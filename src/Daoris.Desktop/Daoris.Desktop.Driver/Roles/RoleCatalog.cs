@@ -23,33 +23,33 @@ public enum RoleState
 
 /// <summary>One id as the catalogue reads it: its role where it has one, its revision (0 for the seed) and, where it does not read, why.</summary>
 /// <param name="Scope">What an unreadable record still shows of its scope; none where it shows none, which holds every start.</param>
-/// <param name="Appointed">An unreadable record whose <c>filled</c> is <c>appointed</c>, which this build does not configure.</param>
+/// <param name="Appointed">An unreadable record whose <c>filled</c> is <c>appointed</c>, which holds no work's starts.</param>
 public sealed record RoleSlot(string Id, RoleState State, RoleRecord? Role, string? Error, long Revision, RoleScope? Scope = null, bool Appointed = false);
 
 /// <summary>The role a work has at a place, or why its start holds; neither where no role takes the work there (it is off).</summary>
 public sealed record RoleFound(RoleRecord? Role, string? Held);
 
 /// <summary>
-/// The catalogue of working roles (FOUNDATION1 w, the foundation design §2.7): the store's <c>roles</c> and the seed per id, read beside
-/// and by nothing yet (row x's start plan adopts <see cref="RoleFor"/>). Its capabilities are the work codes (<see cref="RoleWork"/>);
-/// no act vocabulary and no appointed seed: the supervisor and the steward stay the shell's.
+/// The catalogue of roles (FOUNDATION1 w, the foundation design §2.7; D233 point 2): the store's <c>roles</c> and the seed per id. A
+/// working role's capabilities are the work codes (<see cref="RoleWork"/>), an appointed role's its acts (<see cref="RoleHold"/>).
 /// </summary>
 /// <remarks>
 /// <b>The seed</b> reproduces today's start per id: the eight always-on roles, each machine-wide and taking the work of its name, none taking
-/// design, so design falls back to what takes build. <b>An id reads</b> absent (the seed's), set, removed or unreadable; an unreadable seeded
-/// id holds the starts of its work, an unreadable added record every start in its scope, each said with the record's error (O3-16). Its
-/// staffing is not in the record: it is read from <c>role_staffing</c> by <see cref="Order"/> through the loaded configuration.
+/// design, so design falls back to what takes build; then the supervisor, held by the person's rules, and the steward, held by no one, both
+/// machine-wide. <b>An id reads</b> absent (the seed's), set, removed or unreadable; an unreadable seeded working id holds the starts of its
+/// work, an unreadable added working record every start in its scope, each said with the record's error (O3-16); an appointed record holds
+/// no start. A working role's staffing is not in the record: it is read from <c>role_staffing</c> by <see cref="Order"/>.
 /// </remarks>
 public sealed class RoleCatalog
 {
     /// <summary>The store's version this family's tables arrive at.</summary>
     private const int Step = 10;
 
-    /// <summary>The ids no added role may take, which stay the shell's: the supervisor and the steward.</summary>
-    public static IReadOnlyList<string> Reserved { get; } = ["supervisor", "steward"];
-
-    /// <summary>The seeded roles, one per id of <see cref="ActorChoices.Ids"/>, in the screen's order: Defaults/roles.json, carried in the assembly.</summary>
+    /// <summary>The seeded roles in the screen's order, one per id of <see cref="ActorChoices.Ids"/> and the two appointed: Defaults/roles.json, carried in the assembly.</summary>
     public static IReadOnlyList<RoleRecord> Seed { get; } = ReadSeed();
+
+    /// <summary>Whether <paramref name="id"/> is one the seed holds.</summary>
+    public static bool IsSeeded(string id) => Seed.Any(role => role.Id == id);
 
     private static IReadOnlyList<RoleRecord> ReadSeed()
     {
@@ -57,10 +57,14 @@ public sealed class RoleCatalog
         using var stream = assembly.GetManifestResourceStream("Daoris.Driver.Defaults/roles.json")
             ?? throw new InvalidOperationException("the roles this build ships are not carried in it (Defaults/roles.json).");
         using var document = JsonDocument.Parse(stream);
-        return [.. document.RootElement.GetProperty("roles").EnumerateArray().Select(each => new RoleRecord(
-            each.GetProperty("id").GetString()!, AuthoredText.Read(each.GetProperty("name")) ?? throw new InvalidOperationException("a shipped role has no name."),
-            each.GetProperty("filled").GetString()!, [each.GetProperty("work").GetString()!],
-            new RoleScope(each.GetProperty("place").GetString()!)))];
+        return [.. document.RootElement.GetProperty("roles").EnumerateArray().Select(each =>
+        {
+            var hold = each.TryGetProperty("authority", out _) ? RoleHold.Read(each).Hold ?? throw new InvalidOperationException("a shipped appointed role does not read.") : null;
+            return new RoleRecord(
+                each.GetProperty("id").GetString()!, AuthoredText.Read(each.GetProperty("name")) ?? throw new InvalidOperationException("a shipped role has no name."),
+                each.GetProperty("filled").GetString()!, hold is null ? [each.GetProperty("work").GetString()!] : [],
+                new RoleScope(each.GetProperty("place").GetString()!), hold);
+        })];
     }
 
     private RoleCatalog(IReadOnlyList<RoleSlot> slots) => Slots = slots;
@@ -98,7 +102,7 @@ public sealed class RoleCatalog
             slots.Add(rows.TryGetValue(seed.Id, out var row) ? Slot(row) : new RoleSlot(seed.Id, RoleState.Seed, seed, null, 0));
         }
 
-        slots.AddRange(rows.Values.Where(row => !ActorChoices.Ids.Contains(row.Id, StringComparer.Ordinal)).OrderBy(row => row.Id, StringComparer.Ordinal).Select(Slot));
+        slots.AddRange(rows.Values.Where(row => !IsSeeded(row.Id)).OrderBy(row => row.Id, StringComparer.Ordinal).Select(Slot));
         return new RoleCatalog(slots);
     }
 
@@ -167,7 +171,7 @@ public sealed class RoleCatalog
     public RoleFound RoleFor(string work, RolePlace place)
     {
         var seeded = StartPlan.RoleOf(work);
-        foreach (var slot in Slots.Where(slot => slot.State == RoleState.Unreadable))
+        foreach (var slot in Slots.Where(slot => slot.State == RoleState.Unreadable && !slot.Appointed && !AppointedRoles.Kinds.Contains(slot.Id, StringComparer.Ordinal)))
         {
             var seededId = ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal);
             if (seededId ? slot.Id == seeded : slot.Scope is null || slot.Scope.Covers(place))
@@ -193,20 +197,15 @@ public sealed class RoleCatalog
     /// <summary>
     /// The role <paramref name="role"/> names, for a start of <paramref name="work"/> at <paramref name="place"/>: found by its id, never by
     /// the work. A role that takes build takes a design step, as <see cref="RoleFor"/>'s fallback does. Its <c>Held</c>, said,
-    /// where the id is the shell's, not in the catalogue, appointed or unreadable, or the role does not work here or take the work; no other
-    /// role is taken for it.
+    /// where the id is not in the catalogue, appointed or unreadable, or the role does not work here or take the work; no other role is
+    /// taken for it.
     /// </summary>
     public RoleFound Named(string role, string work, RolePlace place)
     {
         const string Hold = "so the starts naming it hold";
-        if (Reserved.Contains(role, StringComparer.Ordinal))
-        {
-            return new RoleFound(null, $"`{role}` is the shell's: the supervisor and the steward are not configured here, {Hold} until they name a working role.");
-        }
-
         var slot = Slots.FirstOrDefault(slot => slot.Id == role);
         if (slot is null or { State: RoleState.Removed }) return new RoleFound(null, $"No role `{role}` is in the catalogue, {Hold} until it is added: {Configured}.");
-        if (slot.Appointed) return new RoleFound(null, $"`{role}` is an appointed role: this build configures working roles alone, {Hold} until they name a working role.");
+        if (slot.Appointed || slot.Role?.Hold is not null) return new RoleFound(null, $"`{role}` is an appointed role, which holds acts and takes no work, {Hold} until they name a working role.");
         if (slot.Role is not { } found) return Unreadable(slot, "the starts naming it");
         if (!found.Scope.Covers(place))
         {
@@ -220,6 +219,16 @@ public sealed class RoleCatalog
     private static RoleFound Unreadable(RoleSlot slot, string reach) =>
         new(null, $"The role `{slot.Id}` {slot.Error}, so {reach} hold until it reads or is deleted.");
 
+    /// <summary>Every appointed role that reads, the supervisors and the steward, in the catalogue's order.</summary>
+    public IReadOnlyList<RoleRecord> HoldingActs => [.. Slots.Select(slot => slot.Role).OfType<RoleRecord>().Where(role => role.Hold is not null)];
+
+    /// <summary>
+    /// The appointed role of <paramref name="kind"/> that acts at <paramref name="place"/>: the most specific scope's that covers it, as a
+    /// work's role is found; null where none does. The judge keeps one of a kind per scope.
+    /// </summary>
+    public RoleRecord? Appointed(string kind, RolePlace place) =>
+        HoldingActs.Where(role => role.Hold!.Kind == kind && role.Scope.Covers(place)).OrderByDescending(role => role.Scope.Rank).FirstOrDefault();
+
     /// <summary>Where the person gives a work its role, named in every hold that waits for one.</summary>
     private const string Configured = "Agents → Roles, or `daoris role`";
 
@@ -232,7 +241,7 @@ public sealed class RoleCatalog
 
     /// <summary>The judge's refusal codes, the closed set every door answers; <c>policy</c> is a staffing policy's (<see cref="StaffPolicy.Judge"/>).</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["appointed-not-configurable", "mixed-shape", "unknown-work", "reserved-id", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code];
+        ["appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices", StaffPolicy.Code];
 
     /// <summary>
     /// Whether <paramref name="choices"/> may be the staffing of a role taking <paramref name="work"/>: today's <see cref="ActorChoices.Judge"/>
@@ -249,18 +258,22 @@ public sealed class RoleCatalog
         role.Takes.Select(work => Judge(work, choices)).FirstOrDefault(refusal => refusal is not null);
 
     /// <summary>
-    /// Whether <paramref name="change"/> may be made to this catalogue, for every door alike: an appointed record is refused before anything
-    /// else of it, then a mixed shape, an unknown work, an id the shell keeps, a record that is not one, two roles taking one work in one
-    /// scope, and the removal or scoping away of the role of a work that may not be off from the machine. Null where it may.
+    /// Whether <paramref name="change"/> may be made to this catalogue, for every door alike: a mixed shape, an appointed role's acts,
+    /// holder, scope and window (<see cref="RoleHold.Judge"/>), an unknown work, a record that is not one, a seeded id given the other
+    /// shape or kind, two roles taking one work (or two of one appointed kind) in one scope, and the removal or scoping away from the
+    /// machine of the role of a work that may not be off, or of the supervisor. Null where it may.
     /// </summary>
     public RoleRefusal? Judge(RoleChange change)
     {
         if (change is RoleChange.SetRole { Role: var role })
         {
-            if (role.Filled == RoleRecord.Appointed) return Refused("appointed-not-configurable", $"`{role.Id}` is an appointed role: this build configures working roles alone.");
-            if (role.Authority is not null) return Refused("mixed-shape", $"`{role.Id}` mixes the working and the appointed shape: a role takes work or holds acts, never both.");
-            if (role.Filled != RoleRecord.Always) return Refused("bad-record", $"`{role.Id}` is not `always` or `appointed`.");
-            if (Reserved.Contains(role.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{role.Id}` is the shell's: the supervisor and the steward are not configured here.");
+            var appointed = role.Filled == RoleRecord.Appointed;
+            if ((appointed && role.Takes.Count > 0) || (!appointed && role.Hold is not null))
+            {
+                return Refused("mixed-shape", $"`{role.Id}` mixes the working and the appointed shape: a role takes work or holds acts, never both.");
+            }
+
+            if (role.Filled is not (RoleRecord.Always or RoleRecord.Appointed)) return Refused("bad-record", $"`{role.Id}` is not `always` or `appointed`.");
             if (!IdShape.IsMatch(role.Id)) return Refused("bad-record", $"`{role.Id}` is not an id: lowercase letters, digits and hyphens, from a letter, at most 40.");
             if (string.IsNullOrWhiteSpace(role.Name.AsWritten)) return Refused("bad-record", $"`{role.Id}` needs a name.");
             if (!RoleScope.Kinds.Contains(role.Scope.Kind, StringComparer.Ordinal) || (role.Scope.Kind == RoleScope.Machine) != string.IsNullOrWhiteSpace(role.Scope.Id))
@@ -268,17 +281,28 @@ public sealed class RoleCatalog
                 return Refused("bad-record", $"`{role.Id}`'s scope is the machine alone, or a workspace or a repository with its id.");
             }
 
-            if (role.Takes.Count == 0) return Refused("bad-record", $"`{role.Id}` takes no work.");
-            if (role.Takes.FirstOrDefault(work => !RoleWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
+            if (Seed.FirstOrDefault(seed => seed.Id == role.Id) is { } seeded && (seeded.Filled != role.Filled || seeded.Hold?.Kind != role.Hold?.Kind))
             {
-                return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", RoleWork.Codes)}.");
+                return Refused("mixed-shape", $"`{role.Id}` is seeded as {(seeded.Hold?.Kind is { } kind ? $"the {kind}" : "a working role")}, a shape it keeps.");
+            }
+
+            if (appointed)
+            {
+                if (RoleHold.Judge(role) is { } refusedHold) return refusedHold;
+            }
+            else
+            {
+                if (role.Takes.Count == 0) return Refused("bad-record", $"`{role.Id}` takes no work.");
+                if (role.Takes.FirstOrDefault(work => !RoleWork.Codes.Contains(work, StringComparer.Ordinal)) is { } unknown)
+                {
+                    return Refused("unknown-work", $"`{unknown}` is not a work — one of {string.Join(", ", RoleWork.Codes)}.");
+                }
             }
         }
         else if (change is RoleChange.DefaultAllRoles)
         {
             // Names no one id: the seed answers for every seeded one.
         }
-        else if (Reserved.Contains(change.Id, StringComparer.Ordinal)) return Refused("reserved-id", $"`{change.Id}` is the shell's: the supervisor and the steward are not configured here.");
         else if (Slots.All(slot => slot.Id != change.Id)) return Refused("bad-record", $"no role `{change.Id}` is in the catalogue.");
 
         var after = After(change);
@@ -289,6 +313,18 @@ public sealed class RoleCatalog
             {
                 return Refused("two-roles-one-work", $"`{clash.Id}` already takes `{clash.Takes.Intersect(set.Takes).First()}` in that scope: at most one role takes a work in one scope.");
             }
+
+            if (set.Hold?.Kind is { } kind
+                && after.FirstOrDefault(slot => slot.Role is { } other && other.Id != set.Id && other.Scope == set.Scope && other.Hold?.Kind == kind) is { Role: { } twin })
+            {
+                return Refused("two-roles-one-work", $"`{twin.Id}` is already the {kind} in that scope: at most one role of a kind acts in one scope.");
+            }
+        }
+
+        // The supervisor's rules always act, so a supervisor stays on the machine to hold them.
+        if (!after.Any(slot => slot.Role is { Hold.Kind: AppointedRoles.Supervisor, Scope.Rank: 0 }) && !after.Any(slot => slot is { State: RoleState.Unreadable, Id: AppointedRoles.Supervisor }))
+        {
+            return Refused("may-not-be-off", $"the supervisor may not be off: your rules hold it on the machine, so `{change.Id}` cannot be removed or scoped away from it.");
         }
 
         // An unreadable seeded id is left to the person's next edit of it, so it is not counted as uncovered here.
@@ -311,7 +347,7 @@ public sealed class RoleCatalog
     {
         if (change is RoleChange.DefaultAllRoles)
         {
-            return [.. Seed.Select(role => new RoleSlot(role.Id, RoleState.Seed, role, null, 0)), .. Slots.Where(slot => !ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal))];
+            return [.. Seed.Select(role => new RoleSlot(role.Id, RoleState.Seed, role, null, 0)), .. Slots.Where(slot => !IsSeeded(slot.Id))];
         }
 
         var slots = Slots.Where(slot => slot.Id != change.Id).ToList();
@@ -361,14 +397,14 @@ public sealed class RoleCatalog
 
                 // The whole structure's default is each seeded role not already the seed's, one revision apiece; 0 where none moved.
                 var each = asked is RoleChange.DefaultAllRoles
-                    ? current.Slots.Where(slot => slot.State != RoleState.Seed && ActorChoices.Ids.Contains(slot.Id, StringComparer.Ordinal)).Select(slot => RoleChange.Default(slot.Id)).ToList()
+                    ? current.Slots.Where(slot => slot.State != RoleState.Seed && IsSeeded(slot.Id)).Select(slot => RoleChange.Default(slot.Id)).ToList()
                     : [asked];
                 var last = 0L;
                 foreach (var change in each)
                 {
                     var revision = write.Scalar<long>("SELECT MAX(revision) FROM role_revisions WHERE id = $id", ("$id", change.Id)) + 1;
                     var at = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-                    var seeded = ActorChoices.Ids.Contains(change.Id, StringComparer.Ordinal);
+                    var seeded = IsSeeded(change.Id);
                     (string State, string? Record) kept = change switch
                     {
                         RoleChange.SetRole set => ("set", set.Role.Json()),

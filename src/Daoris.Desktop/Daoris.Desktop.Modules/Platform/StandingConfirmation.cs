@@ -86,19 +86,12 @@ public sealed record StandingJudgement(bool Covered, string? Why, string? Press,
 /// <param name="Unwritten">That the last revoke could not write its record, so the next start may read it as on.</param>
 /// <param name="Used">How many presses it covered since this Daoris started.</param>
 /// <param name="Held">The repositories a covered hold held during this run, which a covered resume may release.</param>
-/// <param name="AppointmentsOffered">Whether this build offers any role (STEWARDROLE1a-i, D209 §2.4: derived from the two role flags, gating nothing alone).</param>
-/// <param name="Appointments">The appointments the record holds, each as its row reads it, dormant where found at a start.</param>
-/// <param name="SupervisorOffered">Whether this build offers the supervisor (its own flag, D209 §2.4).</param>
-/// <param name="StewardOffered">Whether this build offers the steward (its own flag, D209 §2.4).</param>
-/// <param name="Holders">The holders living this run, each with its roles and when its tab was opened, which a later <i>Appoint…</i> may add a role to.</param>
+/// <param name="Holds">The roles a terminal holds this run, each by its catalogue id; a role staffed by the terminal and not here is not started.</param>
+/// <param name="Holders">The holders living this run, each with its roles and when its tab was opened, which a later start may add a role to.</param>
 public sealed record StandingNow(
     bool Offered, bool On, IReadOnlyList<string> Presses, IReadOnlyList<string> Built, DateTimeOffset? Since, string? Unread,
-    bool Unwritten, int Used, IReadOnlyList<string> Held, bool AppointmentsOffered = false, IReadOnlyList<AppointmentNow>? Appointments = null,
-    bool SupervisorOffered = false, bool StewardOffered = false, IReadOnlyList<HolderNow>? Holders = null)
+    bool Unwritten, int Used, IReadOnlyList<string> Held, IReadOnlyList<RoleHoldNow>? Holds = null, IReadOnlyList<HolderNow>? Holders = null)
 {
-    /// <summary>The acts this build offers a steward's appointment, in order (STEWARDROLE1b, <see cref="StewardActs.Offered"/>), which its ask names.</summary>
-    public IReadOnlyList<string> StewardActsOffered { get; init; } = [];
-
     /// <summary>The steward's acts this run, newest first (STEWARDROLE1b, D209 §5.3), from memory alone: the line's entries.</summary>
     public IReadOnlyList<StewardActNow> StewardActs { get; init; } = [];
 
@@ -117,138 +110,28 @@ public sealed record StewardActNow(
 /// <summary>A grant's or a revoke's answer: done, or refused as data with a code the page words.</summary>
 public sealed record StandingChange(bool Done, string? Why, string? Message);
 
-/// <summary>The roles the owner appoints (D208 point 1, the supervisor design §2; D209 §1), by the names the record keeps.</summary>
-public static class Roles
-{
-    /// <summary>The supervisor (主管), who answers a parked session's recorded question with one offered choice.</summary>
-    public const string Supervisor = "supervisor";
-
-    /// <summary>The steward (管家), who makes development's management acts on the owner's behalf (STEWARDROLE1, D209).</summary>
-    public const string Steward = "steward";
-
-    /// <summary>The roles this build knows. A role is never one of <see cref="StandingPresses.Built"/>'s presses.</summary>
-    public static IReadOnlyList<string> Known { get; } = [Steward, Supervisor];
-}
-
 /// <summary>
-/// An appointment's scope (D209 §2.3): <c>machine</c>, every repository the service's registry names here as each act is judged (the
-/// steward's), <c>repository:&lt;name&gt;</c> (the supervisor's), or <c>workspace:&lt;name&gt;</c> (the supervisor's, SUPERVISOR1e: every
-/// repository the registry places in that workspace as each act is judged, a repository added later included).
+/// A role a terminal holds this run, as the window reads it: the role's catalogue id, its kind, the living holder, since when, and how
+/// many acts it made. Never its generation, its key nor its hash.
 /// </summary>
-public static class RoleScopes
-{
-    public const string Machine = "machine";
-
-    private const string RepositoryPrefix = "repository:";
-
-    private const string WorkspacePrefix = "workspace:";
-
-    /// <summary>The scope of one repository.</summary>
-    public static string Repository(string name) => RepositoryPrefix + name;
-
-    /// <summary>The scope of one workspace (SUPERVISOR1e).</summary>
-    public static string Workspace(string name) => WorkspacePrefix + name;
-
-    /// <summary>The repository a scope names, or null for <c>machine</c> or any other.</summary>
-    public static string? RepositoryOf(string scope) => Named(scope, RepositoryPrefix);
-
-    /// <summary>The workspace a scope names, or null for any other.</summary>
-    public static string? WorkspaceOf(string scope) => Named(scope, WorkspacePrefix);
-
-    private static string? Named(string scope, string prefix) =>
-        scope.StartsWith(prefix, StringComparison.Ordinal) && scope.Length > prefix.Length ? scope[prefix.Length..] : null;
-
-    /// <summary>Whether <paramref name="scope"/> is one a record or a form may name.</summary>
-    public static bool Known(string scope) => scope == Machine || RepositoryOf(scope) is not null || WorkspaceOf(scope) is not null;
-
-    /// <summary>Two scopes the same, a repository's or a workspace's name compared as the registry compares names.</summary>
-    public static bool Same(string a, string b) =>
-        RepositoryOf(a) is { } left && RepositoryOf(b) is { } right ? string.Equals(left, right, StringComparison.OrdinalIgnoreCase)
-        : WorkspaceOf(a) is { } one && WorkspaceOf(b) is { } other ? string.Equals(one, other, StringComparison.OrdinalIgnoreCase)
-        : a == b;
-}
-
-/// <summary>Who holds a role (the supervisor design §2.2): a terminal the window started with the holder key, or Daoris's own actor.</summary>
-public static class RoleHolders
-{
-    public const string Terminal = "terminal";
-    public const string Actor = "actor";
-}
-
-/// <summary>
-/// One appointment as the record keeps it (the supervisor design §2.3; D209 §2.3): its role, its scope, the holder's kind, its
-/// generation (an opaque id drawn at each appointment, never reused), when, the acts its ask named from the build's offered set, and
-/// the owner's own set-up tick. Never the key nor its hash, nor which holder holds it, which is this run's memory alone.
-/// </summary>
-/// <param name="Window">
-/// The supervisor's overrule window in minutes, set at the appointment (SUPERVISOR1e, §6.3): 1 to 60, five where none was set. A record
-/// read at a start only shows it: <i>Appoint again</i> sets its own.
-/// </param>
-public sealed record Appointment(
-    string Role, string Scope, string Holder, string Generation, DateTimeOffset Since, IReadOnlyList<string> Acts, bool Setup = false,
-    int Window = Appointment.DefaultWindow)
-{
-    /// <summary>The window where an appointment sets none, in minutes: row 1's five (§6.3).</summary>
-    public const int DefaultWindow = 5;
-
-    /// <summary>The bounds an appointment's window keeps, in minutes (§6.3, §12: never 0).</summary>
-    public const int ShortestWindow = 1, LongestWindow = 60;
-
-    /// <summary>The repository its scope names, or null for <c>machine</c> or a workspace.</summary>
-    public string? Repository => RoleScopes.RepositoryOf(Scope);
-
-    /// <summary>The workspace its scope names (SUPERVISOR1e), or null.</summary>
-    public string? Workspace => RoleScopes.WorkspaceOf(Scope);
-
-    /// <summary>Whether <paramref name="minutes"/> is a window an appointment may set.</summary>
-    public static bool InWindow(long minutes) => minutes is >= ShortestWindow and <= LongestWindow;
-}
-
-/// <summary>
-/// An appointment as the window's row reads it (the supervisor design §6.4): never its generation, its key nor its hash.
-/// </summary>
-/// <param name="Repository">The repository its scope names; null for the steward's <c>machine</c>.</param>
-/// <param name="Dormant">Found as Daoris started (§2.3): no key is known for it, so it admits no holder until <i>Appoint again</i>.</param>
-/// <param name="Answers">How many acts its holder made under it since this Daoris started.</param>
-/// <param name="Scope">Its scope (D209 §2.3).</param>
-/// <param name="HolderId">The living holder that holds it this run; null where it is dormant.</param>
-/// <param name="Workspace">The workspace its scope names (SUPERVISOR1e); null for any other scope.</param>
-/// <param name="Window">Its overrule window in minutes (SUPERVISOR1e).</param>
-public sealed record AppointmentNow(
-    string Role, string? Repository, string Holder, DateTimeOffset Since, bool Dormant, int Answers, string Scope = RoleScopes.Machine,
-    string? HolderId = null, string? Workspace = null, int Window = Appointment.DefaultWindow)
-{
-    /// <summary>The acts its ask named (STEWARDROLE1b, D209 §2.3).</summary>
-    public IReadOnlyList<string> Acts { get; init; } = [];
-
-    /// <summary>The owner's own set-up tick (D209 §2.3).</summary>
-    public bool Setup { get; init; }
-}
+public sealed record RoleHoldNow(string Role, string Kind, string Holder, DateTimeOffset Since, int Answers);
 
 /// <summary>A living holder as the window reads it (D209 §2.2): its id, when its tab was opened, its roles. Never its key, its hash nor its process.</summary>
 public sealed record HolderNow(string Id, DateTimeOffset Since, IReadOnlyList<string> Roles);
 
-/// <summary>An appointment's change: its answer, and the generations it ended, which the caller sweeps after its step (§5).</summary>
-public sealed record AppointmentChange(StandingChange Answer, IReadOnlyList<string> Ended)
-{
-    /// <summary>
-    /// SUPERVISOR1e (§5): a workspace's generation a repository's own appointment replaced for that repository alone, which the caller
-    /// sweeps after its step for that repository's decisions, as it sweeps <see cref="Ended"/>.
-    /// </summary>
-    public IReadOnlyList<(string Generation, string Repository)> Narrowed { get; init; } = [];
-}
+/// <summary>A start of a role's terminal: its answer, and the generations it ended, which the caller sweeps after its step (§5).</summary>
+public sealed record HoldChange(StandingChange Answer, IReadOnlyList<string> Ended);
 
 /// <summary>
-/// The window's appointment (<c>SET_APPOINTMENT { role, scope, holder, on, share?, setup?, window? }</c>, D209 §2.3): <paramref name="Share"/> is a
-/// later <i>Appoint…</i>'s choice while a holder lives, <c>own</c> for a terminal of its own or a living holder's id to add the role
-/// to it; <paramref name="Setup"/> the owner's own set-up tick, the steward's alone; <paramref name="Window"/> the supervisor's overrule
-/// window in minutes, 1 to 60, five where none is named (SUPERVISOR1e).
+/// The window's start of the terminal that holds a role staffed by the terminal (<c>START_ROLE_TERMINAL { role, share? }</c>):
+/// <paramref name="Role"/> the role's catalogue id; <paramref name="Share"/> the choice while a holder lives, <c>own</c> for a terminal of
+/// its own or a living holder's id to add the role to it.
 /// </summary>
-public sealed record AppointRequest(string Role, string Scope, string Holder, bool On, string? Share = null, bool Setup = false, long? Window = null);
+public sealed record HoldRequest(string Role, string? Share = null);
 
 /// <summary>
-/// The judge's role method's answer (the supervisor design §2.2, §3.1; D209 §3.3): covered, with the appointment it acted under, its
-/// holder and, for <c>ROLE_ACT</c>, the act and the act's id Daoris drew at admission; or refused with why, never asked.
+/// The judge's role method's answer (the supervisor design §2.2, §3.1; D209 §3.3): covered, with the role's kind and the hold it acted
+/// under, its holder and, for <c>ROLE_ACT</c>, the act and the act's id Daoris drew at admission; or refused with why, never asked.
 /// </summary>
 /// <param name="Roles">The roles the holder holds now, which every answer of a role's verb names (D209 §2.2).</param>
 public sealed record RoleJudgement(
@@ -282,18 +165,17 @@ public sealed record RoleJudgement(
 /// answers <see cref="StandingWhy.Untold"/> and this covers nothing (D201's note on order). The grant is offered only where
 /// <see cref="Offered"/> says so.</para>
 ///
-/// <para><b>The owner's appointments</b> (SUPERVISOR1a-ii, D208 points 2 and 3; the supervisor design §2.2, §2.3): the record carries
-/// <c>appointments</c> beside <c>presses</c>, each its role, repository, holder kind, generation and moment, never the key nor its hash.
-/// The holder key's SHA-256 is kept in this instance's memory alone, so an appointment read at a start is <b>dormant</b> until the
-/// owner presses <i>Appoint again</i>. A role's act is judged by its own method (<see cref="JudgeRole"/>) under the same lock and
-/// caller look, then by the holder's proof over the connection's nonce, independent of the presses; and the decisions' admission
-/// (<see cref="IDecisionAdmission"/>) answers the effective appointment's generation from the same memory.</para>
+/// <para><b>The roles' terminals</b> (D233 point 2; the supervisor design §2.2): the supervisor and the steward are catalogue roles,
+/// staffed through the role door, read live from the catalogue (<see cref="Appointed"/>). A role staffed by the terminal is held this run
+/// once the window starts its terminal (<see cref="StartAsync"/>), a generation drawn for that hold and the holder key's SHA-256 kept in
+/// this instance's memory alone, so after a restart the role is not started until the window starts it again. A role's act is judged by
+/// its own method (<see cref="JudgeRole"/>) under the same lock and caller look, against the role's record as it stands, then by the
+/// holder's proof over the connection's nonce; and the decisions' admission (<see cref="IDecisionAdmission"/>) answers the effective
+/// supervisor's hold and window from the same memory and the catalogue.</para>
 ///
-/// <para><b>One mutation step</b> (§2.3): every read-modify-write of the record, presses and appointments alike, and the memory it
-/// installs, runs whole under the lock: read the memory, build the whole record, write it atomically, install the memory. A grant, an
-/// appointment, a dismissal and a revoke never interleave; a revoke clears its part of the memory first, inside the step. The lock is
-/// never held across an await nor while a decision's lock is taken: a revoke's sweep of its decisions runs after its step
-/// (<see cref="AppointmentChange.Ended"/>).</para>
+/// <para><b>One mutation step</b> (§2.3): every read-modify-write of the record and the memory it installs runs whole under the lock. The
+/// lock is never held across an await nor while a decision's lock is taken: the sweep of an ended hold's decisions runs after its step
+/// (<see cref="HoldChange.Ended"/>).</para>
 /// </remarks>
 public sealed class StandingConfirmation : IDecisionAdmission
 {
@@ -322,54 +204,29 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>A grant whose record could not be written, so nothing was turned on; or a revoke's, turned off for this run alone.</summary>
     public const string Unwritten = "unwritten";
 
-    /// <summary>
-    /// Whether this build offers the supervisor (STEWARDROLE1a-i, D209 §2.4, amending D208 §2.3): its own flag, decoupled from D201's
-    /// offering. Only SUPERVISOR1a-iii turns it on, after SUPERVISOR1b and D201 part (i)'s case 4 seen on every door. It gates the
-    /// supervisor's ask and row, its <c>SET_APPOINTMENT</c>, <c>SUPERVISOR_ANSWER</c> and <c>SUPERVISOR_DEFER</c>.
-    /// </summary>
-    public const bool SupervisorOfferedInThisBuild = false;
-
-    /// <summary>
-    /// Whether this build offers the steward (STEWARDROLE1a-i, D209 §2.4): its own flag. Only STEWARDROLE1d turns it on. It gates the
-    /// steward's <i>Roles</i> row, its ask, its <c>SET_APPOINTMENT</c> and <c>ROLE_ACT</c> for <c>steward</c>.
-    /// </summary>
-    public const bool StewardOfferedInThisBuild = false;
-
-    /// <summary>Whether this build offers any role: derived from the two flags, and gating nothing by itself (D209 §2.4).</summary>
-    public const bool AppointmentsOffered = SupervisorOfferedInThisBuild || StewardOfferedInThisBuild;
-
-    /// <summary>An appointment naming a role this build does not know.</summary>
+    /// <summary>A start naming no appointed role of the catalogue.</summary>
     public const string UnknownRole = "unknown-role";
 
-    /// <summary>An appointment naming a repository Daoris does not drive here.</summary>
-    public const string UnknownRepository = "unknown-repository";
+    /// <summary>A start of a role the terminal does not hold: its record names another holder, or none.</summary>
+    public const string NotTerminal = "not-terminal";
 
-    /// <summary>An appointment naming a workspace whose repositories Daoris's registry does not place here (SUPERVISOR1e).</summary>
-    public const string UnknownWorkspace = "unknown-workspace";
-
-    /// <summary>An appointment's overrule window outside 1 to 60 minutes (SUPERVISOR1e, §6.3, §12).</summary>
-    public const string WindowRefused = "window";
-
-    /// <summary>A terminal appointment whose holder's terminal could not be started: nothing was kept.</summary>
+    /// <summary>A role's terminal that could not be started: nothing was kept.</summary>
     public const string Unstarted = "unstarted";
 
-    /// <summary>An appointment naming a scope its role does not take (the steward's is <c>machine</c>, the supervisor's a repository).</summary>
-    public const string Scope = "scope";
-
     /// <summary>
-    /// A later <i>Appoint…</i> while a holder's tab lives that names no choice (D209 §2.2): the owner adds the role to that terminal or
-    /// gives it one of its own; neither is preselected.
+    /// A start while a holder's tab lives that names no choice (D209 §2.2): the owner adds the role to that terminal or gives it one of
+    /// its own; neither is preselected.
     /// </summary>
     public const string ChooseTerminal = "choose-terminal";
 
     /// <summary>A share naming no living holder.</summary>
     public const string NoHolder = "no-holder";
 
-    /// <summary>A role revoked this run added back to a holder that held it (D209 §2.2): only a terminal of its own.</summary>
+    /// <summary>A role ended in a holder this run added back to it (D209 §2.2): only a terminal of its own.</summary>
     public const string RevokedHolder = "revoked-holder";
 
-    /// <summary>The machine log's event for an appointment, a revoke, a holder's end and what a start found (D209 §5.2).</summary>
-    public const string RoleLogEvent = "role.appointment";
+    /// <summary>The machine log's event for a role's terminal started, a hold ended and a holder's end (D209 §5.2).</summary>
+    public const string RoleLogEvent = "role.hold";
 
     private readonly string _home;
     private readonly MachineLog _log;
@@ -384,12 +241,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
     private bool _newer;
     private int _used;
     private long _seq;
-    // SUPERVISOR1a-ii, amended by STEWARDROLE1a-i (D209 §2.2): the record's appointments as this run holds them; the holders living this
-    // run by their id, each with its key's hash, its tab, its harness's process and the roles revoked from it; and which holder holds each
-    // live appointment, by its generation, in memory alone. An appointment no holder holds is dormant.
-    private IReadOnlyList<Appointment> _appointments = [];
+    // The roles a terminal holds this run, each with the generation every act under it carries; the holders living this run by their id,
+    // each with its key's hash, its tab, its harness's process and the roles ended in it, in memory alone.
+    private readonly List<Hold> _holds = [];
     private readonly Dictionary<string, Holding> _holders = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _holderOf = new(StringComparer.Ordinal);
     private readonly HashSet<string> _endedTabs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _answers = new(StringComparer.Ordinal);
     private readonly RoleActsMemory _acts = new();
@@ -398,7 +253,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
     private readonly HashSet<string> _ownerSet = new(StringComparer.Ordinal);
     private bool _ownerUnresolved;
 
-    /// <summary>A holder of this run (D209 §2.2): apart from its appointments, shared by them or its own.</summary>
+    /// <summary>A role a living holder holds this run: its catalogue id, its kind, the generation drawn at its start, its holder.</summary>
+    private sealed record Hold(string Role, string Kind, string Generation, string Holder, DateTimeOffset Since);
+
+    /// <summary>A holder of this run (D209 §2.2): apart from its holds, shared by them or its own.</summary>
     private sealed class Holding(string id, byte[] hash, string? tab, HolderProcess? process, DateTimeOffset since)
     {
         public string Id { get; } = id;
@@ -407,7 +265,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         public HolderProcess? Process { get; } = process;
         public DateTimeOffset Since { get; } = since;
 
-        /// <summary>The roles revoked from this holder this run: never added back to it (§2.2).</summary>
+        /// <summary>The roles ended in this holder this run: never added back to it (§2.2).</summary>
         public HashSet<string> Revoked { get; } = new(StringComparer.Ordinal);
     }
 
@@ -417,13 +275,11 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <param name="clock">The clock a grant's moment is read by.</param>
     /// <param name="offered">Whether the grant is offered (<see cref="OfferedInThisBuild"/> where none is named).</param>
     /// <param name="machine">This machine and account, as the record binds them (<see cref="ThisMachine"/> where none is named).</param>
-    /// <param name="supervisor">Whether the supervisor is offered (<see cref="SupervisorOfferedInThisBuild"/> where none is named), whatever D201's grant is.</param>
-    /// <param name="steward">Whether the steward is offered (<see cref="StewardOfferedInThisBuild"/> where none is named), whatever D201's grant is.</param>
     /// <param name="walk">The configuration walk every <c>Role</c> route's admission runs (<see cref="HolderWalk.System"/> where none is named).</param>
     /// <param name="desk">Who a desk request is counted against (<see cref="DeskCaller.System"/> where none is named; STEWARDROLE1c).</param>
     public StandingConfirmation(
         string home, MachineLog? log = null, IStandingCaller? caller = null, TimeProvider? clock = null, bool? offered = null,
-        string? machine = null, bool? supervisor = null, bool? steward = null, IHolderWalk? walk = null, IDeskCaller? desk = null)
+        string? machine = null, IHolderWalk? walk = null, IDeskCaller? desk = null)
     {
         _home = home;
         _log = log ?? MachineLog.None;
@@ -431,14 +287,33 @@ public sealed class StandingConfirmation : IDecisionAdmission
         _clock = clock ?? TimeProvider.System;
         Offered = offered ?? OfferedInThisBuild;
         _machine = machine ?? ThisMachine();
-        // Each role is offered by its own flag, apart from the grant's offering, which stays off.
-        SupervisorOffered = supervisor ?? SupervisorOfferedInThisBuild;
-        StewardOffered = steward ?? StewardOfferedInThisBuild;
         Walk = walk ?? HolderWalk.System;
         RunStarted = _clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), _clock, Environment.ProcessId));
-        Desk = new StewardDesk(_clock, StewardOffered ? DaorisHome.Entry(home, HomeEntry.StewardDesk) : null);
+        Desk = new StewardDesk(_clock, DaorisHome.Entry(home, HomeEntry.StewardDesk));
+        Appointed = () =>
+        {
+            try
+            {
+                return RoleCatalog.ReadHome(home).HoldingActs;
+            }
+            catch (DriverException)
+            {
+                // A catalogue that cannot be read staffs no role: every act and answer is refused until it reads.
+                return [];
+            }
+        };
     }
+
+    /// <summary>The catalogue's appointed roles as they stand now, read at each judgement; a test hands its own.</summary>
+    public Func<IReadOnlyList<RoleRecord>> Appointed { get; set; }
+
+    /// <summary>Whether a holder holds the steward: what the desk, the steward's starts and the owner's marks wait on.</summary>
+    public bool StewardStaffed => Staffed(AppointedRoles.Steward, new RolePlace()) is { Hold.Holder: not null };
+
+    // The role of a kind at a place, as the catalogue says now (the most specific scope's), or null.
+    private RoleRecord? Staffed(string kind, RolePlace place) =>
+        Appointed().Where(role => role.Hold?.Kind == kind && role.Scope.Covers(place)).OrderByDescending(role => role.Scope.Rank).FirstOrDefault();
 
     /// <summary>The steward's desk (D209 §6.2): the requests, which grant nothing.</summary>
     public StewardDesk Desk { get; }
@@ -448,12 +323,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>
     /// <c>STEWARD_REQUEST</c> (D209 §6.2): any caller's request kept on the desk, counted against the caller <paramref name="client"/> is
-    /// keyed by, the act one of the steward's table; refused <c>not-offered</c> while this build does not offer the steward. It reads
-    /// nothing of the appointments, admits nothing and registers no act.
+    /// keyed by, the act one of the steward's table; refused <c>not-staffed</c> while no holder holds the steward. It admits nothing and
+    /// registers no act.
     /// </summary>
     public DeskFiled FileRequest(JsonElement? payload, PipeClientProcess? client)
     {
-        if (!StewardOffered) return new DeskFiled(false, null, DeskWhy.NotOffered);
+        if (!StewardStaffed) return new DeskFiled(false, null, DeskWhy.NotStaffed);
         var filed = Desk.File(payload, DeskCaller.KeyOf(client), StewardActs.Table.Keys);
         _log.Info("steward.desk", ("outcome", filed.Filed ? "filed" : "refused"), ("why", filed.Why ?? ""));
         return filed;
@@ -462,28 +337,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>Whether this instance offers the grant (D201's note on order).</summary>
     public bool Offered { get; }
 
-    /// <summary>Whether this instance offers the supervisor (D209 §2.4).</summary>
-    public bool SupervisorOffered { get; }
-
-    /// <summary>Whether this instance offers the steward (D209 §2.4).</summary>
-    public bool StewardOffered { get; }
-
-    /// <summary>Whether this instance offers any role: derived, and gating nothing by itself.</summary>
-    public bool AppointsOffered => SupervisorOffered || StewardOffered;
-
-    /// <summary>Whether <paramref name="role"/> is offered by its own flag.</summary>
-    public bool RoleOffered(string role) => role switch
-    {
-        Roles.Supervisor => SupervisorOffered,
-        Roles.Steward => StewardOffered,
-        _ => false,
-    };
-
     /// <summary>The configuration walk (D209 §6.1), run for every route of the census's <c>Role</c> class.</summary>
     public IHolderWalk Walk { get; }
-
-    /// <summary>The acts this build offers a role's new appointment (<see cref="StewardActs.Offered"/> for the steward), unless a test names its own.</summary>
-    public Func<string, IReadOnlyList<string>> OffersActs { get; set; } = role => role == Roles.Steward ? StewardActs.Offered : [];
 
     /// <summary>Each role's table for <c>ROLE_ACT</c> (<see cref="StewardActs.TableOf"/>), unless a test hands a stand-in act.</summary>
     public Func<string, IReadOnlyDictionary<string, IRoleAct>> TableOf { get; set; } = StewardActs.TableOf;
@@ -495,22 +350,16 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public Action<string>? Close { get; set; }
 
     /// <summary>
-    /// Told the generations a holder's end or the walk ended outside an appointment's own press, after the step that ended them, for the
-    /// door's sweep (§5) as an appointment's change answers them.
+    /// Told the generations a holder's end or the walk ended outside a start's own press, after the step that ended them, for the door's
+    /// sweep (§5) as a start's change answers them.
     /// </summary>
     public Action<IReadOnlyList<string>>? Ended { get; set; }
 
-    /// <summary>Whether a repository is one Daoris drives on this machine (the loop's registry, which the loop hands in); none is none.</summary>
-    public Func<string, bool> Drives { get; set; } = _ => false;
-
     /// <summary>
     /// The workspace the registry places a repository in (SUPERVISOR1e), as the loop last read it; null where it places it in none or the
-    /// registry is not read yet, so a workspace's appointment covers nothing it cannot place. Read under the judge's lock: it never awaits.
+    /// registry is not read yet, so a workspace's supervisor covers nothing it cannot place. Read under the judge's lock: it never awaits.
     /// </summary>
     public Func<string, string?> WorkspaceOf { get; set; } = _ => null;
-
-    /// <summary>Whether the registry places a repository Daoris drives here in a workspace (SUPERVISOR1e); none is none.</summary>
-    public Func<string, bool> DrivesIn { get; set; } = _ => false;
 
     /// <summary>Where a terminal's process stands.</summary>
     public IStandingCaller Caller { get; }
@@ -544,7 +393,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
     {
         string state;
         IReadOnlyList<string> presses = [];
-        IReadOnlyList<Appointment> appointments = [];
         DateTimeOffset? since = null;
         var newer = false;
         string? text;
@@ -564,7 +412,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         }
         else
         {
-            (state, presses, since, appointments) = Read(text, _machine);
+            (state, presses, since) = Parse(text, _machine);
             newer = state == StandingRead.Newer;
         }
 
@@ -575,80 +423,43 @@ public sealed class StandingConfirmation : IDecisionAdmission
             _unread = state == StandingRead.Found ? null : state;
             _newer = newer;
             _held.Clear();
-            // SUPERVISOR1a-ii (§2.3): every appointment read at a start is dormant, since no key is known for it in this run.
-            _appointments = state == StandingRead.Found ? appointments : [];
+            _holds.Clear();
             _holders.Clear();
-            _holderOf.Clear();
             _answers.Clear();
         }
 
-        _log.Info(LogEvent, ("state", state), ("presses", Names(state == StandingRead.Found ? presses : [])),
-            ("appointments", (state == StandingRead.Found ? appointments.Count : 0).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        _log.Info(LogEvent, ("state", state), ("presses", Names(state == StandingRead.Found ? presses : [])));
     }
 
     /// <summary>The record's text read as the instance reads it: its state, its presses in the build's order (unknown names kept out), and its moment.</summary>
     internal static (string State, IReadOnlyList<string> Presses, DateTimeOffset? Since) Parse(string text, string machine)
     {
-        var (state, presses, since, _) = Read(text, machine);
-        return (state, presses, since);
-    }
-
-    /// <summary>
-    /// The record whole, its appointments too (SUPERVISOR1a-ii): each well formed one kept as written, its role, repository, holder,
-    /// generation and moment, whatever else it carries (a key or a hash an agent wrote there is never read).
-    /// </summary>
-    public static (string State, IReadOnlyList<string> Presses, DateTimeOffset? Since, IReadOnlyList<Appointment> Appointments) Read(
-        string text, string machine)
-    {
         try
         {
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return (StandingRead.Unread, [], null, []);
+            if (root.ValueKind != JsonValueKind.Object) return (StandingRead.Unread, [], null);
             if (!root.TryGetProperty("schemaVersion", out var version) || !version.TryGetInt32(out var number) || number < 1)
             {
-                return (StandingRead.Unread, [], null, []);
+                return (StandingRead.Unread, [], null);
             }
 
-            if (number > SchemaVersion) return (StandingRead.Newer, [], null, []);
+            if (number > SchemaVersion) return (StandingRead.Newer, [], null);
             if (Json.Text(root, "machine") is not { } bound || !string.Equals(bound, machine, StringComparison.OrdinalIgnoreCase))
             {
-                return (StandingRead.OtherMachine, [], null, []);
+                return (StandingRead.OtherMachine, [], null);
             }
 
-            if (!root.TryGetProperty("presses", out var named) || named.ValueKind != JsonValueKind.Array) return (StandingRead.Unread, [], null, []);
+            if (!root.TryGetProperty("presses", out var named) || named.ValueKind != JsonValueKind.Array) return (StandingRead.Unread, [], null);
             var names = named.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToHashSet(StringComparer.Ordinal);
             var since = Moments.Read(Json.Text(root, "since"));
-            var appointments = new List<Appointment>();
-            foreach (var each in Json.Items(root, "appointments"))
-            {
-                // D209 §2.3: a record the built door wrote, `repository` and no `scope`, is read as `repository:<name>`.
-                var scope = Json.Text(each, "scope") is { Length: > 0 } written ? written
-                    : Json.Text(each, "repository") is { Length: > 0 } repository ? RoleScopes.Repository(repository) : null;
-                if (Json.Text(each, "role") is { Length: > 0 } role && scope is not null && RoleScopes.Known(scope)
-                    && Json.Text(each, "holder") is { Length: > 0 } holder && Json.Text(each, "generation") is { Length: > 0 } generation
-                    && Moments.Read(Json.Text(each, "since")) is { } at
-                    && !appointments.Any(kept => kept.Role == role && RoleScopes.Same(kept.Scope, scope)))
-                {
-                    // Its acts and its tick as written, which only show it: Appoint again never reads them back (§2.3).
-                    IReadOnlyList<string> acts = each.TryGetProperty("acts", out var listed) && listed.ValueKind == JsonValueKind.Array
-                        ? [.. listed.EnumerateArray().Where(act => act.ValueKind == JsonValueKind.String).Select(act => act.GetString()!)]
-                        : [];
-                    var setup = each.TryGetProperty("setup", out var ticked) && ticked.ValueKind == JsonValueKind.True;
-                    // SUPERVISOR1e: its window as written where it is within the bounds, five otherwise; it only shows it.
-                    var window = each.TryGetProperty("window", out var minutes) && minutes.TryGetInt64(out var set) && Appointment.InWindow(set)
-                        ? (int)set
-                        : Appointment.DefaultWindow;
-                    appointments.Add(new Appointment(role, scope, holder, generation, at, acts, setup, window));
-                }
-            }
 
             // A later build's press this build does not know is kept out: its table cannot judge it.
-            return (StandingRead.Found, [.. StandingPresses.Built.Where(names.Contains)], since, appointments);
+            return (StandingRead.Found, [.. StandingPresses.Built.Where(names.Contains)], since);
         }
         catch (JsonException)
         {
-            return (StandingRead.Unread, [], null, []);
+            return (StandingRead.Unread, [], null);
         }
     }
 
@@ -660,20 +471,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
         {
             return new StandingNow(
                 Offered, IsOn, _presses, StandingPresses.Built, _since, _unread, _unwritten, _used,
-                [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)], AppointsOffered,
-                [.. _appointments.Select(each => new AppointmentNow(
-                    each.Role, each.Repository, each.Holder, each.Since, !_holderOf.ContainsKey(each.Generation),
-                    _answers.GetValueOrDefault(each.Generation), each.Scope, _holderOf.GetValueOrDefault(each.Generation),
-                    each.Workspace, each.Window)
-                {
-                    Acts = each.Acts, Setup = each.Setup,
-                })],
-                SupervisorOffered, StewardOffered,
+                [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)],
+                [.. _holds.Select(each => new RoleHoldNow(each.Role, each.Kind, each.Holder, each.Since, _answers.GetValueOrDefault(each.Generation)))],
                 [.. _holders.Values.OrderBy(each => each.Since).Select(each => new HolderNow(each.Id, each.Since, RolesOf(each.Id)))])
             {
-                StewardActsOffered = StewardOffered ? OffersActs(Roles.Steward) : [],
                 StewardActs = stewardActs,
-                StewardDesk = StewardOffered ? Desk.Now() : [],
+                StewardDesk = Desk.Now(),
             };
         }
     }
@@ -701,8 +504,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
             return new StandingChange(false, NotOffered, "This Daoris does not offer the standing confirmation yet.");
         }
 
-        // One mutation step (SUPERVISOR1a-ii, §2.3): the whole record built from memory, written and installed under the lock, so a
-        // grant never interleaves with an appointment's change or a revoke.
+        // One mutation step (§2.3): the whole record built from memory, written and installed under the lock, so a grant never
+        // interleaves with a revoke.
         lock (_gate)
         {
             if (_newer)
@@ -713,7 +516,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             var since = _clock.GetUtcNow();
             try
             {
-                Write(granted, since, _appointments);
+                Write(granted, since);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -736,11 +539,11 @@ public sealed class StandingConfirmation : IDecisionAdmission
         bool unwritten;
         lock (_gate)
         {
-            // At once, before the write (§4.3): a press judged after this asks. The appointments stay: each is its own tick.
+            // At once, before the write (§4.3): a press judged after this asks.
             _presses = [];
             _since = null;
             _held.Clear();
-            unwritten = !TryWrite([], null, _appointments, onlyWhereFound: true);
+            unwritten = !TryWrite([], null, onlyWhereFound: true);
             _unwritten = unwritten;
         }
 
@@ -754,12 +557,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// Under the lock: the record written as memory now holds it, false where the write failed. A newer record, or another machine's,
     /// is left as it is (§4.2): it is off here already. <paramref name="onlyWhereFound"/> writes nothing where there is no record yet.
     /// </summary>
-    private bool TryWrite(IReadOnlyList<string> presses, DateTimeOffset? since, IReadOnlyList<Appointment> appointments, bool onlyWhereFound)
+    private bool TryWrite(IReadOnlyList<string> presses, DateTimeOffset? since, bool onlyWhereFound)
     {
         if (_newer || _unread == StandingRead.OtherMachine) return true;
         try
         {
-            if (!onlyWhereFound || File.Exists(RecordPath)) Write(presses, since, appointments);
+            if (!onlyWhereFound || File.Exists(RecordPath)) Write(presses, since);
             return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -768,7 +571,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         }
     }
 
-    private void Write(IReadOnlyList<string> presses, DateTimeOffset? since, IReadOnlyList<Appointment> appointments) => JsonFile.Write(RecordPath, writer =>
+    private void Write(IReadOnlyList<string> presses, DateTimeOffset? since) => JsonFile.Write(RecordPath, writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("schemaVersion", SchemaVersion);
@@ -777,93 +580,36 @@ public sealed class StandingConfirmation : IDecisionAdmission
         writer.WriteEndArray();
         if (since is { } at) writer.WriteString("since", Moments.Write(at));
         writer.WriteString("machine", _machine);
-        // SUPERVISOR1a-ii (§2.3): additive, schema 1; never the key nor its hash. Carried through every change of the presses.
-        if (appointments.Count > 0)
-        {
-            writer.WriteStartArray("appointments");
-            foreach (var each in appointments)
-            {
-                // STEWARDROLE1a-i (D209 §2.3): `scope`, `acts` and `setup` in place of the built `repository`, schema 1 still.
-                writer.WriteStartObject();
-                writer.WriteString("role", each.Role);
-                writer.WriteString("scope", each.Scope);
-                writer.WriteString("holder", each.Holder);
-                writer.WriteString("generation", each.Generation);
-                writer.WriteString("since", Moments.Write(each.Since));
-                writer.WriteStartArray("acts");
-                foreach (var act in each.Acts) writer.WriteStringValue(act);
-                writer.WriteEndArray();
-                writer.WriteBoolean("setup", each.Setup);
-                // SUPERVISOR1e (§6.3): the supervisor's overrule window, in minutes; schema 1 still, an older build ignoring it.
-                if (each.Role == Roles.Supervisor) writer.WriteNumber("window", each.Window);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-        }
-
         writer.WriteEndObject();
     });
 
-    // ——— The owner's appointments (SUPERVISOR1a-ii, D208; amended by STEWARDROLE1a-i, D209 §2.2 to §2.4, §3.3, §3.4, §5.1a).
+    // ——— The roles' terminals (D233 point 2; D209 §2.2, §3.3, §3.4, §5.1a).
 
-    /// <summary>The same as <see cref="AppointAsync"/>, its holder's tab opened synchronously (a test's stand-in).</summary>
-    public AppointmentChange Appoint(AppointRequest request, Func<HolderOpen, HolderOpened> open) =>
-        AppointAsync(request, each => Task.FromResult(open(each))).GetAwaiter().GetResult();
+    /// <summary>The same as <see cref="StartAsync"/>, its holder's tab opened synchronously (a test's stand-in).</summary>
+    public HoldChange Start(HoldRequest request, Func<HolderOpen, HolderOpened> open) =>
+        StartAsync(request, each => Task.FromResult(open(each))).GetAwaiter().GetResult();
 
     /// <summary>
-    /// The window's appointment (<c>SET_APPOINTMENT { role, scope, holder, on, share?, setup? }</c>, D209 §2.3): with <c>on</c>, a new
-    /// generation, held by a new holder whose tab <paramref name="open"/> starts with a new key before the mutation step installs its
-    /// hash, or, where the owner chose it, by a living holder the role is added to (§2.2); nothing kept where the tab could not start or
-    /// its harness is not Daoris's own (<see cref="HolderHarness.Refused"/>). Without <c>on</c>, the appointment dismissed alone. Either way
-    /// the generations it ended are answered for the caller to sweep after this step (§5), never inside it.
+    /// The window's start of a role's terminal (<c>START_ROLE_TERMINAL { role, share? }</c>): the role read from the catalogue as it stands,
+    /// staffed by the terminal, held under a new generation by a new holder whose tab <paramref name="open"/> starts with a new key before
+    /// the mutation step installs its hash, or, where the owner chose it, by a living holder the role is added to (§2.2); nothing kept
+    /// where the tab could not start or its harness is not Daoris's own (<see cref="HolderHarness.Refused"/>). The generation of a hold it
+    /// replaced is answered for the caller to sweep after this step (§5), never inside it.
     /// </summary>
     /// <param name="open">Opens a new holder's tab with the key in its harness's environment; called outside the lock.</param>
-    public async Task<AppointmentChange> AppointAsync(AppointRequest request, Func<HolderOpen, Task<HolderOpened>> open)
+    public async Task<HoldChange> StartAsync(HoldRequest request, Func<HolderOpen, Task<HolderOpened>> open)
     {
-        var (role, scope, holder, on) = (request.Role, request.Scope, request.Holder, request.On);
-        if (!on) return Dismiss(role, scope);
-        if (!Roles.Known.Contains(role, StringComparer.Ordinal)) return Refuse(UnknownRole, $"This Daoris has no role `{role}` to appoint.");
-        // D209 §2.4: each role by its own flag.
-        if (!RoleOffered(role)) return Refuse(NotOffered, $"This Daoris does not offer the {role}'s appointment yet.");
-        // The actor holds a role only once it is measured (SUPERVISOR1c, 1d): until then a terminal alone.
-        if (holder != RoleHolders.Terminal) return Refuse(NotOffered, $"This Daoris does not offer the `{holder}` holder yet.");
-        if (role == Roles.Steward ? scope != RoleScopes.Machine : RoleScopes.RepositoryOf(scope) is null && RoleScopes.WorkspaceOf(scope) is null)
+        var role = request.Role;
+        if (Appointed().FirstOrDefault(each => each.Id == role) is not { Hold.Kind: { } kind } staffed)
         {
-            return Refuse(Scope, role == Roles.Steward
-                ? "The steward is appointed for this machine, every repository its registry names."
-                : "The supervisor is appointed for one repository or one workspace.");
+            return Refuse(UnknownRole, $"This Daoris has no appointed role `{role}`.");
         }
 
-        if (RoleScopes.RepositoryOf(scope) is { } repository && !Drives(repository))
-        {
-            return Refuse(UnknownRepository, $"Daoris does not drive a repository `{repository}` here.");
-        }
-
-        // SUPERVISOR1e (§5): a workspace's appointment names one the registry places a repository Daoris drives in.
-        if (RoleScopes.WorkspaceOf(scope) is { } workspace && !DrivesIn(workspace))
-        {
-            return Refuse(UnknownWorkspace, $"Daoris drives no repository of a workspace `{workspace}` here.");
-        }
-
-        // SUPERVISOR1e (§6.3, §12): the supervisor's overrule window, set by the owner at the appointment, 1 to 60 minutes, never 0.
-        if (request.Window is { } minutes && (role != Roles.Supervisor || !Appointment.InWindow(minutes)))
-        {
-            return Refuse(WindowRefused, role == Roles.Supervisor
-                ? $"The supervisor's answers are held from {Appointment.ShortestWindow} to {Appointment.LongestWindow} minutes for your overrule."
-                : $"The {role} holds no answer for an overrule window.");
-        }
-
-        var window = (int)(request.Window ?? Appointment.DefaultWindow);
-
-        // §2.3: the acts the build offers, and the owner's own tick, never what a file says.
-        IReadOnlyList<string> acts = OffersActs(role);
-        var setup = role == Roles.Steward && request.Setup;
+        if (!staffed.Hold!.Terminal) return Refuse(NotTerminal, $"`{role}` is not held by a terminal: staff it with the terminal among the roles first.");
         string? shared = null;
         IReadOnlyList<string> living;
         lock (_gate)
         {
-            if (_newer) return Refuse(StandingRead.Newer, "Its record is from a newer Daoris, which this one does not write over.");
             if (_holders.Count > 0 && request.Share is null)
             {
                 return Refuse(ChooseTerminal,
@@ -873,9 +619,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
             if (request.Share is { } named && named != "own")
             {
                 if (!_holders.TryGetValue(named, out var target)) return Refuse(NoHolder, "That terminal no longer holds a role: give this one a terminal of its own.");
-                if (target.Revoked.Contains(role) || HeldBy(target.Id).Any(each => each.Role == role && RoleScopes.Same(each.Scope, scope)))
+                if (target.Revoked.Contains(role) || _holds.Any(each => each.Holder == target.Id && each.Role == role))
                 {
-                    return Refuse(RevokedHolder, $"The {role} was turned off in that terminal this run: it is appointed again only to a terminal of its own.");
+                    return Refuse(RevokedHolder, $"The {kind} was turned off in that terminal this run: it is started again only in a terminal of its own.");
                 }
 
                 shared = named;
@@ -894,7 +640,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             key = HolderKey.Draw();
             try
             {
-                opened = await open(new HolderOpen(id, key, [role], now, living)).ConfigureAwait(false);
+                opened = await open(new HolderOpen(id, key, [kind], now, living)).ConfigureAwait(false);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
                                               or System.ComponentModel.Win32Exception)
@@ -908,146 +654,84 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 return opened.Why == HolderHarness.Refused
                     ? Refuse(HolderHarness.Refused,
                         $"Daoris starts only its own pinned claude-code as a role's terminal, and {opened.Message ?? "it has none"}: pin claude-code "
-                        + "and install it from its maker's channel (`daoris agent pin claude-code <version>`), then appoint again. Nothing was appointed.")
-                    : Refuse(Unstarted, $"The {role}'s terminal could not be started, so nothing was appointed.");
+                        + "and install it from its maker's channel (`daoris agent pin claude-code <version>`), then start it again. Nothing was started.")
+                    : Refuse(Unstarted, $"The {kind}'s terminal could not be started, so nothing was kept.");
             }
         }
 
-        var appointed = new Appointment(role, scope, holder, Guid.NewGuid().ToString("N"), now, acts, setup, window);
+        var hold = new Hold(role, kind, Guid.NewGuid().ToString("N"), shared ?? id, now);
         var told = new List<(string Tab, string Line, string? Title)>();
-        IReadOnlyList<string> ended;
-        IReadOnlyList<(string Generation, string Repository)> narrowed = [];
-        AppointmentChange? refused = null;
-        int cancelled;
+        IReadOnlyList<string> ended = [];
+        HoldChange? refused = null;
+        var cancelled = 0;
         lock (_gate)
         {
-            if (_newer)
+            if (opened?.Tab is { } tab && _endedTabs.Contains(tab))
             {
-                refused = Refuse(StandingRead.Newer, "Its record is from a newer Daoris, which this one does not write over.");
-            }
-            else if (opened?.Tab is { } tab && _endedTabs.Contains(tab))
-            {
-                // §2.2: a tab that ended while its appointment was still opening it: the appointment is never written.
-                refused = Refuse(Unstarted, $"The {role}'s terminal ended as it opened, so nothing was appointed.");
+                // §2.2: a tab that ended while its start was still opening it: the hold is never kept.
+                refused = Refuse(Unstarted, $"The {kind}'s terminal ended as it opened, so nothing was kept.");
             }
             else if (shared is not null && !_holders.ContainsKey(shared))
             {
                 refused = Refuse(NoHolder, "That terminal no longer holds a role: give this one a terminal of its own.");
             }
-
-            if (refused is not null)
-            {
-                ended = [];
-                cancelled = 0;
-            }
             else
             {
-                var replaced = _appointments.Where(each => each.Role == role && RoleScopes.Same(each.Scope, scope)).ToList();
-                var next = _appointments.Where(each => !(each.Role == role && RoleScopes.Same(each.Scope, scope))).Append(appointed).ToList();
-                try
+                var replaced = _holds.Where(each => each.Role == role).ToList();
+                cancelled = Revoked(replaced, told);
+                if (shared is null) _holders[id] = new Holding(id, HolderKey.Hash(key)!, opened!.Tab, opened.Process, now);
+                _holds.Add(hold);
+                if (shared is not null && _holders[shared].Tab is { } sharedTab)
                 {
-                    // As a grant does, written over a record this build does not honour but one a newer Daoris wrote.
-                    Write(_presses, _since, next);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    _log.Warn(RoleLogEvent, ("state", Unwritten), ("role", role));
-                    refused = Refuse(Unwritten, "Its record could not be written, so nothing was appointed.");
-                    next = null;
+                    var roles = RolesOf(shared);
+                    told.Add((sharedTab, HolderTerminal.Added(kind, now, roles), HolderTerminal.Title(roles)));
                 }
 
-                if (next is null)
-                {
-                    ended = [];
-                    cancelled = 0;
-                }
-                else
-                {
-                    _appointments = next;
-                    cancelled = Revoked(replaced, told);
-                    Holding target;
-                    if (shared is null)
-                    {
-                        target = new Holding(id, HolderKey.Hash(key)!, opened!.Tab, opened.Process, now);
-                        _holders[id] = target;
-                    }
-                    else
-                    {
-                        target = _holders[shared];
-                    }
-
-                    _holderOf[appointed.Generation] = target.Id;
-                    if (shared is not null && target.Tab is { } tab)
-                    {
-                        var roles = RolesOf(target.Id);
-                        told.Add((tab, HolderTerminal.Added(role, now, roles), HolderTerminal.Title(roles)));
-                    }
-
-                    _unread = null;
-                    ended = [.. replaced.Select(each => each.Generation)];
-                    // SUPERVISOR1e (§5): a repository's own appointment wins over its workspace's from this step on, so the
-                    // workspace's decisions for that repository are swept after it; the workspace's stands for its other repositories.
-                    if (role == Roles.Supervisor && appointed.Repository is { } own && WorkspaceOf(own) is { } placed
-                        && next.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Workspace(placed)))
-                            is { } covering)
-                    {
-                        narrowed = [(covering.Generation, own)];
-                    }
-                }
+                ended = [.. replaced.Select(each => each.Generation)];
             }
         }
 
         if (refused is not null)
         {
-            // A tab opened for an appointment that is not kept is closed: its key admits nothing.
+            // A tab opened for a hold that is not kept is closed: its key admits nothing.
             if (opened?.Tab is { } orphan) Close?.Invoke(orphan);
             return refused;
         }
 
         Said(told);
-        if (cancelled > 0) _log.Info("role.cancelled", ("role", role), ("count", Count(cancelled)));
-        _log.Info(LogEvent, ("state", "appointed"), ("role", role), ("holder", holder));
-        _log.Info(RoleLogEvent, ("state", shared is null ? "appointed" : "added"), ("role", role),
-            ("scope", RoleScopes.RepositoryOf(scope) is not null ? "repository" : RoleScopes.WorkspaceOf(scope) is not null ? "workspace" : scope));
-        return new AppointmentChange(new StandingChange(true, null, null), ended) { Narrowed = narrowed };
+        if (cancelled > 0) _log.Info("role.cancelled", ("role", kind), ("count", Count(cancelled)));
+        _log.Info(RoleLogEvent, ("state", shared is null ? "started" : "added"), ("role", kind), ("scope", staffed.Scope.Kind));
+        return new HoldChange(new StandingChange(true, null, null), ended);
     }
 
     /// <summary>
-    /// Turn one appointment off (§5; D209 §2.2, Codex's final read, finding 10): its record, its admitted acts and its pending operations
-    /// and bindings, by its generation, in one mutation step; the holder's hash stays while the holder holds another live appointment,
-    /// and goes with its last. Taken whether or not its role is offered.
+    /// The catalogue changed (a role's press through the role door): every hold whose role no longer reads as held by the terminal, or
+    /// as the kind it was started as, ended in one mutation step, its admitted acts, pending operations and bindings cancelled; a holder
+    /// left holding nothing goes, its tab told so. Its generations are answered for the caller to sweep after this step (§5).
     /// </summary>
-    private AppointmentChange Dismiss(string role, string scope)
+    public IReadOnlyList<string> RolesChanged()
     {
-        IReadOnlyList<string> ended;
-        bool unwritten;
+        var staffed = Appointed();
         var told = new List<(string Tab, string Line, string? Title)>();
+        IReadOnlyList<string> ended;
         int cancelled;
         lock (_gate)
         {
-            var gone = _appointments.Where(each => each.Role == role && RoleScopes.Same(each.Scope, scope)).ToList();
-            // At once, before the write: an act judged after this is refused.
+            var gone = _holds.Where(each => staffed.FirstOrDefault(role => role.Id == each.Role) is not { Hold: { Terminal: true } held } || held.Kind != each.Kind).ToList();
             cancelled = Revoked(gone, told);
-            _appointments = [.. _appointments.Where(each => !(each.Role == role && RoleScopes.Same(each.Scope, scope)))];
-            unwritten = gone.Count > 0 && !TryWrite(_presses, _since, _appointments, onlyWhereFound: true);
             ended = [.. gone.Select(each => each.Generation)];
         }
 
         Said(told);
-        if (cancelled > 0) _log.Info("role.cancelled", ("role", role), ("count", Count(cancelled)));
-        _log.Info(LogEvent, ("state", unwritten ? Unwritten : "dismissed"), ("role", role));
-        _log.Info(RoleLogEvent, ("state", unwritten ? Unwritten : "revoked"), ("role", role));
-        return new AppointmentChange(
-            unwritten
-                ? new StandingChange(true, Unwritten, "Turned off; its record could not be written, so the next start may read it as dormant.")
-                : new StandingChange(true, null, null),
-            ended);
+        if (ended.Count > 0) _log.Info(RoleLogEvent, ("state", "ended"), ("count", Count(ended.Count)));
+        if (cancelled > 0) _log.Info("role.cancelled", ("count", Count(cancelled)));
+        return ended;
     }
 
     /// <summary>
-    /// A holder's tab ended (D209 §2.2's <c>HolderEnded</c>), by any of its paths: the holder's hash and every appointment it holds dropped
-    /// in one mutation step, their acts and operations cancelled; the generations it ended answered for the sweep, and told to
-    /// <see cref="Ended"/>. A tab that ends while its appointment still opens it is remembered, so that appointment is never written.
+    /// A holder's tab ended (D209 §2.2's <c>HolderEnded</c>), by any of its paths: the holder's hash and every hold it holds dropped in one
+    /// mutation step, their acts and operations cancelled; the generations it ended answered for the sweep, and told to
+    /// <see cref="Ended"/>. A tab that ends while its start still opens it is remembered, so that hold is never kept.
     /// </summary>
     public IReadOnlyList<string> HolderEnded(string tab)
     {
@@ -1066,52 +750,42 @@ public sealed class StandingConfirmation : IDecisionAdmission
         return ended;
     }
 
-    // Under the lock: a holder dropped with every appointment it holds, written once.
+    // Under the lock: a holder dropped with every hold it holds.
     private (IReadOnlyList<string> Ended, int Cancelled) EndHolder(Holding holding)
     {
-        var generations = _holderOf.Where(each => each.Value == holding.Id).Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
-        foreach (var generation in generations) _holderOf.Remove(generation);
+        var generations = _holds.Where(each => each.Holder == holding.Id).Select(each => each.Generation).ToHashSet(StringComparer.Ordinal);
+        _holds.RemoveAll(each => each.Holder == holding.Id);
         _holders.Remove(holding.Id);
-        var cancelled = _acts.Cancel(generations);
-        if (generations.Count > 0)
-        {
-            _appointments = [.. _appointments.Where(each => !generations.Contains(each.Generation))];
-            TryWrite(_presses, _since, _appointments, onlyWhereFound: true);
-        }
-
-        return ([.. generations], cancelled);
+        return ([.. generations], _acts.Cancel(generations));
     }
 
-    // Under the lock: the appointments ended by a dismissal or a replacement taken out of memory. Each one's holder marks the role
-    // revoked; a holder left holding nothing goes, its tab told so. Their acts and operations are cancelled.
-    private int Revoked(IReadOnlyList<Appointment> gone, List<(string Tab, string Line, string? Title)> told)
+    // Under the lock: the holds ended by a role's change or a replacement taken out of memory. Each one's holder marks the role ended in
+    // it; a holder left holding nothing goes, its tab told so. Their acts and operations are cancelled.
+    private int Revoked(IReadOnlyList<Hold> gone, List<(string Tab, string Line, string? Title)> told)
     {
         var generations = gone.Select(each => each.Generation).ToHashSet(StringComparer.Ordinal);
+        _holds.RemoveAll(each => generations.Contains(each.Generation));
         foreach (var each in gone)
         {
-            if (!_holderOf.Remove(each.Generation, out var id) || !_holders.TryGetValue(id, out var holding)) continue;
+            if (!_holders.TryGetValue(each.Holder, out var holding)) continue;
             holding.Revoked.Add(each.Role);
-            if (_holderOf.ContainsValue(id)) continue;
-            _holders.Remove(id);
+            if (_holds.Any(other => other.Holder == each.Holder)) continue;
+            _holders.Remove(each.Holder);
             if (holding.Tab is { } tab) told.Add((tab, HolderTerminal.TurnedOff, null));
         }
 
         return _acts.Cancel(generations);
     }
 
-    // Under the lock: the appointments a holder holds now.
-    private IEnumerable<Appointment> HeldBy(string holder) =>
-        _appointments.Where(each => _holderOf.TryGetValue(each.Generation, out var id) && id == holder);
-
-    // Under the lock: the roles a holder holds now, in the build's order.
+    // Under the lock: the kinds of the roles a holder holds now, in the build's order.
     private IReadOnlyList<string> RolesOf(string holder)
     {
-        var held = HeldBy(holder).Select(each => each.Role).ToHashSet(StringComparer.Ordinal);
-        return [.. Roles.Known.Where(held.Contains)];
+        var held = _holds.Where(each => each.Holder == holder).Select(each => each.Kind).ToHashSet(StringComparer.Ordinal);
+        return [.. AppointedRoles.Kinds.Where(held.Contains)];
     }
 
-    // Under the lock: whether a generation is an appointment a living holder holds now.
-    private bool Live(string generation) => _holderOf.TryGetValue(generation, out var id) && _holders.ContainsKey(id);
+    // Under the lock: whether a generation is a hold a living holder holds now.
+    private bool Live(string generation) => _holds.Any(each => each.Generation == generation && _holders.ContainsKey(each.Holder));
 
     private void Said(List<(string Tab, string Line, string? Title)> told)
     {
@@ -1120,63 +794,63 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     private static string Count(int count) => count.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    private static AppointmentChange Refuse(string why, string message) => new(new StandingChange(false, why, message), []);
+    private static HoldChange Refuse(string why, string message) => new(new StandingChange(false, why, message), []);
 
     /// <summary>
-    /// The decisions' admission (SUPERVISOR1a-ii; §2.3, §3.4): the effective supervisor's appointment for <paramref name="repository"/>,
-    /// its generation, read under the lock for this synchronous answer alone; refused <c>not-offered</c> (the supervisor's own flag,
-    /// D209 §2.4), <c>not-appointed</c> or <c>dormant</c>.
+    /// The decisions' admission (SUPERVISOR1a-ii; §2.3, §3.4): the effective supervisor's hold for <paramref name="repository"/>, its
+    /// generation and its role's window, read under the lock for this synchronous answer alone; refused <c>not-staffed</c> where the
+    /// supervisor there is held by the person's rules alone, or <c>not-started</c> where its terminal is not started this run.
     /// </summary>
     /// <remarks>
-    /// SUPERVISOR1e (§5): <b>one effective appointment per question</b>, the repository's own winning over its workspace's, the
-    /// workspace the one <see cref="WorkspaceOf"/> places the repository in now; answered with that appointment's overrule window.
+    /// <b>One effective supervisor per question</b>, as a work's role is found: the most specific scope's, a repository's own over its
+    /// workspace's over the machine's, the workspace the one <see cref="WorkspaceOf"/> places the repository in now.
     /// </remarks>
     public DecisionAdmitted Admit(string repository)
     {
+        var effective = Supervising(repository);
         lock (_gate)
         {
-            if (!SupervisorOffered) return DecisionAdmitted.Refused(SupervisorWhy.NotOffered);
-            if (Effective(repository) is not { } appointed) return DecisionAdmitted.Refused(SupervisorWhy.NotAppointed);
-            return Live(appointed.Generation)
-                ? new DecisionAdmitted(appointed.Generation, null) { Window = TimeSpan.FromMinutes(appointed.Window) }
-                : DecisionAdmitted.Refused(SupervisorWhy.Dormant);
+            if (effective is not { Hold.Terminal: true }) return DecisionAdmitted.Refused(SupervisorWhy.NotStaffed);
+            return HoldOf(effective.Id) is { } hold
+                ? new DecisionAdmitted(hold.Generation, null) { Window = TimeSpan.FromMinutes(effective.Hold!.Window) }
+                : DecisionAdmitted.Refused(SupervisorWhy.NotStarted);
         }
     }
 
     /// <summary>
-    /// Whether the supervisor's appointment of <paramref name="generation"/> is the effective one for <paramref name="repository"/>
-    /// (SUPERVISOR1e, §5), which the holder's answer and defer check against the park's repository: null where it is;
-    /// <c>appointment-changed</c> where its scope covers the repository but another appointment is effective there (a repository's own
-    /// made over its workspace's); <c>not-appointed</c> where its scope does not cover it.
+    /// Whether the supervisor's hold of <paramref name="generation"/> is the effective one for <paramref name="repository"/>, which the
+    /// holder's answer and defer check against the park's repository: null where it is; <c>role-changed</c> where it holds a supervisor
+    /// that covers the repository but another is effective there (a repository's own made over its workspace's); <c>not-staffed</c>
+    /// where it covers nothing there.
     /// </summary>
     public string? Covers(string generation, string repository)
     {
+        var staffed = Appointed();
+        var place = new RolePlace(WorkspaceOf(repository), repository);
+        var effective = Supervising(repository);
         lock (_gate)
         {
-            if (Effective(repository) is { } effective && effective.Generation == generation) return null;
-            var named = _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && each.Generation == generation);
-            var covering = named is not null && (RoleScopes.Same(named.Scope, RoleScopes.Repository(repository))
-                || (named.Workspace is { } workspace && WorkspaceOf(repository) is { } placed
-                    && string.Equals(workspace, placed, StringComparison.OrdinalIgnoreCase)));
-            return covering ? SupervisorWhy.AppointmentChanged : SupervisorWhy.NotAppointed;
+            if (effective is { Hold.Terminal: true } && HoldOf(effective.Id) is { } live && live.Generation == generation) return null;
+            var named = _holds.FirstOrDefault(each => each.Kind == AppointedRoles.Supervisor && each.Generation == generation);
+            var covering = named is not null && staffed.Any(role => role.Id == named.Role && role.Scope.Covers(place));
+            return covering ? SupervisorWhy.RoleChanged : SupervisorWhy.NotStaffed;
         }
     }
 
-    // Under the lock: the supervisor's effective appointment for a repository (§5), its own, else its workspace's; null where none.
-    private Appointment? Effective(string repository) =>
-        _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Repository(repository)))
-        ?? (WorkspaceOf(repository) is { } workspace
-            ? _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Workspace(workspace)))
-            : null);
+    // The supervisor that acts for a repository now (§5): the most specific scope's that covers it; null where none.
+    private RoleRecord? Supervising(string repository) => Staffed(AppointedRoles.Supervisor, new RolePlace(WorkspaceOf(repository), repository));
+
+    // Under the lock: the live hold of a role by its catalogue id, or null.
+    private Hold? HoldOf(string role) => _holds.FirstOrDefault(each => each.Role == role && _holders.ContainsKey(each.Holder));
 
     /// <summary>
     /// The judge's role method (SUPERVISOR1a-ii; amended by STEWARDROLE1a-i, D209 §3.4), for every route of the census's <c>Role</c>
-    /// class: the role's own flag; D201's caller look, the first denial, so a contained agent is refused before its proof is read; the
-    /// form; the appointment its generation names, live and not dormant; the holder's proof over this connection's unused
-    /// <paramref name="nonce"/> and the form, against the appointment's holder's hash in memory; then <b>the configuration walk</b>, one
-    /// guard for the whole class (finding 13), which ends a holder it finds started on another configuration; and for <c>ROLE_ACT</c>,
-    /// the act in its role's table and the appointment's <c>acts</c>, its own form exact, and the act admitted once, its id drawn here.
-    /// Anything uncovered is refused, never asked.
+    /// class: D201's caller look, the first denial, so a contained agent is refused before its proof is read; the form; the hold its
+    /// generation names, live, its role still held by the terminal as the catalogue says now; the holder's proof over this connection's
+    /// unused <paramref name="nonce"/> and the form, against the holder's hash in memory; then <b>the configuration walk</b>, one guard for
+    /// the whole class (finding 13), which ends a holder it finds started on another configuration; and for <c>ROLE_ACT</c>, the act in
+    /// its role's table and the role's <c>authority</c>, its own form exact, and the act admitted once, its id drawn here. Anything
+    /// uncovered is refused, never asked.
     /// </summary>
     /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it was used or expired.</param>
     public RoleJudgement JudgeRole(string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce)
@@ -1186,9 +860,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
         string? tab = null;
         IReadOnlyList<string> ended = [];
         var cancelled = 0;
+        var staffed = Appointed();
         lock (_gate)
         {
-            judged = Judged(module, route, payload, client, nonce, out misconfigured);
+            judged = Judged(module, route, payload, client, nonce, staffed, out misconfigured);
             if (misconfigured is not null)
             {
                 tab = misconfigured.Tab;
@@ -1210,7 +885,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
     }
 
     // Under the lock: §3.4's order, steps 1 to 7.
-    private RoleJudgement Judged(string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce, out Holding? misconfigured)
+    private RoleJudgement Judged(
+        string module, string route, JsonElement? payload, PipeClientProcess? client, string? nonce, IReadOnlyList<RoleRecord> staffed, out Holding? misconfigured)
     {
         misconfigured = null;
         var roleAct = route == RoleRoutes.Act;
@@ -1219,9 +895,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
             return RoleJudgement.Refused(StandingWhy.NotNamed);
         }
 
-        var role = roleAct ? RoleActForm.RoleOf(payload) : Roles.Supervisor;
-        if (role is null || !Roles.Known.Contains(role, StringComparer.Ordinal)) return RoleJudgement.Refused(SupervisorWhy.Form);
-        if (!RoleOffered(role)) return RoleJudgement.Refused(SupervisorWhy.NotOffered);
+        var role = roleAct ? RoleActForm.RoleOf(payload) : AppointedRoles.Supervisor;
+        if (role is null || !AppointedRoles.Kinds.Contains(role, StringComparer.Ordinal)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
         var place = Caller.Place(client);
         if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
@@ -1242,17 +917,21 @@ public sealed class StandingConfirmation : IDecisionAdmission
             (generation, proof, canonical) = (read.Generation, read.Proof, read.Canonical);
         }
 
-        if (_appointments.FirstOrDefault(each => each.Role == role && each.Generation == generation) is not { } appointed)
+        if (_holds.FirstOrDefault(each => each.Kind == role && each.Generation == generation) is not { } held)
         {
-            return RoleJudgement.Refused(!roleAct || _appointments.Any(each => each.Role == role)
-                ? SupervisorWhy.AppointmentChanged
-                : SupervisorWhy.NotAppointed);
+            // A role of this kind staffed by the terminal and not started this run says so; another hold of it is a changed role.
+            return RoleJudgement.Refused(_holds.Any(each => each.Kind == role) ? SupervisorWhy.RoleChanged
+                : staffed.Any(each => each.Hold is { Terminal: true } hold && hold.Kind == role) ? SupervisorWhy.NotStarted
+                : SupervisorWhy.NotStaffed);
         }
 
-        if (!_holderOf.TryGetValue(appointed.Generation, out var id) || !_holders.TryGetValue(id, out var holding))
+        // The role as the catalogue says now: a hold whose role no longer reads as the terminal's is not the role's.
+        if (staffed.FirstOrDefault(each => each.Id == held.Role) is not { Hold: { Terminal: true } grant } found || grant.Kind != held.Kind)
         {
-            return RoleJudgement.Refused(SupervisorWhy.Dormant);
+            return RoleJudgement.Refused(SupervisorWhy.RoleChanged);
         }
+
+        if (!_holders.TryGetValue(held.Holder, out var holding)) return RoleJudgement.Refused(SupervisorWhy.NotStarted);
 
         if (nonce is null || !SupervisorProof.Verify(holding.Hash, nonce, canonical, proof)) return RoleJudgement.Refused(SupervisorWhy.NotHolder);
 
@@ -1264,19 +943,17 @@ public sealed class StandingConfirmation : IDecisionAdmission
         }
 
         var roles = RolesOf(holding.Id);
+        var repository = found.Scope.Kind == Daoris.Driver.RoleScope.Repository ? found.Scope.Id : null;
         if (act is null)
         {
-            _answers[appointed.Generation] = _answers.GetValueOrDefault(appointed.Generation) + 1;
-            return new RoleJudgement(true, null, appointed.Role, appointed.Repository, appointed.Generation, holding.Id, Roles: roles);
+            _answers[held.Generation] = _answers.GetValueOrDefault(held.Generation) + 1;
+            return new RoleJudgement(true, null, held.Kind, repository, held.Generation, holding.Id, Roles: roles);
         }
 
         if (!TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);
-        // STEWARDROLE1c (§6.2): the desk's decline changes nothing of Daoris's controls, so every steward's appointment may make it.
-        var desk = role == Roles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
-        if ((!desk && !appointed.Acts.Contains(act.Act, StringComparer.Ordinal)) || (act.Act == StewardActs.Setup && !appointed.Setup))
-        {
-            return RoleJudgement.Refused(RoleWhy.NotGranted);
-        }
+        // STEWARDROLE1c (§6.2): the desk's decline changes nothing of Daoris's controls, so every steward may make it.
+        var desk = role == AppointedRoles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
+        if (!desk && !grant.Acts.Contains(act.Act, StringComparer.Ordinal)) return RoleJudgement.Refused(RoleWhy.NotGranted);
 
         if (!row.IsForm(act.Form)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
@@ -1285,9 +962,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
         if (OwnerHolds(target)) return RoleJudgement.Refused(RoleWhy.OwnerSet);
 
         // Step 7: admitted once, its id drawn here and registered as admitted; the lock is released as this returns.
-        var admitted = _acts.Admit(role, act.Act, appointed.Generation, holding.Id, target.Name, target.Kind);
-        _answers[appointed.Generation] = _answers.GetValueOrDefault(appointed.Generation) + 1;
-        return new RoleJudgement(true, null, role, appointed.Repository, appointed.Generation, holding.Id, act.Act, admitted, roles);
+        var admitted = _acts.Admit(role, act.Act, held.Generation, holding.Id, target.Name, target.Kind);
+        _answers[held.Generation] = _answers.GetValueOrDefault(held.Generation) + 1;
+        return new RoleJudgement(true, null, role, repository, held.Generation, holding.Id, act.Act, admitted, roles);
     }
 
     // ——— The run's memory of a role's acts (D209 §3.4 steps 7 and 8, §5.1a): every step one hold of the judge's lock, never across an await.
@@ -1295,7 +972,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>
     /// §3.4 step 8, under the act's gates: the act still <c>admitted</c> (no revoke and no owner's mark cancelled it), its holder's hash
     /// present and its generation live, and its target not <c>owner-set</c>, moved to <c>running</c>; null where it may run, else
-    /// <c>owner-set</c> or <c>appointment-changed</c>.
+    /// <c>owner-set</c> or <c>role-changed</c>.
     /// </summary>
     public string? RunAct(string id)
     {
@@ -1308,7 +985,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             }
 
             if (_acts.Run(id, Live)) return null;
-            return _acts.CancelledByOwner(id) ? RoleWhy.OwnerSet : SupervisorWhy.AppointmentChanged;
+            return _acts.CancelledByOwner(id) ? RoleWhy.OwnerSet : SupervisorWhy.RoleChanged;
         }
     }
 
@@ -1372,12 +1049,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>
     /// A pending operation registered for an act that ran (§5.1a): its kind, its stages in order, whether its last is a binding, and the
-    /// complete operation its consumers act on. Cancelled at once where its appointment ended since the act ran.
+    /// complete operation its consumers act on. Cancelled at once where its hold ended since the act ran.
     /// </summary>
     public RoleOperation? Pend(string id, string kind, IReadOnlyList<string> stages, bool binds, object? operation)
     {
         RoleOperation? pending;
-        lock (_gate) pending = _acts.Pend(id, Roles.Steward, kind, stages, binds, operation, Live);
+        lock (_gate) pending = _acts.Pend(id, AppointedRoles.Steward, kind, stages, binds, operation, Live);
         if (pending is { State: RoleOperationStates.Cancelled }) _log.Info("role.cancelled", ("role", pending.Role), ("count", "1"));
         return pending;
     }
@@ -1417,16 +1094,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
     private sealed record StewardDone(string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At);
 
     /// <summary>
-    /// The generation of <paramref name="role"/>'s live appointment, which its holder's verb proves over (D209 §3.3), or null where none is
-    /// live (none, dormant, or a build not offering the role). The supervisor's listing names its own the same way.
+    /// The generation of a live hold of <paramref name="kind"/>, which its holder's verb proves over (D209 §3.3), or null where none is
+    /// live (not staffed by the terminal, or not started). The supervisor's listing names its own the same way.
     /// </summary>
-    public string? LiveGeneration(string role)
+    public string? LiveGeneration(string kind)
     {
-        lock (_gate)
-        {
-            if (!RoleOffered(role)) return null;
-            return _appointments.FirstOrDefault(each => each.Role == role && Live(each.Generation))?.Generation;
-        }
+        lock (_gate) return _holds.FirstOrDefault(each => each.Kind == kind && Live(each.Generation))?.Generation;
     }
 
     /// <summary>A session's act re-keyed to the quest its session resolved to (§5.4), before its gates' step.</summary>
@@ -1439,7 +1112,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public void StewardDid(string id, string act, string? repository = null, string? quest = null, string? session = null)
     {
         lock (_gate) _stewardDone.Add(new StewardDone(id, act, repository, quest, session, _clock.GetUtcNow()));
-        _log.Info("role.act", ("role", Roles.Steward), ("act", act), ("outcome", "done"));
+        _log.Info("role.act", ("role", AppointedRoles.Steward), ("act", act), ("outcome", "done"));
         // STEWARDROLE1c (§6.2): the act closes every open request on the desk that asked for it, by its act and what it acted on.
         Desk.Answered(id, act, repository, quest, session);
     }
@@ -1513,7 +1186,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 : null;
         }
 
-        _log.Info(taken is null ? "role.cancelled" : "role.act", ("role", Roles.Steward), ("act", StewardActNames.Retry),
+        _log.Info(taken is null ? "role.cancelled" : "role.act", ("role", AppointedRoles.Steward), ("act", StewardActNames.Retry),
             ("outcome", taken is null ? "withdrawn" : "started"));
         return taken;
     }
@@ -1523,7 +1196,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     {
         int cancelled;
         lock (_gate) cancelled = _acts.CancelTarget(OwnerKinds.Quest, quest);
-        _log.Info("role.cancelled", ("role", Roles.Steward), ("count", Count(cancelled)), ("why", "held.checkout"));
+        _log.Info("role.cancelled", ("role", AppointedRoles.Steward), ("count", Count(cancelled)), ("why", "held.checkout"));
     }
 
     /// <summary>The steward's acts this run, newest first, as the window's line reads them (§5.3): each standing while the owner has not acted on its target since.</summary>

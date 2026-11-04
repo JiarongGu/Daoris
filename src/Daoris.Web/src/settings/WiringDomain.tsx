@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, standingOf, useClearDownloads, useDriver, useOpenLogFolder,
+  type DownloadCleared, type SpacePlan, type SpaceStarted, standingOf, useClearDownloads, useDriver, useOpenLogFolder,
   useSetStandingConfirmation, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { useSetKeep } from '../bridge/driver';
@@ -13,11 +13,9 @@ import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
 import { WiringCards } from './wiring/WiringCards';
 import { WiringDownloads } from './wiring/WiringDownloads';
-import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 import { WiringStanding } from './wiring/WiringStanding';
-import { StewardDoor } from './wiring/StewardDoor';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -40,8 +38,6 @@ const FILE_DOORS: Record<string, StarterDoor> = {
  * - **Machine-only** like every machine domain (D47 §4): a browser is never offered it, and no host route answers any of it.
  * - **Sizes are asked once**, when the page first has its answer: the open itself walks no folder, and the answer to the ask
  *   says it is measuring, which the query reads again every two seconds until each size is counted.
- * - **A shell older than the page** answers the route `NO_ROUTE` (`DriverModule.UnknownType`); the page says so in one line,
- *   and Driver's home row, kept as the fallback, is what that shell can show.
  *
  * The cards are molecules over props, composed by `WiringCards` so a story draws the whole domain (R6); this holds the hooks
  * (`presentational.test.ts`).
@@ -62,8 +58,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // KEEP1c: the Disk space card's read; its sizes are counted only when the person asks, or by the look once a day.
   const space = useSystemSpace();
   const [counting, setCounting] = useState(false);
-  const spaceOlder = space.query.isError && refusedNoRoute(space.query.error);
-  useErrorNotify(spaceOlder ? null : space.query.error, notify);
+  useErrorNotify(space.query.error, notify);
   const clearDownloads = useClearDownloads();
   // KEEP1d: each rule's *Change…*, the same `keep` `daoris settings keep` edits; a refusal is said under its editor.
   const setKeep = useSetKeep();
@@ -79,9 +74,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const [offRefused, setOffRefused] = useState<string | null>(null);
   const [offUnwritten, setOffUnwritten] = useState(false);
   const asked = useRef(false);
-  const older = query.isError && refusedNoRoute(query.error);
-  // An older shell's refusal is the page's state, not a failure to tell the person of.
-  useErrorNotify(older ? null : query.error, notify);
+  useErrorNotify(query.error, notify);
 
   const ask = () => {
     setBusy(true);
@@ -102,7 +95,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answered]);
 
-  if (older) return <WiringOlder />;
   if (!query.data) return <DomainLoading rows={6} />;
   const wiring = query.data;
   const list = (
@@ -130,7 +122,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         <WiringSpace
           // An answer with no kinds is no disk space this page reads: drawn as still on its way, never as a card of nothing.
           space={Array.isArray(space.query.data?.kinds) ? space.query.data : undefined}
-          older={spaceOlder}
           busy={counting}
           onCount={count}
           onDownloads={() => { setCleared(null); setDownloadsOpen('space'); }}
@@ -169,13 +160,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           busy={setStanding.isPending}
           refused={offRefused}
           unwritten={offUnwritten}
-          roles={standing.stewardOffered && (
-            <StewardDoor
-              appointment={standing.appointments.find((each) => each.role === 'steward') ?? null}
-              acts={standing.stewardActs.length}
-              onOpen={() => onGo({ view: 'agents', roleSection: 'appointed' })}
-            />
-          )}
           onTurnOn={(presses, answered) => {
             setOffRefused(null);
             setOffUnwritten(false);

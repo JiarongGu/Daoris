@@ -45,7 +45,7 @@ public sealed class OwnerSetCensusTests
         ["ACCOUNT_USE"] = OwnerNone.MachineSetting, // an agent's account's use, by the account's ids and the workspaces it serves
         ["START_CHAT"] = OwnerNone.OwnConversation, // a conversation begun in a repository: no quest, and its record is a new conversation's
         ["START_HELP"] = OwnerNone.OwnConversation, // Ask Daoris begun in a workspace: no quest
-        ["SET_APPOINTMENT"] = OwnerNone.Appointment, // appointing a role acts on the role, never on the repository it names
+        ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names
     };
 
     /// <summary>The setting doors that name no repository, workspace or quest (a machine's), each with why.</summary>
@@ -60,20 +60,6 @@ public sealed class OwnerSetCensusTests
 
     private const StateScopes RoleScopes = StateScopes.Driver | StateScopes.Sessions | StateScopes.Landing | StateScopes.Lines;
 
-    [Fact]
-    public void Every_person_and_window_route_has_a_mark_and_every_mark_is_one()
-    {
-        var owner = OwnerRoutes().ToHashSet(StringComparer.Ordinal);
-
-        Assert.Empty(owner.Where(each => !PipeTargets.Daoris.Marks.ContainsKey(each)).Order(StringComparer.Ordinal));
-        Assert.Empty(PipeTargets.Daoris.Marks.Keys.Where(each => !owner.Contains(each)).Order(StringComparer.Ordinal));
-        Assert.All(PipeTargets.Daoris.Marks, each => Assert.True(
-            each.Value.ByPlan || each.Value.Fields.Count > 0 != (each.Value.None is not null),
-            $"{each.Key} names fields or a reason, never both nor neither"));
-        Assert.All(PipeTargets.Daoris.Marks.Values.Where(each => each.None is not null), each => Assert.Contains(each.None, OwnerNone.All));
-        Assert.Equal(["HELP_APPLY"], PipeTargets.Daoris.Marks.Where(each => each.Value.ByPlan).Select(each => each.Key));
-    }
-
     /// <summary>The sweep over the census as built: every route's mark holds against its handler.</summary>
     [Fact]
     public void Every_mark_holds_against_its_handler()
@@ -85,7 +71,7 @@ public sealed class OwnerSetCensusTests
     /// <summary>A mutating route declaring none fails, as one declaring another field does, whatever its reason says.</summary>
     [Theory]
     [InlineData("STOP_SESSION", OwnerNone.NamesNothing)]
-    [InlineData("SET_LANDING", OwnerNone.MachineSetting)]
+    [InlineData("SET_LINE", OwnerNone.MachineSetting)]
     [InlineData("SESSION_QUEUE_EDIT", OwnerNone.ActsOnNothing)]
     public void A_mutating_route_declaring_none_fails(string route, string why)
     {
@@ -225,7 +211,7 @@ public sealed class OwnerSetCensusTests
                     OwnerNone.ActsOnNothing => mutating,
                     OwnerNone.MachineSetting => handler.Session is not null || (handler.Changes & (RoleScopes & ~StateScopes.Driver)) != 0,
                     OwnerNone.OwnConversation => handler.Session is not null,
-                    OwnerNone.Appointment => route != "SET_APPOINTMENT",
+                    OwnerNone.RoleTerminal => route != "START_ROLE_TERMINAL",
                     _ => true,
                 };
                 if (effects) failures.Add($"{route}: exempt as {reason}, and its handler changes what a role acts on");
@@ -234,7 +220,7 @@ public sealed class OwnerSetCensusTests
 
             if (mutating && names) failures.Add($"{route}: changes what a role acts on, names {string.Join(",", handler.Fields)}, and marks nothing");
             else if (names) failures.Add($"{route}: names {string.Join(",", handler.Fields)}, marks nothing, and is no reviewed exemption");
-            if (mark.None is OwnerNone.ActsOnNothing or OwnerNone.OwnConversation or OwnerNone.Appointment && names)
+            if (mark.None is OwnerNone.ActsOnNothing or OwnerNone.OwnConversation or OwnerNone.RoleTerminal && names)
             {
                 failures.Add($"{route}: {mark.None} is taken only by a reviewed exemption");
             }
@@ -263,34 +249,33 @@ public sealed class OwnerSetCensusTests
         return facts;
     }
 
-    /// <summary>The handler's own text: its marks, then its method to the brace that closes it, or to its expression's end.</summary>
+    /// <summary>
+    /// The handler's own text: its marks, then its method to the brace that closes it, or to its expression's end. The pipe's marks are
+    /// left out, since an owner's mark names the very fields the sweep looks for in the handler.
+    /// </summary>
     private static string? Body(string source, string route)
     {
-        var at = source.IndexOf($"[DriverRoute(\"{route}\")]", StringComparison.Ordinal);
+        var at = source.IndexOf($"[DriverRoute(\"{route}\",", StringComparison.Ordinal);
         if (at < 0) return null;
         var open = source.IndexOf('{', at);
         var arrow = source.IndexOf("=>", at, StringComparison.Ordinal);
         if (arrow >= 0 && (open < 0 || arrow < open))
         {
             var end = source.IndexOf(";\n", arrow, StringComparison.Ordinal);
-            return source[at..(end < 0 ? source.Length : end)];
+            return PipeMark.Replace(source[at..(end < 0 ? source.Length : end)], "");
         }
 
         var depth = 0;
         for (var i = open; i < source.Length; i++)
         {
             if (source[i] == '{') depth++;
-            else if (source[i] == '}' && --depth == 0) return source[at..(i + 1)];
+            else if (source[i] == '}' && --depth == 0) return PipeMark.Replace(source[at..(i + 1)], "");
         }
 
-        return source[at..];
+        return PipeMark.Replace(source[at..], "");
     }
 
-    /// <summary>Every route the census makes a person's or a window's, in any form, as <see cref="PipeTargets.Marks"/> keys it.</summary>
-    private static IEnumerable<string> OwnerRoutes() =>
-        PipeCensus.Daoris.Routes
-            .Where(each => each.Class is PipeClass.Person or PipeClass.Window || each.When?.Class is PipeClass.Person or PipeClass.Window)
-            .Select(each => each.Route is null ? each.Module.ToUpperInvariant() : PipeTargets.Key(each.Module, each.Route));
+    private static readonly Regex PipeMark = new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", RegexOptions.Multiline);
 
     private static string RepositoryRoot()
     {

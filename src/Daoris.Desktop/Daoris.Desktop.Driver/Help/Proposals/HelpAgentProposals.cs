@@ -13,11 +13,6 @@ namespace Daoris.Driver;
 /// <para>Applied as <c>HARNESS_ACTION</c>'s own start, one at a time; its end is said into the conversation after
 /// what the Apply did (<see cref="HelpProposals.ApplyAsync"/>).</para>
 ///
-/// <para>Since HELP10 (D110) a third door, <c>default</c>: which of its accounts an agent runs as by default, its value
-/// the account and its workspace one for a single workspace, judged as <c>daoris agent account default</c> judges it —
-/// an account that exists, and since TOOL4g one its scope's own list holds (D130 §3.1) — and applied as
-/// <c>HARNESS_ACTION</c>'s own <c>profile-default</c>.</para>
-///
 /// <para>Since TOOL4g the <c>use</c> door's judge (D130 §9, §16.6): how a scope's list is used — <c>use</c> (<c>goal</c> or
 /// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), since SWITCH1d <c>switch</c> and <c>curve</c>
 /// (each window's points, or JSON null for none), and the old <c>early</c> and <c>near</c>, still read, each a field of
@@ -27,9 +22,7 @@ namespace Daoris.Driver;
 /// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
 ///
 /// <para>Since POOL1b (D197 point 6, the account-pool design §5.3) an agent's accounts are one set: <c>use</c> and <c>order</c> act on
-/// it, each applied only where the service marked it so (<c>set: true</c>), and refuse a workspace in the terminal's words; a stored
-/// proposal without the mark, whose <c>order</c> may have meant <i>only these accounts</i>, is refused at its Apply. <c>default</c> left
-/// <see cref="Doors"/>, and a stored one is refused, naming <c>order</c>.</para>
+/// it.</para>
 /// </remarks>
 internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
@@ -49,12 +42,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (file.ValueKind != JsonValueKind.Object) return proposal;
         proposal = ReadUse(proposal, file);
         if (proposal.Kind != "agent") return proposal;
-
-        // POOL1b: the service's mark that the proposal was written for the one set (§5.3).
-        if (proposal.Door is "use" or "order")
-        {
-            proposal = proposal with { ForSet = file.TryGetProperty("set", out var set) && set.ValueKind == JsonValueKind.True };
-        }
 
         if (proposal.Door == "order")
         {
@@ -103,8 +90,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
-        if (proposal.Door == "default") return Retired(proposal, facts);
-        if (proposal.Door is "use" or "order" && !proposal.ForSet) return Unmarked(proposal);
         if (proposal.Door == "use") return Use(proposal, facts);
         if (proposal.Door == "order") return Order(proposal, facts);
         if (proposal.Door == "ready") return Ready(proposal, facts);
@@ -180,28 +165,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             terminal, null);
     }
 
-    /// <summary>
-    /// A stored <c>default</c> (HELP10, retired by POOL1b, D197 point 6, the account-pool design §5.3): refused at its Apply, naming
-    /// <c>order</c>, which says where the set's starts begin. A door's accounts are its owner's (AGT7), so the sentence names the owner.
-    /// </summary>
-    private static HelpPlan Retired(HelpProposal proposal, HelpMachineFacts facts)
-    {
-        var name = proposal.Target?.Trim() ?? "";
-        var owner = facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal))?.AccountsOf ?? name;
-        var account = proposal.Value?.Trim() is { Length: > 0 } named ? named : null;
-        return new HelpPlan($"`default` is retired: {OneSetWords.Default(owner, account)}. Propose `order` with the account first.", "", "", null);
-    }
-
-    /// <summary>
-    /// A stored <c>use</c> or <c>order</c> written before the <c>set</c> mark (POOL1b, §5.3): for the machine's or a workspace's list, and
-    /// an <c>order</c> of it may have said which accounts alone may run, so it is refused, never applied to the set.
-    /// </summary>
-    private static HelpPlan Unmarked(HelpProposal proposal) => new($"this `{proposal.Door}` was {OneSetWords.Unmarked}.", "", "", null);
-
-    /// <summary>A workspace named on <c>use</c> or <c>order</c>, refused in the terminal's words (POOL1b, §5.3).</summary>
-    private static string? WorkspaceRefused(HelpProposal proposal) =>
-        proposal.Workspace?.Trim() is { Length: > 0 } ? $"{OneSetWords.Workspace("workspace")}." : null;
-
     /// <summary>The set's order as the facts read it (the projection, POOL1a2): every account of the owner's; none where nothing was read.</summary>
     private static IReadOnlyList<string> SetOf(HarnessSettings? wiring, string owner) => wiring?.Set(owner).List ?? [];
 
@@ -234,7 +197,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             + (change.NoCurve ? " --no-curve" : curve);
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (WorkspaceRefused(proposal) is { } scoped) return Refused(scoped);
         if (proposal.AccountCurveRefused is { } broken) return Refused(broken);
 
         if (change.Use is null && change.Keep is null && !change.NoKeep && change.Early is null && change.Near is null
@@ -335,7 +297,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             : $"daoris agent account order {owner} {ShellWord.Words(list, ShellWord.Account)}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (WorkspaceRefused(proposal) is { } scoped) return Refused(scoped);
         if (list.Count > 0 == change.Clear)
         {
             return Refused(change.Clear
@@ -419,13 +380,6 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     {
         var (proposal, plan, id) = (applying.Proposal, applying.Plan, applying.Id);
         var harness = proposal.Target!.Trim();
-        // POOL1b (§5.3): a retired door or an unmarked list's proposal is never applied to the set, whatever judged it.
-        if (proposal.Door == "default" || (proposal.Door is "use" or "order" && !proposal.ForSet))
-        {
-            var why = proposal.Door == "default" ? $"`default` is retired: {OneSetWords.Default(harness)}." : $"this `{proposal.Door}` was {OneSetWords.Unmarked}.";
-            return applying.Settled(false, $"Not applied: `#{id}` — {why}", why);
-        }
-
         if (proposal.Door == "ready")
         {
             var account = proposal.ReadyAccount?.Trim() is { } named && named != OwnSignIn ? named : null;
@@ -510,7 +464,7 @@ public interface IHelpAgentDoors
 
     /// <summary>
     /// <c>ACCOUNT_USE</c>'s own <c>use</c> (TOOL4g; POOL1b): how a door's owner's set is used, refused as the screen refuses it and
-    /// written as it writes it. A workspace's and <c>HARNESS_ACTION</c>'s <c>profile-default</c> left with D197.
+    /// written as it writes it.
     /// </summary>
     Task SetAccountUseAsync(string harness, UseChange change, CancellationToken ct);
 

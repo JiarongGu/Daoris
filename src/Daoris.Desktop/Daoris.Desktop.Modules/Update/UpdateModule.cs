@@ -15,6 +15,7 @@ namespace Daoris.Desktop;
 ///
 /// <para>Nothing it answers names a path: the staged build by its id, version and commit, a refusal by its code.</para>
 /// </remarks>
+[WindowModule]
 public sealed class UpdateModule(InstallUpdater updater) : ModuleBase
 {
     public override string ModuleName => "DAORIS.UPDATE";

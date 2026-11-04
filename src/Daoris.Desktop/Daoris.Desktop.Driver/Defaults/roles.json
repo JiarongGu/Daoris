@@ -7,6 +7,8 @@
     { "id": "partner", "name": { "en": "Partner", "zh": "搭档" }, "work": "partner", "place": "machine", "filled": "always" },
     { "id": "brainstorm", "name": { "en": "Brainstorm", "zh": "头脑风暴" }, "work": "brainstorm", "place": "machine", "filled": "always" },
     { "id": "ask-daoris", "name": { "en": "Ask Daoris", "zh": "问道衍" }, "work": "ask-daoris", "place": "machine", "filled": "always" },
-    { "id": "chat", "name": { "en": "Chat", "zh": "聊天" }, "work": "chat", "place": "machine", "filled": "always" }
+    { "id": "chat", "name": { "en": "Chat", "zh": "聊天" }, "work": "chat", "place": "machine", "filled": "always" },
+    { "id": "supervisor", "name": { "en": "Supervisor", "zh": "主管" }, "kind": "supervisor", "authority": ["answer", "defer"], "holder": "rules", "window": 5, "place": "machine", "filled": "appointed" },
+    { "id": "steward", "name": { "en": "Steward", "zh": "管家" }, "kind": "steward", "authority": ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"], "place": "machine", "filled": "appointed" }
   ]
 }

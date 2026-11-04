@@ -65,7 +65,6 @@
   "settings.ai.roles.open": "打开角色",
   "settings.ai.roles.body": "每个角色在一个位置内承担一种工作：本机、一个工作区或一个仓库。启动时采用位置最具体的那个角色，并按你排的顺序，在它第一个能运行的选择上运行；用了后面的选择时会说明。头脑风暴同时运行它的所有选择。没有角色承担的工作会等待，直到你为它指定一个角色；正在运行的工作照常继续。",
   "settings.ai.roles.unkept": "这个主目录还没有角色目录，因此在 Daoris 于它上面启动之前，这里不能更改任何角色。",
-  "settings.ai.roles.notOffered": "这个外壳不提供：下面显示每个角色的顺序，但这里不能更改。",
   "settings.ai.roles.readFailed": "无法读取角色，因此不显示角色目录；稍后可重试。",
   "settings.ai.roles.none": "还没有设置任何角色。",
   "settings.ai.roles.useDefault": "使用默认值",

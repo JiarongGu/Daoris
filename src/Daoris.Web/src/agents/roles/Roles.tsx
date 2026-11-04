@@ -213,7 +213,7 @@ function suggestionPress(role: SuggestedRole): RoleChangePress {
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function RolesCard({
-  catalogue, read = catalogue ? 'ok' : 'notOffered', staffing = [], agents, about = {}, busy = false, onSet, onSetAll,
+  catalogue, read = catalogue ? 'ok' : 'loading', staffing = [], agents, about = {}, busy = false, onSet, onSetAll,
   editor: held, onEditor, only, editorOnly = false, onDiagram, offers = {}, onOpenPlace, scope: heldScope, onScope, consequence,
   bare = false, search: heldSearch, onSearch,
 }: {
@@ -240,10 +240,10 @@ export function RolesCard({
   /** The open editor, where the place that owns the section holds it (D168 point 3); with none given the card holds its own. */
   editor?: Editing | null;
   onEditor?: (next: Editing | null) => void;
-  /** The catalogue as `ROLES` answers it; null where the shell offers none or the read failed. */
+  /** The catalogue as `ROLES` answers it; null while it is read or where the read failed. */
   catalogue: RoleCatalogue | null;
-  /** Why there is no catalogue: not offered by this shell, or a read that failed; `loading` says nothing. */
-  read?: 'ok' | 'loading' | 'notOffered' | 'failed';
+  /** Why there is no catalogue: a read that failed; `loading` says nothing. */
+  read?: 'ok' | 'loading' | 'failed';
   /** Each seeded role's order as it runs, as its `ROLES` row carries it. */
   staffing?: readonly ActorRow[];
   /** The agents this machine has, to name in a choice. */
@@ -365,7 +365,6 @@ export function RolesCard({
   const said = (
     <>
       {catalogue && !kept && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.unkept')}</p>}
-      {read === 'notOffered' && <p className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 mb-2 text-small text-ink-soft">{t('settings.ai.roles.readFailed')}</p>}
     </>
   );

@@ -6,8 +6,8 @@ A role is who does a kind of work for the person. A working role takes one or mo
 place, and its staffing says which agents, models and efforts run it, in order. The person sets roles through one door:
 the window, the terminal, or an Ask Daoris proposal they apply. A role may carry a policy: weights, shares, budgets and
 the moves a line makes to another choice. The supervisor watches a line's counts. Its rules are the person's, read with no
-model: *when this count reaches n here, do this*. An appointed supervisor or steward (an agent the owner appoints in the
-window) is built but dark in this build. Ask Daoris is the front desk: it reads the machine, takes the person to a place,
+model: *when this count reaches n here, do this*. The supervisor and the steward are catalogue roles of the appointed shape,
+staffed through the same door; one held by the terminal acts once the window starts its terminal. Ask Daoris is the front desk: it reads the machine, takes the person to a place,
 starts an ask, or proposes a change the person applies. In full access it acts itself.
 
 ## Its parts
@@ -17,7 +17,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 | Unit | File | Its job |
 |---|---|---|
-| `RoleCatalog` | `Roles/RoleCatalog.cs` | The working roles: the seed per id, the store's rows, the judge, the role that takes a work at a place |
+| `RoleCatalog` | `Roles/RoleCatalog.cs` | The roles: the seed per id, the store's rows, the judge, the role that takes a work at a place, the appointed role of a kind at a place |
+| `RoleHold`, `AppointedRoles`, `RoleHolders` | `Roles/RoleHold.cs` | The appointed shape: kind, acts, holder, the supervisor's window; the kinds' act vocabularies; its judge |
 | `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the nine works; machine, workspace or repository scope |
 | The seed | `Defaults/roles.json` | The eight seeded roles, machine-wide |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
@@ -34,7 +35,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; reached mark; the fresh seed; what each executor reads; old doors refused |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
-| `StandingConfirmation`, `RoleHolders` | `Modules/Platform/StandingConfirmation.cs` | Appointments, generations, holders, the two offered flags |
+| `StandingConfirmation` | `Modules/Platform/StandingConfirmation.cs` | The roles' terminals this run: holds, generations, holders; the act judge over the catalogue |
 | Steward | `Roles/StewardCommand.cs`, `Modules/Bridge/StewardActRows.cs`, `Modules/Platform/RoleActs.cs` | `steward <act>` over `ROLE_ACT`; the eight acts; pending operations |
 | `StartAdmission`, `CallTable` | `Participants/Domain/StartAdmission.cs`, `Service/Daoris.Service.Mcp/CallTable.cs` | Who may ask for a co-worker; which tools each work is served |
 | `HelpProposals`, `HelpProposalKinds` | `Help/HelpProposals.cs`, `Help/HelpProposalKinds.cs`, `Help/Proposals/` | Ask Daoris's 16 proposal kinds, each judged by its route's code and applied by the person |
@@ -45,8 +46,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 **The roles**
 
-1. A role is a record of the role catalogue in the desktop store. This build configures working roles only: a name
-   (authored text), the works it takes, a scope, and a staffing. A role carries no doors of its own. (from D212, D222)
+1. A role is a record of the role catalogue in the desktop store, in one of two shapes. A working role: a name (authored
+   text), the works it takes, a scope, and a staffing. An appointed role: a name, its kind (supervisor or steward), the acts it
+   holds of that kind's vocabulary, a scope, its holder, and the supervisor's window. A role carries no doors of its own. (from D212, D222, D233)
 2. The works are build, design, chat, ask-daoris, intake, help, partner, review and brainstorm. A record's work is read
    from its marks by one rule, never stored. Design falls to the role that takes build when none takes design. (from D212)
 3. Eight roles are seeded: build, intake, opinion, helper, partner, brainstorm, ask-daoris and chat, machine-wide. An id
@@ -56,8 +58,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 5. Only Intake and Ask Daoris may be off. A work that may not be off keeps a role on the machine (`may-not-be-off`). A
    removed role's work holds its starts, said, until the person gives it a role. (from D205, D212)
 6. A record that does not read holds the starts that read it, said with its error. It is never read as the seed. (from D212)
-7. `supervisor` and `steward` are reserved ids. No added role takes them, and a record with `filled: appointed` is
-   refused `appointed-not-configurable`. (from D208, D212)
+7. `supervisor` (held by the person's rules) and `steward` (held by no one) are seeded machine-wide; a seeded id keeps its
+   shape and kind (`mixed-shape`). An agent holder is refused `appointed-not-configurable`, as are choices on an appointed role.
+   The steward works on the machine alone and is never held by rules; the supervisor's holder is rules or the terminal, its
+   window 1 to 60 minutes; two of one kind never share a scope; the machine's supervisor may not be removed. (from D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris driver role` and `role_propose`
@@ -132,16 +136,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes`. The cap stays a machine
     setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
-    `supervisor`, or `role_propose`. Any other field of the supervisor is `appointed-not-configurable`. (from D229)
+    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. (from D229)
 
-**Appointed roles**
+**The supervisor and the steward**
 
-41. The owner appoints a role in the window with their own press (`SET_APPOINTMENT`), per scope, off by default. No verb,
-    Ask Daoris door, card or grant appoints one. Ask Daoris may explain the supervisor, never appoint or overrule it. (from D208)
-42. Each role has its own offered flag, and both are off in this build. Every appointment, answer, defer and steward act
-    is refused `not-offered`. Only the `terminal` holder is offered once lit; `actor` is not. (from D208, D209)
-43. An appointment is kept in the standing confirmation's record with a generation every act carries, never the key or
-    its hash. It lasts until Daoris restarts, and one found at a start is dormant until *Appoint again*. (from D208, D209)
+41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --acts --holder --window`,
+    `role_propose`). The act judge reads the catalogue at each act, answer and admission: the most specific scope's role of the
+    kind that covers the place, held by the terminal. Ask Daoris may explain the supervisor, never overrule it. (from D233)
+42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
+    is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`. Unstaffed is off. (from D233)
+43. A hold lives in memory with a generation every act carries, never the key or its hash; a restart starts nothing. A role's
+    press through the door ends the holds it no longer staffs and sweeps their decisions. (from D208, D209, D233)
 44. The holder is a dedicated session in a tab the window starts, outside every repository, on a configuration Daoris
     writes, running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (from D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The
@@ -152,12 +157,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
     rule holds the line (`rule-holds`). The rule is read first and its act stands. (from D208, D229)
-49. A decision is held whole in memory for the overrule window (1 to 60 minutes, 5 by default), then released in one
-    conditional step. Its word is `From: supervisor`, never the person's; an unattributable one is quarantined. (from D208)
+49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
+    one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
+    unattributable one is quarantined. (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes eight acts with no card: drive, undrive, trees, hold, resume, stop, finish
-    and try again, each one exact form over `ROLE_ACT`. Everything else is never a role's act. (from D209)
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eight with no card: drive, undrive,
+    trees, hold, resume, stop, finish and try again, each one exact form over `ROLE_ACT`; `setup` only where the person lists
+    it. Everything else is never a role's act. (from D209, D233)
 52. What the owner does to a repository, a quest or a session makes it the owner's for the run (`owner-set`). Every
     release the steward writes is kept in `roleReleases`, `by: steward`. (from D209)
 

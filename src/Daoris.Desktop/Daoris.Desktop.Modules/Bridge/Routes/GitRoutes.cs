@@ -6,9 +6,8 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Git's reads, the page's `bridge/git.ts` (GIT1d-a, D147 §2, D150): the branch list and a graph, a commit, a file's history,
-/// a blame and a compare, for Repositories' Branches and History tabs. Shell-only: each is the driver's own read
-/// (<see cref="GitBranches"/>, <see cref="GitReads"/>) through the git the agents run, and `daoris git` is the terminal's.
+/// Git's reads and acts, the page's `bridge/git.ts`, for Repositories' Branches, History and Changes tabs: each the driver's own,
+/// through the git the agents run.
 /// </summary>
 public sealed class GitRoutes(DriverLoop loop)
 {
@@ -21,10 +20,9 @@ public sealed class GitRoutes(DriverLoop loop)
     // The acts this module runs, journaled in the home's store; one object, so a run's reconciler knows its own acts.
     private readonly ActRuns _acts = new(new ActJournal(loop.Home));
 
-    // The list, read as the terminal's `git branches` reads it: every checkout here, the session records naming each session's
-    // branch (read without them where the service will not give them), D112's scope by `all` or `repository`. 🔴 No machine
-    // path leaves (D47 §4): a branch's tree by its folder's name, and a sentence that named a root names the repository.
-    [DriverRoute("GIT_BRANCHES")]
+    // The list, read as the terminal's `git branches` reads it. 🔴 No machine path leaves: a branch's tree by its folder's name,
+    // and a sentence that named a root names the repository.
+    [DriverRoute("GIT_BRANCHES", PipeClass.Open)]
     private async Task<object?> GitBranchesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var named = Optional(request, "repository");
@@ -86,7 +84,7 @@ public sealed class GitRoutes(DriverLoop loop)
     // The checkout's current branch, for the composer's tree chip (NEW1e-a): `{ branch }`, null where HEAD is detached. Its own
     // route, since the list costs every branch. The checkout is found as GitAnsweredAsync finds it; 🔴 no path in any answer or
     // sentence (D47 §4), and the git failure's words name none either.
-    [DriverRoute("CHECKOUT_BRANCH")]
+    [DriverRoute("CHECKOUT_BRANCH", PipeClass.Open)]
     private async Task<object?> CheckoutBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = Optional(request, "repository") ?? throw new DriverException("a Git read names its repository.");
@@ -108,7 +106,7 @@ public sealed class GitRoutes(DriverLoop loop)
     }
 
     // A graph page from the tips named (a branch's whole commit ids, resolved by the list), the commits drawn in date order.
-    [DriverRoute("GIT_GRAPH")]
+    [DriverRoute("GIT_GRAPH", PipeClass.Open)]
     private async Task<object?> GitGraphAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var tips = Strings(request, "tips");
@@ -117,49 +115,50 @@ public sealed class GitRoutes(DriverLoop loop)
     }
 
     // A commit's page: its fields, whole message and changes against its first parent.
-    [DriverRoute("GIT_COMMIT")]
+    [DriverRoute("GIT_COMMIT", PipeClass.Open)]
     private async Task<object?> GitCommitAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             _gitReads.CommitAsync(root, Optional(request, "commit") ?? "", token));
 
     // A file's history at a commit, following renames, a page at a time.
-    [DriverRoute("GIT_HISTORY")]
+    [DriverRoute("GIT_HISTORY", PipeClass.Open)]
     private async Task<object?> GitHistoryAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             _gitReads.HistoryAsync(root, Optional(request, "commit") ?? "", Optional(request, "path") ?? "", GitPage(request), token));
 
     // A file as a commit holds it, each line with the commit that last changed it.
-    [DriverRoute("GIT_BLAME")]
+    [DriverRoute("GIT_BLAME", PipeClass.Open)]
     private async Task<object?> GitBlameAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             _gitReads.BlameAsync(root, Optional(request, "commit") ?? "", Optional(request, "path") ?? "", token));
 
     // Two commits compared: the commits only one side holds, bounded (D147 §2.6: not paged), and the changes.
-    [DriverRoute("GIT_COMPARE")]
+    [DriverRoute("GIT_COMPARE", PipeClass.Open)]
     private async Task<object?> GitCompareAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             _gitReads.CompareAsync(root, Optional(request, "left") ?? "", Optional(request, "right") ?? "", Flag(request, "everything"), token));
 
-    // GITAPP2b (D204, the git-writes design §1 and §4): the Changes tab's read, three fresh observations of the checkout through
-    // the counting seam, asked again at every ask (kept nowhere across opens, `readAt` saying when). Told by event: it starts git.
-    [DriverRoute("GIT_CHANGES")]
+    // The Changes tab's read, three fresh observations of the checkout, kept nowhere across opens. Told by event: it starts git.
+    [DriverRoute("GIT_CHANGES", PipeClass.Open)]
     [ByEvent("GIT_CHANGES", Untold = "the checkout's index, tree and untracked files, which no scope tells")]
     private async Task<object?> GitChangesAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitChanges.ReadAsync(root, token));
 
-    // GITAPP2h (D204, the git-writes design §4): one file's hunks on a side, with the ids a press must still find equal. A read.
-    [DriverRoute("GIT_HUNKS")]
+    // One file's hunks on a side, with the ids a press must still find equal.
+    [DriverRoute("GIT_HUNKS", PipeClass.Open)]
     [ByEvent("GIT_HUNKS", Untold = "the checkout's index and the file's bytes, which no scope tells")]
     private async Task<object?> GitHunksAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             GitHunks.ReadAsync(root, Optional(request, "path") ?? "", Optional(request, "side") ?? "", token));
 
-    // GITAPP2h (D204, the git-writes design §8): stage and unstage a file, hunks or lines of it, and Undo of such an act. Each is one act
-    // of the journal under the checkout's lock; a refusal is answered as data (`done: false`, the driver's sentence), never thrown.
-    // The checkout is the registered one the repository's page reads, never a session's tree.
-    [DriverRoute("GIT_STAGE")]
-    [DriverRoute("GIT_UNSTAGE")]
-    [DriverRoute("GIT_UNDO")]
+    // Stage and unstage a file, hunks or lines of it, and Undo of such an act: each one act of the journal under the checkout's
+    // lock, on the registered checkout, never a session's tree. A refusal is data (`done: false`), never thrown.
+    [DriverRoute("GIT_STAGE", PipeClass.Window)]
+    [DriverRoute("GIT_UNSTAGE", PipeClass.Window)]
+    [DriverRoute("GIT_UNDO", PipeClass.Window)]
+    [Owner("GIT_STAGE", Repository = "repository", Workspace = "workspace")]
+    [Owner("GIT_UNSTAGE", Repository = "repository", Workspace = "workspace")]
+    [Owner("GIT_UNDO", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_STAGE", StateScopes.Checkouts)]
     [Publishes("GIT_UNSTAGE", StateScopes.Checkouts)]
     [Publishes("GIT_UNDO", StateScopes.Checkouts)]
@@ -207,16 +206,17 @@ public sealed class GitRoutes(DriverLoop loop)
         return Staged(await acts.RunAsync(context, press, cancellationToken).ConfigureAwait(false), repository, root);
     }
 
-    // GITAPP2j (D204, the git-writes design §8 Resolve): a file in conflict read by its stages, one conflict at a time. A read, told by event: it starts git.
-    [DriverRoute("GIT_CONFLICT")]
+    // A file in conflict read by its stages, one conflict at a time. Told by event: it starts git.
+    [DriverRoute("GIT_CONFLICT", PipeClass.Open)]
     [ByEvent("GIT_CONFLICT", Untold = "the checkout's index stages and the file's bytes, which no scope tells")]
     private async Task<object?> GitConflictAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitConflicts.ReadAsync(root, Optional(request, "path") ?? "", token));
 
-    // GITAPP2j: *Resolve* (ours, theirs or both for each conflict, replacing the file's bytes) and *Mark resolved* (the file added). Each is one act of
-    // the journal under the checkout's lock, answered as the stage's are; Undo of either is `GIT_UNDO`.
-    [DriverRoute("GIT_RESOLVE")]
-    [DriverRoute("GIT_MARK_RESOLVED")]
+    // *Resolve* (ours, theirs or both per conflict) and *Mark resolved*, each one act of the journal; Undo of either is `GIT_UNDO`.
+    [DriverRoute("GIT_RESOLVE", PipeClass.Window)]
+    [DriverRoute("GIT_MARK_RESOLVED", PipeClass.Window)]
+    [Owner("GIT_RESOLVE", Repository = "repository", Workspace = "workspace")]
+    [Owner("GIT_MARK_RESOLVED", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_RESOLVE", StateScopes.Checkouts)]
     [Publishes("GIT_MARK_RESOLVED", StateScopes.Checkouts)]
     private async Task<object?> GitResolveAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -257,18 +257,18 @@ public sealed class GitRoutes(DriverLoop loop)
         Said = WithoutRoots(run.Said, [root], repository),
     };
 
-    // GITAPP2i (D204, the git-writes design §8): what a commit or an amend would rest on (the tip, the index as a tree, the hooks it runs, who
-    // commits), read fresh. A read, told by event: it starts git.
-    [DriverRoute("GIT_COMMIT_PLAN")]
+    // What a commit or an amend would rest on, read fresh. Told by event: it starts git.
+    [DriverRoute("GIT_COMMIT_PLAN", PipeClass.Open)]
     [ByEvent("GIT_COMMIT_PLAN", Untold = "the checkout's index, HEAD and hooks, which no scope tells")]
     private async Task<object?> GitCommitPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             new CommitActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "verb") == CommitVerbs.Amend ? CommitVerbs.Amend : CommitVerbs.Commit, token));
 
-    // GITAPP2i: *Commit* and *Amend* of the staged changes, one commit step of the journal under the checkout's lock; the repository's hooks run
-    // and are never skipped. Answered as the stage's acts are: a refusal, or a hook's refusal, is data with the driver's sentence.
-    [DriverRoute("GIT_MAKE_COMMIT")]
-    [DriverRoute("GIT_AMEND")]
+    // *Commit* and *Amend* of the staged changes, one commit step of the journal; the repository's hooks run and are never skipped.
+    [DriverRoute("GIT_MAKE_COMMIT", PipeClass.Window)]
+    [DriverRoute("GIT_AMEND", PipeClass.Window)]
+    [Owner("GIT_MAKE_COMMIT", Repository = "repository", Workspace = "workspace")]
+    [Owner("GIT_AMEND", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_MAKE_COMMIT", StateScopes.Checkouts | StateScopes.Driver)]
     [Publishes("GIT_AMEND", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitMakeCommitAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -297,17 +297,16 @@ public sealed class GitRoutes(DriverLoop loop)
         };
     }
 
-    // GITAPP2k (D204, the git-writes design §8): what a switch to a branch would rest on (where HEAD is, whether tracked files are changed, the tree that
-    // has the branch out, the hooks it runs), read fresh. A read, told by event: it starts git.
-    [DriverRoute("GIT_SWITCH_PLAN")]
+    // What a switch to a branch would rest on, read fresh. Told by event: it starts git.
+    [DriverRoute("GIT_SWITCH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_SWITCH_PLAN", Untold = "the checkout's HEAD, branches, index and the other trees, which no scope tells")]
     private async Task<object?> GitSwitchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             new SwitchActs(new ActJournal(_loop.Home)).PlanAsync(root, Optional(request, "branch") ?? "", token));
 
-    // GITAPP2k: *Switch* of the registered checkout to a local branch, never forced; refused as data where tracked files are changed, an
-    // operation is in progress or the branch is out in another tree. It is undone by pressing Switch again on the branch it left.
-    [DriverRoute("GIT_SWITCH")]
+    // *Switch* of the registered checkout to a local branch, never forced; undone by pressing Switch again on the branch it left.
+    [DriverRoute("GIT_SWITCH", PipeClass.Window)]
+    [Owner("GIT_SWITCH", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_SWITCH", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitSwitchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -317,16 +316,16 @@ public sealed class GitRoutes(DriverLoop loop)
         return Acted(await new SwitchActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
     }
 
-    // GITAPP2k: what a stash Save would rest on: the changes, the shared stash's tip and the trees that share it. A read, told by event.
-    [DriverRoute("GIT_STASH_PLAN")]
+    // What a stash Save would rest on, the shared stash's tip among it. Told by event.
+    [DriverRoute("GIT_STASH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_STASH_PLAN", Untold = "the checkout's index, tree, untracked files and the shared stash, which no scope tells")]
     private async Task<object?> GitStashPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) =>
             new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
 
-    // GITAPP2k: stash *Save*, tracked files only unless `untracked`; `refs/stash` is shared with every linked tree, so a stash that moved since the plan
-    // refuses the press. Apply is its own route and Drop is deferred.
-    [DriverRoute("GIT_STASH")]
+    // Stash *Save*: `refs/stash` is shared with every linked tree, so a stash that moved since the plan refuses the press.
+    [DriverRoute("GIT_STASH", PipeClass.Window)]
+    [Owner("GIT_STASH", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_STASH", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitStashAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -336,8 +335,9 @@ public sealed class GitRoutes(DriverLoop loop)
         return Acted(await new StashActs(new ActJournal(_loop.Home)).RunAsync(context, press, cancellationToken).ConfigureAwait(false), context);
     }
 
-    // GITAPP2l: stash *Apply* by the stash commit's id, never its ordinal and never `pop`; a conflict stays for Resolve and the stash is kept. Drop is deferred.
-    [DriverRoute("GIT_STASH_APPLY")]
+    // Stash *Apply* by the stash commit's id, never its ordinal and never `pop`; a conflict stays for Resolve and the stash is kept.
+    [DriverRoute("GIT_STASH_APPLY", PipeClass.Window)]
+    [Owner("GIT_STASH_APPLY", Repository = "repository", Workspace = "workspace")]
     [Publishes("GIT_STASH_APPLY", StateScopes.Checkouts | StateScopes.Driver)]
     private async Task<object?> GitStashApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -372,11 +372,12 @@ public sealed class GitRoutes(DriverLoop loop)
         Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [context.Checkout], context.Repository),
     };
 
-    // GITAPP2c (D204, the git-writes design §6, §9): *New branch* and *New tag* at a commit, one `create` run as an act of the journal
-    // (GitRefActs). A ref act writes no working tree, so it asks no switch. The page presses it after its own confirmation; a terminal's
-    // `git branch|tag <repository> <name> --yes` is the same route asked for its words (`said`), run on the window's Confirm. A refusal
-    // is data, `{ refused, said }`, never thrown; `act` names the journal's record, which `GIT_REF_UNDO` deletes the ref at.
-    [DriverRoute("GIT_REF_CREATE")]
+    // *New branch* and *New tag* at a commit, one `create` act of the journal; a ref act writes no working tree. A terminal's verb is
+    // the same route asked for its words (`said`). A refusal is data; `act` names the record `GIT_REF_UNDO` deletes the ref at.
+    [DriverRoute("GIT_REF_CREATE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_REF_CREATE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_CREATE", "repository", "workspace")]
+    [Says("GIT_REF_CREATE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_CREATE", StateScopes.Driver)]
     private async Task<object?> GitRefCreateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -401,10 +402,12 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
-    // GITAPP2d (D204, the git-writes design §6): *Delete* on a branch or a lightweight tag, one transaction of the delete, the recovery ref and each
-    // holder's verify, then the branch's section. `at` is the commit the page showed; the act refuses where the ref stands elsewhere, and the held
-    // branches (daoris/*, a landing's, the line, a together-bound one), an annotated tag and an occupied branch. Refusals are data, as the create's are.
-    [DriverRoute("GIT_REF_DELETE")]
+    // *Delete* on a branch or a lightweight tag, at `at`, the commit the page showed: refused where the ref stands elsewhere, and for
+    // the held branches, an annotated tag and an occupied branch.
+    [DriverRoute("GIT_REF_DELETE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_REF_DELETE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_DELETE", "repository", "workspace")]
+    [Says("GIT_REF_DELETE", "repository:repository", "name:words")]
     [Publishes("GIT_REF_DELETE", StateScopes.Driver)]
     private async Task<object?> GitRefDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -432,10 +435,12 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
-    // GITAPP2e (D204, the git-writes design §6): *Rename* on a branch or a lightweight tag, one transaction (the old name deleted, the new made, the old
-    // tip kept on a recovery ref), then the branch's section renamed under config.lock. The refusals are the delete's, and a taken name. An answer of
-    // outcome `partial` is a rename stopped between its ref and its section: the page offers GIT_REF_FINISH and GIT_REF_UNDO, each conditional.
-    [DriverRoute("GIT_REF_RENAME")]
+    // *Rename* on a branch or a lightweight tag, then its section under config.lock. An outcome `partial` stopped between the two:
+    // the page offers GIT_REF_FINISH and GIT_REF_UNDO.
+    [DriverRoute("GIT_REF_RENAME", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_REF_RENAME", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_RENAME", "repository", "workspace")]
+    [Says("GIT_REF_RENAME", "repository:repository", "name:words", "to:words")]
     [Publishes("GIT_REF_RENAME", StateScopes.Driver)]
     private async Task<object?> GitRefRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -464,17 +469,17 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
-    // GITAPP2f (D204, D198, the git-writes design §9): whether *Fetch* is offered on a repository's Branches (the doors installed, an origin, none of its
-    // settings that run another program or mirror) and the command a person types. A read, told by event: it starts git and asks no network.
-    [DriverRoute("GIT_FETCH_PLAN")]
+    // Whether *Fetch* is offered on a repository's Branches, and the command a person types. Told by event: it starts git, no network.
+    [DriverRoute("GIT_FETCH_PLAN", PipeClass.Open)]
     [ByEvent("GIT_FETCH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
     private async Task<object?> GitFetchPlanAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await GitAnsweredAsync(request, cancellationToken, (root, token) => GitFetchActs.PlanReadAsync(_loop.Home, root, token));
 
-    // GITAPP2f: *Fetch* of origin's branches, one `fetch` step of the act journal that moves refs/remotes/origin/* alone (prune included, its removals
-    // named in the answer's words) and leaves FETCH_HEAD. A refusal is data, as the ref acts' are; a terminal's `git fetch <repository> --yes` is the
-    // same route asked for its words (`said`), run on the window's Confirm.
-    [DriverRoute("GIT_FETCH")]
+    // *Fetch* of origin's branches, one `fetch` step that moves refs/remotes/origin/* alone; a terminal's verb asks it for its words.
+    [DriverRoute("GIT_FETCH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_FETCH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_FETCH", "repository", "workspace")]
+    [Says("GIT_FETCH", "repository:repository")]
     [Publishes("GIT_FETCH", StateScopes.Driver)]
     private async Task<object?> GitFetchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -501,7 +506,10 @@ public sealed class GitRoutes(DriverLoop loop)
     }
 
     // GITAPP2e: the Finish beside a stopped rename's answer, the section moved alone where the ref and the section stand as the act journaled them.
-    [DriverRoute("GIT_REF_FINISH")]
+    [DriverRoute("GIT_REF_FINISH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_REF_FINISH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_FINISH", "repository", "workspace")]
+    [Says("GIT_REF_FINISH", "repository:repository")]
     [Publishes("GIT_REF_FINISH", StateScopes.Driver)]
     private async Task<object?> GitRefFinishAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -515,7 +523,10 @@ public sealed class GitRoutes(DriverLoop loop)
 
     // GITAPP2c: the Undo beside a create's answer, the act's ref deleted only at the id the act made it at; refused as data where it moved.
     // GITAPP2d: and beside a delete's, the ref made again where the name is free and its section put back.
-    [DriverRoute("GIT_REF_UNDO")]
+    [DriverRoute("GIT_REF_UNDO", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_REF_UNDO", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_REF_UNDO", "repository", "workspace")]
+    [Says("GIT_REF_UNDO", "repository:repository")]
     [Publishes("GIT_REF_UNDO", StateScopes.Driver)]
     private async Task<object?> GitRefUndoAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -527,10 +538,13 @@ public sealed class GitRoutes(DriverLoop loop)
         return Answered(run, checkout, repository);
     }
 
-    // GITAPP2m (D204, the git-writes design §7, §9): a branch's history edited from objects, through the journal. `plan: true` answers what
-    // the edit would take and changes nothing (a look: a rule on `plan` in the pipe's census); the press carries the ids its plan pinned
-    // (`pins`) and is refused as data where any moved. A terminal's `git pick|revert|rebase … --yes` is the press asked for its words (`said`).
-    [DriverRoute("GIT_HISTORY_EDIT")]
+    // A branch's history edited from objects, through the journal. `plan: true` answers what the edit would take and changes nothing;
+    // the press carries the ids its plan pinned (`pins`) and is refused as data where any moved.
+    [DriverRoute("GIT_HISTORY_EDIT", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [ClassedBy("GIT_HISTORY_EDIT", "plan", PipeClass.Open, "true", Unless = new[] { "said" })]
+    [Owner("GIT_HISTORY_EDIT", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_HISTORY_EDIT", "repository", "workspace")]
+    [Says("GIT_HISTORY_EDIT", "repository:repository", "branch:words")]
     [Publishes("GIT_HISTORY_EDIT", StateScopes.Driver)]
     private async Task<object?> GitHistoryEditAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -676,10 +690,9 @@ public sealed class GitRoutes(DriverLoop loop)
     private static int GitPage(IpcRequest request) =>
         Number(request, "page") is { } page ? (int)Math.Clamp(page, -1, GitReads.LastPage + 1) : 0;
 
-    // GITAUTH1a: the person's Try again on a held git remote's row in What needs you (the git-auth design §5.2): every hold on the
-    // repositories it names, in its workspace where it names one, lifted, so the next fetch of each tries once. The row goes as the
-    // attention slice hears the lift (GitHolds.Changed); `{ lifted }`, how many holds were. Nothing connects here: the next act does.
-    [DriverRoute("GIT_TRY_AGAIN")]
+    // Try again on a held git remote: every hold on the repositories it names lifted, so the next fetch of each tries once.
+    // Nothing connects here: the next act does.
+    [DriverRoute("GIT_TRY_AGAIN", PipeClass.Open)]
     private Task<object?> GitTryAgainAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repositories = Strings(request, "repositories");

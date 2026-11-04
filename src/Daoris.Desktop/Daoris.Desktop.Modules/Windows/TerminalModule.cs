@@ -35,6 +35,7 @@ namespace Daoris.Desktop;
 /// <para><b>A shell starts through the start gate</b> (<see cref="ProcessStarts"/>, TERMSTART1), never on the window's
 /// thread; one whose terminal was ended while it waited there is ended as it starts.</para>
 /// </remarks>
+[WindowModule]
 public sealed class TerminalModule : ModuleBase, IDisposable
 {
     private readonly IEventBus _events;

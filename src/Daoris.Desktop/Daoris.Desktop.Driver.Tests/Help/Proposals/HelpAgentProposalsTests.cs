@@ -60,47 +60,13 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Contains("the pointer did not answer", later[2]);
     }
 
-    private static HelpProposal Default(string agent, string? account, string? workspace = null) =>
-        new("p7", "agent", "default", agent, workspace, account, null, "the person asked", "h1", "proposed");
-
-    /// <summary>
-    /// POOL1b (D197 point 6, the account-pool design §5.3): a stored <c>default</c>, which HELP10 made for the machine or a workspace, is
-    /// refused naming <c>order</c>, the door that says where the set's starts begin; a door's accounts are its owner's (AGT7). Before
-    /// POOL1b these held the default made, and refused where the account or workspace was none or outside its scope's list.
-    /// </summary>
+    /// <summary>A door the kind does not have, <c>default</c> among them, is refused naming the doors it has.</summary>
     [Theory]
-    [InlineData("claude-code", "work", null)]
-    [InlineData("claude-code-acp", "work", "work")]
-    [InlineData("claude-code", null, null)]
-    public void A_stored_default_is_refused_naming_order(string agent, string? account, string? workspace)
+    [InlineData("inherit")]
+    [InlineData("default")]
+    public void An_agent_change_of_no_door_names_the_doors(string door)
     {
-        var plan = HelpProposals.Plan(Default(agent, account, workspace), DriverConfig.Empty, Machine);
-
-        Assert.Equal("`default` is retired: every account of Daoris's serves every workspace (D197), and the order says where starts "
-            + $"begin — `daoris agent account order claude-code {account ?? "<account>"}` puts one first. Propose `order` with the account "
-            + "first.", plan.Refusal);
-    }
-
-    /// <summary>A stored <c>default</c> reaching its Apply is settled refused with nothing pressed (POOL1b, §5.3).</summary>
-    [Fact]
-    public async Task A_stored_default_is_settled_refused_at_its_apply_and_nothing_is_pressed()
-    {
-        var (applied, doors, _) = await ApplyAsync(Default("claude-code-acp", "work", "work"));
-
-        Assert.False(applied.Applied);
-        Assert.Contains("`default` is retired", applied.Told);
-        Assert.Empty(doors.Calls);
-        Assert.Equal("refused", HelpProposals.Find(_home, "p7")!.State);
-    }
-
-    /// <summary>
-    /// <c>default</c> left the doors with POOL1b, so a refusal names the five left. Before POOL1b this listed six, <c>default</c>
-    /// among them.
-    /// </summary>
-    [Fact]
-    public void An_agent_change_of_no_door_names_the_doors_left()
-    {
-        var plan = HelpProposals.Plan(new HelpProposal("p8", "agent", "inherit", "claude-code", null, null, null, "the person asked", "h1", "proposed"),
+        var plan = HelpProposals.Plan(new HelpProposal("p8", "agent", door, "claude-code", null, null, null, "the person asked", "h1", "proposed"),
             DriverConfig.Empty, Machine);
 
         Assert.Contains("`update`, `pin`, `use`, `order` or `ready`", plan.Refusal);
@@ -120,8 +86,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         },
     };
 
-    private static HelpProposal Use(string agent, UseChange change, string? workspace = null, bool set = true) =>
-        new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change, ForSet = set };
+    private static HelpProposal Use(string agent, UseChange change, string? workspace = null) =>
+        new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change };
 
     /// <summary>
     /// TOOL4g's <c>use</c> (D130 §9, §16.6; POOL1b, §5.3): how the set is used, as <c>daoris agent account use</c> takes it, said in its
@@ -142,41 +108,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
             + "switch accounts while a session runs and holds its own curve's five-hour window at 85%.", machine.Describe);
         Assert.Equal("daoris agent account use claude-code --no-keep", none.Terminal);
         Assert.Contains("keeps no account for conversations", none.Describe);
-    }
-
-    /// <summary>
-    /// POOL1b (§5.3): a <c>use</c> or an <c>order</c> naming a workspace is refused in the terminal's words, and one the service wrote
-    /// before the <c>set</c> mark is refused as written for a list that is gone, never applied to the set.
-    /// </summary>
-    [Fact]
-    public void A_workspace_or_an_unmarked_proposal_is_refused_in_d197_s_words()
-    {
-        var scoped = HelpProposals.Plan(Use("claude-code", new UseChange(Use: "goal"), "lab"), DriverConfig.Empty, Listed);
-        var unmarked = HelpProposals.Plan(Use("claude-code", new UseChange(Use: "goal"), set: false), DriverConfig.Empty, Listed);
-        var scopedOrder = HelpProposals.Plan(Order("claude-code", ["work"], "lab"), DriverConfig.Empty, Walked);
-        var scopedClear = HelpProposals.Plan(Order("claude-code", [], "lab", clear: true), DriverConfig.Empty, Walked);
-        var unmarkedOrder = HelpProposals.Plan(Order("claude-code", ["work"]) with { ForSet = false }, DriverConfig.Empty, Walked);
-
-        Assert.Equal("Daoris's accounts serve every workspace (D197), so `workspace` names nothing here.", scoped.Refusal);
-        Assert.Equal("Daoris's accounts serve every workspace (D197), so `workspace` names nothing here.", scopedOrder.Refusal);
-        Assert.Equal("Daoris's accounts serve every workspace (D197), so `workspace` names nothing here.", scopedClear.Refusal);
-        Assert.Equal("this `use` was written for a list that is gone (D197): propose it again.", unmarked.Refusal);
-        Assert.Equal("this `order` was written for a list that is gone (D197): propose it again.", unmarkedOrder.Refusal);
-    }
-
-    /// <summary>An unmarked <c>use</c> or <c>order</c> that reaches its Apply is settled refused with nothing pressed (POOL1b, §5.3).</summary>
-    [Fact]
-    public async Task An_unmarked_proposal_is_settled_refused_at_its_apply_and_nothing_is_pressed()
-    {
-        var (use, useDoors, _) = await ApplyAsync(Use("claude-code", new UseChange(Use: "goal"), set: false), facts: Listed);
-        var (order, orderDoors, _) = await ApplyAsync(Order("claude-code", ["work"]) with { Id = "p15", ForSet = false }, facts: Walked);
-
-        Assert.False(use.Applied);
-        Assert.Contains("written for a list that is gone (D197): propose it again", use.Told);
-        Assert.Empty(useDoors.Calls);
-        Assert.False(order.Applied);
-        Assert.Empty(orderDoors.Calls);
-        Assert.Equal("refused", HelpProposals.Find(_home, "p15")!.State);
     }
 
     /// <summary>
@@ -228,7 +159,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     [InlineData("claude-code", null, "spread", null, false, null, null, "`spread` is not a way to use accounts")]
     [InlineData("claude-code", null, null, null, false, null, 49, "a whole percent from 50 to 99, not 49")]
     [InlineData("claude-code", null, null, "solo", false, null, null, "`solo` is not one of `claude-code`'s accounts (work, then play)")]
-    [InlineData("claude-code", "elsewhere", "goal", null, false, null, null, "so `workspace` names nothing here")]
     [InlineData("gpt-agent", null, "goal", null, false, null, null, "no agent `gpt-agent`")]
     public void A_use_the_route_would_refuse_is_refused(
         string agent, string? workspace, string? use, string? keep, bool noKeep, bool? early, int? near, string says)
@@ -309,23 +239,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal(["update", "pin", "use", "order", "ready"], new HelpAgentProposals().Doors);
     }
 
-    /// <summary>The <c>set</c> mark is read from a <c>use</c> or an <c>order</c> file (POOL1b, §5.3); one without it is unmarked.</summary>
-    [Fact]
-    public void The_set_mark_is_read_from_a_use_or_an_order_file()
-    {
-        void Write(string id, string door, string fields) => System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), $"{id}.json"), $$"""
-            { "id": "{{id}}", "kind": "agent", "door": "{{door}}", "target": "claude-code", "workspace": null, "value": null, {{fields}}
-              "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
-            """);
-        Write("m1", "use", """ "use": "goal", "set": true, """);
-        Write("m2", "order", """ "accounts": ["work"], "set": true, """);
-        Write("m3", "order", """ "accounts": ["work"], """);
-
-        Assert.True(HelpProposals.Find(_home, "m1")!.ForSet);
-        Assert.True(HelpProposals.Find(_home, "m2")!.ForSet);
-        Assert.False(HelpProposals.Find(_home, "m3")!.ForSet);
-    }
-
     /// <summary>
     /// The machine of an <c>order</c> (TOOL4l-b): <c>claude-code</c> has three accounts, a list of its own on the machine and a
     /// default and a kept account in it, and <c>lab</c> a list and a default of its own, <c>trial</c> a default only.
@@ -357,7 +270,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     private static HelpProposal Order(string agent, string[] accounts, string? workspace = null, bool clear = false) =>
         new("p11", "agent", "order", agent, workspace, null, null, "the person asked", "h1", "proposed")
         {
-            AccountOrder = new AccountOrder(accounts, clear), ForSet = true,
+            AccountOrder = new AccountOrder(accounts, clear),
         };
 
     /// <summary>
@@ -390,7 +303,6 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     [InlineData("claude-code", new[] { "work" }, null, true, "never both")]
     [InlineData("claude-code", new[] { "work", "gone" }, null, false, "has no account `gone` on this machine")]
     [InlineData("claude-code", new[] { "work", "work" }, null, false, "`work` is named twice")]
-    [InlineData("claude-code", new[] { "work" }, "elsewhere", false, "so `workspace` names nothing here")]
     [InlineData("gpt-agent", new[] { "work" }, null, false, "no agent `gpt-agent`")]
     public void An_order_the_route_would_refuse_is_refused(string agent, string[] accounts, string? workspace, bool clear, string says)
     {

@@ -20,8 +20,6 @@ import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type Re
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { Button, CheckField, Chip, Icon, Inline, Segmented, SelectField, SettingRow } from '../../design/ui';
 import { clockOf } from '../../locales/format';
-import type { SupervisorLine } from './SupervisorRow';
-import { SupervisorDoor } from './SupervisorDoor';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { type FoldSpec, FoldRow } from './FoldRow';
@@ -111,10 +109,6 @@ export type Driving = {
    * for as long as this run remembers it: said beside the hold.
    */
   heldStanding?: boolean;
-  /** The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5), beside the hold; absent on a shell older than it. */
-  supervisor?: SupervisorLine;
-  /** The door from its line to Agents → Roles → Appointed roles, where it is appointed (COMPANYVIEW1e). */
-  onOpenAppointed?: () => void;
   /**
    * When the steward last set this repository's driving (STEWARDROLE1b, D209 §5.1), from this run's memory: the newest of its drive,
    * undrive, trees, hold and resume here that still stands. Null or absent where none does.
@@ -430,10 +424,6 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
                 <p className="m-0 text-small text-ink-soft">{t('projects.setup.heldStanding')}</p>
               )}
             </SettingRow>
-          )}
-          {/* SUPERVISOR1a-ii: the supervisor's appointment beside the hold, once the repository is driven, or while one is on record. */}
-          {driving.supervisor && (driving.drivable || driving.supervisor.appointment) && (
-            <SupervisorDoor repository={repository} supervisor={driving.supervisor} onOpen={driving.onOpenAppointed} />
           )}
           {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}

@@ -399,7 +399,7 @@ describe('ConversationView', () => {
     ]);
 
     const handed = screen.getByRole('button', { name: /What it was handed/ });
-    expect(handed).toHaveTextContent('6,786 characters in 15 sections');
+    expect(handed).toHaveTextContent('6,786 characters in 11 sections');
     await userEvent.click(handed);
     expect(screen.getByRole('rowheader', { name: 'The quest' })).toBeInTheDocument();
     expect(screen.getAllByRole('region', { name: 'What it was handed' })).toHaveLength(1);

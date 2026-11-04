@@ -9,13 +9,16 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208; the supervisor design §2.2, §2.3, §3.1, §5 and §11 row 1a-ii) over the bridge: the window's appointment
-/// starts the holder's terminal with the key in its environment and answers no key, nor does <c>STATE</c>; this build refuses it
-/// <c>not-offered</c>; the holder's answer is refused on every door but a covered terminal's, and kept as a held decision on one; the
-/// listing names what waits with its generation; and turning the appointment off makes a held decision stale after the judge's step.
+/// D233 point 2 (the supervisor design §2.2, §3.1, §5) over the bridge: the window's start of a role's terminal, for a role the catalogue
+/// staffs with the terminal, starts the holder's terminal with the key in its environment and answers no key, nor does <c>STATE</c>; a
+/// role the seed holds otherwise starts nothing; the holder's answer is refused on every door but a covered terminal's, and kept as a
+/// held decision on one; the listing names what waits with its generation; and a role's change makes a held decision stale after the
+/// judge's step.
 /// </summary>
-public sealed class DriverModuleAppointmentTests : DriverModuleBridge
+public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
 {
+    private const string Supervisor = "supervisor-engine";
+
     private const string Records =
         """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z"}]""";
 
@@ -66,14 +69,13 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         return (loop, module, provider.GetRequiredService<IMessageDispatcher>(), provider);
     }
 
-    private StandingConfirmation Judge(bool appointments = true) =>
-        new(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, supervisor: appointments, walk: new StandingConfirmationTests.Walked())
-        {
-            Drives = repository => repository == "engine",
-        };
+    /// <summary>A judge whose catalogue staffs the repository's own supervisor with the terminal.</summary>
+    private StandingConfirmation Judge() =>
+        new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: new StandingConfirmationTests.Walked())
+            .Staff(RoleKit.Supervisor(Supervisor, RoleKit.Repository("engine")));
 
     [Fact]
-    public async Task The_window_appoints_by_starting_the_holders_terminal_and_no_answer_the_page_receives_holds_the_key()
+    public async Task The_window_starts_the_roles_terminal_and_no_answer_the_page_receives_holds_the_key()
     {
         var (loop, module, dispatcher, services) = Compose();
         using var composed = services;
@@ -87,43 +89,45 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         };
         try
         {
-            var appointed = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", holder = "terminal", on = true });
-            Assert.True(appointed.GetProperty("done").GetBoolean(), appointed.GetRawText());
+            var start = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor });
+            Assert.True(start.GetProperty("done").GetBoolean(), start.GetRawText());
 
             // The panel is a stand-in here: no shell, console or window starts (HolderTerminalTests holds the tab itself).
             var key = Assert.Single(started);
             Assert.NotNull(HolderKey.Read(key));
 
-            // No answer the page receives holds the key or its hash; STATE says the appointment, never its generation.
+            // No answer the page receives holds the key or its hash; STATE says the hold, never its generation.
             var hash = Convert.ToHexStringLower(HolderKey.Hash(key)!);
             var state = await AnswerAsync(module, "STATE");
-            foreach (var said in new[] { appointed.GetRawText(), state.GetRawText() })
+            foreach (var said in new[] { start.GetRawText(), state.GetRawText() })
             {
                 Assert.DoesNotContain(key!, said, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(hash, said, StringComparison.OrdinalIgnoreCase);
             }
 
-            var row = Assert.Single(state.GetProperty("standingConfirmation").GetProperty("appointments").EnumerateArray());
-            Assert.Equal(("supervisor", "engine", false), (row.GetProperty("role").GetString(), row.GetProperty("repository").GetString(), row.GetProperty("dormant").GetBoolean()));
+            var row = Assert.Single(state.GetProperty("standingConfirmation").GetProperty("holds").EnumerateArray());
+            Assert.Equal((Supervisor, AppointedRoles.Supervisor), (row.GetProperty("role").GetString(), row.GetProperty("kind").GetString()));
             Assert.False(row.TryGetProperty("generation", out _));
 
-            var unknown = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "elsewhere", on = true });
-            Assert.Equal("unknown-repository", unknown.GetProperty("why").GetString());
+            var unknown = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = "elsewhere" });
+            Assert.Equal(StandingConfirmation.UnknownRole, unknown.GetProperty("why").GetString());
+            var rules = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = AppointedRoles.Supervisor });
+            Assert.Equal(StandingConfirmation.NotTerminal, rules.GetProperty("why").GetString());
             Assert.Single(started);
 
             SupervisorDoor.Starter = _ => Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null));
-            // A holder lives: the next Appoint names a terminal of its own (D209 §2.2); the built `repository` form is still read as its scope.
-            var unchosen = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
+            // A holder lives: the next start names a terminal of its own (D209 §2.2).
+            var unchosen = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor });
             Assert.Equal((false, StandingConfirmation.ChooseTerminal), (unchosen.GetProperty("done").GetBoolean(), unchosen.GetProperty("why").GetString()));
-            var unstarted = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", scope = "repository:engine", on = true, share = "own" });
+            var unstarted = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor, share = "own" });
             Assert.Equal((false, "unstarted"), (unstarted.GetProperty("done").GetBoolean(), unstarted.GetProperty("why").GetString()));
-            // The appointment in force is the one before: nothing was installed.
-            Assert.Equal(hash, Convert.ToHexStringLower(HolderKey.Hash(key)!));
+            // The hold in force is the one before: nothing was installed.
             Assert.Null(pipe.StandingConfirmation.Admit("engine").Why);
 
-            var off = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = false });
-            Assert.True(off.GetProperty("done").GetBoolean());
-            Assert.Empty((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("appointments").EnumerateArray());
+            // The role door's change ends it: your rules alone hold the repository's supervisor.
+            pipe.StandingConfirmation.Staff(RoleKit.Supervisor(Supervisor, RoleKit.Repository("engine"), RoleHolders.Rules));
+            await SupervisorDoor.RolesChangedAsync(loop, CancellationToken.None);
+            Assert.Empty((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("holds").EnumerateArray());
         }
         finally
         {
@@ -131,12 +135,9 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         }
     }
 
-    /// <summary>
-    /// STEWARDROLE1a-i (D209 §3.3): <c>ROLE_ACT</c>'s own handler, off the role's door (the page's, or any request the judge did not
-    /// cover), is refused <c>not-holder</c> and runs nothing; and a <c>SET_APPOINTMENT</c> naming no scope is refused <c>scope</c>.
-    /// </summary>
+    /// <summary>STEWARDROLE1a-i (D209 §3.3): <c>ROLE_ACT</c>'s own handler, off the role's door, is refused <c>not-holder</c> and runs nothing.</summary>
     [Fact]
-    public async Task A_role_act_off_the_role_s_door_is_refused_and_an_appointment_names_its_scope()
+    public async Task A_role_act_off_the_role_s_door_is_refused()
     {
         var (loop, module, dispatcher, services) = Compose();
         using var composed = services;
@@ -148,16 +149,14 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
 
         Assert.Equal((false, SupervisorWhy.NotHolder), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
         Assert.Equal(RolesBrief.Revision, refused.GetProperty("brief").GetString());
-        var unscoped = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "steward", on = true });
-        Assert.Equal((false, StandingConfirmation.Scope), (unscoped.GetProperty("done").GetBoolean(), unscoped.GetProperty("why").GetString()));
     }
 
     /// <summary>
-    /// STEWARDROLE1b (D209 §3.3): <c>STEWARD_ACTS</c>, the steward's verbs' open read, answers from the judge's memory alone; in a build
-    /// that offers no steward it names no live generation and no act, and with no pipe neither.
+    /// STEWARDROLE1b (D209 §3.3): <c>STEWARD_ACTS</c>, the steward's verbs' open read, answers from the judge's memory alone; with no
+    /// steward's terminal started it names no live generation and no act, and with no pipe neither.
     /// </summary>
     [Fact]
-    public async Task The_steward_s_acts_read_names_no_generation_and_no_act_while_the_steward_is_not_offered()
+    public async Task The_steward_s_acts_read_names_no_generation_and_no_act_while_no_terminal_holds_it()
     {
         var (loop, module, dispatcher, services) = Compose();
         using var composed = services;
@@ -171,28 +170,29 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEWARDROLE1c (D209 §6.2): the desk's routes over the bridge. In this build, which offers no steward, a request is refused
-    /// <c>not-offered</c> and the desk reads empty; where the build offers it, a request is kept, read back by <c>STEWARD_DESK</c> and by
+    /// STEWARDROLE1c (D209 §6.2): the desk's routes over the bridge. While no holder holds the steward, a request is refused
+    /// <c>not-staffed</c> and the desk reads empty; once the catalogue staffs it, a request is kept, read back by <c>STEWARD_DESK</c> and by
     /// <c>STATE</c>'s <c>stewardDesk</c> with its words as the caller wrote them, and never the caller's key.
     /// </summary>
     [Fact]
-    public async Task The_desk_keeps_a_request_only_where_the_steward_is_offered_and_reads_it_back()
+    public async Task The_desk_keeps_a_request_only_where_the_steward_is_staffed_and_reads_it_back()
     {
         var (loop, module, dispatcher, services) = Compose();
         using var composed = services;
         var request = new { act = "drive", target = "engine", why = "the next row is engine's" };
-        Assert.Equal((false, DeskWhy.NotOffered), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
+        Assert.Equal((false, DeskWhy.NotStaffed), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
 
-        using (var dark = new InstancePipe(dispatcher, Bus, Home, standing: Judge()))
+        using (var unstaffed = new InstancePipe(dispatcher, Bus, Home, standing: Judge()))
         {
-            loop.Pipe = dark;
-            Assert.Equal((false, DeskWhy.NotOffered), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
+            loop.Pipe = unstaffed;
+            Assert.Equal((false, DeskWhy.NotStaffed), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
             Assert.Equal(0, (await AnswerAsync(module, "STEWARD_DESK")).GetProperty("requests").GetArrayLength());
             Assert.Empty((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("stewardDesk").EnumerateArray());
         }
 
-        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: true,
-            walk: new StandingConfirmationTests.Walked(), desk: new DeskCaller(_ => null, new SystemProcesses(), TimeProvider.System, Environment.ProcessId));
+        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
+            walk: new StandingConfirmationTests.Walked(), desk: new DeskCaller(_ => null, new SystemProcesses(), TimeProvider.System, Environment.ProcessId))
+            .Staff(RoleKit.Steward([.. StewardActs.Table.Keys]));
         using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: judge);
         loop.Pipe = pipe;
         var filed = await AnswerAsync(module, "STEWARD_REQUEST", request);
@@ -211,9 +211,9 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         static (bool, string?) Filed(JsonElement answer) => (answer.GetProperty("filed").GetBoolean(), answer.GetProperty("why").GetString());
     }
 
-    /// <summary>D208 §2.3: this build does not offer appointments, so the window's press is refused and nothing starts.</summary>
+    /// <summary>The seed's catalogue staffs no terminal: the window's start is refused and nothing starts.</summary>
     [Fact]
-    public async Task This_build_refuses_an_appointment_not_offered_and_starts_nothing()
+    public async Task The_seeds_roles_start_no_terminal()
     {
         var (loop, module, dispatcher, services) = Compose();
         using var composed = services;
@@ -227,10 +227,14 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         };
         try
         {
-            var refused = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
-            Assert.Equal((false, "not-offered"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+            foreach (var role in AppointedRoles.Kinds)
+            {
+                var refused = await AnswerAsync(module, "START_ROLE_TERMINAL", new { role });
+                Assert.Equal((false, StandingConfirmation.NotTerminal), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+            }
+
             Assert.Equal(0, started);
-            Assert.False((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("appointmentsOffered").GetBoolean());
+            Assert.Empty((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("holds").EnumerateArray());
         }
         finally
         {
@@ -240,10 +244,10 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
 
     /// <summary>
     /// §3.1: the page's door, or any door the role method did not cover, is refused <c>not-holder</c> and keeps nothing; over the pipe a
-    /// covered terminal's answer is kept held, listed no more, and the appointment turned off makes it stale after the judge's step.
+    /// covered terminal's answer is kept held, listed no more, and the role's change makes it stale after the judge's step.
     /// </summary>
     [Fact]
-    public async Task The_answer_is_kept_only_from_a_covered_terminal_and_a_turn_off_sweeps_it()
+    public async Task The_answer_is_kept_only_from_a_covered_terminal_and_a_roles_change_sweeps_it()
     {
         if (!OperatingSystem.IsWindows()) return;
         var (loop, module, dispatcher, services) = Compose();
@@ -263,7 +267,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         };
         try
         {
-            Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());
+            Assert.True((await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor })).GetProperty("done").GetBoolean());
             var generation = judge.Admit("engine").Generation!;
 
             var waiting = (await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting");
@@ -291,7 +295,8 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             Assert.Equal((SupervisorState.Held, generation, "terminal"), (held.State, held.Generation, held.Holder.Kind));
             Assert.Empty((await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting").EnumerateArray());
 
-            Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = false })).GetProperty("done").GetBoolean());
+            judge.Staff(RoleKit.Supervisor(Supervisor, RoleKit.Repository("engine"), RoleHolders.Rules));
+            await SupervisorDoor.RolesChangedAsync(loop, CancellationToken.None);
             var swept = Assert.Single(loop.Supervisor.LiveOf("s1"));
             Assert.Equal((SupervisorState.Stale, SupervisorWhy.Revoked), (swept.State, swept.Why));
         }
@@ -326,7 +331,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         };
         try
         {
-            Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());
+            Assert.True((await AnswerAsync(module, "START_ROLE_TERMINAL", new { role = Supervisor })).GetProperty("done").GetBoolean());
             var generation = judge.Admit("engine").Generation!;
             Assert.Empty((await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting").EnumerateArray());
 

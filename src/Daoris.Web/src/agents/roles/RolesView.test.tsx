@@ -87,7 +87,7 @@ const openRoles = async () => userEvent.click(await screen.findByRole('radio', {
 
 describe('The Agents place, Roles mode', () => {
   let refuseRole = false;
-  let catalogue: 'roles' | 'seeded' | 'none' = 'roles';
+  let catalogue: 'roles' | 'seeded' = 'roles';
 
   beforeEach(() => {
     refuseRole = false;
@@ -100,7 +100,7 @@ describe('The Agents place, Roles mode', () => {
       if (type === 'SET_ROLE' && refuseRole) throw new Error('`build` may not be off: a role must take it on the machine.');
       if (type === 'STATE' || type === 'SET_ROLE') return DRIVER_STATE;
       if (type === 'HARNESSES') return ROSTER;
-      if (type === 'ROLES') return catalogue === 'roles' ? staffed(ROLES) : catalogue === 'seeded' ? staffed(SEEDED) : undefined;
+      if (type === 'ROLES') return catalogue === 'roles' ? staffed(ROLES) : staffed(SEEDED);
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
       return undefined;
     });
@@ -161,17 +161,6 @@ describe('The Agents place, Roles mode', () => {
     // A new window opens on the section left.
     expect(await screen.findByRole('heading', { name: 'Appointed roles' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Appointed roles/ })).toHaveAttribute('aria-current', 'true');
-  });
-
-  it('draws no role and edits none on a shell with no catalogue, since each order is its role row\'s', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
-    catalogue = 'none';
-    show(<Place />);
-
-    expect(await screen.findByText(/Not offered by this shell/)).toBeTruthy();
-    expect(screen.queryByText('Actors')).toBeNull();
-    expect(screen.queryAllByText('claude-code · account default · account default · as before')).toHaveLength(0);
-    expect(screen.queryAllByRole('button', { name: /^Edit / })).toHaveLength(0);
   });
 
   it("reads each order from the role read alone, its row's staffing", async () => {
@@ -314,7 +303,7 @@ describe('The Agents place, Roles mode', () => {
     });
   });
 
-  it('tells a failed read of the roles from a shell that offers none', async () => {
+  it('says a failed read of the roles', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const answer = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
@@ -324,7 +313,6 @@ describe('The Agents place, Roles mode', () => {
     show(<Place />);
 
     expect(await screen.findByText(/could not be read/)).toBeTruthy();
-    expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
   });
 
   it("says the driver's refusal of a removal under the role's row", async () => {

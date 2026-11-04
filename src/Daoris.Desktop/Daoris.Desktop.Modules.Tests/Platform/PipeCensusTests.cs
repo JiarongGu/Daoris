@@ -5,19 +5,34 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The pipe's census (RPC1a, D171 point 3, the terminal RPC design §4.2): every route the pipe accepts is classed <c>open</c>,
-/// <c>person</c> or <c>window</c>, the driver's route by route against D156 §3, so the same account opening the pipe gains no
-/// person's authority. An unclassed press is the person's and an unclassed module is refused, and the census fails on a route
-/// it does not class, so a route added later is classed in the change that adds it (`bridge-presses.md`).
+/// The pipe's census: every route the pipe accepts is classed <c>open</c>, <c>person</c>, <c>window</c> or <c>role</c> by its mark,
+/// so the same account opening the pipe gains no person's authority. An unclassed press is the person's and an unclassed module is
+/// refused.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class PipeCensusTests
 {
+    /// <summary>
+    /// Every route is marked: the census is read off the marks at its first use, and refuses a person's or a role's press with no
+    /// drain, a person's or a window's route with no owner mark, a person's press resting on nothing and not timeless, a setting
+    /// naming no value it sets with no reason it is never already, and a mark naming a route its member does not answer.
+    /// </summary>
     [Fact]
-    public void Every_route_of_the_driver_is_classed_and_every_class_names_a_route()
+    public void Every_route_is_marked()
     {
-        Assert.Empty(PipeCensus.Daoris.Unclassed(DriverModule.Name, DriverModule.Routes));
-        Assert.Empty(PipeCensus.Daoris.Stale(DriverModule.Name, DriverModule.Routes));
+        var census = PipeCensus.Daoris;
+
+        Assert.Equal(
+            DriverModule.Routes.Order(StringComparer.Ordinal),
+            census.Routes.Where(each => each.Module == DriverModule.Name).Select(each => each.Route!).Order(StringComparer.Ordinal));
+        Assert.All(census.Routes.Where(each => each.Class is PipeClass.Person or PipeClass.Role && each.Route is not null),
+            each => Assert.NotNull(census.DrainOf(each.Module, each.Route)));
+        Assert.All(census.Routes.Where(each => each.Class is PipeClass.Person or PipeClass.Window || each.When?.Class is PipeClass.Person or PipeClass.Window),
+            each => Assert.NotNull(census.Targets.Mark(each.Module, each.Route)));
+        Assert.All(census.Routes.Where(each => each.Route is not null && (each.Class == PipeClass.Person || each.When?.Class == PipeClass.Person)),
+            each => Assert.NotNull(census.Targets.Row(each.Module, each.Route!)));
+        // A route a route-by-route module leaves to the person by default has no row, and is refused `ungrounded` (PipeConfirmTests).
+        Assert.Null(census.Targets.Row(DriverModule.Name, "A_ROUTE_NOBODY_CLASSED"));
     }
 
     /// <summary>
@@ -60,7 +75,7 @@ public sealed class PipeCensusTests
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (answer.Module, PipeCensus.Daoris.Of(answer.Module, answer.Route), answer.Class));
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (defer.Module, PipeCensus.Daoris.Of(defer.Module, defer.Route), defer.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
-        Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.SupervisorRoutes.Appoint));
+        Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.RoleRoutes.StartTerminal));
         // STEWARDROLE1a-i (D209 §3.3): the steward's one route beside the supervisor's two, and nothing else of the class.
         Assert.Equal(
             Daoris.Driver.SupervisorRoutes.Acts.Append(Daoris.Driver.RoleRoutes.Act).Order(),
@@ -285,16 +300,6 @@ public sealed class PipeCensusTests
         }
     }
 
-    /// <summary>The census fails on a route it does not class, and on a class that names no route: the check the test above runs.</summary>
-    [Fact]
-    public void The_census_names_a_route_it_does_not_class_and_a_class_that_names_none()
-    {
-        var routes = DriverModule.Routes.Append("LAND_EVERYTHING").Where(route => route != "STATE").ToList();
-
-        Assert.Equal(["LAND_EVERYTHING"], PipeCensus.Daoris.Unclassed(DriverModule.Name, routes));
-        Assert.Equal(["STATE"], PipeCensus.Daoris.Stale(DriverModule.Name, routes));
-    }
-
     /// <summary>
     /// Every module this library answers for is named by the census, whole or route by route, so none is refused only because
     /// nobody looked at it; the kit's own modules are not Daoris's to class, and stay refused.
@@ -464,28 +469,6 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// DRAINHOLD1 (D156's DRAINHOLD1 note): every person's and role's route of every route-by-route module says what an update's drain
-    /// does with it, waits or passes, and every route the drain classes is one of them, so a route added later is classed for the drain in
-    /// the change that adds it, as it is for the pipe.
-    /// </summary>
-    [Fact]
-    public void Every_person_s_and_role_s_route_is_classed_for_the_drain_and_every_drain_class_names_one()
-    {
-        Assert.Empty(PipeCensus.Daoris.DrainUnclassed());
-        Assert.Empty(PipeCensus.Daoris.DrainStale());
-    }
-
-    /// <summary>The drain's census check fails on a person's route it does not class: the check the test above runs.</summary>
-    [Fact]
-    public void The_drain_names_a_person_s_route_it_does_not_class()
-    {
-        var census = PipeCensus.Daoris.With(DriverModule.Name, "NEW_PRESS", PipeClass.Person).With("TEST.PRESS", "MOVE", PipeClass.Open);
-
-        Assert.Equal([$"{DriverModule.Name}.NEW_PRESS"], census.DrainUnclassed());
-        Assert.Empty(census.DrainStale());
-    }
-
-    /// <summary>
     /// DRAINHOLD1: while an update drains, a press waits for the restart only where it starts work the drain waits on, starts a process of
     /// its own that runs on past its answer, or changes a repository through git; a stop, a take-back, an answer to a session under way and
     /// a word whose resume is the loop's, which the drain holds, go on. A conversation's go-on after an answer alone is the chat runner's at
@@ -554,7 +537,7 @@ public sealed class PipeCensusTests
         string[] releases =
         [
             "SET_HELPERS", "SET_CAP", "SET_ROLE", "SET_ROLES", "SET_COOLOFF", "ACCOUNT_USE", "HARNESSES_REFRESH", "SET_HAND_OVER", "SET_OPINION",
-            "SET_LANDING", "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
+            "SET_REVIEW", "SET_LINE", "OPINION_ANYWAY", "OPINION_MYSELF", "WORK_HELD", "WORKFLOW_NODE", "WORK_RESUME",
             "WORKFLOW_LANDED", "WORKFLOW_SAVE", "WORKFLOW_USE", "WORKFLOW_KIND", "WORKFLOW_VERIFY", "SET_KEEP", "TRUST_FOLDER", "PLUGIN_ACTION", "PLUGIN_ADD", "PLUGIN_INSTALL", "PLUGIN_UPDATE",
         ];
         string[] inert =

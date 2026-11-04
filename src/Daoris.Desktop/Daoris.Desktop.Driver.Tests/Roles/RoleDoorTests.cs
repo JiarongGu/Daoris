@@ -49,10 +49,12 @@ public sealed class RoleDoorTests : IDisposable
 
         (RoleChange Change, IReadOnlyList<ActorChoice>? Choices, string Code)[] cases =
         [
-            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed }), Opus, "appointed-not-configurable"),
-            (RoleChange.Set(Designer() with { Id = "lead", Authority = ["answer"] }), Opus, "mixed-shape"),
+            (RoleChange.Set(Designer(new RoleScope(RoleScope.Workspace, "w1")) with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), Opus, "appointed-not-configurable"),
+            (RoleChange.Set(Designer() with { Id = "lead", Filled = RoleRecord.Appointed, Takes = [], Hold = new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Terminal) }), null, "two-roles-one-work"),
+            (RoleChange.Set(Designer() with { Id = "lead", Hold = new RoleHold(AppointedRoles.Supervisor, ["answer"], RoleHolders.Rules) }), Opus, "mixed-shape"),
             (RoleChange.Set(Designer() with { Id = "lead", Takes = ["gardening"] }), Opus, "unknown-work"),
-            (RoleChange.Set(Designer() with { Id = "steward" }), Opus, "reserved-id"),
+            (RoleChange.Set(Designer() with { Id = "steward" }), Opus, "mixed-shape"),
+            (RoleChange.Remove(AppointedRoles.Supervisor), null, "may-not-be-off"),
             (RoleChange.Set(Designer() with { Id = "Lead!" }), Opus, "bad-record"),
             (RoleChange.Remove("build"), null, "may-not-be-off"),
             (RoleChange.Set(Designer() with { Id = "second" }), Opus, "two-roles-one-work"),
@@ -68,6 +70,33 @@ public sealed class RoleDoorTests : IDisposable
 
         Assert.Equal(before, Catalogue().Slots.Select(slot => (slot.Id, slot.State, slot.Revision)).ToList());
         Assert.Equal(staffed, Config().Actors.Keys.Order(StringComparer.Ordinal).ToList());
+    }
+
+    /// <summary>ROLEONE1 (D233 point 2): the supervisor and the steward are staffed through the one door, their holder and window in the record, no staffing row.</summary>
+    [Fact]
+    public void The_supervisor_and_the_steward_are_staffed_through_the_role_door_and_read_back()
+    {
+        var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
+        var place = new RoleRecord("supervisor-engine", AuthoredText.Of("Engine's supervisor"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Repository, "engine"),
+            new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, RoleHolders.Rules));
+
+        RoleDoor.ApplyAll(Staffing, [
+            (RoleChange.Set(supervisor with { Hold = supervisor.Hold! with { Holder = RoleHolders.Terminal, Window = 12 } }), null, null),
+            (RoleChange.Set(steward with { Hold = steward.Hold! with { Holder = RoleHolders.Terminal } }), null, null),
+            (RoleChange.Set(place), null, null),
+        ]);
+
+        var catalogue = Catalogue();
+        var held = catalogue.Slots.Single(slot => slot.Id == AppointedRoles.Supervisor);
+        Assert.Equal((RoleState.Set, RoleHolders.Terminal, 12), (held.State, held.Role!.Hold!.Holder, held.Role.Hold.Window));
+        Assert.Equal(RoleHolders.Terminal, catalogue.Appointed(AppointedRoles.Steward, new RolePlace())!.Hold!.Holder);
+        Assert.Equal("supervisor-engine", catalogue.Appointed(AppointedRoles.Supervisor, new RolePlace(Repository: "engine"))!.Id);
+        Assert.DoesNotContain(AppointedRoles.Supervisor, Config().Actors.Keys);
+        Assert.Equal(RoleHolders.Terminal, RoleDoor.Rows(catalogue, Config()).Single(row => row.Id == AppointedRoles.Supervisor).Hold!.Holder);
+
+        RoleDoor.Apply(Staffing, RoleChange.Default(AppointedRoles.Steward));
+        Assert.Null(Catalogue().Appointed(AppointedRoles.Steward, new RolePlace())!.Hold!.Holder);
     }
 
     /// <summary>I18NOPEN1 (D222): a role is named in one language, or in a third, and an old pair reads unchanged; each is shown in the viewer's language, else as written.</summary>

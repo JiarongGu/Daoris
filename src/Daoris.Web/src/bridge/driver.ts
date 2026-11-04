@@ -107,23 +107,6 @@ export type DriverState = {
   helpSwapping?: string[];
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
-  /**
-   * What establishing the home did on this start, when it is worth saying — state moved in from a
-   * profile directory, the account's environment gaining the variable, or the account's home set aside
-   * for this install's own (D105). Null when nothing was.
-   */
-  homeNotice?: string | null;
-  /**
-   * How that home stands to the account's DAORIS_HOME, which a terminal's daoris reads (LEFT2): the same
-   * folder, overridden by this install's own `data/` (D105; the notice says which), or named for this start
-   * alone (no notice). Absent on a shell older than it.
-   */
-  homeAccount?: 'same' | 'overridden' | 'this-start';
-  /**
-   * The host this shell adopted is serving a page that is not this install's, in the shell's own
-   * sentence — or null. Standing, because it is true for as long as that host runs.
-   */
-  hostNotice?: string | null;
   /** The lines as set (WSR2), by repository — absent on a shell older than them. */
   lines?: { repository: string; branch: string }[];
   /** And by workspace, for each repository there that sets none of its own. */
@@ -507,7 +490,7 @@ export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../
 /**
  * The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role with its work, place and choices, the works a role may
  * take, whether this home keeps the catalogue, and the roles Daoris suggests. `daoris role` says the same. Under the driver's
- * key, so every press that changes the driver's state asks it again. Null in a browser and from an older shell, which answers no roles.
+ * key, so every press that changes the driver's state asks it again. Null in a browser, which answers no roles.
  */
 const readRoles = (raw: unknown): RoleCatalogue | null => {
   const answer = raw as Partial<RoleCatalogue> | null;
@@ -561,8 +544,7 @@ const readRoleStructure = (raw: unknown): RoleStructure | null => {
  * The roles' structure for the places and works asked (COMPANYVIEW1c): each place's role per work as a start finds it, each work's rule
  * with where it was set, and each choice's state from the last readings alone, so opening a view asks no account (D150 point 5). Told by
  * event (NOBLOCK1), under the driver's key with the catalogue, so every press that changes the driver's state asks it again. Null until
- * the shell's first reading lands; a shell that does not know the route is the query's error, `refusedNoRoute`'s, so a view tells *not
- * offered by this shell* from a failed read and from an empty one.
+ * the shell's first reading lands.
  */
 export const useRoleStructure = (places: StructurePlaceAsk[], works?: string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();

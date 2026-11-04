@@ -388,7 +388,7 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
     {
         Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(DriverModule.Name, route));
         Assert.DoesNotContain(route, StandingPresses.Built, StringComparer.OrdinalIgnoreCase);
-        Assert.DoesNotContain(route, StewardActs.Offered, StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(route, StewardActs.Table.Keys, StringComparer.OrdinalIgnoreCase);
         Assert.NotNull(PipeTargets.Daoris.Mark(DriverModule.Name, route));
         Assert.Contains(route, DriverModule.Routes);
     }

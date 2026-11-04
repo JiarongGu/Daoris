@@ -57,7 +57,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onOpenAppointed, onOpenPlugin, onOpenGit, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenPlugin, onOpenGit, onOpenSetup, onOpenWorkspaceSetup, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend, branchAsked = null, onBranchOpened,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -80,8 +80,6 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
-  /** Open Agents → Roles → Appointed roles, where a Setup's supervisor is appointed (COMPANYVIEW1e). */
-  onOpenAppointed?: () => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
   /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e). */
@@ -213,7 +211,6 @@ export function useProjectsView({
     enabled: setupShown,
     notify,
     onOpenPlugin,
-    onOpenAppointed,
     onOpenGit,
   });
 
@@ -263,7 +260,6 @@ export function useProjectsView({
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
-          onOpenAppointed={onOpenAppointed}
           onOpenSetupSection={onOpenWorkspaceSetup}
           onSyncNow={onSyncNow}
           syncing={syncing}

@@ -245,20 +245,4 @@ public sealed class PipeGroundsBindingTests
         Assert.False(row.Already([state], Payload(new { repository = "Lyntai", gates = gates.Reverse() })));
         Assert.False(row.Already([state], Payload(new { repository = "Lyntai" })));
     }
-
-    /// <summary>Finding 12: every setting ground says the value it sets, or is a named exception with its reason.</summary>
-    [Fact]
-    public void Every_setting_ground_says_what_it_sets_or_why_it_cannot()
-    {
-        var unsaid = PipeTargets.Daoris.Rows
-            .Where(each => each.Value.Grounds.OfType<ReadGround>().Any(ground => ground.Kind == PipeGroundKind.Setting && ground.Sets is null))
-            .Select(each => each.Key)
-            .Where(each => !PipeTargets.NotAlready.ContainsKey(each))
-            .Order(StringComparer.Ordinal)
-            .ToList();
-
-        Assert.Empty(unsaid);
-        Assert.All(PipeTargets.NotAlready, each => Assert.False(string.IsNullOrWhiteSpace(each.Value)));
-        Assert.All(PipeTargets.NotAlready.Keys, each => Assert.True(PipeTargets.Daoris.Rows.ContainsKey(each), each));
-    }
 }

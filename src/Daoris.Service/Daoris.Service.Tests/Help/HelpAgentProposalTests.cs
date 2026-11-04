@@ -23,12 +23,10 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// POOL1b (D197 point 6, the account-pool design §5.3): <c>default</c> left the doors, so none is written, naming <c>order</c>; and
-    /// an update or a pin names no account. HELP10 wrote a default with its account and its workspace before.
+    /// A door the kind does not have is refused as an unknown word, naming the doors; and an update or a pin names no account.
     /// </summary>
     [Theory]
-    [InlineData("default", null, "work", "`default` is retired: every account of Daoris's serves every workspace (D197)")]
-    [InlineData("default", null, null, "propose `order` with the account first")]
+    [InlineData("default", null, null, "an agent's change is `update`, `pin`, `use`, `order` or `ready`")]
     [InlineData("update", null, "work", "names no account")]
     [InlineData("pin", "2.1.300", "work", "names no account")]
     public void A_default_or_a_misplaced_account_is_refused_with_nothing_written(string action, string? version, string? account, string says)
@@ -42,7 +40,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
     /// <summary>
     /// TOOL4l-a: a use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent. Since POOL1b
-    /// (§5.3) it is marked for the set, `set: true`, and names no workspace; it carried `lab` before.
+    /// (§5.3) it names no workspace; it carried `lab` before.
     /// </summary>
     [Fact]
     public void A_use_is_written_with_its_fields_and_keep_none_is_told_from_unchanged()
@@ -56,8 +54,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Equal(("agent", "use", "claude-code", "order", "work"),
             (file.GetProperty("kind").GetString(), file.GetProperty("door").GetString(), file.GetProperty("target").GetString(),
              file.GetProperty("use").GetString(), file.GetProperty("keep").GetString()));
-        Assert.Equal((JsonValueKind.Null, JsonValueKind.True), (file.GetProperty("workspace").ValueKind, file.GetProperty("set").ValueKind));
-        Assert.Equal(JsonValueKind.True, Written(none!).GetProperty("set").ValueKind);
+        Assert.Equal(JsonValueKind.Null, file.GetProperty("workspace").ValueKind);
         Assert.Equal((JsonValueKind.True, 80), (file.GetProperty("early").ValueKind, file.GetProperty("near").GetInt32()));
         Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("keep").ValueKind);
         Assert.False(Written(none!).TryGetProperty("use", out _));
@@ -134,10 +131,8 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Equal("order", file.GetProperty("door").GetString());
         Assert.Equal(["work", "play"], file.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()!).ToArray());
         Assert.False(file.TryGetProperty("clear", out _));
-        Assert.Equal(JsonValueKind.True, file.GetProperty("set").ValueKind);
         var cleared = Written(clear!);
         Assert.Equal((JsonValueKind.True, JsonValueKind.Null), (cleared.GetProperty("clear").ValueKind, cleared.GetProperty("workspace").ValueKind));
-        Assert.Equal(JsonValueKind.True, cleared.GetProperty("set").ValueKind);
         Assert.False(cleared.TryGetProperty("accounts", out _));
     }
 

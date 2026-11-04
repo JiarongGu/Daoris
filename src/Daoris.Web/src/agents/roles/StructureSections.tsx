@@ -12,8 +12,8 @@ import type {
 } from './roleStructure';
 import { NO_FILTERS, nodeOfRow, placeId } from './roleStructure';
 
-/** Why there are no rows: not asked yet, not offered by this shell, a read that failed, or the rows. */
-export type StructureRead = 'ok' | 'loading' | 'notOffered' | 'failed';
+/** Why there are no rows: not asked yet, a read that failed, or the rows. */
+export type StructureRead = 'ok' | 'loading' | 'failed';
 
 /**
  * Where a row's door leads, handed in by the application (D168 point 3): the molecules press these and know no route. A door the
@@ -169,7 +169,6 @@ function Notice({ read, failed }: { read: StructureRead; failed?: string }) {
   return (
     <>
       {read === 'loading' && <p className="m-0 text-body text-ink-soft">{t('agents.roles.reading')}</p>}
-      {read === 'notOffered' && <p className="m-0 text-body text-ink-soft">{t('agents.roles.notOffered')}</p>}
       {read === 'failed' && <p role="alert" className="m-0 text-body text-ink-soft">{t('agents.roles.readFailed')}</p>}
       {read === 'ok' && failed && <p role="alert" className="m-0 mb-3 text-body text-ink-soft">{t('agents.roles.catalogueFailed', { why: failed })}</p>}
     </>

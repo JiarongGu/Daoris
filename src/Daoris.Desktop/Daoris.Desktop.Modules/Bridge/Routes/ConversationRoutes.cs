@@ -20,7 +20,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // what is newer (`after`) — how a page opens a session after a restart, loads earlier
     // turns, and closes a gap in the live events. From the record under the home, so it
     // answers whether or not this app was running when the session spoke.
-    [DriverRoute("SESSION_HISTORY")]
+    [DriverRoute("SESSION_HISTORY", PipeClass.Open)]
     private object? SessionHistory(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -35,7 +35,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // machine, which never leaves it (D46 §7).
     // A start changes the sessions and the driver's state its loop, nudged, reads again (STATEHUB1d, D169), as each press below
     // that opens a conversation does.
-    [DriverRoute("START_CHAT")]
+    [DriverRoute("START_CHAT", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("START_CHAT", None = OwnerNone.OwnConversation)]
+    [GroundRepository("START_CHAT", "repository")]
+    [Says("START_CHAT", "repository:repository", "adapter:agent", "text:words")]
     [Publishes("START_CHAT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> StartChatAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -79,17 +82,16 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { start.SessionId, start.Message };
     }
 
-    // The person's words to a session, whatever its state (MSG1d, D137 §5.3): `{ sent, reaches, why }`. A running session
-    // hears them at its door as before (SESS3, D136, CONV4a); one that parked or ended has them kept on its record and the
-    // loop nudged, so the same session goes on with them (MSG1b); words said as one winds up are held until its record ends,
-    // never refused. What never goes on is `sent: false` with its code. 🔴 A session running here that takes no input at
-    // all is REFUSED instead, in the driver's words (INT4h): false would tell a stale page it ended when it is running.
-    // Words kept on a park's or an ended record move it among the sessions (STATEHUB1d); a live chat's words reach its door
-    // alone, and the publisher reads no answer to tell them apart (D169 point 5), so every one asks the sessions again. It
-    // declares Ask Daoris's history too (HELPHISTORYHUB1): the route cannot tell a help conversation's words from another's, a
-    // conversation's first words list it there, named by its question, and words kept on an ended one resume it; a history
-    // nobody has open only goes stale.
-    [DriverRoute("SESSION_INPUT")]
+    // The person's words to a session, whatever its state: `{ sent, reaches, why }`. A running session hears them at its door;
+    // a parked or ended one keeps them on its record and goes on with them. A running session that takes no input is refused
+    // in the driver's words, since `sent: false` would tell a stale page it ended. Every answer publishes the sessions and Ask
+    // Daoris's history, since the route cannot tell a help conversation's words from another's.
+    [DriverRoute("SESSION_INPUT", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_INPUT", Session = "id")]
+    [GroundSession("SESSION_INPUT", "id")]
+    [GroundRead("SESSION_INPUT", nameof(PipeReads.QuestionOpen))]
+    [GroundRead("SESSION_INPUT", nameof(PipeReads.AttachedFiles))]
+    [Says("SESSION_INPUT", "id:session", "text:words", "level:level", "paths:files", "said:form")]
     [Publishes("SESSION_INPUT", StateScopes.Sessions | StateScopes.Help, Session = "id")]
     private async Task<object?> SessionInputAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -161,12 +163,12 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };
     }
 
-    // *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): words a session cannot go on with, and that nothing
-    // carries on by itself, start a conversation in its repository on the machine's adapter, handed with a preface naming the
-    // session, and leave its record naming that conversation, as one act of the chat runner's. `{ sessionId, sent, why,
-    // message }`: what never goes on, a session still running, no words waiting and a quest that carries them on by itself are
-    // refused by their codes before anything starts. Its end reaches the page as a start's does.
-    [DriverRoute("SESSION_START_FROM")]
+    // *Start a conversation with these words*: words a session cannot go on with start a conversation in its repository, handed
+    // with a preface naming the session, as one act of the chat runner's; what cannot go on is refused by its code before it starts.
+    [DriverRoute("SESSION_START_FROM", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_START_FROM", Session = "id")]
+    [GroundSession("SESSION_START_FROM", "id")]
+    [Says("SESSION_START_FROM", "id:session")]
     [Publishes("SESSION_START_FROM", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -185,13 +187,12 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { started.SessionId, started.Sent, started.Why, started.Message };
     }
 
-    // *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): a conversation, or a closed quest's session, whose words wait for the
-    // person goes on in a new part of its session, in its tree on its agent and account, its record naming the one it continues (why
-    // `resume`, by the person), handed Daoris's brief and then their words, which leave the record they were said to naming it. Beside
-    // SESSION_START_FROM, the person's fresh start. `{ sessionId, sent, why, message }`: what never goes on, a session still running, no
-    // words waiting, a quest carried on by itself, a tree gone and an agent no longer here are refused by their codes before anything
-    // opens. Its end reaches the page as a start's does.
-    [DriverRoute("SESSION_GO_ON_BRIEF")]
+    // *Go on with Daoris's brief*: a session whose words wait goes on in a new part, in its tree on its agent and account, handed
+    // Daoris's brief and then their words; what cannot go on is refused by its code before anything opens.
+    [DriverRoute("SESSION_GO_ON_BRIEF", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_GO_ON_BRIEF", Session = "id")]
+    [GroundSession("SESSION_GO_ON_BRIEF", "id")]
+    [Says("SESSION_GO_ON_BRIEF", "id:session")]
     [Publishes("SESSION_GO_ON_BRIEF", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionGoOnBriefAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -205,11 +206,12 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { moved.SessionId, moved.Sent, moved.Why, moved.Message };
     }
 
-    // *Stop waiting* (LIMITRESUME1d, D206 §3.7, N27): an ended conversation held by its account's limit waits no more. Its waiting
-    // words are marked, Daoris's limit word taken off, and the limits stage leaves it, so nothing goes on by itself; the person's next
-    // word goes on as any word to an ended conversation does (`ChatRunner.StopWaitingAsync`, LIMITRESUME1c). `{ stopped, message }`:
-    // one that runs, waits for no limit, or is no conversation of this machine's is refused as data, in the runner's sentence.
-    [DriverRoute("SESSION_STOP_WAITING")]
+    // *Stop waiting*: an ended conversation held by its account's limit waits no more, so nothing goes on by itself; a refusal is
+    // data in the runner's sentence.
+    [DriverRoute("SESSION_STOP_WAITING", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_STOP_WAITING", Session = "id")]
+    [GroundSession("SESSION_STOP_WAITING", "id")]
+    [Says("SESSION_STOP_WAITING", "id:session")]
     [Publishes("SESSION_STOP_WAITING", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionStopWaitingAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -220,15 +222,15 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { Stopped = refused is null, Message = refused ?? "" };
     }
 
-    // *Go on with another agent…* (MIXAGENT1b-i, D163): a conversation of this machine handed to another agent, from its page.
-    // The chat runner judges and keeps the ask: taken at once for a conversation that is not talking, kept for its turn's end
-    // for one that is (the page's *Stop and hand over…* asks this first, then stops the turn). `{ sessionId, kept, why, message }`;
-    // a refusal is the answer by its code, never thrown. The reason is `press` unless named; `near` and `limit` are Daoris's own
-    // offer's (MIXAGENT1b-ii), taken from the person's press on the offer, so only with them is `askedBy` `daoris` honoured.
+    // *Go on with another agent…*: the chat runner keeps the ask, taken at once for a conversation not talking, at its turn's end for
+    // one that is. `near` and `limit` are Daoris's own offer's reasons, so only with them is `askedBy` `daoris` honoured.
     public static string HandOverAskedBy(string why, string? askedBy) =>
         askedBy == HandOverBy.Daoris && why is HandOverWhy.Near or HandOverWhy.Limit ? HandOverBy.Daoris : HandOverBy.Person;
 
-    [DriverRoute("SESSION_HAND_OVER")]
+    [DriverRoute("SESSION_HAND_OVER", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_HAND_OVER", Session = "id")]
+    [GroundSession("SESSION_HAND_OVER", "id")]
+    [Says("SESSION_HAND_OVER", "id:session", "agent:agent")]
     [Publishes("SESSION_HAND_OVER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHandOverAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -243,10 +245,8 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         var why = Optional(request, "why") ?? HandOverWhy.Press;
-        // SESSWATCH1a (the session-watch design §2.3, §5.2): a quest's own session is handed over from its page too, through the judge
-        // `sessions hand-over` answers it by (QuestHandOver): judged and decided as a driven move in the store (FOUNDATION1f-v part c),
-        // which the driver's next look takes, stops it and carries its quest on in the same tree with the agent named. `sessionId` is
-        // null: no conversation opens here.
+        // A quest's own session is handed over through `sessions hand-over`'s judge, as a driven move the next look takes: no
+        // conversation opens here.
         if (_loop.Service is { } service
             && (await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false))
                 .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal)) is { } record
@@ -289,7 +289,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // and whether it still waits on the person. It moves the ask and the park (STATEHUB1h, D169).
     // PARKVIEW1 (the park's ask design §4): `goesOn: false` where the page answers the park itself, with the answer to the question the
     // park also asked (GOAHEAD2's provision for such a caller): the go-ahead is kept and the park waits for that answer. Absent is true.
-    [DriverRoute("SESSION_GO_AHEAD")]
+    [DriverRoute("SESSION_GO_AHEAD", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_GO_AHEAD", Session = "id")]
+    [GroundWait("SESSION_GO_AHEAD", "go-ahead", "ask", "number")]
+    [Says("SESSION_GO_AHEAD", "id:session", "ask:ask", "words:words")]
     [Publishes("SESSION_GO_AHEAD", StateScopes.Sessions | StateScopes.Asks, Session = "id")]
     private async Task<object?> SessionGoAheadAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -314,7 +317,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
     // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
     // for a session that takes no input, for the same reason as a message.
-    [DriverRoute("END_CHAT")]
+    [DriverRoute("END_CHAT", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("END_CHAT", Session = "id")]
+    [GroundSession("END_CHAT", "id")]
+    [Says("END_CHAT", "id:session")]
     [Publishes("END_CHAT", StateScopes.Sessions, Session = "id")]
     private object? EndChat(IpcRequest request)
     {
@@ -333,7 +339,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // turn keeping what waits for the next turn, withdrawing nothing: the keeping stop (COWORK1a, the message-urgency design
     // §3.2), the person's own press beside words held for the turn's end, which no word presses for them (D188 point 3).
     // RPC1d: `sessions stop <id> --turn` sent over the pipe asks for the verb's own words.
-    [DriverRoute("CANCEL_TURN")]
+    [DriverRoute("CANCEL_TURN", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("CANCEL_TURN", Session = "id")]
+    [GroundSession("CANCEL_TURN", "id")]
+    [Says("CANCEL_TURN", "id:session")]
     [Publishes("CANCEL_TURN", StateScopes.Sessions, Session = "id")]
     private async Task<object?> CancelTurnAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -370,7 +379,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // here holds may wait on the session's record, parked or ended (SAIDBACK1b): the service's take-back door answers for it,
     // and refuses what never goes on in its own sentence. A word taken back from a record moves it, so the edit publishes as a
     // word said does (STATEHUB1h, D169), naming the session by its `session` field.
-    [DriverRoute("SESSION_QUEUE_EDIT")]
+    [DriverRoute("SESSION_QUEUE_EDIT", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SESSION_QUEUE_EDIT", Session = "session")]
+    [GroundRead("SESSION_QUEUE_EDIT", nameof(PipeReads.QueuedWord))]
+    [Says("SESSION_QUEUE_EDIT", "session:session", "text:words", "level:level")]
     [Publishes("SESSION_QUEUE_EDIT", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionQueueEditAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -426,7 +438,12 @@ public sealed class ConversationRoutes(DriverContext context)
     // Moving one word held on a part's record to the head the page shows as `to` (LINESTOGETHER1b, the review-flow design §2), through the
     // service's move door; its answers are the desktop README's. A refusal is data, never thrown, so the page words its code and asks again
     // after `not-known`.
-    [DriverRoute("SESSION_QUEUE_MOVE")]
+    [DriverRoute("SESSION_QUEUE_MOVE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_QUEUE_MOVE", Session = "session")]
+    [Owner("SESSION_QUEUE_MOVE", Session = "to")]
+    [GroundRead("SESSION_QUEUE_MOVE", nameof(PipeReads.QueuedWord))]
+    [GroundSession("SESSION_QUEUE_MOVE", "to")]
+    [Says("SESSION_QUEUE_MOVE", "session:session", "to:session")]
     [Publishes("SESSION_QUEUE_MOVE", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionQueueMoveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -442,7 +459,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
     // holding it, or a door that carries none, is an empty list — never a refusal, since a composer
     // asks of every conversation it shows.
-    [DriverRoute("SESSION_OPTIONS")]
+    [DriverRoute("SESSION_OPTIONS", PipeClass.Open)]
     private object? SessionOptions(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -453,7 +470,11 @@ public sealed class ConversationRoutes(DriverContext context)
     // session. The driver refuses the mode, an option never offered and a conversation it does not
     // hold, in its own words; the agent refuses a value it does not take, in its. It declares nothing (STATEHUB1h, D169): every
     // window hears the options whole as `SESSION_OPTIONS_CHANGED` when they change.
-    [DriverRoute("SET_SESSION_OPTION")]
+    [DriverRoute("SET_SESSION_OPTION", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_SESSION_OPTION", Session = "id")]
+    [GroundSession("SET_SESSION_OPTION", "id")]
+    [GroundRead("SET_SESSION_OPTION", nameof(PipeReads.SessionOption))]
+    [Says("SET_SESSION_OPTION", "id:session")]
     private async Task<object?> SetSessionOptionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -467,7 +488,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
     // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`. What waits on a parked or
     // ended record is read with the record (SAIDBACK1b), so it is listed here and in each `SESSION_QUEUED` the record tells.
-    [DriverRoute("SESSION_QUEUE")]
+    [DriverRoute("SESSION_QUEUE", PipeClass.Open)]
     private async Task<object?> SessionQueueAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -476,21 +497,10 @@ public sealed class ConversationRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Where a session's turns stand and what a word said now would do, whole (CONV4a, MSG1d, MSG1f2): the queue's answer, and
-    /// <c>SESSION_QUEUED</c> where a record's move or a later session of its quest told it again, in one shape.
+    /// Where a session's turns stand and what a word said now would do, whole: the queue's answer, and <c>SESSION_QUEUED</c>'s, in one
+    /// shape. <c>Queued</c> is read with the reach, never apart from it, so a record that tells its reach again lists its words
+    /// again, never an empty list over them.
     /// </summary>
-    /// <remarks>
-    /// <c>Listening</c> says a running driven session's door is open (SESS3), on the protocol door or, where its run can go on
-    /// in its own conversation, the native door (MSG1b); a door that closed listens no longer, though the registry holds it a
-    /// moment longer. Whether the page offers a box is <c>reaches</c> and <c>why</c>'s: what a word said now would do (D137
-    /// §5.3), and why nothing takes one, which is when it draws the line instead. <c>reach</c> says the same as an object
-    /// (<see cref="ReachOf"/>), which tells a page this shell follows it live.
-    ///
-    /// <c>Queued</c> is what an inbox or a conversation's turns hold here, or, where neither holds any, the person's words
-    /// waiting on the record as <paramref name="reach"/> read it (SAIDBACK1b): each by its id, which <c>SESSION_QUEUE_EDIT</c>
-    /// takes back through the service. Read with the reach, never apart from it, so this answer stays whole and synchronous
-    /// for <c>SESSION_QUEUED</c>, and a record that tells its reach again lists its words again, never an empty list over them.
-    /// </remarks>
     internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
     {
         var inbox = loop.Processes.InboxOf(id);

@@ -327,26 +327,15 @@ describe('The roles', () => {
     });
   });
 
-  describe('a shell that answers the actors and not the roles', () => {
-    it('ONEWAY1a: shows each order, edits none, and says the catalogue is not offered by this shell', () => {
-      card({ catalogue: null, read: 'notOffered' });
-
-      expect(screen.getByText(/Not offered by this shell/)).toBeTruthy();
-      expect(screen.queryByRole('button', { name: 'Add a role' })).toBeNull();
-      expect(screen.getAllByText('Build')).toHaveLength(1);
-      expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
-    });
-
-    it('tells a failed read from a shell that does not offer it, and from an empty catalogue', () => {
+  describe('a read of the roles that failed', () => {
+    it('tells a failed read from an empty catalogue', () => {
       const { unmount } = render(<RolesCard catalogue={null} read="failed" staffing={STAFFING} agents={AGENTS} onSet={() => {}} />);
       expect(screen.getByText(/could not be read/)).toBeTruthy();
-      expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
       unmount();
 
       render(<RolesCard catalogue={{ ...CATALOGUE, roles: [], suggested: [] }} staffing={[]} agents={AGENTS} onSet={() => {}} />);
       expect(screen.getByText('No role is set yet.')).toBeTruthy();
       expect(screen.queryByText(/could not be read/)).toBeNull();
-      expect(screen.queryByText(/Not offered by this shell/)).toBeNull();
     });
   });
 

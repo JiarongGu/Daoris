@@ -185,19 +185,8 @@ describe("the person's door over the bridge", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it("keeps the poll of the service's list where the shell is older than the telling, and lists none without the key", async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SERVICE_CONFIRMATIONS') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
-      return null;
-    });
-    const fetcher = vi.fn(async () => Response.json([HELD]));
-    vi.stubGlobal('fetch', fetcher);
-    const { result } = renderHook(() => useServiceConfirmations(true), { wrapper: wrapper() });
-
-    await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1']));
-    expect((fetcher.mock.calls as unknown as [string][]).map(([path]) => path)).toContain('/api/confirmations');
-
-    invoke.mockClear();
+  it('lists none without the key', async () => {
+    invoke.mockImplementation(async () => null);
     const none = renderHook(() => useServiceConfirmations(false), { wrapper: wrapper() });
     expect(none.result.current).toEqual({ waiting: [], read: false });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SERVICE_CONFIRMATIONS', {});

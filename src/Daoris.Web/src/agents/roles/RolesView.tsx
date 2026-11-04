@@ -1,7 +1,7 @@
 import { type ComponentType, type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  helpModeOf, refusedNoRoute, standingOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
+  helpModeOf, useAccounts, useActors, useDriver, useHarnesses, useLines, usePlugins, useRoles,
   useSetRole, useSetRoles, useStarts, useWorkflowCurrents, type RoleChangePress,
 } from '../../bridge/shell';
 import { useRegistry } from '../../data/queries';
@@ -14,7 +14,6 @@ import { AskDaorisAbout, IntakeAbout } from '../../settings/ai/ActorAbout';
 import { byTool, doorLabel } from '../tools';
 import type { RoleSection } from '../modes';
 import { type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
-import { AppointedRoles } from './AppointedRoles';
 import { DiagramSection } from './StructureCanvas';
 import { RoleSectionMain, type RolesView } from './RoleSections';
 import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
@@ -56,8 +55,8 @@ export function useRoleEditing(notify: Notify) {
 
   // The role catalogue, each change the person's press over SET_ROLE, judged by the driver's role door.
   const roles = useRoles();
-  // Why there is no catalogue: a shell older than the route says so by NO_ROUTE or by answering nothing; any other refusal is a failed read.
-  const read = roles.data ? 'ok' : roles.isError ? (refusedNoRoute(roles.error) ? 'notOffered' : 'failed') : roles.isSuccess ? 'notOffered' : 'loading';
+  // Why there is no catalogue: a refusal, or an answer that does not read, is a failed read.
+  const read = roles.data ? 'ok' : roles.isError || roles.isSuccess ? 'failed' : 'loading';
   const setRole = useSetRole();
   const pressRole = (press: RoleChangePress, answered: Answered) => {
     const row = roles.data?.roles.find((each) => each.id === press.id);
@@ -91,7 +90,7 @@ export function useRoleEditing(notify: Notify) {
     });
   };
   return {
-    harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'notOffered' | 'failed',
+    harnesses, agents, offers, staffing, catalogue: roles.data ?? null, read: read as 'ok' | 'loading' | 'failed',
     busy: setRole.isPending || setRoles.isPending, onSet: pressRole, onSetAll: pressRoles,
   };
 }
@@ -164,13 +163,12 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
   for (const { name, result } of currents) {
     workflows[name] = result.data ? workflowReadOf(result.data) : result.isError ? { read: 'failed' } : { read: 'loading' };
   }
-  // The appointments as STATE says them, which the diagram draws; Appointed roles keeps their presses.
-  const standing = standingOf(driver.data?.standingConfirmation);
+  // The supervisor and the steward are catalogue roles (D233 point 2); the diagram's appointed half waits for their rows (ROLEONE1).
   const structure = answer
     ? buildStructure({
       structure: answer, registry: registryRows, tools: byTool(harnesses), accounts: accounts.data, plugins: plugins.data?.plugins, lines: lines.data,
       driver: driver.data ? { drivable: driver.data.drivable ?? [], holds: driver.data.holds ?? [] } : null, workflows, filters,
-      appointed: standing ? { stewardOffered: standing.stewardOffered, supervisorOffered: standing.supervisorOffered, appointments: standing.appointments } : null,
+      appointed: null,
     })
     : null;
 
@@ -237,7 +235,6 @@ export function useRolesMode({ notify, section = 'working', doors = {}, page: gi
     <DiagramDetail
       structure={structure} id={selected} open={opened} onToggle={toggle} doors={rowDoors}
       working={selected.startsWith('role:') && shown ? cardOf(selected.slice('role:'.length)) : undefined}
-      appointed={selected.startsWith('appointed:') ? <AppointedRoles /> : undefined}
     />
   );
   return {
@@ -306,9 +303,7 @@ export function RolesMode({ section, notify, doors = {}, page: held }: { section
 }
 
 /** The sections that hold their own reads and presses, so opening another asks nothing of them. */
-const OWN_MAINS: Partial<Record<RoleSection, ComponentType>> = {
-  appointed: AppointedRoles,
-};
+const OWN_MAINS: Partial<Record<RoleSection, ComponentType>> = {};
 
 /** Working roles, Work, Accounts and By repository, and the diagram: one hook's card, read and doors. */
 function SharedMain({ section, notify, doors, page }: { section: RoleSection; notify: Notify; doors: RoleOpeners; page: RolesPage }) {

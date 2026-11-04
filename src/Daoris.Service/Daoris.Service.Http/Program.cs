@@ -465,7 +465,6 @@ if (mode == ServiceMode.Shared)
 
 // Each domain's routes, declared in Daoris.Contracts and mapped by its module (Routes/), found by reflection. The routes
 // mapped below are the ones not declared yet.
-// transitional: routes-by-hand
 var wiring = new HostWiring(composed, mode, hostRun, homeId, personKey, personGate);
 var questAnswers = new QuestAnswers(wiring);
 RouteModules.MapAll(app, wiring);

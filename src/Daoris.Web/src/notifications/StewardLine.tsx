@@ -64,12 +64,12 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
 
 /**
  * The steward's line in *Notifications* (STEWARDROLE1b, D209; the steward design §5.3, §5.4, §8): at the head of the presses' group
- * beside the standing confirmation's and the supervisor's, where the build offers the steward and it is appointed or acted this run.
- * *Steward appointed · n acts since Daoris started* with **Turn off**, at once and with no ask, opening to the run's acts newest first:
- * each its act in words, its target, its time and the mark *By the steward, on your behalf*, and only while it stands, the owner's
- * own reverse press (§5.4), none for a finish or a Try again. A stop whose quest still waits on a *Try again* is said above them as
- * *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row also says it. **A line, not a row**: no notice
- * per act, so it counts toward no group's count and never the bell's.
+ * beside the standing confirmation's, where a terminal holds the steward or it acted this run. *Steward's terminal · n acts since Daoris
+ * started*, opening to the run's acts newest first: each its act in words, its target, its time and the mark *By the steward, on your
+ * behalf*, and only while it stands, the owner's own reverse press (§5.4), none for a finish or a Try again. A stop whose quest still
+ * waits on a *Try again* is said above them as *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row
+ * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's. Who holds the
+ * steward is its role's, among the roles (D233 point 2).
  *
  * Under it, the steward's desk (STEWARDROLE1c, §6.2; kept across a restart since COMMS1l): what any caller asked the steward to do, *n waiting*, folded until
  * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own
@@ -77,13 +77,12 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  *
  * A molecule: drawn from props; the application holds the presses.
  */
-export function StewardLine({ standing, busy = false, refused = null, onTurnOff, onReverse }: {
+export function StewardLine({ standing, busy = false, refused = null, onReverse }: {
   standing: StandingConfirmationNow | null;
   /** A press of the line on its way. */
   busy?: boolean;
   /** What a press was refused with, in words, said under the line. */
   refused?: string | null;
-  onTurnOff: () => void;
   /** The owner's reverse press for this act, the route `stewardReverse` names. */
   onReverse: (act: StewardActNow) => void;
 }) {
@@ -91,30 +90,23 @@ export function StewardLine({ standing, busy = false, refused = null, onTurnOff,
   const [open, setOpen] = useState(false);
   const [deskOpen, setDeskOpen] = useState(false);
   const id = useId();
-  if (!standing?.stewardOffered) return null;
-  const appointment = standing.appointments.find((each) => each.role === 'steward') ?? null;
+  if (!standing) return null;
+  const held = standing.holds.some((each) => each.kind === 'steward');
   const acts = standing.stewardActs;
   const desk = standing.stewardDesk;
-  if (!appointment && acts.length === 0 && desk.length === 0) return null;
+  if (!held && acts.length === 0 && desk.length === 0) return null;
   const deskWaiting = desk.filter((each) => each.state === 'open').length;
   const waiting = acts.filter((each) => each.act === 'stop' && each.waiting && stewardReverse(each) === 'retry');
-  const said = !appointment
-    ? t('notifications.steward.lineOff', { count: acts.length })
-    : appointment.dormant
-      ? t('notifications.steward.dormant')
-      : t('notifications.steward.line', { count: acts.length });
+  const said = held ? t('notifications.steward.line', { count: acts.length }) : t('notifications.steward.lineOff', { count: acts.length });
   return (
     <section data-steward-line="" aria-label={t('notifications.steward.label')} className="grid gap-2 rounded-control border border-line border-l-[3px] border-l-warn bg-sunken px-3 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="m-0 min-w-0 text-small text-ink-soft">{said}</p>
-        <div className="flex flex-wrap gap-2">
-          {acts.length > 0 && (
-            <Button variant="ghost" aria-expanded={open} aria-controls={`${id}-acts`} onClick={() => setOpen((was) => !was)}>
-              {t(open ? 'notifications.steward.hide' : 'notifications.steward.show')}
-            </Button>
-          )}
-          {appointment && <Button disabled={busy} onClick={onTurnOff}>{t('notifications.steward.off')}</Button>}
-        </div>
+        {acts.length > 0 && (
+          <Button variant="ghost" aria-expanded={open} aria-controls={`${id}-acts`} onClick={() => setOpen((was) => !was)}>
+            {t(open ? 'notifications.steward.hide' : 'notifications.steward.show')}
+          </Button>
+        )}
       </div>
       {waiting.length > 0 && (
         <div className="grid gap-1">

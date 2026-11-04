@@ -382,27 +382,6 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The driver's own routes, through the real module: setting a landing rule changes every plan and the rules, and
-    /// publishes both; a rule refused in the driver's words, and a read (the accounts, a file read), publish nothing.
-    /// </summary>
-    [Fact]
-    public async Task The_driver_s_route_publishes_what_its_mark_declares()
-    {
-        var dispatcher = Compose(Module());
-
-        var set = await Dispatch(dispatcher, DriverModule.Name, "SET_LANDING", new { repository = "engine", form = "merge" });
-        var refused = await Dispatch(dispatcher, DriverModule.Name, "SET_LANDING", new { repository = "engine", form = "push" });
-        var read = await Dispatch(dispatcher, DriverModule.Name, "ACCOUNTS");
-
-        Assert.True(set.Success);
-        Assert.False(refused.Success);
-        Assert.True(read.Success);
-        await UntilAsync(() => Changed().Count == 1);
-        await Task.Delay(50);
-        Assert.Equal("""{"scopes":["landing","lines"]}""", Shape(Assert.Single(Changed())));
-    }
-
-    /// <summary>
     /// D169's first slice, the landing family: what each press declares it changes, and which payload field names the session
     /// where the change is one session's; the plans, gates and lists beside them declare nothing.
     /// </summary>
@@ -423,7 +402,6 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("WITHDRAW_LANDING_BRANCH", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("RECOVERY_DROP", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("TREES_SYNC", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("SET_LANDING", "landing,lines", null)]
     [InlineData("LANDING", "", null)]
     [InlineData("SESSION_PROCESS", "", null)]
     [InlineData("READ_LEAVE", "", null)]

@@ -7,14 +7,12 @@ using static Daoris.Desktop.DriverArguments;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
-/// design §2.7, §6.1): the routes its start node takes and the graph each follows, read from this machine's driver file, its plugins
-/// and its registry exactly as `daoris workflow show` reads them; and where a piece of work stands in it
-/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
-/// the landed route and accepts the gates it runs unasked (FABRIC-PIPELINE1a); <c>INTEGRATION_GATES</c>, their acceptance of a
-/// repository's integration declaration by its blob (INTEGRATE1d); <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
-/// node (FABRIC-CUTOVER1f); and <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c>, their saving, choosing and kind-setting of
-/// workflows (AGENTSPLACE1c).
+/// How work moves in a repository or a workspace, the page's `bridge/workflow.ts`: the routes its start node takes and the graph each follows, read from this machine's driver file, its plugins
+/// and its registry exactly as `daoris workflow show` reads them; and where a piece of work stands in it, the runs <see cref="WorkflowRunReader"/> reads. Read-only but three: <c>WORKFLOW_LANDED</c>, the person's press that sets
+/// the landed route and accepts the gates it runs unasked; <c>INTEGRATION_GATES</c>, their acceptance of a
+/// repository's integration declaration by its blob; <c>WORKFLOW_NODE</c>, their skip or stop of a graph run's
+/// node; and <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c>, their saving, choosing and kind-setting of
+/// workflows.
 /// </summary>
 public sealed class WorkflowRoutes(DriverContext context)
 {
@@ -25,8 +23,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     // registry's, so it waits for the driver as the lines do; one the registry does not hold is read as in no workspace, and
     // the answer says so. Beside a workspace's, each repository the registry holds there, with whether a choice of its own makes it
     // follow something else, or none where the registry is not up yet. An optional `route` (`default`, `kind:<name>` or `landed`) adds
-    // `effective`: the graph that route follows (SETUPUX1b, D221), read and never written.
-    [DriverRoute("WORKFLOW_CURRENT")]
+    // `effective`: the graph that route follows, read and never written.
+    [DriverRoute("WORKFLOW_CURRENT", PipeClass.Open)]
     private async Task<object?> WorkflowCurrentAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = Optional(request, "repository");
@@ -74,14 +72,14 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The start node a Workflow tab draws first (FABRIC-PIPELINE1a, the pipeline design §1.3): <see cref="WorkflowStart.Read"/>'s routes,
+    /// The start node a Workflow tab draws first: <see cref="WorkflowStart.Read"/>'s routes,
     /// each with the pipeline it names and what chose it; the landed route with its pipeline's name, the gates accepted and where they
     /// stand against the line's tip (<see cref="LandedGates.StateOf"/>), the tip and the declaration there where it is to be accepted, or
     /// why the tip could not be read; and the verification pipelines saved here. A workspace has no line, so its route's gates are
     /// accepted repository by repository, and its tip is never read.
     /// </summary>
     /// <remarks>
-    /// INTEGRATE1d (D215 point 2, the integration design §4.1): a repository's start node also says where its integration's own acceptance
+    /// a repository's start node also says where its integration's own acceptance
     /// stands, <c>integration</c>, in the landed route's shape: the blob accepted (<c>gates</c>), its state against the line's tip
     /// (<see cref="IntegrationAcceptance.StateOf"/>), the tip, the declaration's text where it is to be accepted, or why the tip could not be
     /// read. So git is asked for every repository, once, and both acceptances are judged against that one read of the tip; the landed
@@ -119,7 +117,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// Where a repository's integration acceptance stands (INTEGRATE1d), from the tip read once for the start node: the blob accepted, its
+    /// Where a repository's integration acceptance stands, from the tip read once for the start node: the blob accepted, its
     /// state, the tip, the declaration's text where it is changed or unaccepted, and why the tip could not be read.
     /// </summary>
     private static async Task<object> IntegrationAsync(
@@ -157,12 +155,17 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The page's <i>Verify…</i> (FABRIC-PIPELINE1d part 5), <c>daoris gate verify</c>'s twin: <c>{repository}</c> and one of <c>branch</c> or
+    /// The page's <i>Verify…</i> <c>daoris gate verify</c>'s twin: <c>{repository}</c> and one of <c>branch</c> or
     /// <c>commit</c>, or neither for its checkout's HEAD. It binds the person's run through <see cref="VerifyCommand.BindAsync"/> in the first
     /// checkout of the repository on this disk, so the library's refusals are the page's: answers <c>{ repository, done, refused, message }</c>,
     /// <c>refused</c> being <c>no-checkout</c>, <c>refused</c> (no pipeline, gates not accepted, no version that reads) or <c>unread</c> (the commit).
     /// </summary>
-    [DriverRoute("WORKFLOW_VERIFY")]
+    [DriverRoute("WORKFLOW_VERIFY", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_VERIFY", Repository = "repository")]
+    [GroundRepository("WORKFLOW_VERIFY", "repository")]
+    [GroundRead("WORKFLOW_VERIFY", nameof(PipeReads.VerifiedRoute))]
+    [Says("WORKFLOW_VERIFY", "repository:repository")]
+    [NotAlready("WORKFLOW_VERIFY", "starts a run of the accepted gates beside the route, and sets no value")]
     [Publishes("WORKFLOW_VERIFY", StateScopes.Driver)]
     private async Task<object?> WorkflowVerifyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -191,17 +194,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The person's press on the landed route (FABRIC-PIPELINE1a, D192 point 2; Setup's route row and the Workflow tab's <i>Accept the
-    /// gates</i>, D156's door): <c>{repository}</c> or <c>{workspace}</c>, and <c>workflow</c>, a verification pipeline's id, <c>current</c>
-    /// for no verification, or null to clear. For a repository naming a verification pipeline it reads the <c>daoris.gates.json</c> at its
-    /// line's tip and accepts it by its blob, as <c>daoris workflow use … --landed</c> does; where the tip cannot be read it keeps
-    /// what was accepted for the same pipeline. Judged by the twins' edit first (<see cref="WorkflowSelection.Apply"/>), so a development
-    /// pipeline is refused in its words before anything is written. Answers the start node as it now stands, and what the change lowers
-    /// (<see cref="InvolvementRoutes.LowersRoute"/>), said: the person's press applies it (D157 point 10). An optional <c>gates</c> names the
-    /// blob the person read: one that is no longer the tip's is refused <c>moved</c>, and a tip that cannot be read <c>unread</c>, each as the
-    /// driver's sentence with nothing written, as <c>INTEGRATION_GATES</c> does; a caller naming none accepts the tip as it stands.
+    /// The person's press on the landed route: <c>workflow</c>, a verification pipeline's id, <c>current</c> for none, or null to clear.
+    /// A verification pipeline accepts the <c>daoris.gates.json</c> at the line's tip by its blob; an optional <c>gates</c> names the blob
+    /// the person read, refused <c>moved</c> where the tip moved and <c>unread</c> where it cannot be read, with nothing written.
     /// </summary>
-    [DriverRoute("WORKFLOW_LANDED")]
+    [DriverRoute("WORKFLOW_LANDED", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_LANDED", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_LANDED", "repository", "workspace")]
+    [GroundRead("WORKFLOW_LANDED", nameof(PipeReads.LandedRoute))]
+    [Says("WORKFLOW_LANDED", "repository:repository")]
+    [NotAlready("WORKFLOW_LANDED", "reads the gates at the line's tip and accepts them by their blob")]
     private async Task<object?> WorkflowLandedAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = Optional(request, "repository");
@@ -268,18 +270,16 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The person's press accepting a repository's integration declaration by its blob (INTEGRATE1d; D215 points 2 and 10, the integration
-    /// design §4.1, §4.3): <c>{repository}</c> and <c>gates</c>, the blob of the declaration the person read, or <c>clear: true</c> to
-    /// withdraw the acceptance. It reads the <c>daoris.gates.json</c> at the repository's line's tip in its checkout here, as
-    /// <c>WORKFLOW_LANDED</c> does, and keeps that blob in <c>driver.json</c>'s <c>integrationGates</c>, apart from the landed route's,
-    /// so integrating needs no verification pipeline. A blob named that is no longer the tip's is refused <c>moved</c>, and a tip that
-    /// cannot be read <c>unread</c>, each with the driver's sentence and nothing written: the person accepts what they read. Beside the
-    /// landed route, since both accept the one declaration at the one tip and the start node answers both. Only the person's: the
-    /// census makes it theirs, so a terminal's press waits for their Confirm, no standing confirmation covers it and no role's act
-    /// reaches it, and an agent never accepts what it would run under. Answers <c>{ start, done, refused, message }</c>, the start
-    /// node as it now stands.
+    /// The person's press accepting a repository's integration declaration by its blob, or <c>clear: true</c> to withdraw it, kept in
+    /// <c>driver.json</c>'s <c>integrationGates</c> apart from the landed route's, so integrating needs no verification pipeline. Refused
+    /// <c>moved</c> or <c>unread</c> as <c>WORKFLOW_LANDED</c> is. Only the person's: an agent never accepts what it would run under.
     /// </summary>
-    [DriverRoute("INTEGRATION_GATES")]
+    [DriverRoute("INTEGRATION_GATES", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("INTEGRATION_GATES", Repository = "repository")]
+    [GroundRepository("INTEGRATION_GATES", "repository")]
+    [GroundRead("INTEGRATION_GATES", nameof(PipeReads.IntegrationDeclaration))]
+    [Says("INTEGRATION_GATES", "repository:repository")]
+    [NotAlready("INTEGRATION_GATES", "reads the declaration at the line's tip and accepts it by its blob")]
     [Publishes("INTEGRATION_GATES", StateScopes.Driver)]
     private async Task<object?> IntegrationGatesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -331,9 +331,9 @@ public sealed class WorkflowRoutes(DriverContext context)
         };
     }
 
-    // AGENTSPLACE1c (D194 point 4): the terminal's `workflow new|edit|use|kind` as routes, the person's alone. Each runs the typed operation the
+    // the terminal's `workflow new|edit|use|kind` as routes, the person's alone. Each runs the typed operation the
     // verb runs (`WorkflowOperations`) and says its result as data; a refusal is an answer `{ done: false, refused, message }` with nothing written.
-    // Every answer says the integration design's §17.7 reach: per repository, the graph a combination of choices and landing rule would run,
+    // Every answer says its reach: per repository, the graph a combination of choices and landing rule would run,
     // `cannots` where that combination cannot start and `noGates` where its line integrates with none.
 
     private WorkflowOperations.RegistryRead Registry => async ct =>
@@ -355,15 +355,19 @@ public sealed class WorkflowRoutes(DriverContext context)
             : null;
 
     /// <summary>
-    /// A version saved (AGENTSPLACE1c; <c>daoris workflow new|edit|apply</c>'s twin): <c>{id}</c> and one of <c>from</c> (a preset, a saved
+    /// A version saved: <c>{id}</c> and one of <c>from</c> (a preset, a saved
     /// workflow or <c>current:&lt;repository&gt;</c>, for an id not held, with <c>withOpinion</c>, <c>withLook</c> and <c>name</c>), <c>steps</c> or
     /// <c>graph</c>. Under a fresh id it makes v1. Onto a saved one it appends, against <c>base</c>, the version the caller read: a newer one is
     /// refused <c>stale</c>; and since a new start binds the newest version, it first answers every place that chooses the workflow, and writes
     /// only when <c>authorize</c> lists exactly those places' keys (refused <c>reach</c> otherwise, also where the graph's reach cannot start).
     /// <c>plan: true</c> says all of it and writes nothing. Answers <c>{ id, done, refused, message, version, written, appended, scopes, reach,
-    /// problems }</c>, the problems a refused graph's, each by its code at its step or wire (WORKFLOWEDIT1b).
+    /// problems }</c>, the problems a refused graph's, each by its code at its step or wire.
     /// </summary>
-    [DriverRoute("WORKFLOW_SAVE")]
+    [DriverRoute("WORKFLOW_SAVE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_SAVE", None = OwnerNone.MachineSetting)]
+    [GroundFiles("WORKFLOW_SAVE", "workflow-file", "id")]
+    [Says("WORKFLOW_SAVE", "id:form", "from:form", "name:words")]
+    [NotAlready("WORKFLOW_SAVE", "adds a version beside the ones kept, or makes a workflow")]
     [Publishes("WORKFLOW_SAVE", StateScopes.Driver)]
     private async Task<object?> WorkflowSaveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -394,7 +398,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// The person's choice of a workflow for a place (AGENTSPLACE1c; <c>daoris workflow use</c>'s twin, the landed route apart, which is
+    /// The person's choice of a workflow for a place (<c>daoris workflow use</c>'s twin, the landed route apart, which is
     /// <c>WORKFLOW_LANDED</c>): <c>{repository}</c> or <c>{workspace}</c>, <c>workflow</c> (a saved id, <c>current</c>, or absent to clear), and
     /// <c>kind</c> for a kind of task instead of the default; <c>version</c>, the newest the caller read, is refused <c>stale</c> when it moved.
     /// One change, judged first as the terminal judges it: a graph whose reach cannot start somewhere is refused <c>reach</c>, nothing written.
@@ -402,7 +406,12 @@ public sealed class WorkflowRoutes(DriverContext context)
     /// plan of one and writes nothing (<see cref="PlanAnswer"/>); <c>expected</c>, a plan's token, is refused <c>moved</c> where anything moved
     /// since, and <c>stale</c> stays for a <c>version</c> that did. A press with neither acts as it always did.
     /// </summary>
-    [DriverRoute("WORKFLOW_USE")]
+    [DriverRoute("WORKFLOW_USE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_USE", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_USE", "repository", "workspace")]
+    [GroundRead("WORKFLOW_USE", nameof(PipeReads.PlaceRoutes))]
+    [Says("WORKFLOW_USE", "repository:repository", "workflow:form", "kind:form")]
+    [NotAlready("WORKFLOW_USE", "merges into the place's choice, which keeps its other kinds and its landed route")]
     [Publishes("WORKFLOW_USE", StateScopes.Driver)]
     private async Task<object?> WorkflowUseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -463,7 +472,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A choice read as a plan of one and nothing written (SETUPUX1c): <c>{ done: false, plan: true, refused, message, changed, reach, lowers,
+    /// A choice read as a plan of one and nothing written: <c>{ done: false, plan: true, refused, message, changed, reach, lowers,
     /// places, keeps, expected }</c>. A press carrying <c>expected</c> is refused <c>moved</c> where anything the plan says has changed.
     /// </summary>
     private static object PlanAnswer(WorkflowUsePlan plan) => new
@@ -481,12 +490,17 @@ public sealed class WorkflowRoutes(DriverContext context)
     };
 
     /// <summary>
-    /// The person's declaration of a kind of task for a workspace (AGENTSPLACE1c; <c>daoris workflow kind</c>'s twin): <c>{workspace, kind,
+    /// The person's declaration of a kind of task for a workspace: <c>{workspace, kind,
     /// label, paths}</c>, or <c>drop: true</c> with no label. Declared again, the label and the paths are replaced; the workflow a kind maps to is
     /// <c>WORKFLOW_USE</c>'s. Answers <c>{ done, refused, message, changed, reach, start }</c>, the reach being what the workspace's repositories
     /// now run (§17.7).
     /// </summary>
-    [DriverRoute("WORKFLOW_KIND")]
+    [DriverRoute("WORKFLOW_KIND", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_KIND", Workspace = "workspace")]
+    [GroundRepository("WORKFLOW_KIND", "workspace")]
+    [GroundRead("WORKFLOW_KIND", nameof(PipeReads.WorkspaceKinds))]
+    [Says("WORKFLOW_KIND", "kind:form", "label:words")]
+    [NotAlready("WORKFLOW_KIND", "merges into the workspace's kinds, keeping the others")]
     [Publishes("WORKFLOW_KIND", StateScopes.Driver)]
     private async Task<object?> WorkflowKindAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -519,7 +533,7 @@ public sealed class WorkflowRoutes(DriverContext context)
 
     /// <summary>
     /// The answer: each step as the shared table's cell, its settings in the order the version reads them, and each limit's
-    /// sentence by its code, for a page with no words of its own for one; and the start node (FABRIC-PIPELINE1a).
+    /// sentence by its code, for a page with no words of its own for one; and the start node.
     /// </summary>
     private static object Answer(
         CurrentWorkflow drawn, string? repository, string workspace, bool? registered, IReadOnlyList<object>? repositories, object start,
@@ -531,7 +545,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             limits[code] = WorkflowLimits.Says(code);
         }
 
-        // SETUPUX1b: only a caller that asked for a route is answered `effective`; an older one is answered as it was.
+        // only a caller that asked for a route is answered `effective`; an older one is answered as it was.
         if (effective is not null)
         {
             return new
@@ -564,7 +578,7 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     /// <summary>
-    /// A route's effective graph (SETUPUX1b): the workflow it follows and how it was chosen, its version or Current's digest, the graph to
+    /// A route's effective graph: the workflow it follows and how it was chosen, its version or Current's digest, the graph to
     /// draw, and each node's cell as <c>WORKFLOW_RUN</c> answers a step, with each limit a cell carries in the driver's words.
     /// </summary>
     private static object EffectiveAnswer(WorkflowEffective effective)
@@ -585,18 +599,18 @@ public sealed class WorkflowRoutes(DriverContext context)
             Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowSteps.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
             Limits = limits,
             effective.Problem,
-            // A copy of a shipped default this build ships changed since: left out, as null, where it is up to date (WORKFLOWCLEAN1h).
+            // A copy of a shipped default this build ships changed since: left out, as null, where it is up to date.
             Newer = effective.Newer is null ? null : new { effective.Newer.Default, effective.Newer.Name, effective.Newer.Graph },
         };
     }
 
-    // Where a piece of work stands in its workflow (WORKFLOW1c; D157 point 11, design §5.1–§5.2, §7): the runs
+    // Where a piece of work stands in its workflow: the runs
     // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, exactly one, each step
     // Current's cell beside where it stands. The records are the service's and this machine's, so it waits for the driver.
     // What names nothing that runs (a chat, a quest not here) is answered as no run with its code, the id and the workflow its
-    // words name, and the driver's English sentence (CHATFLOW1a, the chat-flow design §10): the page words a code it knows in the
+    // words name, and the driver's English sentence: the page words a code it knows in the
     // reader's language and shows the sentence for one it does not. Read-only, and a run is never kept as a copy.
-    [DriverRoute("WORKFLOW_RUN")]
+    [DriverRoute("WORKFLOW_RUN", PipeClass.Open)]
     private async Task<object?> WorkflowRunAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var asked = new WorkflowRunAsk(Optional(request, "session"), Optional(request, "quest"), Optional(request, "ask"));
@@ -619,17 +633,20 @@ public sealed class WorkflowRoutes(DriverContext context)
         return new { Runs = read.Runs.Select(RunAnswer).ToArray(), read.Problem, read.Code, read.Id, read.Workflow };
     }
 
-    // The person's skip or stop of a run's node (FABRIC-CUTOVER1f; D190 points 3 and 6, the cutover design §3, §5.2): the page's half of
+    // The person's skip or stop of a run's node: the page's half of
     // `daoris workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
     // lease asked inside it; the loop's runtime applies it at its next pass, which the nudge wakes.
     /// <summary>
-    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words, DECIDE1c) on
+    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words) on
     /// `node` of `run`, a run bound to a graph version, for the next look. Answers `{ run, node, act, done, refused, message }`, a refusal as an
     /// answer with its code (`not-run`, `unread-version`, `not-node`, `not-act`, `not-review`, `ended`, `worded`, the one table's `no-words`,
     /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the terminal's sentence. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>
-    [DriverRoute("WORKFLOW_NODE")]
+    [DriverRoute("WORKFLOW_NODE", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("WORKFLOW_NODE", None = OwnerNone.NamesNothing)]
+    [GroundWait("WORKFLOW_NODE", "workflow-node", "run", "node")]
+    [Says("WORKFLOW_NODE", "run:quest", "act:form", "words:words")]
     [Publishes("WORKFLOW_NODE", StateScopes.Driver)]
     private async Task<object?> WorkflowNodeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -650,7 +667,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             return said;
         }
 
-        // INTEGRATE1n part n3 (F50): a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
+        // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
         var done = await Task.Run(() => RunNodeWords.WordAsync(records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken), cancellationToken)
             .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
@@ -678,7 +695,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             run.Session,
             run.At,
             run.Problem,
-            // CHATFLOW1c: a chat run's key and its checks, which a conversation's execution is held to since CHATFLOW1h (the chat-flow design §4.4);
+            // a chat run's key and its checks, which a conversation's execution is held to;
             // null for a quest's run, and from a driver before it.
             Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = WorkflowRunWords.ChecksOf(run), Enforced = true } : null,
             // The workflow's wait, in the shape the Trees domain's landing gate answers it.
@@ -686,7 +703,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
                 Id = run.Process?.Named == true ? run.Process.Binding!.Workflow : null,
                 BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null,
-                // FABRIC-PIPELINE1a: the route that chose its pipeline, as its binding keeps it; the page says it in its own words.
+                // the route that chose its pipeline, as its binding keeps it; the page says it in its own words.
                 Route = run.Process?.Binding is { } bound ? new { bound.Level, bound.Kind, bound.Label } : null },
             Steps = run.Steps.Select(step => new
             {
@@ -708,24 +725,24 @@ public sealed class WorkflowRoutes(DriverContext context)
                 step.GoAhead,
                 step.Words,
                 step.Code,
-                // FABRIC-CUTOVER1e: a graph run's node's own kind and the subject it observes; null on a steps run's step.
+                // a graph run's node's own kind and the subject it observes; null on a steps run's step.
                 step.Node,
                 step.On,
-                // FABRIC-CUTOVER1f, additive: what the person may say of a graph run's node now (`skip`, `stop`), and their word kept on it and
+                // what the person may say of a graph run's node now (`skip`, `stop`), and their word kept on it and
                 // not applied yet; null on a steps run's step and where none.
                 step.Acts,
-                // FABRIC-PIPELINE1d, additive: a failed check's gate, and its attempt held unknown for the person or settled by their stop.
+                // a failed check's gate, and its attempt held unknown for the person or settled by their stop.
                 step.Gate,
                 Held = step.Held is { } held ? new { held.Unit, held.Attempt, held.Words, held.Resolution } : null,
                 Asked =step.Asked is { } asked ? new { asked.Node, asked.Act, asked.Words, asked.At } : null,
-                // INTEGRATE1o part o2, additive: the quests the work's sessions published and the helpers they asked, on the work step; null where none.
+                // the quests the work's sessions published and the helpers they asked, on the work step; null where none.
                 Requests = step.Requests?.Select(request => new
                 {
                     request.Kind, request.Id, request.To, request.State, request.Session, request.Awaits, request.Words, request.At,
                 }).ToArray(),
             }).ToArray(),
-            // FABRIC-CUTOVER1e: a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
-            // DECIDE1c, additive: a `when` wire's outcome on it alone, the `back` wires apart, the nodes no route takes and each decision's outcome.
+            // a run bound to a graph version, drawn from its record: its graph's wires and what its record says of it.
+            // a `when` wire's outcome on it alone, the `back` wires apart, the nodes no route takes and each decision's outcome.
             Graph = run.Graph is { } graph
                 ? new
                 {

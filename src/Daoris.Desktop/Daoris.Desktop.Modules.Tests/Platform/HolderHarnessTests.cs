@@ -43,7 +43,7 @@ public sealed class HolderHarnessTests : Bridge
 
     private static readonly TerminalShell PathPowerShell = new(TerminalShells.WindowsPowerShell, @"C:\planted\path\powershell.exe", ["-NoLogo"]);
 
-    private static HolderOpen Open() => new("h1", Key, [Roles.Steward], DateTimeOffset.Parse("2026-10-24T14:02:00Z"), []);
+    private static HolderOpen Open() => new("h1", Key, [AppointedRoles.Steward], DateTimeOffset.Parse("2026-10-24T14:02:00Z"), []);
 
     [Fact]
     public async Task The_tab_s_process_is_the_managed_binary_by_its_absolute_path_with_no_shell_between()

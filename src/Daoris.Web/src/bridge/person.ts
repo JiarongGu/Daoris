@@ -4,10 +4,10 @@ import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import {
-  type AppointmentAnswer, type AppointmentNow, type DeskRequestNow, type HolderNow, inWindow, type StandingAnswer,
-  type StandingConfirmationNow, type StandingUnread, type StewardActNow, WINDOW,
+  type DeskRequestNow, type HolderNow, type RoleHoldNow, type RoleTerminalAnswer, type StandingAnswer, type StandingConfirmationNow,
+  type StandingUnread, type StewardActNow,
 } from '../person/standing';
-import { call, confirmBound, refusedNoRoute } from './call';
+import { call, confirmBound } from './call';
 import { notPushed } from './state/slices';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
@@ -107,42 +107,30 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
   };
 }
 
-/** The shell's answer while it tells what waits at the service; `older` where it is older than the telling (NOTIFY2j). */
-type ServiceRead = ServiceConfirmationsTold | 'older';
-
 /**
  * What waits at the service for the person's confirmation (PERSONDOOR1b's doors, D156 §4.2), asked only while the page holds the
  * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled** (NOTIFY2j, D196 point 4):
  * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
- * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A shell older than the telling,
- * and a browser, keep the poll of the service's list. `read` says whether this window has read it at all, so its first read is
- * told apart from an arrival.
+ * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A browser keeps the poll of the
+ * service's list. `read` says whether this window has read it at all, so its first read is told apart from an arrival.
  */
 export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   useShenoraEvent<ServiceConfirmationsTold>('DAORIS', 'SERVICE_CONFIRMATIONS', (told) => {
     const now = serviceOf(told);
-    const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
+    const kept = client.getQueryData<ServiceConfirmationsTold>(keys.serviceTold);
     // Kept once this window has read, where it is newer: the bus may deliver one late, and the read may land after a telling.
-    if (!now || kept === undefined || kept === 'older') return;
+    if (!now || kept === undefined) return;
     if (now.seq !== null && kept.seq !== null && now.seq <= kept.seq) return;
-    client.setQueryData<ServiceRead>(keys.serviceTold, now);
+    client.setQueryData<ServiceConfirmationsTold>(keys.serviceTold, now);
   });
   const told = useQuery({
     queryKey: keys.serviceTold,
-    queryFn: async (): Promise<ServiceRead> => {
-      let answer: unknown;
-      try {
-        answer = await call<ServiceConfirmationsTold>('SERVICE_CONFIRMATIONS');
-      } catch (error) {
-        if (refusedNoRoute(error)) return 'older';
-        throw error;
-      }
-      const read = serviceOf(answer);
-      if (!read) return 'older';
-      const kept = client.getQueryData<ServiceRead>(keys.serviceTold);
-      return kept && kept !== 'older' && kept.seq !== null && read.seq !== null && kept.seq >= read.seq ? kept : read;
+    queryFn: async (): Promise<ServiceConfirmationsTold> => {
+      const read = serviceOf(await call<ServiceConfirmationsTold>('SERVICE_CONFIRMATIONS')) ?? { seq: null, waiting: [] };
+      const kept = client.getQueryData<ServiceConfirmationsTold>(keys.serviceTold);
+      return kept && kept.seq !== null && read.seq !== null && kept.seq >= read.seq ? kept : read;
     },
     enabled: isAvailable && held,
     // The telling keeps it current: nothing asks again by itself.
@@ -152,11 +140,11 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
   const polled = useQuery({
     queryKey: keys.serviceAsks,
     queryFn: ({ signal }) => api.confirmations(signal),
-    enabled: held && (!isAvailable || told.data === 'older'),
+    enabled: held && !isAvailable,
     refetchInterval: 5_000,
     retry: false,
   });
-  const list = told.data && told.data !== 'older' ? told.data.waiting : polled.data;
+  const list = told.data ? told.data.waiting : polled.data;
   return { waiting: (list ?? []).filter((each) => each.state === 'waiting').map((each): Confirmation => ({
     source: 'service',
     id: each.id,
@@ -246,13 +234,8 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     unwritten: shaped.unwritten === true,
     used: typeof shaped.used === 'number' && Number.isFinite(shaped.used) ? shaped.used : 0,
     held: strings(shaped.held),
-    appointmentsOffered: shaped.appointmentsOffered === true,
-    supervisorOffered: shaped.supervisorOffered === true,
-    stewardOffered: shaped.stewardOffered === true,
-    appointments: appointmentsOf(shaped.appointments),
+    holds: holdsOf(shaped.holds),
     holders: holdersOf(shaped.holders),
-    // STEWARDROLE1b (D209 §2.3, §5.1): an older shell's missing fields read as none.
-    stewardActsOffered: strings(shaped.stewardActsOffered),
     stewardActs: stewardActsOf(shaped.stewardActs),
     // STEWARDROLE1c (D209 §6.2): an older shell's missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
@@ -304,34 +287,20 @@ function stewardActsOf(raw: unknown): StewardActNow[] {
   });
 }
 
-/**
- * The owner's appointments (SUPERVISOR1a-ii; STEWARDROLE1a-i's scope), each read field by field; one with no role, or with neither a
- * scope nor a repository, is left out.
- */
-function appointmentsOf(raw: unknown): AppointmentNow[] {
+/** The roles a terminal holds this run (D233 point 2), each read field by field; one with no role, kind or holder is left out. */
+function holdsOf(raw: unknown): RoleHoldNow[] {
   if (!Array.isArray(raw)) return [];
-  return raw.flatMap((each): AppointmentNow[] => {
+  return raw.flatMap((each): RoleHoldNow[] => {
     if (typeof each !== 'object' || each === null) return [];
     const shaped = each as Record<string, unknown>;
-    const repository = typeof shaped.repository === 'string' ? shaped.repository : '';
-    const scope = typeof shaped.scope === 'string' && shaped.scope.length > 0 ? shaped.scope
-      : repository ? `repository:${repository}` : null;
-    if (typeof shaped.role !== 'string' || scope === null) return [];
+    const role = text(shaped.role);
+    const kind = text(shaped.kind);
+    const holder = text(shaped.holder);
+    if (role === null || kind === null || holder === null) return [];
     return [{
-      role: shaped.role,
-      repository,
-      holder: typeof shaped.holder === 'string' ? shaped.holder : 'terminal',
-      since: typeof shaped.since === 'string' && shaped.since.length > 0 ? shaped.since : null,
-      dormant: shaped.dormant === true,
+      role, kind, holder,
+      since: text(shaped.since),
       answers: typeof shaped.answers === 'number' && Number.isFinite(shaped.answers) ? shaped.answers : 0,
-      scope,
-      holderId: typeof shaped.holderId === 'string' && shaped.holderId.length > 0 ? shaped.holderId : null,
-      acts: strings(shaped.acts),
-      setup: shaped.setup === true,
-      // SUPERVISOR1e: the workspace its scope names, and its overrule window, five where a shell older than it says none.
-      workspace: typeof shaped.workspace === 'string' ? shaped.workspace
-        : scope.startsWith('workspace:') ? scope.slice('workspace:'.length) : '',
-      window: typeof shaped.window === 'number' && inWindow(shaped.window) ? shaped.window : WINDOW.standing,
     }];
   });
 }
@@ -352,26 +321,17 @@ function holdersOf(raw: unknown): HolderNow[] {
 }
 
 /**
- * The owner's appointment of a role, or its turning off (SUPERVISOR1a-ii, D208 §2.3, §5; STEWARDROLE1a-i, D209 §2.2, §2.3): `on`
- * true appoints, which makes the window start a holder's tab, Daoris's own pinned harness with the key in its environment, or add the
- * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role and
- * `machine` for the steward's, and `workspace:<name>` for the supervisor of a workspace (SUPERVISOR1e); `share` is a later
- * *Appoint…*'s choice while a holder lives, `own` or that holder's id; `window` the supervisor's overrule window in minutes, 1 to 60.
- * Sent from the window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code;
- * it never carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6). The steward's ask
- * sends its set-up tick as `setup` (STEWARDROLE1b, D209 §2.3), off unless the owner ticked it there; the supervisor's sends none.
+ * The start of the terminal that holds a role the catalogue staffs with the terminal (D233 point 2): the window starts a holder's tab,
+ * Daoris's own pinned harness with the key in its environment, or adds the role to a living holder; `share` is the choice while a
+ * holder lives, `own` or that holder's id. Staffing a role, and turning its terminal off, is the role door's (`SET_ROLE`). Sent from
+ * the window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
+ * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6).
  */
-export function useSetAppointment() {
+export function useStartRoleTerminal() {
   return useMutation({
-    mutationFn: async ({ role, repository, workspace, on, share, setup, window }: {
-      role: string; repository?: string; workspace?: string; on: boolean; share?: string; setup?: boolean; window?: number;
-    }): Promise<AppointmentAnswer> => {
-      const scope = repository ? `repository:${repository}` : workspace ? `workspace:${workspace}` : 'machine';
+    mutationFn: async ({ role, share }: { role: string; share?: string }): Promise<RoleTerminalAnswer> => {
       const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_APPOINTMENT', {
-          role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}),
-          ...(on && window !== undefined ? { window } : {}),
-        });
+        'START_ROLE_TERMINAL', { role, ...(share ? { share } : {}) });
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

@@ -60,16 +60,15 @@ export function PlaceSessionsBodyView({ setup }: { setup: RepositorySetupProps |
 }
 
 /** A repository place's setup, from the registry's row and the driver's answers; read only while the section that draws it is open. */
-function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed, onOpenGit }: {
+function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenGit }: {
   place: PlaceHold['row'];
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
-  onOpenAppointed?: () => void;
   onOpenGit?: (host: string) => void;
 }) {
   const registry = useRegistry('machine');
   const registration = (registry.data ?? []).find((row) => row.repository === place.repository && workspaceOf(row) === workspaceOf(place));
-  const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenPlugin, onOpenAppointed, onOpenGit });
+  const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenPlugin, onOpenGit });
   return { registration, setup };
 }
 
@@ -212,16 +211,15 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: 
  *
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
-export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed, onOpenGit }: {
+export function PlaceSessions({ place, notify, onOpenPlugin, onOpenGit }: {
   place: Pick<PlaceHold, 'kind' | 'row' | 'asked'>;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
-  onOpenAppointed?: () => void;
   /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e). */
   onOpenGit?: (host: string) => void;
 }) {
   if (place.kind === 'repository') {
-    return <RepositorySessions place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenAppointed={onOpenAppointed} onOpenGit={onOpenGit} />;
+    return <RepositorySessions place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenGit={onOpenGit} />;
   }
   // A workspace's Sessions hold its access and session rows and, since SETUPUX1v, Reach: its rules and the machines its remote counts undeclared.
   return (
@@ -230,19 +228,17 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenAppointed, on
       notify={notify}
       rows="sessions"
       open={place.asked === 'access' || place.asked === 'reach' ? place.asked : undefined}
-      onOpenAppointed={onOpenAppointed}
       onOpenGit={onOpenGit}
     />
   );
 }
 
-function RepositorySessions({ place, notify, onOpenPlugin, onOpenAppointed, onOpenGit }: {
+function RepositorySessions({ place, notify, onOpenPlugin, onOpenGit }: {
   place: PlaceHold['row'];
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
-  onOpenAppointed?: () => void;
   onOpenGit?: (host: string) => void;
 }) {
-  const { setup } = useRepositoryPlace({ place, notify, onOpenPlugin, onOpenAppointed, onOpenGit });
+  const { setup } = useRepositoryPlace({ place, notify, onOpenPlugin, onOpenGit });
   return <PlaceSessionsBodyView setup={setup} />;
 }

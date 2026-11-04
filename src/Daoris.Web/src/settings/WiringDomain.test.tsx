@@ -3,8 +3,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Settings → This Daoris (WIRING1c-i, the this-Daoris design §3.1-3.3, §7): the folders, the service and the loop of one
-// install, read from the shell's `SYSTEM_WIRING`; it shows and sets nothing. A shell older than the page answers the route
-// `NO_ROUTE`, and the page says so.
+// install, read from the shell's `SYSTEM_WIRING`; it shows and sets nothing.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
@@ -549,17 +548,6 @@ describe('Settings → This Daoris', () => {
     expect(screen.queryByRole('region', { name: 'Left in your own tool home' })).toBeNull();
   });
 
-  it('a shell older than the page: one line saying so, and no card', async () => {
-    invoke.mockImplementation(async (module: string, type: string) => {
-      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_WIRING') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
-      return module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING;
-    });
-    open();
-
-    expect(await screen.findByText(/This window is older than this page/)).toBeTruthy();
-    expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
-  });
-
   // KEEP1c (D195 point 5, the cleanup design §4.1, §4.2): the Disk space card, each kind's size, rule, next and last clean.
   it('shows the disk space after the folders: each kind with its size, rule, next and last, and counts nothing on the open', async () => {
     invoke.mockImplementation(shell(WIRED));
@@ -1052,18 +1040,6 @@ describe('Settings → This Daoris', () => {
     open();
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
     expect(row(card, 'Free space').queryByRole('button', { name: 'Change…' })).toBeNull();
-  });
-
-  it('says in its card that a shell older than it answers no disk space', async () => {
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => {
-      if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_SPACE') throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
-      return shell(WIRED)(module, type, request);
-    });
-    open();
-
-    const card = await screen.findByRole('region', { name: 'Disk space' });
-    expect(await within(card).findByText('This window answers no disk space: it is older than this page.')).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Folders' })).toBeTruthy();
   });
 
   it('shows the disk space in 中文', async () => {

@@ -17,19 +17,22 @@ public sealed class PersonRoutes(DriverLoop loop)
     // so the pipe never answers it), which keeps it in memory and sends it on every write. This shell mints no key (minting it and
     // proving its host holds it are PERSONDOOR1g's) and holds none for a host it adopted, so it answers none and the page writes as
     // it did.
-    [DriverRoute("PERSON_KEY")]
+    [DriverRoute("PERSON_KEY", PipeClass.Window)]
+    [Owner("PERSON_KEY", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonKeyAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(new PersonKey(null));
 
     // RPC1c: what waits for the window, read whole as the `CONFIRMATIONS` event tells it, for a window that opens or reloads while one
     // waits. None where this shell serves no pipe.
-    [DriverRoute("PERSON_CONFIRMATIONS")]
+    [DriverRoute("PERSON_CONFIRMATIONS", PipeClass.Window)]
+    [Owner("PERSON_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> PersonConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.Pipe?.Confirmations.Now() ?? new PipeConfirmationsNow(0, []));
 
     // NOTIFY2j (D196 point 4): what waits at the service's own door, read whole as the `SERVICE_CONFIRMATIONS` event tells it, for a
     // window that opens or reloads while one waits; the person answers each at the service's door with the key, as before.
-    [DriverRoute("SERVICE_CONFIRMATIONS")]
+    [DriverRoute("SERVICE_CONFIRMATIONS", PipeClass.Window)]
+    [Owner("SERVICE_CONFIRMATIONS", None = OwnerNone.NamesNothing)]
     private Task<object?> ServiceConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
 
@@ -46,7 +49,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // ONEWAY1n-i (the oneway design §4 M4): `source: "service"` answers one waiting at the service's door instead, where the host makes
     // the request at the Confirm: `{ answered: true }` where its door took it, else the host's code as `why` (`not-made` with the door's
     // own sentence, `restarted`), `gone` where none, and `unreachable` where the service did not answer, nothing taken.
-    [DriverRoute("PERSON_CONFIRM")]
+    [DriverRoute("PERSON_CONFIRM", PipeClass.Window)]
+    [Owner("PERSON_CONFIRM", None = OwnerNone.ActsOnNothing)]
     private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -109,7 +113,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as
     // when it was shown, which every window is told by `CONFIRMATIONS`, and it moves no clock (CONFIRMWAIT1a-i). One no longer waiting is
     // answered as data, `gone`. It runs nothing and moves no record, so it declares no change.
-    [DriverRoute("PERSON_CONFIRM_SHOWN")]
+    [DriverRoute("PERSON_CONFIRM_SHOWN", PipeClass.Window)]
+    [Owner("PERSON_CONFIRM_SHOWN", None = OwnerNone.ActsOnNothing)]
     private Task<object?> PersonConfirmShownAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -129,7 +134,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // the terminal's door (the census refuses it first), `not-offered` for a grant this build does not offer yet (D201's note on order),
     // `unknown-press`, `newer` for a record a newer Daoris wrote, and `unwritten` for a record that could not be written (a revoke still
     // stands for this run). It moves STATE's `standingConfirmation`.
-    [DriverRoute("SET_STANDING_CONFIRMATION")]
+    [DriverRoute("SET_STANDING_CONFIRMATION", PipeClass.Window)]
+    [Owner("SET_STANDING_CONFIRMATION", None = OwnerNone.MachineSetting)]
     [Publishes("SET_STANDING_CONFIRMATION", StateScopes.Driver)]
     private Task<object?> SetStandingConfirmationAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -152,43 +158,28 @@ public sealed class PersonRoutes(DriverLoop loop)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it has no standing confirmation."));
     }
 
-    // SUPERVISOR1a-ii (D208 §2.3, §5), amended by STEWARDROLE1a-i (D209 §2.2, §2.3): the owner's appointment of a role, made and turned
-    // off in the window alone. `{ role, scope, holder?, on, share?, setup? }`, `scope` `machine` or `repository:<name>` (the built
-    // `repository` read as that scope for one release), `holder` `terminal` where none is named, `share` a later Appoint's choice while a
-    // holder lives (`own`, or a living holder's id), `setup` the steward's own tick. With `on`, a new holder's tab is started first, by
-    // the window, Daoris's own pinned harness with the key in its environment, and nothing is kept where it could not start; the key is
-    // never answered. SUPERVISOR1e: `scope` may be `workspace:<name>` for the supervisor, and `window` its overrule window in minutes,
-    // 1 to 60, five where none is named. Answered `{ done, why?, message? }`, a refusal as data (`window-only`, `not-offered`,
-    // `unknown-role`, `unknown-repository`, `unknown-workspace`, `window`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`,
-    // `holder-harness`, `newer`, `unwritten`, `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept
-    // under a generation it ended goes stale, and a workspace's for a repository whose own appointment replaced it there.
-    [DriverRoute("SET_APPOINTMENT")]
-    [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
-    private async Task<object?> SetAppointmentAsync(IpcRequest request, CancellationToken cancellationToken)
+    // D233 point 2: the start of the terminal that holds a role the role door staffed with the terminal, in the window alone, since the
+    // key passes from the window to the tab. `{ role, share? }`, `role` the role's catalogue id, `share` the choice while a holder lives
+    // (`own`, or a living holder's id). A new holder's tab is started first, Daoris's own pinned harness with the key in its environment,
+    // and nothing is kept where it could not start; the key is never answered. Answered `{ done, why?, message? }`, a refusal as data
+    // (`window-only`, `unknown-role`, `not-terminal`, `choose-terminal`, `no-holder`, `revoked-holder`, `holder-harness`, `unstarted`,
+    // `no-pipe`). The judge's step ends first; then each decision kept under a hold it replaced goes stale. Turning a role's terminal off
+    // is the role door's: its holder changed, or the tab closed.
+    [DriverRoute("START_ROLE_TERMINAL", PipeClass.Window)]
+    [Owner("START_ROLE_TERMINAL", None = OwnerNone.RoleTerminal)]
+    [Publishes("START_ROLE_TERMINAL", StateScopes.Driver | StateScopes.Sessions)]
+    private async Task<object?> StartRoleTerminalAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
-            return new StandingChange(false, "window-only", "Only Daoris's window appoints a role or turns one off.");
+            return new StandingChange(false, "window-only", "Only Daoris's window starts a role's terminal.");
         }
 
         var role = PayloadHelper.GetRequiredValue<string>(request.Payload, "role");
-        // STEWARDROLE1a-i (D209 §2.3): `scope`; the built `{ role, repository, … }` form is read as `repository:<name>` for one release.
-        var scope = PayloadHelper.GetOptionalValue<string>(request.Payload, "scope")
-            ?? (PayloadHelper.GetOptionalValue<string>(request.Payload, "repository") is { Length: > 0 } repository ? RoleScopes.Repository(repository) : null);
-        if (scope is null || !RoleScopes.Known(scope))
-        {
-            return new StandingChange(false, StandingConfirmation.Scope,
-                "An appointment names its scope: `machine`, `repository:<name>` or `workspace:<name>`.");
-        }
-
-        var holder = PayloadHelper.GetOptionalValue<string>(request.Payload, "holder") ?? RoleHolders.Terminal;
-        var on = PayloadHelper.GetRequiredValue<bool>(request.Payload, "on");
         var share = PayloadHelper.GetOptionalValue<string>(request.Payload, "share");
-        var setup = PayloadHelper.GetOptionalValue<bool>(request.Payload, "setup");
-        var window = PayloadHelper.GetOptionalValue<long?>(request.Payload, "window");
         return _loop.Pipe is { } pipe
-            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup, window), cancellationToken).ConfigureAwait(false)
-            : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it appoints no terminal holder.");
+            ? await SupervisorDoor.StartAsync(_loop, pipe, new HoldRequest(role, share), cancellationToken).ConfigureAwait(false)
+            : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it starts no role's terminal.");
     }
 
     private sealed record PersonKey(string? Key);

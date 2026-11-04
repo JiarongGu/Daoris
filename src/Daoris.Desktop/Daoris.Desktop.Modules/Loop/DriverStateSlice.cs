@@ -30,7 +30,7 @@ public static class DriverStateSlice
     /// <summary>Each partition, and the fields of <c>STATE</c>'s answer it carries: the allow-list.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Partitions = new Dictionary<string, IReadOnlyList<string>>
     {
-        ["shell"] = ["ready", "home", "homeNotice", "homeAccount", "hostNotice"],
+        ["shell"] = ["ready", "home"],
         ["choices"] =
         [
             "drivable", "holds", "trees", "notify", "strikes", "coolOff", "forgiven", "intakeAdapter", "helperAdapter", "helpMode", "helpGrants",
