@@ -9,99 +9,6 @@ using static Daoris.Driver.AccountFileNodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One window as a reader saw it, for the usage history (USAGECAP1a1, D179 point 2): more than the walk keeps of it, read by
-/// a parse beside the walk's own, which it leaves unchanged.
-/// </summary>
-/// <param name="Window">
-/// The window's identity as its maker names it: Claude's key (<c>five_hour</c>, <c>seven_day</c>, <c>seven_day_opus</c>), a
-/// row of <c>get_usage</c>'s <c>limits[]</c> by its kind (<c>limits:weekly_scoped</c>), or Codex's by its length
-/// (<c>10080-minute</c>), never its slot (D179 point 8).
-/// </param>
-/// <param name="Walk">Daoris's name for it where the walk reads it (<c>session</c>, <c>weekly</c>), else null.</param>
-/// <param name="Scope">What it counts where that is not the whole plan: a model family, or Codex's limit; null for the plan's.</param>
-/// <param name="Minutes">Its length where its maker says or names it; null where unknown.</param>
-/// <param name="Used">How much of it is used, from 0 to 1, or null where no number was said: absent is never zero (D57).</param>
-/// <param name="Precision">
-/// The least step the number shows as its maker wrote it, as a fraction (0.01 for a whole percent): a floor on what the maker
-/// resolves, since a number's trailing zeros are not written. Null with no number, or one written with an exponent.
-/// </param>
-/// <param name="Reset">When it turns over, or null where none was said or made up.</param>
-/// <param name="ResetFrom">
-/// Where the reset came from: <see cref="UsageHistory.ResetSaid"/>, or <see cref="UsageHistory.ResetMadeUp"/> for a window
-/// not yet opened at zero, whose reset the walk sets a window's length ahead (no boundary to calibrate on); null with none.
-/// </param>
-public sealed record WindowSeen(
-    string Window, string? Walk, string? Scope, int? Minutes, double? Used, double? Precision, DateTimeOffset? Reset, string? ResetFrom);
-
-/// <summary>Where a reading came from (USAGECAP1a1): whose, through what, read by which reader, and when.</summary>
-/// <param name="Agent">The account's owner (AGT7).</param>
-/// <param name="Account">The account's opaque local id: its folder's name, or <see cref="AccountWindows.Own"/> for the tool's own.</param>
-/// <param name="Door">The adapter whose session carried it, or whose question asked it.</param>
-/// <param name="Source">
-/// <see cref="UsageHistory.SourceFrame"/> for a session's frame on either door, or the question asked: <c>get_usage</c>, or
-/// Codex's <c>account/rateLimits/read</c>.
-/// </param>
-/// <param name="Reader">The version of the reader that parsed it, its own per source.</param>
-/// <param name="Seen">When it was observed: the moment <c>windows.json</c> keeps beside it.</param>
-/// <param name="Session">The session where one said it; null for a read.</param>
-/// <param name="Plan">The plan as last read (<c>subscription_type</c>'s word, never who or the organisation), or null.</param>
-/// <param name="PlanFrom">How the plan was read: <c>get_usage</c>, or <see cref="UsageHistory.PlanFromStatus"/>.</param>
-public sealed record ReadingFrom(
-    string Agent, string Account, string Door, string Source, int Reader, DateTimeOffset Seen, string? Session = null,
-    string? Plan = null, string? PlanFrom = null);
-
-/// <summary>One reading as the history keeps it (USAGECAP1a1): its window, where it came from, and its account's epoch.</summary>
-/// <param name="Epoch">The account's binding epoch when it was kept; null where the epochs file did not read.</param>
-public sealed record KeptReading(
-    string Agent, string Account, int? Epoch, string Door, WindowSeen Window, string Source, DateTimeOffset Seen, string? Session,
-    string? Plan, string? PlanFrom, int Reader);
-
-/// <summary>
-/// A stretch the history does not hold (USAGECAP1a1): months pruned for their <c>age</c> or the log's <c>size</c>, or the
-/// rest of a month whose file was <c>full</c>.
-/// </summary>
-public sealed record HistoryGap(DateTimeOffset From, DateTimeOffset To, string Why, IReadOnlyList<string> Segments);
-
-/// <summary>What the history holds, in the order it was written: its readings, its gaps, and the lines that did not read.</summary>
-public sealed record HistoryRead(IReadOnlyList<KeptReading> Readings, IReadOnlyList<HistoryGap> Gaps, int Unread);
-
-/// <summary>
-/// One turn as the history keeps it (USAGECAP1a2, D179 point 2): whose it was, when, its four counts each null where its door
-/// said none, the models they were spent on, and what its door's report means.
-/// </summary>
-/// <param name="Agent">The account's owner (AGT7), or null where no start bound the session.</param>
-/// <param name="Account">The account's opaque local id, <see cref="AccountWindows.Own"/> for the tool's own sign-in, or null.</param>
-/// <param name="Epoch">The account's binding epoch when it was kept; null with no account, or where the epochs file did not read.</param>
-/// <param name="Door">The adapter the session ran through, or null where no start bound it.</param>
-/// <param name="Seq">The turn's event in its session's record (<see cref="SessionEvent.Seq"/>): with the session, its key.</param>
-/// <param name="Started">When the session took the turn's ask, or null where this process did not see it.</param>
-/// <param name="Ended">When the turn's end was recorded.</param>
-/// <param name="Tokens">The turn's four counts as its door reported them, each null where it said none: absent is never zero (D57).</param>
-/// <param name="Model">The one model, <see cref="TurnModels.Mixed"/> or <see cref="TurnModels.Unknown"/>.</param>
-/// <param name="Split">Each model's share where the door's split agreed with the total, else null.</param>
-/// <param name="Attribution">Where the model and the split came from (<see cref="TurnModels.From"/>), or null.</param>
-/// <param name="Whole">False where a helper model's tokens fall outside the total; null where no split says.</param>
-/// <param name="Cancelled">Whether the turn was stopped: its counts are as reported, and may be none.</param>
-/// <param name="Meaning">What its door's counts mean: <see cref="UsageHistory.PerTurn"/> or <see cref="UsageHistory.MeaningUnknown"/>.</param>
-/// <param name="Reader">The version of the reading of its tokens and models.</param>
-public sealed record KeptTurn(
-    string? Agent, string? Account, int? Epoch, string? Door, string Session, long Seq, DateTimeOffset? Started, DateTimeOffset Ended,
-    TurnTokens Tokens, string Model, IReadOnlyList<ModelTokens>? Split, string? Attribution, bool? Whole, bool Cancelled, string Meaning,
-    int Reader)
-{
-    public string? Actor { get; init; }
-
-    /// <summary>The brainstorm a pass's turn was spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
-    public string? Brainstorm { get; init; }
-
-    /// <summary>The role's choice the turn was spent on, as its policy keys it, the tuple's JSON (STAFFPOLICY1e2); null where its start chose none.</summary>
-    public string? Choice { get; init; }
-}
-
-/// <summary>What the turns' log holds, in the order it was written: its turns, its gaps, and the lines that did not read.</summary>
-public sealed record TurnsRead(IReadOnlyList<KeptTurn> Turns, IReadOnlyList<HistoryGap> Gaps, int Unread);
-
-/// <summary>
 /// The usage history (USAGECAP1a1, D179 point 2): every usage reading, appended under the home's <c>usage-history/</c> before
 /// <see cref="AccountWindows.Said"/> keeps the newest of each window, so the readings an estimate of each window's capacity
 /// needs gather while the estimator is built (USAGECAP1b). Beside it, <c>epochs.json</c>: each account's binding epoch.
@@ -163,8 +70,8 @@ public static class UsageHistory
     /// <summary>The version of the reading of a turn's tokens and models.</summary>
     public const int TurnReader = 1;
 
-    private const string ReadingsLog = "readings";
-    private const string TurnsLog = "turns";
+    internal const string ReadingsLog = "readings";
+    internal const string TurnsLog = "turns";
     private const string EpochsFile = "epochs.json";
 
     /// <summary>The logs the bound counts together (USAGECAP1a2): a month pruned for size goes from each.</summary>
@@ -175,7 +82,7 @@ public static class UsageHistory
 
     private static readonly JsonWriterOptions Options = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+    internal static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private static readonly Regex Plain = new("^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$", RegexOptions.CultureInvariant);
 
@@ -268,16 +175,8 @@ public static class UsageHistory
         }
     }
 
-    /// <summary>
-    /// What the history holds, oldest month first and each in the order written (USAGECAP1a1): its readings, the gaps a reader
-    /// meets, and how many lines did not read, which are counted and never guessed at. A record of a kind this reader does not
-    /// know is passed over. Never throws: what could not be read is not there.
-    /// </summary>
-    public static HistoryRead Read(string home)
-    {
-        var (readings, gaps, unread) = ReadLog(home, ReadingsLog, "reading", ReadingOf);
-        return new(readings, gaps, unread);
-    }
+    /// <inheritdoc cref="UsageHistoryReads.Read"/>
+    public static HistoryRead Read(string home) => UsageHistoryReads.Read(home);
 
     /// <summary>
     /// Keep a turn (USAGECAP1a2): one record, with its account's epoch where a start bound it, appended to its month's file after
@@ -308,48 +207,26 @@ public static class UsageHistory
         }
     }
 
-    /// <summary>
-    /// What the turns' log holds, oldest month first and each in the order written: its turns, the gaps a reader meets (the
-    /// readings' rules), and how many lines did not read. Never throws.
-    /// </summary>
-    public static TurnsRead ReadTurns(string home)
-    {
-        var (turns, gaps, unread) = ReadLog(home, TurnsLog, "turn", TurnOf);
-        return new(turns, gaps, unread);
-    }
+    /// <inheritdoc cref="UsageHistoryReads.ReadTurns"/>
+    public static TurnsRead ReadTurns(string home) => UsageHistoryReads.ReadTurns(home);
 
-    /// <summary>
-    /// The turn lines of <paramref name="sessions"/>, by session, in the order written (KNOWCENTRAL2d): what a commit point hands the service,
-    /// so a memory row names the model of the turn its instant falls in. A session with no line is left out. Never throws.
-    /// </summary>
+    /// <inheritdoc cref="UsageHistoryReads.TurnLinesOf"/>
     public static IReadOnlyDictionary<string, IReadOnlyList<KeptTurn>> TurnLinesOf(string home, IReadOnlyCollection<string> sessions)
-    {
-        var wanted = sessions.ToHashSet(StringComparer.Ordinal);
-        return ReadTurns(home).Turns
-            .Where(turn => wanted.Contains(turn.Session))
-            .GroupBy(turn => turn.Session, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => (IReadOnlyList<KeptTurn>)[.. group], StringComparer.Ordinal);
-    }
+        => UsageHistoryReads.TurnLinesOf(home, sessions);
 
-    /// <summary>One month's file of a log as it stands (USAGEPROBE1): where <see cref="UsageLedger"/> reads on from.</summary>
-    internal sealed record HistoryMonth(string Name, DateTimeOffset Month, long Length);
+    /// <inheritdoc cref="UsageHistoryReads.ReadingMonths"/>
+    internal static IReadOnlyList<HistoryMonth> ReadingMonths(string home) => UsageHistoryReads.ReadingMonths(home);
 
-    /// <summary>The readings' month files now, oldest first; none where the history has none or its folder does not read.</summary>
-    internal static IReadOnlyList<HistoryMonth> ReadingMonths(string home) => MonthsOf(home, ReadingsLog);
+    /// <inheritdoc cref="UsageHistoryReads.TurnMonths"/>
+    internal static IReadOnlyList<HistoryMonth> TurnMonths(string home) => UsageHistoryReads.TurnMonths(home);
 
-    /// <summary>The turns' month files now, oldest first; none where the history has none or its folder does not read.</summary>
-    internal static IReadOnlyList<HistoryMonth> TurnMonths(string home) => MonthsOf(home, TurnsLog);
+    /// <inheritdoc cref="UsageHistoryReads.ReadingsOn"/>
+    internal static long ReadingsOn(string home, HistoryMonth month, long offset, List<KeptReading> into)
+        => UsageHistoryReads.ReadingsOn(home, month, offset, into);
 
-    /// <summary>
-    /// The readings a month's file holds from <paramref name="offset"/> on, added to <paramref name="into"/>: the offset read to
-    /// (the end of its last whole line), or -1 where the file is shorter than the offset, begun again since. Never throws.
-    /// </summary>
-    internal static long ReadingsOn(string home, HistoryMonth month, long offset, List<KeptReading> into) =>
-        ReadOn(home, ReadingsLog, month, offset, "reading", ReadingOf, into);
-
-    /// <summary>The turns a month's file holds from <paramref name="offset"/> on, as <see cref="ReadingsOn"/> reads its readings.</summary>
-    internal static long TurnsOn(string home, HistoryMonth month, long offset, List<KeptTurn> into) =>
-        ReadOn(home, TurnsLog, month, offset, "turn", TurnOf, into);
+    /// <inheritdoc cref="UsageHistoryReads.TurnsOn"/>
+    internal static long TurnsOn(string home, HistoryMonth month, long offset, List<KeptTurn> into)
+        => UsageHistoryReads.TurnsOn(home, month, offset, into);
 
     /// <summary>A maker's name as the history keeps it: a plain name of letters, digits and <c>_ . : -</c>, else null.</summary>
     public static string? Word(string? said) => said is not null && Plain.IsMatch(said) ? said : null;
@@ -443,7 +320,7 @@ public static class UsageHistory
 
     // ——— The log: appended a month to a file, bounded, its gaps said.
 
-    private sealed record Segment(string Log, string Name, DateTimeOffset Month, long Length);
+    internal sealed record Segment(string Log, string Name, DateTimeOffset Month, long Length);
 
     private static string SegmentOf(string log, DateTimeOffset at) =>
         $"{log}-{at.UtcDateTime.ToString("yyyy-MM", CultureInfo.InvariantCulture)}.jsonl";
@@ -452,7 +329,7 @@ public static class UsageHistory
     private static DateTimeOffset MonthOf(DateTimeOffset at) => new(at.UtcDateTime.Year, at.UtcDateTime.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>The log's files, oldest month first: each named <c>&lt;log&gt;-YYYY-MM.jsonl</c>; any other name is not the log's.</summary>
-    private static List<Segment> Segments(string home, string log)
+    internal static List<Segment> Segments(string home, string log)
     {
         var segments = new List<Segment>();
         foreach (var path in Directory.EnumerateFiles(FolderOf(home), $"{log}-*.jsonl"))
@@ -738,7 +615,7 @@ public static class UsageHistory
     /// does not know is passed over. Never throws: what could not be read is not there.
     /// </summary>
     /// <param name="parse">A record of the kind read whole, or null where it does not read.</param>
-    private static (List<T> Records, List<HistoryGap> Gaps, int Unread) ReadLog<T>(
+    internal static (List<T> Records, List<HistoryGap> Gaps, int Unread) ReadLog<T>(
         string home, string log, string kind, Func<JsonObject, T?> parse)
         where T : class
     {
@@ -774,162 +651,8 @@ public static class UsageHistory
         return (records, gaps, unread);
     }
 
-    /// <summary>A log's month files as <see cref="HistoryMonth"/>s, oldest first; none where its folder is not there or does not read.</summary>
-    private static IReadOnlyList<HistoryMonth> MonthsOf(string home, string log)
-    {
-        try
-        {
-            return Directory.Exists(FolderOf(home))
-                ? [.. Segments(home, log).Select(segment => new HistoryMonth(segment.Name, segment.Month, segment.Length))]
-                : [];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
-
-    /// <summary>
-    /// Every whole line of a month's file from <paramref name="offset"/> on, each record of <paramref name="kind"/> added to
-    /// <paramref name="into"/> (USAGEPROBE1): only the bytes appended since the last read are read, a line still being written
-    /// is left for the next. The offset read to, -1 where the file is shorter than the offset, and the offset itself where the
-    /// file does not read.
-    /// </summary>
-    private static long ReadOn<T>(
-        string home, string log, HistoryMonth month, long offset, string kind, Func<JsonObject, T?> parse, List<T> into)
-        where T : class
-    {
-        try
-        {
-            using var stream = new FileStream(
-                DaorisHome.Entry(home, HomeEntry.UsageHistory, month.Name), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            var length = stream.Length;
-            if (length < offset) return -1;
-            if (length == offset) return offset;
-
-            stream.Seek(offset, SeekOrigin.Begin);
-            var bytes = new byte[length - offset];
-            stream.ReadExactly(bytes);
-            var end = Array.LastIndexOf(bytes, (byte)'\n');
-            if (end < 0) return offset;
-
-            var segment = new Segment(log, month.Name, month.Month, length);
-            foreach (var line in Utf8.GetString(bytes, 0, end + 1).Split('\n'))
-            {
-                if (line.Length > 0 && Record(line, segment, kind, parse) is T record) into.Add(record);
-            }
-
-            return offset + end + 1;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Read again from here next time: what could not be read is not there yet.
-            return offset;
-        }
-    }
-
-    /// <summary>A reading read back whole, or null where it does not read.</summary>
-    private static KeptReading? ReadingOf(JsonObject record)
-    {
-        if (Json.Text(record, "agent") is not { } agent || Json.Text(record, "account") is not { } account
-            || Json.NonEmpty(record, "door") is not { } door || Json.NonEmpty(record, "window") is not { } window
-            || Json.NonEmpty(record, "source") is not { } source || Moments.ReadStrict(Json.Text(record, "seen")) is not { } seen
-            || Whole(record, "reader") is not { } reader)
-        {
-            return null;
-        }
-
-        var reset = Moments.ReadStrict(Json.Text(record, "reset"));
-        return new KeptReading(
-            agent, account, Whole(record, "epoch"), door,
-            new WindowSeen(
-                window, Json.NonEmpty(record, "walk"), Json.NonEmpty(record, "scope"), Whole(record, "minutes"),
-                Fraction(record, "used"), Fraction(record, "precision"), reset, reset is null ? null : Json.NonEmpty(record, "resetFrom")),
-            source, seen, Json.NonEmpty(record, "session"), Json.NonEmpty(record, "plan"), Json.NonEmpty(record, "planFrom"), reader);
-    }
-
-    /// <summary>
-    /// A line read back: a record of the log's kind, a gap (a <c>full</c> record read as the rest of its month), null for a
-    /// kind this reader does not know, or false where it does not read.
-    /// </summary>
-    private static object? Record<T>(string line, Segment segment, string kind, Func<JsonObject, T?> parse)
-        where T : class
-    {
-        JsonObject record;
-        try
-        {
-            if (JsonNode.Parse(line) is not JsonObject parsed) return false;
-            record = parsed;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-
-        var said = Json.Text(record, "kind");
-        if (said == kind) return (object?)parse(record) ?? false;
-        switch (said)
-        {
-            case "gap":
-                return Moments.ReadStrict(Json.Text(record, "from")) is { } from && Moments.ReadStrict(Json.Text(record, "to")) is { } to
-                    ? new HistoryGap(from, to, Json.NonEmpty(record, "why") ?? "pruned", Json.TrimmedStrings(record["segments"]))
-                    : false;
-            case "full":
-                return Moments.ReadStrict(Json.Text(record, "written")) is { } written
-                    ? new HistoryGap(written, segment.Month.AddMonths(1), "full", [segment.Name])
-                    : false;
-            default:
-                return null;
-        }
-    }
-
-    /// <summary>A turn read back whole, or null where it does not read.</summary>
-    private static KeptTurn? TurnOf(JsonObject record)
-    {
-        if (Json.NonEmpty(record, "session") is not { } session || Count(record, "seq") is not { } seq
-            || Moments.ReadStrict(Json.Text(record, "ended")) is not { } ended || Json.NonEmpty(record, "model") is not { } model
-            || Json.NonEmpty(record, "meaning") is not { } meaning || Whole(record, "reader") is not { } reader
-            || Flag(record, "cancelled") is not { } cancelled)
-        {
-            return null;
-        }
-
-        IReadOnlyList<ModelTokens>? split = null;
-        if (record["split"] is JsonArray shares)
-        {
-            var read = new List<ModelTokens>();
-            foreach (var node in shares)
-            {
-                if (node is not JsonObject share || Json.NonEmpty(share, "model") is not { } name) return null;
-                read.Add(new(name, TokensOf(share)));
-            }
-
-            split = read;
-        }
-
-        var agent = Json.NonEmpty(record, "agent");
-        return new KeptTurn(
-            agent, agent is null ? null : Json.Text(record, "account"), Whole(record, "epoch"), Json.NonEmpty(record, "door"), session, seq,
-            Moments.ReadStrict(Json.Text(record, "started")), ended, TokensOf(record), model, split, Json.NonEmpty(record, "attribution"),
-            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor"), Brainstorm = Json.NonEmpty(record, "brainstorm"), Choice = Json.NonEmpty(record, "choice") };
-    }
-
-    private static TurnTokens TokensOf(JsonObject record) =>
-        new(Count(record, "input"), Count(record, "output"), Count(record, "cacheRead"), Count(record, "cacheWrite"));
-
-    private static long? Count(JsonObject record, string name) =>
-        record[name] is JsonValue value && value.TryGetValue<long>(out var count) ? count : null;
-
-    private static bool? Flag(JsonObject record, string name) =>
-        record[name] is JsonValue value && value.TryGetValue<bool>(out var flag) ? flag : null;
-
-    private static int? Whole(JsonObject record, string name) =>
-        record[name] is JsonValue value && value.TryGetValue<int>(out var whole) ? whole : null;
-
-    private static double? Fraction(JsonObject record, string name) =>
-        record[name] is JsonValue value && value.TryGetValue<double>(out var number) && double.IsFinite(number) ? number : null;
-
-    // ——— An exact duplicate, once.
+    internal static object? Record<T>(string line, Segment segment, string kind, Func<JsonObject, T?> parse)
+        where T : class => UsageHistoryReads.Record(line, segment, kind, parse);
 
     private static string KeyOf(ReadingFrom from, WindowSeen window) =>
         string.Join('\n', from.Agent, from.Account, window.Window, window.Scope ?? "", from.Source,
@@ -949,4 +672,5 @@ public static class UsageHistory
         if (recent.Order.Count > Remembered) recent.Keys.Remove(recent.Order.Dequeue());
         return true;
     }
+
 }

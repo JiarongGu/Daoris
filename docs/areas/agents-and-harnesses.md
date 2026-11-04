@@ -22,9 +22,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (the stand-ins only, today), the registry made over today's adapters, id resolution by kind |
 | `LegacyDoor` | `Registry/LegacyDoor.cs` | Presents a contract door to today's readers as an adapter and a toolchain |
 | `StubProvider` | `Providers/Stub/` | The stand-ins `stub` (pipe) and `acp-stub` (protocol): run a configured command, no model |
-| `ISessionAdapter`, `SessionWire`, `AdapterSet` | `Adapters.cs` | The adapter seam with its silent defaults; the built set; `Resolve` refuses an unknown name |
-| `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | `Adapters.cs` | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
-| `SessionTarget`, `TargetPrompt` | `Adapters.cs` | What a spawn carries, and the composed first prompt |
+| `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set; `Resolve` refuses an unknown name |
+| `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | same names | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
+| `StubAdapter`, `AcpStubAdapter`, `Spawning`, `CommitTrailers` | `StubAdapters.cs`, same names | The stand-in adapters; the one assembly of a spawn's process start; the maker's trailer a commit carries |
+| `SessionTarget`, `ChatTarget`, `EarlierMaker` | same names | What a spawn carries |
+| `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
+| `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart |
 | `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
 | `OpenPrompts`, `OpenPrompt`, `PromptPassage` | `Turn/` | The prompts on the wire and the run's door they pass, under one gate whose header names what it guards, the order of the locks and what a race would break: a prompt opens as it is admitted under the write lock, the door shuts between two writes, a word is taken once |
@@ -47,18 +50,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
 | `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `StructuredOutput`, `NativePrompt` | same names | The native door: capture, `stream-json` mapping, the prompt written on stdin |
-| `HarnessRoster` | `HarnessRoster.cs` (hub, 149 KB) | One judgement for every start: binary, account walk, holds, usage questions, the Agents page's report |
+| `HarnessRoster` | `HarnessRoster.cs` (hub, 26 KB) | One judgement for every start, kept as one-line doors to the units below, with the roster's state and settings reads |
+| `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
+| `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach |
+| `OfferAsk`, `WalkMemory`, `WalkPass` | same names | What a start asked of the walk, what one walk remembered, and what one pass held |
 | `HarnessSettings`, `AccountSet`, `PoolReceipts` | same names | `harnesses.json`: pins, each agent's one account set, its order and use settings, the fold and its receipts |
-| `AccountRotation`, `RotationUse`, `UsageCurves`, `SwitchDecision` | `AccountRotation.cs`, `RotationUse.cs`, `Domain/` | The walk's order, the next start's reason, the curves, a running session's switch (pure) |
+| `AccountRotation`, `RotatedOpening`, `RotationWords`, `RotationUse`, `UsageCurves`, `SwitchDecision` | same names, `Domain/` | The walk's order, the rotated start's opening and the walk's words, the next start's reason, the curves, a running session's switch (pure); its records and enums (`AccountState`, `WalkStep`, `NextStart`, and the rest) each in a file of their own |
 | `AccountLimits`, `AccountCooling`, `RefusedAccounts`, `AccountSignIns` | same names | Limit words and resets, `cooling.json`, refused credentials, sign-in refusals |
 | `AgentErrors`, `TransientRetry`, `TransientRetries` | same names | The four-kind reader of a door's failure, and the retry in the same conversation |
-| `AccountWindows`, `ClaudeUsage`, `CodexUsage`, `UsageHistory`, `UsageProjection` | same names, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend; the readings and turns history; the capacity estimate |
-| `HarnessProbe`, `HarnessKeys`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | `HarnessSelection.cs` and same names | Version and sign-in questions, API-key accounts, one question per home at a time, no real sign-in under a scratch home |
+| `AccountWindows`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend; the capacity estimate |
+| `UsageHistory`, `UsageHistoryReads` | same names | The readings and turns history: kept, rotated and pruned; read back by month with the gaps and the unread counted; its records (`KeptReading`, `KeptTurn`, `HistoryGap`, and the rest) each in a file |
+| `HarnessProbe`, `HarnessKeys`, `HarnessSelection`, `StartWiring`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | same names | Version and sign-in questions, API-key accounts, a selection and the wiring a start is handed, one question per home at a time, no real sign-in under a scratch home |
 | `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs` and same names | Rules in scopes and defaults, an agent's proposals, folder trust, reach into other checkouts |
 | `SpawnServers`, `SpawnSkills`, `DshProfile` | same names | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
 | `Driver.Prepare`, `Equip`, `HandRules` | `Loop/Driver.cs:2829-3001` | The spawn's assembly, shared by every kind of start |
-| `daoris agent …` verbs | `AgentsCommand.cs`, `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
+| `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
 | `SessionProcesses`, `LineageTokens` | same names | The live process per session (never sent to the service), and the token each process runs under |
 
 ## Its rules
@@ -187,7 +194,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - A new agent or door: a registration line in `Registry/Providers.cs` and a folder under `Agents/Providers/<id>/`, on the
   contract. Do not add another `ISessionAdapter` class; those end at row t.
 - A new fact about an existing real agent (a flag, a posture, a word table entry): its adapter or `HarnessToolchain` in
-  `Adapters.cs` today, measured first, with a recorded sentence for any word table.
+  its adapter file today, measured first, with a recorded sentence for any word table.
 - New protocol-door behaviour on a frame: a stage of its own beside `Acp.cs`, marked `[TurnStage]` with its phase and what it
   follows (as `AcpMeasure`, `AcpRender`, `AcpPermission` are); what it reaches of the session goes on `ITurnWiring`, and what it
   shares with another stage on a state of its own (`RefusedCalls`, `StepCalls`); `AcpPartsTests` holds the order. Other door
@@ -223,19 +230,19 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Contradictions
 
-1. D23 (one harness supported; a second written only when a repository adopts one) vs `Adapters.cs:2552-2572` (four real doors,
+1. D23 (one harness supported; a second written only when a repository adopts one) vs `AdapterSet.cs:97` (four real doors,
    stand-ins and plugin harnesses). D53, D57 and D213 read right; only D23's "unknown name is an error" lives.
 2. D24 and D98 (Daoris names no model and chooses none) vs D205 and `Roles/ActorSuggestion.cs:23`, `Roles/RoleSuggestion.cs:23`
    (the suggestions name `sonnet` and `opus`; starts carry the role's model). D205 reads right.
 3. D205 point 7 (the suggestion leads Build with `opus` · high) vs its note of 2026-10-25 and `Roles/ActorSuggestion.cs:23`
    (`sonnet` · high, then `opus` · high). The note and the code read right.
-4. D81 (a driven session is never `bypassPermissions`) vs D184 and `Adapters.cs:2299` (bypass by a repository's unrestricted
+4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeAdapter.cs:161` (bypass by a repository's unrestricted
    setup). D184 reads right; D81 holds only for the auto setup.
-5. D184 point 5 (the person's deny rules hold in every setup) vs `Adapters.cs:2053-2054` (Codex takes no rules file, so no deny
+5. D184 point 5 (the person's deny rules hold in every setup) vs `CodexAcpAdapter.cs:46-47` (Codex takes no rules file, so no deny
    reaches it in any mode). The code reads right, and is said (D233 choice 3).
-6. D125 point 4 (per-workspace rotation) and D130 points 3-4 (machine and workspace lists) vs D197 and `HarnessRoster.cs:1227-1228`
+6. D125 point 4 (per-workspace rotation) and D130 points 3-4 (machine and workspace lists) vs D197 and `RosterWalk.cs:34`
    (one set per agent, whatever the workspace). D197 reads right.
-7. D125 point 5 (the tool's own home as an account a start may use) vs D175, D197 and `HarnessRoster.cs:1253-1255` (a start with
+7. D125 point 5 (the tool's own home as an account a start may use) vs D175, D197 and `RosterWalk.cs:60` (a start with
    no Daoris account waits). D175 and D197 read right.
 8. D73 (trust with no account named writes the machine default's, else the tool's own home) vs D197 point 3 (every account of
    the set, never the own home). D197 reads right.
@@ -245,13 +252,13 @@ Agents page, and `orient-index` and `code-map` once files move.
     owner's), as D210 point 2 prescribes. The code and D210 read right today; D213 is the target.
 11. D213's note of 2026-11-04 (row m-i complete) vs `TASKS.md:29` (m-i still open). The note reads right; the row belongs in
     the archive.
-12. `HarnessSettings.cs:850-852` (a pin with nothing installed falls back to `PATH` and says so) vs `HarnessRoster.cs:1284-1295`
+12. `HarnessSettings.cs:850-852` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
     (refused). The refusal reads right (D57, D121).
-13. `Registry/ProviderRegistry.cs:12-13` (nothing reads the registry but its tests) vs `HarnessRoster.cs:875` and
-    `AgentsCommand.cs:653`. The callers read right.
-14. `Adapters.cs:2157-2160` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
+13. `Registry/ProviderRegistry.cs:12-13` (nothing reads the registry but its tests) vs `RosterReport.cs:376` and
+    `AgentsCommand.cs:282`. The callers read right.
+14. `ClaudeCodeAdapter.cs:19-22` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
     `Loop/Driver.cs:3323` and `:5209` (Daoris offers its connector at every spawn). The spawn reads right.
-15. `Adapters.cs:2017-2022` (codex-acp offers three modes, "no third reading") vs `Adapters.cs:2064` (`workspace-write` read in
+15. `CodexAcpAdapter.cs:10-15` (codex-acp offers three modes, "no third reading") vs `CodexAcpAdapter.cs:57` (`workspace-write` read in
     codex-acp 2.1.1). The property reads right.
 
 ## Open
