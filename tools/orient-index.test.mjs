@@ -197,7 +197,43 @@ function section(readme, heading) {
   return lines.slice(start + 1, end < 0 ? lines.length : end).join('\n');
 }
 
-const GENERATED_ROWS = ['`routes.md`', '`verbs.md`', '`catalogues.md`', '`fixtures.md`', '`decisions.md`', '`outlines/<path>.md`'];
+const GENERATED_ROWS = [
+  '`routes.md`', '`verbs.md`', '`catalogues.md`', '`fixtures.md`', '`decisions.md`', '`registered.md`', '`outlines/<path>.md`',
+];
+
+test("the registered parts are listed in their root's order, and a mark the order refuses is listed apart with why", () => {
+  const seam = 'src/Kit/LookPassAttribute.cs';
+  const passes = 'src/Driver/Passes.cs';
+  const files = {
+    [seam]: [
+      'enum LookPhase { Before, /* Gone, */ After }',
+      'sealed class LookPassAttribute(string name, LookPhase phase, params string[] after) : PartAttribute(name, phase, after);',
+    ].join('\n'),
+    [passes]: [
+      '[LookPass("landing", LookPhase.After)] class Landing { }',
+      '[LookPass("claims", LookPhase.Before, "sync")]',
+      'sealed class Claims { }',
+      '[LookPass("sync", LookPhase.Before)] class Sync { }',
+      '// [LookPass("old", LookPhase.Before)] class Old { }',
+      '[LookPass("early", LookPhase.Before, "landing")] class Early { }',
+    ].join('\n'),
+  };
+  const at = join(scratch, 'registered');
+  for (const [path, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(at, path)), { recursive: true });
+    writeFileSync(join(at, path), content);
+  }
+  const page = planIndex(at, Object.keys(files)).get('docs/index/registered.md');
+  const rows = page.split('\n').filter((line) => /^\| (\d|refused)/.test(line)).map((line) => line.split(' | ').slice(0, 3).join(' | '));
+  assert.deepEqual(rows, [
+    '| 1 | `sync` | Before',
+    '| 2 | `claims` | Before',
+    '| 3 | `landing` | After',
+    '| refused: landing runs in a later phase | `early` | Before',
+  ]);
+  assert.match(page, /Phases, in order: Before, After\./);
+  assert.match(page, /`src\/Driver\/Passes\.cs:2`/);
+});
 
 test('the README lists the indexes kept by hand first, then the files it generates, then the large files', () => {
   const readme = readmeOf('kept-by-hand', {

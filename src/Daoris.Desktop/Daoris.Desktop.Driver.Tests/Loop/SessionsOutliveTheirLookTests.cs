@@ -292,8 +292,8 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
         await Poll.Until(() => State("s1") == "stood-down", () => $"s1 is {State("s1")}", Bound);
 
-        Assert.Contains($"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaimToReopen}", look.Events);
-        Assert.DoesNotContain(look.Events, line => line.Contains(Daoris.Driver.Driver.LostClaim, StringComparison.Ordinal));
+        Assert.Contains($"stop  session s1 (#q1): {LostClaimStop.LostClaimToReopen}", look.Events);
+        Assert.DoesNotContain(look.Events, line => line.Contains(LostClaimStop.LostClaim, StringComparison.Ordinal));
         Assert.Equal(("stood-down", "ended.lost-claim-reopened"),
             (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
     }
@@ -317,8 +317,8 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
         await Poll.Until(() => State("s1") == "stood-down", () => $"s1 is {State("s1")}", Bound);
 
-        Assert.Contains($"stop  session s1 (#q2): {Daoris.Driver.Driver.LostClaimToReopen}", look.Events);
-        Assert.DoesNotContain(look.Events, line => line.Contains(Daoris.Driver.Driver.LostClaim, StringComparison.Ordinal));
+        Assert.Contains($"stop  session s1 (#q2): {LostClaimStop.LostClaimToReopen}", look.Events);
+        Assert.DoesNotContain(look.Events, line => line.Contains(LostClaimStop.LostClaim, StringComparison.Ordinal));
         Assert.Equal(("stood-down", "ended.lost-claim-reopened"),
             (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
     }
@@ -677,7 +677,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var report = await run.WaitAsync(Bound);
 
         Assert.Equal($"sync  default: quests: {Away}", report.Events[0]);
-        Assert.Single(report.Events, line => line == $"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}");
+        Assert.Single(report.Events, line => line == $"stop  session s1 (#q1): {LostClaimStop.LostClaim}");
         Assert.Contains(report.Events, line => line.StartsWith("stood-down  session s1 (#q1 → engine)", StringComparison.Ordinal));
         Assert.Equal(("stood-down", "ended.lost-claim"), (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
         lock (said)
@@ -716,7 +716,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         lock (said)
         {
             var lines = said.SelectMany(each => each.Events).ToList();
-            var stop = lines.IndexOf($"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}");
+            var stop = lines.IndexOf($"stop  session s1 (#q1): {LostClaimStop.LostClaim}");
             var ended = lines.FindIndex(line => line.StartsWith("stood-down  session s1 (#q1 → engine)", StringComparison.Ordinal));
             Assert.True(stop >= 0 && ended > stop, string.Join(" | ", lines));
             Assert.Single(lines, line => line.StartsWith("stop  session s1", StringComparison.Ordinal));
@@ -812,7 +812,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         {
             var part = Assert.Single(said);
             Assert.Empty(part.Considerations);
-            Assert.Equal([$"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}"], part.Events);
+            Assert.Equal([$"stop  session s1 (#q1): {LostClaimStop.LostClaim}"], part.Events);
         }
 
         lock (reports) Assert.DoesNotContain(reports.SelectMany(each => each.Events), line => line.StartsWith("stop  ", StringComparison.Ordinal));
@@ -858,7 +858,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var (watch, runs) = Watch(sync: sync);
         runs.OnOpen = _ => _ledger.Down = true;
         var heard = new List<object>();
-        var stopLine = $"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}";
+        var stopLine = $"stop  session s1 (#q1): {LostClaimStop.LostClaim}";
         bool Carried()
         {
             lock (heard) return heard.OfType<TickReport>().Any(each => each.Events.Contains(stopLine));

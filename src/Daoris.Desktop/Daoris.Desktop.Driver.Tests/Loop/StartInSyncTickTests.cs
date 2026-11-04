@@ -132,7 +132,7 @@ public sealed class StartInSyncTickTests : IDisposable
         service.Keep(new JsonObject
         {
             ["id"] = "s2", ["quest"] = "q1", ["repository"] = "engine", ["state"] = "stood-down", ["kind"] = "drive", ["tree"] = tree,
-            ["note"] = Daoris.Driver.Driver.LostClaim, ["created"] = lostAt.ToString("O"),
+            ["note"] = LostClaimStop.LostClaim, ["created"] = lostAt.ToString("O"),
         });
         service.Claim = "held";
         service.ClaimForward = new JsonObject
