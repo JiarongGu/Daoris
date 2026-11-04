@@ -86,17 +86,18 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         await runtime.PassAsync(Declaring(whole: false), CancellationToken.None);
         await runtime.PassAsync(Declaring(), CancellationToken.None);
 
-        var receipts = new ResourceRecordFiles(_home, () => true).Read(Branch)!.Receipts;
+        var receipts = new ResourceRecordFiles(_home, () => true).Read(RunUnit)!.Receipts;
         Assert.Equal([PluginResourceRoles.Temporary, PluginResourceRoles.Result], receipts.Select(receipt => receipt.Role));
         Assert.Empty(_port.Cleaned);
         Assert.Empty(_port.Owed[^1]);
 
-        // The branch is done: its true end. The first ask fails, so its plugin stays owed and the retry is the loop's next timer.
-        _units = [_units[0], BranchUnit with { End = new MilestoneEnd(WorkEndState.Ended, null, null, null, _now, "done") }];
+        // The run lands: its record holds its end, the unit's true end. The first ask fails, so its plugin stays owed and the retry is the loop's next timer.
+        _units = [_units[0], RunHome.Branch(Branch, "daoris/s1", Opened, [RunId], RunHome.Landing(Branch, "feature/q7", Tip1, _now, RunId))];
+        await runtime.PassAsync(Declaring(), CancellationToken.None);
         _port.Cleanup = _ => new(CleanupDispositions.Failed, Message: "busy");
         var failed = await runtime.PassAsync(Declaring(), CancellationToken.None);
 
-        Assert.Contains(failed.Performed, done => (done.What, done.Code) == (CleanedWhat.Again, CleanupDispositions.Failed));
+        Assert.True(failed.Performed.Any(done => (done.What, done.Code) == (CleanedWhat.Again, CleanupDispositions.Failed)), "ended=" + Record().Ended?.Quest + " states=" + string.Join(",", Record().Statuses.Select(s => s.Key + "=" + s.Value.State)) + " armed=" + failed.Armed + " performed=" + string.Join("|", failed.Performed.Select(d => d.What + ":" + d.Code)));
         Assert.Equal(["p-1"], _port.Cleaned.Select(call => call.Resource));
         Assert.Equal([Plugin], _port.Owed[^1]);
         Assert.Equal(_now + TimeSpan.FromMinutes(1), runtime.NextDue);
@@ -109,7 +110,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         Assert.Equal(["p-1", "p-1"], _port.Cleaned.Select(call => call.Resource));
         Assert.Single(_port.Cleaned.Select(call => call.IdempotencyKey).Distinct());
         Assert.Empty(_port.Owed[^1]);
-        var owed = WorkObligations.Read(_home, _now)[Branch].ToDictionary(entry => entry.Resource, entry => entry.Disposition);
+        var owed = WorkObligations.Read(_home, _now)[RunUnit].ToDictionary(entry => entry.Resource, entry => entry.Disposition);
         Assert.Equal(InventoryDisposition.Removed, owed["acme.deploy/preview@1:p-1"]);
         Assert.Equal(InventoryDisposition.Kept, owed["acme.deploy/site@1:s-1"]);
     }
@@ -488,7 +489,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         Assert.Equal(HeldResolutions.Again, Assert.Single(HeldAttempts.Read(Files)).Resolution);
         var pass = await runtime.PassAsync(Look(Governed, whole: false), CancellationToken.None);
 
-        Assert.Contains(pass.Performed, done => done is { What: PerformedWhat.Resolved, Code: HeldResolutions.Again });
+        Assert.True(pass.Performed.Any(done => done is { What: PerformedWhat.Resolved, Code: HeldResolutions.Again }), "armed=" + pass.Armed + " ended=" + Record().Ended?.Quest + " states=" + string.Join(",", Record().Statuses.Select(s => s.Key + "=" + s.Value.State)) + " attempts=" + string.Join(",", Record().Attempts.Select(a => a.Node + ":" + a.Attempt + ":" + a.State + ":" + a.Resolution)) + " performed=" + string.Join("|", pass.Performed.Select(d => d.What + ":" + d.Code)) + " said=" + string.Join("|", pass.Said) + " held=" + HeldAttempts.Read(Files).Count + " evaluated=" + string.Join("|", pass.Evaluated.Select(e => e.ToString())));
         Assert.Equal(2, _port.Sent.Count);
         Assert.NotEqual(sent.IdempotencyKey, _port.Sent[1].IdempotencyKey);
         Assert.NotEqual(sent.Invocation, _port.Sent[1].Invocation);

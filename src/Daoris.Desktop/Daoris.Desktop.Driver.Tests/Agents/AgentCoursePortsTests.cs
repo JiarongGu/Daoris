@@ -355,14 +355,17 @@ public sealed class AgentCoursePortsTests
         public bool Refused;
         public Exception? Failure;
         public void Dispose() { }
-        public Task<string> GetAsync(string path, CancellationToken ct) { Calls.Add((path, null)); return Task.FromResult("""[{"id":"s1","quest":null,"state":"working","repository":"engine","adapter":"stub","workspace":"default","kind":"driven","note":null,"evidence":null,"transcript":null,"harnessVersion":null,"profile":null,"tree":null,"created":"2026-10-27T00:00:00Z","updated":"2026-10-27T00:00:00Z","said":[{"id":"retry-left","text":"go on","key":"transient-retry/s1/old","at":"2026-10-27T00:00:00Z","files":[],"reopens":false},{"id":"person-left","text":"person","at":"2026-10-27T00:00:00Z","files":[],"reopens":false}]}]"""); }
+        public Task<string> GetAsync(string path, CancellationToken ct) { Calls.Add((path, null)); return Task.FromResult(Listed); }
+        private const string Listed = """[{"id":"s1","quest":null,"state":"working","repository":"engine","adapter":"stub","workspace":"default","kind":"driven","note":null,"evidence":null,"transcript":null,"harnessVersion":null,"profile":null,"tree":null,"created":"2026-10-27T00:00:00Z","updated":"2026-10-27T00:00:00Z","said":[{"id":"retry-left","text":"go on","key":"transient-retry/s1/old","at":"2026-10-27T00:00:00Z","files":[],"reopens":false},{"id":"person-left","text":"person","at":"2026-10-27T00:00:00Z","files":[],"reopens":false}]}]""";
         public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
         public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
         {
             Calls.Add((path, json));
             if (Failure is { } failure) return Task.FromException<ServiceReply>(failure);
             return Task.FromResult(Refused ? new ServiceReply(403, "{\"error\":\"refused\"}") : new(200,
-                path.EndsWith("/say", StringComparison.Ordinal) ? """{"said":{"id":"w1","text":"go on","at":"2026-10-27T00:00:00Z"}}""" : "{}"));
+                path.EndsWith("/say", StringComparison.Ordinal) ? """{"said":{"id":"w1","text":"go on","at":"2026-10-27T00:00:00Z"}}"""
+                : verb == ServiceVerb.Get && path.StartsWith("/api/sessions", StringComparison.Ordinal) ? Listed
+                : "{}"));
         }
     }
     private sealed class Wire(List<string> calls) : TextWriter

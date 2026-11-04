@@ -57,6 +57,8 @@ internal sealed class NodeRunKeeping(
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
         if (record.Attempts.Any(attempt => attempt.State != AttemptStates.Settled || attempt.RetryAt is not null)) return;
+        // A failure kept for the person waits on their word, which only an armed run applies, so the run is not over while one stands.
+        if (record.Attempts.Any(attempt => attempt.Resolution is null && WorkPerformer.KeptFailure(record, attempt))) return;
         var settled = !NodeStates.Live.Contains(WorkPerformer.StatusOf(record, governed.Graph.End).State)
                       || !governed.Graph.Nodes.Any(node => WorkPerformer.StatusOf(record, node.Id).State
                           is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated);
