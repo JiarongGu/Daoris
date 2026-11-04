@@ -26,7 +26,9 @@ public sealed class StaffCourseLookTests : IDisposable
         Assert.True(staffing.ImportFile().How is StaffingImported.Done or StaffingImported.Already);
         var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
         var parsed = StaffPolicy.Parse(policy).Policy!;
-        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices);
+        // A reached home keeps no moves or bound on a policy: the policy keeps its rule, and its moves are written as rules below.
+        var kept = parsed with { Moves = new Dictionary<string, StaffMove>(), Most = null };
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices, null, new RolePolicyPress(kept));
         // The course reads the line's rules, never a policy's own moves: the policy's moves, written as rules beside the seeded ones.
         var store = new SupervisorRuleStore(_home);
         var world = SupervisorRuleDoor.World(_home) with { ReadReached = false, Reached = true };
@@ -200,7 +202,7 @@ public sealed class StaffCourseLookTests : IDisposable
         var left = StaffKey.Read("""{"agent":"acp-stub","model":"sonnet","effort":"low"}""")!.Value;
         Assert.True(staff.Moves.Record("q1", "build", "s1", StaffConditions.Failed, StaffActions.Next, left.Text));
 
-        var line = staff.Moves.LineFacts("q1");
+        var line = StaffCourse.LineFacts(staff, new QuestView("q1", "ask #a1", "engine", "The work", "", "Taken"), null, "build")!;
         Assert.Equal(left, Assert.Single(line.MovedOff.Keys));
 
         IReadOnlyList<ActorEffective> order = [new("acp-stub", "sonnet", "low", "1"), new("acp-other", "codex-mini", "high", "2")];

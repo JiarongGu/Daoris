@@ -63,8 +63,13 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         foreach (var account in new[] { "home", "office" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "full-door", "home"));
-        new HarnessSettings().WithDefault("door", "home").WithDefault("full-door", "home")
-            .Save(settings);
+        new HarnessSettings
+        {
+            Rotation = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["door"] = ["home", "office"], ["full-door"] = ["home"],
+            },
+        }.Save(settings);
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             harnesses: new HarnessRoster(adapters, settings));
@@ -74,7 +79,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
 
     /// <summary>
     /// 🔴 The workspace named reaches the ledger's open; none named sends none. A second in the same workspace is the ledger's
-    /// refusal, naming the first. The accounts are one set (D197 point 1), so both take the order's first, the machine's account.
+    /// refusal, naming the first. The accounts are one set (D197 point 1): a workspace chooses none of its own.
     /// </summary>
     [Fact]
     public async Task The_workspace_reaches_the_ledger_s_open_and_its_account_is_the_set_s()
@@ -90,7 +95,8 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.Equal(("h1", "alpha"), (alpha.SessionId, alpha.Workspace));
         Assert.Equal("home", ledger.Record(alpha.SessionId!)["profile"]!.GetValue<string>());
         Assert.Equal(("h2", "default"), (unnamed.SessionId, unnamed.Workspace));
-        Assert.Equal("home", ledger.Record(unnamed.SessionId!)["profile"]!.GetValue<string>());
+        // The first holds the order's first account, so the second takes the next one the set has free.
+        Assert.Equal("office", ledger.Record(unnamed.SessionId!)["profile"]!.GetValue<string>());
         Assert.Null(again.SessionId);
         Assert.Contains("h1", again.Message);
     }

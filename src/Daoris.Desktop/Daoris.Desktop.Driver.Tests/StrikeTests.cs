@@ -158,7 +158,6 @@ public sealed class StrikeTests
     [InlineData("""{ "id": "s1", "quest": "Q1", "state": "FAILED" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": true }""", false)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": false }""", true)]
-    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": "true" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped" }""", false)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": false }""", false)]

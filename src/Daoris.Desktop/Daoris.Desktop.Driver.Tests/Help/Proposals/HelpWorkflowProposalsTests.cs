@@ -244,7 +244,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>A development graph that integrates its landing, asking as <paramref name="request"/>, saved as the workflow `integrated`.</summary>
-    private void SavedIntegrating(string request = "owner", string landing = """{"method":"branch"}""") =>
+    private void SavedIntegrating(string request = "owner", string landing = """{"method":"integrate"}""") =>
         StoredSteps.AddGraph(Daoris.Driver.WorkflowPorts.Store(_home), "integrated", "Integrated into the line", "2026-10-30T09:00:00Z", JsonNode.Parse(
             $$$"""
             {"schemaVersion":2,"entries":["claim"],"end":"merge-in",
@@ -260,7 +260,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     {
         SavedIntegrating("done");
         var proposal = Propose(null, scope: "engine", route: "default", workflow: "integrated");
-        var config = DriverConfig.Empty;
+        var config = DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Gates: LandingIntegrate.Declared));
 
         var unread = Card(HelpProposals.Plan(proposal, config, Here()));
         Assert.Contains("could not be read", Assert.Single(unread.Needs));
