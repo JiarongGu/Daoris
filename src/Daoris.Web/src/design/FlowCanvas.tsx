@@ -3,4 +3,4 @@
 export { RankedFlow as FlowCanvas } from './RankedFlow';
 export type {
   FlowCanvasProps, FlowEdge, FlowMark, FlowNode, FlowPick, FlowProps, FlowSection, LabelContext, NodeContext, NodeFoot, PillTone,
-} from './RankedFlow';
+} from './flowTypes';
