@@ -247,7 +247,7 @@ public sealed class LookSaidTests : IDisposable
     private static readonly string[] Producers =
     [
         "ChannelReach.cs", "ReopenTelling.cs", "ReviewDesk.cs", "RuleProposals.cs","WorkspaceSetup.cs",
-        "RegistrationFollow.cs", "Hooks.cs", "BranchTidying.cs", "UncertainWords.cs", "DriverMeetings.cs", "DriverBrainstorms.cs",
+        "RegistrationFollow.cs", "Hooks.cs", "BranchTidying.cs", "TidyKeeping.cs", "UncertainWords.cs", "DriverMeetings.cs", "DriverBrainstorms.cs",
         "DriverHelpers.cs",
     ];
 
