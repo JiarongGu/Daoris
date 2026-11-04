@@ -243,54 +243,6 @@ public sealed class QuestNameTests
         else Assert.Contains(problem, said);
     }
 
-    /// <summary>The key rides the rule in <c>driver.json</c>, after its pattern, as the CLI writes it; an empty one is none.</summary>
-    [Fact]
-    public void A_tickets_key_is_kept_in_driver_json_after_the_pattern()
-    {
-        var keyed = DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}", Key: @"[A-Z]+-\d+"));
-
-        Assert.Equal(@"[A-Z]+-\d+", DriverConfig.Parse(keyed.ToJson()).WorkspaceLandings["aurora"].Key);
-        Assert.Matches("\"pattern\": \"feature/\\{ticket}-\\{slug}\",\\s*\"key\": ", keyed.ToJson());
-        Assert.DoesNotContain("\"key\"",
-            DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}")).ToJson(), StringComparison.Ordinal);
-        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Key: @"[A-Z]+-\d+")));
-
-        var read = DriverConfig.Parse("""
-            {"landings":{"game":{"form":"branch","pattern":"feature/{ticket}","key":""}}}
-            """);
-        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}"), read.Landings["game"]);
-    }
-
-    /// <summary>
-    /// A key the driver refuses in the file is ignored, and the rest of its rule stands (PROCESS1b-i): a key written by a reader
-    /// that takes more never drops the rule, so the repository never lands by its workspace's rule or a merge unasked. A door that
-    /// sets one still refuses it.
-    /// </summary>
-    [Fact]
-    public void A_rule_whose_key_is_refused_is_read_without_it()
-    {
-        var read = DriverConfig.Parse("""
-            {"landings":{
-              "engine":{"form":"branch","pattern":"feature/{ticket}","key":"(?i)tk-\\d+","plugin":"example.github-pull-request","tidy":true,"autoAccept":true},
-              "parity":{"form":"branch","pattern":"feature/{ticket}-{slug}","key":"TK\\_\\d+"},
-              "unasked":{"form":"branch","pattern":"feature/{quest}","key":"[A-Z]+-\\d+"},
-              "line":{"form":"merge","key":"[A-Z]+-\\d+"},
-              "bad":{"form":"branch","pattern":"fixed","key":"[A-Z]+-\\d+"}}}
-            """);
-
-        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}", Tidy: true, Plugin: "example.github-pull-request", AutoAccept: true),
-            read.Landings["engine"]);
-        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), read.Landings["parity"]);
-        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{quest}"), read.Landings["unasked"]);
-        Assert.Equal(LandingRule.Merge, read.Landings["line"]);
-        // A rule that could not land work without its key is still not read.
-        Assert.False(read.Landings.ContainsKey("bad"));
-        // The door that sets one still refuses it, in the CLI's words.
-        Assert.Contains(
-            @"may escape only a punctuation mark or one of `\d \D \w \W \s \S \b \B \n \r \t \f \v`, which the driver and the CLI read alike, and `\_` is neither.",
-            Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{ticket}", Key: @"TK\_\d+"))).Message);
-    }
-
     /// <summary>
     /// <c>squash</c> on a landing rule (PROCESS1b-ii, D164's amendment point 2): Accept makes the pull request's branch one commit.
     /// Only a branch rule takes it, as only a branch rule accepts automatically (the CLI's twin, <c>driverconfig.ts</c>, left in
@@ -307,36 +259,6 @@ public sealed class QuestNameTests
 
         if (problem is null) Assert.Null(said);
         else Assert.Contains(problem, said);
-    }
-
-    /// <summary>What the file says of <c>squash</c>, read: absent is off, only JSON <c>true</c> is on, and a merge carrying it is not read.</summary>
-    [Theory]
-    [InlineData("absent is off", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}""", "landings", "engine", "off")]
-    [InlineData("true on a branch rule is on", """{"landings":{"engine":{"form":"branch","pattern":"feature/{ticket}-{slug}","squash":true}}}""", "landings", "engine", "on")]
-    [InlineData("text is not true", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","squash":"true"}}}""", "landings", "engine", "off")]
-    [InlineData("a merge carrying it is not read", """{"landings":{"engine":{"form":"merge","squash":true}}}""", "landings", "engine", "none")]
-    [InlineData("a workspace's rule carries it", """{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true,"squash":true}}}""", "workspaceLandings", "aurora", "on")]
-    public void Squash_reads_as_the_cli_reads_it(string name, string file, string map, string key, string expected)
-    {
-        var config = DriverConfig.Parse(file);
-        var rules = map == "workspaceLandings" ? config.WorkspaceLandings : config.Landings;
-        var read = rules.TryGetValue(key, out var rule) ? rule.Squash ? "on" : "off" : "none";
-
-        Assert.True(expected == read, $"{name}: {read}");
-    }
-
-    /// <summary>Written only when on, after the automatic acceptance, and kept through the file: the CLI writes it in the same place.</summary>
-    [Fact]
-    public void Squash_is_written_only_when_on_and_survives_the_file()
-    {
-        var on = DriverConfig.Empty.WithWorkspaceLanding(
-            "aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}", Tidy: true, AutoAccept: true, Squash: true));
-
-        Assert.True(DriverConfig.Parse(on.ToJson()).WorkspaceLandings["aurora"].Squash);
-        Assert.Matches("\"autoAccept\": true,\\s*\"squash\": true", on.ToJson());
-        Assert.DoesNotContain("squash",
-            DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}")).ToJson(), StringComparison.Ordinal);
-        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Squash: true)));
     }
 
     /// <summary>

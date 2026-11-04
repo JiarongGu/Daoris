@@ -272,7 +272,7 @@ public sealed class LookJudgesTests : IDisposable
             Opinions = opinions
                 ? new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) { ["engine"] = new(["codex-acp"], [OpinionRules.Steps], false) }
                 : DriverConfig.Empty.Opinions,
-        }).WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}")).Save(config);
+        }).Save(config);
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(

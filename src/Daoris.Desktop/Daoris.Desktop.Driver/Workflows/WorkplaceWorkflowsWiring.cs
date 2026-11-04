@@ -64,14 +64,6 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
     public bool FollowsSaved(DriverConfig config, string repository, string? workspace) =>
         WorkflowSelection.Resolve(config, repository, workspace, null).Workflow != WorkflowSelection.Current;
 
-    public (string Method, string Graph) CurrentLand(LandingRule rule)
-    {
-        var graph = NodeGraphHomes.Landing(rule);
-        var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
-        var method = land.Options.TryGetValue("method", out var written) ? System.Text.Json.JsonSerializer.Deserialize<string>(written) : null;
-        return (method ?? LandNodes.Merge, NodeGraphs.Digest(graph));
-    }
-
     // The world is the review's IOpinionWorld, which every world the doors and the look hand the gate is (the review's IAutoLandingWorld
     // among them): the second opinion reads its opinions through it.
     public async Task<IWorkplaceGate> GateAsync(

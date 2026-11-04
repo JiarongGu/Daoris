@@ -231,11 +231,10 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     public async Task A_squash_landings_branch_moved_as_it_went_keeps_the_branch()
     {
         var root = await RepositoryAsync("engine");
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        var gate = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}", squash: true));
         var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the work\n", "the work");
-        var landed = await new SessionTrees(Home).LandAsync(opened.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: InUseAsync);
+        var landed = await new SessionTrees(Home).LandAsync(opened.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: InUseAsync, gate: gate);
         Assert.True(landed.Landed, landed.Message);
         var tip = await TipAsync(root, opened.Branch);
         var trees = new SessionTrees(Home) { BeforeRefDeleted = async _ => await GitAsync(root, "update-ref", "-d", $"refs/heads/{landed.Branch}") };
@@ -345,105 +344,6 @@ public sealed class JudgedDeleteGitTests : LandedFixture
 
     // ——— the fourth review
 
-    /// <summary>The branch a landing of <c>0fda18</c> titled "Fix the gap" makes, squashing or not.</summary>
-    private const string Made = "feature/0fda18-fix-the-gap";
-
-    /// <summary>
-    /// A chain of two sessions, the second grown from the first, and the second accepted under a rule that cleans up (LAND3): the first's
-    /// branch is the one more the landing's tidy judges. <paramref name="act"/> is told each git start once the pressed session's branch went
-    /// (its delete's transaction), as a person acting before the tidy reads the landing's branch.
-    /// </summary>
-    private async Task<(TreeOpened First, string FirstTip, TreeLanding Landed)> ChainLandedAsync(
-        string root, bool squash, Action<IReadOnlyList<string>> act)
-    {
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Squash: squash))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-        var trees = new SessionTrees(Home);
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first step\n", "the first step");
-        var second = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
-        await CommitAsync(second.Path, "second.txt", "the verify step\n", "the verify step");
-        var firstTip = (await GitAsync(root, "rev-parse", first.Branch)).Trim();
-        var armed = false;
-        WorkingTree.Started.Value = arguments =>
-        {
-            if (armed) act(arguments);
-            else if (arguments is ["update-ref", "--stdin"]) armed = true;
-        };
-        try
-        {
-            var landed = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: InUseAsync);
-            Assert.True(landed.Landed, landed.Message);
-            Assert.True(armed, "the pressed session's branch went in a transaction");
-            return (first, firstTip, landed);
-        }
-        finally
-        {
-            WorkingTree.Started.Value = null;
-        }
-    }
-
-    /// <summary>
-    /// 🔴 The fourth review's P1 (TreeTidies.cs:67 and :69, TreeLands.cs:563): LAND3's squash path compares the other branches with the
-    /// session tip it squashed, so what its removals rest on is the branch the squash made at a commit holding the one the landing made. That
-    /// branch made again elsewhere before the tidy reads it holds none of the squashed work, so the chain's earlier branch stays, and the
-    /// landing says the clean-up could not judge it, never that the branch holds its commits.
-    /// </summary>
-    [Fact]
-    public async Task A_squash_holder_replaced_before_the_tidys_read_keeps_the_earlier_branch()
-    {
-        var root = await RepositoryAsync("engine");
-        var unrelated = (await GitAsync(root, "rev-parse", "main")).Trim();
-        var replaced = false;
-        var (first, firstTip, landed) = await ChainLandedAsync(root, squash: true, arguments =>
-        {
-            if (!replaced && arguments is ["rev-parse", "--verify", "--quiet", var revision] && revision == $"refs/heads/{Made}^{{commit}}")
-            {
-                replaced = true;
-                GitNow(root, "update-ref", $"refs/heads/{Made}", unrelated);
-            }
-        });
-
-        Assert.True(replaced, "the landing's branch was made again before the tidy read it");
-        Assert.Equal(firstTip, await TipAsync(root, first.Branch));
-        var kept = Assert.Single(landed.Tidied!);
-        Assert.Equal(first.Branch, kept.Branch);
-        Assert.False(kept.Removed);
-        Assert.Contains("could not judge", landed.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain($"whose commits `{Made}` holds", landed.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// 🔴 The fourth review's P2 (TreeTidies.cs:67, :72 and :225): a landing's branch git could not read leaves every other branch unjudged.
-    /// They stay, and the landing says the clean-up could not judge them, where it used to say nothing.
-    /// </summary>
-    [Fact]
-    public async Task An_unread_holder_says_the_clean_up_could_not_judge()
-    {
-        var root = await RepositoryAsync("engine");
-        var unread = false;
-        WorkingTree.Answered.Value = arguments =>
-            unread && arguments is ["rev-parse", "--verify", "--quiet", var revision] && revision == $"refs/heads/{Made}^{{commit}}"
-                ? (128, "", "fatal: simulated read failure")
-                : null;
-        try
-        {
-            var (first, firstTip, landed) = await ChainLandedAsync(root, squash: false, _ => unread = true);
-
-            Assert.True(unread, "the landing's branch was unread once the pressed branch went");
-            Assert.Equal(firstTip, await TipAsync(root, first.Branch));
-            var kept = Assert.Single(landed.Tidied!);
-            Assert.Equal(first.Branch, kept.Branch);
-            Assert.False(kept.Removed);
-            Assert.Contains($"could not judge `{first.Branch}`", landed.Message, StringComparison.Ordinal);
-            Assert.DoesNotContain($"whose commits `{Made}` holds", landed.Message, StringComparison.Ordinal);
-        }
-        finally
-        {
-            WorkingTree.Answered.Value = null;
-        }
-    }
-
     /// <summary>
     /// 🔴 The fourth review's P2 (ContentHolds.cs:376): git's quiet verification exits 1 on any failure to resolve, a broken ref's too, so a
     /// branch broken as its delete was refused is unread, never "gone already": only git's own "missing" says it went.
@@ -464,93 +364,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         Assert.Equal("not a commit\n", await File.ReadAllTextAsync(loose));
     }
 
-    // ——— FABRIC-TIDYHELD-TEST1: the held tidy and the cut-off opening, moved at the delete
-
-    /// <summary>
-    /// A chain of two sessions, the second grown from the first, accepted under <paramref name="rule"/> through <see cref="TreeLands"/>: the
-    /// first's branch is the one more the held tidy judges (<c>TreeTidies.TidyOneAsync</c>). <paramref name="move"/> runs once, right before
-    /// the first's ref delete, after every proof and the trees' read; the pressed session's own delete runs untouched.
-    /// </summary>
-    private async Task<(TreeOpened First, string FirstTip, TreeLanding Landed)> HeldMovedAsync(string root, LandingRule rule, Func<string, Task> move)
-    {
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-        string? target = null;
-        var moved = false;
-        var trees = new SessionTrees(Home)
-        {
-            BeforeRefDeleted = async name =>
-            {
-                if (moved || name != target) return;
-                moved = true;
-                await move(name);
-            },
-        };
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "first.txt", "the first step\n", "the first step");
-        var second = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
-        await CommitAsync(second.Path, "second.txt", "the verify step\n", "the verify step");
-        var firstTip = (await GitAsync(root, "rev-parse", first.Branch)).Trim();
-        target = first.Branch;
-
-        var landed = await trees.LandAsync(second.Path, new LandingSubject("s2", "0fda18", "Fix the gap"), inUse: InUseAsync);
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.True(moved, "the held tidy reached the earlier branch's delete");
-        return (first, firstTip, landed);
-    }
-
-    /// <summary>
-    /// 🔴 FABRIC-TIDYHELD-TEST1: the ref the held tidy's proof rested on (the landing's branch, the squash's branch, or the line a merge went
-    /// into) set back before the landing as the earlier branch goes refuses the delete in git's own transaction: the branch stays at its
-    /// tip, and the landing says what moved, never that it went.
-    /// </summary>
-    [Theory]
-    [InlineData(LandingForm.Branch, false)]
-    [InlineData(LandingForm.Branch, true)]
-    [InlineData(LandingForm.Merge, false)]
-    public async Task A_held_branchs_holder_moved_as_it_goes_keeps_it(string form, bool squash)
-    {
-        var root = await RepositoryAsync("engine");
-        var before = (await GitAsync(root, "rev-parse", "main")).Trim();
-        var holder = form == LandingForm.Merge ? "main" : Made;
-        var rule = form == LandingForm.Merge
-            ? new LandingRule(LandingForm.Merge, Tidy: true)
-            : new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Squash: squash);
-
-        var (first, firstTip, landed) = await HeldMovedAsync(root, rule, async _ => await GitAsync(root, "update-ref", $"refs/heads/{holder}", before));
-
-        Assert.Equal(firstTip, await TipAsync(root, first.Branch));
-        var kept = Assert.Single(landed.Tidied!);
-        Assert.Equal(first.Branch, kept.Branch);
-        Assert.False(kept.Removed);
-        Assert.Contains($"`{holder}` moved as it went", kept.Why, StringComparison.Ordinal);
-        Assert.Contains($"Kept `{first.Branch}`", landed.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Also removed", landed.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// 🔴 FABRIC-TIDYHELD-TEST1: the earlier branch itself moved on as it goes, to a commit the landing does not hold, is no longer the commit
-    /// judged: git refuses the delete, and the new commit stays on it.
-    /// </summary>
-    [Fact]
-    public async Task A_held_branch_moved_as_it_goes_keeps_its_new_commit()
-    {
-        var root = await RepositoryAsync("engine");
-        var after = "";
-
-        var (first, firstTip, landed) = await HeldMovedAsync(
-            root, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true), async branch =>
-            {
-                after = (await GitAsync(root, "commit-tree", $"{branch}^{{tree}}", "-p", branch, "-m", "a commit made as it went")).Trim();
-                await GitAsync(root, "update-ref", $"refs/heads/{branch}", after);
-            });
-
-        Assert.NotEqual(firstTip, after);
-        Assert.Equal(after, await TipAsync(root, first.Branch));
-        var kept = Assert.Single(landed.Tidied!);
-        Assert.False(kept.Removed);
-        Assert.Equal(ContentHolds.MovedSince, kept.Why);
-    }
+    // ——— FABRIC-TIDYHELD-TEST1: the cut-off opening, moved at the delete
 
     /// <summary>
     /// 🔴 FABRIC-TIDYHELD-TEST1, the cut-off opening (<c>TreeStrays.CutOffAsync</c>): a tree whose opening a kill cut off, its branch held by

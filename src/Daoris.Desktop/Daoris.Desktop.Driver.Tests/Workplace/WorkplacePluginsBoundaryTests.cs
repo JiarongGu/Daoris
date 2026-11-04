@@ -110,28 +110,6 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     }
 
     [Fact]
-    public void Setting_a_landing_rule_refuses_a_plugin_that_cannot_land_and_writes_nothing()
-    {
-        var catalog = Standing();
-        var config = DriverConfig.Empty;
-
-        var refused = Assert.Throws<DriverException>(() =>
-            LandingRules.Put(config, "engine", null, new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.off"), catalog));
-        Assert.Equal(
-            "plugin `acme.off` is switched off on this machine — `daoris plugin enable acme.off` switches it on. Nothing was written.",
-            refused.Message);
-        Assert.Contains("which is not installed", Assert.Throws<DriverException>(() =>
-            LandingRules.Put(config, null, "aurora", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.absent"), catalog)).Message);
-        Assert.Equal("a landing rule is set for a `repository` or a `workspace` — name one of them.",
-            Assert.Throws<DriverException>(() => LandingRules.Put(config, "engine", "aurora", null, catalog)).Message);
-
-        var rule = new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.ready");
-        Assert.Equal(rule, LandingRules.Put(config, "engine", null, rule, catalog).Landings["engine"]);
-        // A rule's shape is judged first, and the catalogue is not asked of a rule that names no plugin.
-        Assert.Empty(LandingRules.Put(config, "engine", null, null, catalog).Landings);
-    }
-
-    [Fact]
     public void The_wire_asks_the_homes_catalogue_at_each_call_and_refuses_a_plugin_without_starting_it()
     {
         var started = 0;

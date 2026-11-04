@@ -81,8 +81,7 @@ public sealed class HomeDefaultTests : IDisposable
     {
         var config = DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Batch: 4, Gates: LandingIntegrate.Declared));
 
-        Assert.Equal(4, LandingRules.Choose(config, "engine", null).Rule.Integrate!.Batch);
-        Assert.Equal(4, LandingRules.Choose(config, "engine", null).Rule.Integrate!.Batch);
+        Assert.Equal(4, LandingRules.Line(config, "engine", null).Rule.Integrate!.Batch);
         Assert.Throws<DriverException>(() => config.WithLinePolicy("engine", new LandingIntegrate(Batch: 99)));
         Assert.Throws<DriverException>(() => config.WithLinePolicy("engine", new LandingIntegrate(Request: "owner")));
         Assert.Null(config.WithLinePolicy("engine", null).LinePolicyOf("engine", null));
@@ -90,15 +89,6 @@ public sealed class HomeDefaultTests : IDisposable
         var shared = config.WithWorkspaceLinePolicy("aurora", new LandingIntegrate(Batch: 2, Gates: LandingIntegrate.Declared));
         Assert.Equal(2, shared.LinePolicyOf("web", "aurora")!.Batch);
         Assert.Equal(4, shared.LinePolicyOf("engine", "aurora")!.Batch);
-    }
-
-    [Fact]
-    public void An_unconverted_home_keeps_integrating_by_the_rule_s_integrate_where_no_policy_is_set()
-    {
-        var config = DriverConfig.Parse("""{"landings":{"engine":{"form":"branch","pattern":"w/{quest}","integrate":{"batch":3,"gates":"declared"}}}}""");
-
-        Assert.Equal(3, LandingRules.Choose(config, "engine", null).Rule.Integrate!.Batch);
-        Assert.Equal(5, LandingRules.Choose(config.WithLinePolicy("engine", new LandingIntegrate(Batch: 5, Gates: LandingIntegrate.Declared)), "engine", null).Rule.Integrate!.Batch);
     }
 
     [Fact]

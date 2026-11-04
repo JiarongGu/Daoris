@@ -16,9 +16,6 @@ public sealed class TogetherAcceptsTests : LandedFixture
 
     private static async Task<string> TipAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
 
-    private void Rule(LandingRule rule) =>
-        DriverConfig.Empty.WithLanding("engine", rule).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-
     /// <summary>The head with both members replayed onto it, the line one commit on, and the operation checked and ready.</summary>
     private async Task<(SessionTrees Trees, string Root, TreeOpened Head, TreeOpened Beside, TogetherOperation Operation)> ReadyAsync()
     {
@@ -48,18 +45,19 @@ public sealed class TogetherAcceptsTests : LandedFixture
         return (trees, root, head, beside, ready);
     }
 
-    private static Task<TreeLanding> AcceptAsync(SessionTrees trees, TogetherOperation operation, IReadOnlyDictionary<string, IWorkplaceGate?>? gates = null) =>
-        trees.LandTogetherAsync(operation.Id, new LandingSubject("s-head", "q1", "Bring the work together"), gates ?? new Dictionary<string, IWorkplaceGate?>());
+    private static Task<TreeLanding> AcceptAsync(
+        SessionTrees trees, TogetherOperation operation, IReadOnlyDictionary<string, IWorkplaceGate?>? gates = null, IWorkplaceGate? gate = null) =>
+        trees.LandTogetherAsync(operation.Id, new LandingSubject("s-head", "q1", "Bring the work together"), gates ?? new Dictionary<string, IWorkplaceGate?>(),
+            gate: gate);
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task One_Accept_on_a_moved_line_lands_the_branch_or_its_squash_carrying_the_members_who_never_land_again(bool squash)
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: squash));
         var (trees, _, _, beside, operation) = await ReadyAsync();
 
-        var landed = await AcceptAsync(trees, operation);
+        var landed = await AcceptAsync(trees, operation, gate: GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}", squash)));
 
         Assert.True(landed.Landed, landed.Message);
         var after = new TogetherOperations(Home).Of(operation.Id)!;
@@ -78,9 +76,8 @@ public sealed class TogetherAcceptsTests : LandedFixture
     }
 
     [Fact]
-    public async Task One_Accept_under_a_merge_rule_merges_the_head_into_the_line_and_the_operation_is_its_inclusion_record()
+    public async Task One_Accept_by_a_merge_merges_the_head_into_the_line_and_the_operation_is_its_inclusion_record()
     {
-        Rule(new LandingRule(LandingForm.Merge, "feature/{quest}-{slug}"));
         var (trees, root, _, _, operation) = await ReadyAsync();
 
         var landed = await AcceptAsync(trees, operation);
@@ -128,12 +125,11 @@ public sealed class TogetherAcceptsTests : LandedFixture
     [Fact]
     public async Task An_entrys_one_Accept_lands_the_head_by_the_operation_and_reads_its_members_brought_into_never_landed()
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
         var (trees, _, head, beside, operation) = await ReadyAsync();
         var other = operation.Members.Single(each => each.Session == "s-other");
         var together = new EntryTogether(operation.Id, "s-head", new Dictionary<string, IWorkplaceGate?>(), new HashSet<string> { "s-beside", "s-other" });
         IReadOnlyList<EntryLandingPart> parts =
-            [new("s-head", head.Path), new("s-beside", beside.Path), new("s-other", other.Tree)];
+            [new("s-head", head.Path) { Gate = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}")) }, new("s-beside", beside.Path), new("s-other", other.Tree)];
 
         var landed = await trees.LandEntryAsync(parts, new LandingSubject("s-head", "q1", "Bring the work together"), new HashSet<string>(), together: together);
 
@@ -149,7 +145,6 @@ public sealed class TogetherAcceptsTests : LandedFixture
     [Fact]
     public async Task A_bound_member_in_another_windows_entry_Accept_with_no_operation_to_land_it_is_refused_naming_the_operation()
     {
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
         var (trees, _, head, beside, operation) = await ReadyAsync();
         IReadOnlyList<EntryLandingPart> parts = [new("s-beside", beside.Path)];
 

@@ -51,8 +51,8 @@
     {
       "id": "service",
       "title": "Service",
-      "summary": "The cross-repository knowledge service, whole: its core, its hosts and its tests.",
-      "paths": ["src/Daoris.Service/**"]
+      "summary": "The cross-repository knowledge service, whole: its core, its hosts, its tests and the declaration of its HTTP API.",
+      "paths": ["src/Daoris.Service/**", "src/Daoris.Contracts/**"]
     },
     {
       "id": "cli",

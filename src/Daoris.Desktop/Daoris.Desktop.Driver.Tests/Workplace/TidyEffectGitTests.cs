@@ -120,7 +120,7 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         var root = await RepositoryAsync("engine");
         var opened = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "a.txt", "a\n", "work on a");
-        var landed = await new SessionTrees(Home).LandAsync(opened.Path, new LandingSubject("s1", "q1", "First"), inUse: InUseAsync);
+        var landed = await new SessionTrees(Home).LandAsync(opened.Path, new LandingSubject("s1", "q1", "First"), inUse: InUseAsync, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
         await GitAsync(root, "worktree", "remove", opened.Path);
         await SquashAsync(root, landed.Branch!);

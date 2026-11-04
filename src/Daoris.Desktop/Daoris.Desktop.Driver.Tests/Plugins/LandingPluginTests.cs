@@ -25,12 +25,12 @@ public sealed class LandingPluginTests : LandingPluginFixture
     {
         var (root, origin) = await RepositoryWithOriginAsync("engine");
         InstallRealPlugin();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap"), gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         const string branch = "feature/0fda18-fix-the-api-gap";
@@ -44,9 +44,6 @@ public sealed class LandingPluginTests : LandingPluginFixture
         Assert.Contains("https://example.test/example-org/engine/pull/7", landed.Message);
         // The person is not told to push what the plugin pushed.
         Assert.DoesNotContain("git push", landed.Message);
-        // Branch, then plugin, then the tidy the rule asked for.
-        Assert.Contains("Cleaned up", landed.Message);
-        Assert.False(Directory.Exists(opened.Path));
 
         // What the plugin was told, and that the branch was already there when it was.
         var told = JsonDocument.Parse(await File.ReadAllTextAsync(DaorisHome.Entry(Home, HomeEntry.Plugins,".data", Id, "landed.json"))).RootElement;
@@ -74,17 +71,17 @@ public sealed class LandingPluginTests : LandingPluginFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         var asked = 0;
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         InstallManifest();
         var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        var nothing = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var nothing = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
         Assert.False(nothing.Landed);
 
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
         await GitAsync(root, "branch", "feature/0fda18-fix");
-        var taken = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var taken = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
         Assert.False(taken.Landed);
         Assert.Contains("already a branch", taken.Message);
 
@@ -96,18 +93,18 @@ public sealed class LandingPluginTests : LandingPluginFixture
     public async Task A_rule_whose_plugin_is_gone_or_off_is_refused_at_the_press_and_nothing_is_made()
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var missing = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var missing = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
         Assert.False(missing.Landed);
         Assert.Contains("not installed", missing.Message);
 
         InstallManifest();
         PluginState.Disable(Home, Id);
-        var off = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var off = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
         Assert.False(off.Landed);
         Assert.Contains($"daoris plugin enable {Id}", off.Message);
 
@@ -123,7 +120,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         InstallManifest();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var asked = 0;
         var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
         var opened = await trees.OpenAsync(root, "engine", "aurora");
@@ -136,7 +133,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
         TreeLanding landed;
         using (GitVersions.Pretending(new Version(2, 30, 1)))
         {
-            landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+            landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
         }
 
         Assert.True(landed.Landed, landed.Message);
@@ -158,14 +155,14 @@ public sealed class LandingPluginTests : LandingPluginFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         InstallManifest();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var asked = 0;
         var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
         GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "engine", Set = [new("write", "deny")] });
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Equal(0, asked);
@@ -177,7 +174,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
         GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "engine", Set = [new("write", "ask")] });
         var again = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(again.Path, "more.txt", "more", "more work");
-        var accepted = await trees.LandAsync(again.Path, new LandingSubject("s5e6f7a8", "1abc23", "More"));
+        var accepted = await trees.LandAsync(again.Path, new LandingSubject("s5e6f7a8", "1abc23", "More"), gate: Lands);
         Assert.True(accepted.Landed, accepted.Message);
         Assert.Equal(1, asked);
     }
@@ -195,7 +192,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         InstallManifest();
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var trees = new SessionTrees(Home, how == "will-not-start"
             ? new LandingPlugins(Home, start: (_, _, _) => throw new DriverException($"plugin `{Id}`'s hook process could not start — `node`: not found"))
             : Plugins(_ => how == "throws"
@@ -204,7 +201,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), gate: Lands);
 
         Assert.True(landed.Landed, landed.Message);
         Assert.Contains("the work", await GitAsync(root, "log", "feature/0fda18-fix", "--oneline"));
@@ -221,17 +218,17 @@ public sealed class LandingPluginTests : LandingPluginFixture
     public async Task The_plan_names_the_plugin_and_its_problem_before_the_press()
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id), workspace: true);
+        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", Id));
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
-        var missing = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
+        var missing = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), process: Lands!.Process);
         Assert.Equal(Id, missing.Plugin);
         Assert.Contains("not installed", missing.Problem);
 
         InstallManifest();
-        var ready = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
-        Assert.Equal(new LandingPlan(LandingForm.Branch, "feature/0fda18-fix", LandingSource.Workspace, Id), ready);
+        var ready = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"), process: Lands.Process);
+        Assert.Equal((LandingForm.Branch, "feature/0fda18-fix", Id, (string?)null), (ready.Form, ready.Target, ready.Plugin, ready.Problem));
     }
 
     /// <summary>What the conversation's record keeps of a landing: the whole sentence, the plugin's part in it.</summary>

@@ -35,6 +35,14 @@ when the work moves outside it. What follows is what a worktree adds.
   to, never a `partial`. A file over the size ratchet (`tools/size-ratchet.json`) does not grow. A comment says
   why, only where the code cannot; no row ids, no history.
 
+## Tokens and round trips
+
+- Every turn re-reads the whole context, so keep it small: read outline ranges, never a hub whole; send independent
+  reads and searches together in one message; build each project once, at the end of a step; don't re-check
+  `git status` or logs between steps.
+- **Hand back at about 150 tool calls**, at the end of the step you are on: commit, say what is done and what is
+  left. A fresh builder carries on from your commits for far less than your context costs per turn.
+
 ## Gates
 
 - Red first: run the failing test before the code. Run only your own tests, filtered.

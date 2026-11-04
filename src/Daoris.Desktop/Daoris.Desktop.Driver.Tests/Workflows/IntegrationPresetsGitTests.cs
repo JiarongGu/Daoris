@@ -101,8 +101,8 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
         var root = await RepositoryAsync("engine");
         await CommitAsync(root, LandedGates.File, Declaration, "the declaration");
         var blob = (await GitAsync(root, "rev-parse", $"HEAD:{LandedGates.File}")).Trim();
-        DriverConfig.Empty.WithLine("engine", "main").WithLanding("engine", new LandingRule(LandingForm.Branch, Pattern, AutoAccept: true))
-            .WithLandingIntegrate("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
+        DriverConfig.Empty.WithLine("engine", "main")
+            .WithLinePolicy("engine", new LandingIntegrate(Request: LandingIntegrate.Done, Gates: LandingIntegrate.Declared))
             .WithIntegrationGates("engine", blob)
             .Save(ConfigPath);
         var process = await SavedPresetAsync("integrated-no-press");

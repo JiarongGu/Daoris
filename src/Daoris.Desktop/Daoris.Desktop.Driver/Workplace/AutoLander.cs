@@ -964,7 +964,7 @@ public sealed class AutoLander(
             var ownTree = trees.Holds(tree);
             var (where, repository) = ownTree ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
             // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2), as the look and the landing read it.
-            var landing = process is { Named: true } named ? named.Landing : LandingRules.Effective(config, repository, where);
+            var landing = process is { Named: true } named ? named.Landing : LandingRules.Line(config, repository, where);
             // WORKFLOWCLEAN1 1c: a run whose `land` the runtime performs writes no due entry; its start is the runtime's, not the look's.
             var performed = process is { LandsByRuntime: true };
             // LANDBACK1 part 1: where the person's Accept is kept on the session, its end is due whatever the rule's switch says, and ends

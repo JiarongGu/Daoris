@@ -23,10 +23,8 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     private const string Automatic =
         """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic","plugin":"pr-plugin"},{"id":"pr","kind":"pull-request"}]""";
 
-    /// <summary>`engine` lands on a branch its rule names a pattern for, and chooses the workflow as its default.</summary>
-    private static readonly DriverConfig Chosen = WorkflowSelection.Apply(
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "work/{quest}-{slug}")),
-        new WorkflowUse(Id, "engine", null, null));
+    /// <summary>`engine` chooses the workflow as its default.</summary>
+    private static readonly DriverConfig Chosen = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowUse(Id, "engine", null, null));
 
     /// <summary>The proposal's file as the service's box writes it (WORKFLOW1h-a), read back as the driver reads it.</summary>
     private HelpProposal Propose(

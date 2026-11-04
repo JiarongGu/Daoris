@@ -11,8 +11,7 @@ public sealed class OverlapPlannerTests
         new(id, "Asker", "Game", $"Ask {id}", "Here is why.", status) { Paths = paths };
 
     private static DriverConfig Rule(string? overlap) =>
-        (DriverConfig.Empty with { Drivable = ["Game"], Cap = 4 })
-        .WithLanding("Game", new LandingRule("branch", "quest/{slug}-{quest}") { Integrate = new LandingIntegrate(Overlap: overlap) });
+        (DriverConfig.Empty with { Drivable = ["Game"], Cap = 4 }).WithLinePolicy("Game", new LandingIntegrate(Overlap: overlap));
 
     private static Consideration Plan(QuestView[] quests, DriverConfig config, Snapshot? with = null)
     {

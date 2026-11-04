@@ -22,12 +22,12 @@ public abstract class TreeSyncFixture : LandedFixture
     /// B: a session's work in two commits, landed as a branch; then S, the chain's next step, grown from B's tip with
     /// one commit of its own; then the parent's tree tidied, as a landing rule's tidy leaves it, its work on B.
     /// </summary>
-    protected static async Task<(TreeOpened Parent, string B, TreeOpened Step)> ParentAndStepAsync(SessionTrees trees, string root)
+    protected async Task<(TreeOpened Parent, string B, TreeOpened Step)> ParentAndStepAsync(SessionTrees trees, string root)
     {
         var parent = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(parent.Path, "shared.txt", "one\ntwo\n", "b1");
         await CommitAsync(parent.Path, "b.txt", "b\n", "b2");
-        var landed = await trees.LandAsync(parent.Path, new LandingSubject("s1", "q1", "First"));
+        var landed = await trees.LandAsync(parent.Path, new LandingSubject("s1", "q1", "First"), gate: Lands);
         Assert.True(landed.Landed, landed.Message);
 
         var step = await trees.OpenAsync(root, "engine", "aurora", from: parent.Branch);

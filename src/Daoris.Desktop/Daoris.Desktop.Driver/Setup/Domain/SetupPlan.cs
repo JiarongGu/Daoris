@@ -70,9 +70,6 @@ public sealed record SetupPlan(string Repository)
     /// <summary>The quest's body (<see cref="SetupBrief"/>).</summary>
     public string? Body { get; init; }
 
-    /// <summary>How its work lands, said before the press (D117 §6.3).</summary>
-    public Landing? Landing { get; init; }
-
     /// <summary>The agent this machine's driven sessions start on, which would carry it.</summary>
     public string? Adapter { get; init; }
 

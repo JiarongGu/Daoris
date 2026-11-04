@@ -4,51 +4,18 @@
 // design (D31): where a rule should change, the UI proposes the command to run in the repository that
 // owns it.
 
-// `workspace` rides every cross-repository shape (D48): it is the unit of sharing, so a view that
-// shows material from more than one must be able to say which is which. Optional on the way in —
-// a host older than workspaces simply does not send it, and nothing here should crash over that.
-// `version` (WIRING1b): the host's own, which a host older than it does not send.
-export type Status = { semantic: boolean; tier: string; note?: string; version?: string | null };
+// The knowledge reads' shapes are the service's declarations (`generated/service.ts`, written from src/Daoris.Contracts),
+// under the names the page reads them by.
+import type { HitResponse, ProvenanceResponse } from './generated/service';
+export type {
+  StatusResponse as Status, ProvenanceResponse as Provenance, RepositoryResponse as Repository, HitResponse as Hit,
+  EntryResponse as Entry, ConvergenceEntryResponse as ConvergenceEntry, ConvergenceResponse as Convergence,
+} from './generated/service';
 /**
- * Which point in a repository's history a deployment's copy of its knowledge came from (D48 §6).
- *
- * Absent on a deployment that reads its own checkouts — it has no feed, and what it shows is the
- * machine's own state. Present on a shared one, where the index is a *claim about a commit*: naming
- * the commit is what makes staleness something a person can see rather than must assume.
+ * A search's hits, and which tier answered them: `lexical`, `semantic`, `lexical+semantic`, or `none` when no half
+ * answered, which is not the same as nothing matching. Null from a host that sends no header.
  */
-export type Provenance = {
-  commit: string; shortCommit: string; committedAt: string; branch: string; origin?: string;
-};
-export type Repository = {
-  name: string; total: number; local: number; canonical: number; workspace?: string;
-  fed?: Provenance;
-};
-export type Hit = {
-  id: string; repository: string; kind: string; title: string;
-  path: string; excerpt?: string; score: number; workspace?: string;
-  firstLine?: number | null; lastLine?: number | null; excerptLine?: number | null;
-};
-/**
- * A search's hits, and which tier answered them (TIER1): `lexical`, `semantic`, `lexical+semantic`,
- * or `none` when no half answered — which is not the same as nothing matching. Null from a host older
- * than the header.
- */
-export type SearchAnswer = { hits: Hit[]; tier: string | null };
-export type Entry = {
-  id: string; repository: string; kind: string; provenance: string;
-  title: string; path: string; body: string; workspace?: string;
-  firstLine?: number | null; lastLine?: number | null;
-};
-export type ConvergenceEntry = {
-  id: string; repository: string; kind: string; title: string; path: string;
-};
-export type Convergence = {
-  method: 'Identical' | 'Restatement' | 'Convergent';
-  similarity: number;
-  repositories: string[];
-  entries: ConvergenceEntry[];
-  suggestion: string;
-};
+export type SearchAnswer = { hits: HitResponse[]; tier: string | null };
 /**
  * A file a quest carries, by name (D65 §2). `path` is where THIS machine keeps it — answered only to a
  * caller on this machine, and only when the bytes are here — so the page reads its PRESENCE as "can be
@@ -293,7 +260,7 @@ export type CodeDependency = { from: string; to: string; kind: string };
 export type CodeMapAnswer = {
   repository: string; file?: string | null; problem?: string | null;
   modules: CodeModule[]; dependencies: CodeDependency[];
-  fed?: Provenance;
+  fed?: ProvenanceResponse;
 };
 export type QuestAction = { quest: Quest; message: string };
 /**
@@ -598,6 +565,7 @@ export type Retired = { repository: string; retired: boolean; message: string };
  */
 import { PAGE_SHOWN } from './results';
 import { onHost } from './host';
+import { ROUTES, type RouteName, type Routes } from './generated/service';
 
 function qs(params: Record<string, string | number | boolean | null | undefined>): string {
   const pairs = Object.entries(params)
@@ -625,17 +593,32 @@ async function reach(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
+async function answered(response: Response): Promise<Response> {
+  if (response.ok) return response;
+  // The service reports its own errors as { error }; anything else means the host itself failed, and the status line is the
+  // only thing that says anything useful. The status rides along, so a reader can tell "the service has none by that name"
+  // (an entry gone since it was found) from a service that failed; the sentence is still the service's own.
+  const body = await response.json().catch(() => null);
+  throw Object.assign(new Error(body?.error ?? `${response.status} ${response.statusText}`), { status: response.status });
+}
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await reach(path, { signal });
-  if (!response.ok) {
-    // The service reports its own errors as { error }; anything else means the host itself failed,
-    // and the status line is the only thing that will say anything useful.
-    const body = await response.json().catch(() => null);
-    // The status rides along, so a reader can tell "the service has none by that name" (an entry gone since it
-    // was found, FRAME1f) from a service that failed; the sentence is still the service's own.
-    throw Object.assign(new Error(body?.error ?? `${response.status} ${response.statusText}`), { status: response.status });
-  }
-  return response.json() as Promise<T>;
+  return (await answered(await reach(path, { signal }))).json() as Promise<T>;
+}
+
+/**
+ * A read the service declares (`generated/service.ts`), by its record's name: each `{name}` of its path filled from the request,
+ * the rest its query. Its answer is typed by the declaration, and its response rides along for what its headers say.
+ */
+async function send<N extends RouteName>(name: N, request: Routes[N]['request'], signal?: AbortSignal) {
+  const rest = { ...request } as Record<string, string | number | boolean | null | undefined>;
+  const path = ROUTES[name].path.replace(/\{(\w+)[^}]*\}/g, (_, key: string) => {
+    const value = rest[key];
+    delete rest[key];
+    return encodeURIComponent(String(value));
+  });
+  const response = await answered(await reach(`${path}${qs(rest)}`, { signal }));
+  return { answer: await response.json() as Routes[N]['answer'], response };
 }
 
 /**
@@ -684,7 +667,7 @@ export async function holdPersonKey(ask: (() => Promise<string | null>) | null):
 /** Whether the page holds the person key: the service's confirmations are the page's to answer only then (their door takes it). */
 export const holdsPersonKey = (): boolean => personKey !== null;
 
-const send = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
+const write = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
   const headers = {
     ...(body === undefined ? {} : { 'content-type': 'application/json' }),
     ...(personKey ? { 'Daoris-Person': personKey } : {}),
@@ -697,14 +680,14 @@ const send = (path: string, body: unknown, method: 'POST' | 'DELETE') => {
 };
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
-  let response = await send(path, body, method);
+  let response = await write(path, body, method);
   // PERSONDOOR1f (design §2.3, §5.2): a key from an earlier start of the host is refused `stale`. The shell is asked again and
   // the write sent once more with the key it holds now; a second refusal is the host's sentence, said as every refusal is.
   if (response.status === 403 && personKey !== null) {
     const refused = await response.clone().json().catch(() => null);
     if (refused?.code === 'stale') {
       personKey = await askedKey();
-      response = await send(path, body, method);
+      response = await write(path, body, method);
     }
   }
   if (!response.ok) {
@@ -751,14 +734,14 @@ export type ServiceConfirmation = {
 const asThePerson = <T>(path: string, body: unknown): Promise<T> => post<T>(path, body);
 
 export const api = {
-  status: (signal?: AbortSignal) => get<Status>('/api/status', signal),
+  status: async (signal?: AbortSignal) => (await send('ReadStatus', {}, signal)).answer,
   /**
    * Whether the host holds a person key of its own (D156 §2.3): asked with a fresh nonce, a host holding one answers its `proof`,
    * and one holding none answers as it always did. The page holding no key beside a host that holds one is the adoption notice's
    * case (PERSONDOOR1f): the person's own acts are refused there.
    */
   hostHoldsAKey: async (signal?: AbortSignal): Promise<boolean> =>
-    typeof (await get<Status & { proof?: unknown }>(`/api/status${qs({ prove: nonce() })}`, signal)).proof === 'string',
+    typeof (await send('ReadStatus', { prove: nonce() }, signal)).answer.proof === 'string',
   /** What waits at the service for the person's confirmation (PERSONDOOR1b): a read, whatever key the page holds. */
   confirmations: (signal?: AbortSignal) => get<ServiceConfirmation[]>('/api/confirmations', signal),
   /**
@@ -770,25 +753,17 @@ export const api = {
       `/api/confirmations/${encodeURIComponent(id)}/${confirm ? 'confirm' : 'refuse'}`, undefined),
   // Every cross-repository read below takes the scope (WSP5; D48 §4): null asks for every circle the
   // deployment holds, and the switcher says so; a name asks for that one, and nothing else is mixed in.
-  repositories: (workspace: string | null, signal?: AbortSignal) =>
-    get<Repository[]>(`/api/repositories${qs({ workspace })}`, signal),
-  entry: (id: string, signal?: AbortSignal) =>
-    get<Entry>(`/api/entry?id=${encodeURIComponent(id)}`, signal),
+  repositories: async (workspace: string | null, signal?: AbortSignal) => (await send('ListRepositories', { workspace }, signal)).answer,
+  entry: async (id: string, signal?: AbortSignal) => (await send('ReadEntry', { id }, signal)).answer,
+  // A search and a convergence ask one MORE than the view shows, so it can say whether there are more without guessing
+  // (`results.ts`); the extra row is never rendered.
   search: async (q: string, localOnly: boolean, workspace: string | null, signal?: AbortSignal): Promise<SearchAnswer> => {
-    // One MORE than the view shows, so the view can say whether there are more without guessing
-    // (`results.ts`). The extra row is never rendered.
-    const response = await reach(`/api/search${qs({ q, localOnly, limit: PAGE_SHOWN + 1, workspace })}`, { signal });
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      throw new Error(body?.error ?? `${response.status} ${response.statusText}`);
-    }
-    // Which tier ANSWERED this search (TIER1, D24) rides a header, so the body stays the array every
-    // other client reads. A host older than it sends none, and the view falls back to the configured.
-    return { hits: await response.json() as Hit[], tier: response.headers.get('x-daoris-tier') };
+    const { answer, response } = await send('Search', { q, localOnly, limit: PAGE_SHOWN + 1, workspace }, signal);
+    // Which tier answered rides a header, so the body stays the array every other client reads.
+    return { hits: answer, tier: response.headers.get('x-daoris-tier') };
   },
-  convergence: (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
-    // One more than the view shows, for the same reason search asks for one more (`results.ts`).
-    get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: PAGE_SHOWN + 1, workspace })}`, signal),
+  convergence: async (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
+    (await send('FindConvergence', { minimumSimilarity, limit: PAGE_SHOWN + 1, workspace }, signal)).answer,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
   /**

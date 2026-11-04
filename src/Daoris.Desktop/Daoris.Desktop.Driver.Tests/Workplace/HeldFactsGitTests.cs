@@ -158,43 +158,6 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 <i>Accept</i>'s tidy under the merge form: the end is judged before the tree goes, so its entry is kept ended. Under the branch
-    /// form the session branch goes inside a landing branch the line does not hold yet: its unit stays open, named in the landing's
-    /// <c>Units</c>, until the landing's own end retires it.
-    /// </summary>
-    [Fact]
-    public async Task Accepts_tidy_keeps_an_ended_trace_under_the_merge_form_and_an_open_unit_under_the_branch_form()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(Home);
-        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
-
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Tidy: true)).Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-        var (mergedTree, merged, _) = await WorkAsync(trees, root, "a.txt");
-        Assert.True((await trees.LandAsync(mergedTree, new LandingSubject("s1", "17", "merged work"))).Landed);
-        Assert.Equal(EndBy.Merged, Entry(merged).Held?.By);
-        Assert.NotNull(Entry(merged).GoneAt);
-
-        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true))
-            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
-        var (handedTree, handed, _) = await WorkAsync(trees, root, "b.txt");
-        var landed = await trees.LandAsync(handedTree, new LandingSubject("s2", "18", "handed work"));
-        Assert.True(landed.Landed, landed.Message);
-
-        var trace = Entry(handed);
-        var landing = new LandedBranches(Home).Of("engine", landed.Branch!)!;
-        Assert.NotNull(trace.GoneAt);
-        Assert.Null(trace.Held);
-        Assert.Equal([trace.Unit!], landing.Units);
-        Assert.True(SessionBranches.Open(trace, SessionBranches.OpenUnits(Home)));
-
-        await MergedAsync(root, landed.Branch!);
-        Assert.Equal(1, await KeepAsync(trees, root));
-        Assert.Equal(EndBy.Merged, new LandedBranches(Home).Of("engine", landed.Branch!)!.Held?.By);
-        Assert.False(SessionBranches.Open(trace, SessionBranches.OpenUnits(Home)));
-    }
-
-    /// <summary>
     /// FABRIC-END2d (a), a guard green before and after: a session branch recorded before END2, with no unit, whose squashing landing's branch
     /// the line holds, is kept ended with no unit naming its landing. The line holds the squash commit, whose tree is the session's own, so
     /// the content proof ends it on the line, as the clean-up's press proves it there (<c>SquashedHoldAsync</c>, then the content).

@@ -736,8 +736,7 @@ public sealed class DriverWatch(
                     var gates = new NodeGates(home, service);
                     pass = await Stages.TimeAsync("nodes", () => runtime.PassAsync(new NodeRuntimeLook(config, whole)
                     {
-                        // INTEGRATE1n part n3 (F51): `integrate` alone arms the runtime, so the read is its repositories' branch units alone.
-                        Units = token => ReadNodeUnitsAsync(home, service, token, runtime.ReadsIntegratingOnly(config) ? config : null),
+                        Units = token => ReadNodeUnitsAsync(home, service, token),
                         Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
                         // FABRIC-PERFORM1d: a receipt's role is what its plugin's manifest declares of its schema.
                         Resources = plugin => PluginCatalog.Load(home).Contributing.FirstOrDefault(each => each.Manifest.Id == plugin)?.Manifest.Resources,
@@ -1070,16 +1069,12 @@ public sealed class DriverWatch(
     /// repository a bound quest's chain worked in, taken for this read alone (<see cref="QuestClosing.TipsAsync"/>): a home with no quest
     /// bound to a closure graph, the owner's install, starts no git here.
     /// </remarks>
-    internal static async Task<NodeUnitsRead> ReadNodeUnitsAsync(string home, ServiceClient service, CancellationToken token, DriverConfig? narrowedTo = null)
+    internal static async Task<NodeUnitsRead> ReadNodeUnitsAsync(string home, ServiceClient service, CancellationToken token)
     {
         var unread = new List<string>();
         var unlinked = new List<string>();
         var registry = await service.RegistryAsync(token).ConfigureAwait(false);
-        // INTEGRATE1n part n3 (F51): where `integrate` alone arms the runtime, the read is the branch units of the repositories whose rule
-        // carries it, a repository known by each workspace the registry holds it in, else by none; no quest, ask or session is read.
-        var units = narrowedTo is null
-            ? await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token, unlinked).ConfigureAwait(false)
-            : await WorkUnits.BranchesAsync(home, new HashSet<string>(), IntegratingIn(narrowedTo, registry), unread, token).ConfigureAwait(false);
+        var units = await WorkUnits.ReadAsync(home, new Dictionary<string, string>(), new HashSet<string>(), service, unread, token, unlinked).ConfigureAwait(false);
         // GITAUTH1c: the doors find a checkout's repository from the files alone, so the registry's roots are kept for them.
         GitFolders.Remember(home, registry.Where(repo => repo.Root is { Length: > 0 }).Select(repo => (repo.Root!, repo.Repository, repo.Workspace)));
         var roots = registry.Where(repo => repo.Root is { Length: > 0 }).GroupBy(repo => repo.Repository, StringComparer.Ordinal)
@@ -1087,14 +1082,6 @@ public sealed class DriverWatch(
         // FABRIC-CUTOVER1c (the cutover design §2.3): why the work's attribution was not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
         return new NodeUnitsRead(units, roots) { Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked };
-    }
-
-    /// <summary>Whether a repository is one whose Current branch graph holds <c>integrate</c> in any workspace the registry holds it in, else in none.</summary>
-    private static Func<string, bool> IntegratingIn(DriverConfig config, IEnumerable<RepoView> registry)
-    {
-        var workspaces = registry.GroupBy(repo => repo.Repository, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Select(repo => (string?)repo.Workspace).Distinct().ToList(), StringComparer.OrdinalIgnoreCase);
-        return repository => (workspaces.TryGetValue(repository, out var held) ? held : [null]).Any(workspace => NodeRuntime.Integrating(config, repository, workspace));
     }
 
     /// <summary>

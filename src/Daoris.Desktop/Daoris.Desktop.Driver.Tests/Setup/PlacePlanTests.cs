@@ -113,11 +113,9 @@ public sealed class PlacePlanTests
             Assert.Equal(PlaceProjection.ValuesAt(config, "engine", "aurora", PlaceSource.RepositoryLevel), side.Values);
             Assert.Equal(SetupPresets.LandOf(WorkflowProcesses.Otherwise(store, config, "engine", "aurora").Steps!), side.Land);
             Assert.Equal(RoleWork.Codes.Select(work => WorkPolicies.Of(config, work, "engine", "aurora").Consent), side.Policies.Select(policy => policy.Consent));
-            Assert.Equal(LandingRules.Choose(config, "engine", "aurora").Rule.Form, side.Values.Landing.Value);
         }
 
-        // No landing rule is written (design §1.2): the place follows the copy, and the line gets its policy.
-        Assert.Empty(after.Landings);
+        // The place follows the copy, and the line gets its policy.
         Assert.Equal("integrated", WorkflowSelection.Resolve(after, "engine", "aurora", task: null).Workflow);
         Assert.NotNull(after.LinePolicyOf("engine", "aurora"));
     }

@@ -3,22 +3,20 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1d (D190 point 4; the cutover design §4): a run bound to a graph version lands where its record says, and only the commit its
-/// <c>handed</c> is bound to. A real pass of the runtime makes <c>handed</c> active on the session's branch at its tip, read from git, and the
-/// door lands that commit; before any pass the door holds and asks for one. A commit made between the gate's judgement and the landing lands
-/// nothing, on the branch path and on the merge path, which gains the pin a branch landing already had; the pass after it judges the new tip,
-/// and the door lands that.
+/// A run bound to a graph version lands where its record says, and only the commit its <c>land</c> is bound to. A real pass of the runtime makes
+/// <c>land</c> active on the session's branch at its tip, read from git, and the door lands that commit. A commit made between the gate's
+/// judgement and the landing lands nothing, on the branch path and on the merge path; the pass after it judges the new tip, and the door lands that.
 /// </summary>
 /// <remarks>Real git, as the other landing tests, a stand-in for the service's quests and records, and no plugin: nothing reaches a network.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class GraphRunLandingTests : AutoLandingFixture
 {
-    /// <summary>The least a named version's graph holds: <c>claimed</c>, then <c>handed</c>.</summary>
-    private const string ClaimedThenHanded = """
-        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
-         "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
+    /// <summary>The least a graph run lands by: <c>claimed</c>, then a <c>land</c> by <paramref name="land"/>'s options.</summary>
+    private static string ClaimedThenLand(string land) => $$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"landing",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"landing","kind":"land","version":1,"reach":"performed","options":{{land}}}],
+         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"}]}
         """;
 
     private static readonly LandingSubject Work = new("s1", "q1", "Fix the gap");
@@ -47,13 +45,12 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         public IReadOnlyList<WorkStepHeard> TakeSteps() => [];
     }
 
-    /// <summary>Run q1 bound to a graph version, under <paramref name="rule"/>, its session s1's tree done with one commit.</summary>
-    private async Task<(string Root, string Tree, GrownBranch Branch)> BoundRunAsync(LandingRule rule)
+    /// <summary>Run q1 bound to a graph version landing by <paramref name="land"/>'s options, its session s1's tree done with one commit.</summary>
+    private async Task<(string Root, string Tree, GrownBranch Branch)> BoundRunAsync(string land)
     {
         var root = await RepositoryAsync("engine");
-        Rule(rule);
         var tree = await DoneSessionAsync(root, "s1", "q1");
-        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ClaimedThenHanded), DateTimeOffset.UtcNow);
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ClaimedThenLand(land)), DateTimeOffset.UtcNow);
         return (root, tree, Assert.Single(new SessionBranches(_home).All()));
     }
 
@@ -79,7 +76,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     private LandingDoor Door() => new(() => new AutoLander(
         _home, _world, new SessionTrees(_home, Plugins()), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { Performs = true, HoldsLease = () => true });
 
-    private NodeStatus Handed() => Status("handed");
+    /// <summary>A branch made for the person, no plugin asked.</summary>
+    private const string BranchLand = """{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}""";
 
     private NodeStatus Status(string node) => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses[node];
 
@@ -103,7 +101,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     public async Task A_held_done_holds_a_defaults_run_at_its_quest_holds_step_and_the_look_says_it()
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge with { AutoAccept = true });
         var tree = await DoneSessionAsync(root, "s1", "q1", held: true);
         await CopyAsync("merge-automatic");
         var line = await HeadAsync(root);
@@ -122,7 +119,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     public async Task A_version_without_the_holds_lands_a_held_done_with_no_press()
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge with { AutoAccept = true });
         var tree = await DoneSessionAsync(root, "s1", "q1", held: true);
         RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"landing",
@@ -139,9 +135,9 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     }
 
     [Fact]
-    public async Task The_door_lands_where_the_pass_made_handed_active_and_holds_before_any_pass()
+    public async Task The_door_lands_where_the_pass_made_land_active_and_holds_before_any_pass()
     {
-        var (root, tree, branch) = await BoundRunAsync(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var (root, tree, branch) = await BoundRunAsync(BranchLand);
         var trees = new SessionTrees(_home);
 
         var before = await trees.GateAsync(tree, "q1", _world, "s1");
@@ -154,7 +150,8 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
 
         await PassAsync(root, branch);
         var commit = await HeadAsync(tree);
-        Assert.Equal((NodeStates.Active, branch.Unit, commit), (Handed().State, Handed().Binding!.Observes, Handed().Binding!.SubjectRevision));
+        var landing = Status("landing");
+        Assert.Equal((NodeStates.Active, branch.Unit, commit), (landing.State, landing.Binding!.Observes, landing.Binding!.SubjectRevision));
 
         var gate = await trees.GateAsync(tree, "q1", _world, "s1");
         Assert.Equal((GraphGateStates.Lands, commit), (gate.Graph!.State, gate.Tip));
@@ -171,7 +168,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     public async Task A_version_copied_from_merge_automatically_lands_the_session_with_no_press()
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge);
         var tree = await DoneSessionAsync(root, "s1", "q1");
         Assert.DoesNotContain((await CopyAsync("merge-automatic")).Nodes, node => node.Kind == NodeKinds.Review);
         var branch = Assert.Single(new SessionBranches(_home).All());
@@ -197,7 +193,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     public async Task A_saved_version_s_land_lands_its_work_at_done_through_its_delivery()
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge);
         await CopyAsync("merge-automatic");
         var tree = await NamedDoneAsync(root, "s1", "q1");
         // WORKFLOWCLEAN1 1c: the conclusion wrote no due entry, and the look chooses nothing; the runtime's pass starts the `land`.
@@ -230,7 +225,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         // The loop's process holds the home's lease, whose holder alone keeps what the line holds.
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge);
         await CopyAsync("merge-automatic");
         await NamedDoneAsync(root, "s1", "q1");
         await InventoryPassAsync(root);
@@ -274,7 +268,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     private async Task<(string Root, string Tree, GrownBranch Branch, LandingDoor Door)> ReviewedRunAsync(string graph)
     {
         var root = await RepositoryAsync("engine");
-        Rule(LandingRule.Merge);
         var tree = await DoneSessionAsync(root, "s1", "q1");
         RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, graph), DateTimeOffset.UtcNow);
         var branch = Assert.Single(new SessionBranches(_home).All());
@@ -447,8 +440,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     [InlineData(LandingForm.Merge)]
     public async Task A_commit_inserted_between_the_gates_judgement_and_the_landing_lands_nothing(string form)
     {
-        var rule = form == LandingForm.Branch ? new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}") : new LandingRule(LandingForm.Merge);
-        var (root, tree, branch) = await BoundRunAsync(rule);
+        var (root, tree, branch) = await BoundRunAsync(form == LandingForm.Branch ? BranchLand : """{"method":"merge"}""");
         var trees = new SessionTrees(_home);
         await PassAsync(root, branch);
         var judged = await HeadAsync(tree);
