@@ -215,14 +215,17 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     [Fact]
     public void Without_the_local_release_plugin_none_of_its_nodes_is_sent()
     {
-        var config = DriverConfig.Parse("{ \"workCycles\": { \"engine\": { \"quest\": " + WorkflowDefaults.Of("release")!.GraphJson + " } } }");
+        var config = DriverConfig.Parse("{}");
+        var graph = ReleaseGraph();
+        var quest = new QuestView("q7", "game", "engine", "Ship", "", "Taken") { Closure = NodeGraphs.Digest(graph) };
         var unit = new WorkUnit("quest:q7", WorkUnitKind.Quest, new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter),
-            new WorkSubject("#q7", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), []);
+            new WorkSubject("#q7", null), new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "open"), [])
+        { Records = new WorkUnitRecords(null, [], quest) };
         var read = new NodeUnitsRead([unit], new Dictionary<string, string>());
 
-        var without = Assert.Single(NodeRuntime.Govern(config, read, []));
+        var without = Assert.Single(NodeRuntime.Govern(config, read, [], _ => graph));
         Assert.Equal(["check"], without.Dispatchable.Order());
-        var with = Assert.Single(NodeRuntime.Govern(config, read, LocalReleaseSteps()));
+        var with = Assert.Single(NodeRuntime.Govern(config, read, LocalReleaseSteps(), _ => graph));
         Assert.Equal(["check", "find", "publish", "release"], with.Dispatchable.Order());
     }
 

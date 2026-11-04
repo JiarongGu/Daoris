@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FABRIC-RUN1 through the loop (the fabric events design §D6, §E7, §A3): the watch loop holding the home's lease and a hook set, a stand-in
-/// performer installed. Where a repository's quests are governed by a work cycle naming the stand-in's step, the loop's runtime awaits the
+/// performer installed. Where a repository's quests are bound to a graph naming the stand-in's step, the loop's runtime awaits the
 /// quest's unit, the look's supervision starts the process, the step is sent once and its completion heard and kept. Where nothing names a
 /// performed step (the owner's install today), the same loop starts no plugin process and writes no unit record.
 /// </summary>

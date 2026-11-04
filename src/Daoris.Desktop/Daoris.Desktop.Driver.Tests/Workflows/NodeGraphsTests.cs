@@ -46,7 +46,7 @@ public sealed class NodeGraphsTests
 
     private static readonly NodeGraph Example = new(Nodes, Wires, ["line", "dependency"], "close") { Cleanup = new(GraphCleanupUntil.End) };
 
-    /// <summary>The example as its JSON, as a named graph or a <c>workCycles</c> entry holds it.</summary>
+    /// <summary>The example as its JSON, as a named graph holds it.</summary>
     internal const string ExampleJson = """
         { "schemaVersion": 2, "entries": ["line", "dependency"], "end": "close", "cleanup": { "until": "end" },
           "nodes": [
