@@ -36,4 +36,10 @@ internal enum RunPhase
     /// are let go once it is open.
     /// </summary>
     Opened,
+
+    /// <summary>
+    /// The opened record handed to its session, which runs to its conclusion: the one stage here ends in the run's own start however the
+    /// session ended, so nothing runs after it.
+    /// </summary>
+    Handed,
 }

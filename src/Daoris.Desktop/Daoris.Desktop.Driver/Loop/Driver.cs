@@ -318,6 +318,69 @@ public sealed class Driver(
 
     void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
 
+    SessionHold IRunWiring.Holds => Holds;
+
+    Func<string, string?> IRunWiring.Variable => Variable;
+
+    (string Role, long Revision)? IRunWiring.RoleTaken(Consideration start, string? named) => RoleTaken(start, named);
+
+    (ProcessStartInfo Info, string? Notice) IRunWiring.Prepare(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection) =>
+        Prepare(adapter, target, selection);
+
+    (string? File, object? Meta, HandedSection Handed) IRunWiring.HandRules(
+        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository, string tree, string? kept,
+        AcrossReach? across, IReadOnlyList<string>? plugins, IReadOnlyList<string>? continued, HeavyHanded? heavy) =>
+        HandRules(adapter, info, sessionId, workspace, repository, tree, kept, across: across, plugins: plugins, continued: continued, heavy: heavy);
+
+    EarlierMaker? IRunWiring.LeftBy(PriorSession prior) => LeftBy(prior);
+
+    Task<SessionParts> IRunWiring.PartsAsync(
+        EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct) =>
+        PartsAsync(entry, joinedIn, entryTree, opened, repository, ct);
+
+    void IRunWiring.SayMoved(PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief) =>
+        SayMoved(prior, sessionId, agent, account, why, brief);
+
+    Task<(ActorAsked Asked, string Choice)?> IRunWiring.ReaskAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, ActorEffective refused, HarnessSelection selection, CancellationToken ct, string? role) =>
+        ReaskAsync(start, registry, refused, selection, ct, role);
+
+    Task<(ActorAsked Asked, string Choice)?> IRunWiring.ReaskHandedAsync(
+        Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct, string? role) =>
+        ReaskHandedAsync(start, agent, selection, refusal, refused, ct, role);
+
+    Action<JsonElement> IRunWiring.Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => Said(adapter, selection, sessionId);
+
+    Task<bool> IRunWiring.WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
+        WaitsOnOwnHelperAsync(session, quest, openedAt, ct);
+
+    Task IRunWiring.ConcludedForOpinionAsync(
+        string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct) =>
+        ConcludedForOpinionAsync(sessionId, quest, status, state, workTree, workspace, ct);
+
+    SessionConclusion IRunWiring.AccountRefused(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended) =>
+        AccountRefused(conclusion, adapter, selection, ended);
+
+    SessionConclusion IRunWiring.ModelRefused(
+        SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId) =>
+        ModelRefused(conclusion, agent, selection, model, ended, sessionId);
+
+    SessionConclusion IRunWiring.AccountSignedOut(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended) =>
+        AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
+
+    (SessionConclusion Conclusion, bool Limit) IRunWiring.AccountLimited(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        AcpUsage? used, LimitSeen? byCode) =>
+        AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used, byCode);
+
+    Task<string?> IRunWiring.HandOverAtTurnEndAsync(string session, string quest, CancellationToken ct) => HandOvers.AtTurnEndAsync(session, quest, ct);
+
+    StartReservation IRunWiring.MovingReservation(Consideration start) => MovingReservation(start);
+
+    Task<SessionConclusion> IRunWiring.EndStoppedAsync(string sessionId, SessionStop stop) => EndStoppedAsync(sessionId, stop);
+
     ConversationMoves IRunWiring.Moves => Moves;
 
     Action<LineCourse>? IRunWiring.Decided => Decided;
@@ -1622,622 +1685,26 @@ public sealed class Driver(
         Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
         string? movedOff = null, (string Agent, string Model)? movedOffModel = null, string? movedFrom = null)
     {
-        var quest = start.Quest;
-        var root = start.Root!;
-
-        // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
-        // locked or opened.
+        // The state lets go of the repository's trees and the carry-on's move record with the run, on every way out.
         await using var state = new RunState();
         var run = new RunRound(start, registry, untrusted, onOpened, movedOff, movedOffModel, movedFrom, fresh, state);
-        foreach (var stage in RunStages.In(RunPhase.Choose))
+
+        // Each phase's stages at its anchor, in the order the marks make: a stage may hold the start, which ends the run there.
+        foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
         {
-            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+            foreach (var stage in RunStages.In(phase))
+            {
+                if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+            }
         }
 
-        var (agent, handedQuest, stepRole, policyRole, handedFrom) =
-            (run.State.Agent, run.State.HandedQuest, run.State.StepRole, run.State.PolicyRole, run.State.HandedFrom);
-        var (selection, chosen, buildPasses, passedAccount) = (run.State.Selection, run.State.Chosen, run.State.BuildPasses, run.State.PassedAccount);
-        var (limitWalks, policyMove, resume, limitResume) = (run.State.LimitWalks, run.State.PolicyMove, run.State.Resume, run.State.LimitResume);
-        var (access, permissions) = (run.State.Access, run.State.Permissions);
-        StartRun Hold(string why) => run.Hold(why);
-        string? CarriedModel(PriorSession? record) => run.State.CarriedModel(record);
-        var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        // The session's own tree, found or grown before the record; the repository's trees stay held in the state until the record is open.
-        foreach (var stage in RunStages.In(RunPhase.Grown))
+        // The record handed to its session, which runs to its conclusion however it ends.
+        foreach (var stage in RunStages.In(RunPhase.Handed))
         {
-            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } ended) return ended;
         }
 
-        var workTree = run.State.WorkTree;
-        foreach (var stage in RunStages.In(RunPhase.Placed))
-        {
-            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
-        }
-
-        var (runBound, setUp) = (run.State.Bound, run.State.SetUp);
-        var (entryTree, priorStands, entryStands, opened, resumedIn) = (run.State.Tree.EntryTree, run.State.Tree.PriorStands, run.State.Tree.EntryStands, run.State.Tree.Opened, run.State.Tree.ResumedIn);
-        var (joinedIn, resuming, carryingOn) = (run.State.Tree.JoinedIn, run.State.Tree.Resuming, run.State.Tree.CarryingOn);
-        var (answered, handsOn, inSync, oneLook) = (run.State.Tree.Answered, run.State.Tree.HandsOn, run.State.Tree.InSync, run.State.Tree.OneLook);
-
-        // What may still hold the start before the record: the tree's trust by the harness, and the record the words wait on.
-        foreach (var stage in RunStages.In(RunPhase.Cleared))
-        {
-            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
-        }
-
-        // The record the person's words wait on, continued, or its words handed on below in a new session saying why. It may move the
-        // start, the account it walked to and the passed account.
-        var goneOn = run.State.GoneOn;
-        start = goneOn.Start;
-        var (fellBack, answerKept, written, switched) = (goneOn.FellBack, goneOn.AnswerKept, goneOn.Written, goneOn.Switched);
-        (selection, passedAccount) = (run.State.Selection, run.State.PassedAccount);
-
-        // The record opens, naming the account it opened on and why.
-        foreach (var stage in RunStages.In(RunPhase.Opened))
-        {
-            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
-        }
-
-        var (sessionId, keyed, fenced, continues, before) = (run.State.Opened.SessionId, run.State.Opened.Keyed, run.State.Opened.Fenced, run.State.Opened.Continues, run.State.Opened.Before);
-        var (openedAt, locksTree, carry) = (run.State.Opened.OpenedAt, run.State.Opened.LocksTree, run.State.Carry);
-        var prior = carryingOn ? start.Resumes : null;
-
-        // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
-        SessionStop? stoppedFirst = null;
-        // TREELOCK1: whether its record still holds its tree as the run ends, waiting on the person or going on at the next look.
-        var holdsTree = false;
-        try
-        {
-            // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
-            // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
-            // session's conversation, where the person wrote them. FOUNDATION1d-ii part 5: where the open moved them, off this one by theirs,
-            // which the ask keeps alike, each shown here under its id and its files copied here first; never by the ids the record was read with.
-            var movedBy = MovedWords.Moving(keyed) ? keyed : null;
-            IReadOnlyList<SaidWordView>? movedOn = null;
-            // FOUNDATION1f-iv part b: the record's delivery is written where each door's write of the first prompt returns, the moved words'
-            // `sent` first and their take after it, so it goes with the take only where the fence was written; where the store refused it,
-            // the moved words are not taken here and wait on the new session.
-            var delivering = fenced is null ? carry : null;
-            if (fenced is not null && movedBy is not null)
-            {
-                output?.Append(sessionId, $"— the move's record could not be written ({fenced}), so the words moved to this session wait on it.");
-            }
-            else if (fellBack is not null)
-            {
-                movedOn = await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched, opened: movedBy, delivery: delivering)
-                    .ConfigureAwait(false);
-            }
-            // SAYHELD1 (A): and those said to the session that asked while its quest waited go to its resume, the same way.
-            else if (handsOn is not null)
-            {
-                movedOn = await GoOns.HandedOnAsync(
-                        handsOn, sessionId, ContinueWhy.Of(ContinueWhy.Resumed), ct, resumed: true, opened: movedBy, delivery: delivering)
-                    .ConfigureAwait(false);
-            }
-
-            // The record that was not fenced is ended by its phase here, not at the end of a run that lasts as long as its session does. One that
-            // was fenced goes on to its door's write, which is where it delivers: the moved words' `sent` and their take, or, for a carry-on that
-            // moved no word, an older host's, the prompt's outcome alone; a run that never writes ends it by its phase as it is let go.
-            if (carry is not null && delivering is null) await carry.EndAsync().ConfigureAwait(false);
-
-            var adapter = Context.Adapters.Resolve(agent);
-            // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
-            // every harness's instruction carries.
-            var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
-            // What the cut-off session's line left in Daoris's own record (TOOL4f, D125 §3.5, as SESSCTX1b widens it, D189 point 4):
-            // Daoris's brief of the whole line, every word it took and each turn's outcome, the tree read in the tree this start
-            // works in, which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
-            // another account that is now cooling, which only a limit makes so.
-            // The note its agent left where it asked to hand over (MIXAGENT1c), the brief's own section as that agent's claim.
-            var handedNote = carryingOn && handedFrom ? handedQuest?.Note : null;
-            var brief = prior is null
-                ? null
-                : await ContextBriefs.ComposeAsync(
-                    service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
-                    config: config, tree: workTree, ct: ct).ConfigureAwait(false);
-            if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
-            // CONTEXTDRIVE1b (§3 point 2): a start with no brief carries its line's course where any count is not zero, a quest that failed here
-            // before among them; a carry-on's brief carries it among its own.
-            var course = brief is null ? ContextBrief.Counted((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts) : null;
-            var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
-            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
-            // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
-            // machine's config.
-            // The servers the plugins hand this session (D65 §1f), handed before its instruction is composed, which tells it the
-            // browser it was handed (BRWHINT1b, D78). With Daoris's own browser brought up for a server that drives it, or that server
-            // left out and the transcript told why.
-            var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(Context.Servers, Context.Browser, ct).ConfigureAwait(false);
-            var browserNotice = browserNoted?.Note;
-            // What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7): read for its instruction, never
-            // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
-            var channelDoors = new ServiceChannelDoors(service);
-            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, sessionId, ct).ConfigureAwait(false) : null;
-            // FABRIC-CLOSE1l (CLOSE1f, CLOSE1g; the fabric events design §E5): a quest whose work cycle holds `quest.close` names its graph for
-            // the take as its first session opens, so the take binds it in its own write, and a bound quest's session says `ready`, never
-            // `done`. A circle synced through a remote, by the map sync reads, binds only where the host judges the remote's handshake and
-            // every machine of it declared it knows a bound quest (FABRIC-CLOSE1i). No closure graph: nothing asked, nothing said.
-            // FABRIC-CLOSE1o: named for this session, whose take alone binds it, the service judging it again at the take. FABRIC-CUTOVER1g:
-            // the graph its run is bound to, as the bind above kept it: Current's work cycle under Current, none under a named version.
-            var closure = await ClosureBinding.AtStartAsync(
-                service, config, quest, start.Workspace ?? RemoteTarget.DefaultWorkspace,
-                RemoteTarget.Effective(Variable, home).ContainsKey(RemoteTarget.Workspace(start.Workspace)), home, ct,
-                session: sessionId, run: runBound.Binding)
-                .ConfigureAwait(false);
-            // The process its work follows (WORKFLOW1f): read for the landing a session in a tree of its own is told, and for the checks its
-            // run takes wherever its repository sets them, since a named workflow's run takes its version's, never Current's rule; and
-            // wherever its run is bound to a named workflow, whose version's `work`, or a graph's `claimed`, may set them
-            // (FABRIC-PIPELINE1b2, 1b3). Read from the binding the bind above came to, so the first session takes its version's, and
-            // neither the service's quests nor the run's file is read again (FABRIC-PIPELINE1b3).
-            var process = Context.Trees.Holds(workTree) || SessionChecks.For(config, quest.To) is not null || runBound.Binding is { IsCurrent: false }
-                ? WorkflowProcesses.Bound(home, config, quest.To, start.Workspace, runBound.Run, runBound.Binding)
-                : null;
-            // FABRIC-PIPELINE1b (D192 point 5): what its run's checks tell and hand it, its words composed from the declaration, its deny
-            // rules where its agent takes Daoris's rules; and those checks kept by its id for `run-heavy`, which reads them by the session
-            // its tree's lock names, let go as its run ends, a graph version's `callMinutes` beside them for its long-call watch (1b3).
-            var checks = SessionChecks.Of(config, quest.To, process);
-            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
-            var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
-            using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
-            var asking = await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
-            // FOUNDATION1f-iv part b: a carry-on's moved words are taken once its first prompt is written, and the take is what keeps the
-            // person's among them on the ask this instruction reads, so the instruction is handed them here, as the take will have kept them.
-            if (delivering is not null && movedBy is not null && movedOn is { Count: > 0 } && asking.Words is AskWords askRead)
-            {
-                asking = asking with { Words = askRead.WithMoved(movedOn, sessionId, quest.Id) };
-            }
-
-            var target = WithAccess(WithLanguage(asking, config, start.Workspace), access) with
-            {
-                // CONTEXTONE1c (D230 point 3): its standing block, its tree's facts with its repository's routing and the person's choices
-                // on this machine, the memory a carry-on's line read, and the file it goes through where the whole first prompt cannot
-                // carry it.
-                Block = StandingBlocks.OnMachine(asking.Block ?? new StandingFacts { Repository = quest.To }, ParticipantWork.Build, config, registry, start.Workspace) with
-                {
-                    Checkouts = across.Reads.Count > 0,
-                    Memory = brief?.Memory ?? [],
-                    File = StandingBlocks.FileOf(home, sessionId),
-                },
-                // The mode its repository's permission prompts name on its harness (AUTONOMY1b), on either door.
-                Access = permissions,
-                // MODELROLE1c (D205 §3.2): what the entry the walk took names, carried on every run; a continuation keeps its record's,
-                // and its choice with it (FOUNDATION1j part ii, §3.5(a)), so a part carried on from Build's second choice says it is that one.
-                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
-                Choice = chosen?.From ?? start.Resumes?.Choice,
-                Browser = InAppBrowserServers.Told(browserDrivers),
-                ReadsAcross = across.Reads,
-                WritesAcross = across.Writes,
-                // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
-                Session = sessionId,
-                Ready = closure?.Bound == true,
-                Answered = answered,
-                // What cut the last session off, and what it left uncommitted (D80) — read by the
-                // driver, because the session may not run `git status` itself. An open quest's start, handed the words its
-                // session could not go on with (MSG1b), takes it as any first start does: it is not yet anyone's.
-                // SYNCMERGE1b: a stand-down brought forward is told the quest is this machine's again, never its stop's words that its
-                // work would double someone else's.
-                CutOff = carryingOn && quest.Status != "Open"
-                    ? start.BroughtForward is { } forward ? BroughtForwardTold(forward) : start.Resumes!.Note ?? "it ended before closing the quest."
-                    : null,
-                // RETRYWORK1: an open quest carried on in the tree its failed session committed work in is told that record's words, to
-                // take the quest and finish the work rather than build it again.
-                Retried = carryingOn && start.CarriesWork is > 0 ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
-                // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
-                InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
-                // MAKERTRAIL2: the harness the part before it ran on and the models its door reported, so a carry-on of another maker
-                // credits what that part left uncommitted.
-                LeftBy = carryingOn ? LeftBy(start.Resumes!) : null,
-                // What its start did against the line in the tree it goes on in (LANDSYNC2).
-                InSync = inSync?.Told,
-                // Its repository's remotes Daoris holds, so it does not try them (GITAUTH1a): read after its start's own fetch above. And,
-                // where the remote helper is laid out for it, what `git remote -v` shows under the rewrite (GITAUTH1b, the design §5.3);
-                // or, on a git older than the doors need, that its remote acts are not Daoris's (GITAUTH1c, §4.1).
-                Git = GitHolds.Told(
-                    GitHolds.OfRepository(home, quest.To, RemoteTarget.Workspace(start.Workspace)),
-                    rewritten: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is not null,
-                    origin: GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null
-                        ? null
-                        : await GitRemotes.AddressOf(workTree, "origin", ct: ct).ConfigureAwait(false),
-                    older: await GitWiring.OlderAsync(home, ct).ConfigureAwait(false)),
-                // What its tree's open copied of the checkout's dependencies, so it skips the `npm ci` that would delete them (TREEDEPS1).
-                // And what a tree made again copied the same way (TREELOCAL2), where the session goes on in one.
-                Dependencies = opened?.Dependencies ?? (priorStands?.Told, entryStands?.Told) switch
-                {
-                    ({ } remadePrior, { } remadeEntry) => $"{remadePrior} {remadeEntry}",
-                    ({ } remadePrior, _) => remadePrior,
-                    (_, { } remadeEntry) => remadeEntry,
-                    _ => null,
-                },
-                // Its repository's heavy gates, once at its end through `run-heavy`, where its PATH finds the verb (HEAVYRUN1b1). Looked up
-                // under the quest's repository, the name DAORIS_REPOSITORY hands `run-heavy`, not the checkout's folder (HEAVYRUN1b2a2).
-                // Under its run's checks, the words composed from them (FABRIC-PIPELINE1b): `light`'s light gates, and its heavy gates as
-                // the verification's.
-                Heavy = heavy.Words,
-                GrewFrom = opened?.GrewFrom,
-                // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
-                Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
-                // What waited on the ask's channel for its line of work (SESSONE2b, design §2.3), its mark moved once it works.
-                Channel = channelHeld,
-                // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
-                // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
-                // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run is bound before its take
-                // (FABRIC-CUTOVER1g), so its first session is told its version's too.
-                LandsOn = Context.Trees.Holds(workTree)
-                    ? await Context.Trees.PlanAsync(
-                        workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
-                        process!)
-                        .ConfigureAwait(false)
-                    : null,
-                // How it commits (PROCESS1d-i, D164's amendment point 4): the rule standing for its repository, told with the landing
-                // to a session in a tree of its own on every form, so its agent and the repository's own rules do not stop each other;
-                // the person's checkout is told nothing. Under a named workflow the rule applies as everywhere.
-                Commits = Context.Trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
-                // The person's answer, when the session before parked to ask them (STANDDOWN2).
-                PersonSaid = carryingOn ? SaidWordView.PersonsJoined(start.Resumes!.Waiting) : null,
-                // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
-                // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
-                // FOUNDATION1d-ii part 5: the words the open moved here, where it moved them, as this record holds them.
-                Handed = handsOn is not null
-                    ? [.. (movedOn ?? handsOn.Waiting).Where(DriverContinuations.HandedToResume)]
-                    : switched ? [.. (movedOn ?? written!.Waiting).Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
-                // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
-                Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
-                // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
-                BroughtForward = carryingOn && quest.Status != "Open" && start.BroughtForward is not null,
-                HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
-                Brief = brief,
-                Course = course,
-                // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
-                HandedNote = handedNote,
-                // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
-                AccountChanged = elsewhere && !handedFrom && prior!.Limit
-                    && LineAccount.OwnHold(Context.Harnesses.CoolingOf(agent, prior.Profile)) == NextHold.Cooling,
-                // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
-                // says where that rule was set (REVIEWENV1c2).
-                SetUp = setUp,
-                SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
-            };
-            oneLook.Dispose();
-            var (info, harnessNotice) = Prepare(adapter, target, selection);
-
-            // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
-            // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
-            var startingNote = StartingNote(
-                opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
-                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null,
-                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null, broughtForward: start.BroughtForward is not null,
-                carriesWork: carryingOn && start.CarriesWork is > 0);
-            await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
-
-            // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
-            // the person's words in its own record, where they read the question. A resume that was tried already put
-            // them there (ANSWER1a).
-            // Words to a session that had ended are in its conversation already, where the person wrote them (MSG1b).
-            if (carryingOn && !answerKept && SaidWordView.PersonsJoined(start.Resumes!.Waiting) is { Length: > 0 } answeredWith && written is { Parked: true })
-            {
-                Context.Events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
-            }
-
-            var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
-            Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
-
-            // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed
-            // one under Daoris's home, and the file goes when the session does.
-            Context.Hooks?.Log.Served(Context.Catalog, sessionId, servers);
-            var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
-            // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, Context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
-
-            // What this session may do (PERM1, D72): the rules composed for its circle and repository,
-            // handed over as the harness's own settings tier.
-            // SESSCTX1b: a carry-on reads the kept folders of its line's parts, whose files its brief names (the design §3.1 item 5).
-            // CONTEXTONE1c: and the folder its standing block went through, where it went through one.
-            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
-            var rules = HandRules(
-                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
-                continued: blockFolder is null ? brief?.Kept : [.. brief?.Kept ?? [], blockFolder], heavy: heavy);
-
-            Context.Runs.Live[quest.Id] = sessionId;
-            using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
-
-            return await Holds.HoldAsync(
-                "build", adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
-                // FOUNDATION1x: `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.
-                taken: start.Resumes is null ? RoleTaken(start, stepRole) : null,
-                // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
-                // an intake, for the same reason: it was handed its whole quest at once, the pipe door
-                // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
-                refusesInput: TakesNoMessages(quest),
-                ct: ct,
-                preamble: browserNotice,
-                handedServers: servers,
-                drivesBrowser: drivesBrowser,
-                said: Said(adapter, selection, sessionId),
-                // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
-                goesOnAs: selection,
-                stopMade: stop => stoppedFirst = stop,
-                // The part works: what it was handed from the ask's channel is acknowledged by its id (SESSONE2b, COWORK1d).
-                working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
-                // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
-                // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
-                waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
-                // LANDBACK1 part 2: a turn that ends with the quest done and the tree uncommitted is carried on, not concluded.
-                carriesOn: CarriesOn(service, quest, workTree, resumed: start.Resumes is not null, () => Context.Processes.StopMade(sessionId) is not null),
-                // FOUNDATION1f-iv part b: where the first prompt's write returns, the carry-on's moved words are `sent`, then taken.
-                written: delivering is null ? null : delivering.Written,
-                // MODELROLE1c2 (D205 §3.3): its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a
-                // later entry on the same agent and account, set on this session. A continuation keeps its asked choice, so its record ends.
-                // PRESSMODEL1: a handed quest's start asks its named agent's own choice (Build's entry for it, else its default), so a
-                // refusal of that entry's model is re-asked on that agent's later entries and its default, on the same account.
-                offers: new OpenOffers(
-                    selection.Version, selection.Profile,
-                    chosen is { } walkedEntry && handedQuest is null && (start.Resumes is null || limitWalks)
-                        ? _ => ReaskAsync(start, registry, walkedEntry, selection, ct, stepRole)
-                        : chosen is not null && handedQuest is not null
-                            ? refusal => ReaskHandedAsync(start, agent, selection, refusal, refusedHanded, ct, stepRole)
-                            : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
-                // AGENTERRORS1a (D210 §5.1, §5.5): a driven quest session is tried again in the same conversation on a transient failure,
-                // asking before each try whether its quest still wants a turn, against the quest as this start was planned (finding 5).
-                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
-                conclude: async (exitCode, used, turnFailed, ended) =>
-                {
-                    if (used is not null)
-                    {
-                        usage?.Record(new UsageEntry(
-                            sessionId, quest.To, adapter.Name, selection.Profile,
-                            used.Used, used.Size, DateTimeOffset.UtcNow));
-                    }
-
-                    // The person's stop outranks the observation: a killed session leaves the same
-                    // signals as a crashed one, and only this flag knows whose decision the end was.
-                    var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
-                    var status = after?.Status ?? "Open";
-                    var stop = Context.Processes.StopMade(sessionId);
-                    // HELPERWAIT1: a clean end holding its quest, on its agent's own open helper ask and no question of the person's, waits on that helper.
-                    var awaitsHelper = stop is null && exitCode == 0 && status == "Taken"
-                                       && await WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
-                    var conclusion = stop is not null
-                        // The driver's own stop, for a take that lost (D68 §5), stands it down: the quest was someone
-                        // else's, and the reason says who. The person's, a pause's naming the pause (PAUSE1b, design
-                        // §4.1), is theirs, never interrupted. One reading, which a close cutting this off records too (FLAKE3).
-                        ? stop.Conclusion
-                        : exitCode is int code
-                            // What it waited on before and after (D79): a NEW question is this session
-                            // asking and waiting, which is a good ending, not a stand-down.
-                            ? Observation.Conclude(
-                                code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: start.Resumes is not null,
-                                // Whose take it was, and what it last said (STANDDOWN2): a session
-                                // holding the quest it took and stopping is waiting on the person.
-                                took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript),
-                                // FABRIC-CLOSE1c2: the person's reopen of the work it grew from holds its quest as it ends. FABRIC-CLOSE1c16:
-                                // or they reopened it and went on with the step while it ran, so it ends as the reopen stopped it, and is
-                                // carried on with its branch brought up to date.
-                                reopenedFrom: Planner.ReopenedFrom(quest, after),
-                                // BGWAIT1c: the native door's harness ended its own background work with its turn.
-                                backgroundCut: ended.BackgroundCut,
-                                // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
-                                submitted: QuestResults.Submitted(after),
-                                awaitsHelper: awaitsHelper,
-                                // APIREFUSAL1: its provider refused its turn, so it failed, and never parks on the person.
-                                providerRefused: ended.ProviderRefused)
-                            // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
-                            // SESSWATCH1a: the watcher's end (a headless --quiet-end) reads as its own cause, never as a bound's.
-                            : Watch.EndedMinutes(sessionId) is { } quietMinutes
-                                ? Observation.AfterQuiet(quietMinutes, quest.Status, status)
-                                : Observation.AfterTimeout(config.TestBound ?? 0, quest.Status, status);
-                    // CODEXPERM1: a park whose turn its agent cut asked the person nothing, and says so.
-                    if (stop is null) conclusion = Observation.Cut(conclusion, ended.Cut);
-
-                    // ACCESSSWAP1b: a run Daoris ended at its turn's end for a changed setup is neither a park nor a failure, and goes on.
-                    var swappedOn = stop is null && ended.SetupChanged is not null;
-                    if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
-
-                    // MIXAGENT1c (D191): its agent's ask to hand over, where the person's rule or their yes lets it go, is taken at this
-                    // turn's end and never mid-turn: the quest is held on the next agent with the agent's note, written before the record
-                    // says it stopped, as the person's own hand-over stops it. Not over the person's stop, nor a run ended for a changed setup.
-                    if (stop is null && !swappedOn && exitCode is int && status == "Taken"
-                        && await HandOvers.AtTurnEndAsync(sessionId, quest.Id, ct).ConfigureAwait(false) is { } handedTo)
-                    {
-                        conclusion = SessionConclusion.Of("stopped", HandOverNotes.QuestHandedOver(handedTo));
-                    }
-
-                    // MODELROLE1c2 (D205 §3.3, §3.5(c)): its agent refused the choice at the open, before any prompt, so it ends
-                    // `choice-not-offered`: no strike, its quest planned again, no Ended notice, the reading kept before it ended.
-                    var notOffered = stop is null && ended.NotOffered is not null;
-                    if (notOffered) conclusion = Observation.ChoiceNotOffered(adapter.Name, ended.NotOffered!);
-
-                    // AGENTERRORS1a (D210 §5.1): past its transient bound a failed end is `ended.transient`, no strike and no cool-off, its quest
-                    // held for the person; and Daoris's go-on comes off the record by its key where its take-off did not land (R3-O5).
-                    if (stop is null && ended.Transient?.Episode is { Exhausted: true } exhausted && conclusion.State == "failed")
-                    {
-                        conclusion = Observation.Transient(exhausted);
-                    }
-
-                    if (ended.Transient?.Opened == true) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
-
-                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
-                    var beforeSignIn = conclusion;
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
-                    // LIMITPICK2: the account this start was refused for, where it has a profile another can stand in for.
-                    var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null && movedOff is null && start.Resumes is null
-                        ? selection.Profile : null;
-                    // The quest is reserved again before this record fails, so a look between this end and the next run's open plans nothing
-                    // for it; the caller lets it go when that run has opened or come to nothing. Not reserved, it is not moved.
-                    if (signedOutOn is not null && !Context.Runs.TryReserve(MovingReservation(start))) signedOutOn = null;
-                    // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
-                    // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
-                    var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
-                    var modelRefused = !ReferenceEquals(refusedModel, conclusion);
-                    conclusion = refusedModel;
-                    // MODELREFUSE1: a model its agent refused, at the open or on a silent pipe turn, moves the same start to the walk's next
-                    // answer as an account's sign-in does, under the same reservation; the reading it kept makes the walk pass it.
-                    (string Agent, string Model)? modelRefusedOn = null;
-                    if ((notOffered || modelRefused) && stop is null && movedOff is null && movedOffModel is null && start.Resumes is null
-                        && (ended.NotOffered?.Value ?? target.Asked?.NamedModel) is { Length: > 0 } refusedValue
-                        && Context.Runs.TryReserve(MovingReservation(start)))
-                    {
-                        modelRefusedOn = (adapter.Name, refusedValue);
-                    }
-
-                    (conclusion, var limited) = AccountLimited(
-                        conclusion, adapter, selection, turnFailed, sessionId, used,
-                        // A limit read by its code on the door, with no sentence (§3.1): cooled for D125's unstated hour.
-                        byCode: ended.Transient?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null);
-
-                    var commits = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
-                    // EVID1b (D144 §3): a done that waits on its evidence is read here, after the quest and before the record,
-                    // at the tree's HEAD now, and the verdict goes to the evidence door and beneath the commits on the record.
-                    var evidence = await EvidenceCheck.AtEndAsync(
-                            service, after, new EvidenceAt(workTree, EvidenceCodes.SessionEnd) { Base = before, Session = sessionId },
-                            commits, ct)
-                        .ConfigureAwait(false);
-                    // PARKVIEW1 (the park's ask design §2): its question kept only for the park this run ends in, and only where its last
-                    // turn asked it; settled before the record moves, so a parked record never shows another run's question.
-                    Questions(sessionId, new QuestionFiles(home).SettleRun(sessionId, conclusion.State, openedAt, Context.Events));
-                    await service.AdvanceAsync(
-                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
-                        parts: conclusion.Parts).ConfigureAwait(false);
-                    // D205 §4.1 (round 4, R3-B1): its process has stopped and its record left Running, so its one count is given back, both
-                    // halves, before the next look selects what the walk now answers.
-                    if (notOffered) Context.Harnesses.Release(selection.Number, sessionId);
-
-                    // REVIEWENV1c (design §2.6): a set-up step's said set-ups posted with the commit Daoris reads from its tree now.
-                    // REVIEWENV1d: and its build served to its tab from then until the person's verdict.
-                    await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
-                        .ConfigureAwait(false);
-
-                    await ConcludedForOpinionAsync(sessionId, quest, QuestResults.Status(after), conclusion.State, workTree, start.Workspace, ct)
-                        .ConfigureAwait(false);
-
-                    // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
-                    // rules 6–7): the person merges from the root and discards from a surface that
-                    // refuses to destroy work. The line names it so a terminal watcher knows where.
-                    var where = opened is not null ? $" [own tree: {opened.Path}]"
-                        : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
-                        : "";
-                    // HELPERWAIT1: a session waiting on its own helper goes on in this tree with the answer, so it keeps it, as a park does.
-                    var waitsOnHelper = HelperWaits.Ended(conclusion.Parts);
-                    holdsTree = SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper;
-                    // FABRIC-CLOSE1o: a take its start named a graph for that went unbound (an expired bind, a remote since) is said
-                    // here once, beside its take's own answer, since its next start reads it unbound and names nothing.
-                    return new StartRun(
-                        $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}"
-                        + ClosureBinding.UnboundAtEnd(
-                            closure, after,
-                            // CLOSETAKE1: why, read off the session's record only where there is something to say.
-                            closure is { Bound: true } && after is { Status: "Taken" or "Done", Closure: null or "" }
-                                ? await TookBindOrNullAsync(service, sessionId, ct).ConfigureAwait(false)
-                                : null),
-                        true,
-                        // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
-                        // one that outranks the observation above. Read once, used for both. A park is
-                        // not an ending (STANDDOWN2): the record waits on the person, and the attention
-                        // watch says so from the active list, as it does for a parked intake. Nor is a run ended for a changed setup,
-                        // whose record goes on at the next look (ACCESSSWAP1b), nor one waiting on its own helper (HELPERWAIT1).
-                        SessionStates.IsParked(conclusion.State) || swappedOn || waitsOnHelper
-                            ? null
-                            : new SessionEnded(
-                                sessionId, quest.To, conclusion.State,
-                                ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)
-                            {
-                                Limit = limited,
-                                NotOffered = notOffered || modelRefused,
-                                Reason = SessionEnded.ReasonOf(conclusion.Parts),
-                            })
-                    {
-                        SignedOutOn = signedOutOn,
-                        ModelRefusedOn = modelRefusedOn,
-                    };
-                }).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            // The person is closing the driver. WaitAsync already ended the process tree, so nothing
-            // is orphaned — and the record must say so rather than sit at "working" forever. The write
-            // rides an unbound token: the cancelled one would refuse the very report it caused.
-            // Interrupted (D104): closing the driver is not a decision about this quest, so a take this
-            // session held is carried on at the next start, as a cut-off is.
-            // 🔴 Unless a stop came first (FLAKE3): the driver's for a take that lost, or the person's, whose process was still
-            // ending, or its conclusion still asking the service, when the close came. That stop decided the end, so the record
-            // says it, as its conclusion would have, and is never interrupted.
-            var (closed, interrupted) = Observation.Closed(stoppedFirst);
-            try
-            {
-                await service.AdvanceAsync(
-                    sessionId, closed.State,
-                    stoppedFirst is null && Context.Processes.Close.Build is { } build ? ShellClose.Closed(build) : closed.AsNoted(),
-                    ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
-            }
-            catch
-            {
-                // Best-effort by construction: the host may already be gone on the same shutdown.
-            }
-
-            if (stoppedFirst is { } first)
-            {
-                return new StartRun(
-                    $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}): {closed.Note}",
-                    true,
-                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: agent));
-            }
-
-            // The person is closing the driver, so this ending is theirs — no interruption is owed
-            // for something they are in the middle of doing (design §4).
-            return new StartRun(
-                $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
-                true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent));
-        }
-        catch (Exception) when (stoppedFirst is not null)
-        {
-            // A wire that broke after a stop (the process killed under a handshake's write) is that stop's end, not a failure: the
-            // stop decided it, as its conclusion would have, and the person's is never interrupted (D104, FLAKE3).
-            var stopped = await EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
-
-            return new StartRun(
-                $"{stopped.State}  session {sessionId} (#{quest.Id} → {quest.To}): {stopped.Note}",
-                true,
-                new SessionEnded(sessionId, quest.To, stopped.State, ByPerson: stoppedFirst!.ByPerson, stopped.Note, Quest: quest.Id, Adapter: agent));
-        }
-        catch (Exception error)
-        {
-            // Everything but the shutdown above — which includes a client TIMEOUT: HttpClient's is an
-            // OperationCanceledException with nobody having cancelled, and filtering it out let it
-            // escape the tick and leave the record at `starting` (REV3).
-            // The record must say what the driver saw, even when what it saw was its own failure —
-            // an abandoned "starting" row reads as a session that never ends.
-            try
-            {
-                await service.AdvanceAsync(
-                    sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // The terminal write is best-effort by construction: the first failure is the report,
-                // and a host that is gone or slow here must not turn that report into a second throw.
-            }
-
-            return new StartRun(
-                $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
-                true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: agent));
-        }
-        finally
-        {
-            // However this ended, the stream is over. The buffer stays readable so whoever was
-            // watching can see how it finished; the transcript remains the durable copy either way.
-            // In the finally rather than the happy path, because a session that FAILED is the one
-            // whose last lines someone most wants to read.
-            output?.Close(sessionId);
-
-            // TREELOCK1: the session lets go of its tree however it ended, before any clean-up of Daoris's removes it; on no token,
-            // since a close is one of the ways. A record that still holds it keeps the lock.
-            if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
-        }
+        throw new InvalidOperationException("no stage handed the opened record to its session");
     }
 
     /// <summary>
@@ -3234,7 +2701,7 @@ public sealed class Driver(
     /// Why the graph named for a session's take did not bind it (CLOSETAKE1), or null: a line's extra word is never worth failing the end of a
     /// run for, so a service that did not answer says nothing more than the line already did.
     /// </summary>
-    private static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
+    internal static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
     {
         try
         {

@@ -28,9 +28,9 @@ public sealed class DriverRunPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
 
         var order = driver.RunStages.Order;
-        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open"], order.Select(part => part.Name));
+        Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "hand"], order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened],
+            [.. Enumerable.Repeat(RunPhase.Choose, 4), RunPhase.Grown, .. Enumerable.Repeat(RunPhase.Placed, 3), .. Enumerable.Repeat(RunPhase.Cleared, 2), RunPhase.Opened, RunPhase.Handed],
             order.Select(part => (RunPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -51,6 +51,7 @@ public sealed class DriverRunPartsTests : IDisposable
             stage => Assert.IsType<TrustedTree>(stage),
             stage => Assert.IsType<GoOnRecord>(stage));
         Assert.Collection(driver.RunStages.In(RunPhase.Opened), stage => Assert.IsType<OpenRecord>(stage));
+        Assert.Collection(driver.RunStages.In(RunPhase.Handed), stage => Assert.IsType<HandToSession>(stage));
     }
 
     [Fact]
