@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// person answers the session's requests, held for them.
 /// </summary>
 /// <remarks>
-/// <para><b>This is D37 and D52 on the wire.</b> A request reaching the driver at all means the repository's own checked-in permission
+/// <para><b>The driver widens nothing.</b> A request reaching the driver at all means the repository's own checked-in permission
 /// configuration did not already cover the action; the driver is a component, not a party to the work, and widening the posture at
 /// runtime is precisely what "a better approval surface must not widen autonomy" forbids. The harness's standing posture is set where
 /// it belongs, at session creation, so ordinary reversible work never reaches this path.</para>
@@ -16,9 +16,8 @@ namespace Daoris.Driver;
 /// <para><b>With no refusal offered, the answer is <c>cancelled</c></b>, never the first option that happens to be present. Fail closed
 /// means closed even when the menu is unhelpful.</para>
 ///
-/// <para><b>Under a repository's asking permission prompts it is held for the person instead</b> (D184 point 3,
-/// <see cref="HoldPermission"/>): the person's press is the say D37 and D52 keep for them, one call at a time; the driver itself still
-/// allows nothing.</para>
+/// <para><b>Under a repository's asking permission prompts it is held for the person instead</b> (<see cref="HoldPermission"/>): the
+/// person's press is the say kept for them, one call at a time; the driver itself still allows nothing.</para>
 /// </remarks>
 [TurnStage("permission", TurnPhase.Request)]
 internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
