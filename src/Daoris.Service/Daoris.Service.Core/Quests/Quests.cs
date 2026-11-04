@@ -85,7 +85,77 @@ public sealed class QuestStore
         _followUps = new QuestFollowUps(this);
         _passes = new QuestPasses(this);
         _claims = new QuestClaims(this);
+        _histories = new QuestHistories(this);
+        _takeReadings = new QuestTakeReadings(this);
+        _forgetting = new QuestForgetting(this);
+        _reads = new QuestReads(this);
     }
+
+    private readonly QuestHistories _histories;
+    private readonly QuestTakeReadings _takeReadings;
+    private readonly QuestForgetting _forgetting;
+    private readonly QuestReads _reads;
+
+    internal Task GiveHistoriesAsync(CancellationToken ct) => _histories.GiveHistoriesAsync(ct);
+
+    /// <summary>One quest's history, from its row: the operations that replay to exactly what it says.</summary>
+    internal Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
+        _histories.GiveHistoryAsync(quest, transaction, ct);
+
+    /// <summary>A quest's history in the order it replays: what a remote accepted, by number, then what this machine has not pushed.</summary>
+    public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) => _histories.HistoryAsync(id, ct);
+
+    internal Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, SqliteTransaction? transaction, CancellationToken ct) =>
+        _histories.HistoryAsync(id, transaction, ct);
+
+    /// <summary>A quest's history read inside a transaction the caller already holds.</summary>
+    internal Task<IReadOnlyList<QuestOperation>> HistoryWithinAsync(string id, CancellationToken ct) => _histories.HistoryWithinAsync(id, ct);
+
+    /// <summary>Who holds a quest's step and how each take that lost on it stands.</summary>
+    public Task<QuestTakeReading> ReadTakesAsync(string id, CancellationToken ct = default) => _takeReadings.ReadTakesAsync(id, ct);
+
+    /// <summary>The take reading of each of the quests with something to read, by id.</summary>
+    public Task<IReadOnlyDictionary<string, QuestTakeReading>> ReadTakesAsync(IEnumerable<Quest> quests, CancellationToken ct = default) =>
+        _takeReadings.ReadTakesAsync(quests, ct);
+
+    /// <summary>Remove one quest from this machine, forgetting it where a remote numbered it (see <see cref="QuestForgetting"/>).</summary>
+    internal Task<bool> ForgetAsync(string id, DateTimeOffset at, CancellationToken ct) => _forgetting.ForgetAsync(id, at, ct);
+
+    /// <summary>Whether this machine forgot the quest.</summary>
+    public Task<bool> ForgottenAsync(string id, CancellationToken ct = default) => _forgetting.ForgottenAsync(id, ct);
+
+    /// <summary>Every quest this machine forgot.</summary>
+    public Task<IReadOnlySet<string>> ForgottenAsync(CancellationToken ct = default) => _forgetting.ForgottenAsync(ct);
+
+    internal Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct) =>
+        _forgetting.ForgottenAsync(transaction, ct);
+
+    /// <summary>The taken quests waiting on a question.</summary>
+    public Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default) => _reads.WaitingOnAsync(question, ct);
+
+    /// <summary>Every question a taken quest waits on.</summary>
+    public Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default) => _reads.AwaitedAsync(ct);
+
+    /// <summary>The last number this machine fetched from a workspace's remote: zero before its first fetch.</summary>
+    public Task<long> CursorAsync(string workspace, CancellationToken ct = default) => _reads.CursorAsync(workspace, ct);
+
+    internal Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct) =>
+        _reads.CursorAsync(workspace, transaction, ct);
+
+    /// <summary>One quest by id, or null.</summary>
+    public Task<Quest?> FindAsync(string id, CancellationToken ct = default) => _reads.FindAsync(id, ct);
+
+    internal Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct) =>
+        _reads.FindAsync(id, transaction, ct);
+
+    /// <summary>Quests addressed to one repository, or every quest when none is named; what is outstanding first.</summary>
+    public Task<IReadOnlyList<Quest>> ListAsync(
+        string? receiver = null, bool includeClosed = false, string? workspace = null, CancellationToken ct = default) =>
+        _reads.ListAsync(receiver, includeClosed, workspace, ct);
+
+    /// <summary>Quests a sender filed, or whose sender starts with the name.</summary>
+    public Task<IReadOnlyList<Quest>> FromAsync(string sender, bool startingWith = false, CancellationToken ct = default) =>
+        _reads.FromAsync(sender, startingWith, ct);
 
     private readonly QuestPasses _passes;
     private readonly QuestClaims _claims;
@@ -212,64 +282,6 @@ public sealed class QuestStore
         command.Parameters.AddWithValue(
             "$id", Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8)).ToLowerInvariant());
         return (string)(await command.ExecuteScalarAsync(ct).ConfigureAwait(false))!;
-    }
-
-    /// <summary>
-    /// Give every quest of this store's own that the log has never seen its history, from what its row
-    /// says: published when it was filed, and the move to where it stands when it last moved.
-    /// </summary>
-    /// <remarks>
-    /// A quest is not derivable from anything, so a store from before the log is migrated rather than
-    /// rebuilt (the index's rule is for what can be re-read). Checked again inside the transaction,
-    /// because two hosts open one store and only one of them may write the histories.
-    /// </remarks>
-    private async Task GiveHistoriesAsync(CancellationToken ct)
-    {
-        const string Unlogged = """
-            SELECT * FROM quests
-            WHERE NOT EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id)
-            ORDER BY filed, id
-            """;
-
-        await using (var probe = _db.Command())
-        {
-            probe.CommandText = $"SELECT EXISTS ({Unlogged})";
-            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
-        }
-
-        await InTransactionAsync(async (transaction, inside) =>
-        {
-            var unlogged = new List<Quest>();
-            await using (var select = _db.Command())
-            {
-                select.Transaction = transaction;
-                select.CommandText = Unlogged;
-                await using var reader = await select.ExecuteReaderAsync(inside).ConfigureAwait(false);
-                while (await reader.ReadAsync(inside).ConfigureAwait(false)) unlogged.Add(Read(reader));
-            }
-
-            foreach (var quest in unlogged) await GiveHistoryAsync(quest, transaction, inside).ConfigureAwait(false);
-            return unlogged.Count;
-        }, ct).ConfigureAwait(false);
-    }
-
-    /// <summary>One quest's history, from its row — the operations that replay to exactly what it says.</summary>
-    internal async Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(
-        Quest quest, SqliteTransaction transaction, CancellationToken ct)
-    {
-        var history = new List<QuestOperation>
-        {
-            await AppendAsync(quest.Id, QuestOperationKind.Published, quest.Filed, null, quest, transaction, ct)
-                .ConfigureAwait(false),
-        };
-
-        if (QuestTransitions.KindFor(quest.Status) is { } moved)
-        {
-            history.Add(await AppendAsync(quest.Id, moved, quest.Updated, quest.Note, null, transaction, ct, noteParts: quest.NoteParts)
-                .ConfigureAwait(false));
-        }
-
-        return history;
     }
 
     /// <summary>
@@ -470,32 +482,6 @@ public sealed class QuestStore
     /// </summary>
     internal static bool JudgedOpen(QuestOperationKind kind) => kind is QuestOperationKind.Declined or QuestOperationKind.Rebound;
 
-    /// <summary>
-    /// A quest's history, in the order it replays (design §8): what a remote accepted, by its number,
-    /// then what this machine has not pushed, in the order it was made. Empty for an unknown id.
-    /// </summary>
-    public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) =>
-        InGateAsync(() => HistoryAsync(id, transaction: null, ct), ct);
-
-    internal async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
-        string id, SqliteTransaction? transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        // None handed in keeps the one the command was made in: the connection hands a new command the transaction it
-        // has open, and a caller holding one without its object (HistoryDesk's, HistoryWithinAsync) must not lose it.
-        if (transaction is not null) command.Transaction = transaction;
-        command.CommandText = $"""
-            SELECT {OperationColumns} FROM quest_log WHERE quest = $id
-            ORDER BY remote IS NULL, remote, position
-            """;
-        command.Parameters.AddWithValue("$id", id);
-
-        var history = new List<QuestOperation>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) history.Add(ReadOperation(reader));
-        return history;
-    }
-
     /// <inheritdoc cref="QuestTakeOperation.MoveAsync"/>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
@@ -579,63 +565,6 @@ public sealed class QuestStore
         string id, QuestOperationRef conflict, DateTimeOffset now, CancellationToken ct = default, bool running = false) =>
         WriteAsync(tx => Operations.Of<QuestDismissOperation>().BringForwardAsync(tx, id, conflict, now, running), ct);
 
-    /// <summary>This machine's bring-forwards on a quest (SYNCMERGE1b0), in the order they were made.</summary>
-    private async Task<IReadOnlyList<QuestForwardPress>> PressesAsync(string id, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        command.CommandText = """
-            SELECT conflict_machine, conflict_sequence, take_machine, take_sequence, at FROM quest_forwards
-            WHERE quest = $quest ORDER BY at, take_sequence
-            """;
-        command.Parameters.AddWithValue("$quest", id);
-        var presses = new List<QuestForwardPress>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false))
-        {
-            presses.Add(new QuestForwardPress(
-                new QuestOperationRef(reader.GetString(0), reader.GetInt64(1)), new QuestOperationRef(reader.GetString(2), reader.GetInt64(3)),
-                Moments.ReadRequired(reader.GetString(4))));
-        }
-
-        return presses;
-    }
-
-    /// <summary>
-    /// Who holds a quest's step and how each take that lost on it stands or ended (SYNCMERGE1b0, <see cref="QuestLog.Read"/>), with this
-    /// machine's own bring-forwards: what the quest's answer and the claim's say of them, and what the session ledger carries a
-    /// stand-down on by. <see cref="QuestTakeReading.None"/> for a quest this store does not hold.
-    /// </summary>
-    public Task<QuestTakeReading> ReadTakesAsync(string id, CancellationToken ct = default) =>
-        InGateAsync(async () => QuestLog.Read(
-            await HistoryAsync(id, transaction: null, ct).ConfigureAwait(false), await PressesAsync(id, ct).ConfigureAwait(false)), ct);
-
-    /// <summary>
-    /// <see cref="ReadTakesAsync(string, CancellationToken)"/> for each of <paramref name="quests"/> with something to read: taken, or one
-    /// whose log holds a conflict, settled or not. By id; a quest with neither is absent, and reads as <see cref="QuestTakeReading.None"/>.
-    /// A list answers many quests, so only those have their log read.
-    /// </summary>
-    public Task<IReadOnlyDictionary<string, QuestTakeReading>> ReadTakesAsync(IEnumerable<Quest> quests, CancellationToken ct = default) =>
-        InGateAsync<IReadOnlyDictionary<string, QuestTakeReading>>(async () =>
-        {
-            var contested = new HashSet<string>(StringComparer.Ordinal);
-            await using (var command = _db.Command())
-            {
-                command.CommandText = $"SELECT DISTINCT quest FROM quest_log WHERE kind = '{KindText(QuestOperationKind.Conflict)}'";
-                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                while (await reader.ReadAsync(ct).ConfigureAwait(false)) contested.Add(reader.GetString(0));
-            }
-
-            var read = new Dictionary<string, QuestTakeReading>(StringComparer.Ordinal);
-            foreach (var quest in quests.Where(quest => quest.Status == QuestStatus.Taken || contested.Contains(quest.Id)))
-            {
-                read[quest.Id] = QuestLog.Read(
-                    await HistoryAsync(quest.Id, transaction: null, ct).ConfigureAwait(false),
-                    await PressesAsync(quest.Id, ct).ConfigureAwait(false));
-            }
-
-            return read;
-        }, ct);
-
     /// <summary>
     /// Delete an open quest (D95), judged against the replayed history inside the write, as every move
     /// is: only an open quest goes. Whether anything outside this store stands on it — a session, a
@@ -650,193 +579,7 @@ public sealed class QuestStore
     public Task<QuestDeletion> DeleteAsync(string id, DateTimeOffset now, bool travels, CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestDeleteOperation>().DeleteAsync(tx, id, now, travels), ct);
 
-    // ——— Clearing finished history from this machine (HIST1b, D153 point 3, history-clearing design §3).
-
-    /// <summary>
-    /// Remove one quest from this machine: its row and its whole log together, since a row with no log is given a fresh
-    /// pending history at the next open and a log with no row lets a publish append to it (H3). Where a remote numbered any
-    /// of its operations it is <b>forgotten</b>: <c>quest_forgotten</c> keeps its id, and the fetch skips it from then on
-    /// (<see cref="IntegrateAsync"/>), so no later move and no cursor at zero brings it back (H4). No operation is
-    /// written, so nothing travels: the team's copy is untouched, and a new store fetches it whole.
-    /// </summary>
-    /// <remarks>
-    /// Blind, like every write here, and opening no transaction of its own: <see cref="HistoryDesk"/> judges the unit and
-    /// calls this inside the one transaction it clears the unit in, so the mark, the log and the row go together or not at
-    /// all. The gate it takes is the one that transaction's work already holds (SQLITETX1).
-    /// </remarks>
-    /// <returns>Whether it was forgotten, rather than simply going because nothing of it was ever numbered.</returns>
-    internal Task<bool> ForgetAsync(string id, DateTimeOffset at, CancellationToken ct) => _db.RunAsync<bool>(async () =>
-    {
-        bool numbered;
-        await using (var probe = _db.Command())
-        {
-            probe.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_log WHERE quest = $id AND remote IS NOT NULL)";
-            probe.Parameters.AddWithValue("$id", id);
-            numbered = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
-        }
-
-        await using var command = _db.Command();
-        command.CommandText = (numbered ? "INSERT OR IGNORE INTO quest_forgotten (id, at) VALUES ($id, $at);" : "")
-                              + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quest_forwards WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
-        command.Parameters.AddWithValue("$id", id);
-        command.Parameters.AddWithValue("$at", Moments.Write(at));
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        return numbered;
-    }, ct);
-
-    /// <summary>Whether this machine forgot the quest (HIST1b): it cleared it after a remote numbered it.</summary>
-    public Task<bool> ForgottenAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_forgotten WHERE id = $id)";
-        command.Parameters.AddWithValue("$id", id);
-        return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
-    }, ct);
-
-    /// <summary>Every quest this machine forgot (HIST1b): what the quest fetch and the session fetch skip.</summary>
-    public Task<IReadOnlySet<string>> ForgottenAsync(CancellationToken ct = default) =>
-        InGateAsync(() => ForgottenAsync(transaction: null, ct), ct);
-
-    internal async Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        if (transaction is not null) command.Transaction = transaction;
-        command.CommandText = "SELECT id FROM quest_forgotten";
-        var forgotten = new HashSet<string>(StringComparer.Ordinal);
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) forgotten.Add(reader.GetString(0));
-        return forgotten;
-    }
-
-    /// <summary>
-    /// A quest's history read inside a transaction the caller already holds — <see cref="HistoryDesk"/>'s, which judges a
-    /// unit again where it clears it. The same read as <see cref="HistoryAsync(string, CancellationToken)"/>: the gate is
-    /// reentrant within the work that holds it (SQLITETX1), and the read joins that work's transaction.
-    /// </summary>
-    internal Task<IReadOnlyList<QuestOperation>> HistoryWithinAsync(string id, CancellationToken ct) =>
-        HistoryAsync(id, ct);
-
-    /// <summary>
-    /// The taken quests waiting on <paramref name="question"/> (D79) — what keeps a question from being
-    /// deleted: deleted, the quests waiting on it would wait on nothing for good.
-    /// </summary>
-    public Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "SELECT * FROM quests WHERE awaits = $question AND status = 'Taken' ORDER BY filed";
-        command.Parameters.AddWithValue("$question", question);
-
-        var quests = new List<Quest>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
-        return quests;
-    }, ct);
-
-    /// <summary>Every question a taken quest waits on (D79) — what <see cref="WaitingOnAsync"/> answers, for a whole list at once.</summary>
-    public Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "SELECT DISTINCT awaits FROM quests WHERE awaits IS NOT NULL AND status = 'Taken'";
-
-        var awaited = new HashSet<string>(StringComparer.Ordinal);
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) awaited.Add(reader.GetString(0));
-        return awaited;
-    }, ct);
-
-    // ——— A machine's half of the sync (D68 §3, design §8).
-
-    /// <summary>The last number this machine fetched from a workspace's remote — zero before its first fetch.</summary>
-    public Task<long> CursorAsync(string workspace, CancellationToken ct = default) =>
-        InGateAsync(() => CursorAsync(workspace, transaction: null, ct), ct);
-
-    internal async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        // None handed in keeps the one the command was made in, as HistoryAsync's does.
-        if (transaction is not null) command.Transaction = transaction;
-        command.CommandText = "SELECT number FROM quest_cursor WHERE workspace = $workspace";
-        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
-        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } number and not DBNull
-            ? Convert.ToInt64(number)
-            : 0;
-    }
-
-    // ——— A remote's half.
-
-    /// <summary>
-    /// A read inside the connection's gate, as every command here is (SQLITETX1): it never meets another
-    /// request's open transaction, so a pending operation is never read from one that then rolled back.
-    /// </summary>
-    private Task<T> InGateAsync<T>(Func<Task<T>> read, CancellationToken ct) => _db.RunAsync(read, ct);
-
-    /// <summary>The columns <see cref="ReadOperation"/> reads, in its order.</summary>
+    /// <summary>The columns <see cref="QuestRecordCodec.ReadOperation"/> reads, in its order.</summary>
     internal const string OperationColumns =
         "quest_log.quest, quest_log.kind, quest_log.machine, quest_log.sequence, quest_log.at, quest_log.payload, quest_log.remote";
-
-    public Task<Quest?> FindAsync(string id, CancellationToken ct = default) =>
-        InGateAsync(() => FindAsync(id, transaction: null, ct), ct);
-
-    internal async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        // None handed in keeps the one the command was made in, as HistoryAsync's does.
-        if (transaction is not null) command.Transaction = transaction;
-        command.CommandText = "SELECT * FROM quests WHERE id = $id";
-        command.Parameters.AddWithValue("$id", id);
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
-
-    /// <summary>
-    /// Quests addressed to one repository, or every quest when none is named.
-    /// </summary>
-    /// <remarks>
-    /// Open and taken first: what is outstanding is the question worth asking, and a finished queue
-    /// pushing live work off the end is how a list stops being read. A done that a departure holds for the
-    /// person's yes is outstanding too (DRIFT1d): it waits on someone, and what follows it waits with it — the
-    /// driver keeps a quest waiting on it waiting because it is listed here.
-    /// </remarks>
-    public Task<IReadOnlyList<Quest>> ListAsync(
-        string? receiver = null, bool includeClosed = false, string? workspace = null,
-        CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = $"""
-            SELECT * FROM quests
-            WHERE ($receiver IS NULL OR receiver = $receiver)
-              AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
-              {(includeClosed ? "" : "AND (status IN ('Open', 'Taken') OR held = 1)")}
-            ORDER BY CASE status WHEN 'Open' THEN 0 WHEN 'Taken' THEN 1 ELSE 2 END, filed
-            """;
-        command.Parameters.AddWithValue("$receiver", (object?)receiver ?? DBNull.Value);
-        command.Parameters.AddWithValue(
-            "$workspace", workspace is null ? DBNull.Value : Workspaces.Normalize(workspace));
-
-        var quests = new List<Quest>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
-        return quests;
-    }, ct);
-
-    /// <summary>
-    /// Every quest one sender asked, closed ones included — or, <paramref name="startingWith"/>, every
-    /// quest whose sender begins with it. What an ask's standing is read from (USE1c): its quests are
-    /// the ones asked BY it, chain steps included, whichever machine last moved them.
-    /// </summary>
-    public Task<IReadOnlyList<Quest>> FromAsync(
-        string sender, bool startingWith = false, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = startingWith
-            ? "SELECT * FROM quests WHERE substr(sender, 1, length($sender)) = $sender ORDER BY filed"
-            : "SELECT * FROM quests WHERE sender = $sender ORDER BY filed";
-        command.Parameters.AddWithValue("$sender", sender);
-
-        var quests = new List<Quest>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
-        return quests;
-    }, ct);
-
 }
