@@ -345,19 +345,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
 
-    /// <summary>
-    /// Dismiss every conflict a quest carries (SYNC6c) — the terminal's form of the drawer's button. The
-    /// service's sentence comes back verbatim, including "nothing to dismiss".
-    /// </summary>
-    /// <exception cref="DriverException">The service refused, in its own words — no such quest.</exception>
-    public async Task<string> DismissConflictsAsync(string quest, CancellationToken ct = default)
-    {
-        using var answer = JsonDocument.Parse(await _doors.PostAsync(
-            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/conflicts/dismiss", "{}", ct)
-            .ConfigureAwait(false));
-        return Text(answer.RootElement, "message") ?? "";
-    }
-
     /// <summary>Where a circle stands on this machine (SYNC6a) — read from its host, without reaching the remote.</summary>
     public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
         RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
@@ -1461,10 +1448,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct = default) =>
         DeleteRecordAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
 
-    /// <summary>A person deletes a quest made by mistake (D95) — refused, in the service's words, for one anything stands on.</summary>
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct = default) =>
-        DeleteRecordAsync($"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
-
     /// <summary>
     /// Whether this client's host knows a closure graph's operations and doors (FABRIC-CLOSE1b's handshake): <c>/api/status</c>'s
     /// <c>closure</c> and (CLOSECAP1) <c>closeOutcome</c>, the outcome door's recovery: both must be answered. A host from before
@@ -1487,70 +1470,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     Task<(bool Ok, string Message)> IClosureBindPort.BindQuestAsync(string id, string graph, string session, CancellationToken ct) =>
         this.BindQuestAsync(id, graph, session, ct);
 
-    /// <summary>
-    /// The graph's close (FABRIC-CLOSE1a's <c>POST /api/quests/{id}/close</c>, §E5 step 2): every quest named, with the submission it judged,
-    /// under its key and token. A refusal is an answer with its check's code (<c>key-reused</c> among them), the same close again answers its
-    /// first outcome, and a host older than the door is said to be.
-    /// </summary>
-    /// <exception cref="HttpRequestException">The host did not answer: the caller keeps the close unknown, and asks what became of it (FABRIC-CLOSE1u).</exception>
-    public Task<QuestCloseAnswer> CloseQuestsAsync(
-        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
-        CloseDoorAsync("close", quest, key, token, quests, ct);
+    Task<QuestCloseAnswer> IQuestClosePort.CloseQuestsAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct) =>
+        QuestPersonViews.CloseQuestsAsync(this, quest, key, token, quests, ct);
 
-    /// <summary>
-    /// What became of a close sent with <paramref name="key"/> (FABRIC-CLOSE1u, <c>POST /api/quests/{id}/close/outcome</c>): the close as it was
-    /// sent, answered from the door's own record and read as the close is: its first outcome, or refused <c>withdrawn</c> where it never took
-    /// the key. A host before the question has no such door, which proves nothing, so the close stays unknown.
-    /// </summary>
-    /// <exception cref="HttpRequestException">The host did not answer, or answered as no door of its own: the close stays unknown.</exception>
-    public Task<QuestCloseAnswer> CloseOutcomeAsync(
-        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct = default) =>
-        CloseDoorAsync("close/outcome", quest, key, token, quests, ct);
-
-    /// <summary>One call at the close door's <paramref name="door"/>: the close as it is named, and the door's own answer, else a throw.</summary>
-    private async Task<QuestCloseAnswer> CloseDoorAsync(
-        string door, string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("key", key);
-            writer.WriteString("token", token);
-            writer.WriteStartArray("quests");
-            foreach (var each in quests)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("id", each.Id);
-                writer.WriteString("machine", each.Machine);
-                writer.WriteNumber("sequence", each.Sequence);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/{door}", body, ct).ConfigureAwait(false);
-
-        // FABRIC-CLOSE1l, the review's finding 7: only the door's own answer settles a close, its close or its coded refusal. Anything
-        // else (a proxy's page, the host's 500, a bare 404, a refusal naming no check of the door's) proves nothing about whether its
-        // transaction committed, so the close is unknown and the same close is sent again, whose key answers its first outcome.
-        if (root is { ValueKind: JsonValueKind.Object } answer)
-        {
-            if (ok && answer.TryGetProperty("quests", out var named) && named.ValueKind == JsonValueKind.Array)
-            {
-                return new(QuestCloseOutcomes.Closed, null, Text(answer, "message") ?? "", QuestViews.Read(named.GetRawText()));
-            }
-
-            if (status is 400 or 404 or 409 && Text(answer, "code") is { } code && QuestCloseOutcomes.Codes.Contains(code))
-            {
-                return new(QuestCloseOutcomes.Refused, code, Text(answer, "error") ?? payload, []);
-            }
-        }
-
-        throw new HttpRequestException($"the close door at {_base} answered {status}, which is not its own answer, so whether it closed is unknown: "
-                                       + TextBounds.Clip(payload, 200));
-    }
+    Task<QuestCloseAnswer> IQuestClosePort.CloseOutcomeAsync(
+        string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct) =>
+        QuestPersonViews.CloseOutcomeAsync(this, quest, key, token, quests, ct);
 
     /// <summary>
     /// Every session record, closed ones included, as the service answers them, with this client's key: what the session
@@ -2768,81 +2694,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     ];
 
     /// <summary>
-    /// Post a set-up step's session's said set-ups with the commit Daoris read from its tree (REVIEWENV1c, design §2.6): the local
-    /// host's <c>POST /api/quests/{id}/set-up</c>, <c>{ session, commit, kind }</c>, which keeps each said set-up once. The commit
-    /// is read, never the session's word. A refusal is an answer, in the service's words, and a host older than the door says so.
-    /// </summary>
-    /// <param name="kind">The environment's kind, as the rule declares it: <c>local</c> or <c>deployed</c>.</param>
-    public async Task<(bool Ok, string Message)> PostSetUpAsync(
-        string quest, string session, string commit, string kind, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("session", session);
-            writer.WriteString("commit", commit);
-            writer.WriteString("kind", kind);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up", body, ct)
-            .ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_base} has no set-up door ({status}) — is it older than this driver?");
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
-    /// The person's verdict on a review (REVIEWENV1c, design §3.3): the local host's <c>POST /api/quests/{id}/review</c>, with the
-    /// set-up they were shown, named by its <c>machine</c> and <c>sequence</c> whole (REVIEWENV1b3); a skip names none. The
-    /// service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
-    /// </summary>
-    /// <param name="verdict"><c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</param>
-    public async Task<(bool Ok, string Message)> ReviewAsync(
-        string quest, string verdict, string? words, string? machine, long? sequence, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("verdict", verdict);
-            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
-            if (machine is not null && sequence is { } at)
-            {
-                writer.WriteStartObject("setUp");
-                writer.WriteString("machine", machine);
-                writer.WriteNumber("sequence", at);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/review", body, ct)
-            .ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_base} has no review door ({status}) — is it older than this driver?");
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
-
-    /// <summary>
-    /// The person's <i>Set it up in <c>environment</c></i> (REVIEWENV1j, design §3.6): the local host's
-    /// <c>POST /api/quests/{id}/set-up-step</c>, <c>{ environment }</c>, the door the gate's press calls, which publishes a set-up step
-    /// following a done quest. The service's sentence comes back verbatim, a refusal included, with the step it published; a host
-    /// older than the door says so.
-    /// </summary>
-    public async Task<(bool Ok, string Message, string? Step)> PublishSetUpStepAsync(string quest, string environment, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("environment", environment);
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync(
-            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up-step", body, ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_base} has no set-up step door ({status}) — is it older than this driver?", null);
-        if (!ok) return (false, Text(answer, "error") ?? payload, null);
-        var step = answer.TryGetProperty("quest", out var published) && published.ValueKind == JsonValueKind.Object ? Text(published, "id") : null;
-        return (true, Text(answer, "message") ?? "", step);
-    }
-
-    /// <summary>
     /// The person's review choice on an ask, or its intake's proposal applied (REVIEWENV1j; design §1.5): the local host's
     /// <c>POST /api/asks/{id}/review</c>, <c>{ choice, words? }</c>, the door the ask's page presses. The latest stands. The service's
     /// sentence comes back verbatim, a refusal included, and a host older than the door says so.
@@ -2905,28 +2756,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (workflow is not null) writer.WriteString("workflow", workflow);
             if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
         }, ct);
-
-    /// <summary>
-    /// The person's kind and workflow on a quest no ask published, before it starts (WORKFLOW1e2; the workflow design §4.1 row 1): the
-    /// local host's <c>POST /api/quests/{id}/workflow</c>, <c>{ kind?, workflow?, words? }</c>, a person's door (D156); neither clears
-    /// the choice. The service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
-    /// </summary>
-    public async Task<(bool Ok, string Message)> ChooseQuestWorkflowAsync(
-        string quest, string? kind, string? workflow, string? words, CancellationToken ct = default)
-    {
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            if (kind is not null) writer.WriteString("kind", kind);
-            if (workflow is not null) writer.WriteString("workflow", workflow);
-            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
-            writer.WriteEndObject();
-        });
-        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/workflow", body, ct)
-            .ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_base} has no quest workflow door ({status}) — is it older than this driver?");
-        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
-    }
 }
 
 /// <summary>A session record the ledger opened for this client (LOG1b).</summary>

@@ -241,7 +241,7 @@ public static class QuestViews
     }
 
     // A person's or the driver's move on one quest: its sentence, a refusal's included, and a host older than the door said to be.
-    private static async Task<(bool Ok, string Message)> MovedAsync(
+    internal static async Task<(bool Ok, string Message)> MovedAsync(
         this ServiceClient service, IRoute<QuestActionResponse> route, string door, CancellationToken ct, string? named = null)
     {
         var sent = await service.SendAsync(route, ct).ConfigureAwait(false);
@@ -252,7 +252,7 @@ public static class QuestViews
     }
 
     // A refusal's sentence, else its text; null where the host answered no JSON at all, an older host's bare 404 or 405.
-    private static string? Error<T>(Sent<T> sent) where T : class
+    internal static string? Error<T>(Sent<T> sent) where T : class
     {
         try
         {

@@ -469,112 +469,6 @@ var wiring = new HostWiring(composed, mode, hostRun, homeId, personKey, personGa
 var questAnswers = new QuestAnswers(wiring);
 RouteModules.MapAll(app, wiring);
 
-// A graph's close, under the unit's record lock, which the driver holds: a local host's alone, as its bind is.
-if (mode == ServiceMode.Local)
-{
-    app.MapPost("/api/quests/{id}/close", async (
-        ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
-        await CloseAnswerAsync(s, http, await s.Exchange.CloseAsync(id, body.Key, body.Token, CloseNamed(body), DateTimeOffset.UtcNow, ct), ct));
-
-    // FABRIC-CLOSE1u: what became of a close's key, asked by the driver before it would ever send that close again; answered from
-    // the store's record of the key, in the close door's own shape, and a key never taken withdrawn so its close never runs.
-    app.MapPost("/api/quests/{id}/close/outcome", async (
-        ComposedService s, HttpContext http, string id, CloseQuestRequest body, CancellationToken ct) =>
-        await CloseAnswerAsync(s, http, await s.Exchange.CloseOutcomeAsync(id, body.Key, body.Token, CloseNamed(body), DateTimeOffset.UtcNow, ct), ct));
-
-    // A half-named submission arrives blank and is refused by the exchange, which says what a close names.
-    static List<(string, QuestOperationRef)> CloseNamed(CloseQuestRequest body) =>
-        [.. (body.Quests ?? []).Select(q => (q?.Id ?? "", new QuestOperationRef(q?.Machine ?? "", q?.Sequence ?? 0)))];
-
-    async Task<IResult> CloseAnswerAsync(ComposedService s, HttpContext http, QuestCloseOutcome outcome, CancellationToken ct)
-    {
-        if (outcome.Refusal == QuestCloseRefusal.None)
-        {
-            var answered = new List<QuestResponse>();
-            foreach (var quest in outcome.Quests) answered.Add(await QuestAnswerAsync(s, http, quest, ct));
-            return Results.Ok(new QuestCloseResponse(answered, outcome.Message));
-        }
-
-        // FABRIC-CLOSE1b: each refusal names its check by a code (`key-reused`, `stale`, …), which the driver keeps beside the sentence.
-        var refused = new ErrorResponse(outcome.Message, QuestCloseCodes.Of(outcome.Refusal));
-        return outcome.Refusal switch
-        {
-            QuestCloseRefusal.Malformed => Results.BadRequest(refused),
-            QuestCloseRefusal.NotFound => Results.NotFound(refused),
-            // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's; a key not that close's or
-            // withdrawn (FABRIC-CLOSE1u). Nothing was written.
-            _ => Results.Conflict(refused),
-        };
-    }
-
-    // A set-up on a set-up step (REVIEWENV1b, design §2.6, §3.3): the driver posts each set-up a session said, with the commit it
-    // read from the step's tree, or the person records their own. LOCAL mode only, as the evidence door is: the commit is read
-    // on the machine whose tree holds it, and the set-up travels from there as an operation (D68). No connector tool reaches
-    // it, since a session never reports a commit.
-    // Both forms want the key where the host holds one (PERSONDOOR1a, design §3.2): naming a session, the driver's post of what
-    // that session said, which the session never reports of itself; naming none, the person's own.
-    app.MapPost("/api/quests/{id}/set-up", async (
-        ComposedService s, HttpContext http, string id, QuestSetUpRequest body, CancellationToken ct) =>
-    {
-        if (personGate.Refused(http, PersonDoors.SetUp, form: body.Session is null) is { } refusedForm) return refusedForm.Result();
-
-        return await ReviewAnswer(await s.Exchange.PostSetUpAsync(
-            id, new QuestSetUpPost(body.Commit, body.Kind, body.Session, body.Look, body.Shows, body.Again), DateTimeOffset.UtcNow, ct),
-            s, http, ct);
-    });
-
-    // The person's verdict on a set-up step, or their skip of a review (REVIEWENV1b, D154 point 8): LOCAL mode only, as the yes
-    // is, and no connector tool reaches it, since the verdict is a look only the person has taken. A set-up named by half its
-    // reference is refused here, never read as none (REVIEWENV1b3): none once meant the newest, which the person may not have seen.
-    app.MapPost("/api/quests/{id}/review", async (
-        ComposedService s, HttpContext http, string id, QuestReviewRequest body, CancellationToken ct) =>
-    {
-        if (body.SetUp is { } half && (string.IsNullOrWhiteSpace(half.Machine) || half.Sequence is null))
-        {
-            return Results.BadRequest(new ErrorResponse(
-                "`setUp` names a set-up by both its `machine` and its `sequence`, as the quest's `setUps` answer them. Nothing was kept."));
-        }
-
-        return await ReviewAnswer(await s.Exchange.ReviewAsync(
-            id, body.Verdict, body.Words,
-            body.SetUp is { Machine: { } machine, Sequence: { } sequence } ? new QuestOperationRef(machine, sequence) : null,
-            DateTimeOffset.UtcNow, ct),
-            s, http, ct);
-    });
-
-    // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done
-    // quest, in Daoris's words. LOCAL mode only: the person's press, on their own machine.
-    app.MapPost("/api/quests/{id}/set-up-step", async (
-        ComposedService s, HttpContext http, string id, SetUpStepRequest body, CancellationToken ct) =>
-        await ReviewAnswer(await s.Exchange.PublishSetUpStepAsync(id, body.Environment, DateTimeOffset.UtcNow, ct), s, http, ct));
-
-    // The person's kind and workflow on a quest published with no ask, before it starts (WORKFLOW1e2, the workflow design §4.1 row 1):
-    // LOCAL mode only, the person's door as an ask's is; no connector tool reaches it. A shape is a bad request, and a quest an ask
-    // published, or one already started or closed, the lock's own 409.
-    app.MapPost("/api/quests/{id}/workflow", async (
-        ComposedService s, HttpContext http, string id, QuestWorkflowRequest body, CancellationToken ct) =>
-    {
-        var outcome = await s.Exchange.ChooseWorkflowAsync(id, body.Kind, body.Workflow, body.Words, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            QuestRespondRefusal.BadWorkflow => Results.BadRequest(new ErrorResponse(outcome.Message)),
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
-}
-
-// A review door's answer (REVIEWENV1b): a state the review refuses is the lock's own shape, 409, and a shape is a bad request.
-async Task<IResult> ReviewAnswer(QuestRespondOutcome outcome, ComposedService s, HttpContext http, CancellationToken ct) =>
-    outcome.Refusal switch
-    {
-        QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
-        QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-        QuestRespondRefusal.BadSetUp or QuestRespondRefusal.BadReviewVerdict => Results.BadRequest(new ErrorResponse(outcome.Message)),
-        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-    };
-
 // The window's confirmation of what an asker asked (PERSONDOOR1b, D156 point 4; ONEWAY1n-i, the oneway design §4 M4). A terminal
 // cannot be told from a session, so a keyless call to the person's or the driver's door is refused, and its asker asks here with
 // the exact request. It waits with no clock; the window lists it and the person answers with the key, and at the Confirm the host
@@ -640,47 +534,6 @@ static IResult ConfirmationAnswer((Confirmation? Confirmation, ConfirmationAnswe
             new ErrorResponse(outcome.Message, PersonConfirmations.NotAsker), statusCode: StatusCodes.Status403Forbidden),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
-
-// A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
-// so the conflict goes on every machine. It moves no status, which is why it is not a `respond`
-// action — every one of those is a move through the table.
-app.MapPost("/api/quests/{id}/conflicts/dismiss", async (
-    ComposedService s, HttpContext http, string id, DismissConflictRequest body, CancellationToken ct) =>
-{
-    var quest = id.TrimStart('#');
-    var dismissal = await s.Quests.DismissAsync(quest, body.Machine, body.Sequence, DateTimeOffset.UtcNow, ct);
-    if (dismissal.Quest is null)
-    {
-        return Results.NotFound(new ErrorResponse($"quest `#{quest}` is not one this service holds."));
-    }
-
-    return Results.Ok(new QuestActionResponse(
-        await QuestAnswerAsync(s, http, dismissal.Quest, ct),
-        dismissal.Dismissed switch
-        {
-            0 => $"quest `#{quest}` carries no such conflict — nothing to dismiss.",
-            1 => $"Dismissed one conflict on quest `#{quest}`; every machine drops it on its next sync.",
-            var count => $"Dismissed {count} conflicts on quest `#{quest}`; every machine drops them on its next sync.",
-        }));
-});
-
-// Deleting a quest made by mistake (D95): the exchange's judgement and sentence, verbatim. LOCAL mode
-// only — a person deletes on their own machine, and a shared quest's tombstone travels from there; a
-// deployment answering the network has no door that removes a record.
-if (mode == ServiceMode.Local)
-{
-    app.MapDelete("/api/quests/{id}", async (ComposedService s, string id, CancellationToken ct) =>
-    {
-        var outcome = await s.Exchange.DeleteAsync(id, DateTimeOffset.UtcNow, ct);
-        return outcome.Refusal switch
-        {
-            QuestDeleteRefusal.None => Results.Ok(new DeletedResponse(outcome.Quest!.Id, outcome.Message)),
-            QuestDeleteRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
-            // Something stands on it, or a take won the race: a state conflict, the lock's own shape.
-            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
-        };
-    });
-}
 
 // A quest's file, whole — so a person reading the drawer can open the screenshot the quest carries.
 // LOCAL mode only and to a caller on this machine only: the bytes never left it (D65 §2), and a shared
@@ -2463,7 +2316,6 @@ static IResult FeedAnswer(FeedOutcome outcome) =>
             ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
             : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
 
-Task<QuestResponse> QuestAnswerAsync(ComposedService s, HttpContext http, Quest quest, CancellationToken ct) => questAnswers.AnswerAsync(http, quest, ct);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.
