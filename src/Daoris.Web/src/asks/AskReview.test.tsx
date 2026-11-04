@@ -9,6 +9,7 @@ import type { Answered } from '../work/InlineConfirm';
 import { NO_CARRY } from '../compose/carry';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
+import { anAsk } from './anAsk';
 import { CLOSED, PROPOSED } from './fixtures';
 
 // REVIEWENV1g (D154 point 3; the review environment design §1.5–§1.6): the person chooses the review of an ask's work in the
@@ -33,14 +34,14 @@ function Composer({ onSubmit }: { onSubmit: (draft: AskDraft) => void }) {
   );
 }
 
-const CHOSEN: Ask = {
+const CHOSEN: Ask = anAsk({
   ...PROPOSED,
   reviewChoices: [{ choice: 'local', at: new Date(Date.now() - 3_600_000).toISOString(), words: 'run it locally against dev data' }],
-};
-const PROPOSING: Ask = {
+});
+const PROPOSING: Ask = anAsk({
   ...PROPOSED,
   reviewProposals: [{ choice: 'off', reason: 'Only the README changes, which has nothing to show.', at: '2026-10-09T09:00:00Z', quest: 'q1' }],
-};
+});
 
 describe("the review choice for an ask's work", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

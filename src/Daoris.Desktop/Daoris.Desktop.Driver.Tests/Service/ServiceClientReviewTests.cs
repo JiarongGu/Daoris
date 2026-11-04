@@ -132,7 +132,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void An_ask_s_review_choices_and_its_intake_s_proposals_are_read_as_the_service_answers_them()
     {
-        var ask = ServiceClient.ReadAskJson(
+        var ask = AskDoorViews.ReadAskJson(
             """
             {"id":"a1","workspace":"work","sentence":"s","state":"Published","tier":"intake",
              "reviewChoices":[{"choice":"on","at":"2026-10-08T08:00:00+00:00"},
@@ -160,7 +160,7 @@ public sealed class ServiceClientReviewTests
     [Fact]
     public void An_ask_no_review_touches_reads_none()
     {
-        var ask = ServiceClient.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""");
+        var ask = AskDoorViews.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""");
 
         Assert.Empty(ask.ReviewChoices);
         Assert.Empty(ask.ReviewProposals);
