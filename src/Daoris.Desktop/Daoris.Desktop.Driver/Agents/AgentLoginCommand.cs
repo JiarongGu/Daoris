@@ -17,7 +17,7 @@ internal static class AgentLoginCommand
 
     /// <summary>
     /// <c>login &lt;agent&gt; [--account &lt;account&gt;] [--device-code]</c>, or <c>--new [--name &lt;name&gt;]</c> (D66 §3, ACCT1, ACCT2,
-    /// CODEXLOGIN1; <c>--join</c> and <c>--join-machine</c> refused since POOL1b, D197): every check that needs no flow is made first, the browser's ports tried once
+    /// CODEXLOGIN1): every check that needs no flow is made first, the browser's ports tried once
     /// where the agent waits on them, then the binary a start runs signs in (CODEXACCT1b, D57 rule 4), its pin before <c>PATH</c>'s.
     /// </summary>
     internal static async Task<int> LoginAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
@@ -45,10 +45,6 @@ internal static class AgentLoginCommand
         }
 
         var login = SignInWays.Arguments(name, toolchain, byCode ? SignInWay.DeviceCode : SignInWay.Browser);
-
-        // POOL1b (D197 point 6, the account-pool design §5.1): there are no lists to join, and a new account joins Daoris's accounts by
-        // itself, so `--join` and `--join-machine` are refused before anything starts.
-        if (args.Contains("--join") || args.Contains("--join-machine")) throw new AgentWords(OneSetWords.Join);
         var fresh = args.Contains("--new");
         if (fresh && args.Contains("--account"))
         {
