@@ -513,37 +513,6 @@
       "changed": "WORKFLOWCLEAN1 1a: a workflow is no longer copied from a place's Current by hand; the verb refuses and names `convert`, and writes nothing."
     },
     {
-      "name": "workflow show, a Current whose rule carries integrate",
-      "argv": [
-        "workflow",
-        "show",
-        "--repository",
-        "web-app"
-      ],
-      "before": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}",
-      "registry": [
-        {
-          "repository": "web-app",
-          "workspace": "work",
-          "root": null
-        }
-      ],
-      "exit": 0,
-      "out": [
-        "daoris: `web-app` follows Current: in the workspace `work`, read from the rules as they stand at each gate (version 05b1cc9a230c).",
-        "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. On a branch named `work/{session}`, for you to push. This repository's landing rule.",
-        "  The integration — You · Daoris · your press: Accept. Integrates the landed branch into its line, requested by you, with no gates; a conflict goes back to its session. This repository's landing rule.",
-        "      Not integrated yet: the rule carries `integrate`, but nothing runs an integration in this build, so work stays on its branch as it always did."
-      ],
-      "err": [],
-      "after": "{\"landings\":{\"web-app\":{\"form\":\"branch\",\"pattern\":\"work/{session}\",\"integrate\":{}}}}"
-    },
-    {
       "name": "workflow new, from Current, a repository not in the registry",
       "argv": [
         "workflow",
@@ -3446,9 +3415,9 @@
       "out": [
         "daoris: `web-app`, for kind `docs` (Documentation), follows `docs-to-pr` — Documentation to a pull request, v1 (digest 19f6127d3c6a), chosen by the workspace `work` for Documentation.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
+        "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
-        "    kind `feature` (Feature) → Current, since nothing names a workflow",
+        "    kind `feature` (Feature) → no workflow, since nothing names a workflow",
         "    landed work → no verification here",
         "  A pull request opens once its quest is done; you merge it.",
         "  work · work — Agent alone.",
@@ -3461,7 +3430,7 @@
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
     },
     {
-      "name": "workflow show, a workspace's kind on Current",
+      "name": "workflow show, a workspace's kind",
       "argv": [
         "workflow",
         "show",
@@ -3476,16 +3445,13 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the workspace `work`, for kind `feature` (Feature), follows Current: for each repository there that sets none of its own, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "the workspace `work`, for kind `feature` (Feature), follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Chosen: since nothing names a workflow.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
+        "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
-        "    kind `feature` (Feature) → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    kind `feature` (Feature) → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
@@ -3504,15 +3470,12 @@
       },
       "exit": 0,
       "out": [
-        "daoris: the workspace `work` follows Current: for each repository there that sets none of its own, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
+        "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
-        "    kind `feature` (Feature) → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    kind `feature` (Feature) → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
@@ -3545,17 +3508,14 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `web-app` follows Current: in the workspace `work`, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Chosen: since nothing names a workflow.",
         "  `design` is not a kind the workspace `work` declares, so it is read as none.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
+        "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
-        "    kind `feature` (Feature) → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    kind `feature` (Feature) → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
@@ -3586,13 +3546,10 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `notes-site` follows Current: in the workspace `elsewhere`, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "`notes-site` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    the default → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
@@ -3623,14 +3580,11 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `stray` follows Current: in the workspace `default`, read from the rules as they stand at each gate (version 06e90f358edc).",
-        "  `stray` is not in the registry, so it is read as in no workspace: the `default` workspace's rules reach it.",
+        "`stray` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "  `stray` is not in the registry, so it is read as in no workspace: the `default` workspace's choices reach it.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    the default → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
@@ -3650,7 +3604,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: cannot say which workspace's rules reach `web-app`: the registry could not be read — the service did not answer — and this file sets rules for a workspace. Nothing was drawn. `--workspace <name>` draws a workspace's Current from this file alone."
+        "daoris: cannot say which workspace's choices reach `web-app`: the registry could not be read — the service did not answer — and this file sets choices for a workspace. `--workspace <name>` shows a workspace's from this file alone."
       ],
       "after": "{\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
     },
@@ -3729,7 +3683,7 @@
       "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"default\": \"docs-to-pr\"\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\",\n          \"workflow\": \"docs-to-pr\"\n        },\n        \"feature\": {\n          \"label\": \"Feature\"\n        }\n      }\n    }\n  }\n}\n"
     },
     {
-      "name": "workflow show, Current with the registry unread",
+      "name": "workflow show, a repository with the registry unread",
       "argv": [
         "workflow",
         "show",
@@ -3739,20 +3693,17 @@
       "before": null,
       "exit": 0,
       "out": [
-        "daoris: `web-app` follows Current: its workspace not read, read from the rules as they stand at each gate (version 06e90f358edc).",
-        "  The registry was not read (the service did not answer); no rule here is set for a workspace, so none reaches it.",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "  The registry was not read (the service did not answer); no choice here is set for a workspace, so none reaches it.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    the default → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": null
     },
     {
-      "name": "workflow show, a workspace's Current from nothing",
+      "name": "workflow show, a workspace's, from nothing",
       "argv": [
         "workflow",
         "show",
@@ -3762,13 +3713,10 @@
       "before": null,
       "exit": 0,
       "out": [
-        "daoris: the workspace `work` follows Current: for each repository there that sets none of its own, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    landed work → no verification here",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    the default → no workflow, since nothing names a workflow",
+        "    landed work → no verification here"
       ],
       "err": [],
       "after": null
@@ -4102,14 +4050,11 @@
       },
       "exit": 0,
       "out": [
-        "daoris: `web-app` follows Current: in the workspace `work`, read from the rules as they stand at each gate (version 06e90f358edc).",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
-        "    the default → Current, since nothing names a workflow",
-        "    kind `docs` (Documentation) → Current, since nothing names a workflow",
-        "    landed work → no verification here, as `web-app` chooses",
-        "  No plugin here may hold a start.",
-        "  The work — Agent alone · an agent. The chain's steps in this repository; a done that departs from your words or lacks its evidence waits for your yes. Always.",
-        "  The landing — You · Daoris · your press: Accept. Merged into its line. Daoris's default."
+        "    the default → no workflow, since nothing names a workflow",
+        "    kind `docs` (Documentation) → no workflow, since nothing names a workflow",
+        "    landed work → no verification here, as `web-app` chooses"
       ],
       "err": [],
       "after": "{\n  \"workflows\": {\n    \"notes-site\": {\n      \"landed\": {\n        \"workflow\": \"web-verify\"\n      }\n    },\n    \"web-app\": {\n      \"landed\": {\n        \"workflow\": \"current\"\n      }\n    }\n  },\n  \"workspaceWorkflows\": {\n    \"work\": {\n      \"kinds\": {\n        \"docs\": {\n          \"label\": \"Documentation\"\n        }\n      },\n      \"landed\": {\n        \"workflow\": \"web-verify\"\n      }\n    }\n  }\n}\n"
@@ -4246,612 +4191,6 @@
       }
     },
     {
-      "name": "landing --cycle, a merge with its cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "qa.json"
-      ],
-      "before": "{}",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing, a rule set again keeps its cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--tidy"
-      ],
-      "before": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  Once a press lands the work, its tree and its branch go — only where git proves the work is on a",
-        "  branch of yours. Without --tidy the tree stays until you discard it.",
-        "  Its cycle is kept: 1 node and 1 wire, ending at `qa`.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"tidy\": true,\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --no-cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--no-cycle"
-      ],
-      "before": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"tidy\": true,\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  Its cycle is cleared: the work ends when the line holds it.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\"\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --cycle, a workspace's branch rule",
-      "argv": [
-        "landing",
-        "--workspace",
-        "shop",
-        "branch",
-        "shop/{quest}",
-        "--cycle",
-        "qa.json"
-      ],
-      "before": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\"\n    }\n  }\n}\n",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in repositories in the workspace `shop` is put on a branch named `shop/{quest}` when you accept it —",
-        "  from the session's branch, with nothing merged and no checkout touched. You push it and open",
-        "  the pull request: Daoris never pushes (D87).",
-        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
-        "  A repository with a rule of its own keeps it — `daoris place landing <repository> --clear` hands it back.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"shop\": {\n      \"form\": \"branch\",\n      \"pattern\": \"shop/{quest}\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --no-cycle, a workspace's rule",
-      "argv": [
-        "landing",
-        "--workspace",
-        "shop",
-        "merge",
-        "--no-cycle"
-      ],
-      "before": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"shop\": {\n      \"form\": \"branch\",\n      \"pattern\": \"shop/{quest}\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in repositories in the workspace `shop` is merged into the line when you accept it, in the repository's own checkout.",
-        "  Its cycle is cleared: the work ends when the line holds it.",
-        "  A repository with a rule of its own keeps it — `daoris place landing <repository> --clear` hands it back.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\"\n    }\n  },\n  \"workspaceLandings\": {\n    \"shop\": {\n      \"form\": \"merge\"\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing, a form changed under a kept cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "merge"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"branch\",\"pattern\":\"feature/{quest}\",\"cycle\":{\"end\":\"pull-request\"}}}}",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  Its cycle is kept as written, and does not hold under this rule: the end `pull-request` names no node of this graph.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"end\": \"pull-request\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --cycle, a person's words kept",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "words.json"
-      ],
-      "before": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"end\": \"pull-request\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "qa.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}",
-        "words.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\",\"options\":{\"brief\":\"Vérifier la livraison\"}}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"brief\": \"Vérifier la livraison\"\n            }\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --cycle, a loop",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"},{\"id\":\"qb\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"},{\"id\":\"b\",\"kind\":\"after\",\"from\":\"qa\",\"to\":\"qb\"},{\"id\":\"c\",\"kind\":\"after\",\"from\":\"qb\",\"to\":\"qa\"}],\"end\":\"qb\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `cycle.json` does not hold: nodes `qa`, `qb`: they wait on each other through `b`, `c`; a graph's wires never come back, and a return is its adapter's, bounded. Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, an end a merge holds none of",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"end\":\"pull-request\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `cycle.json` does not hold: the end `pull-request` names no node of this graph. Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, not a graph's shape",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":3}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `cycle.json` does not hold: the graph's `nodes` is not a graph's shape: it holds no list there. Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, not JSON",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{ not json"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `cycle.json` is not readable JSON. Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, a file not there",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "none.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{ not json"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: there is no file `none.json`. Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, a number by its own text",
-      "changed": "The CLI refused a cycle it could not write back into driver.json as read, since JavaScript writes a number by its own text and orders the keys that are numbers; the driver keeps every value as written (`NodeGraphHomes.Compact`), so the cycle is set as the window would set it (D194 point 6).",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\",\"options\":{\"weight\":1.0}}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"weight\": 1.0\n            }\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --cycle, keys that are numbers out of their order",
-      "changed": "The CLI refused a cycle it could not write back into driver.json as read, since JavaScript writes a number by its own text and orders the keys that are numbers; the driver keeps every value as written (`NodeGraphHomes.Compact`), so the cycle is set as the window would set it (D194 point 6).",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\",\"options\":{\"order\":{\"2\":\"b\",\"1\":\"a\"}}}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: work in `engine` is merged into the line when you accept it, in the repository's own checkout.",
-        "  After the landing, its cycle: 1 node and 1 wire, ending at `qa`.",
-        "  Written to <config> — the review reads it at each press, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"landings\": {\n    \"engine\": {\n      \"form\": \"merge\",\n      \"cycle\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\",\n            \"options\": {\n              \"order\": {\n                \"2\": \"b\",\n                \"1\": \"a\"\n              }\n            }\n          }\n        ],\n        \"wires\": [\n          {\n            \"id\": \"a\",\n            \"kind\": \"after\",\n            \"from\": \"line\",\n            \"to\": \"qa\"\n          }\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "landing --clear --cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "--clear",
-        "--cycle",
-        "cycle.json"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `--clear` takes the rule and its cycle with it — a cycle rides its rule (D164). Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle, no file named",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `--cycle` needs the file holding the cycle's JSON — `--cycle <file>`, a graph fragment after the landing."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --cycle and --no-cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "merge",
-        "--cycle",
-        "cycle.json",
-        "--no-cycle"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: a rule sets its cycle or takes it away — say `--cycle <file>` or `--no-cycle`, not both."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "landing --clear --no-cycle",
-      "argv": [
-        "landing",
-        "engine",
-        "--clear",
-        "--no-cycle"
-      ],
-      "before": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}",
-      "files": {
-        "cycle.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"wires\":[{\"id\":\"a\",\"kind\":\"after\",\"from\":\"line\",\"to\":\"qa\"}],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `--clear` takes the rule and its cycle with it — a cycle rides its rule (D164). Nothing was written."
-      ],
-      "after": "{\"landings\":{\"engine\":{\"form\":\"merge\"}}}"
-    },
-    {
-      "name": "work-cycle, a quest's",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "quest",
-        "quest.json"
-      ],
-      "before": "{\"workCycles\":{\"Engine\":{\"ask\":{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}}}}",
-      "files": {
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: a quest in `engine` follows its cycle: 1 node and 0 wires, ending at `qa`.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      },\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a workspace's ask",
-      "argv": [
-        "work-cycle",
-        "--workspace",
-        "shop",
-        "ask",
-        "quest.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      },\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: an ask in each repository of the workspace `shop` that names none of its own follows its cycle: 1 node and 0 wires, ending at `qa`.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      },\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  },\n  \"workspaceWorkCycles\": {\n    \"shop\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle --clear",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "ask",
-        "--clear"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      },\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  },\n  \"workspaceWorkCycles\": {\n    \"shop\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: an ask in `engine` takes its workspace's cycle again, else none.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  },\n  \"workspaceWorkCycles\": {\n    \"shop\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle --clear, a workspace's",
-      "argv": [
-        "work-cycle",
-        "--workspace",
-        "shop",
-        "ask",
-        "--clear"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  },\n  \"workspaceWorkCycles\": {\n    \"shop\": {\n      \"ask\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 0,
-      "out": [
-        "daoris: an ask in each repository of the workspace `shop` that names none of its own takes none again.",
-        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
-      ],
-      "err": [],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a graph that does not hold",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "quest",
-        "broken.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: the cycle in `broken.json` does not hold: the end `nowhere` names no node of this graph. Nothing was written."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a branch",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "branch",
-        "quest.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); no kind has two homes. `daoris place landing <repository> … --cycle <file>` sets it."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a kind with none",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "chore",
-        "quest.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `chore` is no kind of work with a cycle of its own here — `quest` or `ask`."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, the words short",
-      "argv": [
-        "work-cycle",
-        "engine"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver work-cycle` needs <repository>|--workspace <name>, then quest|ask, then <file>|--clear — e.g. `daoris place work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a file and --clear",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "quest",
-        "quest.json",
-        "--clear"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `driver work-cycle` needs <repository>|--workspace <name>, then quest|ask, then <file>|--clear — e.g. `daoris place work-cycle aurora-engine quest cycle.json`, a whole graph its work of that kind follows to its end."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a file not there",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "quest",
-        "gone.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: there is no file `gone.json`. Nothing was written."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
-      "name": "work-cycle, a file that is not JSON",
-      "argv": [
-        "work-cycle",
-        "engine",
-        "quest",
-        "bad.json"
-      ],
-      "before": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n",
-      "files": {
-        "bad.json": "{ no",
-        "broken.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"nowhere\"}",
-        "quest.json": "{\"nodes\":[{\"id\":\"qa\",\"kind\":\"human\",\"version\":1,\"reach\":\"pressed\"}],\"entries\":[\"qa\"],\"end\":\"qa\"}"
-      },
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `bad.json` is not readable JSON. Nothing was written."
-      ],
-      "after": "{\n  \"workCycles\": {\n    \"Engine\": {\n      \"quest\": {\n        \"nodes\": [\n          {\n            \"id\": \"qa\",\n            \"kind\": \"human\",\n            \"version\": 1,\n            \"reach\": \"pressed\"\n          }\n        ],\n        \"entries\": [\n          \"qa\"\n        ],\n        \"end\": \"qa\"\n      }\n    }\n  }\n}\n"
-    },
-    {
       "name": "a verb the family does not have",
       "changed": "The family's words are Daoris's driver program's whole (PUSH1f2b): a verb it does not have is said in its own words and its usage on the error stream, as every host verb says one (D194 point 1); the dispatcher's golden row moved here. The family's usage gains `driver keep`, each rule the person sets (KEEP1d), and `driver role suggested`, the choices Daoris suggests for each role (MODELROLE1g). ONEWAY1a: the staffing verbs are retired, `role set` naming the one door, its choices or `off`.",
       "argv": [
@@ -4868,11 +4207,6 @@
         "       daoris settings cap <n> · cooloff <minutes>",
         "       daoris quest retry <quest> [--at <n> | --session <id>]",
         "       daoris place line <repository>|--workspace <name> <branch>|--clear",
-        "       daoris place landing <repository>|--workspace <name> merge|branch <pattern>|--clear",
-        "              (serves only a place that follows Current; converting retires the old landing rule)",
-        "              [--tidy] [--plugin <id>] [--auto-accept|--no-auto-accept] [--key <shape>|--no-key] [--squash|--no-squash]",
-        "              [--cycle <file>|--no-cycle]",
-        "       daoris place work-cycle <repository>|--workspace <name> quest|ask <file>|--clear",
         "       daoris place across <repository>|--workspace <name> read on|off|--clear",
         "       daoris place across <repository> write-to <other> [--clear]",
         "       daoris place standing <repository> \"…\"|--clear",
@@ -4899,7 +4233,6 @@
         "              (a workflow's writes say their change, and with --plan save nothing)",
         "       daoris settings keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default",
         "              · history <days>|never|default · floor <n>GB|<n>%|off|default]",
-        "       daoris settings actor found [take|dismiss <n>]",
         "       daoris role [<id>] · role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>]",
         "              [--scope machine|workspace:<id>|repository:<id>] [\"<agent> [<model>|-] [<effort>|-]\" … | off]",
         "              · role remove|default <id> · role suggested [--use]",

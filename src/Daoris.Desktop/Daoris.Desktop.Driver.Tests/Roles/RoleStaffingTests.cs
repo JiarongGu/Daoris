@@ -342,9 +342,16 @@ public sealed class RoleStaffingTests : IDisposable
             var wired = text.IndexOf("RoleStaffing.WireHome(Environment.GetEnvironmentVariable)", StringComparison.Ordinal);
             Assert.True(wired > 0, $"{root} wires no staffing");
             // The shell's own loads are its loop's and routes', made after Program wires it; the host's are its doors' and its loop's.
+            // The one exception is the home's migration, which finds the home by the variable to convert it once before any read of its config (D232).
+            var migrating = text.IndexOf("HomeMigration.Run(", StringComparison.Ordinal);
             foreach (var first in (string[])["DriverConfig.Load(", "DriverConfig.FindHome(", "new DriverLoop("])
             {
                 var at = text.IndexOf(first, StringComparison.Ordinal);
+                if (first == "DriverConfig.FindHome(" && at >= 0 && migrating > at && migrating < wired)
+                {
+                    at = text.IndexOf(first, migrating, StringComparison.Ordinal);
+                }
+
                 Assert.True(at < 0 || wired < at, $"{root} reaches `{first}` before it wires the staffing");
             }
         }
@@ -359,7 +366,9 @@ public sealed class RoleStaffingTests : IDisposable
             .ToList();
 
         Assert.Empty(lines.Where(each => handed.IsMatch(each.Line)).Select(each => $"{each.Path}:{each.At}"));
-        Assert.Equal(["Roles/StaffingProjection.cs"], lines.Where(each => each.Line.Contains("DriverConfig.Parse(", StringComparison.Ordinal))
+        // The one parse is the configuration's own load (and the write's re-read of its own source text), in its disk file.
+        Assert.Equal(["Settings/DriverConfig.cs", "Settings/DriverConfigDisk.cs"], lines.Where(each => each.Line.Contains("DriverConfig.Parse(", StringComparison.Ordinal)
+                || each.Line.Contains("DriverConfigReader.Parse(", StringComparison.Ordinal))
             .Select(each => each.Path).Distinct());
     }
 

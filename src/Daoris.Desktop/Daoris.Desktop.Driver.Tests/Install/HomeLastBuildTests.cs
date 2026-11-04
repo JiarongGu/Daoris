@@ -14,7 +14,7 @@ public sealed class HomeLastBuildTests : IDisposable
 
     public void Dispose()
     {
-        try { Directory.Delete(Path.GetDirectoryName(_home)!, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(Path.GetDirectoryName(_home)!);
     }
 
     [Fact]

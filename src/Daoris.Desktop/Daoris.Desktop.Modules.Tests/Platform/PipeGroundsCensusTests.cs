@@ -97,7 +97,7 @@ public sealed class PipeGroundsCensusTests
         var at = source.IndexOf(mark, StringComparison.Ordinal);
         var body = PipeMark.Replace(mark.StartsWith("case ", StringComparison.Ordinal) ? Case(source, at) : Body(source, at), "");
         var methods = Methods(others ?? [source]);
-        var read = new List<string> { body };
+        var read = new List<string> { body, PayloadFields(body, others ?? [source]) };
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var next = new List<string> { body };
         // Three calls deep: a handler hands its request or its payload to a helper, which may hand it on to the library's parse.
@@ -113,6 +113,48 @@ public sealed class PipeGroundsCensusTests
     }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IEnumerable<string>, Dictionary<string, List<string>>> Indexed = [];
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IEnumerable<string>, Dictionary<string, List<string>>> Payloads = [];
+
+    /// <summary>
+    /// The wire names of the payload records a handler's signature takes, each as a quoted field: a typed handler reads its fields by the
+    /// record's own member names (camel-cased on the wire), where an untyped one spells them in its body.
+    /// </summary>
+    internal static string PayloadFields(string handler, IEnumerable<string> files)
+    {
+        var records = Payloads.GetValue(files, each =>
+        {
+            var found = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (System.Text.RegularExpressions.Match record in System.Text.RegularExpressions.Regex.Matches(string.Concat(each),
+                         @"\brecord\s+(?:struct\s+)?([A-Z]\w*)\s*\(([^)]*)\)"))
+            {
+                var names = new List<string>();
+                var depth = 0;
+                var part = new System.Text.StringBuilder();
+                foreach (var letter in record.Groups[2].Value + ",")
+                {
+                    if (letter == '<') depth++;
+                    else if (letter == '>') depth--;
+                    if (letter == ',' && depth == 0)
+                    {
+                        var parameter = part.ToString().Split('=')[0].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parameter.Length > 0) names.Add(parameter[^1]);
+                        part.Clear();
+                    }
+                    else part.Append(letter);
+                }
+
+                found[record.Groups[1].Value] = [.. names.Select(name => $"\"{char.ToLowerInvariant(name[0])}{name[1..]}\"")];
+            }
+
+            return found;
+        });
+        handler = System.Text.RegularExpressions.Regex.Replace(handler, @"^[ \t]*\[.*\][ \t]*\r?$", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        var signature = handler[..Math.Min(handler.Contains('{', StringComparison.Ordinal) ? handler.IndexOf('{', StringComparison.Ordinal) : handler.Length,
+            handler.Contains("=>", StringComparison.Ordinal) ? handler.IndexOf("=>", StringComparison.Ordinal) : handler.Length)];
+        return string.Join("\n", System.Text.RegularExpressions.Regex.Matches(signature, @"\b[A-Z]\w*\b")
+            .SelectMany(each => records.TryGetValue(each.Value, out var fields) ? fields : []));
+    }
 
     private static readonly System.Text.RegularExpressions.Regex PipeMark =
         new(@"^[ \t]*\[(Owner|NotAlready|ClassedBy|Ground\w+|Timeless|Says)\(.*\r?\n", System.Text.RegularExpressions.RegexOptions.Multiline);
@@ -138,8 +180,18 @@ public sealed class PipeGroundsCensusTests
     /// <summary>A method's text from <paramref name="at"/>: its block by its braces, or its expression body to its <c>;</c>.</summary>
     private static string Body(string source, int at)
     {
-        var open = source.IndexOf('{', at);
-        var arrow = source.IndexOf("=>", at, StringComparison.Ordinal);
+        // A mark's own arguments may hold braces (`new[] { ... }`): the method's block begins after its attribute lines.
+        var signature = at;
+        while (signature < source.Length && source[signature] == '[')
+        {
+            var line = source.IndexOf('\n', signature);
+            if (line < 0) break;
+            signature = line + 1;
+            while (signature < source.Length && (source[signature] == ' ' || source[signature] == '\t')) signature++;
+        }
+
+        var open = source.IndexOf('{', signature);
+        var arrow = source.IndexOf("=>", signature, StringComparison.Ordinal);
         if (arrow >= 0 && (open < 0 || arrow < open))
         {
             var end = source.IndexOf(';', arrow);

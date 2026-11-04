@@ -305,7 +305,7 @@ public sealed class HelpRoomTests : IDisposable
         var report = Assert.Single(machine.Repositories, repository => repository.Name == "console-ui");
         Assert.True(report.Drivable && report.OwnTree && report.Checkout && !report.Held);
         Assert.Equal("feature/app", report.Line.Branch);
-        Assert.Equal(LandingSource.Workspace, report.Landing.Source);
+        Assert.Equal(LandingSource.Default, report.Landing.Source);
         Assert.True(Assert.Single(machine.Repositories, repository => repository.Name == "reports-db").Held);
         Assert.False(Assert.Single(machine.Repositories, repository => repository.Name == "engine").Checkout);
         Assert.Equal([new HelpWaitingSession("s1", "console-ui")], machine.Waiting);
@@ -377,9 +377,14 @@ public sealed class HelpRoomTests : IDisposable
         // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it (STRUCT1, D166).
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpRoomSections.All[0].GetType().Name}.cs"))!;
 
+        // The doors section's rows and places are parts beside it (`HelpDoor*`); every other file of the folder is one section's own.
+        var files = Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories);
         Assert.Equal(
             HelpRoomSections.All.Select(section => $"{section.GetType().Name}.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            files.Where(file => File.ReadAllText(file).Contains(" : IHelpRoomSection", StringComparison.Ordinal)).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.All(
+            files.Select(Path.GetFileName).Where(name => !HelpRoomSections.All.Any(section => $"{section.GetType().Name}.cs" == name)),
+            name => Assert.StartsWith("HelpDoor", name, StringComparison.Ordinal));
         foreach (var section in HelpRoomSections.All)
         {
             Assert.Contains($"class {section.GetType().Name} : IHelpRoomSection", File.ReadAllText(Path.Combine(folder, $"{section.GetType().Name}.cs")));

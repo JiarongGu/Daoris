@@ -165,14 +165,13 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public void The_family_is_this_programs_whole_and_its_usage_names_each_verb()
     {
         Assert.Equal(
-            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-                "brainstorms", "workflow", "keep", "actor",
+            ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+                "brainstorms", "workflow", "keep",
                 // FOUNDATION1y-i: the role catalogue's door.
                 "role"],
             DriverChoicesCommand.Verbs);
         Assert.All(DriverChoicesCommand.Verbs, verb =>
             Assert.Matches($"(?<![\\w-]){System.Text.RegularExpressions.Regex.Escape(verb)}(?![\\w-])", DriverChoicesCommand.Usage));
-        Assert.Contains("--cycle <file>|--no-cycle", DriverChoicesCommand.Usage, StringComparison.Ordinal);
         Assert.All(DriverWorkflowsCommand.Verbs, verb => Assert.Contains(verb, DriverChoicesCommand.Usage, StringComparison.Ordinal));
         Assert.DoesNotContain("still", DriverChoicesCommand.Usage, StringComparison.Ordinal);
         // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
@@ -181,11 +180,9 @@ public sealed class DriverChoicesCommandTests : IDisposable
 
     /// <summary>
     /// A change no route takes acts here on the terminal's word (D171's PUSH1f note, kept by D194 point 5), refused from a session's
-    /// terminal before anything is read or written: a landing's cycle, the brainstorm policy and a workflow's write.
+    /// terminal before anything is read or written: the brainstorm policy and a workflow's write.
     /// </summary>
     [Theory]
-    [InlineData("landing engine merge --no-cycle")]
-    [InlineData("work-cycle engine quest --clear")]
     [InlineData("brainstorms --mode off")]
     [InlineData("workflow new docs --from merge-after-accept")]
     [InlineData("workflow kind work docs --label Documentation")]
@@ -217,11 +214,9 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Beside the running Daoris a change no route takes is written here, with nothing sent (PUSH1f2b, D194 point 5): a landing's cycle,
-    /// whose rule SET_LANDING would take, sends nothing, since the route has no field for the cycle.
+    /// Beside the running Daoris a change no route takes is written here, with nothing sent (PUSH1f2b, D194 point 5): the brainstorm policy.
     /// </summary>
     [Theory]
-    [InlineData("landing engine merge --no-cycle")]
     [InlineData("brainstorms --mode off")]
     public async Task Beside_the_running_Daoris_a_change_no_route_takes_is_written_here_and_nothing_is_sent(string words)
     {
