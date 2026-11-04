@@ -6,7 +6,7 @@ import { Composer } from './Composer';
 import type { ChatMessage, Level } from './conversation';
 import type { Answered } from '../InlineConfirm';
 import { type Box, neverSentence } from '../say';
-import type { HeadLink } from '../head/SessionHead';
+import type { HeadLink } from '../head/headRows';
 
 /**
  * The box at the foot of a session's page (MSG1f, D137 §5.1): offered on every session that takes words, saying what the

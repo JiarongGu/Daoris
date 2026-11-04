@@ -30,7 +30,7 @@ import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitW
 import { LimitWaitLine } from '../waits/LimitWaitLine';
 import type { useAttendedWaits } from '../waits/useAttendedWaits';
 import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
-import type { HeadLink } from './SessionHead';
+import type { HeadLink } from './headRows';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useHeadAsks } from './useHeadAsks';
