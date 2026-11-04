@@ -109,6 +109,22 @@ public sealed class LandedReviewTests : LandedFixture
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject);
         await GitAsync(root, "branch", "-D", landed.Branch!);
+        // The landing removes no session branch, so the session's own still holds the commits until it goes with its tree.
+        foreach (var line in (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').Where(line => line.StartsWith("worktree ", StringComparison.Ordinal)).Skip(1))
+        {
+            await GitAsync(root, "worktree", "remove", "--force", line["worktree ".Length..].Trim());
+        }
+
+        foreach (var session in (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/")).Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            await GitAsync(root, "branch", "-D", session.Trim());
+        }
+
+        foreach (var pin in (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/")).Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            await GitAsync(root, "update-ref", "-d", pin.Trim());
+        }
+
         await GitAsync(root, "reflog", "expire", "--expire=now", "--expire-unreachable=now", "--all");
         await GitAsync(root, "gc", "--quiet", "--prune=now");
 

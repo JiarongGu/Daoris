@@ -51,10 +51,10 @@ public sealed class LandedBranchTests : LandedFixture
         var refused = await trees.OpenAsync(root, "engine", "aurora");
         Assert.False((await trees.LandAsync(refused.Path, new LandingSubject("s1", "q1", "Nothing"), gate: Lands)).Landed);
 
-        DriverConfig.Empty.Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        var merges = GraphLand.Gate(Home, GraphLand.Merge, run: "q2");
         var merged = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(merged.Path, "work.txt", "work\n", "the work");
-        Assert.True((await trees.LandAsync(merged.Path, new LandingSubject("s2", "q2", "Merged"), gate: Lands)).Landed);
+        Assert.True((await trees.LandAsync(merged.Path, new LandingSubject("s2", "q2", "Merged"), gate: merges)).Landed);
 
         Assert.Empty(new LandedBranches(Home).All());
     }

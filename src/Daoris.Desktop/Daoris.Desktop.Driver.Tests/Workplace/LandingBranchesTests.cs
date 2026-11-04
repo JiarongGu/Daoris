@@ -64,7 +64,8 @@ public sealed class LandingBranchesTests : IDisposable
         var removed = await trees.RemoveBranchAsync(root, "engine", failed.Branch, force: true);
         Assert.True(removed.Removed, removed.Message);
         Assert.False(await BranchAsync(root, failed.Branch));
-        Assert.Empty(trees.Grown.All());
+        // The landing removes no other session branch, so the landed tree's own stays recorded; the failed attempt's is forgotten.
+        Assert.DoesNotContain(trees.Grown.All(), grown => grown.Branch == failed.Branch);
     }
 
     /// <summary>A failed attempt whose tree is still here goes through the same door: its tree with it, behind `--force`.</summary>

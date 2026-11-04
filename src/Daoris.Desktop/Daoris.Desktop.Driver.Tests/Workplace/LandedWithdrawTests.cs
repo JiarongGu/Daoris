@@ -123,7 +123,7 @@ public sealed class LandedWithdrawTests : LandedFixture
         var done = await trees.WithdrawLandedAsync(root, "engine", landed.Branch!, Why);
 
         Assert.False(done.Done);
-        Assert.True(done.Message.Contains("trees clean", StringComparison.Ordinal), done.Message);
+        Assert.True(done.Message.Contains("tree clean", StringComparison.Ordinal), done.Message);
         Assert.Contains(landed.Branch!, await GitAsync(root, "branch", "--list"));
         Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
         Assert.Single(new LandedBranches(Home).All());

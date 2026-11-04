@@ -76,7 +76,8 @@ public sealed class ContentLandingTests : LandedFixture
         await CherryPickAsync(root, tree.Branch, "feature/x");
         var before = await StateAsync(root, tree);
 
-        var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
+        // The head judges the work held by content where no graph's land governs: a land graph leaves it to its content.holds step.
+        var landed = await trees.LandAsync(tree.Path, Subject);
 
         Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
         Assert.StartsWith(
