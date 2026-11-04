@@ -2155,7 +2155,7 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
-        Assert.Equal((int)AcpSession.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
+        Assert.Equal((int)AcpProtocol.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
         Assert.Equal("s.json", meta.GetProperty("claudeCode").GetProperty("options").GetProperty("settings").GetString());
     }
 
