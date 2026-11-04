@@ -35,6 +35,11 @@ of everything it handed, section by section.
 | `ChatWords` | `Loop/Chat/ChatWords.cs` | The words said to a live conversation: the person's (framed, kept on the record, at a level or at *now*), Daoris's own, a composed message and the workflow draft it carries |
 | `ChatTurnDoors` | `Loop/Chat/ChatTurnDoors.cs` | What is read of a live conversation's turns and done to them: where they stand, a word's reach, the press hold, waiting words edited, the turn stopped |
 | `ChatSendBack` | `Loop/Chat/ChatSendBack.cs` | Another agent's findings handed to a conversation as a turn: sent back to the one running, or the ones an ended conversation goes on with |
+| `ChatWatch`, `ChatWatched` | `Loop/Chat/` | The watch over a conversation's run from its open to its end: opens or resumes its agent, reads how it ended, concludes its record and lets go of what the run held |
+| `ChatConclusion` | `Loop/Chat/ChatConclusion.cs` | How a conversation's record ends: the state and note, the limit a last turn met, the ending note of a run that simply ended |
+| `ProtocolHeld` | `Loop/Chat/ProtocolHeld.cs` | A conversation's session on the protocol door as its run holds it open: what it is handed and set before its first prompt, and what its open's failure says |
+| `ChatWalk` | `Loop/Chat/ChatWalk.cs` | A new conversation's walk over its actor's effective order, choice by choice, remembering the passes it has said |
+| `ChatServers` | `Loop/Chat/ChatServers.cs` | The servers a conversation is handed at its open: the knowledge connector carrying who it is, and the plugins' servers with the browser brought up for one that drives it |
 | `ChatTold` | `Loop/Chat/ChatTold.cs` | What a new conversation is told with its first message, held from its start: its process, its execution's checks, its standing block's facts |
 | `ChatAccountReads` | `Loop/Chat/ChatAccountReads.cs` | A refused call read for its account: a limit cools it, a refused sign-in signs it out; what a part going on from a limit carries |
 | `ChatGoOn` | `Course/Chat/ChatGoOn.cs` | Executor `go-on`: an ended chat goes on with the words kept on its record; it hears the record once the runner is made |

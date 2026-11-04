@@ -30,9 +30,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
-    /// <summary>Each running conversation's run over its process (ONEWAY1h-iii), which a person's finish closes.</summary>
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TransportRun> _runs = new(StringComparer.OrdinalIgnoreCase);
-
     private readonly ChatOptions _options;
 
     private readonly ChatAccountReads _accounts;
@@ -45,9 +42,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     private readonly ServiceClient _service;
 
     private readonly string _home;
-
-    // What each conversation order's walk last passed, so `actor.passed` is written when a pass is new (LOGCOLLECTION1).
-    private readonly PassMemory _passed = new();
 
     private readonly SessionProcesses _processes;
 
@@ -77,6 +71,16 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     private readonly ChatTurnDoors _turns;
 
     private readonly ChatSendBack _sendBack;
+
+    private readonly ChatWalk _walk;
+
+    private readonly ChatServers _servers;
+
+    private readonly ChatConclusion _conclusion;
+
+    private readonly ChatWatch _watch;
+
+    private readonly ProtocolHeld _held;
 
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
@@ -127,6 +131,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         _words = new ChatWords(_context, _told);
         _turns = new ChatTurnDoors(_context);
         _sendBack = new ChatSendBack(this, _chatRuns);
+        _walk = new ChatWalk(_context);
+        _servers = new ChatServers(_context);
+        _conclusion = new ChatConclusion(this);
+        _watch = new ChatWatch(this, _told, _conclusion);
+        _held = new ProtocolHeld(this, (id, options) => OptionsChanged?.Invoke(id, options));
 
         // One holder for the moves of the home, the hand-over's among them (FOUNDATION1f-v part a): it imports the boxes an older build wrote and
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
@@ -824,51 +833,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
         Executors.Of<HelpStart>().RunHelpAsync(placed, config, machine, onEnded, ct);
 
-    /// <summary>
-    /// A new conversation's walk over <paramref name="actor"/>'s effective order (MODELROLE1d, D205 §4.1), as Build's start walks its:
-    /// choice by choice, each choice's accounts by the existing walk before the next, every account judged by its offer reading for the
-    /// choice's model. An entry that cannot hold a conversation here is passed <c>unavailable</c> before any account is asked, and, for Ask
-    /// Daoris, one its access refuses under the mode standing now <c>no-posture</c> (<see cref="HelpAccess.For"/>), so a full-access
-    /// mode never reaches an agent with no mode that asks nothing. With none that can run, the press is refused in the wait's sentence,
-    /// each choice named (§4.5).
-    /// </summary>
-    /// <param name="refused">
-    /// The entry and account an open refused (MODELROLE1d2, D205 §3.5(b)), passed as if known before the spawn, beside the reading kept.
-    /// </param>
-    /// <param name="counts">False for an open's re-ask, which takes no count of its own, <paramref name="except"/> its start's count left out.</param>
-    internal async Task<ConversationWalk> WalkAsync(
+    /// <inheritdoc cref="ChatWalk.AskAsync"/>
+    internal Task<ConversationWalk> WalkAsync(
         string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct,
-        (ActorEffective Entry, string? Account)? refused = null, bool counts = true, long except = 0)
-    {
-        using var log = new MachineLog(_home, "driver");
-        // A conversation has no record yet while it is walked, and what its walk passes is fixed by the actor's order and the place it
-        // is asked in, so those name the subject whose passes are not said again while they stand (LOGCOLLECTION1). FOUNDATION1j part v: the
-        // start plan's one walk, its gate what a conversation cannot run on.
-        StartPlan plan;
-        try
-        {
-            // FOUNDATION1x: through the plan with the catalogue and the place, so the walk's role is the one that takes the work there.
-            plan = new StartPlan(
-                actor, config, _harnesses, _harnesses.Adapters, _passed, order: order, catalogue: RoleCatalog.ReadHome(_home), place: new RolePlace(workspace))
-            {
-                Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
-                Pinned = profile, WalksOne = true, Staff = _harnesses.StaffFor(_home), OwnOrder = true,
-                Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
-                    : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
-                    : null,
-            };
-        }
-        catch (DriverException error)
-        {
-            // A catalogue that will not read, or two roles taking the work in one scope: the start holds, saying so.
-            return new(null, null, null, [], error.Message);
-        }
-
-        var settled = await plan.ResolveAsync(ct, counts, refused, except).ConfigureAwait(false);
-        return settled.Chosen is null
-            ? new(null, null, null, settled.Passes, settled.Selection.Refusal)
-            : new(settled.Adapter, settled.Selection, settled.Chosen, settled.Passes, null);
-    }
+        (ActorEffective Entry, string? Account)? refused = null, bool counts = true, long except = 0) =>
+        _walk.AskAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
 
     /// <summary>Where Ask Daoris's conversation runs (<see cref="HelpPlacement.In"/>).</summary>
     internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace = null) => HelpPlacement.In(_home, room, reads, workspace);
@@ -887,48 +856,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
     internal ChatContext Context => _context;
-
-    /// <summary>
-    /// The plugins' servers a conversation is handed, with Daoris's own browser brought up for one that drives it, or
-    /// that one withheld and the sentence why (D78); and a <c>plugin.served</c> line for each, handed or withheld
-    /// (PLUGUI1e, D119 §4.2), read from the catalogue the servers came from, as a driven session's are.
-    /// </summary>
-    /// <remarks>
-    /// The catalogue is read as the driver loop reads it, reserving the build's names (CHATSERVERS1). Never the roster's live
-    /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
-    /// carries, and its servers were withheld from every conversation.
-    /// </remarks>
-    /// <param name="to">Whose servers: those declared for sessions, or for Ask Daoris (HELPPLUG1a).</param>
-    /// <param name="every">
-    /// Every server the plugins here declare, for whomever and approved or not, each said once in the log (HELPMODE1a1, Ask Daoris in
-    /// full access, D170 as D183 amends it); false takes those <paramref name="to"/> takes.
-    /// </param>
-    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandServersAsync(
-        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions,
-        bool every = false)
-    {
-        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        // Ask Daoris takes only the servers the person approved for it (HelpGrants, D170's note); a session, its own.
-        var servers = every ? [.. PluginServerTo.All.SelectMany(catalog.ServersTo).DistinctBy(server => server.Name)]
-            : to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
-        var handed = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
-        if (every) ServedEvery(plugins, catalog, sessionId, handed.Handed);
-        else plugins.Served(catalog, sessionId, handed.Handed, to);
-        return handed;
-    }
-
-    /// <summary>A <c>plugin.served</c> line for every server the plugins here declare, once each, handed or withheld (HELPMODE1a1).</summary>
-    private static void ServedEvery(PluginLog plugins, PluginCatalog catalog, string sessionId, IReadOnlyList<AcpMcpServer> handed)
-    {
-        var said = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var plugin in catalog.Contributing)
-        {
-            foreach (var server in plugin.Manifest.Servers.Where(server => said.Add(server.Name)))
-            {
-                plugins.Served(plugin.Manifest.Id, server.Name, sessionId, handed.Any(each => string.Equals(each.Name, server.Name, StringComparison.Ordinal)));
-            }
-        }
-    }
 
     /// <summary>
     /// A conversation whose record is open: its process spawned with its rules and servers, its door's
@@ -1063,7 +990,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             if (place.Plugins)
             {
                 IReadOnlyList<string> drivers;
-                (pluginServers, browserNotice, drivesBrowser, drivers) = await HandServersAsync(
+                (pluginServers, browserNotice, drivesBrowser, drivers) = await ChatServers.HandAsync(
                     _home, _browser, _plugins, sessionId, ct, place.ServersTo, place.EveryServer).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
                 // conversation already told when it opened, so it is told nothing again.
@@ -1079,7 +1006,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all. A room
             // has no `.mcp.json` of its own, so its connector goes in the same file (HELP1a).
             offered = resolved.Wire == SessionWire.Acp || place.ConnectorOnPipe
-                ? Servers(sessionId, place.Circle, pluginServers, resolved.Wire == SessionWire.Acp ? proc : null)
+                ? _servers.For(sessionId, place.Circle, pluginServers, resolved.Wire == SessionWire.Acp ? proc : null)
                 : pluginServers;
             if (resolved.Wire == SessionWire.Pipe) servers = SpawnServers.Hand(resolved, info, _home, sessionId, offered);
 
@@ -1127,7 +1054,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
                 SpawnSettings.Remove(rules);
                 SpawnServers.Remove(servers);
                 SpawnSkills.Remove(skills);
-                await Conclude(sessionId, "stopped", ClosedNoted, onEnded).ConfigureAwait(false);
+                await _conclusion.ConcludeAsync(sessionId, "stopped", ClosedNoted, onEnded).ConfigureAwait(false);
                 if (_processes.Close.Build is { } build) KeepRestart(sessionId, build);
                 return new(sessionId, message);
             }
@@ -1152,7 +1079,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             SpawnSkills.Remove(skills);
             _told.LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
-            await Conclude(
+            await _conclusion.ConcludeAsync(
                 sessionId, "failed",
                 cancelled
                     ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
@@ -1173,7 +1100,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _context.Talking[sessionId] = resolved;
-        _runs[sessionId] = run!;
+        _context.Runs[sessionId] = run!;
         // One at a time in each workspace (ASKHIST1, ASKSCOPE1a): going back to an earlier conversation of its workspace sets this one
         // aside first, and one of another workspace's leaves it be.
         if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = RemoteTarget.Workspace(place.Workspace);
@@ -1360,12 +1287,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             {
                 if (goOn.Named()) _ = GoOn.WentOnAsync(sessionId, goOn, resolved.Name);
             },
-            Protocol = chat is null ? null : Held(run, chat, sessionId, workTree, place.Posture ?? resolved.AcpPosture, meta, offered, resolved, Said),
+            Protocol = chat is null ? null : _held.Of(run, chat, sessionId, workTree, place.Posture ?? resolved.AcpPosture, meta, offered, resolved, Said),
         });
 
-        var watch = WatchAsync(
+        var watch = _watch.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
+            new ChatWatched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -1457,7 +1384,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         foreach (var (id, _) in watches)
         {
             if (_context.Turned.TryGetValue(id, out var chat)) chat.Turns.HoldForClose();
-            var idle = update is not null && !_updateCuts.ContainsKey(id) && Spoken(id);
+            var idle = update is not null && !_updateCuts.ContainsKey(id) && _conclusion.Spoken(id);
             _processes.Stop(id, idle ? Noted.Of(NoteCodes.ChatRestarted,
                 "Daoris restarted for an update; this conversation goes on in its own conversation at your next word.") : ClosedNoted);
         }
@@ -1479,8 +1406,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             }
         }
     }
-
-    private bool Spoken(string session) => _events.After(session, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Reaches is null);
 
     /// <summary>
     /// Words a turn left waiting on their record, said (FOUNDATION1 row p, the design §3.4 rule 5): the record did not name them marked
@@ -1532,11 +1457,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
             _context.Finishing[sessionId] = 0;
-            _ = chat.FinishAsync(() => _runs.TryGetValue(sessionId, out var turned) ? turned.CloseAsync(CancellationToken.None) : Task.CompletedTask);
+            _ = chat.FinishAsync(() => _context.Runs.TryGetValue(sessionId, out var turned) ? turned.CloseAsync(CancellationToken.None) : Task.CompletedTask);
             return true;
         }
 
-        if (!_runs.TryGetValue(sessionId, out var run)) return false;
+        if (!_context.Runs.TryGetValue(sessionId, out var run)) return false;
         _context.Finishing[sessionId] = 0;
         _ = run.CloseAsync(CancellationToken.None);
         return true;
@@ -1673,7 +1598,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     T IExecutorWiring.Of<T>() => Executors.Of<T>();
 
     Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
-        Conclude(sessionId, state, note, onEnded);
+        _conclusion.ConcludeAsync(sessionId, state, note, onEnded);
 
     RotatedOpening.Carried? IExecutorWiring.LimitCarried(string? carries) => LimitCarried(carries);
 
@@ -1704,22 +1629,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <inheritdoc cref="ChatAccountReads.SignedOut"/>
     internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure) => _accounts.SignedOut(adapter, profile, failure);
 
-    /// <summary>What a conversation's watch knows of it beyond its process (MSG1c).</summary>
-    /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
-    /// <param name="Keeps">Whether its conversation's id is kept, so it can go on once it ended (<see cref="ChatPlace.Keeps"/>).</param>
-    /// <param name="GoOn">The ended chat this run goes on with, or null for a new conversation.</param>
-    private sealed record Watched(string Adapter, bool Keeps, GoingOn? GoOn)
-    {
-        /// <summary>The plugins' skills composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which go when the conversation does.</summary>
-        public string? Skills { get; init; }
-
-        /// <summary>
-        /// A fact about how this run was set up, its transcript's first line on either door: the mode Ask Daoris's start got
-        /// (HELPMODE1a1, D183 point 3). Null says nothing.
-        /// </summary>
-        public string? Preamble { get; init; }
-    }
-
     /// <summary>What a conversation's ending note adds where Daoris kept no id for its harness conversation (<see cref="ChatEnded.NotKept"/>).</summary>
     public const string NotKept = ChatEnded.NotKept;
 
@@ -1729,327 +1638,4 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary>How a conversation that simply ended says so (<see cref="ChatEnded.EndedNote"/>).</summary>
     internal static Noted EndedNote(bool stopped, bool notKept) => ChatEnded.EndedNote(stopped, notKept);
 
-    /// <param name="run">The run over its process, spawned and tracked, its start completed and not yet open (ONEWAY1h-iii).</param>
-    /// <param name="measured">Told the conversation's high-water context at its end, where its door reported one (USAGE1).</param>
-    /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
-    /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
-    /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
-    /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
-    /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
-    /// <param name="said">Told what its door says about its account's windows (TOOL6c), on either structured door.</param>
-    /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with (MSG1c).</param>
-    /// <returns>
-    /// Whether the chat it goes on with is to be tried once more as the same resume (SESSCTX1c): its native harness ended on a failed
-    /// exit before it named its conversation, the first time. The record is left working, and nothing is concluded.
-    /// </returns>
-    private async Task<bool> WatchAsync(
-        string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
-        Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
-        string? servers, Action<JsonElement>? said, Watched watched, ActorRun actorRun, MachineLog actorLog)
-    {
-        // 🔴 CHATGOONWAKE1: declared first, so disposed last: a word shown to its ended record while this run still held it goes on once
-        // everything of this run is let go.
-        using var letGo = new Disposer(() => GoOn.LetGo(sessionId));
-        using var actorLogging = actorLog;
-        await using var actorWatching = actorRun;
-        using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));
-        var goOn = watched.GoOn;
-
-        // Declared first, so it is let go LAST — its process ended, untracked and disposed after every map that talks to it has let go
-        // (REV3: nothing disposed a conversation's process or its pipes).
-        await using var held = run;
-        using var talking = new Disposer(() =>
-        {
-            _runs.TryRemove(sessionId, out _);
-            _context.Talking.TryRemove(sessionId, out _);
-            _context.Turned.TryRemove(sessionId, out _);
-            _context.Rooms.TryRemove(sessionId, out _);
-            _context.Finishing.TryRemove(sessionId, out _);
-            Executors.Of<HelpAccessSwap>().Forget(sessionId);
-            _context.Handing.TryRemove(sessionId, out _);
-            _context.Browsers.TryRemove(sessionId, out _);
-            _context.Drafts.TryRemove(sessionId, out _);
-            _context.Palettes.TryRemove(sessionId, out _);
-            _told.Ended(sessionId);
-            // Nothing waiting will be sent now, and the page is told its queue emptied. COWORK1c: words kept on its record wait there for
-            // it to go on, unless the person stopped it, which ends them with it.
-            var personStopped = _processes.StopMade(sessionId) is { Reason: null };
-            chat?.Turns.Gone(personStopped);
-            native?.Gone(personStopped);
-            // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
-            _context.Answers.Forget(sessionId);
-        });
-        // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a), on the session the run holds.
-        using var stops = chat is null || _output is null
-            ? null
-            : _processes.OpenTaskStops(sessionId, (task, ct) => run.Session is { } session ? session.StopTaskAsync(task, ct) : Task.FromResult(false));
-        // Whether its end was asked of the run: before it, a failure lets the run go with its process ended (ANSWER2).
-        var ending = false;
-        try
-        {
-            // The conversation's messages are recorded as the person sends them (`Say`), so the capture opens with no composed prompt of its
-            // own, its first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation
-            // resumed (MSG1c), its id kept for its record the moment its door names it (D137 §4.2).
-            run.HandRecords(new RunRecords(
-                sessionId, transcript, _output, _events, LineageHome: _home, KeepAs: watched.Keeps ? watched.Adapter : null, Said: said,
-                Preamble: watched.Preamble));
-            await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
-                .ConfigureAwait(false);
-
-            // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
-            if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
-
-            // Its exit, then its capture read to its end, then its process's lineage end (COWORKVIEW1a).
-            ending = true;
-            var end = await run.EndAsync(CancellationToken.None).ConfigureAwait(false);
-
-            // 🔴 The native door's harness ended on a failed exit before naming its conversation: it never opened it, which a
-            // crash, a failed sign-in or a flag it rejected ends the same way, so it proves nothing of its loss (SESSCTX1c, D189's
-            // amendment). The same resume is tried once more, once this watch has let its process go; a second such end is
-            // `exited`, never `gone`. Read from the structure, never from its words.
-            if (goOn is { Ask.Refused: null } && mapper is not null && chat is null && !goOn.Ask.Named
-                && end.Exit != 0 && !_processes.WasStopRequested(sessionId))
-            {
-                if (!goOn.Ask.Retried)
-                {
-                    goOn.Ask.Again();
-                    return true;
-                }
-
-                goOn.Ask.Refused = ContinueWhy.Of(ContinueWhy.Exited);
-            }
-
-            if (goOn?.Ask.Refused is { } refused)
-            {
-                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return false;
-            }
-
-            // What it consumed, where its door reported it — measured before the record moves, so a page
-            // told of the ending finds the account's usage already counting it.
-            if (end.Usage is { } used) measured?.Invoke(used);
-
-            // The person's stop outranks the observation, exactly as for a driven session: a killed
-            // process leaves the same signals as one that ended on its own, and only this flag knows
-            // whose decision it was. Otherwise a conversation simply ended — `completed`, with no
-            // evidence claim beyond whatever its commits already say.
-            var stopped = _processes.WasStopRequested(sessionId);
-            // The driver's own reason when it was the driver — closing, say — and the person's otherwise. Said before anyone
-            // writes to it (MSG1c): a spoken conversation whose harness kept no id says so beside any stop's own note.
-            var note = EndedNoteFor(sessionId, watched, stopped);
-            await Conclude(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
-            return false;
-        }
-        catch (Exception error)
-        {
-            // 🔴 The harness first, while it is still tracked (REV3): a record that could not move to
-            // `working` — a stop pressed during `starting` ends it so — used to conclude here and leave
-            // the agent running, untracked and unmarked, until the application exited. The run let go before
-            // its end ends it, and writes its process's end unclean once its exit is read (ANSWER2); one whose
-            // end was asked has exited.
-            if (!ending) await run.AbandonAsync().ConfigureAwait(false);
-
-            // An agent that would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended.
-            if (goOn?.Ask.Refused is { } refused)
-            {
-                await GoOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return false;
-            }
-
-            if (_processes.WasStopRequested(sessionId))
-            {
-                await Conclude(sessionId, "stopped", EndedNoteFor(sessionId, watched, stopped: true), onEnded).ConfigureAwait(false);
-                return false;
-            }
-
-            // MODELROLE1d2 (D205 §3.5(b), (c)): its agent refused the choice at the open, before any prompt: `choice-not-offered`, no strike
-            // and no Ended notice, the reading kept by the re-ask before it ended.
-            if (chat?.NotOffered is { } notOffered)
-            {
-                var ended = Observation.ChoiceNotOffered(watched.Adapter, notOffered);
-                await Conclude(sessionId, ended.State, ended.AsNoted(), onEnded).ConfigureAwait(false);
-                return false;
-            }
-
-            await Conclude(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
-            return false;
-        }
-        finally
-        {
-            _output?.Close(sessionId);
-            SpawnSettings.Remove(rules);
-            SpawnServers.Remove(servers);
-            SpawnSkills.Remove(watched.Skills);
-        }
-    }
-
-    private Noted EndedNoteFor(string session, Watched watched, bool stopped)
-    {
-        var note = _processes.StopReason(session) ?? EndedNote(stopped, notKept: false);
-        if (!watched.Keeps || _context.Conversations.Read(session) is not null || !Spoken(session)) return note;
-        using var log = new MachineLog(_home, "driver");
-        log.Warn("conversation.unkept", ("session", session), ("adapter", watched.Adapter), ("error", "MissingId"));
-        return note.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept));
-    }
-
-    /// <summary>
-    /// What a conversation on the protocol door is handed on <c>session/new</c> — what a driven session on
-    /// that door is handed (ACP4, D65 §1f): the machine's knowledge connector, carrying who the session
-    /// is, and every server the plugins declare. Located per conversation, because a machine can gain
-    /// either between two.
-    /// </summary>
-    /// <param name="circle">The workspace its tools are bound to (<see cref="ChatPlace.Circle"/>, ASKSCOPE1c); null for none.</param>
-    /// <param name="proc">The lineage token of the process it is composed for, on the protocol door alone.</param>
-    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins, string? proc = null)
-    {
-        var offered = new List<AcpMcpServer>();
-        if (KnowledgeConnector.Offer(
-                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: ConnectorScope(_home, sessionId, circle, proc, KnowledgeConnector.KeptRole(_context.Conversations.RoleOf, sessionId))) is { } connector)
-        {
-            offered.Add(connector);
-        }
-
-        offered.AddRange(plugins);
-        return offered;
-    }
-
-    /// <summary>
-    /// What a conversation's knowledge connector carries beyond the store: who it is and where its rules live (PERM2), and the
-    /// workspace it is bound to, as a driven session's circle is named for its connector (ASKSCOPE1c); none for a conversation bound
-    /// to none.
-    /// </summary>
-    internal static IReadOnlyDictionary<string, string> ConnectorScope(
-        string home, string sessionId, string? circle, string? proc = null, (string Role, long Revision)? role = null) =>
-        KnowledgeConnector.SessionScope(home, sessionId, HelpCircle.Scope(circle), proc, role);
-
-    /// <summary>
-    /// A conversation's session on the protocol door (CONV3b), as its run holds it open (ONEWAY1h-iii): what it is handed on <c>session/new</c>
-    /// and what is set on it before its first prompt, the turns let go once it opened, and what its open's failure says. Its lines, what each
-    /// turn renders, reach the transcript and the console through the run, and what they mean the record — the driven path's split, held open
-    /// for as many turns as the person takes.
-    /// </summary>
-    /// <remarks>
-    /// A session that cannot be opened is one nothing can be said to: the run ends its process once this has said why, and the failure is
-    /// what the record concludes with — the driver saw it, and it is not the person's.
-    /// </remarks>
-    /// <param name="cwd">The folder the session works in.</param>
-    /// <param name="servers">What its door is handed of the servers (HELPWIRED1).</param>
-    /// <param name="said">Told what it says about its account's windows (TOOL6c).</param>
-    private TransportProtocol Held(
-        TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, IReadOnlyList<AcpMcpServer> servers,
-        ISessionAdapter resolved, Action<JsonElement> said)
-    {
-        void Record(SessionEvent e) => _events.Keep(sessionId, e, run.Say);
-
-        return new TransportProtocol(cwd)
-        {
-            Posture = posture,
-            Meta = meta,
-            Servers = servers,
-            TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true, // CODEXSTATUS1
-            // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
-            Options = options => OptionsChanged?.Invoke(sessionId, ChatOptions.ThePersons(options)),
-            Configure = session =>
-            {
-                chat.Configure(session);
-                // What it says about its account's windows, kept as it says it (TOOL6c).
-                session.LimitsSaid += said;
-                // The person's words said during a turn, as the record keeps them where the session took them (MSG1c, D136 §3).
-                session.OnTaken(delivered =>
-                {
-                    var words = ChatMessage.FromAgent(delivered);
-                    // Daoris's own go-on (AGENTERRORS1b), told beside the person's words a transient try carries, is Daoris's, never the person's.
-                    run.Say(words.Daoris is not null
-                        ? $"— the conversation was told: {words.Text}"
-                        : $"— the conversation took what the person added: {words.Text}");
-                    Record(ChatMessage.Words(words));
-                });
-            },
-            Opened = () => chat.Opened(run, run.Say, Record),
-            Unopened = error =>
-            {
-                switch (error)
-                {
-                    case AcpResumeRefused refused when chat.GoOn is { } goOn:
-                        // Not a turn that failed: nothing was prompted. The agent's own words stay in this machine's record of the
-                        // conversation; the reason goes back to the record, which goes back to how it ended (MSG1b's rule). Its reason by code,
-                        // the agent's words its own (CONVNOTE2e); the English as it always was.
-                        goOn.Refused = refused.Why;
-                        chat.Opened(null, run.Say, Record);
-                        var refusal = DoorNotes.ResumeRefused(refused, resolved.Name);
-                        run.Say(refusal.Note);
-                        Record(new SessionEvent { Kind = SessionEventKind.Note, Text = refusal.Note, Parts = refusal.Parts });
-                        break;
-                    case AcpChoiceNotOffered refused when chat.Pending is { } pending:
-                        // MODELROLE1d2 (D205 §3.5(b)): its agent refused the choice before any prompt, and the re-ask answered another session. Its
-                        // words move to the pending start before the queue lets them go, each said meanwhile joining them, so the replacement takes
-                        // each once; nothing was prompted, and the record ends `choice-not-offered`.
-                        chat.NotOffered = refused.Refusal;
-                        pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || Executors.Of<ChatReplacement>().Onward(pending, sessionId, word)));
-                        chat.Opened(null, run.Say, Record);
-                        break;
-                    default:
-                        // 🔴 EVERY failure ends the open (REV3): one that escaped — an unreadable answer, a pipe that broke mid-write — left the
-                        // queue waiting on a session that never came.
-                        chat.Opened(null, run.Say, Record);
-                        var notOpen = DoorNotes.NotOpen(error.Message);
-                        run.Say($"— {notOpen.Note}");
-                        Record(new SessionEvent { Kind = SessionEventKind.Note, Text = notOpen.Note, Parts = notOpen.Parts });
-                        // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with
-                        // was not seen (D125 ROSTER1b), so both are read (SIGNIN1b).
-                        chat.ReadSignIn(error);
-                        break;
-                }
-            },
-        };
-    }
-
-    private async Task Conclude(
-        string sessionId, string state, Noted note, Func<string, string, Task>? onEnded)
-    {
-        // Its agent has ended: an Ask Daoris conversation whose access changed is pending no more once its end is told (ACCESSSWAP1).
-        Executors.Of<HelpAccessSwap>().Forget(sessionId);
-        (state, note, var limit) = LimitedEnd(sessionId, state, note);
-        try
-        {
-            await _service.AdvanceAsync(sessionId, state, note, limit: limit).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            // Best-effort by construction: the host — or the client that reaches it — may already be gone
-            // on the same shutdown, and the first failure is the report. EVERY failure, a client timeout
-            // included (an OperationCanceledException nobody asked for): one escaping here never reached
-            // `onEnded`, and the terminal door waited on it forever (REV3).
-        }
-
-        if (onEnded is not null)
-        {
-            try
-            {
-                await onEnded(sessionId, state).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // A listener's failure is its own; the record is already written.
-            }
-        }
-    }
-
-    /// <summary>
-    /// FOUNDATION1g part c (the foundation design §3.5, §4.2's end class): a conversation whose last turn its account's limit refused ends as a
-    /// driven end a limit made does (<c>Driver.AccountLimited</c>), <c>failed</c> with the ledger's <c>limited</c> flag and that turn's cooling
-    /// line after its own note, so its state, flag and note's code say <i>limited</i> alike, and every reader decides by the flag. The person's
-    /// stop stays theirs, as a driven one's does, and an agent's refusal of the choice at the open keeps its own end.
-    /// </summary>
-    /// <remarks>Why <c>failed</c>, never the flag on another state: D212's note of FOUNDATION1g part c.</remarks>
-    private (string State, Noted Note, bool Limit) LimitedEnd(string sessionId, string state, Noted note)
-    {
-        var personStopped = state == "stopped" && _processes.WasStopRequested(sessionId) && _processes.StopReason(sessionId) is null;
-        if (personStopped || note.Parts.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code)) return (state, note, false);
-        if (LimitHeld.Of(_events.After(sessionId, 0).Events) is not { } held) return (state, note, false);
-
-        var cooled = held.Cooled is { } line ? Noted.From(line.Text, line.Parts) : null;
-        return ("failed", cooled is { Note.Length: > 0 } ? note.Then(" ", cooled) : note, true);
-    }
 }

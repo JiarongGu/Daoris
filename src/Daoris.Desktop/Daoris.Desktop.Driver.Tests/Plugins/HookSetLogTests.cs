@@ -329,7 +329,7 @@ public sealed class HookSetLogTests : IDisposable
                 { "name": "browser", "command": ["node", "drive.mjs", "${browser}"] } ] }
             """);
 
-        var (servers, notice, drives, _) = await ChatRunner.HandServersAsync(
+        var (servers, notice, drives, _) = await ChatServers.HandAsync(
             _home, shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null,
             new PluginLog(_log), "s1a2b3c4", CancellationToken.None);
 
@@ -357,12 +357,12 @@ public sealed class HookSetLogTests : IDisposable
             """);
 
         // Withheld from Ask Daoris until the person approves its tools (D170's note), then handed.
-        var (waiting, _, _, _) = await ChatRunner.HandServersAsync(
+        var (waiting, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
         HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tools", "tickets", readsOnly: false);
-        var (help, _, _, _) = await ChatRunner.HandServersAsync(
+        var (help, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s1a2b3c4", CancellationToken.None, PluginServerTo.Help);
-        var (session, _, _, _) = await ChatRunner.HandServersAsync(
+        var (session, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s5e6f7a8", CancellationToken.None);
 
         Assert.Empty(waiting);
@@ -388,9 +388,9 @@ public sealed class HookSetLogTests : IDisposable
                 { "name": "wiki", "command": ["node", "wiki.mjs"], "to": ["sessions", "help"], "allow": ["lookup"] } ] }
             """);
 
-        var (restricted, _, _, _) = await ChatRunner.HandServersAsync(
+        var (restricted, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
-        var (full, _, _, _) = await ChatRunner.HandServersAsync(
+        var (full, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s1a2b3c4", CancellationToken.None, PluginServerTo.Help, every: true);
 
         Assert.Empty(restricted);

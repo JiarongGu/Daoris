@@ -350,7 +350,7 @@ public sealed class HelpRoomMayDoTests
 
     /// <summary>
     /// HELPMODE1a1: in full access the servers it is said to be handed are every one the plugins here declare, for it or for
-    /// sessions, approved or not, as its spawn is handed them (<c>ChatRunner.HandServersAsync</c>); none waits.
+    /// sessions, approved or not, as its spawn is handed them (<c>ChatServers.HandAsync</c>); none waits.
     /// </summary>
     [Fact]
     public void In_full_access_the_servers_it_is_handed_are_every_one_declared_here()

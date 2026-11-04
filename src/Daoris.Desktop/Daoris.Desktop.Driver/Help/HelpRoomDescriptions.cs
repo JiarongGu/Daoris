@@ -129,7 +129,7 @@ internal static class HelpRoomDescriptions
     
         /// <summary>
         /// HELPMODE1a1 (D170 as D183 amends it): in full access its spawn is handed every server the plugins here declare, for it or for
-        /// sessions, approved or not (<c>ChatRunner.HandServersAsync</c>), each once by name; so none waits, and none is offered.
+        /// sessions, approved or not (<c>ChatServers.HandAsync</c>), each once by name; so none waits, and none is offered.
         /// </summary>
         private static HelpMachine Full(HelpMachine machine, HelpMachineSources sources)
         {
