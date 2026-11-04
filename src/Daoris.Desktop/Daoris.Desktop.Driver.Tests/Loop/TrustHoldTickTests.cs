@@ -110,7 +110,7 @@ public sealed class TrustHoldTickTests : IDisposable
         // The sentence still says it, for a person reading the console — and the command it names
         // grants the account the hold read, the named profile, not the machine's default.
         Assert.Contains(held.Events, line => line.Contains("never been trusted", StringComparison.Ordinal)
-            && line.Contains("--profile work", StringComparison.Ordinal));
+            && line.Contains("--account work", StringComparison.Ordinal));
 
         ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
         var after = await driver.RunOnceAsync();
@@ -126,7 +126,7 @@ public sealed class TrustHoldTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "claude-code",
+            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },
         };

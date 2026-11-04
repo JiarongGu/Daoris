@@ -66,11 +66,10 @@ public sealed class AccountRotationTickTests : IDisposable
 
     private string Log => Path.Combine(_home, "agent.log");
 
-    private DriverConfig Config(string signedOut = "-") => DriverConfig.Empty with
+    private DriverConfig Config(string signedOut = "-") => StaffedRoles.Config("stub") with
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "stub",
         TestBound = 1,
         PollSeconds = 1,
         // Two failures park it, and the quest already holds one: a limit must hold none.
@@ -185,11 +184,10 @@ public sealed class AccountRotationTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
             TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: the limit must hold none.
@@ -315,11 +313,10 @@ public sealed class AccountRotationTickTests : IDisposable
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <summary>The protocol door onto the stub's accounts, its agent resuming conversations; <paramref name="signedOut"/> as the stub's sign-in answers it.</summary>
-    private DriverConfig Resuming(string mode, string signedOut = "-") => DriverConfig.Empty with
+    private DriverConfig Resuming(string mode, string signedOut = "-") => StaffedRoles.Config("acp-stub") with
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "acp-stub",
         TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>>

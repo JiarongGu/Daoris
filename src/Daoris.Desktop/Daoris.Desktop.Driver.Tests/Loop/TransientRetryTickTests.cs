@@ -56,7 +56,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 10,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },

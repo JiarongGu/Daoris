@@ -134,7 +134,7 @@ public sealed class PauseTickTests : IDisposable
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "stub",
+        Adapter = "stub", Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), log, first] },

@@ -59,7 +59,7 @@ public sealed class QuietEndProcessTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "stub",
+            Adapter = "stub", Actors = StaffedRoles.On("stub"),
             TestBound = 3,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },

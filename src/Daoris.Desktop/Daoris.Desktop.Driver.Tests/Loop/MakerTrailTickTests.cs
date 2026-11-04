@@ -120,7 +120,7 @@ public sealed class MakerTrailTickTests : IDisposable
         return Driver(new ServiceClient(service.Url, null), adapters, new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), adapter);
     }
 
-    /// <param name="build">Build's order, where the case names one; none leaves the machine's <c>adapter</c> key the only agent.</param>
+    /// <param name="build">Build's order, where the case names one; none runs every role on <paramref name="adapter"/>.</param>
     private Daoris.Driver.Driver Driver(
         ServiceClient client, AdapterSet adapters, HarnessRoster roster, string adapter, IReadOnlyList<ActorChoice>? build = null)
     {
@@ -129,6 +129,7 @@ public sealed class MakerTrailTickTests : IDisposable
             Drivable = ["engine"],
             Trees = ["engine"],
             Adapter = adapter,
+            Actors = StaffedRoles.On(adapter),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

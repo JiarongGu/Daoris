@@ -83,7 +83,7 @@ internal sealed class HandOverQuestHarness : IAsyncDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, Path.Combine(Home, "first.flag")] },
