@@ -70,6 +70,13 @@ const ORGANISMS = new Set<string>([
   // Agents page's card, What needs you and a session's conversation, which each press it, hold none.
   './work/waits/ruleAnswer.ts',
   './work/WorkFrame.tsx',
+  // The Work frame's hooks (CODESHAPE1, D231): each holds one part of what the frame reads and presses, so the frame composes.
+  './work/frame/useDockViews.ts',
+  './work/head/useAttendedSession.ts',
+  './work/head/useAttendedRecord.ts',
+  './work/conversation/useAttendedBox.ts',
+  './work/conversation/useWords.ts',
+  './work/conversation/useBoxWords.ts',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
   // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
