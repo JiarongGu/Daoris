@@ -254,7 +254,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
     [Fact]
     public async Task Asked_for_nothing_it_answers_this_machine_s_every_work_and_says_a_failure_where_it_is()
     {
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "actors": { "intake": "nope" } }""");
+        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code", "actors": { "build": [ { "agent": "claude-code" } ], "intake": "nope" } }""");
 
         var answer = await AnswerAsync(Module(), "ROLE_STRUCTURE");
 

@@ -57,7 +57,8 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         Assert.True(plan.GetProperty("refusals").GetArrayLength() == 0, plan.GetProperty("refusals").ToString());
         var atlas = Repository(plan, "atlas");
         Assert.False(atlas.GetProperty("before").GetProperty("driven").GetBoolean());
-        Assert.Equal(SetupPresets.NotDriven, atlas.GetProperty("before").GetProperty("match").GetProperty("preset").GetString());
+        // A preset is matched against the landing the workflow's landing step says: a place with no workflow matches none before the plan.
+        Assert.Null(atlas.GetProperty("before").GetProperty("match").GetProperty("preset").GetString());
         Assert.Equal(SetupPresets.Merge, atlas.GetProperty("after").GetProperty("match").GetProperty("preset").GetString());
         Assert.Equal("workspace", atlas.GetProperty("after").GetProperty("values").GetProperty("opinion").GetProperty("source").GetString());
         Assert.Equal(["Fix the map"], atlas.GetProperty("released").EnumerateArray().Select(each => each.GetProperty("title").GetString()));

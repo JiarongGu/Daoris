@@ -439,7 +439,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Wiring("""
             {
               "rotation": { "claude-code": ["account-2", "account-1", "account-3"] },
-              "rotationUse": { "claude-code": { "use": "order", "keep": "account-3", "near": 80 } }
+              "rotationUse": { "claude-code": { "use": "order", "keep": "account-3", "switch": "curve", "curve": { "session": [[0, 80]] } } }
             }
             """);
         AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("session", 0.85, Now.AddHours(2))], Now, "s1");

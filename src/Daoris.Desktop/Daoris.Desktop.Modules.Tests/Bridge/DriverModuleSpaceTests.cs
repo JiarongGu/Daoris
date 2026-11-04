@@ -147,6 +147,7 @@ public sealed class DriverModuleSpaceTests : DriverModuleBridge
     public void A_read_asks_every_kind_the_named_ones_or_none(string payload, int asked)
     {
         using var document = JsonDocument.Parse(payload);
-        Assert.Equal(asked, SystemRoutes.SpaceAsked(document.RootElement).Count);
+        JsonElement? measure = document.RootElement.TryGetProperty("measure", out var sent) ? sent : null;
+        Assert.Equal(asked, SystemRoutes.SpaceAsked(measure).Count);
     }
 }

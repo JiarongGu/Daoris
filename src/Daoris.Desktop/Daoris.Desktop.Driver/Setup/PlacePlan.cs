@@ -483,5 +483,5 @@ public static class PlacePlans
     }
 
     /// <summary>The terminal's twin of a plan: <c>daoris place … --plan</c>, in the order its usage names the words.</summary>
-    public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris-driver", "place", .. PlaceCommand.ArgsOf(ask)]);
+    public static string Terminal(PlaceAsk ask) => string.Join(' ', ["daoris", "place", .. PlaceCommand.ArgsOf(ask)]);
 }

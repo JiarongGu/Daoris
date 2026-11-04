@@ -49,7 +49,11 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
     public async Task A_quest_parked_a_second_time_is_marked_at_its_failures_and_the_planner_starts_it()
     {
         var open = Taken with { Status = "Open" };
-        var snapshot = new Snapshot([open], [new RepoView("engine", true, "X:/engine")], [], new Dictionary<string, int> { ["q1"] = 6 });
+        var snapshot = new Snapshot([open], [new RepoView("engine", true, "X:/engine")], [], new Dictionary<string, int> { ["q1"] = 6 })
+        {
+            // The bound a quest parks at is its role's failures, which the look carries.
+            FailuresAt = new Dictionary<string, int> { ["q1"] = 3 },
+        };
         DriverConfig.Empty.WithDrivable("engine", true).WithStrikes(3).WithForgiven("q1", 3).Save(DriverConfigPath);
         var parked = Planner.Plan(snapshot, DriverConfig.Load(DriverConfigPath));
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(parked).Verdict);

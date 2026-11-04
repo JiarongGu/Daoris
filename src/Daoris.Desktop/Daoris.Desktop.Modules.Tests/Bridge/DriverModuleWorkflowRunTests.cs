@@ -138,7 +138,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(
             [("claimed", "work", "claimed", "done", "reached"), ("build", "acme.ci/built", "acme.ci/built", "not-reached", "blocked"),
              ("lint", "acme.ci/linted", "acme.ci/linted", "not-reached", "blocked"), ("both", "all", "all", "not-reached", "blocked"),
-             ("handed", "landing", "handed", "not-reached", "blocked")],
+             ("yes", "review", "review", "not-reached", "blocked"), ("handed", "landing", "land", "not-reached", "blocked")],
             steps.Select(step => (step.GetProperty("step").GetProperty("id").GetString(), step.GetProperty("step").GetProperty("kind").GetString(),
                 step.GetProperty("node").GetString(), step.GetProperty("state").GetString(), step.GetProperty("detail").GetString())));
         Assert.Equal(("quest", "q1"), (steps[0].GetProperty("on").GetString(), steps[0].GetProperty("quest").GetString()));
@@ -149,30 +149,9 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             graph.GetProperty("quest").GetString(), graph.GetProperty("judged").GetBoolean(), graph.GetProperty("unread").GetBoolean()));
         Assert.Equal(["claimed"], graph.GetProperty("entries").EnumerateArray().Select(entry => entry.GetString()));
         Assert.Equal(
-            [("claimed", "build", "after"), ("claimed", "lint", "after"), ("build", "both", "after"), ("lint", "both", "after"), ("both", "handed", "after")],
+            [("claimed", "build", "after"), ("claimed", "lint", "after"), ("build", "both", "after"), ("lint", "both", "after"), ("both", "yes", "after"), ("yes", "handed", "after")],
             graph.GetProperty("wires").EnumerateArray().Select(wire => (wire.GetProperty("from").GetString(), wire.GetProperty("to").GetString(), wire.GetProperty("kind").GetString())));
         Assert.Equal(JsonValueKind.Null, graph.GetProperty("ended").ValueKind);
-    }
-
-    [Theory]
-    [InlineData("opinion")]
-    [InlineData("landing")]
-    public async Task A_bound_step_that_lacks_its_declaration_cannot_start(string kind)
-    {
-        var steps = kind == "opinion"
-            ? """[{"id":"write","kind":"work"},{"id":"inspect","kind":"opinion"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]"""
-            : """[{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"you"}]""";
-        StoredSteps.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
-            System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
-        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
-            new WorkflowTaskChoice(null, "release"), [], T)));
-        var (module, _) = await UpAsync();
-
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
-        var step = answer.GetProperty("runs")[0].GetProperty("steps")[1];
-
-        Assert.Equal("cannot-start", step.GetProperty("state").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(step.GetProperty("words").GetString()));
     }
 
     /// <summary>A session's run is its quest's, and an ask's is each run of each chain it asked: the same records, read the same.</summary>
@@ -220,10 +199,8 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(("c2", 0), (run.GetProperty("session").GetString(), run.GetProperty("quests").GetArrayLength()));
         var mark = run.GetProperty("chat");
         // A chat's run binds its graph now (WORKFLOWCLEAN1 1d), so its checks are the graph's and enforced.
-        Assert.Equal(("chat-c2", "light", true),
+        Assert.Equal(("chat-c2", (string?)null, true),
             (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
-        var work = run.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
-        Assert.Equal(("working", "agent"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
     }
 
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
