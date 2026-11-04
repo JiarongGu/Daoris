@@ -175,7 +175,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
 
     private const string IntegratingGraph = """
         {"schemaVersion":2,"entries":["handed"],"end":"line",
-         "nodes":[{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+         "nodes":[{"id":"handed","kind":"land","version":1,"reach":"performed"},
                   {"id":"integrate","kind":"integrate","version":1,"reach":"waited","options":{"request":"steward"}},
                   {"id":"line","kind":"line","version":1,"reach":"observed"}],
          "wires":[{"id":"h>i","kind":"after","from":"handed","to":"integrate"},{"id":"i>l","kind":"after","from":"integrate","to":"line"}]}

@@ -126,12 +126,11 @@ public sealed class WorkflowPortsTests
         var store = new MemoryStore();
         var runs = new MemoryRuns();
         WorkflowStore.Add(store, runs, Added("you"));
-        // A `handed` graph as an older build stored it: no door saves one now, and a stored one still reads.
         StoredSteps.AddGraph(store, "docs-to-pr", null, "2026-10-10T09:00:00Z", JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                       {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"publish the docs","on":"dev"}},
-                      {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"automatic"}}],
+                      {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
              "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>h","kind":"after","from":"ok","to":"handed"}]}
             """)!);
 
@@ -145,8 +144,9 @@ public sealed class WorkflowPortsTests
                   {"schemaVersion":2,"entries":["claimed"],"end":"handed",
                    "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                             {"id":"ok","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"publish the docs","on":"dev"}},
-                            {"id":"handed","kind":"handed","version":1,"reach":"observed","options":{"form":"branch","accept":"you"}}],
-                   "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>h","kind":"after","from":"ok","to":"handed"}]}}]}
+                            {"id":"yes","kind":"review","version":1,"reach":"pressed"},
+                            {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}}],
+                   "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"ok"},{"id":"o>y","kind":"after","from":"ok","to":"yes"},{"id":"y>h","kind":"after","from":"yes","to":"handed"}]}}]}
                 """).RootElement).Versions).Graph!)));
     }
 
@@ -202,7 +202,7 @@ public sealed class WorkflowPortsTests
         {
             RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
                 {"schemaVersion":2,"entries":["claimed"],"end":"handed",
-                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
                  "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
                 """), At);
             using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
@@ -253,7 +253,7 @@ public sealed class WorkflowPortsTests
         {
             RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
                 {"schemaVersion":2,"entries":["claimed"],"end":"integrate",
-                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"},
                           {"id":"integrate","kind":"integrate","version":1,"reach":"waited"}],
                  "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>i","kind":"after","from":"handed","to":"integrate"}]}
                 """), At);

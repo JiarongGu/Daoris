@@ -327,7 +327,7 @@ public sealed class OpinionLookTests : IDisposable
         var digest = RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"check","kind":"acme.check/run","version":1,"reach":"performed"},
-                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                      {"id":"opinion","kind":"opinion","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"c>k","kind":"after","from":"claimed","to":"check"},{"id":"k>o","kind":"after","from":"check","to":"opinion"},
                       {"id":"o>h","kind":"after","from":"opinion","to":"handed"}]}
             """);

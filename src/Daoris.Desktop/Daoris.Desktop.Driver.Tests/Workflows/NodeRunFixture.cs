@@ -27,7 +27,7 @@ public abstract class NodeRunFixture : NodeRuntimeFixture
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
                   {"id":"go","kind":"go-ahead","version":1,"reach":"pressed","options":{"act":"deploy the release"}},
-                  {"id":"handed","kind":"handed","version":1,"reach":"observed"}],
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>g","kind":"after","from":"claimed","to":"go"},{"id":"g>h","kind":"after","from":"go","to":"handed"}]}
         """;
 

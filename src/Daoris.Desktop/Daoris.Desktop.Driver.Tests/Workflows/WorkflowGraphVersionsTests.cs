@@ -105,14 +105,6 @@ public sealed class WorkflowGraphVersionsTests
         };
         var plan = WorkflowNamed.PlanAdd(file, add, []);
 
-        // WORKFLOWCLEAN1 1b: the one judge refuses a `handed` first, whatever else the row (written before it) says of the graph.
-        if (add.Graph!.ToJsonString().Contains("\"kind\":\"handed\"", StringComparison.Ordinal))
-        {
-            Assert.Null(plan.Result);
-            Assert.Contains("is a `handed`, which only watches a landing some door made", plan.Problem);
-            return;
-        }
-
         Assert.Equal((string?)row["problem"], plan.Problem);
         if (row["result"] is { } result)
         {

@@ -554,16 +554,6 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             HelpProposals.Plan(Propose(Merge, @base: 1), DriverConfig.Empty, Here()).Refusal);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1b: a graph the editor would not save is refused in its words, naming the node (a `handed` is no longer saved).</summary>
-    [Fact]
-    public void A_graph_the_editor_would_not_save_is_refused_in_its_words()
-    {
-        var handed = """{"schemaVersion":2,"entries":["claim"],"end":"land","nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}""";
-        var plan = HelpProposals.Plan(Propose(null, graph: handed), DriverConfig.Empty, Here());
-
-        Assert.StartsWith("v1: its graph does not hold: node `land` is a `handed`, which only watches a landing some door made", plan.Refusal, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void A_scope_this_machine_does_not_have_is_refused()
     {
