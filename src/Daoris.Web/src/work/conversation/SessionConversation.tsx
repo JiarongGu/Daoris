@@ -11,7 +11,8 @@ import { beginsByMove, firstAnswerWait, lastWords, retryingAt, type RunningCall,
 import { ConversationFind } from './ConversationFind';
 import { useEverySession } from '../../data/queries';
 import { isPartnerRecord } from './sender';
-import { type CallMark, type Cooling, ConversationView } from './ConversationView';
+import { type CallMark, ConversationView } from './ConversationView';
+import type { Cooling } from './saidDoors';
 import { exchangesOf, NO_EXCHANGES } from './exchanges';
 import type { HelperAskRow } from '../waits/HelperAsks';
 import type { ReasonValues } from '../say';
