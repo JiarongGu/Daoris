@@ -48,7 +48,7 @@ describe('a session\'s moves, held to the code (trap 11)', () => {
   });
 
   it('holds the nine states the code has, in its order, and the live ones apart from the ended', () => {
-    const block = /public enum SessionState\s*\{([^}]*)\}/.exec(only('Sessions.cs'))?.[1] ?? '';
+    const block = /public enum SessionState\s*\{([^}]*)\}/.exec(only('SessionState.cs'))?.[1] ?? '';
     const members = block.split('\n').flatMap((line) => /^\s*(\w+)\s*,?\s*$/.exec(line)?.[1] ?? []).map(spelled);
     expect(members).toEqual([...SESSION_STATES]);
     expect([...LIVE_STATES, ...ENDED_STATES].sort()).toEqual([...SESSION_STATES].sort());
