@@ -200,7 +200,7 @@ public static class GitReviewCommand
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    private static void Files(Utf8JsonWriter writer, string name, WorkingTree.TreeDiff? diff)
+    private static void Files(Utf8JsonWriter writer, string name, TreeDiff? diff)
     {
         writer.WriteStartArray(name);
         foreach (var file in diff?.Files ?? [])

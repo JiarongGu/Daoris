@@ -1,6 +1,8 @@
 using System.Globalization;
 using static Daoris.Driver.TreeGit;
 using static Daoris.Driver.TreeWorktrees;
+using static Daoris.Driver.SetAsideMarks;
+using static Daoris.Driver.SetAsideReads;
 
 namespace Daoris.Driver;
 
@@ -33,7 +35,7 @@ internal sealed class TreeSetAside(TreeContext context)
     internal const string SetAsideFolder = ".tidied";
 
     /// <summary>How a folder moved aside is named after its tree: the tree's name, then the moment it was moved, in UTC.</summary>
-    private const string SetAsideStamp = "yyyyMMdd'T'HHmmssfff'Z'";
+    internal const string SetAsideStamp = "yyyyMMdd'T'HHmmssfff'Z'";
 
     /// <summary>Where the look's own tidy keeps the folders it moved aside: <c>trees/.tidied/&lt;workspace&gt;/&lt;repository&gt;/</c>.</summary>
     internal string SetAsideRoot => Path.Combine(context.TreesRoot, SetAsideFolder);
@@ -136,57 +138,6 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// Every folder below the tree's top that holds a <c>.git</c> file or folder, as paths from the tree's root with forward
-    /// slashes, none read into: what lies inside one is that repository's. Read from the folders, hidden ones included, never
-    /// following a link; the tree's own <c>.git</c> at its top is passed over, and never read into. A folder that cannot be read throws.
-    /// KEEP1a: the same walk names every link it meets, never followed, which the slim's judgement reads (Fable F1.5: one walk shared).
-    /// </summary>
-    private static (List<string> Nested, List<string> Links) NestedRepositories(string tree)
-    {
-        var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));
-        var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
-        var found = new List<string>();
-        var links = new List<string>();
-        var pending = new Stack<string>();
-        pending.Push(top);
-        while (pending.TryPop(out var folder))
-        {
-            var below = new List<string>();
-            var linked = new List<string>();
-            var repository = false;
-            foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos("*", options))
-            {
-                if (string.Equals(entry.Name, ".git", StringComparison.OrdinalIgnoreCase))
-                {
-                    repository = !string.Equals(folder, top, StringComparison.OrdinalIgnoreCase);
-                    if (repository) break;
-                    continue;
-                }
-
-                if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                {
-                    linked.Add(Path.GetRelativePath(top, entry.FullName).Replace('\\', '/'));
-                }
-                else if (entry is DirectoryInfo directory)
-                {
-                    below.Add(directory.FullName);
-                }
-            }
-
-            if (repository)
-            {
-                found.Add(Path.GetRelativePath(top, folder).Replace('\\', '/'));
-                continue;
-            }
-
-            links.AddRange(linked);
-            foreach (var each in below) pending.Push(each);
-        }
-
-        return (found, links);
-    }
-
-    /// <summary>
     /// The look's removal of a tree (AUTOTIDY1): never a delete. Its folder is moved aside, in one rename on the same volume,
     /// into <see cref="SetAsideRoot"/>, then git lets go of its record of that tree alone (<c>git worktree remove</c> of a tree
     /// whose folder is gone deletes nothing but the record). A write that lands after the last look lands in the folder moved
@@ -270,39 +221,6 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// A moved folder put back where its tree was, and its manifest forgotten only once it is back (Codex's read of the design, finding 4):
-    /// where the put-back fails, the manifest stays at <c>judged</c> beside the folder aside, with its facts, so the next look meets a
-    /// registration whose folder is gone, removes it and its branch, and marks the manifest <c>deleted</c>, and its record is kept.
-    /// </summary>
-    private static (bool Gone, string? To, string? Code, string Sentence) PutBack(string to, string tree, string? manifest, string code, string why)
-    {
-        try
-        {
-            if (SetAsideFaults.Current?.RefusePutBack == true) throw new IOException("refused by the test's fault");
-            Directory.Move(to, tree);
-            Forget(manifest);
-            return (false, null, code, $"{why}, so its folder was put back");
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return (false, to, code, $"{why}, and its folder, moved aside to {to}, could not be put back ({error.Message.Trim()})");
-        }
-    }
-
-    /// <summary>
-    /// What the moved tree holds that no commit does, tracked or untracked and not ignored, read by git in the moved folder with no optional
-    /// lock: a clause where it holds something or git could not say, else null.
-    /// </summary>
-    private static async Task<string?> UncommittedAsync(string folder, CancellationToken ct)
-    {
-        var (code, porcelain, err) = await WorkingTree.GitAsync(
-            folder, ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignore-submodules=none"], ct).ConfigureAwait(false);
-        if (code != 0) return $"git could not read its tree again once moved ({FirstLine(err)})";
-        var paths = porcelain.Split('\0', StringSplitOptions.RemoveEmptyEntries);
-        return paths.Length == 0 ? null : $"{paths.Length} path(s) changed between the judgement and the move: {string.Join(", ", paths.Take(3).Select(each => each.Length > 3 ? each[3..] : each))}";
-    }
-
-    /// <summary>
     /// A folder under the trees home moved aside, in one rename on the same volume, into <see cref="SetAsideRoot"/> under its
     /// workspace and repository, named for the moment it moved (AUTOTIDY1; AUTOTIDY2c, a folder that is no tree): where it went,
     /// or why it stays, as the machine log's code and a clause. A refused rename is a folder something uses (<c>busy</c>).
@@ -366,38 +284,6 @@ internal sealed class TreeSetAside(TreeContext context)
         }
     }
 
-    /// <summary>The manifest marked <c>moved</c> once git let go of the tree; only one still at <c>judged</c>, never one made anew.</summary>
-    private static void MarkMoved(string? path)
-    {
-        if (path is null || SlimManifest.Read(path).Manifest is not { State: SlimStates.Judged } judged) return;
-        try
-        {
-            (judged with { State = SlimStates.Moved, Moved = DateTimeOffset.UtcNow }).Write(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Left at `judged`, the next pass keeps the folder whole and drops it: the move stands, the slim does not happen.
-        }
-    }
-
-    /// <summary>
-    /// A finished tree's manifest marked at a step after its move (KEEPSIZE1b, the keep-size design §3.5): <c>deleted</c> with when, or
-    /// <c>refused</c>. Only a schema-2 manifest at <c>moved</c>, <c>judged</c> or <c>refused</c>; one that does not write stays as it was, and
-    /// the resume reads git again at the next pass.
-    /// </summary>
-    internal static void Mark(string path, string state, DateTimeOffset at)
-    {
-        if (SlimManifest.Read(path).Manifest is not { Finished: not null, State: SlimStates.Moved or SlimStates.Judged or SlimStates.Refused } manifest) return;
-        try
-        {
-            (manifest with { State = state, Deleted = state == SlimStates.Deleted ? at : manifest.Deleted, Why = null }).Write(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Left as it was: the resume finds the branch gone at the next pass and marks it then.
-        }
-    }
-
     /// <summary>
     /// §3.5's resume: a branch with no tree deleted by the look, whose folder was moved aside before and stopped or refused, marks the manifest
     /// of that branch and tip <c>deleted</c>, at every place of the trees entry, so the folder reaches its record at the next pass.
@@ -419,35 +305,11 @@ internal sealed class TreeSetAside(TreeContext context)
         }
     }
 
-    /// <summary>The manifest of a move refused or a folder put back, gone with the attempt (Codex 2.4).</summary>
-    private static void Forget(string? path)
-    {
-        // Left at `judged`, the next pass drops it and keeps any folder beside it whole.
-        if (path is not null) TryDelete(path);
-    }
+    internal static void Mark(string path, string state, DateTimeOffset at) => SetAsideMarks.Mark(path, state, at);
 
-    /// <summary>A file deleted where it can be; one that cannot is left for a later pass, which judges it again.</summary>
-    internal static void TryDelete(string path)
-    {
-        try
-        {
-            File.Delete(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Left for the next pass.
-        }
-    }
+    internal static void TryDelete(string path) => SetAsideMarks.TryDelete(path);
 
-    /// <summary>When a folder moved aside was moved, read from its name (<c>&lt;name&gt;-&lt;moment&gt;</c>); null where its name says none.</summary>
-    internal static DateTimeOffset? MovedAt(string name)
-    {
-        var dash = name.LastIndexOf('-');
-        return dash >= 0 && DateTimeOffset.TryParseExact(
-            name[(dash + 1)..], SetAsideStamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var moved)
-            ? moved
-            : null;
-    }
+    internal static DateTimeOffset? MovedAt(string name) => SetAsideMarks.MovedAt(name);
 
     /// <summary>
     /// The folders the look moved aside that have waited <paramref name="after"/> (AUTOTIDY1): each deleted where nothing in it
@@ -575,31 +437,6 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// The holding check right before a recorded folder's rename (Codex's read of the branch, finding 1): null where it passes; else why it is
-    /// kept. Failing for certain, the manifest is marked <c>unmarked</c>, so the folder waits its days.
-    /// </summary>
-    private static async Task<(string Code, string Sentence)?> HeldNowAsync(
-        string folder, SlimManifest manifest, string workspace, Func<string, string, string?>? rootOf, CancellationToken ct)
-    {
-        if (rootOf is null) return (SetAsideKept.Unheld, "its holding check could not run here, so it waits for a pass that can run it");
-        var (result, why) = await SetAsideEligibility.HoldingAsync(rootOf(workspace, manifest.Repository), manifest, ct).ConfigureAwait(false);
-        if (result == Holding.Passed) return null;
-        if (result == Holding.Failed)
-        {
-            try
-            {
-                (manifest with { State = SlimStates.Unmarked, Why = why }).Write(SlimManifest.PathFor(folder));
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // Read again at the next pass, which fails the same way.
-            }
-        }
-
-        return (SetAsideKept.Unheld, $"its holding check did not pass ({why}), so it is kept");
-    }
-
-    /// <summary>
     /// A set-aside folder removed (KEEPSIZE1b, the keep-size design §3.4): renamed first into <c>.tidied/.going/</c>, so nothing is half deleted
     /// under the name a person opened, then deleted never following a link, and its manifest with it. A refused rename keeps it whole,
     /// <c>busy</c>.
@@ -649,7 +486,7 @@ internal sealed class TreeSetAside(TreeContext context)
             // The last fixes' check, finding 8: the rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
             // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and was chosen.
             if (door != GoingDoors.Press
-                && WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
+                && SetAsideKeeps.WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
             {
                 Directory.Move(going, folder);
                 TryDelete(record);
@@ -715,7 +552,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 // The last fixes' check, finding 9: a folder whose remains cannot be read is put back, never a purge that throws.
                 back = record is null ? "its removal's record does not read, so it was put back"
                     : !record.Started ? "its removal stopped before its delete began, so it was put back whole"
-                    : FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
+                    : SetAsideKeeps.FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
                     : null;
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -765,47 +602,11 @@ internal sealed class TreeSetAside(TreeContext context)
         }
     }
 
-    /// <summary>A file in <paramref name="folder"/> created or written after <paramref name="since"/>, by its path from the folder; folders are passed over, since a delete changes their times.</summary>
-    private static string? FileWrittenSince(string folder, DateTimeOffset since)
-    {
-        var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
-        var pending = new Stack<string>();
-        pending.Push(folder);
-        while (pending.TryPop(out var at))
-        {
-            foreach (var entry in new DirectoryInfo(at).EnumerateFileSystemInfos("*", options))
-            {
-                if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
-                if (entry is DirectoryInfo directory)
-                {
-                    pending.Push(directory.FullName);
-                    continue;
-                }
+    private readonly SetAsideKeeps keeps = new(context);
 
-                if (entry.CreationTimeUtc > since.UtcDateTime || entry.LastWriteTimeUtc > since.UtcDateTime)
-                {
-                    return Path.GetRelativePath(folder, entry.FullName).Replace('\\', '/');
-                }
-            }
-        }
+    internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved, bool top = false) => keeps.Kept(folder, moved, top);
 
-        return null;
-    }
-
-    /// <summary>A finished folder's manifest marked <c>unmarked</c>, saying <paramref name="why"/>; one that does not read, or is no finished tree's, is left as it is.</summary>
-    private static void Unmark(string folder, string why)
-    {
-        var path = SlimManifest.PathFor(folder);
-        if (SlimManifest.Read(path).Manifest is not { Finished: not null } manifest) return;
-        try
-        {
-            (manifest with { State = SlimStates.Unmarked, Why = why }).Write(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Read again at the next pass: its late write, or its holding check, keeps it the same way.
-        }
-    }
+    internal static long DeleteNeverFollowing(string folder) => SetAsideDeleting.DeleteNeverFollowing(folder);
 
     /// <summary>
     /// Where the purge keeps the folders whose delete it could not finish (CLEANUP1, re-check), beside them: a delete refused after the
@@ -814,49 +615,6 @@ internal sealed class TreeSetAside(TreeContext context)
     /// </summary>
     internal string FailedPath => FailedPathOf(SetAsideRoot);
 
-    /// <summary><see cref="FailedPath"/> of one place's <c>.tidied</c> (KEEPSIZE1a): each place keeps its own, naming its folders from it.</summary>
-    private static string FailedPathOf(string root) => Path.Combine(root, "purge-failed.json");
-
-    /// <summary>
-    /// The folders this pass could not delete, kept where the inventory reads them; written only where they changed, gone where none. A
-    /// folder that failed the same way twice carries <c>tried</c>, when (KEEP1a: it waits a day from there), a field added after the rest.
-    /// </summary>
-    private static void KeepFailed(string root, IReadOnlyList<(string Folder, string Why, DateTimeOffset? Tried)> failed)
-    {
-        var path = FailedPathOf(root);
-        try
-        {
-            if (failed.Count == 0)
-            {
-                if (File.Exists(path)) File.Delete(path);
-                return;
-            }
-
-            var text = JsonFile.Serialize(writer =>
-            {
-                writer.WriteStartObject();
-                writer.WriteStartArray("folders");
-                foreach (var (folder, why, tried) in failed.OrderBy(each => each.Folder, StringComparer.Ordinal))
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("folder", Path.GetRelativePath(root, folder).Replace('\\', '/'));
-                    writer.WriteString("why", why);
-                    if (tried is { } at) writer.WriteString("tried", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture));
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-                writer.WriteEndObject();
-            });
-            if (File.Exists(path) && AtomicFile.ReadText(path) == text) return;
-            AtomicFile.WriteText(path, text);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // The purge's own report still says each folder it kept; the inventory then reads it as before.
-        }
-    }
-
     /// <summary>
     /// The folders the last purge could not delete, by full path, each with the purge's reason (<see cref="FailedPath"/>); none where
     /// nothing is kept or it does not read.
@@ -864,237 +622,5 @@ internal sealed class TreeSetAside(TreeContext context)
     internal IReadOnlyDictionary<string, string> Failed() =>
         SetAsideRoots.SelectMany(FailedEntries)
             .ToDictionary(each => each.Key, each => each.Value.Why!, StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// <see cref="Failed"/>'s folders under one place's <c>.tidied</c>, each with when it last failed as before, where it did (KEEP1a's
-    /// day's wait).
-    /// </summary>
-    private static Dictionary<string, (string? Why, DateTimeOffset? Tried)> FailedEntries(string root)
-    {
-        var found = new Dictionary<string, (string? Why, DateTimeOffset? Tried)>(StringComparer.OrdinalIgnoreCase);
-        var path = FailedPathOf(root);
-        try
-        {
-            if (!File.Exists(path)) return found;
-            using var document = System.Text.Json.JsonDocument.Parse(AtomicFile.ReadText(path));
-            if (!document.RootElement.TryGetProperty("folders", out var folders) || folders.ValueKind != System.Text.Json.JsonValueKind.Array) return found;
-            foreach (var each in folders.EnumerateArray())
-            {
-                if (each.ValueKind == System.Text.Json.JsonValueKind.Object
-                    && each.TryGetProperty("folder", out var folder) && folder.GetString() is { Length: > 0 } named
-                    && each.TryGetProperty("why", out var why) && why.GetString() is { Length: > 0 } said)
-                {
-                    var tried = each.TryGetProperty("tried", out var at) && at.ValueKind == System.Text.Json.JsonValueKind.String
-                                && DateTimeOffset.TryParse(at.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var when)
-                        ? when
-                        : (DateTimeOffset?)null;
-                    found[Path.GetFullPath(Path.Combine(root, named))] = (said, tried);
-                }
-            }
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException)
-        {
-            // A record that does not read claims nothing: each folder reads as its own read says.
-        }
-
-        return found;
-    }
-
-    /// <summary>
-    /// Why the purge keeps a folder moved aside at <paramref name="moved"/>, read and never written: reached through a link, a link in it
-    /// outside a build folder, something in it written after the move, or a folder that cannot be read; null where the purge would delete
-    /// it. The purge's own read, and the inventory's (CLEANUP1, after review), so a folder its rule can no longer finish is said to the
-    /// person rather than retained for ever: the comparison is with the move, so a later write keeps it at every pass.
-    /// <para>KEEP1a (the cleanup design §5 step 4): the manifest beside it, where it reads, says what the slim removed, which the read
-    /// passes over (<see cref="WrittenSince"/>). One that does not read says nothing, so the folder is read whole: kept more, never less.</para>
-    /// </summary>
-    /// <param name="top">A finished tree's folder: its own top's time is read too (Codex's read of the design, finding 2), since a top-level
-    /// entry deleted after the judgement's read leaves no later time on anything that stays. A folder from before, whose top was made when it
-    /// was copied or moved, is read as before.</param>
-    internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved, bool top = false)
-    {
-        try
-        {
-            // A link on the way to it, the folder itself included, makes it somewhere else: never walked into (TIDIEDLINK1).
-            return context.Worktrees.LinkBelowTreesRoot(folder) is { } link
-                ? (SetAsideKept.Linked, $"it is reached through a link, at {link}")
-                : WrittenSince(folder, moved, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})");
-        }
-    }
-
-    /// <summary>
-    /// Why a folder moved aside is kept: something in it written after <paramref name="moved"/>, or a link in it outside a build
-    /// folder; null where neither. A link under a build folder is a package manager's, which goes as a link (TIDIEDLINK1): its own
-    /// write is read, never what it points at, and it is never walked into.
-    /// </summary>
-    /// <remarks>
-    /// <para>🔴 <b>Each entry's creation time too</b> (KEEP1a, Fable F1.1, as <see cref="TreeStrays"/> reads one): a copy keeps its source's
-    /// write time and takes a new creation time, so a file copied in after the move is a write.</para>
-    /// <para>🔴 <b>What the slim removed</b> (the cleanup design §5 step 4, the steward's S1): removing a folder changes the time of the
-    /// folder above it, which this read would take for a write after the move and keep for ever. So a path the manifest marks
-    /// <c>removing</c> is passed over, never read into; the folder directly above a <c>removed</c> path has its own write time read
-    /// against when that removal ended, and passed over while a path below it is still <c>removing</c>. Its creation time, and every
-    /// other entry, are read against the move; a removed path there again is read as any entry, a write.</para>
-    /// </remarks>
-    private static (string Code, string Sentence)? WrittenSince(string folder, DateTimeOffset moved, SlimManifest? manifest = null, bool top = false)
-    {
-        var same = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        var removing = new HashSet<string>(same);
-        var passedOver = new HashSet<string>(same);
-        var unknown = new HashSet<string>(same);
-        var ended = new Dictionary<string, DateTime>(same);
-        foreach (var path in manifest?.Paths ?? [])
-        {
-            var above = path.Path.LastIndexOf('/') is var slash and > 0 ? path.Path[..slash] : "";
-            if (path.State == SlimStates.Removing)
-            {
-                removing.Add(path.Path);
-                passedOver.Add(above);
-            }
-            else if (path.State == SlimStates.Removed && path.Ended is { } stamped)
-            {
-                // The manifest keeps a moment to the millisecond, floored, and the folder's own time to 100 ns: a removal that ended within
-                // the millisecond it is stamped with leaves the folder above later than its stamp, so the stamp is read as that millisecond's end
-                // (KEEPSIZE1b, seen once the read under `.going` met a folder's time the first read had not yet).
-                var end = stamped.UtcDateTime.AddMilliseconds(1);
-                ended[above] = ended.TryGetValue(above, out var was) && was > end ? was : end;
-            }
-            else if (path.State == SlimStates.Removed)
-            {
-                // A removal whose end is not known reads the folder above against the move: kept more, never less.
-                unknown.Add(above);
-            }
-        }
-
-        var after = moved.UtcDateTime;
-        DateTime Since(string named) => !unknown.Contains(named) && ended.TryGetValue(named, out var end) && end > after ? end : after;
-        var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
-        var pending = new Stack<string>();
-        pending.Push(folder);
-        while (pending.TryPop(out var at))
-        {
-            foreach (var entry in new DirectoryInfo(at).EnumerateFileSystemInfos("*", options))
-            {
-                var named = Path.GetRelativePath(folder, entry.FullName).Replace('\\', '/');
-                if (removing.Contains(named)) continue;
-                var link = entry.Attributes.HasFlag(FileAttributes.ReparsePoint);
-                if (link && !TreeScratch.UnderBuildFolder(named)) return (SetAsideKept.Linked, $"it holds a link, at {named}");
-                var written = entry.CreationTimeUtc > after || (!passedOver.Contains(named) && entry.LastWriteTimeUtc > Since(named));
-                if (written) return (SetAsideKept.Written, $"something in it was written after it was moved aside: {named}");
-                if (entry is DirectoryInfo directory && !link) pending.Push(directory.FullName);
-            }
-        }
-
-        // A finished tree's own top, read last: an entry deleted there leaves no later time on anything that stays (Codex's read of the design, finding 2).
-        if (top && !passedOver.Contains("") && new DirectoryInfo(folder).LastWriteTimeUtc > Since(""))
-        {
-            return (SetAsideKept.Written, "something at its top was added or removed after it was judged");
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// <paramref name="folder"/> deleted with everything in it, never following a link (TIDIEDLINK1): a link goes as a link, its own
-    /// entry alone, so what it points at stays wherever it is; a read-only file, as git's objects are, is made writable first, and
-    /// only a file that is one. A folder or file that cannot be deleted throws, and what was deleted before it stays deleted. A
-    /// tree's open discards an unfinished copy of its checkout's dependencies with it too (TREEDEPS1). The bytes its files held.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 KEEP1a (Codex 2.5): it checks its own argument, and each folder again right before it reads it, and refuses one that is a link:
-    /// handed a folder that is, or became, a junction, it would have read the junction's target. What still crosses is a folder replaced
-    /// by a junction between that check and the read, under a trees home only Daoris writes (the cleanup design §10).
-    /// </remarks>
-    /// <exception cref="IOException">It is a link, or something in it could not be deleted.</exception>
-    internal static long DeleteNeverFollowing(string folder)
-    {
-        // A folder that is not there reads every attribute set (-1): its enumeration below says it is missing, as it always did.
-        var attributes = new DirectoryInfo(folder).Attributes;
-        if ((int)attributes != -1 && attributes.HasFlag(FileAttributes.ReparsePoint))
-        {
-            throw new IOException($"{folder} is a link, so nothing is deleted through it");
-        }
-
-        long bytes = 0;
-        var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
-        foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos("*", options).ToList())
-        {
-            if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
-            {
-                // Windows takes a junction or a folder's link off with the folder call, which removes the link and never reaches
-                // into it; elsewhere a link to a folder is a file to unlink.
-                if (entry is DirectoryInfo && OperatingSystem.IsWindows()) Directory.Delete(entry.FullName, recursive: false);
-                else File.Delete(entry.FullName);
-            }
-            else if (entry is DirectoryInfo inner)
-            {
-                bytes += DeleteNeverFollowing(inner.FullName);
-            }
-            else
-            {
-                if (entry.Attributes.HasFlag(FileAttributes.ReadOnly)) entry.Attributes &= ~FileAttributes.ReadOnly;
-                bytes += ((FileInfo)entry).Length;
-                entry.Delete();
-                if (SetAsideFaults.Current?.StopInDelete == true) throw new SetAsideStop();
-            }
-        }
-
-        Directory.Delete(folder, recursive: false);
-        return bytes;
-    }
 }
 
-/// <summary>Which door removes a set-aside folder, as its <see cref="GoingRecord"/> says (KEEPSIZE1b).</summary>
-internal static class GoingDoors
-{
-    /// <summary>The hour after its record: its holding check runs again before a stopped delete finishes.</summary>
-    public const string Hour = "hour";
-
-    /// <summary>Its days.</summary>
-    public const string Days = "days";
-
-    /// <summary>The person's press.</summary>
-    public const string Press = "press";
-}
-
-/// <summary>A folder the look moved aside, met by a later look's purge (AUTOTIDY1): deleted, or kept and why.</summary>
-/// <param name="Moved">When it was moved aside, read from its name.</param>
-/// <param name="Kept">Kept: why, in a clause.</param>
-/// <param name="Code">Kept: why, as the machine log's code (<see cref="SetAsideKept"/>).</param>
-internal sealed record SetAside(string Folder, DateTimeOffset Moved, bool Purged, string? Kept, string? Code = null)
-{
-    /// <summary>Purged: the bytes its files held (KEEP1a, <c>keeping.json</c>'s <c>last</c>).</summary>
-    public long Bytes { get; init; }
-
-    /// <summary>Its class when the purge met it (KEEPSIZE1b, <see cref="SetAsideClass"/>).</summary>
-    public string Class { get; init; } = SetAsideClass.Unmarked;
-
-    /// <summary>It was met by the hour's rule, an hour after its record, not its days.</summary>
-    public bool Hour { get; init; }
-}
-
-/// <summary>Why a folder moved aside outlives its wait (AUTOTIDY1): the machine log's <c>tidied.kept</c> codes.</summary>
-public static class SetAsideKept
-{
-    /// <summary>Something in it was written after it was moved aside: a late write it was moved to keep.</summary>
-    public const string Written = "written";
-
-    /// <summary>
-    /// It holds a link outside a build folder, or is reached through one, which a delete is never asked to follow; a link under a
-    /// build folder goes with it as a link (TIDIEDLINK1).
-    /// </summary>
-    public const string Linked = "linked";
-
-    /// <summary>It could not be read, or deleted.</summary>
-    public const string Unread = "unread";
-
-    /// <summary>A recorded folder past its hour whose holding check did not pass right before its rename, or could not run (KEEPSIZE1b).</summary>
-    public const string Unheld = "unheld";
-
-    /// <summary>A folder a stopped removal left in <c>.going</c>, put back where it was, saying why (KEEPSIZE1b).</summary>
-    public const string Returned = "returned";
-}

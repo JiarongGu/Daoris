@@ -164,8 +164,8 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         new("engine", "aurora", branch, "main", "abcdef1234567890", "s1a2b3c4", "0fda18", "Fix the API gap",
             new DateTimeOffset(2026, 10, 1, 9, 30, 0, TimeSpan.Zero)) { From = "0123456789abcdef" };
 
-    private static WorkingTree.TreeDiff Diff(string from) =>
-        new([new WorkingTree.DiffFile("src/chunk.ts", "modified", 4, 1, "@@ -1 +1,2 @@\n-a\n+b")], null, from);
+    private static TreeDiff Diff(string from) =>
+        new([new DiffFile("src/chunk.ts", "modified", 4, 1, "@@ -1 +1,2 @@\n-a\n+b")], null, from);
 
     /// <summary>A session with no landing here answers as it always has: its tree's diff, and no landing.</summary>
     [Fact]
@@ -183,8 +183,8 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void A_trees_uncommitted_work_is_answered_beside_the_committed_files()
     {
-        var dirty = new WorkingTree.TreeDiff(
-            [new WorkingTree.DiffFile("new.txt", "added", 1, 0, "@@ -0,0 +1 @@\n+x")], "1 more untracked file; their patches are not shown here.", "HEAD");
+        var dirty = new TreeDiff(
+            [new DiffFile("new.txt", "added", 1, 0, "@@ -0,0 +1 @@\n+x")], "1 more untracked file; their patches are not shown here.", "HEAD");
 
         var answer = JsonSerializer.SerializeToElement(
             TreesRoutes.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, uncommitted: dirty), Camel);
@@ -200,7 +200,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void Uncommitted_is_null_where_nothing_is_uncommitted_or_the_source_is_not_the_sessions_own_tree()
     {
-        var clean = new WorkingTree.TreeDiff([], null, "HEAD");
+        var clean = new TreeDiff([], null, "HEAD");
 
         var none = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
         var empty = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, uncommitted: clean), Camel);

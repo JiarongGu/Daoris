@@ -209,5 +209,5 @@ public sealed class ReviewBaseTests : LandedFixture
 
     /// <summary>The paths the review lists from <paramref name="from"/>, as the route reads them.</summary>
     private static async Task<string[]> ChangedAsync(string tree, string from) =>
-        [.. Assert.IsType<WorkingTree.TreeDiff>(await WorkingTree.DiffAsync(tree, from)).Files.Select(file => file.Path).Order(StringComparer.Ordinal)];
+        [.. Assert.IsType<TreeDiff>(await WorkingTree.DiffAsync(tree, from)).Files.Select(file => file.Path).Order(StringComparer.Ordinal)];
 }

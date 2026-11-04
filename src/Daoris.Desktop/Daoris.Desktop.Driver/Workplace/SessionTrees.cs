@@ -3,73 +3,6 @@ using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
-/// <param name="Path">Where the tree is — what the session record carries and the lock keys on.</param>
-/// <param name="Branch">The session's own branch, never reused; git itself refuses a second use.</param>
-/// <param name="BasedOn">Which point the branch grew from, spelled for a person — the canonical line, or HEAD with the reason.</param>
-/// <param name="Sentence">The whole act in one sentence, price included — for whoever is watching.</param>
-/// <param name="GrewFrom">The chain step's branch it grew from (CHAIN2), when it did — null for the canonical line.</param>
-public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence, string? GrewFrom = null)
-{
-    /// <summary>
-    /// <see cref="Sentence"/> with its codes (LANG1a, the language design §4 rows 25–26): the tree's branch and what it grew
-    /// from as facts, never its path; and where its start went unrecorded, that line with git's words beside it.
-    /// </summary>
-    public Noted? Opening { get; init; }
-
-    /// <summary>
-    /// What its session's agent is told of what was copied into it from its checkout: the dependencies (TREEDEPS1), and to skip the
-    /// <c>npm ci</c> that would delete them; then the machine-local files its gates read (TREELOCAL1, D216), and to leave them as they
-    /// are. Null where nothing was. Its name is the dependencies', which its readers carry as one told-once field.
-    /// </summary>
-    public string? Dependencies { get; init; }
-}
-
-/// <param name="Removed">Whether the tree is gone. False is a refusal, not a failure.</param>
-/// <param name="Message">What happened, or what would have been lost and how to mean it.</param>
-public sealed record TreeRemoval(bool Removed, string Message);
-
-/// <summary>
-/// What came of asking to merge a session tree into the canonical line (D51 rule 6). A refusal is an
-/// ANSWER — the checkout is busy, there is nothing to merge, the branches conflict — and each names
-/// what the person would do about it.
-/// </summary>
-public sealed record TreeMerge(bool Merged, string Message)
-{
-    /// <summary>A refusal's code where the merge door has one (LANDBACK1 part 1): <c>uncommitted</c>, which the Accept carries its session on for.</summary>
-    public string? Refusal { get; init; }
-}
-
-/// <param name="Path">Where it is.</param>
-/// <param name="Workspace">Whose circle, read from the layout Daoris itself chose.</param>
-/// <param name="Repository">Whose repository, same.</param>
-/// <param name="Branch">
-/// The session branch checked out in it; <see cref="NotATree"/> for a folder with no link to a repository, and
-/// <see cref="SetAside"/> for a folder the look moved aside.
-/// </param>
-public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch)
-{
-    /// <summary>What a folder with no <c>.git</c> is listed as (AUTOTIDY2c): no tree, which the look moves aside once it is left quiet.</summary>
-    public const string NotATree = "(not a tree)";
-
-    /// <summary>What a folder the look moved aside is listed as (AUTOTIDY1, AUTOTIDY2c), until the purge deletes it.</summary>
-    public const string SetAside = "(moved aside)";
-
-    /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
-    public DateTimeOffset? MovedAside { get; init; }
-
-    /// <summary>
-    /// A folder moved aside past its date that the look's purge keeps (CLEANUP1, after review): why, in its own clause (a later write, a
-    /// link, a folder that cannot be read). Null before its date, where the purge takes it, and for anything not moved aside.
-    /// </summary>
-    public string? PurgeKept { get; init; }
-
-    /// <summary>
-    /// A folder moved aside whose package folders the slim dropped (KEEP1a, the cleanup design §5): which, in git's spelling, from the
-    /// manifest beside it. None for anything else.
-    /// </summary>
-    public IReadOnlyList<string> Slimmed { get; init; } = [];
-}
-
 /// <summary>
 /// The worktree half of D51: a repository may have more than one working tree, and the extra ones are
 /// Daoris's to open and account for — <c>&lt;home&gt;/trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>,
@@ -258,283 +191,28 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="TreeContext.OneLook"/>
     internal IDisposable OneLook() => _context.OneLook();
 
-    /// <summary>
-    /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
-    /// with git's own words when it cannot — before any record exists, which is the caller's contract.
-    /// </summary>
-    /// <param name="from">
-    /// A branch to grow from instead of the canonical line — the one a chain's previous step landed on
-    /// in this repository (CHAIN2), so the next step's tree holds the unmerged work it builds on or
-    /// checks. One that no longer exists falls back to <paramref name="landed"/>, then to the canonical line, and the
-    /// answer says so.
-    /// </param>
-    /// <param name="landed">
-    /// The branch the chain's step before landed on (LAND2c, D82 as D145 amends it), tried when <paramref name="from"/> is gone:
-    /// a rule's tidy removes that session branch at its landing, and a step grown from the line could not move the chain's
-    /// branch on. With <paramref name="partOf"/>, the branch that part's work landed on.
-    /// </param>
-    /// <param name="partOf">
-    /// For a further part of a session (SESSONE1d, D167 point 4, D82): the earlier part whose tree it would have gone into, gone
-    /// since its landing. The tree grows from <paramref name="landed"/> where that branch stands, else from the line, and the
-    /// opening says which and whose tree is gone. Without <paramref name="from"/>: a part grows from where its work landed.
-    /// </param>
-    public async Task<TreeOpened> OpenAsync(
+    private TreeOpening? _opening;
+    private TreeListings? _listings;
+    private TreeOpening Opening => _opening ??= new(_context);
+    private TreeListings Listings => _listings ??= new(_context, SetAsides);
+
+    /// <inheritdoc cref="TreeOpening.OpenAsync"/>
+    public Task<TreeOpened> OpenAsync(
         string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null,
-        string? partOf = null)
-    {
-        // The root must BE the top of its own working tree — proven, not assumed. Git resolves a
-        // repository by walking UP from wherever it is asked, so a root that is not one (a
-        // mis-registered path, a folder inside some other checkout) would silently grow worktrees and
-        // branches on whatever repository CONTAINS it. The first run of this class's own test suite
-        // did exactly that, to this repository: this check refuses loudly.
-        // TREEOPENERR1: asked so that a git that fails and says nothing is reported by what it did (code, time, folder, arguments).
-        var top = await AskAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        if (top.Code != 0)
-        {
-            throw new DriverException(
-                $"`{repository}`'s registered root is not a git repository ({top.FirstWords()}) — "
-                + "a session's tree is one git links to its checkout, and there is nothing here to link it to.");
-        }
+        string? partOf = null) => Opening.OpenAsync(root, repository, workspace, ct, from, landed, partOf);
 
-        if (!SamePath(top.Stdout.Trim(), root))
-        {
-            throw new DriverException(
-                $"`{repository}`'s registered root {root} is INSIDE the repository at {top.Stdout.Trim()} "
-                + "rather than being one — refusing to grow a tree on a repository the registration "
-                + "does not name. Re-run `daoris repository connect` from the actual root.");
-        }
+    /// <inheritdoc cref="TreeListings.AheadOfLineAsync"/>
+    public Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default) => Listings.AheadOfLineAsync(tree, ct);
 
-        // The repository's line (WSR2): what the person set for it or its workspace, else the
-        // checkout's guess, else the root's HEAD — and the answer SAYS which, because a branch grown
-        // from the wrong point is invisible until merge time.
-        var line = await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
-        var basedOn = line.Branch is not null
-            ? CanonicalLine.Describe(line)
-            : "the root's HEAD (no canonical line is declared)";
-        var start = line.Branch is { } set ? await StartOfAsync(root, set, line, repository, ct).ConfigureAwait(false) : "HEAD";
+    /// <inheritdoc cref="TreeListings.LineHoldsAsync"/>
+    public Task<bool?> LineHoldsAsync(string root, string repository, string workspace, string commit, CancellationToken ct = default) =>
+        Listings.LineHoldsAsync(root, repository, workspace, commit, ct);
 
-        // A chain's previous step's branch, where it still stands (CHAIN2). Session branches are refs
-        // of the root's own repository, so a linked worktree grows from one like any other branch.
-        string? grewFrom = null;
-        if (from is { Length: > 0 })
-        {
-            var (known, _, _) = await WorkingTree.GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{from}"], ct).ConfigureAwait(false);
-            var (chain, _, _) = known != 0 && landed is { Length: > 0 } && BranchName.IsValid(landed)
-                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
-                : (1, "", "");
-            if (known == 0)
-            {
-                start = grewFrom = from;
-                basedOn = $"`{from}`, the branch the step before it landed on (not merged yet)";
-            }
-            else if (chain == 0 && landed is not null)
-            {
-                start = grewFrom = landed;
-                basedOn = $"`{landed}`, the branch its chain landed on (not merged yet) — `{from}`, the branch the step before it "
-                    + "worked on, is gone";
-            }
-            else
-            {
-                basedOn += $" — `{from}`, the branch the step before it landed on, is gone";
-            }
-        }
-        else if (partOf is not null)
-        {
-            // A further part whose session's tree went at its landing (SESSONE1d): the branch that work landed on, where it stands.
-            var gone = $"the tree session `{partOf}` worked in is gone";
-            var (stands, _, _) = landed is { Length: > 0 } && BranchName.IsValid(landed)
-                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
-                : (1, "", "");
-            if (stands == 0 && landed is { } standing)
-            {
-                start = grewFrom = standing;
-                basedOn = $"`{standing}`, the branch its session's work landed on (not merged yet) — {gone}";
-            }
-            else
-            {
-                basedOn += landed is { Length: > 0 }
-                    ? $" — {gone}, and `{landed}`, the branch its work landed on, is gone too"
-                    : $" — {gone}, and no branch holds its work here";
-            }
-        }
-
-        var name = $"s-{Guid.NewGuid().ToString("N")[..8]}";
-        var branch = $"daoris/{name}";
-        var path = Path.Combine(TreesRoot, workspace, repository, name);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        // OPENCUT1: a folder that was there before the add is never this open's to delete.
-        var ours = !Directory.Exists(path);
-
-        string? unrecorded = null;
-        var dependencies = DependencyCopy.None;
-        var inputs = LocalCopy.None;
-        var refusedBound = false;
-        try
-        {
-            // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
-            // deepest file fits under its root can cross Windows' 260 characters here. The first real
-            // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
-            // `core.longpaths` on every call since, removal and status included (2026-09-28).
-            // OPENCUT1: locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
-            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded.
-            var added = await AskAsync(
-                root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
-                .ConfigureAwait(false);
-            if (added.Code != 0)
-            {
-                throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git said: {added.Failure()}");
-            }
-
-            // GITWORKTREECONFIG1 (D51's note): a tree git binds to another checkout (a shared `core.worktree` under worktree-specific
-            // configuration) is let go of, unused, before a record, a copy or a session is told of it: its agent's own git would act
-            // on that checkout. One start of the tree's own, asked once; the undo below takes the folder and the branch.
-            if (await TreeBinding.RefusalAsync(path, ct).ConfigureAwait(false) is { } bound)
-            {
-                refusedBound = true;
-                throw new DriverException($"could not open a session tree for `{repository}` — {bound}.");
-            }
-
-            // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
-            // here, so a chain's step replays only its own commits once the step before's are on the line.
-            var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-                .ConfigureAwait(false);
-            if (headCode == 0)
-            {
-                try
-                {
-                    // The branch work unit's id, written once here (FABRIC-END2, design §D2); every later record of the branch keeps it.
-                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow)
-                    {
-                        Unit = GrownBranch.NewUnit(),
-                    });
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    unrecorded = error.Message;
-                }
-            }
-
-            // TREEDEPS1: the dependencies the checkout installed at this tree's lockfile, copied in while the tree is still locked as
-            // opening, so a cut-off open's undo takes a half copy with the tree. Copied, never linked (D51's note).
-            dependencies = await TreeDependencies.CopyAsync(root, path, ct).ConfigureAwait(false);
-            // TREELOCAL1 (D216): the machine-local files its gates read, as the checkout's gates file declares them, copied read-only under
-            // the same lock, so its gates run in the tree the checks they run in the checkout.
-            inputs = await TreeLocalInputs.CopyAsync(root, path, ct).ConfigureAwait(false);
-
-            var unlocked = await AskAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
-            if (unlocked.Code != 0)
-            {
-                throw new DriverException(
-                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {unlocked.Failure()}");
-            }
-        }
-        catch
-        {
-            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to leave one behind on
-            // every tick: sixteen on the first real workspace. And a cancel as the app closed cut an open off inside the add,
-            // leaving a half-checked-out tree, locked, and its branch (OPENCUT1, `s-0031408d`). Whatever cut it off, the branch
-            // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
-            // go, and the repository is left as it was found. A kill leaves them for the look (TreeStrays).
-            await TreeOpenings.UndoAsync(root, path, branch, ours, unused: refusedBound).ConfigureAwait(false);
-            throw;
-        }
-
-        // FABRIC-END3: a tree opened is Daoris's own ref move; its repository is watched from here, and judged at once (§B4).
-        RefMoves.Mine(_context.Home, repository, workspace, root);
-
-        // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
-        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded, dependencies, inputs);
-        var told = string.Join(" ", new[] { dependencies.Told, inputs.Told }.OfType<string>());
-        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening, Dependencies = told.Length == 0 ? null : told };
-    }
-
-    /// <summary>
-    /// The opening's sentence, price included, with its codes (LANG1a, the language design §4 rows 25–26): its branch and the
-    /// branch it started at as facts, never its path, which only the English names and the cleaner cuts where it travels. Where
-    /// its checkout's dependencies were copied in (TREEDEPS1), its own code says them; each project that copied none says why. The
-    /// machine-local files its gates read (TREELOCAL1), copied in read-only, are a line after those, and each declared one not copied
-    /// says why.
-    /// </summary>
-    /// <param name="basedOn">What it grew from, spelled for a person.</param>
-    /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
-    /// <param name="unrecorded">Why where its branch started was not recorded (WSR6), in the program's words; null where it was.</param>
-    /// <param name="dependencies">What was copied of the checkout's dependencies, and why not the rest; none by default.</param>
-    /// <param name="inputs">What was copied of the machine-local inputs the checkout's gates file declares, and why not the rest; none by default.</param>
-    internal static Noted OpeningOf(
-        string path, string branch, string basedOn, string startedAt, string? unrecorded, DependencyCopy? dependencies = null,
-        LocalCopy? inputs = null)
-    {
-        dependencies ??= DependencyCopy.None;
-        inputs ??= LocalCopy.None;
-        // 🔴 A stored shape is never changed in place: `started.tree` still says no installed dependencies, as every opening
-        // recorded before TREEDEPS1 did, and a tree its checkout's were copied into says it under a code of its own.
-        var opening = dependencies.Copied.Count > 0
-            ? Noted.Of(
-                NoteCodes.StartedTreeCopied,
-                $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds what git tracks, and here the "
-                + $"dependencies your checkout installed at the same lockfile, copied in: {dependencies.Listed}. `npm ci` is not "
-                + "needed there unless a lockfile changes; the rest of the repository's own setup cost, build outputs included, is "
-                + "paid here, and in exchange the root's uncommitted work holds nothing.",
-                ("branch", branch), ("basedOn", startedAt), ("copied", (IReadOnlyList<string>)[.. dependencies.Copied]))
-            : Noted.Of(
-                NoteCodes.StartedTree,
-                $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
-                + "nothing git does not track: no installed dependencies, no build outputs. The "
-                + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
-                + "holds nothing.",
-                ("branch", branch), ("basedOn", startedAt));
-        foreach (var each in dependencies.Declined) opening = opening.Then(" ", each.Line());
-        if (inputs.Line() is { } copied) opening = opening.Then(" ", copied);
-        foreach (var each in inputs.Declined) opening = opening.Then(" ", each.Line());
-        if (unrecorded is null) return opening;
-
-        var line = Noted.Of(
-            NoteCodes.StartedTreeUnrecorded,
-            $"Daoris could not record where its branch started ({unrecorded}), so bringing it up to date "
-            + "will cut where its work first differs from the line.");
-        return opening.Then(" ", unrecorded.Length == 0 ? line : line.Also(NotePart.Said(unrecorded, NoteBy.Program)));
-    }
+    /// <inheritdoc cref="TreeListings.ListAsync"/>
+    public Task<IReadOnlyList<SessionTree>> ListAsync(Func<string, bool>? only, CancellationToken ct = default) => Listings.ListAsync(only, ct);
 
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
     public bool Holds(string path) => _context.Holds(path);
-
-    /// <summary>
-    /// How many commits a session tree's HEAD holds beyond its repository's line (LAND2b): zero is a done that made no commits,
-    /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
-    /// </summary>
-    public async Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default)
-    {
-        var full = Path.GetFullPath(tree);
-        if (!Holds(full) || !Directory.Exists(full)) return null;
-        var (code, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        if (code != 0) return null;
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (workspace, repository) = _context.OwnerOf(full);
-        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
-        if (against is null) return null;
-        var (countCode, count, _) = await WorkingTree.GitAsync(full, ["rev-list", "--count", $"{against}..HEAD"], ct).ConfigureAwait(false);
-        return countCode == 0 && int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var ahead) ? ahead : null;
-    }
-
-    /// <summary>
-    /// Whether the repository's line holds a commit (LIMITSWITCH3): <c>merge-base --is-ancestor</c> in its checkout against the line as a landing
-    /// reads it, so work that landed by any path settles the words that asked its session to rebase. Null where git cannot say: no line it can
-    /// name, a commit this checkout does not have, or git failing, which establishes nothing.
-    /// </summary>
-    public async Task<bool?> LineHoldsAsync(string root, string repository, string workspace, string commit, CancellationToken ct = default)
-    {
-        if (!Directory.Exists(root)) return null;
-        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
-        if (against is null) return null;
-        // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, against], ct).ConfigureAwait(false);
-        return code switch { 0 => true, 1 => false, _ => null };
-    }
 
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
     public (string Workspace, string Repository) Owner(string tree) => _context.OwnerOf(Path.GetFullPath(tree));
@@ -545,53 +223,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// (AUTOTIDY1, AUTOTIDY2c), with when, until the purge deletes it.
     /// </summary>
     public Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default) => ListAsync(null, ct);
-
-    /// <summary>The session trees and folders moved aside of the repositories <paramref name="only"/> holds (<see cref="ListAsync(CancellationToken)"/>).</summary>
-    /// <param name="only">
-    /// Whether a repository's folder is listed, by its name, in every workspace (FACTSPLIT1a): another's is never entered, so its
-    /// trees cost no git. Every repository's where null.
-    /// </param>
-    public async Task<IReadOnlyList<SessionTree>> ListAsync(Func<string, bool>? only, CancellationToken ct = default)
-    {
-        var found = new List<SessionTree>();
-        IEnumerable<string> Repositories(string workspace) =>
-            Directory.EnumerateDirectories(workspace).Where(folder => only?.Invoke(Path.GetFileName(folder)) ?? true);
-
-        // Both places of the trees (TREEPLACE1), each as found. The folders the look moved aside are no trees (AUTOTIDY1): git no
-        // longer knows them as such.
-        foreach (var root in _context.TreesRoots.Where(Directory.Exists))
-        foreach (var workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder))
-        foreach (var repository in Repositories(workspace))
-        foreach (var tree in Directory.EnumerateDirectories(repository))
-        {
-            // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever
-            // repository holds the home.
-            var (code, branch, _) = Path.Exists(Path.Combine(tree, ".git"))
-                ? await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false)
-                : (1, SessionTree.NotATree, "");
-            found.Add(new(
-                tree,
-                Path.GetFileName(workspace),
-                Path.GetFileName(repository),
-                code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
-        }
-
-        // KEEPSIZE1a: the folders moved aside at every place of the trees, the old place's included.
-        foreach (var aside in SetAsides.SetAsideRoots.Where(Directory.Exists))
-        foreach (var workspace in SetAsideEligibility.Workspaces(aside))
-        foreach (var repository in Repositories(workspace))
-        foreach (var folder in Directory.EnumerateDirectories(repository))
-        {
-            found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)
-            {
-                MovedAside = TreeSetAside.MovedAt(Path.GetFileName(folder)),
-                // KEEP1a: the package folders the slim dropped, from the manifest beside it, which the inventory's line names.
-                Slimmed = SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest?.Removed ?? [],
-            });
-        }
-
-        return found;
-    }
 
     /// <inheritdoc cref="TreeStrays.TidyAsync"/>
     public Task<IReadOnlyList<StrayResult>> TidyStraysAsync(
@@ -610,31 +241,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
     internal IReadOnlyList<string> ClearPassCopies(string trees, DateTimeOffset now, Func<int, bool>? running = null) =>
         Leftovers.ClearCopies(trees, now, running ?? TreeOpenings.Running);
-
-    /// <summary>
-    /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has
-    /// it, its copy on <c>origin</c> where only that exists, and a refusal for a line set to a branch
-    /// the checkout has nowhere — a tree grown from the wrong point is invisible until merge time.
-    /// </summary>
-    private static async Task<string> StartOfAsync(string root, string branch, Line line, string repository, CancellationToken ct)
-    {
-        // STARTGIT1: the checkout's own guess is the branch either way (its answer is the same where it stands or not), so git is
-        // not asked whether it does; a line the person set is the one checked.
-        if (line.Source == LineSource.Checkout) return branch;
-        var (local, _, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
-        if (local == 0) return branch;
-
-        var (remote, _, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
-        if (remote == 0) return $"origin/{branch}";
-
-        throw new DriverException(
-            $"{CanonicalLine.Describe(line)} is `{repository}`'s line, and its checkout has no such branch, here "
-            + $"or on origin. Fetch it, or set another with `daoris place line {repository} <branch>`.");
-    }
-
-    // The callers' calls, one line each (PART10j–l): each part's doc is on its class.
 
     /// <inheritdoc cref="TreeLands.MergeAsync"/>
     public Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null) =>

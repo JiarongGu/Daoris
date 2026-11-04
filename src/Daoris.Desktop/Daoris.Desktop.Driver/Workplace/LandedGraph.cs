@@ -71,7 +71,7 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
         }
 
         // DiffBetweenAsync's read: its top is the checkout's, proven above; the range runs textconv, so it is Π.
-        WorkingTree.TreeDiff? diff = null;
+        TreeDiff? diff = null;
         if (WorkingTree.IsCommitId(from) && WorkingTree.IsCommitId(at))
         {
             diff = await graph.ProgramAsync(

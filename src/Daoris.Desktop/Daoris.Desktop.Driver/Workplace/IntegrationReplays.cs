@@ -431,7 +431,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             var hooked = staged == 0 && (await UnmergedAsync(tree, ct).ConfigureAwait(false)).Count == 0;
             var first = (mergeErr.Length > 0 ? mergeErr : mergeOut).Trim().Split('\n')[0].Trim();
             var why = hooked
-                ? TreeLands.HookRefused(request.Branch, ask.Line, mergeErr, mergeOut)
+                ? LandingSayings.HookRefused(request.Branch, ask.Line, mergeErr, mergeOut)
                 : $"git would not merge `{request.Branch}` into `{ask.Line}`: {first} The merge was aborted and the checkout is as it was.";
             return await ConflictAsync(tree, onto, member.Request, why, ct).ConfigureAwait(false);
         }

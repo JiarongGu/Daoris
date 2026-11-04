@@ -39,7 +39,7 @@ public sealed record LandedReads(string Kind, string? Where, IReadOnlyList<strin
 /// <param name="Changes">Standing, where asked: the changes from where its work grew from up to the branch; null where git could not read them.</param>
 /// <param name="Reads">Gone: whether its work reads on the line.</param>
 /// <param name="Detail">Standing: why its changes could not be read, where they could not.</param>
-public sealed record LandedReview(LandedBranch Entry, string State, WorkingTree.TreeDiff? Changes = null, LandedReads? Reads = null, string? Detail = null)
+public sealed record LandedReview(LandedBranch Entry, string State, TreeDiff? Changes = null, LandedReads? Reads = null, string? Detail = null)
 {
     /// <summary>
     /// Whether the session's review reads as landed: its landed branch stands, or its tree is gone. Then accepting is

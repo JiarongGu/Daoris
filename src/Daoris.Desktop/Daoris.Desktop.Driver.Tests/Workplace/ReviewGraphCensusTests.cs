@@ -1021,7 +1021,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
 
         // The first held while later ones complete: no slot is given back until the fold passes the first.
-        var fold = new UntrackedFold(new WorkingTree.TreeDiff([], null, "HEAD"));
+        var fold = new UntrackedFold(new TreeDiff([], null, "HEAD"));
         var folding = UntrackedWindow.FoldAsync(paths, fold, window, Read, CancellationToken.None);
         Assert.Equal(window, started.Count);
         foreach (var later in started.Keys.Where(path => path != "u0.txt")) started[later].TrySetResult(("+later\n", 1));
@@ -1039,7 +1039,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
         // W spending the whole budget: no untracked read starts at all.
         started.Clear();
-        var spent = new UntrackedFold(new WorkingTree.TreeDiff([new WorkingTree.DiffFile("own.txt", "modified", 1, 0, new string('+', WorkingTree.PatchBudget))], null, "HEAD"));
+        var spent = new UntrackedFold(new TreeDiff([new DiffFile("own.txt", "modified", 1, 0, new string('+', WorkingTree.PatchBudget))], null, "HEAD"));
         Assert.Equal(0, await UntrackedWindow.FoldAsync(paths, spent, window, Read, CancellationToken.None));
         Assert.Empty(started);
     }

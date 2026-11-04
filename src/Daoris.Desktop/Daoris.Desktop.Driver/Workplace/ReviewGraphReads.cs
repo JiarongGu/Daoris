@@ -77,7 +77,7 @@ internal static class ReviewGraphReads
                 ? (baseCommit!, null, Task.FromResult<LineBehind?>(null), Array.Empty<ReviewNode>())
                 : await range.AnswerAsync().ConfigureAwait(false);
             var reads = new ReviewRange(from, null, against).Reads;
-            WorkingTree.TreeDiff? diff = null;
+            TreeDiff? diff = null;
             if (!string.IsNullOrWhiteSpace(reads) && await top.Answer.ConfigureAwait(false))
             {
                 diff = await graph.ProgramAsync(
@@ -131,7 +131,7 @@ internal static class ReviewGraphReads
         {
             head.Node!.Use(true);
             var (code, stdout, stderr) = await head.Answer.ConfigureAwait(false);
-            return new(new WorkingTree.TreeDiff([], null, ""), FromBranch: false, null, TreeGone: false, dirty, TreeBranch: ReviewChoices.Branch(code, stdout, stderr));
+            return new(new TreeDiff([], null, ""), FromBranch: false, null, TreeGone: false, dirty, TreeBranch: ReviewChoices.Branch(code, stdout, stderr));
         }
 
         head.Node?.Use(false);
@@ -148,7 +148,7 @@ internal static class ReviewGraphReads
     /// W → S → the untracked window (<c>UncommittedDiffAsync</c>'s reads, WorkingTree.cs:326-370), each in Π: null where T says no top,
     /// W fails or S fails, and then no window opens.
     /// </summary>
-    private static async Task<WorkingTree.TreeDiff?> UncommittedAsync(
+    private static async Task<TreeDiff?> UncommittedAsync(
         ReviewGraph graph, string tree, (ReviewNode Node, Task<bool> Answer) top, int window, CancellationToken ct)
     {
         if (!await top.Answer.ConfigureAwait(false)) return null;

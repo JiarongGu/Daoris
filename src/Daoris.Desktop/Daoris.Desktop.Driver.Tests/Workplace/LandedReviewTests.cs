@@ -35,7 +35,7 @@ public sealed class LandedReviewTests : LandedFixture
 
         Assert.Equal(LandedState.Standing, review.State);
         Assert.True(review.ReadsAsLanded(treeGone: true));
-        var diff = Assert.IsType<WorkingTree.TreeDiff>(review.Changes);
+        var diff = Assert.IsType<TreeDiff>(review.Changes);
         Assert.Equal(["added.txt", "shared.txt"], diff.Files.Select(file => file.Path).Order(StringComparer.Ordinal));
         Assert.Equal(entry.From, diff.Base);
         Assert.Contains("+two", diff.Files.Single(file => file.Path == "shared.txt").Patch);

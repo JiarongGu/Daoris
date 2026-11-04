@@ -240,7 +240,7 @@ public sealed class NoteSitesTests
     public void A_tree_s_opening_carries_its_branch_and_where_it_started_never_its_path()
     {
         var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
-        var opening = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null);
+        var opening = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null);
         Line(opening,
             $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds "
             + "nothing git does not track: no installed dependencies, no build outputs. The repository's own setup cost is paid "
@@ -249,7 +249,7 @@ public sealed class NoteSitesTests
         Assert.Equal(("daoris/s-1a2b3c4d", "main"), ((string?)opening.Parts[0].Value("branch"), (string?)opening.Parts[0].Value("basedOn")));
         Assert.DoesNotContain(opening.Parts[0].Values, value => value.Value is string text && text.Contains("trees", StringComparison.Ordinal));
 
-        var unrecorded = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "the root's HEAD (no canonical line is declared)", "HEAD", "access denied");
+        var unrecorded = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "the root's HEAD (no canonical line is declared)", "HEAD", "access denied");
         Assert.EndsWith(
             " Daoris could not record where its branch started (access denied), so bringing it up to date will cut where its "
             + "work first differs from the line.",
@@ -264,7 +264,7 @@ public sealed class NoteSitesTests
     public void A_tree_s_opening_says_the_dependencies_copied_in_and_why_any_were_not()
     {
         var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
-        var copied = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+        var copied = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
             new DependencyCopy(["node_modules", "web/node_modules"], [new Uncopied("tools/node_modules", UncopiedWhy.Moved)]));
         Line(copied,
             $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds what git "
@@ -279,7 +279,7 @@ public sealed class NoteSitesTests
         Assert.Equal("tools/node_modules", copied.Parts[1].Value("modules"));
 
         // Nothing copied: the opening as it was, then why each was not.
-        var none = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+        var none = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
             new DependencyCopy([],
             [
                 new Uncopied("node_modules", UncopiedWhy.Manager), new Uncopied("a/node_modules", UncopiedWhy.Uninstalled),
@@ -314,7 +314,7 @@ public sealed class NoteSitesTests
     public void A_tree_s_opening_says_the_machine_local_inputs_copied_in_and_why_any_were_not()
     {
         var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
-        var opening = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
+        var opening = TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null,
             new DependencyCopy([], [new Uncopied("node_modules", UncopiedWhy.Uninstalled)]),
             new LocalCopy(["local/sensitive-patterns.txt", "local/hosts.txt"],
             [
@@ -344,8 +344,8 @@ public sealed class NoteSitesTests
 
         // Nothing declared: the opening as it was.
         Assert.Equal(
-            SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null).Note,
-            SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null, inputs: LocalCopy.None).Note);
+            TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null).Note,
+            TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null, inputs: LocalCopy.None).Note);
     }
 
     private static QuestView Quest(string status = "Taken") => new("q1", "game", "engine", "Fix it", "Body", status);
