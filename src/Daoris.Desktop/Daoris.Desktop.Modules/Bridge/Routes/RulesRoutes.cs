@@ -29,29 +29,29 @@ public sealed class RulesRoutes(DriverLoop loop)
     [GroundRead("RULE_ACTION", nameof(PipeReads.RuleLists))]
     [NotAlready("RULE_ACTION", "edits a rule list in place")]
     [Publishes("RULE_ACTION", StateScopes.Rules)]
-    private async Task<object?> RuleActionAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RuleActionAsync(RuleActionPress press, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+        var action = press.Action;
         var file = PermissionRules.Load(_loop.Home);
         file = action switch
         {
             "add" => PermissionRules.Add(
-                file, ScopeOf(request), Optional(request, "name"),
-                Optional(request, "list") switch
+                file, ScopeOf(press.Scope), press.Name,
+                press.List switch
                 {
                     "allow" => RuleList.Allow,
                     "ask" => RuleList.Ask,
                     "deny" => RuleList.Deny,
                     var other => throw new DriverException($"a rule goes in `allow`, `ask` or `deny`, not `{other}`."),
                 },
-                PayloadHelper.GetRequiredValue<string>(request.Payload, "rule")),
+                ActField.Needs(press.Rule, "rule")),
             "remove" => PermissionRules.Remove(
-                file, ScopeOf(request), Optional(request, "name"),
-                PayloadHelper.GetRequiredValue<string>(request.Payload, "rule")),
+                file, ScopeOf(press.Scope), press.Name,
+                ActField.Needs(press.Rule, "rule")),
             "default" => PermissionRules.SwitchDefault(
-                file, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
-                PayloadHelper.GetRequiredValue<bool>(request.Payload, "on")),
+                file, ActField.Needs(press.Id, "id"),
+                ActField.Needs(press.On, "on")),
             _ => throw new DriverException($"unknown rule action '{action}' — one of: add, remove, default."),
         };
         PermissionRules.Save(_loop.Home, file);
@@ -64,14 +64,14 @@ public sealed class RulesRoutes(DriverLoop loop)
     [Owner("RULE_PROPOSAL", None = OwnerNone.ActsOnNothing)]
     [GroundRead("RULE_PROPOSAL", nameof(PipeReads.RuleProposal))]
     [Publishes("RULE_PROPOSAL", StateScopes.Rules)]
-    private async Task<object?> RuleProposalAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> RuleProposalAsync(RuleProposalPress press, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         RuleProposals.Answer(
             _loop.Home,
-            PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
-            PayloadHelper.GetRequiredValue<bool>(request.Payload, "accept"),
-            Optional(request, "note"),
+            press.Id,
+            press.Accept,
+            press.Note,
             DateTimeOffset.UtcNow);
         return Rules(PermissionRules.Load(_loop.Home));
     }
@@ -134,7 +134,7 @@ public sealed class RulesRoutes(DriverLoop loop)
             proposal.Note,
         }).ToArray<object>();
 
-    private static RuleScope ScopeOf(IpcRequest request) => Optional(request, "scope") switch
+    private static RuleScope ScopeOf(string? scope) => scope switch
     {
         null or "machine" => RuleScope.Machine,
         "workspace" => RuleScope.Workspace,

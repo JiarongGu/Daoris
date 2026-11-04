@@ -29,8 +29,8 @@ public sealed class NoticesRoutes(DriverLoop loop)
     [Owner("NOTICES_READ", None = OwnerNone.ActsOnNothing)]
     [Timeless("NOTICES_READ", "marks news read")]
     [Publishes("NOTICES_READ", StateScopes.Notices)]
-    private Task<object?> NoticesReadAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        Task.FromResult<object?>(new NoticesWritten(_loop.Notices.MarkRead(Ids(request)) is null));
+    private Task<object?> NoticesReadAsync(NoticesReadPress press, CancellationToken cancellationToken) =>
+        Task.FromResult<object?>(new NoticesWritten(_loop.Notices.MarkRead([.. press.Ids ?? []]) is null));
 
     /// <summary>
     /// The notice <c>id</c> dismissed; or with <c>all</c>, every notice of the window's <c>workspace</c> and every machine-wide one,
@@ -40,11 +40,11 @@ public sealed class NoticesRoutes(DriverLoop loop)
     [Owner("NOTICE_DISMISS", None = OwnerNone.ActsOnNothing)]
     [GroundFiles("NOTICE_DISMISS", "notices", "id", "all", "workspace", Quick = true)]
     [Publishes("NOTICE_DISMISS", StateScopes.Notices)]
-    private Task<object?> NoticeDismissAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> NoticeDismissAsync(NoticeDismissPress press, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> ids = Flag(request, "all")
-            ? _loop.Notices.Scoped(Optional(request, "workspace"))
-            : [Optional(request, "id") ?? throw new ArgumentException("NOTICE_DISMISS names the notice it dismisses (id), or all.")];
+        IReadOnlyList<string> ids = press.All
+            ? _loop.Notices.Scoped(press.Workspace)
+            : [press.Id ?? throw new ArgumentException("NOTICE_DISMISS names the notice it dismisses (id), or all.")];
         return Task.FromResult<object?>(new NoticesWritten(_loop.Notices.Dismiss(ids) is null));
     }
 
@@ -60,7 +60,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
     /// read as the slice reads it.</para>
     /// </remarks>
     [DriverRoute("NOTIFICATIONS", PipeClass.Open)]
-    private Task<object?> NotificationsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> NotificationsAsync(NotificationsRead press, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var notices = Notices.Read(_loop.Home, now);
@@ -68,7 +68,7 @@ public sealed class NoticesRoutes(DriverLoop loop)
             ? null
             : Look(_loop.Pipe?.Confirmations.Now(), _loop.ServiceConfirmations.Now(), _loop.Slices.Find(AttentionStateSlice.Name)?.Snapshot(),
                 _loop.Slices.Find(NoticesStateSlice.Name)?.Snapshot(), notices);
-        return Task.FromResult<object?>(new { Said = NoticesRead.Said(look, Flag(request, "json"), now).ToWire() });
+        return Task.FromResult<object?>(new { Said = NoticesRead.Said(look, press.Json, now).ToWire() });
     }
 
     /// <summary>
@@ -134,11 +134,6 @@ public sealed class NoticesRoutes(DriverLoop loop)
         var line = words.Trim().Split('\n')[0].TrimEnd('\r');
         return line.Length > 160 ? $"{line[..159]}…" : line;
     }
-
-    private static List<string> Ids(IpcRequest request) =>
-        request.Payload is { } payload && payload.TryGetProperty("ids", out var items) && items.ValueKind == JsonValueKind.Array
-            ? [.. items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
-            : [];
 }
 
 /// <summary>A notice press's answer: whether its write went in; one refused is said in the machine log.</summary>
