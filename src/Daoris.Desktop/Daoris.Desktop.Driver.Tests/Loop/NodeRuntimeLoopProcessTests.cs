@@ -40,12 +40,12 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         }
         """;
 
-    private const string Cycle = """
-        "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }],
-            "wires": [] } } },
-        """;
+    /// <summary>Quest <c>q1</c>'s run bound to a graph whose entry is the plugin's performed deploy, ahead of the landing.</summary>
+    private void BindDeploy() => RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
+        {"schemaVersion":2,"entries":["deploy"],"end":"land",
+         "nodes":[{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"a","kind":"after","from":"deploy","to":"land"}]}
+        """), DateTimeOffset.UtcNow);
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-runtimeloop-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -122,12 +122,13 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         }
     }
 
-    private NodeRecord? Record() => new NodeRecordFiles(_home).Read(QuestUnits.IdOf("q1"));
+    private NodeRecord? Record() => new NodeRecordFiles(_home).Read(RunUnits.IdOf("q1"));
 
     [Fact]
     public async Task A_governed_quests_performed_node_is_sent_once_by_the_loop_and_its_completion_kept()
     {
-        await RunAsync(Cycle, _ => Record()?.Statuses.GetValueOrDefault("deploy")?.State == NodeStates.Reached);
+        BindDeploy();
+        await RunAsync("", _ => Record()?.Statuses.GetValueOrDefault("deploy")?.State == NodeStates.Reached);
 
         var record = Record()!;
         var attempt = Assert.Single(record.Attempts);
@@ -145,7 +146,8 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     {
         File.WriteAllText(Path.Combine(Folder, "work.mjs"), Script.Replace("appendFileSync(", "void (", StringComparison.Ordinal));
         DateTimeOffset? reached = null;
-        var looks = await RunAsync(Cycle, _ =>
+        BindDeploy();
+        var looks = await RunAsync("", _ =>
         {
             if (Record()?.Statuses.GetValueOrDefault("deploy")?.State != NodeStates.Reached) return false;
             reached ??= DateTimeOffset.UtcNow;

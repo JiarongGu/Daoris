@@ -35,25 +35,6 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
                   {"id":"l>h","kind":"after","from":"look","to":"handed"},{"id":"d>h","kind":"after","from":"deploy","to":"handed"}]}
         """;
 
-    /// <summary>Current's landing rule in the engine, whose cycle observes the plugin's deploy on each branch it governs, and its work cycle.</summary>
-    private const string CurrentCycles = """
-        { "landings": { "engine": { "form": "merge", "cycle": {
-            "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-            "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } },
-          "workCycles": { "engine": { "quest": {
-            "schemaVersion": 2, "entries": ["deploy"], "end": "deploy",
-            "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed" }], "wires": [] } } } }
-        """;
-
-    /// <summary>Current's landing rule in two repositories.</summary>
-    private const string TwoLandingCycles = """
-        { "landings": {
-            "engine": { "form": "merge", "cycle": { "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-              "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } },
-            "other": { "form": "merge", "cycle": { "schemaVersion": 2, "entries": ["deployed"], "end": "deployed",
-              "nodes": [{ "id": "deployed", "kind": "acme.deploy/deployed", "version": 1, "reach": "observed" }], "wires": [] } } } }
-        """;
-
     private bool RecordKept(string unit) => File.Exists(NodeRecordFiles.PathOf(_home, unit));
 
     /// <summary>
@@ -93,7 +74,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     {
         BoundTo(ClaimedThenHanded);
         var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId]);
-        // Another quest and its branch, its work ended at its tip, which the landing rule's cycle evaluates once a branch's end is proved (§1).
+        // Another quest and its branch, which no run is bound to: nothing governs them.
         IReadOnlyList<WorkUnit> Others() =>
             [RunHome.QuestUnit(RunHome.Quest("q9")), RunHome.Branch("unit-b9", "daoris/s9", Opened, ["q9"]) with { Subject = new WorkSubject("daoris/s9", Tip2) }];
         _branchTips["daoris/s1"] = Tip1;
@@ -101,52 +82,27 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId)), b1, .. Others()];
         var runtime = Runtime();
 
-        var taken = await RunPassAsync(runtime, CurrentCycles);
+        var taken = await RunPassAsync(runtime);
         Assert.True(taken.Armed);
-        Assert.Equal(["quest:q9", RunUnit, "unit-b9"], taken.Evaluated.Order(StringComparer.Ordinal));
+        Assert.Equal([RunUnit], taken.Evaluated);
         var claimed = RunStatus("claimed");
         Assert.Equal((NodeStates.Active, "quest:q7"), (claimed.State, claimed.Binding!.Subject));
-        Assert.Equal(["quest:q9"], _port.Sent.Select(call => call.Unit));
+        Assert.Empty(_port.Sent);
 
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), b1, .. Others()];
-        await RunPassAsync(runtime, CurrentCycles);
+        await RunPassAsync(runtime);
         var handed = RunStatus("handed");
         Assert.Equal((NodeStates.Reached, NodeStates.Active), (RunStatus("claimed").State, handed.State));
         Assert.Equal(("unit-b1", Tip1), (handed.Binding!.Subject, handed.Binding.SubjectRevision));
 
         var landed = b1 with { Records = b1.Records with { Landings = [RunHome.Landing("unit-b1", "feature/q7", Tip1, _now, RunId)] } };
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), landed, .. Others()];
-        await RunPassAsync(runtime, CurrentCycles);
+        await RunPassAsync(runtime);
         handed = RunStatus("handed");
         Assert.Equal((NodeStates.Reached, "unit-b1", Tip1), (handed.State, handed.Acceptance!.Subject, handed.Acceptance.SubjectRevision));
 
-        Assert.Equal((false, false, true, true), (RecordKept("quest:q7"), RecordKept("unit-b1"), RecordKept("quest:q9"), RecordKept("unit-b9")));
+        Assert.Equal((false, false, false, false), (RecordKept("quest:q7"), RecordKept("unit-b1"), RecordKept("quest:q9"), RecordKept("unit-b9")));
         Assert.Equal(1, runtime.BindingsRead);
-    }
-
-    /// <summary>
-    /// A record Current's work cycle wrote on the run's quest before the run was bound is left as it stands (§2.3): nothing governs it now, so its
-    /// attempt is not asked after or sent again, and the look says so.
-    /// </summary>
-    [Fact]
-    public async Task A_record_Current_wrote_on_a_runs_quest_before_it_was_bound_is_left_as_it_stands_and_said()
-    {
-        BoundTo(ClaimedThenHanded);
-        const string Quest = "quest:q7";
-        var call = new WorkPerformCall(Quest, Plugin + "/deploy", 1, "i-before", "k-before", "", [], _now.AddMinutes(15));
-        Files.Write(new NodeRecord(Quest)
-        {
-            Statuses = new Dictionary<string, NodeStatus> { ["deploy"] = new(Quest, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1 } },
-            Attempts = [new NodeAttempt("deploy", 1, Plugin, call, AttemptStates.Sent) { RecordedAt = _now, Generation = 1, Deliveries = 1 }],
-        });
-        _units = [RunHome.QuestUnit(RunHome.Quest(RunId))];
-
-        var pass = await RunPassAsync(Runtime(), CurrentCycles);
-
-        Assert.Single(pass.Said, line => line.StartsWith($"work  {Quest}:", StringComparison.Ordinal) && line.Contains("left as it stands", StringComparison.Ordinal));
-        Assert.Equal([RunUnit], pass.Evaluated);
-        Assert.Equal((0, 0), (_port.Asked.Count, _port.Sent.Count));
-        Assert.Equal(AttemptStates.Sent, Assert.Single(Files.Read(Quest)!.Attempts).State);
     }
 
     /// <summary>
@@ -328,36 +284,6 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// Without the service the units read are the branches alone, with no links (§2.3): no branch of a repository holding an open graph run is
-    /// governed by Current, said once a pass, and the run's own nodes keep their bindings; another repository's cycle goes on.
-    /// </summary>
-    [Fact]
-    public async Task The_service_unread_leaves_a_runs_branch_governed_by_nobody_said_and_another_repositorys_cycle_going_on()
-    {
-        BoundTo(ClaimedThenHanded);
-        _branchTips["daoris/s1"] = Tip1;
-        _branchTips["daoris/s5"] = Tip2;
-        // Both branches' work ended at their tips, so a landing rule's cycle would evaluate either.
-        var b1 = RunHome.Branch("unit-b1", "daoris/s1", Opened, []) with { Subject = new WorkSubject("daoris/s1", Tip1) };
-        var b5 = RunHome.Branch("unit-b5", "daoris/s5", Opened, []) with
-        {
-            Owner = new WorkOwner("other", "default", SessionBranches.FileName, WorkRecord.DriverWriter), Subject = new WorkSubject("daoris/s5", Tip2),
-        };
-        _units = [b1, b5];
-        _unread = ["the service did not answer, so its quests and asks were not read: offline"];
-        var runtime = Runtime();
-
-        var pass = await RunPassAsync(runtime, TwoLandingCycles);
-
-        Assert.Contains("unit-b5", pass.Evaluated);
-        Assert.True(RecordKept("unit-b5"));
-        Assert.DoesNotContain("unit-b1", pass.Evaluated);
-        Assert.False(RecordKept("unit-b1"));
-        Assert.Single(pass.Said, line => line.Contains("`engine`", StringComparison.Ordinal) && line.Contains("offline", StringComparison.Ordinal));
-        Assert.NotEqual(NodeStates.Active, Files.Read(RunUnit)!.Statuses.GetValueOrDefault("claimed")?.State);
-    }
-
-    /// <summary>
     /// A branch whose sessions served quests of two runs, one bound to a graph version, is governed by neither: Current's cycle leaves it, the
     /// run's <c>handed</c> finds no subject there and is not begun, and the pass says so (§2.3).
     /// </summary>
@@ -373,7 +299,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         ];
         var runtime = Runtime();
 
-        var pass = await RunPassAsync(runtime, CurrentCycles);
+        var pass = await RunPassAsync(runtime);
 
         Assert.Equal((NodeStates.Reached, NodeStates.Ready), (RunStatus("claimed").State, RunStatus("handed").State));
         Assert.DoesNotContain("unit-b1", pass.Evaluated);
@@ -436,7 +362,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
 
         File.Delete(WorkflowStore.PathOf(_home, "docs"));
         Assert.False((await RunPassAsync(runtime)).Armed);
-        var held = await RunPassAsync(runtime, CurrentCycles);
+        var held = await RunPassAsync(runtime);
 
         Assert.Empty(held.Evaluated);
         Assert.Single(held.Said, line => line.StartsWith($"work  {RunUnit}:", StringComparison.Ordinal) && line.Contains("held whole", StringComparison.Ordinal));
