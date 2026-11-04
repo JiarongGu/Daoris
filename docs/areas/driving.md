@@ -21,6 +21,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`): holds, tree, record, spawn, wait, conclusion |
 | The look's passes | `WorkOrders/Look/`, listed in `docs/index/registered.md` | Each pass a module registers (`[LookPass(name, phase, after)]`, `ILookPass`), run at its phase's anchor in `LookAsync` in the kit's order and built with the driver as its `ILookWiring` |
 | `LookSync`, `LostClaimStop` | `WorkOrders/` | The look's head: the remote sync, then the stop of each session whose take lost |
+| `PluginReload` | `Plugins/PluginReload.cs` | The look's local phase, first: the plugins read fresh, taken up through `IPluginWiring`, the hooks reconciled |
+| `RuleSettling`, `WatchLook`, `MovedLines`, `TogetherSteps` | `WorkOrders/` | The local phase, in this order: the rule proposals settled, the session watch, the lines Daoris moved followed, the operations bringing sessions together stepped |
+| `WorkspacePlansLook` | `Setup/WorkspacePlansLook.cs` | The local phase's last: every workspace plan worked once, through `ISetupWiring` |
 | `UnresolvedDeliveries` | `Workflows/UnresolvedDeliveries.cs` | The look's end: the deliveries a stopped run left unresolved, settled by the lease's holder |
 | `DriverWatch` | `Loop/DriverWatch.cs` | The loop: when a look runs (pace, nudge, wake), whole look or plan only |
 | `LookStages` | `Platform/LookStages.cs` | Times each stage of a look and the work beside it, says a slow one |

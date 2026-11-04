@@ -24,6 +24,12 @@ internal interface ILookWiring
 
     SessionProcesses Processes { get; }
 
+    /// <summary>The sessions' event records.</summary>
+    SessionEvents Events { get; }
+
+    /// <summary>The watcher's look at the running sessions: its steps this look, each said as a line classed by <paramref name="said"/>.</summary>
+    IReadOnlyList<string> LookIn(LookSaid said);
+
     /// <summary>Each line the look says, classed where it is made.</summary>
     LookSaid Lines { get; }
 

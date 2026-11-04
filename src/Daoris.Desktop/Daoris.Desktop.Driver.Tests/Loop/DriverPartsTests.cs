@@ -28,14 +28,23 @@ public sealed class DriverPartsTests : IDisposable
         var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
 
         var order = driver.LookPasses.Order;
-        Assert.Equal(["sync", "claims", "landing"], order.Select(part => part.Name));
-        Assert.Equal([LookPhase.Before, LookPhase.Before, LookPhase.After], order.Select(part => (LookPhase)part.Phase));
+        Assert.Equal(["sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "landing"], order.Select(part => part.Name));
+        Assert.Equal(
+            [LookPhase.Before, LookPhase.Before, .. Enumerable.Repeat(LookPhase.Local, 6), LookPhase.After], order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
         Assert.Collection(
             driver.LookPasses.In(LookPhase.Before),
             pass => Assert.IsType<LookSync>(pass),
             pass => Assert.IsType<LostClaimStop>(pass));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.Local),
+            pass => Assert.IsType<PluginReload>(pass),
+            pass => Assert.IsType<RuleSettling>(pass),
+            pass => Assert.IsType<WatchLook>(pass),
+            pass => Assert.IsType<MovedLines>(pass),
+            pass => Assert.IsType<TogetherSteps>(pass),
+            pass => Assert.IsType<WorkspacePlansLook>(pass));
         Assert.IsType<UnresolvedDeliveries>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
     }
 

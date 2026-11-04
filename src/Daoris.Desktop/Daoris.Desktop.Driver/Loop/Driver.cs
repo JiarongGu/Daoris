@@ -43,7 +43,7 @@ public sealed class Driver(
     // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
     // since a session outlives the look that started it. Null keeps this driver's own, which is what a
     // one-look run and a gate's run-until-idle want.
-    RunningSessions? running = null) : ILandingWiring
+    RunningSessions? running = null) : ILandingWiring, IPluginWiring, ISetupWiring
 {
     /// <summary>
     /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
@@ -286,6 +286,28 @@ public sealed class Driver(
     SessionOutput? ILandingWiring.Output => output;
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
+
+    SessionEvents ILookWiring.Events => Context.Events;
+
+    IReadOnlyList<string> ILookWiring.LookIn(LookSaid said) => LookIn(said);
+
+    AdapterSet IPluginWiring.Built => _built;
+
+    HookSet? IPluginWiring.Hooks => Context.Hooks;
+
+    void IPluginWiring.Adopt(PluginCatalog catalog)
+    {
+        Context.Adapters = _built.WithPlugins(catalog);
+        Context.Servers = catalog.Servers;
+        Context.Catalog = catalog;
+        Context.Harnesses.Use(Context.Adapters);
+        // One set of Daoris's accounts (POOL1a, D197): the wiring folded at the come-up, and again at a next look a held lock refused.
+        Context.Harnesses.Pool(Log);
+    }
+
+    Func<IWorkspaceSetupWorld>? ISetupWiring.SetupPlans => SetupPlans;
+
+    SessionWire ISetupWiring.Door() => Door();
 
     /// <summary>
     /// Told a run a start found bound already, to a named workflow (FABRIC-CUTOVER1c; the cutover design §3): where it is a graph run whose record
@@ -1040,53 +1062,7 @@ public sealed class Driver(
         var round = new LookRound(Part, events);
         foreach (var pass in LookPasses.In(LookPhase.Before)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
-        // The plugins, read fresh each tick like the config (D64): a harness declared since the
-        // last look is spawnable now, a server declared since is handed now, a hook process
-        // disabled since is stopped now. The catalogue refuses a name this build carries before
-        // anything of that plugin is taken.
-        await Stages.TimeAsync("plugins", async () =>
-        {
-            var catalog = PluginCatalog.Load(home, _built.Names);
-            Context.Adapters = _built.WithPlugins(catalog);
-            Context.Servers = catalog.Servers;
-            Context.Catalog = catalog;
-            Context.Harnesses.Use(Context.Adapters);
-            // One set of Daoris's accounts (POOL1a, D197): the wiring folded at the come-up, and again at a next look a held lock refused.
-            Context.Harnesses.Pool(Log);
-            if (Context.Hooks is { } hooks)
-            {
-                events.AddRange(await hooks.ReconcileAsync(catalog, ct, Lines).ConfigureAwait(false));
-            }
-        }).ConfigureAwait(false);
-
-        // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
-        // a narrowing is applied at once, so this tick's sessions are already handed it, and a widening
-        // is held for the person — who alone may let an agent do more.
-        try
-        {
-            // Each line classed where the proposals settle it (NOTIFY2h2).
-            using (Stages.Begin("rules")) events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow, Lines));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry("rules", $"rules  the proposals could not be settled this tick: {error.Message}"));
-        }
-
-        // SESSWATCH1a (D200, the session-watch design §2): the watcher looks in on every running driven session, from memory, reading a
-        // job only for one unheard for half its bound; each step it takes is said, and nothing quiet is ended but under --quiet-end.
-        using (Stages.Begin("watch")) events.AddRange(LookIn(Lines));
-
-        // The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before this
-        // look reads the registry, so a set-up that just landed is planned by what it now declares. Nothing is read with
-        // git, or asked of the service, unless a line moved.
-        await Stages.TimeAsync("lines", () => FollowMovedLinesAsync(events, ct)).ConfigureAwait(false);
-
-        // LINESTOGETHER1d: the operations bringing sessions together, stepped before this look's starts take a head's word.
-        await Stages.TimeAsync("together", () => TogetherAsync(events, ct)).ConfigureAwait(false);
-
-        // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
-        // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
-        await Stages.TimeAsync("setup", () => WorkSetupPlansAsync(events, ct)).ConfigureAwait(false);
+        foreach (var pass in LookPasses.In(LookPhase.Local)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
         // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
         // while they were read: marked first, so a conversation chosen meanwhile is not lost.
@@ -1640,73 +1616,6 @@ public sealed class Driver(
             ? await WorkflowProcesses.ConcludedAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
-    }
-
-    /// <summary>
-    /// Each repository whose line Daoris moved since it was last followed, registered from its line (WSSETUP5), with what
-    /// changed or must be fixed added to <paramref name="events"/>. A pass the service did not answer is said, and the
-    /// lines stay due for the next look: following is never a dead look.
-    /// </summary>
-    private async Task FollowMovedLinesAsync(List<string> events, CancellationToken ct)
-    {
-        var due = RegistryFollowing.Due(home);
-        if (due.Count == 0) return;
-        try
-        {
-            var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), due, ct).ConfigureAwait(false);
-            events.AddRange(report.Followed.Select(followed => RegistrationFollow.EventLine(followed, Lines)).OfType<string>());
-            if (report.Refresh is { } refresh) events.Add(Lines.Retry("registry", $"registry  the index was not read again after registering: {refresh}"));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            events.Add(Lines.Retry(
-                "registry", $"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// The operations bringing sessions together (LINESTOGETHER1d), looked at by the process holding the home's lease: each stepped by
-    /// the records, a landing settled, one whose sessions were deleted dropped. Nothing is asked of the service while none is kept.
-    /// </summary>
-    private async Task TogetherAsync(List<string> events, CancellationToken ct)
-    {
-        if (!HomeLease.HeldHere(home)) return;
-        try
-        {
-            if (new TogetherOperations(home).All().Count == 0) return;
-            var records = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
-            var trees = new SessionTrees(home);
-            await new TogetherWatch(home, () => DateTimeOffset.UtcNow, () => DriverConfig.Load(DriverConfig.ResolvePath(home)),
-                    (session, note) => Context.Events.Keep(session, note, say: null))
-                .LookAsync(records, (root, repository, token) => trees.LineOfAsync(root, repository, null, token), ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
-                                          or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry(
-                "together", $"together  the sessions being brought together could not be looked at this look, and are tried again at the next: {error.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// Every workspace plan under the home worked once (WSSETUP6): the next set-up published while fewer than its
-    /// <c>atOnce</c> are open, a refusal skipped, the pilot's pause taken, each said in <paramref name="events"/>. A plan the
-    /// service could not answer for is said, and tried again at the next look: a plan is never a dead look.
-    /// </summary>
-    private async Task WorkSetupPlansAsync(List<string> events, CancellationToken ct)
-    {
-        try
-        {
-            var world = SetupPlans?.Invoke() ?? new WorkspaceSetupWorld(service, home);
-            events.AddRange(await WorkspaceSetup.TickAsync(
-                world, config, Door(), home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct, Lines).ConfigureAwait(false));
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                          or IOException or UnauthorizedAccessException)
-        {
-            events.Add(Lines.Retry(
-                "setup", $"setup  the workspace plans could not be worked this look, and are tried again at the next: {error.Message}"));
-        }
     }
 
     /// <summary>
