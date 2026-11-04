@@ -100,9 +100,8 @@ public sealed class WorkflowRunCommandTests : IDisposable
     // ——— a run, printed
 
     /// <summary>
-    /// A chain's work done in a repository with a second opinion, a look in <c>local</c> and a branch a plugin pushes: the work
-    /// finished, the opinion settled, the look reviewed and the landing made, as the landing record keeps them, and the pull
-    /// request open, where the run stands.
+    /// A chain's work bound to a graph with a second opinion, a look in <c>local</c> and a pull request a plugin opens: the run is drawn from
+    /// its record, which no look has judged yet, so each step is not reached, the run stands at the work, and what its graph observes is said.
     /// </summary>
     [Fact]
     public async Task A_quest_s_run_prints_each_step_its_state_and_what_it_says_the_step_it_stands_at_marked()
@@ -277,16 +276,22 @@ public sealed class WorkflowRunCommandTests : IDisposable
             new WorkflowSource(null, LandingSource.Default), [], WorkflowRuntime.Built, null), state, detail);
 
     /// <summary>
-    /// The home: <c>engine</c>'s rules (a second opinion, a look in <c>local</c>, and a branch <c>example.pull-request</c> pushes),
-    /// that plugin switched on, and the landing of session <c>s1</c>'s work on <c>work/q1</c> with the opinion and the look it let
-    /// go and its pull request open.
+    /// The home: run <c>q1</c> bound to <see cref="Hosted"/>, <c>engine</c>'s opinion and review rules, <c>example.pull-request</c>
+    /// switched on, and the landing of session <c>s1</c>'s work on <c>work/q1</c> with the opinion and the look it let go and its pull
+    /// request open.
     /// </summary>
     private string Setup()
     {
         var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        var digest = RunHome.SaveGraph(_home, Hosted, "hosted");
+        var runs = new WorkflowRunFiles(_home);
+        if (!runs.Bound("q1"))
+        {
+            Assert.True(runs.Bind(new WorkflowRunBinding("q1", "engine", "aurora", "hosted", WorkflowLevels.Repository, T) { Version = 1, Digest = digest }));
+        }
+
         File.WriteAllText(path, """
             {
-              "landings": { "engine": { "form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request" } },
               "opinions": { "engine": { "reviewers": ["codex-acp"] } },
               "reviews": { "engine": { "required": true, "environments": [
                 { "name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200" } ] } }
@@ -314,6 +319,22 @@ public sealed class WorkflowRunCommandTests : IDisposable
         });
         return path;
     }
+
+    /// <summary>
+    /// The graph run <c>q1</c> is bound to: the work, a second opinion and a look in <c>local</c>, then a branch <c>example.pull-request</c>
+    /// pushes and opens a pull request for.
+    /// </summary>
+    private const string Hosted = """
+        {"schemaVersion":2,"entries":["work"],"end":"pr",
+         "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"opinion","kind":"opinion","version":1,"reach":"observed"},
+                  {"id":"look","kind":"look","version":1,"reach":"observed","options":{"environment":"local"}},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed",
+                   "options":{"method":"pull-request","plugin":"example.pull-request","pattern":"work/{quest}"}},
+                  {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pr","kind":"pull-request","version":1,"reach":"observed"}],
+         "wires":[{"id":"w>o","kind":"after","from":"work","to":"opinion"},{"id":"w>l","kind":"after","from":"work","to":"look"},
+                  {"id":"o>n","kind":"after","from":"opinion","to":"landing"},{"id":"l>n","kind":"after","from":"look","to":"landing"},
+                  {"id":"n>p","kind":"after","from":"landing","to":"pushed"},{"id":"p>r","kind":"after","from":"pushed","to":"pr"}]}
+        """;
 
     /// <summary>The verb's run over the stand-ins, through the sources the host builds: what it printed, and its exit.</summary>
     private Task<(string Said, int Exit)> RunAsync(params string[] words) => RunAsync(false, words);
@@ -355,7 +376,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
                 "/api/quests?includeClosed=true" =>
                     """[{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
                 "/api/sessions?includeClosed=true" => """
-                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code",
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code","tree":"trees/s1",
                       "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
                      {"id":"c1","repository":"engine","state":"working","kind":"chat","created":"2026-10-09T08:00:00Z"}]
                     """,
