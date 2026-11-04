@@ -32,7 +32,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private readonly Driver _driver = driver;
 
     /// <summary>
-    /// The asks for a helper on this machine, at a look (MIXAGENT2a-ii): each judged and started, settled or delivered as the facts
+    /// The asks for a helper on this machine, at a look: each judged and started, settled or delivered as the facts
     /// let it go, beside the look. Returns how many helpers this look starts, which take slots under the cap before any quest's
     /// first start, as a second opinion's pass does (D130). Nothing is read where no ask is on file.
     /// </summary>
@@ -1000,7 +1000,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 plugins: skillPlugins);
             var opening = HelperPass.Opening(ask.Repository, ask.Tip, posture);
 
-            return await _driver.HoldAsync(
+            return await _driver.Holds.HoldAsync(
                 "helper", adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 // One turn, and no words: nobody talks to a helper while it reads, on either door.
                 refusesInput: HelperPass.TakesNoWords(ask.Ask.Id),

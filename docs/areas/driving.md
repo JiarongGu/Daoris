@@ -18,7 +18,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 | Unit | File | Its job |
 |---|---|---|
-| `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`): holds, tree, record, spawn, wait, conclusion |
+| `Driver` | `Loop/Driver.cs` | One look (`LookAsync`) and one quest's start (`RunAsync`), which runs its stages at each phase's anchor and itself grows the tree, opens the record, assembles the spawn and concludes |
+| A run's stages | `Loop/Run/`, listed in `docs/index/registered.md` | Each stage a module registers (`[RunStage(name, phase, after)]`, `IRunStage`), run at its phase's anchor in `RunAsync` in the kit's order and built with the driver as its `IRunWiring`; a stage that returns a `StartRun` holds the start there, and no stage after it runs |
+| `RunState` | `Loop/Run/RunState.cs` | What a run carries from stage to stage on its `RunRound`: the agent, the account and how it was walked, the access setup, the tree, the binding and the set-up step; a member read before the stage that writes it throws, naming that stage |
+| `StartAgent`, `CleanCheckout`, `AccountWalk`, `StartAccess` | `Loop/Run/Choose/` | The `Choose` phase, in this order, before anything is grown, locked or opened: the agent, a clean checkout, the account the walk or a resume takes, the access setup |
+| `StewardPlace`, `RunBinding`, `SetUpStep` | `Loop/Run/Placed/` | The `Placed` phase, once the tree is open and held and before the record opens: a steward's start, the workflow binding and the role it names, a set-up step's procedure and tab; a hold lets the fresh tree go |
+| `SessionHold`, `DrivenProtocolDoor` | `Loop/Run/Hold/` | A prepared session started and held to its conclusion for every kind of run the driver starts (`Driver.Holds`), and the protocol door's driven session that hold opens |
 | The look's passes | `WorkOrders/Look/`, listed in `docs/index/registered.md` | Each pass a module registers (`[LookPass(name, phase, after)]`, `ILookPass`), run at its phase's anchor in `LookAsync` in the kit's order and built with the driver as its `ILookWiring` |
 | `LookState` | `WorkOrders/Look/LookState.cs` | What a look carries from pass to pass on its `LookRound`: the snapshot as each pass shapes it, what a pass marks for the ones after it, and what ended; a member read before the pass that writes it throws, naming that pass |
 | `LookSync`, `LostClaimStop` | `WorkOrders/` | The look's head: the remote sync, then the stop of each session whose take lost |
@@ -53,7 +58,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
 | `Orphans` | `Workplace/Orphans.cs` | The sweep: a record that says it runs with nothing running it is stopped as interrupted |
 | `QuestStore`, `QuestExchange` | `Service/Quests/Quests.cs`, `Service/Quests/QuestExchange.cs` | Quest records and log; every door's judgement; claim by push |
-| The quest log's operations | `Service/Quests/Operations/`, listed in `docs/index/registered.md` | Each kind a module registers (`[QuestOperation(kind, Log)]`, `IQuestOperation`): its log payload written and read, what a lost one takes with it in a rebase, and its verbs on the `QuestTx` the store's one-line door opens; built as the store opens, refusing a kind declared twice or a mark naming another kind |
+| The quest log's operations | `Service/Quests/Operations/`, listed in `docs/index/registered.md` | Every kind the log writes is a module (`[QuestOperation(kind, Log)]`, `IQuestOperation`): published, taken, declined, done, conflict, dismissed, waited, bound, submitted, rebound, reopened, accepted, evidenced, setup, verdict, chosen and deleted. Each writes and reads its log payload, says what a lost one takes with it in a rebase (`LostAsync`, a lost wait and a lost submission naming themselves on the take's conflict through `QuestRebaseLosses`), and holds its verbs on the `QuestTx` the store's one-line door opens; built as the store opens, refusing a kind declared twice or a mark naming another kind. The take, the done and the decline share one move verb, on the take. `QuestRecordCodec` reads and writes the quest row, its columns and the payloads' shared parts, and `QuestSchema` makes and upgrades the store's tables as it opens |
+| The quest records | `Service/Quests/Records/` | `Quest`, `QuestStatus`, `QuestMove`, `QuestRequirement` and its answer, `QuestStep`, `QuestAttachment`, `QuestTakeBind`, `QuestTaker`, `QuestSubmission`, `QuestReopen` and `QuestDeletion`, one file each |
+| The store's parts | `Service/Quests/` | `QuestStore` wires and keeps one-line doors; each part is a type of its own over the store's gate: `QuestCache` (the quests table, written whole by a replay, repaired at open), `QuestLogSync` (a machine's pending, accepted and rebase; a remote's fetch, receive and standing; the log rows kept, numbered and rewritten), `QuestIntegrator` (a fetch's replay), `QuestFollowUps` (the follow-up steps a lost parent move rewrites), `QuestChain`, `QuestHistories`, `QuestTakeReadings`, `QuestForgetting`, `QuestReads` (find, list, from, waiting, cursor), `QuestPasses` (the passes and the remote's handshake) and `QuestClaims` |
 | `QuestHandbacks` | `Service/Quests/QuestHandbacks.cs` | A session's closing note on its quest |
 | `SessionStore`, `SessionLedger`, `Lines` | `Service/Sessions/` | Session records, the ledger's opens, moves and says, the tree lock, a line's head |
 | `AskStore`, `AskDesk` | `Service/Asks/Asks.cs` | Ask records, the person's words on them, publishing and deleting |
@@ -197,8 +204,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 ## Where a change goes
 
-Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs`,
-`Service/Quests/Quests.cs` or `Service/Sessions/SessionLedger.cs`: each is over the size budget.
+Put new behaviour in a unit of its own, beside the subdomain below (D231). Do not grow `Loop/Driver.cs` or
+`Service/Sessions/SessionLedger.cs`: each is over the size budget. `Service/Quests/Quests.cs` is a root that wires.
 
 | A new behaviour about | Goes in | Tests that pin it |
 |---|---|---|
@@ -206,6 +213,7 @@ Put new behaviour in a unit of its own, beside the subdomain below (D231). Do no
 | how a line goes on after an end, words or a limit | `Course/Domain/LineCourse.Decide.cs` only; executors in `Course/` | `Course/LineCourseTests` with `course-cases.txt`, `Course/CourseCensusTests`, `Course/LimitWaitsTests`, `Course/LimitResumeTickTests`, `Loop/AnswerContinuesTickTests` |
 | what a run's end is | `Events/Domain/Observation.cs`, its code in `Events/NoteCodes.cs`, its class in `Events/PartEnds.cs` | `Events/ObservationTests`, `Events/PartEndedTests`, `Loop/AskAndWaitTickTests`, `Loop/OrphanedSessionTests` |
 | a part of the look | a pass of its own in its subdomain, marked `[LookPass]`; what it reaches of the driver goes on `ILookWiring`, or on its module's own wiring interface where the type sits above Work orders; what it reads of an earlier pass or leaves for a later one goes on `LookState`, written by one pass | `Loop/DriverPartsTests`, and the tests of the stage it moves |
+| a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/DriverWatch.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |

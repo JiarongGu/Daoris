@@ -226,7 +226,7 @@ public static class QuestWire
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
         // Only beside a note written with them (QUESTCLOSE1b1): an operation without crosses exactly as it did, and an older
         // build reads the note alone, as it always did.
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         // Only when set, and only on a decline (PAUSE1c) or a publication's rebind (FABRIC-CLOSE1c15): a plain one crosses exactly
         // as it did, and an older build reads a flagged one as a plain one.
         if (operation.WhileOpen && QuestStore.JudgedOpen(operation.Kind)) writer.WriteBoolean("whileOpen", true);
@@ -234,16 +234,16 @@ public static class QuestWire
         if (operation.Answers is { Count: > 0 } answers)
         {
             writer.WritePropertyName("answers");
-            QuestStore.WriteAnswers(writer, answers);
+            QuestRecordCodec.WriteAnswers(writer, answers);
         }
 
         // A graph's close's provenance (FABRIC-CLOSE1a), only on its done: every other done crosses exactly as it did, and an
         // older build reads the done without it.
-        if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestStore.WriteClose(writer, close);
+        if (operation is { Kind: QuestOperationKind.Done, Close: { } close }) QuestRecordCodec.WriteClose(writer, close);
 
         // The submission a reopen or a rebind names (FABRIC-CLOSE1c), and the source a take found (FABRIC-CLOSE1c18), on those kinds alone:
         // a take that found none crosses exactly as it did, and an older build reads a take without it.
-        if (QuestStore.Carries(operation.Kind) && operation.Submission is { } submission) QuestStore.WriteRef(writer, "submission", submission);
+        if (QuestStore.Carries(operation.Kind) && operation.Submission is { } submission) QuestRecordCodec.WriteRef(writer, "submission", submission);
 
         // The session that said a ready (FABRIC-CLOSE1c4), or wrote a done's or a decline's handback (HANDBACK1), on those kinds alone and
         // only where one said it: every other operation crosses exactly as it did, and an older build reads each without it.
@@ -291,7 +291,7 @@ public static class QuestWire
 
         // Only when set, and only on a dismissal (SYNCMERGE1a): a plain one crosses exactly as it did, and an older build reads a marked
         // one as plain, so a mixed family degrades to the conflict dismissed, with no push refused (D178 point 5).
-        if (operation is { Kind: QuestOperationKind.Dismissed, Forward: { } forward }) QuestStore.WriteRef(writer, "forward", forward);
+        if (operation is { Kind: QuestOperationKind.Dismissed, Forward: { } forward }) QuestRecordCodec.WriteRef(writer, "forward", forward);
         if (operation.Published is { } asked)
         {
             writer.WriteStartObject("asked");
@@ -315,7 +315,7 @@ public static class QuestWire
             if (asked.Requirements.Count > 0)
             {
                 writer.WritePropertyName("requirements");
-                QuestStore.WriteRequirements(writer, asked.Requirements);
+                QuestRecordCodec.WriteRequirements(writer, asked.Requirements);
             }
 
             // Only when its publisher gave one (SESSUX1j): an older build reads the quest as it always did, named by its title.
@@ -349,7 +349,7 @@ public static class QuestWire
             if (asked.SetUpIn is not null) writer.WriteString("setUpIn", asked.SetUpIn);
 
             // Only on a step a submission published (FABRIC-CLOSE1c): every other quest crosses exactly as it did.
-            if (asked.GrewFrom is { } grew) QuestStore.WriteRef(writer, "grewFrom", grew);
+            if (asked.GrewFrom is { } grew) QuestRecordCodec.WriteRef(writer, "grewFrom", grew);
 
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
@@ -439,7 +439,7 @@ public static class QuestWire
         // one: read as plain, it would settle the conflict wherever it landed, where the take it was made with lost as well.
         QuestOperationRef? forward = null;
         if (kind == QuestOperationKind.Dismissed && item.TryGetProperty("forward", out var brought)
-            && (forward = QuestStore.ReadRef(brought)) is null)
+            && (forward = QuestRecordCodec.ReadRef(brought)) is null)
         {
             return null;
         }
@@ -510,7 +510,7 @@ public static class QuestWire
 
             // The submission a step grew from (FABRIC-CLOSE1c), where it names one: not whole, the step could not be reopened by it.
             QuestOperationRef? grewFrom = null;
-            if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestStore.ReadRef(grew)) is null) return null;
+            if (asked.TryGetProperty("grewFrom", out var grew) && (grewFrom = QuestRecordCodec.ReadRef(grew)) is null) return null;
 
             // A lane that is not a string is half an address, and a quest half-addressed is not whole.
             var lanes = Items(asked, "lanes");
@@ -633,7 +633,7 @@ public static class QuestWire
         // whole makes the done half of one, which a replay could not tell from another close.
         QuestClose? close = null;
         if (kind == QuestOperationKind.Done && item.TryGetProperty("close", out var closing)
-            && (close = QuestStore.ReadClose(closing)) is null)
+            && (close = QuestRecordCodec.ReadClose(closing)) is null)
         {
             return null;
         }
@@ -642,7 +642,7 @@ public static class QuestWire
         // operation half of one, which a replay would read as a reopen of nothing, or a step rebound to nothing.
         QuestOperationRef? submission = null;
         if (QuestStore.Names(kind)
-            && (!item.TryGetProperty("submission", out var naming) || (submission = QuestStore.ReadRef(naming)) is null))
+            && (!item.TryGetProperty("submission", out var naming) || (submission = QuestRecordCodec.ReadRef(naming)) is null))
         {
             return null;
         }
@@ -650,7 +650,7 @@ public static class QuestWire
         // A take's source (FABRIC-CLOSE1c18) is absent from a source-free quest's take and every take from before. One present and not
         // whole makes the take half of one: read as absent, it would be judged as such a take, and stand on work the person reopened.
         if (kind == QuestOperationKind.Taken && item.TryGetProperty("submission", out var found)
-            && (submission = QuestStore.ReadRef(found)) is null)
+            && (submission = QuestRecordCodec.ReadRef(found)) is null)
         {
             return null;
         }

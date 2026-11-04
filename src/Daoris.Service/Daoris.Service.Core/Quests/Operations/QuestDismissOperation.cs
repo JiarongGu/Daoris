@@ -19,8 +19,8 @@ internal sealed class QuestDismissOperation : IQuestOperation
     public void WritePayload(Utf8JsonWriter writer, QuestOperation operation)
     {
         writer.WriteStartObject();
-        if (operation.Dismisses is { } dismisses) QuestStore.WriteRef(writer, "dismisses", dismisses);
-        if (operation.Forward is { } forward) QuestStore.WriteRef(writer, "forward", forward);
+        if (operation.Dismisses is { } dismisses) QuestRecordCodec.WriteRef(writer, "dismisses", dismisses);
+        if (operation.Forward is { } forward) QuestRecordCodec.WriteRef(writer, "forward", forward);
         writer.WriteEndObject();
     }
 
@@ -29,7 +29,7 @@ internal sealed class QuestDismissOperation : IQuestOperation
         Dismisses = payload.TryGetProperty("dismisses", out var named)
             ? new QuestOperationRef(named.GetProperty("machine").GetString() ?? "", named.GetProperty("sequence").GetInt64())
             : null,
-        Forward = payload.TryGetProperty("forward", out var forward) ? QuestStore.ReadRef(forward) : null,
+        Forward = payload.TryGetProperty("forward", out var forward) ? QuestRecordCodec.ReadRef(forward) : null,
     };
 
     /// <summary>

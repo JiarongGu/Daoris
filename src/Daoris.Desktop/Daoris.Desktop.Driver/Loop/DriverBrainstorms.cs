@@ -58,7 +58,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
     private int _busy;
 
-    /// <summary>A brainstorm's minute, and a meeting's (AGENTROOM1a): a minute, unless a test shortens it.</summary>
+    /// <summary>A brainstorm's minute, and a meeting's: a minute, unless a test shortens it.</summary>
     internal TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
 
     private TimeProvider Clock => _context.BrainstormClock;
@@ -886,7 +886,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             adapter, info, sessionId, null, null, tree: turn.Room, kept: null, brainstorm: BrainstormPermissions.ToolOf(turn.Turn));
         try
         {
-            return await _driver.HoldAsync(
+            return await _driver.Holds.HoldAsync(
                 "brainstorm", adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
                 refusesInput: "a brainstorm's pass is one turn, and takes no words",
                 conclude: (exitCode, used, turnFailed, ended) =>

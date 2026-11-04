@@ -33,21 +33,34 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
     internal Task WriteCacheAsync(Quest quest) => store.WriteCacheAsync(quest, transaction, ct);
 
     /// <summary>The chain's next step <paramref name="quest"/>'s close or submission published, where it stands; else null.</summary>
-    internal Task<Quest?> SuccessorAsync(Quest quest) => store.SuccessorAsync(quest, transaction, ct);
+    internal Task<Quest?> SuccessorAsync(Quest quest) => Of<QuestPublishOperation>().SuccessorAsync(this, quest);
 
     /// <summary>The step that seals <paramref name="quest"/>'s current submission, or null where none does.</summary>
-    internal Task<Quest?> SealingAsync(Quest quest) => store.SealingAsync(quest, transaction, ct);
+    internal Task<Quest?> SealingAsync(Quest quest) => Of<QuestSubmitOperation>().SealingAsync(this, quest);
 
     /// <summary>The chain's next step a close, a yes or a verdict on <paramref name="closed"/> lets go, published; null where none is.</summary>
-    internal Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now) => store.PublishNextAsync(closed, now, transaction, ct);
+    internal Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now) => Of<QuestPublishOperation>().PublishNextAsync(this, closed, now);
 
     /// <summary>A rebind of <paramref name="id"/> onto <paramref name="from"/>, judged by the replay's rule; null where it refused it.</summary>
     internal Task<Quest?> ReboundInAsync(string id, QuestOperationRef from, bool whileOpen, DateTimeOffset now) =>
-        store.ReboundInAsync(id, from, whileOpen, now, transaction, ct);
+        Of<QuestReboundOperation>().ReboundInAsync(this, id, from, whileOpen, now);
 
-    /// <summary>The follow-ups only a lost <paramref name="published"/> on <paramref name="parent"/> published, forgotten with it.</summary>
-    internal Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(string parent, bool takeLost, string published) =>
-        store.ForgetFollowUpsAsync(parent, takeLost, published, transaction, ct);
+    /// <summary>
+    /// The follow-ups only a lost <paramref name="published"/> on <paramref name="parent"/> published, forgotten with it; where the
+    /// parent's take lost to the person's reopen, <paramref name="reopened"/> says so on theirs.
+    /// </summary>
+    internal Task<IReadOnlyList<QuestOperation>> ForgetFollowUpsAsync(string parent, bool takeLost, string published, bool reopened = false) =>
+        store.ForgetFollowUpsAsync(parent, takeLost, published, reopened, transaction, ct);
+
+    /// <summary>The module of type <typeparamref name="T"/>, whose verbs another kind's verb calls.</summary>
+    internal T Of<T>()
+        where T : IQuestOperation => QuestOperations.Registered.Of<T>();
+
+    /// <summary>The store's clock, which a take measures its wait for the write by.</summary>
+    internal TimeProvider Time => store.Time;
+
+    /// <summary>The newer version a store was stamped by, which refuses a write this build would make; null otherwise.</summary>
+    internal int? NewerVersion => store.NewerVersion;
 
     /// <summary>A command in this write's transaction, for a table an operation keeps beside the log.</summary>
     internal SqliteCommand Command()

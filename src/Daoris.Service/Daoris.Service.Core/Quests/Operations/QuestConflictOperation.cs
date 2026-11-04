@@ -23,7 +23,7 @@ internal sealed class QuestConflictOperation : IQuestOperation
         writer.WriteStartObject();
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         // Only when set (FABRIC-CLOSE1c22), so every other conflict reads as it did.
         if (operation.LostToTheReopen) writer.WriteBoolean("lostToTheReopen", true);
         writer.WriteEndObject();
