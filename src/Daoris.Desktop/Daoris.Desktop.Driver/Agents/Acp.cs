@@ -192,19 +192,9 @@ public sealed class AcpSession(
     public IReadOnlyList<string> LeftRunning { get; private set; } = [];
 
     /// <summary>Whether the posture says the person answers this session's permission requests.</summary>
-    private readonly bool _personAnswers = Marks(posture).PersonAnswers;
+    private readonly bool _personAnswers = AcpPosture.Marks(posture).PersonAnswers;
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
-
-    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
-
-    /// <summary>
-    /// What a request's answer does on the reader's thread, before anything after it is read (STEER1): a prompt's turn
-    /// event, and the words behind it taken, keep the order the wire said them in.
-    /// </summary>
-    private readonly ConcurrentDictionary<int, Action<JsonElement>> _answered = new();
-
-    private readonly SemaphoreSlim _writeLock = new(1, 1);
 
     /// <summary>The prompts on the wire and not yet answered, oldest first, and the lock that guards them (STEER1).</summary>
     private readonly LinkedList<OpenPrompt> _prompts = [];
@@ -216,14 +206,7 @@ public sealed class AcpSession(
     /// <summary>Whether *Send now* steers into the running turn (<see cref="SteersNow"/>, STEER2a).</summary>
     private bool _steersNow;
 
-    /// <summary>
-    /// The tool calls announced and not yet finished, by id, and those a steer cut (STEER2a): open when the steer was answered
-    /// <c>injected</c>, and never heard of since. Guarded by the lock, read and written on the reader's thread.
-    /// </summary>
-    private readonly object _callsGate = new();
-    private readonly HashSet<string> _openCalls = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _finishedCalls = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _cut = new(StringComparer.Ordinal);
+    private readonly StepCalls _calls = new();
 
     /// <summary>
     /// The status the record closes a call with that a steer cut and that never heard again (STEER2a, D136's 2026-10-16 note;
@@ -301,7 +284,6 @@ public sealed class AcpSession(
     private readonly List<IAgentWord> _turnedAway = [];
 
     private int _promptCount;
-    private int _nextId;
     private int _updates;
     private string? _sessionId;
 
@@ -702,14 +684,14 @@ public sealed class AcpSession(
     /// <summary>The run's door shut at its end (<see cref="Shut"/>), between two writes, never inside one.</summary>
     private async Task ShutAsync()
     {
-        await _writeLock.WaitAsync().ConfigureAwait(false);
+        await Wire.WriteLock.WaitAsync().ConfigureAwait(false);
         try
         {
             Shut();
         }
         finally
         {
-            _writeLock.Release();
+            Wire.WriteLock.Release();
         }
     }
 
@@ -1168,7 +1150,7 @@ public sealed class AcpSession(
             answered: frame =>
             {
                 if (Outcome(frame) != "injected") return;
-                lock (_callsGate) _cut.UnionWith(_openCalls);
+                _calls.CutOpen();
                 Asked(words);
             },
             admit: () => Admit(passage)).ConfigureAwait(false);
@@ -1239,52 +1221,13 @@ public sealed class AcpSession(
             : null;
     }
 
-    /// <summary>
-    /// The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a),
-    /// before its turn's end, so the page never shows them running. Called on the reader's thread.
-    /// </summary>
+    /// <summary>The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a).</summary>
     private void CloseCut()
     {
-        string[] cut;
-        lock (_callsGate)
-        {
-            if (_cut.Count == 0) return;
-            cut = [.. _cut.Order(StringComparer.Ordinal)];
-            _cut.Clear();
-            _openCalls.ExceptWith(cut);
-            _finishedCalls.UnionWith(cut);
-        }
-
-        foreach (var id in cut) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
+        foreach (var id in _calls.TakeCut()) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
     }
 
-    /// <summary>
-    /// A call announced or updated (STEER2a): heard again, it was not cut. <c>pending</c> and <c>in_progress</c> open it, as
-    /// does an announcement that says no status, which the protocol reads as <c>pending</c>; any other status finishes it. An
-    /// update that says no status keeps what the call was, so a finished call stays finished and is never closed as cut.
-    /// </summary>
-    private void Track(JsonElement update, SessionEvent? mapped)
-    {
-        if (mapped is not { Kind: SessionEventKind.Tool, Id: { } id }) return;
-        lock (_callsGate)
-        {
-            _cut.Remove(id);
-            switch (mapped.Status)
-            {
-                case "pending" or "in_progress":
-                    _finishedCalls.Remove(id);
-                    _openCalls.Add(id);
-                    break;
-                case null:
-                    if (AcpRender.Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
-                    break;
-                default:
-                    _openCalls.Remove(id);
-                    _finishedCalls.Add(id);
-                    break;
-            }
-        }
-    }
+    private void Track(JsonElement update, SessionEvent? mapped) => _calls.Track(update, mapped);
 
     /// <summary>
     /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
@@ -1689,44 +1632,25 @@ public sealed class AcpSession(
     {
         try
         {
-            while (await incoming.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-            {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                JsonElement frame;
-                try
+            await Wire.ReadAsync(
+                incoming,
+                DispatchAsync,
+                raw: line =>
                 {
-                    frame = JsonDocument.Parse(line).RootElement.Clone();
-                }
-                catch (JsonException)
-                {
-                    // Not a frame. A real agent writes diagnostics to stderr, but stdout purity is its
-                    // promise and not this client's guarantee — so the line is shown rather than
-                    // dropped, and the run continues.
                     _console.End();
                     onLine(line);
                     Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
-                    continue;
-                }
-
-                try
+                },
+                unreadable: (error, frame) =>
                 {
-                    await DispatchAsync(frame).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    // 🔴 One frame this client could not read is shown, and the reading goes on. A
-                    // throw here used to end the reader, and its `finally` then said the agent's
-                    // stream had ended — a false sentence over a lost exception, which is how the
-                    // first real run died at its first tool call (ACP2, 2026-09-24).
                     _console.End();
                     onLine($"[unreadable frame: {error.Message}] {AcpRender.Compact(frame)}");
                     Emit(new SessionEvent
                     {
                         Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = AcpRender.Compact(frame),
                     });
-                }
-            }
+                },
+                ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -1884,7 +1808,7 @@ public sealed class AcpSession(
 
     bool ITurnEndWiring.DoorShut => DoorShut;
 
-    SemaphoreSlim ITurnEndWiring.WriteLock => _writeLock;
+    SemaphoreSlim ITurnEndWiring.WriteLock => Wire.WriteLock;
 
     void ITurnEndWiring.Shut() => Shut();
 
@@ -1920,39 +1844,7 @@ public sealed class AcpSession(
         }
     }
 
-    private void Complete(JsonElement id, JsonElement frame)
-    {
-        if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
-
-        // CODEXSTATUS1: a typed client's prompt answered with a terminal failure fails as a prompt answered with an error does (§4.3).
-        if (TypedFailures && _answered.ContainsKey(key) && frame.TryGetProperty("result", out var ended) && TypedFailure(ended) is { } failed)
-        {
-            frame = failed;
-        }
-
-        // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
-        if (_answered.TryRemove(key, out var answered))
-        {
-            try
-            {
-                answered(frame);
-            }
-            catch (Exception failure) when (failure is not OperationCanceledException)
-            {
-                onLine($"[an answer could not be recorded: {failure.Message}]");
-            }
-        }
-
-        if (frame.TryGetProperty("error", out var error))
-        {
-            // Read without trusting the shape (REV3): a throw here left the call it answers waiting. Its `data` is
-            // kept beside its message (ACPDATA1): an adapter may say the words that matter there.
-            waiting.TrySetException(AcpRefusal.Of(error));
-            return;
-        }
-
-        waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
-    }
+    private void Complete(JsonElement id, JsonElement frame) => Wire.Complete(id, frame);
 
     private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
     {
@@ -1973,230 +1865,25 @@ public sealed class AcpSession(
         }).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>D81 widened it, by decision</b>: a session does as much as the harness would on its
-    /// own, so an adapter may name <c>auto</c>, the mode
-    /// in which the harness judges each action itself, ahead of <c>acceptEdits</c>. What the doctrine
-    /// keeps is kept by the rules handed at spawn (no push, the tree guard), which hold in every mode.
-    /// This door sets a mode, which is what the evaluation observed Claude Code offering on
-    /// `session/new` (§1a).</para>
-    ///
-    /// <para>🔴 <b>Never a mode the adapter did not name, and never one the agent did not offer.</b> The
-    /// wire also offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when
-    /// its own was missing is how a permission boundary widens without a decision. An adapter names
-    /// its postures in order, and the first the agent offers is set. An agent that offers no modes is
-    /// left exactly alone — its permissions are its own business, which is the stub's shape and any
-    /// future harness's right.</para>
-    ///
-    /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-    /// full access, <see cref="AgentPostures.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
-    /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
-    /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
-    /// person's two ways on (<see cref="Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
-    /// above.</para>
-    /// </remarks>
-    /// <param name="again">Whether a value was set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
-    private async Task SetPostureAsync(JsonElement created, CancellationToken ct, bool again = false)
-    {
-        // An adapter that names no posture asks for none — dsh, whose wire carries no modes, and the
-        // stub, whose permissions are its own business (ACP3).
-        if (posture is not { Length: > 0 }) return;
+    private AcpPosture Posture => LazyInitializer.EnsureInitialized(ref _posture, () => new AcpPosture(
+        posture, () => Unoffered, (method, args, ct) => RequestAsync(method, args, ct), () => _sessionId));
+    private AcpPosture? _posture;
 
-        var (required, _, named) = Marks(posture);
-        DriverException Refused(IReadOnlyCollection<string> offers)
-        {
-            var offered = offers.Count > 0
-                ? $"it offers {string.Join(", ", offers.Order(StringComparer.Ordinal).Select(mode => $"`{mode}`"))}"
-                : "it offers no modes";
-            // A driven start's required posture is its repository's permission prompts' (AUTONOMY1b), said in its setup's words.
-            return new(Unoffered?.Invoke(named, offered)
-                ?? $"the agent does not offer `{named}`, the mode that asks nothing which full access needs ({offered}), so it does not start in "
-                + "a narrower one under that name. Choose restricted access for Ask Daoris (`daoris ask-daoris mode restricted`), or another "
-                + "agent for it.");
-        }
+    private Task SetPostureAsync(JsonElement created, CancellationToken ct, bool again = false) => Posture.SetAsync(created, ct, again);
 
-        // An answer that is no object names no modes (HELPMODE1a4): a resume's may be null, and a required posture fails on it too.
-        if (created.ValueKind != JsonValueKind.Object
-            || !created.TryGetProperty("modes", out var modes)
-            || !modes.TryGetProperty("availableModes", out var available)
-            || available.ValueKind != JsonValueKind.Array)
-        {
-            if (required) throw Refused([]);
-            return;
-        }
+    private AcpWire Wire => LazyInitializer.EnsureInitialized(ref _wire, () => new AcpWire(outgoing, onLine, () => TypedFailures));
+    private AcpWire? _wire;
 
-        var offered = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var mode in available.EnumerateArray())
-        {
-            if (mode.TryGetProperty("id", out var id) && id.GetString() is { } name) offered.Add(name);
-        }
-
-        // The adapter names its postures in order of preference, `|`-separated (D81): the first the
-        // agent offers is the one. None offered is left alone, exactly as a single posture was.
-        var chosen = named.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(offered.Contains);
-        if (chosen is null)
-        {
-            if (required) throw Refused(offered);
-            return;
-        }
-
-        // Already there is nothing to ask for — and an agent that started in the posture is a fact
-        // worth not overwriting with an identical call.
-        if (!again && modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
-        {
-            return;
-        }
-
-        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = chosen }, ct)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// A posture's marks and the modes it names: <see cref="AgentPostures.Required"/> (set, or the session does not open) and
-    /// <see cref="PersonAnswers"/> (its permission requests held for the person), in either order, before the modes.
-    /// </summary>
-    private static (bool Required, bool PersonAnswers, string Named) Marks(string? posture)
-    {
-        var (required, held, at) = (false, false, 0);
-        while (posture is not null && at < posture.Length && posture[at] is AgentPostures.Required or PersonAnswers)
-        {
-            required |= posture[at] == AgentPostures.Required;
-            held |= posture[at] == PersonAnswers;
-            at++;
-        }
-
-        return (required, held, posture?[at..] ?? "");
-    }
-
-    /// <param name="sent">
-    /// Told once the request is on the wire, before its answer is awaited, and always before <paramref name="answered"/>: by the
-    /// reader, where the answer was read before the write returned.
-    /// </param>
-    /// <param name="answered">
-    /// Told the answer's frame on the reader's thread, before the answer is handed back and before anything after it is
-    /// read (STEER1) — never once the caller has stopped waiting for it.
-    /// </param>
-    /// <param name="admit">
-    /// Asked under the write lock as the write begins (RUNENDS1): false where the run's door has shut, and the request is not written at all.
-    /// </param>
-    /// <exception cref="AcpTurnedAway"><paramref name="admit"/> said no: nothing was written.</exception>
-    private async Task<JsonElement> RequestAsync(
+    private Task<JsonElement> RequestAsync(
         string method, object parameters, CancellationToken ct, Action? sent = null, Action<JsonElement>? answered = null,
-        Func<bool>? admit = null)
-    {
-        var id = Interlocked.Increment(ref _nextId);
-        var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
-        // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn was kept before its note, 2026-10-31): whichever
-        // comes first tells it, once, and the other waits for it to finish.
-        var told = false;
-        var telling = new object();
-        void Tell()
-        {
-            lock (telling)
-            {
-                if (told) return;
-                told = true;
-                sent?.Invoke();
-            }
-        }
+        Func<bool>? admit = null) =>
+        Wire.RequestAsync(method, parameters, ct, sent, answered, admit);
 
-        if (answered is not null)
-        {
-            _answered[id] = frame =>
-            {
-                try
-                {
-                    Tell();
-                }
-                finally
-                {
-                    answered(frame);
-                }
-            };
-        }
+    private Task NotifyAsync(string method, object parameters) => Wire.NotifyAsync(method, parameters);
 
-        _pending[id] = waiting;
+    private Task SendAsync(JsonNode frame, Func<bool>? admit = null) => Wire.SendAsync(frame, admit);
 
-        try
-        {
-            await SendAsync(
-                new JsonObject
-                {
-                    ["jsonrpc"] = "2.0",
-                    ["id"] = id,
-                    ["method"] = method,
-                    ["params"] = JsonSerializer.SerializeToNode(parameters),
-                },
-                admit).ConfigureAwait(false);
-        }
-        catch (AcpTurnedAway)
-        {
-            _answered.TryRemove(id, out _);
-            _pending.TryRemove(id, out _);
-            throw;
-        }
-
-        Tell();
-
-        try
-        {
-            return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // A caller that stopped waiting is told nothing more about this request, as before its answer was seen.
-            _answered.TryRemove(id, out _);
-            throw;
-        }
-    }
-
-    private Task NotifyAsync(string method, object parameters) => SendAsync(new JsonObject
-    {
-        ["jsonrpc"] = "2.0",
-        ["method"] = method,
-        ["params"] = JsonSerializer.SerializeToNode(parameters),
-    });
-
-    /// <summary>
-    /// One frame, one line. Serialized under a lock because the answer to an agent's request is
-    /// written from the read pump while the caller may be writing a request of its own, and two
-    /// interleaved lines are two frames nobody can parse.
-    /// </summary>
-    /// <remarks>
-    /// Asynchronous throughout, deliberately. The first version blocked on the write and took the
-    /// lock synchronously; a cancellation callback then re-entered it on the very thread that held
-    /// it, and the whole run deadlocked. `SemaphoreSlim` is not reentrant, and the fix that lasts is
-    /// to have no path that can re-enter rather than a lock that tolerates it.
-    /// </remarks>
-    private async Task SendAsync(JsonNode frame, Func<bool>? admit = null)
-    {
-        await _writeLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            // RUNENDS1: a prompt is admitted under the lock its write holds, so the run's door shuts between two writes, never in one.
-            if (admit?.Invoke() == false) throw new AcpTurnedAway();
-            await outgoing.WriteLineAsync(frame.ToJsonString()).ConfigureAwait(false);
-            await outgoing.FlushAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            _writeLock.Release();
-        }
-    }
-
-    /// <summary>Fault everything still awaiting an answer that will never come.</summary>
-    private void Fail(Exception error)
-    {
-        _answered.Clear();
-        foreach (var key in _pending.Keys)
-        {
-            if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);
-        }
-    }
+    private void Fail(Exception error) => Wire.Fail(error);
 
     // ---- Resuming a conversation (ANSWER1a, D131) ----
 
