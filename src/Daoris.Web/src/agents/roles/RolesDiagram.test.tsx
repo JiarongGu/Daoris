@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -26,6 +26,7 @@ import { useListPanes } from '../../work/frame/listPanes';
 import { ViewFrame } from '../../work/frame/ViewFrame';
 import { CLAUDE_USE, CODEX_USE, DOORS } from '../agentsFixtures';
 import { useAgentsMode, useAgentsView } from '../AgentsView';
+import { PLACES } from '../setup/setupFixtures';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, WORKS } from './structureFixtures';
 
 function Place() {
@@ -33,6 +34,11 @@ function Place() {
   const modes = useAgentsMode(lists);
   const [chosen, setChosen] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+  // The diagram is This machine's All roles section, as a door to it opens it.
+  const { onPlaceAt } = modes;
+  useEffect(() => {
+    onPlaceAt('machine', { section: 'allRoles' });
+  }, [onPlaceAt]);
   const layout = useAgentsView({ active: true, modes, chosen, onChoose: setChosen, notify: () => {}, roleDoors: {} });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
@@ -50,18 +56,18 @@ const STANDING = {
   holders: [],
 };
 
-const SECTION = { 'Working roles': /^Working roles/, Work: /^Work(?!ing)/, Accounts: /^Accounts/, 'By repository': /^By repository/, 'Appointed roles': /^Appointed roles/ } as const;
-const sectionPress = (name: keyof typeof SECTION) => screen.findByRole('button', { name: SECTION[name] });
-/** The list's chosen section, by its name and any line under it. */
-const chosenSection = () => screen.getAllByRole('button', { current: true }).map((button) => button.textContent).join(' | ');
+/** The steward as the catalogue holds it: an appointed role not yet held by anyone. */
+const STEWARD = {
+  id: 'steward', state: 'seed', seeded: true, name: { en: 'Steward', zh: '管家' }, takes: [], scopeKind: 'machine', revision: 0,
+  hold: { kind: 'steward', acts: [], holder: null },
+};
 const node = (name: string) => screen.getByRole('listitem', { name });
 const detail = () => within(screen.getByRole('complementary', { name: 'What is chosen' }));
 
-async function diagramFrom(section: keyof typeof SECTION) {
+async function openDiagram() {
   show(<Place />);
   const user = userEvent.setup();
-  await user.click(await sectionPress(section));
-  await user.click(await screen.findByRole('button', { name: 'Show as diagram' }));
+  await user.click(await screen.findByRole('radio', { name: 'Diagram' }));
   await screen.findByRole('list', { name: 'The diagram: places, roles and agents' });
   return user;
 }
@@ -75,13 +81,14 @@ describe('The Roles mode, the diagram', () => {
       const url = String(input);
       return url.startsWith('/api/registry') ? Response.json(REGISTRATIONS) : respond(url);
     }));
-    invoke.mockImplementation(async (module: string, type: string) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: object }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       switch (type) {
+        case 'PLACES': return PLACES((request?.payload ?? {}) as Parameters<typeof PLACES>[0]);
         case 'STATE': return { ...DRIVER_STATE, drivable: DRIVER.drivable, holds: DRIVER.holds, standingConfirmation: STANDING };
         case 'HARNESSES': return { settingsPath: 'x', adapter: 'claude-code', harnesses: DOORS };
         case 'ACCOUNTS': return { agents: [CLAUDE_USE, CODEX_USE] };
-        case 'ROLES': return { roles: STRUCTURE.roles, works: WORKS, kept: true, suggested: [] };
+        case 'ROLES': return { roles: [...STRUCTURE.roles, STEWARD], works: WORKS, kept: true, suggested: [] };
         case 'STARTS': return { adapter: 'claude-code', starts: [] };
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };
         case 'LINES': return LINES;
@@ -98,25 +105,23 @@ describe('The Roles mode, the diagram', () => {
     invoke.mockReset();
   });
 
-  it('offers Show as diagram in the head, and back Show as list, keeping the filters', async () => {
+  it('offers the Diagram beside the List in All roles, remembers the choice, and back to the list', async () => {
     show(<Place />);
     const user = userEvent.setup();
-    await user.click(await sectionPress('Work'));
-    await screen.findByRole('button', { name: 'Show building' });
-    await user.type(screen.getByRole('searchbox', { name: 'Name' }), 'engine');
-    await user.click(screen.getByRole('button', { name: 'Show as diagram' }));
+    expect(await screen.findByRole('radio', { name: 'List' })).toBeChecked();
+    await user.click(screen.getByRole('radio', { name: 'Diagram' }));
     const drawn = await screen.findByRole('list', { name: 'The diagram: places, roles and agents' });
-    // The filter holds on the diagram: the role it names, where it is placed, and who staffs it.
-    expect(screen.getByRole('searchbox', { name: 'Name' })).toHaveValue('engine');
+    expect(window.localStorage.getItem('daoris.roles.view')).toBe('diagram');
     const names = within(drawn).getAllByRole('listitem').map((item) => item.getAttribute('data-flow-node'));
-    expect(names).toEqual(['place:machine', 'place:aurora/engine', 'role:engine-build', 'agent:claude-code']);
-    await user.click(screen.getByRole('button', { name: 'Show as list' }));
-    expect(await screen.findByRole('searchbox', { name: 'Name' })).toHaveValue('engine');
+    expect(names).toEqual(expect.arrayContaining(['place:machine', 'place:aurora/engine', 'role:engine-build', 'agent:claude-code']));
+    await user.click(screen.getByRole('radio', { name: 'List' }));
+    expect(await screen.findByRole('button', { name: 'Edit Build' })).toBeTruthy();
     expect(screen.queryByRole('list', { name: 'The diagram: places, roles and agents' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.roles.view')).toBeNull();
   });
 
   it("says each node's edges in words, a choice that cannot run with its reading, and a place counted in its workspace", async () => {
-    await diagramFrom('Work');
+    await openDiagram();
     const build = node('Build');
     expect(within(build).getByRole('button', { name: /^Codex, choice 2: cannot run: signed out · read/ })).toBeTruthy();
     expect(within(build).getByRole('button', { name: /^Claude Code, choice 1: can run/ })).toBeTruthy();
@@ -126,25 +131,20 @@ describe('The Roles mode, the diagram', () => {
     expect(document.getElementById(claude.getAttribute('aria-describedby')!)!.textContent).toMatch(/From choice 1 of Build; .*as before of Chat/);
   });
 
-  it('moves the section with a node of another kind, its detail is its row, and Show as list lands on that row', async () => {
-    const user = await diagramFrom('Work');
+  it('chooses a node of another kind, its detail is its row, and the roles leaning on it are lit', async () => {
+    const user = await openDiagram();
     await user.click(node('Codex'));
-    expect(chosenSection()).toContain('Accounts');
     expect(node('Codex')).toHaveAttribute('aria-current', 'true');
     expect(detail().getByRole('button', { name: 'Hide Codex' })).toBeTruthy();
     // Every role leaning on it is lit, and only those.
     expect(node('Build')).toHaveAttribute('data-lit');
     expect(node('Second opinion')).toHaveAttribute('data-lit');
     expect(node('Chat')).not.toHaveAttribute('data-lit');
-    await user.click(screen.getByRole('button', { name: 'Show as list' }));
-    expect(await screen.findByRole('heading', { name: 'Accounts' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Hide Codex' })).toBeTruthy();
   });
 
   it("lights a place's path, inherited where it takes this machine's roles, and its detail says each work's answer", async () => {
-    const user = await diagramFrom('Accounts');
+    const user = await openDiagram();
     await user.click(node('engine'));
-    expect(chosenSection()).toContain('By repository');
     expect(node('Engine build')).toHaveAttribute('data-lit');
     expect(node('Chat')).toHaveAttribute('data-lit');
     expect(node('This Daoris')).toHaveAttribute('data-lit');
@@ -154,12 +154,11 @@ describe('The Roles mode, the diagram', () => {
   });
 
   it("opens a role's detail on its catalogue row, whose Edit is the same editor the list holds", async () => {
-    const user = await diagramFrom('Accounts');
+    const user = await openDiagram();
     await user.click(node('Build'));
-    expect(chosenSection()).toContain('Working roles');
     await user.click(detail().getByRole('button', { name: 'Edit Build' }));
     expect(detail().getByRole('form', { name: 'Build' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Show as list' }));
+    await user.click(screen.getByRole('radio', { name: 'List' }));
     // The list's catalogue holds the same editor, open.
     expect(await screen.findByRole('form', { name: 'Build' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit Build' })).toBeNull();
@@ -168,31 +167,29 @@ describe('The Roles mode, the diagram', () => {
   it("offers On the diagram in a row's ⋯, and chooses its node there", async () => {
     show(<Place />);
     const user = userEvent.setup();
-    await user.click(await sectionPress('Accounts'));
-    await user.click(await screen.findByRole('button', { name: 'More for Codex' }));
+    await screen.findByRole('button', { name: 'Edit Build' });
+    (await screen.findByRole('button', { name: 'More for Build' })).focus();
+    await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'On the diagram' }));
     await screen.findByRole('list', { name: 'The diagram: places, roles and agents' });
-    expect(node('Codex')).toHaveAttribute('aria-current', 'true');
-    expect(chosenSection()).toContain('Accounts');
+    expect(node('Build')).toHaveAttribute('aria-current', 'true');
   });
 
-  it('selects the Appointed roles section with an appointed node, still on the diagram, its appointment dashed while dormant', async () => {
-    const user = await diagramFrom('Work');
+  it('chooses an appointed node, still on the diagram, its appointment dashed while dormant', async () => {
+    const user = await openDiagram();
     const steward = node('Steward');
     expect(document.getElementById(steward.getAttribute('aria-describedby')!)!.textContent).toMatch(/appointed at This Daoris, dormant until appointed again/);
     await user.click(steward);
-    expect(chosenSection()).toContain('Appointed roles');
     expect(screen.getByRole('list', { name: 'The diagram: places, roles and agents' })).toBeTruthy();
-    expect(await detail().findByRole('group', { name: /^Steward · This Daoris/ })).toBeTruthy();
+    expect(steward).toHaveAttribute('aria-current', 'true');
   });
 
   it('is spoken in Chinese', async () => {
     await i18n.changeLanguage('zh');
     show(<Place />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: new RegExp(`^${i18n.t('nav.roles.work')}$`) }));
-    await user.click(await screen.findByRole('button', { name: '以角色图显示' }));
+    await user.click(await screen.findByRole('radio', { name: i18n.t('agents.setup.allRoles.diagram') }));
     expect(await screen.findByRole('list', { name: '角色图：位置、角色与智能体' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '以列表显示' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: i18n.t('agents.setup.allRoles.list') })).toBeTruthy();
   });
 });

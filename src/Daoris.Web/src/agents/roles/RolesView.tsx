@@ -171,7 +171,8 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
     setOpened((was) => new Set([...was, ...rows]));
   };
   const toDiagram = (row: string) => {
-    const node = structure ? nodeOfRow(structure, row) : null;
+    // The structure is read only once the diagram is asked for, so from the list the row's own id is the node.
+    const node = structure ? nodeOfRow(structure, row) : row;
     if (node) choose(node);
     page.onView('diagram');
   };
