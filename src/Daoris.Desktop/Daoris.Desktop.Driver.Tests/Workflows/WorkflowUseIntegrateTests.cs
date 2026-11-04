@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// INTEGRATE1r part r2 (the integration design §17.7; the workflow design §2.3, §4.7): <c>daoris workflow use</c> of a graph version
 /// that integrates its landing. It refuses, writing nothing, where a repository it reaches cannot carry the <c>integrate</c> (each case its own
-/// sentence naming the Setup row), and says, per repository it reaches, <i>integrates with no gates</i> where the rule's
-/// <c>integrate.gates</c> is absent or <c>none</c>. A workspace's <c>use</c> reaches the registry's repositories of that workspace whose own
+/// sentence), and says, per repository it reaches, <i>integrates with no gates</i> where its line policy's <c>gates</c> is absent or
+/// <c>none</c>. A workspace's <c>use</c> reaches the registry's repositories of that workspace whose own
 /// choice does not replace it.
 /// </summary>
 public sealed class WorkflowUseIntegrateTests : IDisposable
@@ -21,11 +21,8 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
 
     private string Config => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
-    private const string Branch = """{"form":"branch","pattern":"w/{quest}"}""";
-
-    private const string Plugged = """{"form":"branch","pattern":"w/{quest}","plugin":"example.pull-request"}""";
-
-    private const string Gated ="""{"form":"branch","pattern":"w/{quest}","autoAccept":true,"integrate":{"gates":"declared"}}""";
+    /// <summary>A line policy that turns the declared gates on.</summary>
+    private const string Gated = """{"gates":"declared"}""";
 
     /// <summary>
     /// The workflow `integrated`: a claimed node, the landing and an integrate asking as <paramref name="request"/>; the landing waits on the
@@ -47,7 +44,7 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
             """);
     }
 
-    private void Rules(string landings) => File.WriteAllText(Config, $$"""{"landings":{{landings}}}""");
+    private void Policies(string policies) => File.WriteAllText(Config, $$"""{"linePolicies":{{policies}}}""");
 
     private async Task<int> Run(string words, params (string Repository, string? Workspace, string? Root)[] registry)
     {
@@ -66,10 +63,10 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
     private bool Chose() => File.Exists(Config) && File.ReadAllText(Config).Contains("\"workflows\"", StringComparison.Ordinal);
 
     [Fact]
-    public async Task A_repository_whose_rule_declares_no_integrate_is_said_to_integrate_with_no_gates()
+    public async Task A_repository_whose_line_has_no_policy_is_said_to_integrate_with_no_gates()
     {
         Stored();
-        Rules($$"""{"web-app":{{Branch}}}""");
+        Policies("{}");
 
         var exit = await Run("workflow use integrated --repository web-app", ("web-app", "work", null));
 
@@ -79,10 +76,10 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
     }
 
     [Fact]
-    public async Task A_repository_whose_rule_declares_its_gates_is_not_said_to_integrate_with_no_gates()
+    public async Task A_repository_whose_line_policy_declares_its_gates_is_not_said_to_integrate_with_no_gates()
     {
         Stored();
-        Rules($$"""{"web-app":{{Gated}}}""");
+        Policies($$"""{"web-app":{{Gated}}}""");
 
         var exit = await Run("workflow use integrated --repository web-app", ("web-app", "work", null));
 
@@ -92,26 +89,10 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
     }
 
     [Fact]
-    public async Task A_merge_rule_repository_refuses_the_choice_naming_the_pattern_and_the_setup_row_and_writes_nothing()
-    {
-        Stored();
-        Rules("""{"web-app":{"form":"merge"}}""");
-
-        var exit = await Run("workflow use integrated --repository web-app", ("web-app", "work", null));
-
-        Assert.Equal(1, exit);
-        Assert.Contains("`web-app`: its `merge-in` (`integrate`) integrates the branch the landing `land` makes", _error.ToString());
-        Assert.Contains("daoris place landing web-app branch <pattern>", _error.ToString());
-        Assert.Contains("Setup → Line and landing → How work lands", _error.ToString());
-        Assert.EndsWith("Nothing was written.", _error.ToString().Trim());
-        Assert.False(Chose());
-    }
-
-    [Fact]
     public async Task A_workspace_choice_says_each_repository_it_reaches_and_skips_one_whose_own_choice_replaces_it()
     {
         Stored();
-        File.WriteAllText(Config, $$"""{"landings":{"a":{{Branch}},"b":{{Gated}},"c":{"form":"merge"},"d":{{Branch}}},""" + "\"workflows\":{\"c\":{\"default\":\"other\"}}}");
+        File.WriteAllText(Config, $$"""{"linePolicies":{"b":{{Gated}}},""" + "\"workflows\":{\"c\":{\"default\":\"other\"}}}");
 
         var exit = await Run("workflow use integrated --workspace work", ("a", "work", null), ("b", "work", null), ("c", "work", null), ("d", "elsewhere", null));
 
@@ -124,36 +105,36 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
     }
 
     [Fact]
-    public async Task A_workspace_choice_reaching_a_repository_that_cannot_carry_it_is_refused_whole_naming_that_repository()
+    public async Task A_workspace_choice_reaching_repositories_that_cannot_carry_it_is_refused_whole_naming_each_with_its_reason()
     {
-        Stored();
-        Rules($$"""{"a":{{Branch}},"b":{{Plugged}}}""");
+        Stored("steward");
+        Policies($$"""{"a":{{Gated}}}""");
 
         var exit = await Run("workflow use integrated --workspace work", ("a", "work", null), ("b", "work", null));
 
         Assert.Equal(1, exit);
-        Assert.Contains("`b`: its `merge-in` (`integrate`) integrates a branch no plugin lands", _error.ToString());
-        Assert.DoesNotContain("`a`:", _error.ToString());
+        Assert.Contains("`a`: its `merge-in` (`integrate`) asks with `steward`, and whether the declaration the owner accepted names a gate could not be read", _error.ToString());
+        Assert.Contains("`b`: its `merge-in` (`integrate`) asks with `steward`, which needs the line's gates, and `b`'s line policy does not set `gates`", _error.ToString());
         Assert.False(Chose());
     }
 
     [Fact]
-    public async Task Done_is_refused_where_the_accepted_declaration_cannot_be_read_and_a_press_where_the_landing_accepts_by_press()
+    public async Task Done_is_refused_where_the_accepted_declaration_cannot_be_read_and_a_steward_where_the_line_turns_no_gates_on()
     {
         Stored("done");
-        Rules($$"""{"web-app":{{Gated}}}""");
+        Policies($$"""{"web-app":{{Gated}}}""");
 
         // No checkout here to read the line's accepted declaration from: nothing is passed on a guess.
         Assert.Equal(1, await Run("workflow use integrated --repository web-app", ("web-app", "work", null)));
         Assert.Contains("whether the declaration the owner accepted names a gate could not be read", _error.ToString());
         Assert.False(Chose());
 
-        // The landing's press: the version holds a `review` before it.
+        // A steward's request needs the line's gates, and this line's policy turns none on.
         Stored("steward", reviewed: true);
-        Rules("""{"web-app":{"form":"branch","pattern":"w/{quest}","integrate":{"gates":"none"}}}""");
+        Policies("""{"web-app":{"gates":"none"}}""");
         _error.GetStringBuilder().Clear();
         Assert.Equal(1, await Run("workflow use integrated --repository web-app", ("web-app", "work", null)));
-        Assert.Contains("does not set `integrate.gates` to `declared`", _error.ToString());
+        Assert.Contains("line policy does not set `gates` to `declared`", _error.ToString());
     }
 
     [Fact]
@@ -166,7 +147,7 @@ public sealed class WorkflowUseIntegrateTests : IDisposable
              "nodes":[{"id":"claim","kind":"claimed","version":1,"reach":"observed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"}]}}]}
             """);
-        Rules($$"""{"web-app":{{Branch}}}""");
+        Policies("{}");
 
         Assert.Equal(0, await Run("workflow use plain --repository web-app", ("web-app", "work", null)));
         Assert.DoesNotContain("gates", _out.ToString());

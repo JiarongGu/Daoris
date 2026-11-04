@@ -437,11 +437,11 @@ public sealed class WorkflowRunBindingTests : IDisposable
     }
 
     /// <summary>
-    /// LANDNODE1h (the land node design §4): a <c>land</c> the version leaves open is resolved over the repository's rule at the bind, kept in
-    /// the run's file, and read from there: a rule edited after the bind reaches new runs, never the bound one.
+    /// LANDNODE1h (the land node design §4): a <c>land</c> the version leaves open is resolved from the derived defaults at the bind, never
+    /// from a rule, kept in the run's file, and read from there.
     /// </summary>
     [Fact]
-    public void A_land_left_open_is_resolved_at_the_bind_and_a_later_rule_edit_does_not_reach_the_bound_run()
+    public void A_land_left_open_is_resolved_from_the_derived_defaults_at_the_bind_and_kept_in_the_runs_file()
     {
         WorkflowStore.Add(_home, new WorkflowVersionAdded("open-land", "An open land", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
             """
@@ -452,26 +452,16 @@ public sealed class WorkflowRunBindingTests : IDisposable
              "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"r","kind":"after","from":"review","to":"landing"},
                       {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
             """)), kept: []);
-        // WORKFLOWCLEAN1 1a (transitional, until the conversion): a place that still has a landing rule resolves over it, though a derived
-        // default would say otherwise; one with no rule resolves from the derived defaults.
-        var before = Config("""
-            {"workflows":{"web-app":{"default":"open-land"},"api":{"default":"open-land"}},
-             "landings":{"web-app":{"form":"branch","pattern":"a/{ticket}-{quest}","plugin":"other.pr","key":"AAA-\\d+"}}}
-            """);
+        var config = Config("""{"workflows":{"web-app":{"default":"open-land"}}}""");
 
-        var planned = WorkflowRunBindings.Plan(before, WorkflowPorts.Store(_home), "a1b2c3", "web-app", null, null, null, Plugins, At, remoteHost: "github.com");
+        var planned = WorkflowRunBindings.Plan(config, WorkflowPorts.Store(_home), "a1b2c3", "web-app", null, null, null, Plugins, At, remoteHost: "github.com");
         Assert.True(WorkflowRunBindings.Bind(_home, planned));
         var bound = WorkflowRunBindings.Read(_home, "a1b2c3")!;
 
         Assert.Null(bound.Problem);
         Assert.Equal(
-            new Dictionary<string, string> { ["pattern"] = "a/{ticket}-{quest}", ["plugin"] = "other.pr", ["key"] = "AAA-\\d+" }.OrderBy(each => each.Key),
-            bound.Land.OrderBy(each => each.Key));
-
-        var derived = WorkflowRunBindings.Plan(before, WorkflowPorts.Store(_home), "j1k2l3", "api", null, null, null, Plugins, At, remoteHost: "github.com");
-        Assert.Equal(
             new Dictionary<string, string> { ["pattern"] = LandNodes.DefaultPattern, ["plugin"] = "acme.github" }.OrderBy(each => each.Key),
-            derived.Land.OrderBy(each => each.Key));
+            bound.Land.OrderBy(each => each.Key));
 
         // A pattern the version writes with {ticket} resolves the default key, not the rule's.
         WorkflowStore.Add(_home, new WorkflowVersionAdded("ticketed", "Ticketed", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(

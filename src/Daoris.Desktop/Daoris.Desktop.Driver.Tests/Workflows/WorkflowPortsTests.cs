@@ -84,11 +84,8 @@ public sealed class WorkflowPortsTests
         Assert.False(runs.Bound("q9"));
     }
 
-    /// <summary>The choice of `docs-to-pr` for `web-app`, and its branch rule, which a named landing step chooses within.</summary>
-    private static readonly DriverConfig Declared = DriverConfig.Parse("""
-        {"workflows":{"web-app":{"default":"docs-to-pr"}},
-         "landings":{"web-app":{"form":"branch","pattern":"feature/{quest}","tidy":true}}}
-        """);
+    /// <summary>The choice of `docs-to-pr` for `web-app`.</summary>
+    private static readonly DriverConfig Declared = DriverConfig.Parse("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
 
     [Fact]
     public void A_runs_process_is_read_through_the_ports_its_bound_version_and_a_binding_that_does_not_read_holds_it()
@@ -96,8 +93,9 @@ public sealed class WorkflowPortsTests
         var store = new MemoryStore();
         var runs = new MemoryRuns();
 
+        // With no run bound no rule is read: the line's landing, a merge naming no pattern.
         var none = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
-        Assert.Equal(("q1", (WorkflowRunBinding?)null, "feature/{quest}"), (none.Run, none.Binding, none.Landing.Rule.Pattern));
+        Assert.Equal(("q1", (WorkflowRunBinding?)null, (string?)null), (none.Run, none.Binding, none.Landing.Rule.Pattern));
 
         WorkflowStore.Add(store, runs, Added("automatic"));
         Assert.True(runs.Bind(WorkflowRunBindings.Plan(Declared, store, "q1", "web-app", "work", null, null, [], At)));
@@ -169,8 +167,8 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>
-    /// A run's records beside the service come through their port: the landing records and the due list read once per read, the
-    /// acceptances once per run, and whether the work's tree stands asked of it. Here none is on disk: the home names no folder.
+    /// A run's records beside the service come through their port: the landing records read once per read. A run no workflow is bound to
+    /// draws no steps, so no acceptance is read and no tree asked after. Here none is on disk: the home names no folder.
     /// </summary>
     [Fact]
     public async Task A_runs_records_are_read_through_their_port_once_per_read()
@@ -183,10 +181,11 @@ public sealed class WorkflowPortsTests
 
         var read = await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Quest: "q1"), sources, records);
 
-        var landing = read.Runs.Single().Steps.Single(step => step.Step.Kind == WorkflowKinds.Landing);
-        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Merge, (DateTimeOffset?)At), (landing.State, landing.Detail, landing.At));
-        Assert.Equal((1, 1, 1), (records.LandingsRead, records.AutoLandingsRead, records.AcceptancesRead));
-        Assert.Equal(["no-such-tree"], records.Asked);
+        var run = read.Runs.Single();
+        Assert.Empty(run.Steps);
+        Assert.Equal(WorkflowProcess.NoWorkflow(run.Repository), run.Problem);
+        Assert.Equal((1, 0), (records.LandingsRead, records.AcceptancesRead));
+        Assert.Empty(records.Asked);
         Assert.False(Directory.Exists(sources.Home));
     }
 
@@ -476,19 +475,11 @@ public sealed class WorkflowPortsTests
 
         public int LandingsRead { get; private set; }
 
-        public int AutoLandingsRead { get; private set; }
-
         public int AcceptancesRead { get; private set; }
 
         public IReadOnlyList<LandedBranch> Landings()
         {
             LandingsRead++;
-            return [];
-        }
-
-        public IReadOnlyList<AutoLanding> AutoLandings()
-        {
-            AutoLandingsRead++;
             return [];
         }
 

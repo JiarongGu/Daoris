@@ -12,7 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 10, 28, 9, 0, 0, TimeSpan.Zero);
-    private const string Steps = """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""";
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-workflows", Guid.NewGuid().ToString("N")[..8]);
     private string Tree => DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1");
 
@@ -22,11 +21,10 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
 
     private DriverConfig Config() => DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
-    /// <summary>`docs-to-pr` saved with one version and chosen as `engine`'s default.</summary>
+    /// <summary>`docs-to-pr` saved with one graph version, landing on a branch, and chosen as `engine`'s default.</summary>
     private void Choose()
     {
-        StoredSteps.Add(_home, new WorkflowVersionAdded(
-            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", JsonNode.Parse(Steps)), kept: []);
+        RunHome.SaveGraph(_home, GraphLand.Graph(GraphLand.Branch("feature/{quest}-{slug}")), "docs-to-pr");
         WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "engine", null, null)).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
     }
 
@@ -148,7 +146,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         Assert.True(gate.Workflow.LetsGo);
         Assert.Equal("s1", gate.WorkflowPart()!.Session);
         Assert.False(gate.Process!.Named);
-        Assert.Equal("Current", gate.Process.Name);
+        Assert.Equal("no workflow", gate.Process.Name);
         Assert.Null(gate.Graph);
     }
 
@@ -202,7 +200,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         var trees = new SessionTrees(_home);
 
         var unbound = await trees.GateAsync(Tree, null, new World(), "s1", run: "chat-s1");
-        Assert.Equal((WorkflowGateStates.None, "Current"), (unbound.Workflow!.State, unbound.Process!.Name));
+        Assert.Equal((WorkflowGateStates.None, "no workflow"), (unbound.Workflow!.State, unbound.Process!.Name));
 
         var bound = ChatRuns.Bind(Config(), _home, "chat-s1", "engine", "aurora", [], At);
         Assert.True(bound.Wrote);
@@ -244,7 +242,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         var config = Config();
         var current = WorkflowProcess.Declared(config, "engine", "aurora");
         Assert.False(current.Named);
-        Assert.Equal("Current", current.Name);
+        Assert.Equal("no workflow", current.Name);
         Assert.Null(current.Record);
         Assert.Null(current.Binding);
         Assert.Null(current.LandingCannot);
