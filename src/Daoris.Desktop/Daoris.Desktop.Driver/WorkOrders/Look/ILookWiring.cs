@@ -44,4 +44,16 @@ internal interface ILookWiring
 
     /// <summary>A test's stand-in for stopping a session whose take lost; null stops its process.</summary>
     Func<string, Noted, bool>? Stops { get; }
+
+    /// <summary>The harnesses, whose roster marks the starts chosen while a look reads its records.</summary>
+    HarnessRoster Harnesses { get; }
+
+    /// <summary>The supervisor's decisions on this machine's records.</summary>
+    QuestionSupervisorDecisions Supervisor { get; }
+
+    /// <summary>What a session's waiting words are left waiting by.</summary>
+    GoOnMarks Marks { get; }
+
+    /// <summary>The machine log, or null where nothing keeps one.</summary>
+    MachineLog? Log { get; }
 }

@@ -283,6 +283,12 @@ public sealed class Driver(
 
     Func<string, Noted, bool>? ILookWiring.Stops => Stops;
 
+    HarnessRoster ILookWiring.Harnesses => Context.Harnesses;
+
+    QuestionSupervisorDecisions ILookWiring.Supervisor => Context.Supervisor;
+
+    GoOnMarks ILookWiring.Marks => Context.Marks;
+
     SessionOutput? ILandingWiring.Output => output;
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
@@ -534,20 +540,6 @@ public sealed class Driver(
     internal Task<int> MeetingsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
         Meetings.MeetingsAsync(snapshot, taken, events, ct);
 
-    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
-    /// <summary>
-    /// The supervisor's release through the service's say (SUPERVISOR1a-i, D208; the supervisor design §3.4): no text, its decision,
-    /// question and choice, the receipt as the say's key. Kept answers the word's id; a refusal its word; a lost response throws, which
-    /// the release keeps held to repeat.
-    /// </summary>
-    internal async Task<SupervisorSaid> SupervisorSayAsync(
-        string session, string decision, string question, string choice, string key, CancellationToken ct)
-    {
-        var said = await service.SayAsync(
-            session, "", ct: ct, from: SupervisorHanded.From, key: key, supervised: (decision, question, choice)).ConfigureAwait(false);
-        return said.Kept && said.Word?.Id is { } word ? new SupervisorSaid(word, null) : new SupervisorSaid(null, said.Refusal ?? "unsaid");
-    }
-
     /// <summary>
     /// A park whose own conversation cannot resume and that nothing carries on (<see cref="DriverContinuations.CannotGoOn"/>); a
     /// supervisor's decision on it goes <c>stale</c> first, its word taken back, so the park is a wait on the owner again (SUPERVISOR1a-i,
@@ -565,6 +557,7 @@ public sealed class Driver(
         return GoOns.CannotGoOn(quest, park, why);
     }
 
+    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
 
@@ -1059,41 +1052,22 @@ public sealed class Driver(
 
         // The look's registered passes run at their phase's anchor, in their order; the code that has not moved into a pass runs
         // between the anchors.
-        var round = new LookRound(Part, events);
+        var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var pass in LookPasses.In(LookPhase.Before)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
         foreach (var pass in LookPasses.In(LookPhase.Local)) await pass.RunAsync(round, ct).ConfigureAwait(false);
 
-        // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
-        // while they were read: marked first, so a conversation chosen meanwhile is not lost.
-        var mark = Context.Harnesses.Mark();
-        // PARALLEL1b: the starts still opening, read before the snapshot as well as at the plan, so one whose record opened while the
-        // snapshot was read is held by one of the two, whichever the ledger's answer missed.
-        var reservedBefore = Context.Runs.Reserved;
-        var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
-        // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
-        snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
-        // SUPERVISOR1a-i (D208; the supervisor design §3.4, §6.1, §6.3): each decision not yet final compared, settled and released
-        // first, so the release's own word is recorded before anything judges it; then a word claiming the supervisor that Daoris did
-        // not attribute is taken back before anything plans, and never planned from.
-        SupervisorTakeBack takeBack = async (session, word, token) =>
-            (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
-        var undecided = snapshot;
-        // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
-        var alone = AnswersAloneHold.For(Context.Events, Context.Marks, home);
-        IReadOnlyDictionary<string, PriorSession>? lines = null;
-        SupervisorBound bound = async (session, token) =>
-            alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
-        snapshot = await Stages.TimeAsync("supervisor", async () => await SupervisorQuarantine.LookAsync(
-            await SupervisorQuarantine.DecideAsync(undecided, Context.Supervisor, SupervisorSayAsync, takeBack, DateTimeOffset.UtcNow, ct, bound)
-                .ConfigureAwait(false),
-            Context.Supervisor, takeBack, Log, ct).ConfigureAwait(false)).ConfigureAwait(false);
+        foreach (var pass in LookPasses.In(LookPhase.Read)) await pass.RunAsync(round, ct).ConfigureAwait(false);
+
+        // What the passes left in the state, which the stages not yet passes read and the snapshot they go on shaping.
+        var state = round.State;
+        var snapshot = state.Snapshot;
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
         // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
         // answers alone wait on it.
         var lookedAt = snapshot;
         // A record a supervisor's held decision holds is not picked (SUPERVISOR1a-i, §6.3): nothing goes on from it inside the window.
-        await Stages.TimeAsync("alone", () => alone
+        await Stages.TimeAsync("alone", () => state.Alone
             .LookAsync(
                 service,
                 lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values).Where(record => !lookedAt.SupervisorHolds(record)),
@@ -1125,7 +1099,7 @@ public sealed class Driver(
         var overlapLook = snapshot;
         await Stages.TimeAsync("overlaps-told", () => WorkOverlaps.TellAsync(home, overlapLook, async (session, text, key, token) =>
             await service.SayAsync(session, text, ct: token, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false), ct)).ConfigureAwait(false);
-        Context.Harnesses.Look(snapshot.Started, mark);
+        Context.Harnesses.Look(snapshot.Started, state.Mark);
 
         // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
         // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
@@ -1199,7 +1173,7 @@ public sealed class Driver(
         IReadOnlyList<Consideration> plan;
         using (Stages.Begin("plan"))
         {
-            snapshot = snapshot with { Starting = [.. reservedBefore.Union(Context.Runs.Reserved)] };
+            snapshot = snapshot with { Starting = [.. state.ReservedBefore.Union(Context.Runs.Reserved)] };
             plan = Planner.Plan(
                 snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null,
                 roles: Context.Roles);
