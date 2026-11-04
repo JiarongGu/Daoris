@@ -24,4 +24,10 @@ internal enum RunPhase
     /// tree go.
     /// </summary>
     Placed,
+
+    /// <summary>
+    /// Once placed, before the record opens: what the tree's trust and a record the person's words wait on may still hold the start
+    /// for, or move it to a new session. A hold here lets the fresh tree go only where the stage says so.
+    /// </summary>
+    Cleared,
 }

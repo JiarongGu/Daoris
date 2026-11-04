@@ -318,6 +318,9 @@ public sealed class Driver(
 
     void IRunWiring.CountMove(string line, string role, string condition, ActorEffective from, string? to) => CountMove(line, role, condition, from, to);
 
+    bool IRunWiring.HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
+        HandedConnector(adapter, workspace, repository, tool);
+
     AcpMcpServer? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) => Connector(sessionId, scope, proc);
 
     string ILookWiring.Home => home;
@@ -1656,7 +1659,7 @@ public sealed class Driver(
         // The agent, a clean checkout, the account and the access setup, each of which may hold the start before anything is grown,
         // locked or opened.
         using var state = new RunState();
-        var run = new RunRound(start, registry, movedOff, fresh, state);
+        var run = new RunRound(start, registry, untrusted, movedOff, fresh, state);
         foreach (var stage in RunStages.In(RunPhase.Choose))
         {
             if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
@@ -1688,42 +1691,11 @@ public sealed class Driver(
         var (joinedIn, resuming, carryingOn) = (run.State.Tree.JoinedIn, run.State.Tree.Resuming, run.State.Tree.CarryingOn);
         var (answered, handsOn, inSync, oneLook, starting) = (run.State.Tree.Answered, run.State.Tree.HandsOn, run.State.Tree.InSync, run.State.Tree.OneLook, run.State.Starting);
 
-        // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
-        // repository's `permissions.allow` until a person has accepted that path, so a session in an
-        // untrusted tree does the work and then cannot take or close the quest it exists to serve —
-        // measured three times, nine minutes and a real login each. Asked HERE, with the other
-        // pre-spawn holds, because the whole value is not spending that.
-        //
-        // Held rather than failed: nothing is wrong with the quest, and one command fixes it.
-        // Resolved defensively: an unknown adapter name is its own error with its own sentence,
-        // reported where it already was, so this check simply does not run for one.
-        //
-        // 🔴 Only where the connector's allowance would NOT reach the session (D73). The rules Daoris
-        // hands over at spawn are honoured in an untrusted folder on both doors (measured, PERM1), so
-        // a session handed the `connector` default takes and closes its quest whoever trusted what,
-        // and trust then decides only whether the repository's OWN allow-list counts.
-        ISessionAdapter? preflight = null;
-        try { preflight = Context.Adapters.Resolve(agent); } catch (DriverException) { }
-
-        // Asked of the account the session runs as, and again of the walk's pick where a resume's words go to a new record below.
-        StartRun? Untrusted(HarnessSelection chosen)
+        // What may still hold the start before the record: the tree's trust by the harness, and the record the words wait on.
+        foreach (var stage in RunStages.In(RunPhase.Cleared))
         {
-            if (preflight is not { Toolchain.TrustFile: { Length: > 0 } trustFile }
-                || HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
-            {
-                return null;
-            }
-
-            var trustPath = ClaudeTrust.PathFor(trustFile, chosen.ProfileHome, preflight.Toolchain!.ProfileVariable);
-            if (ClaudeTrust.Accepted(trustPath, workTree) != false) return null;
-
-            // Said twice, on purpose: the sentence for a person, the fact for a screen (D73). With no account home its file is
-            // the own sign-in's, which Daoris never writes (POOL1a3, D197 point 3): the screen offers no grant of it.
-            lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id, Own: chosen.ProfileHome is null));
-            return Hold(ClaudeTrust.Refusal(workTree, chosen.ProfileHome is null ? null : chosen.Profile));
+            if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
         }
-
-        if (Untrusted(selection) is { } untrustedHold) return untrustedHold;
 
         // An answer continues its own session (ANSWER1a, D131), and so do words to a session that had ended (MSG1b, D137
         // §2.2): the record they wait on goes on itself where its harness conversation resumes. Otherwise a park ends, and
@@ -1866,7 +1838,7 @@ public sealed class Driver(
                     return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
                 }
 
-                if (!ReferenceEquals(resumed, selection) && Untrusted(selection) is { } walkedUntrusted)
+                if (!ReferenceEquals(resumed, selection) && TrustAsk.Untrusted(this, run, selection) is { } walkedUntrusted)
                 {
                     await fresh.LetGoAsync().ConfigureAwait(false);
                     return walkedUntrusted;

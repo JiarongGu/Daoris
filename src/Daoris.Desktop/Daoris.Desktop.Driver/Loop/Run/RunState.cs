@@ -13,6 +13,7 @@ internal sealed class RunState : IDisposable
 {
     private Slot<TreeLock> _starting;
     private Slot<TreeFound> _tree;
+    private Slot<ISessionAdapter?> _preflight;
     private Slot<string> _agent;
     private Slot<HandedQuest?> _handedQuest;
     private Slot<string?> _stepRole;
@@ -176,6 +177,13 @@ internal sealed class RunState : IDisposable
     {
         get => _workTree.Get(nameof(WorkTree), "tree");
         set => _workTree.Set(value);
+    }
+
+    /// <summary>The adapter the harness trust is asked of, or null where this machine does not know the agent.</summary>
+    public ISessionAdapter? Preflight
+    {
+        get => _preflight.Get(nameof(Preflight), "trust");
+        set => _preflight.Set(value);
     }
 
     /// <summary>The run's workflow binding as the start made it, before its take names a closure graph.</summary>

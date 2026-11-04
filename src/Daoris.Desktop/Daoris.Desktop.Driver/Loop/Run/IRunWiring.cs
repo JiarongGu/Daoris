@@ -61,6 +61,9 @@ internal interface IRunWiring
     /// <summary>A move of a line from one choice to another, counted against its role's bound.</summary>
     void CountMove(string line, string role, string condition, ActorEffective from, string? to);
 
+    /// <summary>Whether the rules a session would be handed let it call the connector's tool unasked, which a harness that takes no rules cannot.</summary>
+    bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool);
+
     /// <summary>The knowledge server a session is offered, located per run; null where this machine has no connector.</summary>
     AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc);
 }
