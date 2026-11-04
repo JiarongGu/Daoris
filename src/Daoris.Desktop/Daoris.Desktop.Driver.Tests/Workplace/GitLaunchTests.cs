@@ -212,7 +212,7 @@ public sealed class GitLaunchTests
         "ActSteps.cs", "AgentStarts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
         "GeneratedWriters.cs", "GitDoors.cs", "GitIdentityActs.cs", "HarnessActions.cs", "HarnessSelection.cs",
         "HeavyStep.cs", "HookProcess.cs", "PieceLauncher.cs", "PluginToolRuns.cs", "PluginToolSetUp.cs", "PluginTrialProcess.cs",
-        "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
+        "GitRuns.cs", "ProcessStarts.cs", "SetupWorld.cs", "ToolQuestions.cs", "TransportRun.cs", "WorkingTree.cs",
     ];
 
     private static List<string> StartProblems(IReadOnlyCollection<string> found) =>
@@ -224,7 +224,7 @@ public sealed class GitLaunchTests
     [Fact]
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
-        // The trees' two: WorkingTree (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
+        // The trees' two: GitRuns (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
         // starts) and GeneratedWriters, a generator's shell (GEN1), which is no git. ActSteps' git is an act's effect step (GITAPP2a), started
         // held in its act's job and counted at the seam as GitRunner.Held. The rest are other seams' starts (a harness, a plugin's tool, the
         // launcher's containment), none of them a git start of the trees'.
@@ -233,7 +233,7 @@ public sealed class GitLaunchTests
         Assert.True(problems.Count == 0, string.Join('\n', problems));
 
         // These two are the seam's shape, a count by design: one call per runner, one launch per runner.
-        var tree = File.ReadAllText(SourceFiles.Driver("WorkingTree.cs"));
+        var tree = File.ReadAllText(SourceFiles.Driver("GitRuns.cs"));
         foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "ReadLaunchedAsync" })
         {
             Assert.Contains($"() => {runner}(", tree, StringComparison.Ordinal);

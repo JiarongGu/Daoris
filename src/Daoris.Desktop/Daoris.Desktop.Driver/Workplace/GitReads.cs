@@ -92,7 +92,7 @@ public sealed record GitCommitDetail(string Commit, IReadOnlyList<string> Parent
     public bool Merge => Parents.Count > 1;
 
     /// <summary>Its changes, as the review reads them (REVIEW3), with the review's bound and the bound's sentence.</summary>
-    public WorkingTree.TreeDiff? Changes { get; init; }
+    public TreeDiff? Changes { get; init; }
 }
 
 /// <summary>One commit in a file's history, and the path the file had there (D147 §2.5).</summary>
@@ -165,7 +165,7 @@ public sealed record GitCompare(string Left, string Right, bool Everything)
     public bool More { get; init; }
 
     /// <summary>The changes, as the review reads them (REVIEW3), with its bound.</summary>
-    public WorkingTree.TreeDiff? Changes { get; init; }
+    public TreeDiff? Changes { get; init; }
 }
 
 /// <summary>The branches whose history holds a commit (D147 §2.4), local and origin's, by their whole names.</summary>
@@ -558,8 +558,8 @@ internal static class GitReadWeight
         GitGraphPage page => Object + Many(page.Tips) + Many(page.Commits),
         GitCommitDetail detail => Object + Of(detail.Commit) + Many(detail.Parents) + Of(detail.Subject) + Of(detail.Message) + Of(detail.Author)
                                   + Of(detail.AuthorEmail) + Of(detail.Committer) + Of(detail.CommitterEmail) + Of(detail.Changes),
-        WorkingTree.TreeDiff diff => Object + Of(diff.Base) + Of(diff.Truncated) + Many(diff.Files),
-        WorkingTree.DiffFile file => Object + Of(file.Path) + Of(file.Status) + Of(file.Patch),
+        TreeDiff diff => Object + Of(diff.Base) + Of(diff.Truncated) + Many(diff.Files),
+        DiffFile file => Object + Of(file.Path) + Of(file.Status) + Of(file.Patch),
         GitFileHistory history => Object + Of(history.Commit) + Of(history.Path) + Many(history.Changes),
         GitFileChange change => Object + Of(change.Commit) + Of(change.Status) + Of(change.Path) + Of(change.From),
         GitBlame blame => Object + Of(blame.Commit) + Of(blame.Path) + Many(blame.Runs) + Many(blame.Commits.Values),

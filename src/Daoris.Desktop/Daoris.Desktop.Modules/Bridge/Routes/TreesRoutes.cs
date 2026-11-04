@@ -138,7 +138,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
-        string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null,
+        string session, TreeDiff? diff, string source, LandedReview? landed, bool treeGone, TreeDiff? uncommitted = null,
         LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
     {
         Session = session,

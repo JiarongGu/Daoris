@@ -127,7 +127,7 @@ public sealed class TreeDiffSplitTests
         Assert.Equal(Before, diff!.Base);
         Assert.Null(diff.Truncated);
         Assert.Equal(
-            new WorkingTree.DiffFile[]
+            new DiffFile[]
             {
                 new("README.md", "modified", 1, 1, Patches.Readme),
                 new("added.txt", "added", 1, 0, Patches.Added),
@@ -164,7 +164,7 @@ public sealed class TreeDiffSplitTests
 
         var diff = await WorkingTree.DiffAsync(Root, Before, new FakeGit(answer).Read, CancellationToken.None);
 
-        Assert.Equal(new WorkingTree.DiffFile(path, "added", 1, 0, patch), Assert.Single(diff!.Files));
+        Assert.Equal(new DiffFile(path, "added", 1, 0, patch), Assert.Single(diff!.Files));
     }
 
     /// <summary>git hands its answer over in pieces of whatever size the pipe gives; a piece may end anywhere.</summary>

@@ -122,9 +122,9 @@ internal static class ReviewChoices
 /// patch budget spent by W's patches and each read patch, a file past it listed with no patch and counted in the truncation's words.
 /// Today's loop and the graph's window both fold through it.
 /// </summary>
-internal sealed class UntrackedFold(WorkingTree.TreeDiff tracked)
+internal sealed class UntrackedFold(TreeDiff tracked)
 {
-    private readonly List<WorkingTree.DiffFile> _files = [.. tracked.Files];
+    private readonly List<DiffFile> _files = [.. tracked.Files];
     private int _spent = tracked.Files.Sum(file => file.Patch?.Length ?? 0);
     private int _dropped;
 
@@ -135,7 +135,7 @@ internal sealed class UntrackedFold(WorkingTree.TreeDiff tracked)
     internal void Drop(string path)
     {
         _dropped++;
-        _files.Add(new WorkingTree.DiffFile(path, "added", null, null, null));
+        _files.Add(new DiffFile(path, "added", null, null, null));
     }
 
     /// <summary>A file read: its patch spends the budget.</summary>
@@ -143,15 +143,15 @@ internal sealed class UntrackedFold(WorkingTree.TreeDiff tracked)
     {
         _spent += patch?.Length ?? 0;
         // The word the committed list uses for an addition, so the page renders both alike.
-        _files.Add(new WorkingTree.DiffFile(path, "added", added, added is null ? null : 0, patch));
+        _files.Add(new DiffFile(path, "added", added, added is null ? null : 0, patch));
     }
 
     /// <summary>The uncommitted answer: the files in order, and the truncation in today's words.</summary>
-    internal WorkingTree.TreeDiff End(string rest)
+    internal TreeDiff End(string rest)
     {
         var truncated = tracked.Truncated ?? (_dropped == 0
             ? null
             : $"{_dropped} more untracked file{(_dropped == 1 ? "" : "s")}; their patches are not shown here. {rest}");
-        return new WorkingTree.TreeDiff(_files, truncated, "HEAD");
+        return new TreeDiff(_files, truncated, "HEAD");
     }
 }

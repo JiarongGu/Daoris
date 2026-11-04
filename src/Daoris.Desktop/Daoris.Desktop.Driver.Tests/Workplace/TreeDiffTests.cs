@@ -309,7 +309,7 @@ public sealed class TreeDiffTests : IDisposable
 
         Assert.NotNull(diff);
         Assert.Equal(
-            new WorkingTree.DiffFile[]
+            new DiffFile[]
             {
                 new("README.md", "modified", 1, 1,
                     // The blobs' ids are their contents' (`# engine`, `# changed`, `b`, each with its newline).
@@ -323,8 +323,8 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>A review read through a seam that counts each git start, around real git.</summary>
-    private static async Task<(WorkingTree.TreeDiff? Diff, int Starts)> CountedAsync(
-        Func<WorkingTree.GitRead, Task<WorkingTree.TreeDiff?>> review)
+    private static async Task<(TreeDiff? Diff, int Starts)> CountedAsync(
+        Func<WorkingTree.GitRead, Task<TreeDiff?>> review)
     {
         var starts = 0;
         var diff = await review((root, arguments, take, ct) =>

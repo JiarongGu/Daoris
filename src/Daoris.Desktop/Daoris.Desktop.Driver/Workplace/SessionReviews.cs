@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <param name="TreeBranch">The branch the tree's HEAD names (REVIEWBASE4); null where detached or not read.</param>
 /// <param name="Offer">What the driver would land of the tree (ACCEPTFOOT1), where it offers anything.</param>
 public sealed record SessionReview(
-    WorkingTree.TreeDiff? Diff, bool FromBranch, LandedReview? Landed, bool TreeGone, WorkingTree.TreeDiff? Uncommitted = null,
+    TreeDiff? Diff, bool FromBranch, LandedReview? Landed, bool TreeGone, TreeDiff? Uncommitted = null,
     LineBehind? Behind = null, string? TreeBranch = null, LandOffer? Offer = null);
 
 /// <summary>
@@ -185,7 +185,7 @@ public static class SessionReviews
         if (dirty is { Files.Count: > 0 })
         {
             return new(
-                new WorkingTree.TreeDiff([], null, ""), FromBranch: false, null, TreeGone: false, dirty,
+                new TreeDiff([], null, ""), FromBranch: false, null, TreeGone: false, dirty,
                 TreeBranch: await WorkingTree.BranchAsync(tree!, ct).ConfigureAwait(false));
         }
 
