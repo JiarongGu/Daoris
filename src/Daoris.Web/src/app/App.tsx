@@ -687,7 +687,6 @@ export function App() {
     // is then chosen now, never a remembered choice.
     if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.agentsMode) agentsModes.onMode(plan.agentsMode);
-    if (plan.roleSection) agentsModes.onSection(plan.roleSection);
     // SETUPUX1h: a door to a place names the section and the row it opens at.
     if (plan.place) agentsModes.onPlaceAt(plan.place, plan.placeAt ?? {});
     // Ask Daoris's place card (AGENTSPLACE1k): the place's *Set up…* opens on the ask, once the Agents place has the place chosen.

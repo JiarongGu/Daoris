@@ -3,7 +3,7 @@ import i18n from '../../locales/i18n';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
 import {
-  buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, sectionOf, type StructureFilters, usedByAgent, workflowReadOf,
+  buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, type StructureFilters, usedByAgent, workflowReadOf,
 } from './roleStructure';
 
 // COMPANYVIEW1d (the company-view design §3.3 to §3.5, §4): the rows of Work, Accounts and By repository, built once over the driver's
@@ -334,8 +334,6 @@ describe('the diagram', () => {
     expect(nodeOfRow(structure, 'place:aurora/engine')).toBe('place:aurora/engine');
     expect(nodeOfRow(structure, 'role:chat')).toBe('role:chat');
     expect(nodeOfRow(structure, 'place:default')).toBeNull();
-    expect(['place:machine', 'place:aurora', 'place:aurora/engine', 'role:build', 'appointed:steward', 'agent:codex'].map(sectionOf))
-      .toEqual(['work', 'repository', 'repository', 'working', 'appointed', 'accounts']);
   });
 });
 

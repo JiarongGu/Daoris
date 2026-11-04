@@ -9,7 +9,6 @@
   "agents.list.waiting_other": "{{count}} 个账户等你处理",
   "agents.list.absent": "未安装",
   "agents.roles.later": "稍后提供。",
-  "agents.roles.laterOf": "这一部分还没有做好。",
   "agents.roles.appointed.machine": "本机",
   "agents.roles.appointed.workspaces": "工作区",
   "agents.roles.appointed.repositories": "仓库",
