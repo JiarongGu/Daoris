@@ -1,11 +1,11 @@
-using System.Globalization;
 using System.Text.Json;
 
 namespace Daoris.Driver;
 
 /// <summary>
 /// The person's standing choices, machine-local by nature (D46 §6/§7): which repositories THIS machine
-/// may drive, what is held, how wide the loop runs, and which adapter spawns.
+/// may drive, what is held, how wide the loop runs, and which adapter spawns. Read by <see cref="DriverConfigReader"/>, written by
+/// <see cref="DriverConfigWriter"/>, edited onto the file as it stands by <see cref="DriverConfigSaving"/>.
 /// </summary>
 /// <param name="Drivable">Repositories the person opted in. Empty means the driver drives nothing.</param>
 /// <param name="Holds">
@@ -115,20 +115,7 @@ public sealed record DriverConfig(
 
     /// <summary>Release this quest from the person's stop of this session: one release per quest, the later replacing the earlier.</summary>
     /// <exception cref="DriverException">A blank quest or session: a release names the stop it releases.</exception>
-    public DriverConfig WithReleased(string questId, string session)
-    {
-        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(session))
-        {
-            throw new DriverException("a release names the quest and the session whose stop it releases.");
-        }
-
-        var quest = questId.Trim().TrimStart('#');
-        var next = new Dictionary<string, string>(Released, StringComparer.OrdinalIgnoreCase);
-        // The quest's spelling first written, when it has one in another case: one entry, never two.
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
-        next[key] = session.Trim();
-        return this with { Released = next };
-    }
+    public DriverConfig WithReleased(string questId, string session) => DriverConfigEdits.Released(this, questId, session);
 
     /// <summary>
     /// The transient holds the person released with <i>Try again</i>, each quest
@@ -152,19 +139,8 @@ public sealed record DriverConfig(
 
     /// <summary>Release this quest's transient hold of this session's end (<i>Try again</i>): one per quest, the later replacing the earlier.</summary>
     /// <exception cref="DriverException">A blank quest or session: a release names the end it releases.</exception>
-    public DriverConfig WithTransientReleased(string questId, string session, DateTimeOffset ended)
-    {
-        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(session))
-        {
-            throw new DriverException("a transient release names the quest and the session whose end it releases.");
-        }
-
-        var quest = questId.Trim().TrimStart('#');
-        var next = new Dictionary<string, TransientRelease>(TransientReleased, StringComparer.OrdinalIgnoreCase);
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
-        next[key] = new TransientRelease(session.Trim(), ended.ToUniversalTime());
-        return this with { TransientReleased = next };
-    }
+    public DriverConfig WithTransientReleased(string questId, string session, DateTimeOffset ended) =>
+        DriverConfigEdits.TransientReleased(this, questId, session, ended);
 
     /// <summary>
     /// A role's releases: each quest's release a role's act wrote, apart from the owner's
@@ -178,35 +154,14 @@ public sealed record DriverConfig(
         new Dictionary<string, RoleRelease>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>This quest's role release, or null where none is written.</summary>
-    public RoleRelease? RoleReleaseFor(string questId) => RoleReleases.GetValueOrDefault(questId.Trim().TrimStart('#'));
+    public RoleRelease? RoleReleaseFor(string questId) => RoleReleases.GetValueOrDefault(DriverConfigEdits.Quest(questId));
 
     /// <summary>A role's release of this quest written, one per quest, the later replacing the earlier.</summary>
     /// <exception cref="DriverException">A blank quest, session or act: a role's release names what it releases and the act that made it.</exception>
-    public DriverConfig WithRoleReleased(string questId, RoleRelease release)
-    {
-        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(release.Session) || string.IsNullOrWhiteSpace(release.Act))
-        {
-            throw new DriverException("a role's release names the quest, the session whose stop it releases and the act that made it.");
-        }
-
-        var quest = questId.Trim().TrimStart('#');
-        var next = new Dictionary<string, RoleRelease>(RoleReleases, StringComparer.OrdinalIgnoreCase);
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
-        next[key] = release with { Session = release.Session.Trim() };
-        return this with { RoleReleases = next };
-    }
+    public DriverConfig WithRoleReleased(string questId, RoleRelease release) => DriverConfigEdits.RoleReleased(this, questId, release);
 
     /// <summary>This quest's role release withdrawn (a cancel, a consumer's take, a restart's first look); unchanged where it has none.</summary>
-    public DriverConfig WithoutRoleRelease(string questId)
-    {
-        var quest = questId.Trim().TrimStart('#');
-        if (!RoleReleases.Keys.Any(key => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase))) return this;
-        return this with
-        {
-            RoleReleases = RoleReleases.Where(pair => !string.Equals(pair.Key, quest, StringComparison.OrdinalIgnoreCase))
-                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-        };
-    }
+    public DriverConfig WithoutRoleRelease(string questId) => DriverConfigEdits.WithoutRoleRelease(this, questId);
 
     /// <summary>
     /// The set-up quests admitted alone (AGENTSPLACE1b, the Agents-place design §4), each against the repository it was published to: a
@@ -219,49 +174,19 @@ public sealed record DriverConfig(
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The repository this quest is admitted alone in, or null where it is admitted in none.</summary>
-    public string? AdmittedIn(string questId) => Admitted.TryGetValue(questId.Trim().TrimStart('#'), out var repository) ? repository : null;
+    public string? AdmittedIn(string questId) => Admitted.TryGetValue(DriverConfigEdits.Quest(questId), out var repository) ? repository : null;
 
     /// <summary>A set-up quest admitted alone in <paramref name="repository"/>, one per quest, the later replacing the earlier.</summary>
     /// <exception cref="DriverException">A blank quest or repository: an admission names the quest and where it starts.</exception>
-    public DriverConfig WithAdmitted(string questId, string repository)
-    {
-        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(repository))
-        {
-            throw new DriverException("an admission names the set-up quest and the repository it starts in.");
-        }
-
-        var quest = questId.Trim().TrimStart('#');
-        var next = new Dictionary<string, string>(Admitted, StringComparer.OrdinalIgnoreCase);
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
-        next[key] = repository.Trim();
-        return this with { Admitted = next };
-    }
+    public DriverConfig WithAdmitted(string questId, string repository) => DriverConfigEdits.Admitted(this, questId, repository);
 
     /// <summary>
     /// This quest's releases, its restart mark and its admission dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
     /// planned again (D46 §3), so none says anything any more. Unchanged where it has none. A quest-keyed entry added to this file joins
-    /// here and <c>HistoryHome</c>'s purge of quests no store holds, and one that starts work joins <c>InstallUpdate.Drained</c>.
+    /// <see cref="DriverConfigEdits.WithoutQuest"/> and <c>HistoryHome</c>'s purge of quests no store holds, and one that starts work joins
+    /// <c>InstallUpdate.Drained</c>.
     /// </summary>
-    public DriverConfig WithoutQuest(string questId)
-    {
-        var quest = questId.Trim().TrimStart('#');
-        bool Same(string key) => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase);
-        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same) && !RoleReleases.Keys.Any(Same)
-            && !Admitted.Keys.Any(Same))
-        {
-            return this;
-        }
-
-        return this with
-        {
-            Released = Released.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-            Forgiven = Forgiven.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-            TransientReleased = TransientReleased.Where(pair => !Same(pair.Key))
-                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-            RoleReleases = RoleReleases.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-            Admitted = Admitted.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
-        };
-    }
+    public DriverConfig WithoutQuest(string questId) => DriverConfigEdits.WithoutQuest(this, questId);
 
     /// <summary>
     /// The asks the person paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause
@@ -277,34 +202,19 @@ public sealed record DriverConfig(
         new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>This ask's pause, or null where it is not paused here: the id as a person writes it, matched in any case.</summary>
-    public WorkPause? PausedAsk(string ask) => PausedAsks.GetValueOrDefault(Id(ask));
+    public WorkPause? PausedAsk(string ask) => PausedAsks.GetValueOrDefault(DriverConfigEdits.PauseId(ask));
 
     /// <summary>This quest's own pause, or null: a quest in a paused ask's work is that ask's pause, not one of its own.</summary>
-    public WorkPause? PausedQuest(string quest) => PausedQuests.GetValueOrDefault(Id(quest));
+    public WorkPause? PausedQuest(string quest) => PausedQuests.GetValueOrDefault(DriverConfigEdits.PauseId(quest));
 
     /// <summary>Pause this ask, or with null resume it: one pause per ask, the later replacing the earlier under the spelling first written.</summary>
     /// <exception cref="DriverException">A blank id: a pause names what it pauses.</exception>
-    public DriverConfig WithPausedAsk(string ask, WorkPause? pause) => this with { PausedAsks = WithPause(PausedAsks, ask, pause) };
+    public DriverConfig WithPausedAsk(string ask, WorkPause? pause) => this with { PausedAsks = DriverConfigEdits.WithPause(PausedAsks, ask, pause) };
 
     /// <summary>Pause this quest on its own, or with null resume it.</summary>
     /// <exception cref="DriverException">A blank id: a pause names what it pauses.</exception>
-    public DriverConfig WithPausedQuest(string quest, WorkPause? pause) => this with { PausedQuests = WithPause(PausedQuests, quest, pause) };
-
-    private static string Id(string id) => id.Trim().TrimStart('#').Trim();
-
-    private static IReadOnlyDictionary<string, WorkPause> WithPause(
-        IReadOnlyDictionary<string, WorkPause> map, string id, WorkPause? pause)
-    {
-        var named = Id(id ?? "");
-        if (named.Length == 0) throw new DriverException("a pause names the ask or the quest it pauses.");
-
-        var next = new Dictionary<string, WorkPause>(map, StringComparer.OrdinalIgnoreCase);
-        // The id's spelling first written, when it has one in another case: one entry, never two.
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
-        if (pause is null) next.Remove(key);
-        else next[key] = pause;
-        return next;
-    }
+    public DriverConfig WithPausedQuest(string quest, WorkPause? pause) =>
+        this with { PausedQuests = DriverConfigEdits.WithPause(PausedQuests, quest, pause) };
 
     /// <summary>
     /// What the person has told this machine holds for every session in a repository (KNOWUSE1b, D135 §3): a standing answer
@@ -328,20 +238,7 @@ public sealed record DriverConfig(
     /// later replacing the earlier under the spelling first written.
     /// </summary>
     /// <exception cref="DriverException">No repository, blank words, or words past <see cref="StandingLimit"/>.</exception>
-    public DriverConfig WithStanding(string repository, string? says, DateTimeOffset at)
-    {
-        var named = repository?.Trim() ?? "";
-        if (named.Length == 0) throw new DriverException("a standing answer names the repository it holds for.");
-        var words = says?.Trim();
-        if (says is not null && (words!.Length == 0 || words.Length > StandingLimit)) throw new DriverException(StandingRefusal);
-
-        var next = new Dictionary<string, StandingAnswer>(Standing, StringComparer.OrdinalIgnoreCase);
-        // The repository's spelling first written, when it has one in another case: one entry, never two.
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
-        if (words is null) next.Remove(key);
-        else next[key] = new StandingAnswer(words, ToTheSecond(at));
-        return this with { Standing = next };
-    }
+    public DriverConfig WithStanding(string repository, string? says, DateTimeOffset at) => DriverConfigEdits.Standing(this, repository, says, at);
 
     /// <summary>
     /// The language a repository's sessions are asked to write to the person in (LANG1c, D142 point 7), by repository, as a
@@ -358,27 +255,12 @@ public sealed record DriverConfig(
     /// <summary>Set a repository's session language, or clear it with null to take its workspace's, else none.</summary>
     /// <exception cref="DriverException">No repository, or a code the table does not hold.</exception>
     public DriverConfig WithLanguage(string repository, string? code) =>
-        this with { Languages = WithLanguageIn(Languages, repository, code, "repository") };
+        this with { Languages = DriverConfigEdits.WithLanguageIn(Languages, repository, code, "repository") };
 
     /// <summary>Set a workspace's session language, or clear it with null.</summary>
     /// <exception cref="DriverException">No workspace, or a code the table does not hold.</exception>
     public DriverConfig WithWorkspaceLanguage(string workspace, string? code) =>
-        this with { WorkspaceLanguages = WithLanguageIn(WorkspaceLanguages, workspace, code, "workspace") };
-
-    private static IReadOnlyDictionary<string, string> WithLanguageIn(
-        IReadOnlyDictionary<string, string> map, string name, string? code, string what)
-    {
-        var named = name?.Trim() ?? "";
-        if (named.Length == 0) throw new DriverException($"a session language is set for a {what} — name it.");
-        var language = code is null ? null : SessionLanguages.Code(code) ?? throw new DriverException(SessionLanguages.Refusal(code));
-
-        var next = new Dictionary<string, string>(map, StringComparer.OrdinalIgnoreCase);
-        // The name's spelling first written, when it has one in another case: one entry, never two.
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
-        if (language is null) next.Remove(key);
-        else next[key] = language;
-        return next;
-    }
+        this with { WorkspaceLanguages = DriverConfigEdits.WithLanguageIn(WorkspaceLanguages, workspace, code, "workspace") };
 
     /// <summary>
     /// Where each repository's work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2, the review-environment
@@ -504,24 +386,11 @@ public sealed record DriverConfig(
     /// <summary>Set a repository's line policy, or clear it with null.</summary>
     /// <exception cref="DriverException">A policy that holds a value it does not take.</exception>
     public DriverConfig WithLinePolicy(string repository, LandingIntegrate? policy) =>
-        this with { LinePolicies = Policy(LinePolicies, repository, policy) };
+        this with { LinePolicies = DriverConfigEdits.Policy(LinePolicies, repository, policy) };
 
     /// <summary>Set a workspace's line policy, or clear it with null.</summary>
     public DriverConfig WithWorkspaceLinePolicy(string workspace, LandingIntegrate? policy) =>
-        this with { WorkspaceLinePolicies = Policy(WorkspaceLinePolicies, workspace, policy) };
-
-    private static IReadOnlyDictionary<string, LandingIntegrate> Policy(IReadOnlyDictionary<string, LandingIntegrate> map, string key, LandingIntegrate? policy)
-    {
-        var next = new Dictionary<string, LandingIntegrate>(map, StringComparer.OrdinalIgnoreCase);
-        if (policy is null) next.Remove(key.Trim());
-        else
-        {
-            if (LandingKey.PolicyProblem(policy, wholeSet: true) is { } problem) throw new DriverException(problem);
-            next[key.Trim()] = policy;
-        }
-
-        return next;
-    }
+        this with { WorkspaceLinePolicies = DriverConfigEdits.Policy(WorkspaceLinePolicies, workspace, policy) };
 
     /// <summary>The line policy that reaches <paramref name="repository"/>: its own, else its workspace's, else null.</summary>
     public LandingIntegrate? LinePolicyOf(string repository, string? workspace) =>
@@ -542,16 +411,7 @@ public sealed record DriverConfig(
     /// existing spelling kept. The person's <i>Accept the gates</i> is the door that calls it.
     /// </summary>
     /// <exception cref="DriverException">No repository, or a value that is no blob id and not <c>none</c>.</exception>
-    public DriverConfig WithIntegrationGates(string repository, string? blob)
-    {
-        var named = repository.Trim();
-        if (named.Length == 0) throw new DriverException("an integration's acceptance names its repository.");
-        if (blob is not null && !IntegrationGatesKey.IsAcceptance(blob)) throw new DriverException(IntegrationGatesKey.Problem);
-        var next = new Dictionary<string, string>(IntegrationGates, StringComparer.OrdinalIgnoreCase);
-        if (blob is null) next.Remove(named);
-        else next[named] = blob;
-        return this with { IntegrationGates = next };
-    }
+    public DriverConfig WithIntegrationGates(string repository, string? blob) => DriverConfigEdits.IntegrationGates(this, repository, blob);
 
     /// <summary>
     /// Each repository's session access setup (AUTONOMY1a, D184 points 1-3), by repository: full access, or the pauses it names. Each
@@ -591,13 +451,6 @@ public sealed record DriverConfig(
     /// Read by the one effective policy (<see cref="KeepPolicy.Of"/>); edited only through <see cref="KeepRules.Apply"/>.
     /// </summary>
     public KeepChoices Keep { get; init; } = KeepChoices.None;
-
-    /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
-    private static DateTimeOffset ToTheSecond(DateTimeOffset at)
-    {
-        var utc = at.ToUniversalTime();
-        return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, utc.Second, TimeSpan.Zero);
-    }
 
     /// <summary>
     /// The harness an ask's INTAKE session runs on (D65 §1b) — or null, and no intake runs.
@@ -691,12 +544,11 @@ public sealed record DriverConfig(
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Set a repository's line, or clear it with null to take the workspace's or the guess again.</summary>
-    public DriverConfig WithLine(string repository, string? branch) => this with { Lines = Set(Lines, repository, branch) };
+    public DriverConfig WithLine(string repository, string? branch) => this with { Lines = DriverConfigEdits.Set(Lines, repository, branch) };
 
     /// <summary>Set a workspace's line, or clear it with null.</summary>
     public DriverConfig WithWorkspaceLine(string workspace, string? branch) =>
-        this with { WorkspaceLines = Set(WorkspaceLines, workspace, branch) };
-
+        this with { WorkspaceLines = DriverConfigEdits.Set(WorkspaceLines, workspace, branch) };
 
     /// <summary>
     /// Whether a repository's checkout may be read by agents outside it (READ1, D107), as the person set
@@ -726,7 +578,7 @@ public sealed record DriverConfig(
 
     /// <summary>Turn the switch for a repository on, or off by taking its entry out.</summary>
     public DriverConfig WithCheckoutWrites(string repository, bool allow) =>
-        this with { CheckoutWrites = SetFlag(CheckoutWrites, repository, allow ? true : null) };
+        this with { CheckoutWrites = DriverConfigEdits.SetFlag(CheckoutWrites, repository, allow ? true : null) };
 
     /// <summary>The read side of <see cref="WithCheckoutWrites"/>.</summary>
     public bool MayChangeCheckout(string repository) =>
@@ -734,51 +586,17 @@ public sealed record DriverConfig(
 
     /// <summary>Set whether a repository's checkout is read across, or clear it with null to take its workspace's.</summary>
     public DriverConfig WithReadAcross(string repository, bool? read) =>
-        this with { ReadAcross = SetFlag(ReadAcross, repository, read) };
+        this with { ReadAcross = DriverConfigEdits.SetFlag(ReadAcross, repository, read) };
 
     /// <summary>Set a workspace's reading across, or clear it with null to take the default, on.</summary>
     public DriverConfig WithWorkspaceReadAcross(string workspace, bool? read) =>
-        this with { WorkspaceReadAcross = SetFlag(WorkspaceReadAcross, workspace, read) };
+        this with { WorkspaceReadAcross = DriverConfigEdits.SetFlag(WorkspaceReadAcross, workspace, read) };
 
     /// <summary>
     /// Declare that <paramref name="repository"/>'s sessions may write into <paramref name="to"/>, or take
     /// that back. A repository never names itself: its own tree is already its sessions'.
     /// </summary>
-    public DriverConfig WithWriteAcross(string repository, string to, bool allow)
-    {
-        if (AcrossDeclarations.Problem(repository, to) is { } problem) throw new DriverException(problem);
-
-        bool Same(string name) => string.Equals(name, to.Trim(), StringComparison.OrdinalIgnoreCase);
-        var next = new Dictionary<string, IReadOnlyList<string>>(WriteAcross, StringComparer.OrdinalIgnoreCase);
-        var held = next.GetValueOrDefault(repository.Trim()) ?? [];
-        IReadOnlyList<string> kept = allow
-            ? (held.Any(Same) ? held : [.. held, to.Trim()])
-            : [.. held.Where(name => !Same(name))];
-
-        // The repository's existing spelling, when it has one in another case: one entry, never two.
-        var key = next.Keys.FirstOrDefault(k => string.Equals(k, repository.Trim(), StringComparison.OrdinalIgnoreCase)) ?? repository.Trim();
-        next.Remove(key);
-        if (kept.Count > 0) next[key] = kept;
-        return this with { WriteAcross = next };
-    }
-
-    private static IReadOnlyDictionary<string, bool> SetFlag(IReadOnlyDictionary<string, bool> map, string key, bool? value)
-    {
-        var next = new Dictionary<string, bool>(map, StringComparer.OrdinalIgnoreCase);
-        if (value is { } set) next[key.Trim()] = set;
-        else next.Remove(key.Trim());
-        return next;
-    }
-
-    private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
-    {
-        var next = new Dictionary<string, string>(map, StringComparer.OrdinalIgnoreCase);
-        if (branch is null) next.Remove(key);
-        else next[key] = BranchName.IsValid(branch)
-            ? branch
-            : throw new DriverException($"`{branch}` is not a branch name git would take.");
-        return next;
-    }
+    public DriverConfig WithWriteAcross(string repository, string to, bool allow) => DriverConfigEdits.WriteAcross(this, repository, to, allow);
 
     /// <summary>The file's name, as a sentence names the file that keeps something (CACHECLEAR1's reasons): never a path to read.</summary>
     public static string FileName => Path.GetFileName(HomeEntry.DriverConfig.New);
@@ -839,7 +657,7 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// The staffing the file held where its five fields were filled from the store (<see cref="RoleStaffingPort.Fill"/>), else null.
-    /// <see cref="Written"/> gives the staffing's four paths as this, so a save of any other key edits none of them and keeps them as found
+    /// <see cref="DriverConfigWriter"/> gives the staffing's four paths as this, so a save of any other key edits none of them and keeps them as found
     /// (FOUNDATION1w-s part 3); they are written through the file step alone.
     /// </summary>
     internal FileStaffing? AsFile { get; init; }
@@ -905,25 +723,9 @@ public sealed record DriverConfig(
     public static readonly IReadOnlyList<string> Sets = ["drivable", "holds", "trees", "writeAcross.*"];
 
     /// <summary>
-    /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
-    /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
+    /// Write the choices back, atomically, with the edit made onto the file as it stands and under its lock
+    /// (<see cref="DriverConfigSaving.Save"/>).
     /// </summary>
-    /// <remarks>
-    /// 🔴 The edit (what changed between <see cref="Source"/> as read and these choices) is made onto the file read again here, under the
-    /// same keep rules (FABRIC-GRAPH1's re-check, finding 1): written over <see cref="Source"/>, a change another writer made in between was
-    /// lost, and a file that had since stopped reading was overwritten. A file that does not read now, or holds a key twice in one object,
-    /// is refused and left as it is; one that is gone is written from nothing. The edit touches only the key paths it changed (the second
-    /// re-check, finding 1, <see cref="JsonKeeping"/>): an object taken out since is made again with only the edit's keys, and one that is
-    /// no longer an object refuses it. A config built in memory is written whole, and one parsed from a text (<see cref="Parse"/>) or read
-    /// from another file over that text (<see cref="ToJson"/>).
-    /// <para>🔴 The re-read and the rename are made holding the file's lock (CONFIGLOCK1, D173's CONFIG1 note; <see cref="KeepLock"/>),
-    /// which the CLI's writer takes too: with none, another writer's change landing between them was lost.</para>
-    /// <para>🔴 <b>The rename is fenced</b>: the lock is read again just before it, and the
-    /// rename is made only while it still says this save's text. A lock a minute old is taken as stale by any other writer, so a save paused
-    /// past that minute had its lock taken and its rename went over that writer's; now it is refused with nothing written, for every key, and
-    /// the next read of the file finds what the other writer left. A writer that took the lock after the read and finished before the rename
-    /// is still renamed over, and an older build's save renames with no look at its lock at all: stated bounds, not closed.</para>
-    /// </remarks>
     /// <exception cref="DriverConfigUnreadableException">
     /// The file there now does not read, holds a key twice, or holds no object where this edit changes something inside one; nothing was
     /// written.
@@ -934,53 +736,7 @@ public sealed record DriverConfig(
     /// </exception>
     public void Save(string path) => Save(path, null);
 
-    internal void Save(string path, KeepSeams? seams)
-    {
-        var file = Path.GetFullPath(path);
-        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        using var held = KeepLock.Take(file, within: null, seams?.Clock);
-        var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        string text;
-        try
-        {
-            text = Source is not null && string.Equals(SourceFile, file, same) ? JsonKeeping.Kept(Current(path), Understood(), Written(), Sets) : ToJson();
-        }
-        catch (JsonEditRefusedException refused)
-        {
-            // The second re-check's finding 1: another writer made a value this edit changes something inside no longer an object.
-            throw new DriverConfigUnreadableException(path, $"{path} has changed under this edit: {refused.Message}, so this edit was not written. "
-                + DriverConfigUnreadableException.Remedy);
-        }
-
-        held.Write(path, text, seams);
-    }
-
-    /// <summary>The file at <paramref name="path"/> as it stands, for an edit to be written over; <c>{}</c> where it is gone.</summary>
-    private static string Current(string path)
-    {
-        DriverConfig now;
-        try
-        {
-            now = Load(path);
-        }
-        catch (DriverConfigUnreadableException error)
-        {
-            throw new DriverConfigUnreadableException(
-                error.Path, $"{error.Message} This edit was not written: a file that does not read is never overwritten.", error.Line, error.Byte);
-        }
-
-        if (now.Source is not { } text) return "{}\n";
-        if (JsonKeeping.Twice(text) is { } key)
-        {
-            throw new DriverConfigUnreadableException(path, $"{path} holds the key `{key}` twice in one object, so an edit cannot tell which it "
-                + $"changes; this edit was not written. {DriverConfigUnreadableException.Remedy}");
-        }
-
-        return text;
-    }
-
-    /// <summary>The choices as their reader understood <see cref="Source"/>, written: what an edit is measured from.</summary>
-    private string Understood() => (Parse(Source!) with { Source = null }).Written();
+    internal void Save(string path, KeepSeams? seams) => DriverConfigSaving.Save(this, path, seams);
 
     /// <summary>
     /// The file's text: the choices written over the text they were read from (<see cref="Source"/>), so every key this build does not own
@@ -988,666 +744,35 @@ public sealed record DriverConfig(
     /// read and written with no edit, the same bytes. A config built in memory is written whole. <see cref="Save"/> writes the edit over the
     /// file as it stands instead.
     /// </summary>
-    public string ToJson() => Source is null ? Written() : JsonKeeping.Kept(Source, Understood(), Written(), Sets);
-
-    /// <summary>The choices' own shape, written by hand for the same AOT reason it is read by hand.</summary>
-    private string Written()
-    {
-        return JsonFile.Serialize(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("drivable");
-            foreach (var name in Drivable) writer.WriteStringValue(name);
-            writer.WriteEndArray();
-            writer.WriteStartArray("holds");
-            foreach (var name in Holds) writer.WriteStringValue(name);
-            writer.WriteEndArray();
-            writer.WriteStartArray("trees");
-            foreach (var name in Trees) writer.WriteStringValue(name);
-            writer.WriteEndArray();
-            writer.WriteNumber("cap", Cap);
-            // The staffing's four paths as the file held them where the store filled the record (AsFile).
-            writer.WriteString("adapter", AsFile?.Adapter ?? Adapter);
-            // Written only when named: absent IS off, and the CLI twin writes it the same way.
-            if ((AsFile is null ? IntakeAdapter : AsFile.IntakeAdapter) is { } intakeKey) writer.WriteString("intakeAdapter", intakeKey);
-            if ((AsFile is null ? HelperAdapter : AsFile.HelperAdapter) is { } helperKey) writer.WriteString("helperAdapter", helperKey);
-            // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
-            ActorKey.Write(writer, AsFile?.Actors ?? Actors);
-            // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
-            if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
-            writer.WriteBoolean("notify", Notify);
-            writer.WriteNumber("pollSeconds", PollSeconds);
-            // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
-            if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
-            writer.WriteStartObject("forgiven");
-            foreach (var (quest, mark) in Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))
-            {
-                writer.WriteNumber(quest, mark);
-            }
-
-            writer.WriteEndObject();
-            // Written only when set (SESSUX1b), as the CLI writes it: absent is no release.
-            WriteMap(writer, "released", Released);
-            // Written only when set (AGENTERRORS1a2): absent is no transient release.
-            WriteTransientReleases(writer, TransientReleased);
-            WriteRoleReleases(writer, RoleReleases);
-            // Written only when set (AGENTSPLACE1b): absent is no set-up admitted alone.
-            WriteMap(writer, "admitted", Admitted);
-            // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
-            WritePauses(writer, "pausedAsks", PausedAsks);
-            WritePauses(writer, "pausedQuests", PausedQuests);
-            // Written only when set (KNOWUSE1b), as the CLI writes it: absent is no standing answer.
-            WriteStanding(writer, Standing);
-            // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
-            // a line should not start carrying an empty one.
-            WriteMap(writer, "lines", Lines);
-            WriteMap(writer, "workspaceLines", WorkspaceLines);
-            // Written only when set (LANG1c), as the CLI writes them: absent is no language, and no line handed.
-            WriteMap(writer, "languages", Languages);
-            WriteMap(writer, "workspaceLanguages", WorkspaceLanguages);
-            // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
-            ReviewKey.WriteMap(writer, "reviews", Reviews);
-            ReviewKey.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
-            // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
-            OpinionKey.WriteMap(writer, "opinions", Opinions);
-            OpinionKey.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
-            // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
-            HelperKey.WriteMap(writer, "helpers", Helpers);
-            HelperKey.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
-            // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
-            HandOverKey.WriteMap(writer, "handOver", HandOver);
-            HandOverKey.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
-            // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
-            BrainstormKey.WriteMachine(writer, Brainstorms);
-            BrainstormKey.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
-            CommitKey.WriteMap(writer, "commits", Commits);
-            CommitKey.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
-            // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
-            WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
-            WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
-            // Written only when set (WORKFLOWCLEAN1 1a): absent is no home default (a place follows Current) and no line policy.
-            if (DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
-            LandingKey.WritePolicies(writer, "linePolicies", LinePolicies);
-            LandingKey.WritePolicies(writer, "workspaceLinePolicies", WorkspaceLinePolicies);
-            // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
-            IntegrationGatesKey.WriteMap(writer, IntegrationGates);
-            // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
-            AccessKey.WriteMap(writer, "access", Access);
-            AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
-            AccessKey.WriteMachine(writer, MachineAccess);
-            // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
-            HeavyKey.WriteMap(writer, HeavyGates);
-            // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
-            SessionChecksKey.WriteMap(writer, SessionChecks);
-            // Written only where set (KEEP1d): absent is each kind's default, and an edit elsewhere must not pin today's defaults.
-            Keep.Write(writer);
-            // Written only when set (D107), for the same reason: absent is reading on and no relationship.
-            WriteFlags(writer, "readAcross", ReadAcross);
-            WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
-            // Written only when on (GITAPP2b): absent is the switch off.
-            WriteFlags(writer, "checkoutWrites", CheckoutWrites);
-            if (WriteAcross.Count > 0)
-            {
-                writer.WriteStartObject("writeAcross");
-                foreach (var (repository, targets) in WriteAcross.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-                {
-                    writer.WriteStartArray(repository);
-                    foreach (var target in targets) writer.WriteStringValue(target);
-                    writer.WriteEndArray();
-                }
-
-                writer.WriteEndObject();
-            }
-
-            writer.WriteStartObject("commands");
-            foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
-            {
-                writer.WriteStartArray(name);
-                foreach (var part in command) writer.WriteStringValue(part);
-                writer.WriteEndArray();
-            }
-
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-        });
-    }
-
-    /// <summary>The transient releases (AGENTERRORS1a2): each quest an object, its <c>session</c> and the <c>ended</c> it releases in UTC.</summary>
-    private static void WriteTransientReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, TransientRelease> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject("transientReleased");
-        foreach (var (quest, release) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(quest);
-            writer.WriteString("session", release.Session);
-            writer.WriteString("ended", release.Ended.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", CultureInfo.InvariantCulture));
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>A role's releases (STEWARDROLE1b): each quest an object, its <c>kind</c>, <c>session</c>, <c>by</c> and <c>act</c>.</summary>
-    private static void WriteRoleReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, RoleRelease> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject("roleReleases");
-        foreach (var (quest, release) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(quest);
-            writer.WriteString("kind", release.Kind);
-            writer.WriteString("session", release.Session);
-            writer.WriteString("by", release.By);
-            writer.WriteString("act", release.Act);
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>A role's releases as written: an entry missing any of its four fields is none; a quest named twice is read where first written.</summary>
-    private static IReadOnlyDictionary<string, RoleRelease> RoleReleaseMap(JsonElement container, string name)
-    {
-        var released = new Dictionary<string, RoleRelease>(StringComparer.OrdinalIgnoreCase);
-        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Name.Length == 0 || released.ContainsKey(property.Name) || property.Value.ValueKind != JsonValueKind.Object) continue;
-            if (Json.NonEmpty(property.Value, "kind") is not { } kind || Json.NonEmpty(property.Value, "session")?.Trim() is not { Length: > 0 } session
-                || Json.NonEmpty(property.Value, "by") is not { } by || Json.NonEmpty(property.Value, "act") is not { } act)
-            {
-                continue;
-            }
-
-            released[property.Name] = new RoleRelease(kind, session, by, act);
-        }
-
-        return released;
-    }
-
-    /// <summary>
-    /// The transient releases as written (AGENTERRORS1a2): an entry with no session or no <c>ended</c> that reads as a moment is none,
-    /// so a release whose end is unsaid passes nothing; a quest named twice in any case is read where first written.
-    /// </summary>
-    private static IReadOnlyDictionary<string, TransientRelease> TransientReleaseMap(JsonElement container, string name)
-    {
-        var released = new Dictionary<string, TransientRelease>(StringComparer.OrdinalIgnoreCase);
-        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Name.Length == 0 || released.ContainsKey(property.Name) || property.Value.ValueKind != JsonValueKind.Object) continue;
-            if (Json.NonEmpty(property.Value, "session")?.Trim() is not { Length: > 0 } session) continue;
-            if (Json.NonEmpty(property.Value, "ended") is not { } ended
-                || !DateTimeOffset.TryParse(ended, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at))
-            {
-                continue;
-            }
-
-            released[property.Name] = new TransientRelease(session, at);
-        }
-
-        return released;
-    }
-
-    private static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, string> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, value);
-        writer.WriteEndObject();
-    }
-
-    /// <summary>The design's shape (§2.5): each id an object, its time in UTC to the second where known, and its stops always, none as <c>{}</c>.</summary>
-    private static void WritePauses(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, WorkPause> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (id, pause) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(id);
-            if (pause.At is { } at) writer.WriteString("at", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
-            writer.WriteStartObject("stopped");
-            foreach (var (quest, session) in pause.Stopped.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(quest, session);
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>
-    /// The pauses (PAUSE1a): each id an object, read where first written in any case. Its <c>at</c> is read only as ISO 8601
-    /// writes a moment, and a time that does not read leaves the pause standing with its time unknown: the pause is the
-    /// person's, and the time only says when. Its <c>stopped</c> is read as <c>released</c> is.
-    /// </summary>
-    private static IReadOnlyDictionary<string, WorkPause> PauseMap(JsonElement root, string name)
-    {
-        var pauses = new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return pauses;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Value.ValueKind != JsonValueKind.Object || property.Name.Length == 0 || pauses.ContainsKey(property.Name)) continue;
-            pauses[property.Name] = new WorkPause(Moment(Json.NonEmpty(property.Value,"at")), SessionMap(property.Value, "stopped"));
-        }
-
-        return pauses;
-    }
-
-    /// <summary>The standing answers (KNOWUSE1b): each repository an object, its words, and its time in UTC to the second where known.</summary>
-    private static void WriteStanding(Utf8JsonWriter writer, IReadOnlyDictionary<string, StandingAnswer> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject("standing");
-        foreach (var (repository, answer) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(repository);
-            writer.WriteString("says", answer.Says);
-            if (answer.At is { } at) writer.WriteString("at", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>
-    /// The standing answers (KNOWUSE1b): each repository an object whose <c>says</c> is text, read without the spaces around it,
-    /// and read where first written in any case. Its <c>at</c> is read only as ISO 8601 writes a moment, and a time that does not
-    /// read leaves the answer standing with its time unknown. Blank words, an entry that is not an object, and a map that is not
-    /// one are none.
-    /// </summary>
-    private static IReadOnlyDictionary<string, StandingAnswer> StandingMap(JsonElement root, string name)
-    {
-        var standing = new Dictionary<string, StandingAnswer>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return standing;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Value.ValueKind != JsonValueKind.Object || property.Name.Trim().Length == 0 || standing.ContainsKey(property.Name)) continue;
-            if (!property.Value.TryGetProperty("says", out var says) || says.ValueKind != JsonValueKind.String
-                || says.GetString()?.Trim() is not { Length: > 0 } words)
-            {
-                continue;
-            }
-
-            standing[property.Name] = new StandingAnswer(words, Moment(Json.NonEmpty(property.Value,"at")));
-        }
-
-        return standing;
-    }
-
-    /// <summary>
-    /// A moment as ISO 8601 writes it, and only so: to the second, with a fraction or not, in UTC or at an offset. The same
-    /// forms <see cref="AccountCooling"/> reads (TOOL4d), and the CLI's <c>cooling.ts</c> (<c>isoMoment</c>): a lenient parse
-    /// would read <i>Oct 2</i> as this year's.
-    /// </summary>
-    private static DateTimeOffset? Moment(string? text) => Moments.ReadStrict(text);
-
-    private static void WriteFlags(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, bool> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteBoolean(key, value);
-        writer.WriteEndObject();
-    }
-
-    /// <summary>
-    /// A map of names to booleans; an entry of any other type is not read (D107). A name written twice in any case is read where first
-    /// readable, as the CLI reads it (CASEMAP1, D173's CONFIG1 note: the last value was read here, each spelling there).
-    /// </summary>
-    private static IReadOnlyDictionary<string, bool> FlagMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim() is { Length: > 0 } named
-                    && !map.ContainsKey(named))
-                {
-                    map[named] = property.Value.GetBoolean();
-                }
-            }
-        }
-
-        return map;
-    }
-
-    /// <summary>
-    /// The declared relationships (D107): each repository's list of other names, once each in any case, in
-    /// the order first written. A list that is not one, an entry that is not a name, and the repository
-    /// itself are not read; a repository left with none has no entry. A repository written twice in any case
-    /// is read where first readable, as the CLI reads it (CASEMAP1: the last list was read here).
-    /// </summary>
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> TargetMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0 || map.ContainsKey(property.Name.Trim())) continue;
-            var targets = new List<string>();
-            foreach (var item in property.Value.EnumerateArray())
-            {
-                if (item.ValueKind == JsonValueKind.String && item.GetString()?.Trim() is { Length: > 0 } target
-                    && AcrossDeclarations.Problem(property.Name, target) is null
-                    && !targets.Contains(target, StringComparer.OrdinalIgnoreCase))
-                {
-                    targets.Add(target);
-                }
-            }
-
-            if (targets.Count > 0) map[property.Name.Trim()] = targets;
-        }
-
-        return map;
-    }
-
-    /// <summary>
-    /// The session languages (LANG1c): each name a code of the table, read in any case without the spaces around it. A code
-    /// the table does not hold, a value that is not text, a blank name and a map that is not one are not read; a name written
-    /// twice in any case is read where first written.
-    /// </summary>
-    private static IReadOnlyDictionary<string, string> LanguageMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Value.ValueKind == JsonValueKind.String && SessionLanguages.Code(property.Value.GetString()) is { } code
-                && property.Name.Trim() is { Length: > 0 } named && !map.ContainsKey(named))
-            {
-                map[named] = code;
-            }
-        }
-
-        return map;
-    }
-
-    /// <summary>
-    /// A map of names to branch names; an entry that is not one git would take is skipped. A name written twice in any case is read
-    /// where first readable, as the CLI reads it (CASEMAP1: the first spelling was kept here with the last value).
-    /// </summary>
-    private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                if (property.Value.ValueKind == JsonValueKind.String
-                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch) && !map.ContainsKey(property.Name))
-                {
-                    map[property.Name] = branch;
-                }
-            }
-        }
-
-        return map;
-    }
+    public string ToJson() =>
+        Source is null
+            ? DriverConfigWriter.Written(this)
+            : JsonKeeping.Kept(Source, DriverConfigSaving.Understood(this), DriverConfigWriter.Written(this), Sets);
 
     /// <summary>This machine's answer to "may I drive that repository, now" — one flag flipped at a time.</summary>
     public DriverConfig WithDrivable(string repository, bool drivable) => this with
     {
-        Drivable = Toggle(Drivable, repository, drivable),
+        Drivable = DriverConfigEdits.Toggle(Drivable, repository, drivable),
     };
 
     public DriverConfig WithHold(string repository, bool held) => this with
     {
-        Holds = Toggle(Holds, repository, held),
+        Holds = DriverConfigEdits.Toggle(Holds, repository, held),
     };
 
     /// <summary>Whether this repository's sessions open their own worktree (D51).</summary>
     public DriverConfig WithTrees(string repository, bool ownTree) => this with
     {
-        Trees = Toggle(Trees, repository, ownTree),
+        Trees = DriverConfigEdits.Toggle(Trees, repository, ownTree),
     };
 
     /// <summary>The read side of <see cref="WithTrees"/> — one comparison rule for both.</summary>
     public bool OpensOwnTree(string repository) =>
         Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
 
-    private static IReadOnlyList<string> Toggle(IReadOnlyList<string> names, string repository, bool present)
-    {
-        var kept = names.Where(n => !string.Equals(n, repository, StringComparison.OrdinalIgnoreCase));
-        return present ? [.. kept, repository] : [.. kept];
-    }
-
-    // Read by hand for the same reason the registration store writes by hand: nothing here may
-    // quietly stop working under AOT, and the shape is small enough to be explicit about.
-    public static DriverConfig Parse(string json)
-    {
-        // A key written twice in one object reads as its last value in its first place, as the CLI's JSON.parse reads it (the re-check's
-        // finding 3); the text read stays as written, and no edit is written over it (Save).
-        using var document = JsonDocument.Parse(JsonKeeping.Once(json));
-        var root = document.RootElement;
-        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
-        // (CONFIGREAD1): said here, so the reader can say it with its file.
-        if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
-        var (actors, actorErrors) = ActorKey.Read(root);
-
-        return new DriverConfig(
-            Drivable: Json.Strings(root,"drivable"),
-            Holds: Json.Strings(root,"holds"),
-            Cap: Math.Max(1, Int(root, "cap") ?? Empty.Cap),
-            Adapter: Json.NonEmpty(root,"adapter") ?? Empty.Adapter,
-            PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? Empty.PollSeconds),
-            Commands: CommandMap(root),
-            Trees: Json.Strings(root,"trees"),
-            // Absent means ON (SURF5b): every machine that already has a driver.json predates this
-            // field, and reading silence as "off" would ship the feature switched off everywhere it
-            // matters most — a machine that has been driving for a while.
-            Notify: Bool(root, "notify") ?? Empty.Notify,
-            Forgiven: ForgivenMap(root))
-        {
-            // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
-            Source = json,
-            // Read only to be said (SESSWATCH1a): no bound is ever read from it.
-            KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
-            // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
-            IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
-            // Absent means OFF, as the intake's does (D89).
-            HelperAdapter = Json.NonEmpty(root,"helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
-            // Each actor's order (MODELROLE1c, D205 §9.1): an entry that does not read is kept as its error, and holds its starts.
-            Actors = actors,
-            ActorErrors = actorErrors,
-            // Restricted unless the file names full (HELPMODE1a1): never widened by a value it does not know.
-            HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
-            // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
-            CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
-                && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
-            Released = SessionMap(root, "released"),
-            TransientReleased = TransientReleaseMap(root, "transientReleased"),
-            RoleReleases = RoleReleaseMap(root, "roleReleases"),
-            // Each set-up quest against its repository, read as a release's session is (AGENTSPLACE1b).
-            Admitted = SessionMap(root, "admitted"),
-            PausedAsks = PauseMap(root, "pausedAsks"),
-            PausedQuests = PauseMap(root, "pausedQuests"),
-            Standing = StandingMap(root, "standing"),
-            Lines = BranchMap(root, "lines"),
-            WorkspaceLines = BranchMap(root, "workspaceLines"),
-            Languages = LanguageMap(root, "languages"),
-            WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
-            // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
-            Reviews = ReviewKey.Map(root, "reviews", allowNone: true),
-            WorkspaceReviews = ReviewKey.Map(root, "workspaceReviews", allowNone: false),
-            // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
-            Opinions = OpinionKey.Map(root, "opinions", allowNone: true),
-            WorkspaceOpinions = OpinionKey.Map(root, "workspaceOpinions", allowNone: false),
-            Helpers = HelperKey.Map(root, "helpers"),
-            WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
-            HandOver = HandOverKey.Map(root, "handOver"),
-            WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
-            Brainstorms = BrainstormKey.Machine(root),
-            WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
-            Commits =CommitKey.Map(root, "commits"),
-            WorkspaceCommits = CommitKey.Map(root, "workspaceCommits"),
-            // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
-            Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
-            WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
-            // A default that is no workflow's id is not read (WORKFLOWCLEAN1 1a).
-            DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
-                && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,
-            LinePolicies = LandingKey.PolicyMap(root, "linePolicies"),
-            WorkspaceLinePolicies = LandingKey.PolicyMap(root, "workspaceLinePolicies"),
-            // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
-            IntegrationGates = IntegrationGatesKey.Map(root),
-            // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
-            Access = AccessKey.Map(root, "access"),
-            WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
-            MachineAccess = AccessKey.Machine(root),
-            // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
-            HeavyGates = HeavyKey.Map(root),
-            // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
-            SessionChecks = SessionChecksKey.Map(root),
-            // Read as a stored shape (KEEP1d): a value out of its kind's bounds is not read, and its kind keeps its default.
-            Keep = KeepChoices.Read(root),
-            ReadAcross = FlagMap(root, "readAcross"),
-            WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
-            CheckoutWrites = FlagMap(root, "checkoutWrites"),
-            WriteAcross = TargetMap(root, "writeAcross"),
-        };
-    }
-
-    /// <summary>
-    /// The releases (SESSUX1b), and a pause's stops (PAUSE1a): each quest against a session's id, read without the spaces
-    /// around it; the admissions (AGENTSPLACE1b) against a repository's name alike. A blank value, one that is not text, a map
-    /// that is not one, and a quest written again in another case are not read.
-    /// </summary>
-    private static IReadOnlyDictionary<string, string> SessionMap(JsonElement container, string name)
-    {
-        var released = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()?.Trim() is { Length: > 0 } session
-                && property.Name.Length > 0 && !released.ContainsKey(property.Name))
-            {
-                released[property.Name] = session;
-            }
-        }
-
-        return released;
-    }
-
-    private static IReadOnlyDictionary<string, int> ForgivenMap(JsonElement root)
-    {
-        var forgiven = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        if (root.TryGetProperty("forgiven", out var element) && element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                // A quest written twice in any case is read where first readable, as the CLI reads it (CASEMAP1).
-                if (property.Value.ValueKind == JsonValueKind.Number
-                    && property.Value.TryGetInt32(out var mark) && mark > 0 && !forgiven.ContainsKey(property.Name))
-                {
-                    forgiven[property.Name] = mark;
-                }
-            }
-        }
-
-        return forgiven;
-    }
+    /// <summary>The choices read from <c>driver.json</c>'s text (<see cref="DriverConfigReader"/>).</summary>
+    public static DriverConfig Parse(string json) => DriverConfigReader.Parse(json);
 
     /// <summary>Whether this machine says so when a session parks or ends unasked (SURF5b).</summary>
     public DriverConfig WithNotify(bool notify) => this with { Notify = notify };
-
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> CommandMap(JsonElement root)
-    {
-        var commands = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        if (root.TryGetProperty("commands", out var element) && element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                var items = new List<string>();
-                if (property.Value.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var item in property.Value.EnumerateArray())
-                    {
-                        if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text)
-                        {
-                            items.Add(text);
-                        }
-                    }
-                }
-
-                commands[property.Name] = items;
-            }
-        }
-
-        return commands;
-    }
-
-    private static bool? Bool(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value)
-            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
-            ? value.GetBoolean()
-            : null;
-
-    // A number that is not a whole one is refused as it always was, now in words that name the field (CONFIGREAD1): the
-    // runtime's own said only that an item was in an invalid format.
-    private static int? Int(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
-            ? value.TryGetInt32(out var number) ? number : throw new JsonException($"`{name}` is not a whole number")
-            : null;
-}
-
-/// <summary>
-/// One pause of an ask's work or a quest's, as <c>driver.json</c> keeps it (PAUSE1a, design §2.5). Machine-local, like
-/// everything in that file: a pause is this machine's (D132 point 10).
-/// </summary>
-/// <param name="At">When the person paused it, or null where the file does not say in a form this reads.</param>
-/// <param name="Stopped">Each quest the pause stopped, against the session it stopped: what <i>Resume</i> writes into <see cref="DriverConfig.Released"/> (design §2.4).</param>
-public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, string> Stopped);
-
-/// <summary>
-/// One transient release: the record's session <i>Try again</i> released, and the
-/// end it released, the record's <c>updated</c> as the press read it.
-/// </summary>
-public sealed record TransientRelease(string Session, DateTimeOffset Ended);
-
-/// <summary>
-/// A role's release of a quest (STEWARDROLE1b, D209 §5.1a): its kind (<see cref="RoleReleaseKinds"/>), the session whose stop or end it
-/// releases, the role that wrote it (<c>steward</c>) and its act's id, which the run's memory holds its operation by.
-/// </summary>
-public sealed record RoleRelease(string Kind, string Session, string By, string Act);
-
-/// <summary>The kinds of a role's release: a stop's (§3.1 row 8) and, with STEWARDROLE1f, a transient hold's (row 11).</summary>
-public static class RoleReleaseKinds
-{
-    public const string Stop = "stop";
-    public const string Transient = "transient";
-}
-
-/// <summary>
-/// The run's memory of a role's acts as the driver's starts read it (STEWARDROLE1b, D209 §3.1a, §5.1a), handed by the application that
-/// holds the judge; null on a loop with none, whose starts no role's act caused and which honours no role's release (fail-closed).
-/// </summary>
-public interface IRoleStarts
-{
-    /// <summary>
-    /// Whether a steward's act caused a start of <paramref name="quest"/> in <paramref name="repository"/> (§3.1a): the repository driven
-    /// by the steward this run and not the owner's since, or the quest carried on by a steward's live release.
-    /// </summary>
-    bool Caused(string repository, string quest);
-
-    /// <summary>Whether this run's memory holds <paramref name="release"/>'s operation at <c>released</c>: only then is it a release (§5.1a).</summary>
-    bool Released(string quest, RoleRelease release);
-
-    /// <summary>
-    /// The start's take of the release (§5.1a, the execution cutoff): its operation moved from <c>released</c> to <c>executing</c>, its
-    /// generation live and its quest not the owner's; false where a revoke or the owner's act cancelled it.
-    /// </summary>
-    bool Take(string quest, RoleRelease release);
-
-    /// <summary>
-    /// A start a steward's act caused was held for the owner (§3.1a, <c>held.checkout</c>): every pending operation on the quest ended,
-    /// said on the role's line.
-    /// </summary>
-    void HeldForOwner(string quest);
 }
