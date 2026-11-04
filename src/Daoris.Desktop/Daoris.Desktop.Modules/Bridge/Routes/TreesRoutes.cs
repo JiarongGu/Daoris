@@ -112,7 +112,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
                 Workspace = workspace,
                 landing.Rule.Form,
                 landing.Rule.Pattern,
-                landing.Rule.Tidy,
                 landing.Rule.Plugin,
                 landing.Rule.AutoAccept,
                 landing.Rule.Key,

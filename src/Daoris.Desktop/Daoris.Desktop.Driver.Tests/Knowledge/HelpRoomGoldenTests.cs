@@ -55,7 +55,7 @@ public sealed class HelpRoomGoldenTests
             {
                 Checkout = true, Drivable = true, OwnTree = true,
                 Line = new Line("feature/app", LineSource.Repository),
-                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Tidy: true, Plugin: "example.lands", AutoAccept: true), LandingSource.Workspace),
+                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Plugin: "example.lands", AutoAccept: true), LandingSource.Workspace),
                 // REVIEWENV1a: a workspace's required review rule, its one environment local.
                 Review = new ResolvedReview(
                     new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
