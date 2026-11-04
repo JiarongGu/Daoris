@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Daoris.Contracts.Parts;
 
 namespace Daoris.Driver;
 
@@ -25,7 +26,7 @@ namespace Daoris.Driver;
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
 /// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IChatRunning
+public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IExecutorWiring
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
@@ -96,9 +97,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     // LIMITRESUME1c: the conversations that wait for an account to be ready, and the look's limits stage that wakes them.
     private readonly LimitWaits _waits;
 
-    // The requests *Start a conversation on its first words* has answered (NEW1a), made when the first carries an id.
-    private StartRequests? _starts;
-
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
     /// home's own where nobody passes one, which is the headless chat door's case.
@@ -139,6 +137,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // Its turns kept in the usage history (USAGECAP1a2), watched once however many runners share the record.
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
+
+        // Before the classes below, whose events may reach an executor as soon as they hear the record.
+        Executors = Parts.Build(ExecutorOrder.Value, type => (IExecutor)Activator.CreateInstance(type, this)!);
         _handOver = new ChatHandOver(_context, this);
         _chatRuns = new ChatRunBinds(home, service, _events);
         _curve = new CurveMove(_context, _handOver);
@@ -159,6 +160,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         // the come-up takes a dead shell's moves up through it, and the hand-over takes the move it leaves standing.
         Moves = _limit.Moves;
     }
+
+    /// <summary>
+    /// The kinds of run a conversation takes, registered by their modules (<see cref="ExecutorAttribute"/>), ordered once per process and
+    /// built once per runner with the runner as their wiring. A door for a kind reaches its executor by type.
+    /// </summary>
+    internal PartSet<IExecutor> Executors { get; }
+
+    private static readonly Lazy<IReadOnlyList<PartDeclaration>> ExecutorOrder =
+        new(() => Parts.Declared<ExecutorAttribute>(typeof(ChatRunner).Assembly));
 
     /// <summary>
     /// The hand-overs this run holds that wait to be taken (FOUNDATION1f-v part a), at a look: a dead shell's or an older build's the come-up or
@@ -313,13 +323,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     }
 
     /// <summary>
-    /// How long an Ask Daoris start waits for the machine's reading before the room as last written serves (HELPSTUCK1,
-    /// <see cref="ChatHelp.ReadBound"/>).
+    /// How long an Ask Daoris start waits for the machine's reading before the room as last written serves
+    /// (<see cref="HelpStart.ReadBound"/>).
     /// </summary>
     internal TimeSpan HelpReadBound
     {
-        get => _help.ReadBound;
-        set => _help.ReadBound = value;
+        get => Executors.Of<HelpStart>().ReadBound;
+        set => Executors.Of<HelpStart>().ReadBound = value;
     }
 
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
@@ -335,63 +345,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
         _help.StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
 
-    /// <summary>
-    /// *Start a conversation with these words* (MSG1f2): <see cref="StartFrom.RunAsync"/> through this runner's own start, on
-    /// the adapter and account a new conversation takes, and its own first message. The record they were written to goes on
-    /// nowhere meanwhile: a word said to it while this runs waits rather than reopening it under the words handed on.
-    /// </summary>
-    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
-    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
-    public async Task<StartedFrom> StartFromAsync(
+    /// <inheritdoc cref="WordsStart.StartFromAsync"/>
+    public Task<StartedFrom> StartFromAsync(
         string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<WordsStart>().StartFromAsync(sessionId, adapter, config, onEnded, ct, order);
 
-        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
-        {
-            return new StartedFrom(null, false, StartFrom.Running, $"conversation `{sessionId}` is going on with its words already.");
-        }
-
-        try
-        {
-            return await StartFrom.RunAsync(
-                _service, _home, _events, _output, sessionId,
-                (repository, moves, token) => StartAsync(repository, adapter, config, onEnded, ct: token, order: order, moves: moves),
-                SayShown, ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            _context.GoingOn.TryRemove(sessionId, out _);
-            going.TrySetResult();
-        }
-    }
-
-    /// <summary>
-    /// Open a conversation on its first words (NEW1a): <see cref="StartAsync"/>, then <see cref="Say"/> with the words and
-    /// files. A request id makes a retry answer the first start (<see cref="StartRequests"/>).
-    /// </summary>
-    /// <param name="ownTree">Absent is the driver's choice; true a tree of its own; false the checkout.</param>
-    /// <exception cref="DriverException">The request id is malformed.</exception>
-    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
+    /// <inheritdoc cref="WordsStart.StartWithAsync"/>
     public Task<StartedFrom> StartWithAsync(
         string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
         bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        Task<StartedFrom> Run() => _context.Closing
-            ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
-            : StartWith.RunAsync(
-                token => StartAsync(
-                    repository, adapter, config, onEnded, profile, ownTree, token, order: order, picked: !string.IsNullOrWhiteSpace(profile)),
-                (id, words, attached, preface) => Say(id, words, attached, preface),
-                text, files, ct);
-
-        if (requestId is null) return Run();
-        _starts ??= new StartRequests(_home);
-        return _starts.RunAsync(requestId, Run);
-    }
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<WordsStart>().StartWithAsync(repository, adapter, config, text, files, requestId, ownTree, profile, onEnded, ct, order);
 
     /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice (D51).</summary>
     public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
@@ -873,163 +838,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
             .Joined(AcrossRules.Rules(across, [tree, .. folders]));
     }
 
-    /// <summary>
-    /// Open Ask Daoris's conversation (HELP1a, D89): a chat about Daoris itself, in the room written from
-    /// <paramref name="machine"/> under the home, on the helper's agent. The record is the service's; the
-    /// process is this machine's.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>It reads, and it advises</b>: handed the knowledge connector on either door, the room's
-    /// allow-list and the person's denies, and none of the plugins' servers — a browser brought up for a
-    /// tool it is not allowed would be a window for nothing.</para>
-    ///
-    /// <para><b>Its tools load with the first request</b> (HELP5), as every session's do since CONTEXTONE1d
-    /// (<see cref="Driver.Equip"/>), so the first answer is not a search for the tools it was handed.</para>
-    ///
-    /// <para><b>One at a time in each workspace</b> (ASKSCOPE1a): the ledger refuses a second while one runs, naming it. The caller hands
-    /// the person the running one rather than asking for another.</para>
-    /// </remarks>
-    public async Task<ChatStart> StartHelpAsync(
+    /// <inheritdoc cref="HelpStart"/>
+    public Task<ChatStart> StartHelpAsync(
         string adapter, DriverConfig config, HelpMachine machine,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, IReadOnlyList<ActorEffective>? order = null)
-    {
-        var placed = await PlaceHelpAsync(adapter, config, ct: ct, order: order).ConfigureAwait(false);
-        return placed.SessionId is null
-            ? new(null, placed.Message)
-            : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
-    }
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<HelpStart>().StartHelpAsync(adapter, config, machine, onEnded, ct, order);
 
-    /// <summary>
-    /// Place Ask Daoris's conversation (HELPSTART1, D89's note): its agent resolved, its account chosen and its record opened in
-    /// its workspace's room folder (ASKSCOPE1b, <see cref="HelpRoom.PathOf(string, string?)"/>), whose path is known before
-    /// anything is read or written. What the person's press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the
-    /// room and spawns the agent after.
-    /// </summary>
-    /// <param name="workspace">
-    /// The workspace the person's window was on at the press (ASKSCOPE1a, D158's ASKSCOPE1 note point 1), captured there, so a
-    /// window that moves meanwhile moves nothing here: its record keeps it and its account is that workspace's. Null is a press
-    /// that named none, which opens as before, in <c>default</c>.
-    /// </param>
-    /// <param name="carries">
-    /// The conversation whose account's limit refused its turn, which this one goes on from on the next account (LIMITGOON1): its
-    /// opening line and <c>account.rotated</c> name it, as a driven carry-on's do. Null for every other start.
-    /// </param>
-    /// <param name="order">
-    /// Ask Daoris's effective order for a new conversation (MODELROLE1d, D205 §4.1): one entry runs on its agent, as before, asking its
-    /// model; more are walked choice by choice, each entry judged first by <see cref="HelpAccess.For"/> under the mode standing now
-    /// (<c>no-posture</c>). Null for one that goes on from another, which runs on <paramref name="adapter"/> as before.
-    /// </param>
-    /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
-    public async Task<HelpPlaced> PlaceHelpAsync(
+    /// <inheritdoc cref="HelpStart.PlaceHelpAsync"/>
+    public Task<HelpPlaced> PlaceHelpAsync(
         string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default, string? carries = null,
-        IReadOnlyList<ActorEffective>? order = null)
-    {
-        if (order is { Count: > 1 })
-        {
-            var walk = await WalkAsync("ask-daoris", order, config, workspace, null, ct).ConfigureAwait(false);
-            if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
-            return await OpenHelpAsync(walked, taken, entry, walk.Passes, config, workspace, carries, ct, order: order).ConfigureAwait(false);
-        }
+        IReadOnlyList<ActorEffective>? order = null) =>
+        Executors.Of<HelpStart>().PlaceHelpAsync(adapter, config, workspace, ct, carries, order);
 
-        var chosen = order is [var only] ? only : null;
-        if (chosen is not null) adapter = chosen.Agent;
-        var resolved = _harnesses.Adapters.Resolve(adapter);
-        if (!resolved.Interactive)
-        {
-            return new(
-                null,
-                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion. Name another under Agents → Roles, Ask Daoris, "
-                + "or `daoris role set ask-daoris \"<agent>\"`.");
-        }
-
-        // HELPMODE1a1 (D183 point 3): full access on an agent with no mode that asks nothing is refused before anything is opened.
-        var access = HelpAccess.For(config.HelpMode, resolved);
-        if (access.Refusal is { } refused) return new(null, refused);
-
-        // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
-        // named none asks the machine's, as before (D89).
-        var selection = await _harnesses
-            .SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct, chosen?.Model).ConfigureAwait(false);
-        if (!selection.Allowed) return new(null, selection.Refusal!);
-        return await OpenHelpAsync(resolved, selection, chosen, [], config, workspace, carries, ct, order: order).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Ask Daoris's replacement placed (MODELROLE1d2, D205 §3.5(b)): its pending start's order walked in its workspace, the refused account
-    /// passed, and its record opened in that workspace's room under the same pending start.
-    /// </summary>
-    private async Task<HelpPlaced> PlaceReplacementAsync(ChatPending pending, DriverConfig config, CancellationToken ct)
-    {
-        var walk = await WalkAsync("ask-daoris", pending.Order, config, pending.Workspace, null, ct, pending.Refusing).ConfigureAwait(false);
-        if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
-        return await OpenHelpAsync(walked, taken, entry, [.. pending.Passes, .. walk.Passes], config, pending.Workspace, null, ct, pending)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>Ask Daoris's record opened on the agent and account its start chose, and its opening said (HELPSTART1, MODELROLE1d).</summary>
-    /// <param name="pending">The pending start a replacement opens for (MODELROLE1d2); null makes one where the start asks its entry on the protocol wire.</param>
-    private async Task<HelpPlaced> OpenHelpAsync(
-        ISessionAdapter resolved, HarnessSelection selection, ActorEffective? chosen, IReadOnlyList<BuildPass> passes, DriverConfig config,
-        string? workspace, string? carries, CancellationToken ct, ChatPending? pending = null, IReadOnlyList<ActorEffective>? order = null)
-    {
-        var access = HelpAccess.For(config.HelpMode, resolved);
-
-        // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by. With the mode
-        // its start gets (HELPMODE1a2), which its run reads from the same file below.
-        var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home, workspace), selection.Version, selection.Profile, workspace, access.Mode, ct)
-            .ConfigureAwait(false);
-        if (sessionId is null) return new(null, message);
-        // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run (QUEUED1).
-        _processes.MarkOpening(sessionId);
-
-        // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first; one that goes on from a
-        // limit names the conversation it carries and the turn the limit refused (LIMITGOON1).
-        RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
-        // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
-        if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
-        await RotatedOpening.SayStaffAsync(_events, _harnesses.Staff(), _service, null, sessionId, selection, "ask-daoris").ConfigureAwait(false);
-
-        // MODELROLE1d2 (D205 §3.5(b)): owned from its placement until dispatched or exhausted; its run says how a replacement runs.
-        if (pending is not null)
-        {
-            pending.Entry = chosen!;
-            _context.Pending.Link(pending, sessionId);
-        }
-        else if (chosen is not null && resolved.Wire == SessionWire.Acp && carries is null)
-        {
-            pending = _context.Pending.Add(new ChatPending(
-                sessionId, "ask-daoris", order is { Count: > 0 } ? order : [chosen], chosen, null, workspace, (_, _) => Task.FromResult(new ChatStart(null, "Ask Daoris's replacement opens only from its run."))));
-        }
-
-        return new(sessionId, message)
-        {
-            Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection, Chosen = chosen, Pending = pending,
-        };
-    }
-
-    /// <summary>
-    /// Ask Daoris's replacement opened and run (MODELROLE1d2, D205 §3.5(b)): placed in its workspace's room, its link kept in the room's
-    /// history, then run on the machine as the press's run reads it.
-    /// </summary>
-    private async Task<ChatStart> RunReplacementAsync(
-        ChatPending pending, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine, Func<string, string, Task>? onEnded,
-        CancellationToken ct)
-    {
-        var placed = await PlaceReplacementAsync(pending, config, ct).ConfigureAwait(false);
-        if (placed.SessionId is not { } id) return new(null, placed.Message);
-        try
-        {
-            new HelpConversations(_home).StartedFrom(id, pending.Current, HelpConversations.NotOffered);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            // Its history names no earlier conversation; its opening's actor line still says why it opened.
-        }
-
-        return await RunHelpAsync(placed, config, machine, onEnded, ct).ConfigureAwait(false);
-    }
+    /// <inheritdoc cref="HelpStart.RunHelpAsync"/>
+    public Task<ChatStart> RunHelpAsync(
+        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        Executors.Of<HelpStart>().RunHelpAsync(placed, config, machine, onEnded, ct);
 
     /// <summary>
     /// A new conversation's walk over <paramref name="actor"/>'s effective order (MODELROLE1d, D205 §4.1), as Build's start walks its:
@@ -1075,93 +900,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         return settled.Chosen is null
             ? new(null, null, null, settled.Passes, settled.Selection.Refusal)
             : new(settled.Adapter, settled.Selection, settled.Chosen, settled.Passes, null);
-    }
-
-    /// <summary>
-    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the room written from the machine as the
-    /// facts the judges keep say it (PARALLEL1a), at once, then the agent spawned as any conversation's. A reading or a room that
-    /// fails ends the record <c>failed</c> saying why, so a conversation the person was handed says what became of it rather than
-    /// waiting at <c>queued</c>. Where no fact was ever judged, the room as last written serves, said first in its conversation;
-    /// with none written before, the first judgement is waited for within <see cref="HelpReadBound"/> (HELPSTUCK1), and past it the
-    /// conversation ends <c>failed</c> saying so (<see cref="ChatHelp.ReadAsync"/>).
-    /// </summary>
-    /// <param name="machine">
-    /// The whole machine from the facts as last judged; null where it could not be read. The room written is the placed
-    /// workspace's (ASKSCOPE1b): the machine projected to it (<see cref="HelpMachine.Within"/>) in its own folder.
-    /// </param>
-    public async Task<ChatStart> RunHelpAsync(
-        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
-    {
-        if (placed is not { SessionId: { } sessionId, Adapter: { } resolved, Selection: { } selection }) return new(null, placed.Message);
-
-        // A start being made, as a start from a conversation's words is: no go-on takes it up meanwhile, and a closing waits for it.
-        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _context.GoingOn.TryAdd(sessionId, going.Task);
-        try
-        {
-            string room;
-            IReadOnlyList<HelpRead> reads;
-            try
-            {
-                // 🔴 HELPSTUCK1, then PARALLEL1a (D181 point 1): the room is the facts the judges keep, as last judged, which answer at
-                // once; a reading of its own walked git across every tree and repository and, on the owner's loaded machine, did not
-                // answer for minutes while this conversation sat at `queued`. Only a home whose facts were never judged waits, and
-                // only where no room was written before, within the bound; else it starts on the room as last written, said first in
-                // its conversation; with none written and no answer in the bound, it ends below saying why.
-                var (read, late, waited) = await _help.ReadAsync(machine, placed.Workspace, ct).ConfigureAwait(false);
-                if (late && !HelpRoom.Written(_home, placed.Workspace))
-                {
-                    var unread = ChatHelp.NotRead(_help.ReadBound);
-                    await Conclude(sessionId, "failed", unread, onEnded).ConfigureAwait(false);
-                    return new(null, unread.Note);
-                }
-
-                if (late)
-                {
-                    (room, reads) = (HelpRoom.PathOf(_home, placed.Workspace), []);
-                    _context.Note(sessionId, waited ? ChatHelp.AsWritten(_help.ReadBound) : ChatHelp.NotReadYet());
-                }
-                else
-                {
-                    // ASKSCOPE1b: its workspace's room, the facts projected to it, so what is not read yet is its own.
-                    var machineRead = (read ?? throw new DriverException("this machine could not be read for it: the service is not answering yet"))
-                        .Within(placed.Workspace);
-                    (room, reads) = (HelpRoom.Prepare(_home, machineRead), machineRead.Reads);
-                    // What the facts had not read yet is said first, so the person knows the room may name less than there is.
-                    if (machineRead.NotReadYet.Any) _context.Note(sessionId, ChatHelp.NotReadYet());
-                }
-            }
-            catch (Exception error)
-            {
-                var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
-                var why = $"Ask Daoris's room could not be written — {error.Message}";
-                await Conclude(
-                    sessionId, "failed",
-                    cancelled ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
-                    onEnded).ConfigureAwait(false);
-                if (cancelled) throw;
-                return new(null, why);
-            }
-
-            if (_context.Closing)
-            {
-                await Conclude(sessionId, "failed", Observation.Failure("the application closed before its agent started."), onEnded).ConfigureAwait(false);
-                return new(null, "the application is closing, so no conversation starts now.");
-            }
-
-            // MODELROLE1d2: a replacement of this start runs as this run does, on the machine's reading, its end told to the same listener.
-            if (placed.Pending is { } pending) pending.Open = (owner, token) => RunReplacementAsync(owner, config, machine, onEnded, token);
-            return await RunAsync(
-                    "ask-daoris", sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct,
-                    chosen: placed.Chosen, pending: placed.Pending)
-                .ConfigureAwait(false);
-        }
-        finally
-        {
-            _context.GoingOn.TryRemove(new KeyValuePair<string, Task>(sessionId, going.Task));
-            going.TrySetResult();
-        }
     }
 
     /// <summary>
@@ -1751,7 +1489,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                 ModelRefused = pending is null ? null : async refusal =>
                 {
                     // MODELROLE1d2 (D205 §3.5(b)): kept as the account's reading first, then the walk asked again as if it had been known.
-                    var later = await ReaskAsync(pending, sessionId, resolved, selection, config, refusal).ConfigureAwait(false);
+                    var later = await Executors.Of<ChatReplacement>().ReaskAsync(pending, sessionId, resolved, selection, config, refusal).ConfigureAwait(false);
                     if (later is null) return null;
                     choice = later.From;
                     await _service.TryKeepActorAsync(sessionId, null, choice, later.Asked, ct: CancellationToken.None).ConfigureAwait(false);
@@ -1850,7 +1588,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         tracked?.TrySetResult(true);
         // MODELROLE1d2 (D205 §3.5(b)): where its open was refused and the re-ask answered another session, the replacement opens once this
         // run let its process, its files and its turns go, in the same call as far as the person is concerned.
-        if (pending is not null) _ = ReplaceAsync(watch, pending, sessionId, selection);
+        if (pending is not null) _ = Executors.Of<ChatReplacement>().ReplaceAsync(watch, pending, sessionId, selection);
         // 🔴 SESSCTX1c (D189's amendment): a native go-on whose harness ended before naming its conversation is tried once more as the
         // same resume, its record still working, once its watch let its process, its files and its turns go; never while closing.
         if (goOn is not null)
@@ -1887,244 +1625,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
     }
 
     /// <summary>
-    /// A conversation's start refused at its open moved on (MODELROLE1d2, D205 §3.5(b)): the refused record and the replacement that took
-    /// its words, in the same press, so the window follows the line as it follows a new part (<c>chat.replaced { from, to }</c>).
+    /// A conversation's start refused at its open moved on: the refused record and the replacement that took its words
+    /// (<see cref="ChatReplacement.Replaced"/>).
     /// </summary>
-    public event Action<string, string>? Replaced;
-
-    /// <summary>
-    /// The start's re-ask where its agent refused the entry's model at the open (MODELROLE1d2, D205 §3.5(b), as §3.3's for a driven start):
-    /// the refusal kept as the account's reading first, then its pending start's order walked again as if it had been known before the
-    /// spawn, the refusing account passed and no count taken. A later entry of the same agent on the same account is set on this session;
-    /// anything else is kept as what the replacement opens on (<see cref="ChatPending.Next"/>), and null ends the open.
-    /// </summary>
-    private async Task<ActorEffective?> ReaskAsync(
-        ChatPending pending, string sessionId, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config, ModelRefusal refusal)
+    public event Action<string, string>? Replaced
     {
-        using var log = new MachineLog(_home, "driver");
-        if (AgentOffers.Refused(_home, resolved.Name, selection.Version, selection.Profile, refusal.Value, DateTimeOffset.UtcNow) is { } unkept)
-        {
-            log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-        }
-
-        log.Write("info", "actor.refused", [("actor", pending.Actor), ("session", sessionId), ("agent", resolved.Name), ("model", refusal.Value),
-            ("code", refusal.Code)]);
-        var refused = pending.Entry;
-        pending.Refusing = (refused, selection.Profile);
-        pending.Pass(new BuildPass(refused, refusal.Code, $"`{selection.Profile ?? "its own sign-in"}` did not offer `{refusal.Value}`"));
-
-        ConversationWalk again;
-        try
-        {
-            again = await WalkAsync(
-                    pending.Actor, pending.Order, config, pending.Workspace, pending.Pinned, CancellationToken.None, pending.Refusing,
-                    counts: false, except: selection.Number)
-                .ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or IOException or HttpRequestException)
-        {
-            again = new ConversationWalk(null, null, null, pending.Passes, error.Message);
-        }
-
-        var same = ReaskMove.Same(refused, selection.Profile, again.Chosen, again.Selection?.Profile);
-        log.Write("info", "actor.reasked", [("actor", pending.Actor), ("session", sessionId), ("refused", refused.From),
-            ("answer", again.Chosen?.From), ("same", same)]);
-        if (!same)
-        {
-            pending.Next = again;
-            return null;
-        }
-
-        // The same-account move (§3.3): the record's choice moves with it, and its opening note says the refused entry passed.
-        pending.Entry = again.Chosen!;
-        RotatedOpening.SayActor(_events, sessionId, pending.Actor, again.Chosen!, pending.Passes);
-        return again.Chosen;
-    }
-
-    /// <summary>
-    /// A word said to a refused conversation after its words moved on (MODELROLE1d2): to the record its pending start runs as now, where
-    /// that is another; false where none takes it.
-    /// </summary>
-    private bool Onward(ChatPending pending, string from, ChatMessage word) =>
-        !string.Equals(pending.Current, from, StringComparison.OrdinalIgnoreCase)
-        && _context.Turned.TryGetValue(pending.Current, out var now) && now.Turns.Take(word) is not null;
-
-    /// <summary>
-    /// The replacement of a conversation its agent refused at the open (MODELROLE1d2, D205 §3.5(b)), once its run let its process, its
-    /// files and its turns go: its count given back, then the walk's answer opened by its pending start, linked to the refused record,
-    /// and the moved words said to it in the order said, each once, taken off the refused record by their ids as its turn takes them.
-    /// Nothing left, the press is refused in the wait's sentence and the words wait on the refused record. Never while closing.
-    /// FOUNDATION1d-ii part 5: against a host whose <c>opens</c> mark is 2, the open moves the words the refused record keeps, and each goes
-    /// to the replacement as its own record's word, never taken off the refused record; a moved part's display goes with its message.
-    /// </summary>
-    private async Task ReplaceAsync(Task<bool> watch, ChatPending pending, string sessionId, HarnessSelection selection)
-    {
-        try
-        {
-            await watch.ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            // Its run concluded the record whatever failed there.
-        }
-
-        if (pending.Next is not { } next)
-        {
-            // Its door opened and carried its choice, or failed for another reason: refusals are no longer this start's.
-            if (string.Equals(pending.Current, sessionId, StringComparison.OrdinalIgnoreCase)) pending.Dispatched();
-            return;
-        }
-
-        pending.Next = null;
-        // FOUNDATION1d-ii part 5: the display a moved part's first message was held with (part 4's ChatContext.Shown) is never written here now;
-        // the replacement that writes the message takes it, and nothing holds it for this record again.
-        (string Text, IReadOnlyList<SessionEvent> Events)? shown = _context.Shown.TryRemove(sessionId, out var held) ? held : null;
-        // So with the moved words' own displays held for it, which go with each word to the replacement's open.
-        _context.ShownMoved.TryRemove(sessionId, out _);
-        // D205 §4.1 (round 4, R3-B1): its process has stopped and its record left Running, so its one count is given back first.
-        _harnesses.Release(selection.Number, sessionId);
-        if (_context.Closing)
-        {
-            await WaitOnAsync(sessionId, pending.Exhausted()).ConfigureAwait(false);
-            return;
-        }
-
-        if (next.Adapter is null)
-        {
-            _context.Note(sessionId, LimitNotes.NotMoved(next.Refusal ?? "none of its choices can run now."));
-            await WaitOnAsync(sessionId, pending.Exhausted()).ConfigureAwait(false);
-            return;
-        }
-
-        ChatStart started;
-        try
-        {
-            started = await pending.Open(pending, CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is not OutOfMemoryException)
-        {
-            started = new ChatStart(null, error.Message);
-        }
-
-        if (started.SessionId is not { } to)
-        {
-            _context.Note(sessionId, LimitNotes.NotMoved(started.Message));
-            await WaitOnAsync(sessionId, pending.Exhausted()).ConfigureAwait(false);
-            return;
-        }
-
-        var turns = _context.Turned.TryGetValue(to, out var chat) ? chat.Turns : null;
-        // 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): where the replacement's keyed open moved the refused record's kept words,
-        // each is the replacement's own word from the open on, under its id there: its files copied first, handed to the turns as that record's
-        // (ChatTurns.TakeMoved), so it is marked attempted and taken off there and a producer's retry the record answers with it goes no second
-        // time, and shown by its own event under its id. Every other moving word goes as before (MovedTo).
-        var moved = MovedWords.Moving(started)
-            ? await MovedWords.OnAsync(_service, _home, sessionId, to, started.Moved, CancellationToken.None).ConfigureAwait(false)
-            : null;
-        var door = new SaidDoor(_service, to);
-        var owned = new Dictionary<string, SaidWordView>(StringComparer.Ordinal);
-        foreach (var word in moved?.Words ?? []) owned.TryAdd(word.Id!, word);
-        bool Say(ChatMessage word)
-        {
-            if (turns is null) return false;
-            if (word.Kept && word.Id is { } id && owned.Remove(id, out var own)) return TakeOwned(turns, door, Owned(word, own, to), own, to);
-            if (shown is { } display && !word.Kept && string.Equals(word.Text, display.Text, StringComparison.Ordinal))
-            {
-                // Recorded by the replacement's door before its write, each moved word under its id, never one joined word.
-                _context.Shown[to] = display;
-                shown = null;
-            }
-
-            return turns.Take(MovedTo(word, sessionId, to)) is not null;
-        }
-
-        var left = pending.Moved(to, Say);
-        // A word of the person's kept on the refused record since, which the open moved and no moving word held: the replacement's, after them.
-        foreach (var late in (moved?.Words ?? []).Where(word => owned.ContainsKey(word.Id!)))
-        {
-            if (turns is not null) TakeOwned(turns, door, Owned(new ChatMessage(late.Text, []) { Key = late.Key }, late, to), late, to);
-        }
-
-        if (left.Count > 0)
-        {
-            using var log = new MachineLog(_home, "driver");
-            log.Warn("chat.replaced-unsaid", ("from", sessionId), ("to", to), ("words", left.Count));
-        }
-
-        Replaced?.Invoke(sessionId, to);
-    }
-
-    /// <summary>
-    /// A moving word as the replacement whose open moved it holds it (FOUNDATION1d-ii part 5): under its id on that record, kept there, its files
-    /// as the replacement's folder keeps them, with no mark or take-off of the refused record's, which its turns give it again through that record.
-    /// </summary>
-    private ChatMessage Owned(ChatMessage word, SaidWordView own, string to) => word with
-    {
-        Id = own.Id, Kept = true, Attempting = null, Went = null, Files = ChatFiles.Kept(_home, to, own.Files),
-    };
-
-    /// <summary>
-    /// A moved word handed to the replacement's turns as its own (<see cref="ChatTurns.TakeMoved"/>), its own <c>User</c> event under its id held
-    /// for the door that writes its turn, which records it before the write (O6-F2); false where the turns took nothing, and nothing is held then.
-    /// </summary>
-    private bool TakeOwned(IChatTurns turns, ISaidDoor door, ChatMessage word, SaidWordView own, string to)
-    {
-        _context.ShowMoved(to, own.Id!, MovedWords.Of(own));
-        if (turns.TakeMoved(door, word) is not null) return true;
-        if (_context.ShownMoved.TryGetValue(to, out var held)) held.TryRemove(own.Id!, out _);
-        return false;
-    }
-
-    /// <summary>
-    /// A moved word as its replacement takes it (MODELROLE1d2): held there in this process, never kept on the replacement's record, and
-    /// taken off the refused record by its id once its turn is on the wire, so its receipt follows it.
-    /// </summary>
-    private ChatMessage MovedTo(ChatMessage word, string from, string to)
-    {
-        if (!word.Kept || word.Id is not { } id) return word;
-        return word with
-        {
-            Id = null, Kept = false, Attempting = null, Went = null,
-            Delivered = () => _ = TakenOffAsync(from, [id], to),
-        };
-    }
-
-    /// <summary>
-    /// The moved words of a start with nothing left to open (MODELROLE1d2): each held in this process alone kept on the refused record,
-    /// which has ended, so they wait there for its go-on, a fresh start of its actor (<see cref="ChatGoOn"/>). A word kept there already
-    /// waits. Never faults.
-    /// </summary>
-    private async Task WaitOnAsync(string sessionId, IReadOnlyList<ChatMessage> words)
-    {
-        foreach (var word in words.Where(word => !word.Kept && !word.OnRecord && word.Persons))
-        {
-            try
-            {
-                // FOUNDATION1d-ii: kept at the head of the record's line where it went on, whole, its files carried to the head's folder.
-                IReadOnlyList<string> names = [.. word.Files.Select(file => file.Name)];
-                await WordsHead.FollowAsync(
-                        sessionId, at => _service.SayAsync(at, word.Text, names.Count > 0 ? names : null, key: word.Key),
-                        (from, to) => ChatFiles.Carry(_home, from, to, names))
-                    .ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException or ObjectDisposedException)
-            {
-                // Nothing kept is nothing waiting: the record says it ended before any prompt.
-            }
-        }
-    }
-
-    /// <summary>Words off a record by their ids, named as taken by <paramref name="by"/>. Never faults: what it does not take stays there.</summary>
-    private async Task TakenOffAsync(string sessionId, IReadOnlyList<string> ids, string by)
-    {
-        try
-        {
-            await _service.TakenAsync(sessionId, ids, by).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException or ObjectDisposedException)
-        {
-            // The word stays on the refused record, where its go-on finds it.
-        }
+        add => Executors.Of<ChatReplacement>().Replaced += value;
+        remove => Executors.Of<ChatReplacement>().Replaced -= value;
     }
 
     /// <summary>
@@ -2320,26 +1827,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         }
 
         return SendText(sessionId, said);
-    }
-
-    /// <summary>
-    /// A person's message that is a new conversation's first, showing the words a keyed open moved to it each under its id (FOUNDATION1d-ii
-    /// part 4, <see cref="ChatContext.Shown"/>): held for the turn that writes it, which records them before the write. A text-only door records
-    /// no turn, so nothing is held for one; null <paramref name="shown"/> is <see cref="Say(string, string, IReadOnlyList{ChatUpload}?, string?)"/>.
-    /// </summary>
-    /// <exception cref="DriverException">The files are more than a message carries.</exception>
-    private bool SayShown(string sessionId, string message, IReadOnlyList<ChatUpload> files, string preface, IReadOnlyList<SessionEvent>? shown)
-    {
-        if (shown is not null && _context.Turned.ContainsKey(sessionId)) _context.Shown[sessionId] = (message, shown);
-        var took = false;
-        try
-        {
-            return took = Say(sessionId, message, files, preface);
-        }
-        finally
-        {
-            if (!took && shown is not null) _context.Shown.TryRemove(sessionId, out _);
-        }
     }
 
     /// <summary>
@@ -2763,6 +2250,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
         string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct,
         (ActorEffective Entry, string? Account)? refused, bool counts, long except) =>
         WalkAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
+
+    ChatContext IExecutorWiring.Context => _context;
+
+    Task IExecutorWiring.ConcludeAsync(string sessionId, string state, Noted note, Func<string, string, Task>? onEnded) =>
+        Conclude(sessionId, state, note, onEnded);
+
+    RotatedOpening.Carried? IExecutorWiring.LimitCarried(string? carries) => LimitCarried(carries);
 
     /// <summary>What a turn's message puts in the record as it is sent (<see cref="ChatRecorded.Recorded"/>).</summary>
     internal static IEnumerable<SessionEvent> Recorded(ChatMessage message, IReadOnlyList<SessionEvent>? shown = null) =>
@@ -3189,7 +2683,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, ICh
                         // words move to the pending start before the queue lets them go, each said meanwhile joining them, so the replacement takes
                         // each once; nothing was prompted, and the record ends `choice-not-offered`.
                         chat.NotOffered = refused.Refusal;
-                        pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || Onward(pending, sessionId, word)));
+                        pending.Moving(chat.Turns.MoveOut(word => pending.Join(word) || Executors.Of<ChatReplacement>().Onward(pending, sessionId, word)));
                         chat.Opened(null, run.Say, Record);
                         break;
                     default:

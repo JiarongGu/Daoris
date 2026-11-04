@@ -174,7 +174,10 @@ public sealed class CourseCensusTests
             var text = WithoutComments(File.ReadAllText(Path.Combine(Root, file)));
             Assert.True(Regex.IsMatch(text, @"\bMovedWords\.Asked\("), $"{file} is named as moving its words but asks no open to move them");
             if (named != "moves") continue;
-            Assert.True(Regex.IsMatch(text, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
+
+            // A site whose destination's moved words another unit reads names that unit's file.
+            var reads = site.TryGetProperty("reads", out var reader) ? WithoutComments(File.ReadAllText(Path.Combine(Root, reader.GetString()!))) : text;
+            Assert.True(Regex.IsMatch(reads, @"\bMovedWords\.(Moving|OnAsync)\("), $"{file} is named as moving its words but reads no destination's moved words");
         }
 
         // The ended limit move's box members were named here until row f-vi retired the box (FOUNDATION1f-vi part a): its move is read from the
