@@ -144,7 +144,7 @@ export type RoleAnswered = { done: () => void; refused: (sentence: string) => vo
  */
 export type StepStaffing = {
   catalogue: RoleCatalogue | null;
-  read: 'ok' | 'loading' | 'notOffered' | 'failed';
+  read: 'ok' | 'loading' | 'failed';
   actors: readonly ActorRow[];
   agents: readonly { value: string; label: string }[];
   offers: Readonly<Record<string, SettingsChoices | null | undefined>>;

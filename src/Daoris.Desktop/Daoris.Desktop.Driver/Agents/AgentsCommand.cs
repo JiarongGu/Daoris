@@ -194,7 +194,7 @@ public static class AgentsCommand
     /// <summary>The flags that take a value, as the CLI's agent family read them: a flag's value is no operand.</summary>
     internal static readonly HashSet<string> Valued = new(StringComparer.Ordinal)
     {
-        "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name", "--join",
+        "--workspace", "--account", "--for", "--keep", "--switch", "--curve", "--early", "--near", "--name",
     };
 
     /// <summary>

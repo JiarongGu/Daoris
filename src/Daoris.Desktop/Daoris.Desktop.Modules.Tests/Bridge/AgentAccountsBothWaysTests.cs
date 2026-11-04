@@ -186,23 +186,14 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// What one set leaves nothing to name (POOL1b, D197 point 6; the account-pool design §5.1): the terminal refuses a default, a
-    /// list to join and a workspace in <see cref="OneSetWords"/>' words before it builds any press, so no route is asked and nothing is
-    /// written, alone or through the window. The route's own <c>ACCOUNTS_ONE_SET</c> refusal of such a payload (POOL1a1) is
-    /// <c>DriverModuleAccountsTests</c>'.
+    /// A verb or a flag the terminal does not have is refused as an unknown word before it builds any press, so no route is asked and
+    /// nothing is written, alone or through the window.
     /// </summary>
     [Theory]
-    [InlineData("profile default claude-code account-2")]
-    [InlineData("profile default claude-code account-2 --workspace aurora")]
-    [InlineData("profile default claude-code --clear")]
-    [InlineData("profile default claude-code --clear --workspace work")]
-    [InlineData("profile order claude-code account-2 seat --workspace work")]
-    [InlineData("profile order claude-code --clear --workspace WORK")]
-    [InlineData("profile join claude-code seat work --machine")]
-    [InlineData("profile join claude-code account-3 --machine")]
-    [InlineData("profile use claude-code --no-keep --no-curve --workspace work")]
-    [InlineData("profile use claude-code --clear --workspace work")]
-    public async Task What_one_set_names_nothing_for_is_refused_at_the_terminal_and_written_nothing(string text)
+    [InlineData("profile default claude-code account-2", "unknown agent profile verb 'default'")]
+    [InlineData("profile join claude-code account-3 --machine", "unknown agent profile verb 'join'")]
+    [InlineData("profile use claude-code --clear --workspace work", "`--workspace` is not a flag of `agent account use`")]
+    public async Task A_word_the_terminal_does_not_have_is_refused_and_written_nothing(string text, string says)
     {
         var words = text.Split(' ');
 
@@ -211,7 +202,7 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
         var refused = Assert.Throws<AgentWords>(() => AgentsCommand.Plan(words, World(new StringWriter(), new StringWriter()), out _));
         var laid = Now(new StringWriter(), new StringWriter(), 0);
 
-        Assert.Contains("(D197)", refused.Message, StringComparison.Ordinal);
+        Assert.Contains(says, refused.Message, StringComparison.Ordinal);
         Assert.Equal(2, alone.Exit);
         Assert.Equal("", alone.Out);
         Assert.Contains(refused.Message, alone.Error, StringComparison.Ordinal);

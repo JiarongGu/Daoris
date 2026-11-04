@@ -4,7 +4,7 @@ import { keys } from '../data/queries';
 import type {
   DownloadCleared, DownloadedVersion, DownloadsListing, SpacePlan, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
 } from '../data/wiring';
-import { call, refusedNoRoute } from './call';
+import { call } from './call';
 import { pollUnlessTold } from './state/published';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
@@ -15,8 +15,6 @@ export type {
   WiringFile, WiringFolder, WiringLocated,
   WiringOld, WiringToolFolder, WiringVariable,
 } from '../data/wiring';
-// The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
-export { refusedNoRoute } from './call';
 
 /**
  * While a walk is under way a window with no bus reads again every two seconds, so each size arrives as it is counted; else not at
@@ -36,8 +34,7 @@ export const useSystemWiring = () => {
     queryKey: keys.systemWiring,
     queryFn: () => call<SystemWiring>('SYSTEM_WIRING'),
     enabled: isAvailable,
-    // A shell older than the route answers `NO_ROUTE` every time, so asking again only delays the page saying so.
-    retry: (count, error) => !refusedNoRoute(error) && count < 2,
+    retry: 2,
     refetchInterval: (current) => wiringAgainIn(current.state.data, isAvailable),
   });
   const measure = async () => {
@@ -66,7 +63,7 @@ export const useSystemSpace = () => {
     queryKey: keys.systemSpace,
     queryFn: () => call<SystemSpace>('SYSTEM_SPACE'),
     enabled: isAvailable,
-    retry: (count, error) => !refusedNoRoute(error) && count < 2,
+    retry: 2,
     // KEEP1e: a press's run under way reads again too, each kind's end told by the bus where there is one.
     refetchInterval: (current) => {
       const data = current.state.data;

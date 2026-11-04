@@ -72,7 +72,6 @@ export const WorkNeedsALook: Story = { args: { which: 'work', filters: { ...NO_F
 
 /** The read said, never an empty list. */
 export const NotRead: Story = { args: { which: 'work', read: 'loading' } };
-export const NotOffered: Story = { args: { which: 'work', read: 'notOffered' } };
 export const ReadFailed: Story = { args: { which: 'work', read: 'failed' }, decorators: [storyWidths.narrow, chinese] };
 
 /** Accounts: each agent a choice names, who leans on it at which position, and what cannot run. */

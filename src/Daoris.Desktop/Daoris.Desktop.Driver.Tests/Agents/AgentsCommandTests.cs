@@ -56,17 +56,13 @@ public sealed class AgentsCommandTests : IDisposable
 
     /// <summary>
     /// A refusal's command names an account a shell cannot take by a placeholder (<see cref="ShellWord"/>): the CLI's
-    /// <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here. Before POOL1b it also held a
-    /// workspace with a space in double quotes, through <c>profile default</c> and <c>profile join</c>'s refusals, which name no workspace
-    /// now (D197 point 6); <c>profile default</c>'s refusal names the account it would put first by a placeholder too.
+    /// <c>shellword.test.ts</c> held these through its TypeScript verbs until PUSH1f2e handed them here.
     /// </summary>
     [Fact]
     public async Task A_refusals_command_names_an_account_it_cannot_spell_by_a_placeholder()
     {
         foreach (var name in new[] { "account-1", "account-2", "R&D" }) Account(Home, name);
 
-        Assert.Contains("`daoris agent account order claude-code <account>` puts one first",
-            await Refused("profile", "default", "claude-code", "R&D"));
         Assert.Contains("`daoris agent account order claude-code <account> account-1` puts those first",
             await Refused("profile", "order", "claude-code", "R&D", "account-1", "--clear"));
         Assert.Contains("`daoris agent account ready claude-code <account>` is that account",
@@ -137,8 +133,6 @@ public sealed class AgentsCommandTests : IDisposable
     [InlineData("unpin claude-code")]
     [InlineData("unpin claude-code --workspace work")]
     [InlineData("profile remove claude-code work")]
-    // `profile default` and `profile join` left these rows with POOL1b (D197 point 6): each is refused on any terminal, saying why, with
-    // nothing written, before a session's terminal is asked about (`fixtures/agents-text.json`).
     [InlineData("profile order claude-code work")]
     [InlineData("profile ready claude-code --own")]
     [InlineData("profile rename claude-code work seat")]

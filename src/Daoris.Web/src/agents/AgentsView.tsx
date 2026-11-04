@@ -432,9 +432,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
-  // *Used by*: from the structure's last readings, which probe nothing; a shell that does not offer it draws no section.
+  // *Used by*: from the structure's last readings, which probe nothing.
   const structure = useStructureRead(asksUsedBy);
-  const usedBy = !asksUsedBy || structure.read === 'notOffered'
+  const usedBy = !asksUsedBy
     ? null
     : { read: structure.read === 'ok' ? 'ok' as const : structure.read === 'failed' ? 'failed' as const : 'loading' as const, rows: structure.answer ? usedByAgent(structure.answer, tool) : [] };
 

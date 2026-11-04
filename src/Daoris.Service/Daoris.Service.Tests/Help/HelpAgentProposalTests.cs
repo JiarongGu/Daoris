@@ -23,12 +23,10 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// POOL1b (D197 point 6, the account-pool design §5.3): <c>default</c> left the doors, so none is written, naming <c>order</c>; and
-    /// an update or a pin names no account. HELP10 wrote a default with its account and its workspace before.
+    /// A door the kind does not have is refused as an unknown word, naming the doors; and an update or a pin names no account.
     /// </summary>
     [Theory]
-    [InlineData("default", null, "work", "`default` is retired: every account of Daoris's serves every workspace (D197)")]
-    [InlineData("default", null, null, "propose `order` with the account first")]
+    [InlineData("default", null, null, "an agent's change is `update`, `pin`, `use`, `order` or `ready`")]
     [InlineData("update", null, "work", "names no account")]
     [InlineData("pin", "2.1.300", "work", "names no account")]
     public void A_default_or_a_misplaced_account_is_refused_with_nothing_written(string action, string? version, string? account, string says)

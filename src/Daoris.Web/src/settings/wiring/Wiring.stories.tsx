@@ -8,7 +8,7 @@ import { WiringCards } from './WiringCards';
 import { WiringDownloads } from './WiringDownloads';
 import { WiringFiles } from './WiringFiles';
 import { WiringFolders } from './WiringFolders';
-import { WiringHead, WiringOlder } from './WiringHead';
+import { WiringHead } from './WiringHead';
 import { WiringKnowledge } from './WiringKnowledge';
 import { WiringLogs } from './WiringLogs';
 import { WiringLoop } from './WiringLoop';
@@ -26,7 +26,7 @@ import {
 
 // Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
 // install with every size counted, a walk under way, a development run with the account naming another home and a service
-// that does not answer, and a shell older than the page; light and dark, and a narrow main area where the rows stack. The
+// that does not answer; light and dark, and a narrow main area where the rows stack. The
 // whole domain at the frame's three widths, in English and 中文 (the UI/UX design R6, UIFIT1): every row's value on the
 // card's track, the cards 16 px apart by the domain's own container.
 
@@ -270,9 +270,6 @@ export const ToolHomeRecordsUnread: Story = {
 /** A narrow main area: a long folder name breaks anywhere. */
 export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: narrow };
 
-/** A shell older than the page: one line, and Driver's home row is its fallback. */
-export const Older: Story = { render: () => <WiringOlder /> };
-
 // KEEP1c (the cleanup design §4.1, §4.2): the Disk space card, each kind with its size, rule, next and last clean, in every state
 // but the editors and the floor's (KEEP1d, KEEP1f), at the three widths in English and 中文.
 const space = (props: Partial<Parameters<typeof WiringSpace>[0]> = {}) => (
@@ -454,12 +451,6 @@ export const SpaceFreeEnded: Story = { render: () => space({ space: SPACE_FREED,
 export const SpaceFreeEndedDark: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: inTheme('dark') };
 
 export const SpaceFreeEndedChineseHalf: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: [storyWidths.half, chinese] };
-
-/** A shell older than the page: the card says it answers no disk space. */
-export const SpaceOlder: Story = { render: () => space({ space: undefined, older: true }) };
-
-/** A shell older than the page, in 中文. */
-export const SpaceOlderChinese: Story = { render: () => space({ space: undefined, older: true }), decorators: [chinese] };
 
 // The whole domain, as `WiringDomain` composes it, in the domain's own container (R1, R6): at the three widths the frame
 // gives, in English and 中文, light and dark. `measured/settings.spec.ts` reads each row's value box against the track.
