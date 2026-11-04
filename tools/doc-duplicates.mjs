@@ -213,7 +213,8 @@ export const byNumber = (a, b) => {
 /** The files a folder's union pattern `<folder>/*.md` covers, by name, in their numbers' order. */
 function markdownIn(root, folder) {
   return readdirSync(join(root, folder), { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    // The folder's README is its generated status table, not a decision (`tools/decision-status.mjs`).
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
     .map((entry) => entry.name)
     .sort(byNumber);
 }

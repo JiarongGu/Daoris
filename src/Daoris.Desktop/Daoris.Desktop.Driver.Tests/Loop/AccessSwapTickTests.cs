@@ -77,7 +77,7 @@ public sealed class AccessSwapTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", ProtocolAgent(), Log, Go] },
@@ -140,7 +140,7 @@ public sealed class AccessSwapTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "claude-code",
+            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Taken, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);

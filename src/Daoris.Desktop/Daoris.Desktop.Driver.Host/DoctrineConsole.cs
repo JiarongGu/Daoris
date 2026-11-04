@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// A word no group owns, handed to the CLI this install carries as a doctrine command: <c>node &lt;app/cli/…/daoris.mjs&gt; &lt;words&gt;</c>
+/// A word no group owns, handed to the CLI this install carries as a doctrine command: <c>node &lt;the carried CLI's bin&gt; &lt;words&gt;</c>
 /// on the tools' Node.js, with the terminal's own streams, marked as handed so the CLI refuses rather than hands back a word it does not
 /// own either. Its exit is the run's; a start that fails is 2, said.
 /// </summary>

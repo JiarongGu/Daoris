@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { running } from '../processes.mjs';
-import { LAUNCHER, MARKER_HEADER, SHELL_EXE, SHELL_FILES, SHELL_HOME } from './names.mjs';
+import { CONNECTOR_HOME, HOST_HOME, LAUNCHER, MARKER_HEADER, SHELL_EXE, SHELL_FILES, SHELL_HOME } from './names.mjs';
 import { HOME, OFFERED_PLUGINS, PLUGIN_OFFERS, RESOURCES } from './lay.mjs';
-import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS } from './launchers.mjs';
+import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_HOME } from './launchers.mjs';
 import { STAGE, STAGED, SWAP_JOURNAL } from './staging.mjs';
 
 /**

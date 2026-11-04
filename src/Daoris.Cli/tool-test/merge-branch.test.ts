@@ -1455,7 +1455,7 @@ const INTEGRATION_DECLARATIONS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
  */
-const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs'];
+const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs'];
 const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const PAGE_PARSED = PAGE_PARSED_NAMES
   .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
@@ -1521,7 +1521,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['what the merge tool imports',['tools/doc-duplicates.mjs'], [...BASE, 'tool-tests']],
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
-    ['the examples', ['examples/engine/README.md'], [...BASE, 'service', 'rehearse-family', 'web']],
+    ['the examples', ['examples/engine/README.md'], [...BASE, 'service', 'rehearse-family', 'web', 'modules', 'modules-process']],
     // MOD9b: the driver reads the offers and the adoption playbook, as the service reads the digest's note table.
     ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'driver', 'driver-process', 'rehearse-family', 'web', 'deployment']],
     ['the adoption playbook', ['.claude/knowledge/adoption.md'], [...BASE, 'service', 'driver']],
@@ -1682,7 +1682,7 @@ test("a merge that changes the web's sources blocks on its typecheck, and one th
   assert.deepEqual(mergeRuns(page), [...BLOCKING, 'web-types', 'web-rules']);
   const entry = selected(page, false, false).find((candidate) => candidate.gate.name === 'web-types')!;
   assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/App\.tsx \(the web's typecheck/);
-  assert.match(tool.selectionLines(selected(page, false, false)).join('\n'), /5\.\s+web-types\s+check\s+blocks the merge/);
+  assert.match(tool.selectionLines(selected(page, false, false)).join('\n'), /4\.\s+web-types\s+check\s+blocks the merge/);
   assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types'], 'what configures its compiler');
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
@@ -1715,7 +1715,7 @@ test("a merge that changes the web's sources blocks on its design and structure 
   assert.deepEqual(mergeRuns(story), [...BLOCKING, 'web-types', 'web-rules']);
   const entry = selected(story, false, false).find((candidate) => candidate.gate.name === 'web-rules')!;
   assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/design\/ui\.stories\.tsx \(the web's design and structure checks/);
-  assert.match(tool.selectionLines(selected(story, false, false)).join('\n'), /6\.\s+web-rules\s+check\s+blocks the merge/);
+  assert.match(tool.selectionLines(selected(story, false, false)).join('\n'), /5\.\s+web-rules\s+check\s+blocks the merge/);
   assert.deepEqual(mergeRuns(['src/Daoris.Web/vite.config.ts']), [...BLOCKING, 'web-types', 'web-rules'], 'what configures its tests');
   assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, 'web-types'], 'the compiler alone is the typecheck\'s');
 
@@ -3287,6 +3287,7 @@ test("a .NET gate's component is the first two folders of the project its comman
   assert.equal(tool.dotnetComponent(processRun('src/Daoris.Desktop/Daoris.Desktop.Modules.Tests')), 'src/Daoris.Desktop');
   assert.equal(tool.dotnetComponent('dotnet test src/Daoris.Service'), 'src/Daoris.Service');
   assert.equal(tool.dotnetComponent('node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
+  assert.equal(tool.dotnetComponent('node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only'), 'src/Daoris.Devkit');
   assert.equal(tool.dotnetComponent('dotnet build "src\\Daoris.Service\\Daoris.Service.Http"'), 'src/Daoris.Service');
   assert.equal(tool.dotnetComponent('dotnet build-server shutdown'), null);
   assert.equal(tool.dotnetComponent('dotnet test'), null);
@@ -3301,7 +3302,10 @@ test('every project a .NET project references is in its own component', () => {
     const text = readFileSync(join(repoRoot, project), 'utf8');
     for (const [, include] of text.matchAll(/<ProjectReference\s+Include="([^"]+)"/g)) {
       const referenced = posix.normalize(posix.join(posix.dirname(project), include!.replace(/\\/g, '/')));
-      assert.equal(tool.dotnetComponent(`dotnet build ${referenced}`), tool.dotnetComponent(`dotnet build ${project}`), `${project} references ${referenced}`);
+      const own = tool.dotnetComponent(`dotnet build ${project}`);
+      const there = tool.dotnetComponent(`dotnet build ${referenced}`);
+      // A shared project is built by each referrer's gates as well (`SHARED_PROJECTS`), so none builds it beside another.
+      if (there !== own) assert.ok(tool.SHARED_PROJECTS.get(own)?.includes(there), `${project} references ${referenced}`);
     }
   }
 });
@@ -3808,14 +3812,17 @@ test('the release rehearsal stages nothing a desktop test reads: they read the C
   const staged = [...(/const STAGED = \[([^\]]+)\]/.exec(stager)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((match) => match[1]!);
   assert.deepEqual(staged, ['canon', 'LICENSE', 'README.md', 'CHANGELOG.md'], 'the stager has stopped saying what it stages: read it again');
   assert.match(stager, /\[\.\.\.STAGED, 'dist'\]/, 'the stager no longer cleans dist/ with them: read it again');
-  const unwritten = new Set(['src', 'test']);
+  // `bin` is the CLI's own entry, tracked: no pack stages or removes it (the one reader runs beside no pack, above).
+  const unwritten = new Set(['src', 'test', 'bin']);
   for (const folder of [...staged, 'dist']) assert.ok(!unwritten.has(folder), `a pack writes the CLI's ${folder}/`);
   const sources = trackedFiles().filter((path) => path.startsWith('src/Daoris.Desktop/') && path.endsWith('.cs'));
   assert.ok(sources.length >= 100, 'the desktop sources left src/Daoris.Desktop');
   let read = 0;
   for (const path of sources) {
     const text = readFileSync(join(repoRoot, path), 'utf8');
-    assert.doesNotMatch(text, /daoris\.mjs/, `${path} names the CLI's bin, which prefers a staged dist/`);
+    // The install's own CLI (`app/cli/node_modules/daoris`) is no package of this checkout. The one test that runs this checkout's bin is a
+    // modules Process test, which never runs beside a pack (the rehearsals run beside the git half alone).
+    assert.ok(path.endsWith('Bridge/ReconcileStatusProcessTests.cs') || !/Daoris\.Cli"[^;]*daoris\.mjs/.test(text), `${path} names the CLI's bin, which prefers a staged dist/`);
     for (const match of text.matchAll(/Daoris\.Cli"\s*,\s*"([^"]+)"|Daoris\.Cli[\\/]+([^\\/\s"`'<]+)/g)) {
       const folder = match[1] ?? match[2]!;
       read += 1;
@@ -3921,7 +3928,7 @@ test("this repository's web gate runs its unit tests as a light gate of its own,
   assert.equal(scripts['test:web'], 'npm run test:web:unit && npm run test:web:e2e');
   const schedule = tool.laneSchedule(repoPlan, { scripts });
   assert.deepEqual(schedule.components['web-unit'], []);
-  assert.deepEqual(schedule.components['web'], ['src/Daoris.Service']);
+  assert.deepEqual(schedule.components['web'], ['src/Daoris.Service', 'src/Daoris.Contracts']);
   assert.equal(tool.isProcessLane(unit), false);
   assert.equal(tool.isHeavyGate(unit), true, 'vitest loads the machine, so a Process half waits for it (GATEORDER1)');
   // The web gate goes before its unit run, so the place service frees goes to the build the light lane's floor waits on.

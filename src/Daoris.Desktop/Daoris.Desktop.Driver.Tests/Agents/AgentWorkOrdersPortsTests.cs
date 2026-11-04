@@ -200,6 +200,7 @@ public sealed class AgentWorkOrdersPortsTests
             return Task.FromResult(quest);
         }
         public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
-        public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) => throw new NotSupportedException();
+        public async Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
+            verb == ServiceVerb.Get ? new ServiceReply(200, await GetAsync(path, ct).ConfigureAwait(false)) : throw new NotSupportedException();
     }
 }

@@ -49,7 +49,9 @@ public sealed class HomeLastBuildTests : IDisposable
     {
         Assert.Null(HomeLastBuild.Refusal(_home, "0.1.0"));
 
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.LastBuild), "not json");
+        var kept = DaorisHome.Entry(_home, HomeEntry.LastBuild);
+        Directory.CreateDirectory(Path.GetDirectoryName(kept)!);
+        File.WriteAllText(kept, "not json");
 
         Assert.Null(HomeLastBuild.Read(_home));
         Assert.Null(HomeLastBuild.Refusal(_home, "0.1.0"));

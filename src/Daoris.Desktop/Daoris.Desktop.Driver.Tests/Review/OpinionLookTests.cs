@@ -412,7 +412,7 @@ public sealed class OpinionLookTests : IDisposable
     {
         (DriverConfig.Empty with
         {
-            Adapter = "claude-code-acp",
+            Adapter = "claude-code-acp", Actors = StaffedRoles.On("claude-code-acp"),
             Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
             {
                 ["reports"] = new OpinionRule(reviewers ?? ["codex-acp"], on ?? [OpinionRules.Landing], required),

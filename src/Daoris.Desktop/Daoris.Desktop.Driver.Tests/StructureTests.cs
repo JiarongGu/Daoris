@@ -733,7 +733,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var errors = Tree.Value.Analysis.Errors();
 
         // CS8795: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile has none of.
-        Assert.Equal(["CS8795"], errors.Keys);
+        Assert.True(errors.Keys.SequenceEqual(["CS8795"]), string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
     }
 
     [Fact]

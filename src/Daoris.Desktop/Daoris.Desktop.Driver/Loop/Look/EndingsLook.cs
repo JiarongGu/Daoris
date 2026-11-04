@@ -21,12 +21,11 @@ internal sealed class EndingsLook(ILookStagesWiring wiring) : ILookPass
     /// <summary>The endings reported into <paramref name="events"/>, and what concluded told to the plugins and synced.</summary>
     public async Task EndAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
-        var lines = wiring.Lines;
         foreach (var ended in wiring.Runs.Drain())
         {
             // As the pass that made it classed it (NOTIFY2h2); else an end the watch announces, or the person's own (NOTIFY2h, the
             // design §5.1: `:1246` is `progress`).
-            events.Add(lines.Ran(ended.Look, ended.Ended is { ByPerson: true }, ended.Line));
+            events.Add(wiring.Lines.Ran(ended.Look, ended.Ended is { ByPerson: true }, ended.Line));
             if (ended.Ended is not null) concluded.Add(ended.Ended);
         }
 
@@ -41,11 +40,11 @@ internal sealed class EndingsLook(ILookStagesWiring wiring) : ILookPass
                 if (wiring.Beside)
                 {
                     wiring.Runs.Judge("hooks", ended.Session, HooksAtOnce,
-                        token => wiring.Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, token, lines), ended.Session, beside: true), ct);
+                        token => wiring.Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, token, wiring.Lines), ended.Session, beside: true), ct);
                     continue;
                 }
 
-                events.AddRange(await wiring.Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct, lines), ended.Session).ConfigureAwait(false));
+                events.AddRange(await wiring.Stages.TimeAsync("hooks", () => hooks.EndedAsync(ended, ct, wiring.Lines), ended.Session).ConfigureAwait(false));
             }
         }
 

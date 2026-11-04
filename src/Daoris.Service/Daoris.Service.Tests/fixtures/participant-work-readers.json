@@ -414,14 +414,6 @@
       "row": "1q",
       "note": "the session-group projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation by the same repository identity; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Workplace/LandedBranches.cs": {
-      "reads": "other",
-      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
-    },
-    "Workplace/IntegrationStore.cs": {
-      "reads": "other",
-      "note": "an integration request's landing proof keeps the landing's own opinion in the landing record's shape (INTEGRATE1e part e2), not a record's mark"
-    },
     "Review/ChatPresses.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"

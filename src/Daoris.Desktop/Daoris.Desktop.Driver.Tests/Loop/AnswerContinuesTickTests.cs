@@ -54,11 +54,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
     private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null, ServiceClient? client = null, AdapterSet? set = null)
     {
         var adapters = set ?? AdapterSet.Built();
-        var config = DriverConfig.Empty with
+        var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
@@ -333,11 +332,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("Open", service.Status("q1"));
     }
 
-    private DriverConfig Config(string agent, string mode, string permissions) => (DriverConfig.Empty with
+    private DriverConfig Config(string agent, string mode, string permissions) => (StaffedRoles.Config("acp-stub") with
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "acp-stub",
         TestBound = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", agent, Log, mode] },

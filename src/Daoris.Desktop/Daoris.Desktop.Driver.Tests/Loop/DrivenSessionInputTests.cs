@@ -394,6 +394,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         {
             Drivable = ["engine"],
             Adapter = adapter is "acp-turns" or "acp-silent" ? "acp-stub" : adapter,
+            Actors = StaffedRoles.On(adapter is "acp-turns" or "acp-silent" ? "acp-stub" : adapter),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>

@@ -168,7 +168,7 @@ describe('a closed quest’s session held for an account’s reset', () => {
 
     await waitFor(() => expect(pageHead()).toBeDefined());
     const header = pageHead();
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     expect(within(header).getByText('completed')).toBeInTheDocument();
     expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
   });

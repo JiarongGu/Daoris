@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { FormField, SelectField } from '../../design/ui';
+import { CheckField, FormField, SelectField } from '../../design/ui';
 import { ACTS, HOLDERS, type HoldDraft, holdReads, WINDOW_BOUNDS } from './appointedHold';
 
 const FIELD = 'w-24 min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink';
@@ -16,10 +16,14 @@ export function HoldFields({ hold, disabled, onChange }: { hold: HoldDraft; disa
       <fieldset className="m-0 grid gap-1 border-0 p-0">
         <legend className="mb-1 p-0 text-meta text-ink-faint">{t('agents.setup.roles.hold.field.acts')}</legend>
         {ACTS[hold.kind].map((act) => (
-          <label key={act} className="flex items-center gap-2 text-small text-ink">
-            <input type="checkbox" checked={hold.acts.includes(act)} disabled={disabled} onChange={() => toggle(act)} />
-            {t(`agents.setup.roles.hold.act.${act}`)}
-          </label>
+          <CheckField
+            key={act}
+            checked={hold.acts.includes(act)}
+            disabled={disabled}
+            onChange={() => toggle(act)}
+            label={t(`agents.setup.roles.hold.act.${act}`)}
+            className="text-small text-ink"
+          />
         ))}
       </fieldset>
       <FormField label={t('agents.setup.roles.hold.field.holder')}>

@@ -24,7 +24,9 @@ public sealed class RouteModulesTests(LocalHost host) : IClassFixture<LocalHost>
     [Fact]
     public void Every_declared_route_is_mapped_once_at_its_method_and_path()
     {
-        var declared = RouteDeclaration.In(typeof(IRoute<>).Assembly);
+        // The feed's doors are a shared host's alone (FeedRoutes maps none on a local one), so this local host maps none of them.
+        var declared = RouteDeclaration.In(typeof(IRoute<>).Assembly)
+            .Where(route => route.Request.Namespace != "Daoris.Contracts.Feed").ToList();
         var mapped = host.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
             .SelectMany(endpoint => (endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods ?? [])
                 .Select(method => (Method: method, Pattern: endpoint.RoutePattern.RawText ?? "")))

@@ -35,7 +35,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
     }
 
     /// <summary>Drivable here, in trees of its own, on an agent that rides the protocol door.</summary>
-    private static DriverConfig Config => (DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = 2 })
+    private static DriverConfig Config => (ActorChoices.With(DriverConfig.Empty, "build", [new ActorChoice("claude-code-acp")]) with { Cap = 2 })
         .WithDrivable("atlas", true).WithTrees("atlas", true);
 
     [Fact]

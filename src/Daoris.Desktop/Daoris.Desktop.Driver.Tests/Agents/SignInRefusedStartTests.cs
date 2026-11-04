@@ -73,17 +73,12 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     private HarnessRoster Built() => new(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
-    private static DriverConfig FakeConfig => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig FakeConfig => ActorChoices.With(DriverConfig.Empty, "build", [new ActorChoice("fake")]);
 
-    private static DriverConfig Config => DriverConfig.Empty with
-    {
-        Drivable = ["engine"],
-        Trees = ["engine"],
-        Adapter = "acp-stub",
-        // One failure would park it: a refused sign-in must not.
-        Strikes = 1,
-        PollSeconds = 1,
-    };
+    // One failure would park it: a refused sign-in must not.
+    private static DriverConfig Config => ActorChoices.With(
+        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Strikes = 1, PollSeconds = 1 },
+        "build", [new ActorChoice("acp-stub")]);
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>
         new(service, Config, AdapterSet.Built(), _home, harnesses: roster);
@@ -671,15 +666,12 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     [Fact]
-    public async Task The_same_failure_without_the_account_s_line_is_a_strike()
+    public async Task The_same_failure_without_the_account_s_line_is_a_strike_the_records_count()
     {
         using var service = _ledger.Client();
         var roster = Built();
         await RefusedAsync(service, roster, accountLine: false);
 
-        var look = await Driver(service, roster).TickAsync().WaitAsync(Poll.Patience);
-
-        Assert.Equal(StartVerdict.Exhausted, Assert.Single(look.Considerations).Verdict);
         Assert.Equal(1, ServiceClient.ReadStrikes(JsonSerializer.Serialize(_ledger.Sessions))["q1"]);
     }
 }

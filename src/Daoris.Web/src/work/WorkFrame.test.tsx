@@ -97,7 +97,7 @@ describe('the Work frame', () => {
     const first = show();
     const user = userEvent.setup();
     let list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.queryByRole('menuitemradio', { name: 'Ask' })).toBeNull();
@@ -107,7 +107,7 @@ describe('the Work frame', () => {
     answerEntries(true);
     show();
     list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
     focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitemradio', { name: 'Ask' }));

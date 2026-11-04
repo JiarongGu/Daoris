@@ -66,7 +66,7 @@ public sealed class AccountGoalTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = Repositories,
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             Cap = Cap,
             TestBound = 2,
             PollSeconds = 1,

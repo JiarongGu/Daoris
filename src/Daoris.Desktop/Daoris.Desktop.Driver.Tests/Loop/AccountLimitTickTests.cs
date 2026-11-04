@@ -61,7 +61,7 @@ public sealed class AccountLimitTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "acp-stub",
+            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             // Two failures park it, and the quest already holds one: were the limit a strike, the carry-on it refused

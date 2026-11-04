@@ -93,7 +93,7 @@ public sealed partial class SyncStateSliceTests : DriverModuleBridge
     {
         var page = Fields(Path.Combine("src", "Daoris.Web", "src", "data", "api.ts"), PageStanding(), "export type SyncStanding = {", PageField());
         var service = Fields(
-            Path.Combine("src", "Daoris.Service", "Daoris.Service.Http", "ApiContracts.cs"), ServiceStanding(), "record SyncStandingResponse(",
+            Path.Combine("src", "Daoris.Contracts", "Sync", "SyncRecords.cs"), ServiceStanding(), "record SyncStandingResponse(",
             ServiceField(), camel: true);
         var driver = typeof(SyncStanding).GetProperties().Select(each => char.ToLowerInvariant(each.Name[0]) + each.Name[1..]);
 

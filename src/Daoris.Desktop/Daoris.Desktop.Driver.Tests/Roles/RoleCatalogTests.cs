@@ -77,7 +77,7 @@ public sealed class RoleCatalogTests : IDisposable
         RoleCatalog.Write(db, RoleChange.DefaultAll(), () => StoreSettled.Yes);
 
         var after = RoleCatalog.Read(db);
-        Assert.Equal(ActorChoices.Ids.Append("designer"), after.Slots.Select(slot => slot.Id));
+        Assert.Equal([.. ActorChoices.Ids, "supervisor", "steward", "designer"], after.Slots.Select(slot => slot.Id));
         Assert.All(after.Slots.Where(slot => slot.Id != "designer"), slot => Assert.Equal(RoleState.Seed, slot.State));
         Assert.Equal((RoleState.Set, added.Json()), (after.Slots[^1].State, after.Slots[^1].Role!.Json()));
         Assert.Null(after.Judge(RoleChange.DefaultAll()));
@@ -144,7 +144,7 @@ public sealed class RoleCatalogTests : IDisposable
         var slots = catalog.Slots.ToDictionary(slot => slot.Id);
         Assert.All(["build", "chat", "intake"], id => Assert.Equal((RoleState.Unreadable, null), (slots[id].State, slots[id].Role)));
         Assert.Equal("mixes the working and the appointed shape", slots["build"].Error);
-        Assert.Equal("is an appointed role, which this build does not configure", slots["chat"].Error);
+        Assert.Equal("names no `kind` of `supervisor` or `steward`", slots["chat"].Error);
         Assert.Equal("takes `gardening`, a work this build does not know", slots["intake"].Error);
     }
 
@@ -235,7 +235,7 @@ public sealed class RoleCatalogTests : IDisposable
         }
 
         var read = RoleCatalog.Read(db);
-        Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "designer"], read.Slots.Select(slot => slot.Id));
+        Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "supervisor", "steward", "designer"], read.Slots.Select(slot => slot.Id));
         Assert.Equal((RoleState.Set, 7L, added.Json()), (read.Slots[^1].State, read.Slots[^1].Revision, read.Slots[^1].Role!.Json()));
     }
 
@@ -265,7 +265,7 @@ public sealed class RoleCatalogTests : IDisposable
     public void A_named_role_that_cannot_take_the_step_holds_it_said_and_never_falls_to_another_role()
     {
         const string Here = "Agents → Roles, or `daoris role`";
-        var appointed = """{"id":"lead","name":{"en":"Lead","zh":"Lead"},"filled":"appointed","authority":["answer"],"scope":{"kind":"machine"}}""";
+        var appointed = """{"id":"lead","name":{"en":"Lead","zh":"Lead"},"kind":"supervisor","filled":"appointed","authority":["answer"],"scope":{"kind":"machine"}}""";
         var catalog = RoleCatalog.Of(
         [
             Stored(Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1"))),
@@ -279,8 +279,8 @@ public sealed class RoleCatalogTests : IDisposable
             ("nobody", ParticipantWork.Build, Machine, $"No role `nobody` is in the catalogue, so the starts naming it hold until it is added: {Here}."),
             ("intake", ParticipantWork.Intake, Machine, $"No role `intake` is in the catalogue, so the starts naming it hold until it is added: {Here}."),
             ("broken", ParticipantWork.Build, Machine, $"The role `broken` {catalog.Slots.Single(slot => slot.Id == "broken").Error}, so the starts naming it hold until it reads or is deleted."),
-            ("supervisor", ParticipantWork.Build, Machine, "`supervisor` is the shell's: the supervisor and the steward are not configured here, so the starts naming it hold until they name a working role."),
-            ("lead", ParticipantWork.Build, Machine, "`lead` is an appointed role: this build configures working roles alone, so the starts naming it hold until they name a working role."),
+            ("supervisor", ParticipantWork.Build, Machine, "`supervisor` is an appointed role, which holds acts and takes no work, so the starts naming it hold until they name a working role."),
+            ("lead", ParticipantWork.Build, Machine, "`lead` is an appointed role, which holds acts and takes no work, so the starts naming it hold until they name a working role."),
             ("checker", ParticipantWork.Review, new RolePlace(Workspace: "w2"), $"The role `checker` does not work here: its scope is the workspace `w1`, so the starts naming it hold until it is scoped here: {Here}."),
             ("checker", ParticipantWork.Build, InWorkspace, $"The role `checker` does not take `build`, so the starts naming it hold until it does: {Here}."),
             ("opinion", ParticipantWork.Design, Machine, $"The role `opinion` does not take `design`, so the starts naming it hold until it does: {Here}."),

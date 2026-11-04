@@ -318,9 +318,9 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     /// <summary>The fields the service answers of a record (<c>SessionResponse</c>), as its web defaults write them.</summary>
     private static IReadOnlyList<string> ServiceSessionFields()
     {
-        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Http", "ApiContracts.cs"));
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Contracts", "Sessions", "SessionRecords.cs"));
         var block = ServiceSession().Match(text);
-        Assert.True(block.Success, "ApiContracts.cs declares no `record SessionResponse(`");
+        Assert.True(block.Success, "SessionRecords.cs declares no `record SessionResponse(`");
         var parameters = Comments().Replace(block.Groups["body"].Value, "");
         return [.. ServiceField().Matches(parameters).Select(field => char.ToLowerInvariant(field.Groups["name"].Value[0]) + field.Groups["name"].Value[1..])];
     }

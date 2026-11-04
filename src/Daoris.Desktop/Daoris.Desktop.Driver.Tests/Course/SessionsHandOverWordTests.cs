@@ -47,7 +47,7 @@ public sealed class SessionsHandOverWordTests : IDisposable
     {
         var ask = Read("hand-over", "s1a2b3c4", flag);
         Assert.Equal((verb, "s1a2b3c4"), (ask.Verb, ask.Ids[0]));
-        Assert.Contains("sessions hand-over <id> --approve|--decline", SessionsCommand.Usage);
+        Assert.Contains("session hand-over <id> --approve|--decline", SessionsCommand.Usage);
     }
 
     [Fact]
