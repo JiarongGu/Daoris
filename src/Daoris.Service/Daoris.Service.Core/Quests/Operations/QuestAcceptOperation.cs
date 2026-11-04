@@ -16,7 +16,7 @@ internal sealed class QuestAcceptOperation : IQuestOperation
     {
         writer.WriteStartObject();
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
-        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
+        QuestRecordCodec.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         writer.WriteEndObject();
     }
 
@@ -26,7 +26,8 @@ internal sealed class QuestAcceptOperation : IQuestOperation
     /// A yes that lost takes the step it published with it, as a lost close's does (DRIFT1d), while the done stands unaccepted; one that
     /// lost to another machine's yes leaves the step the winner published, which is the same one.
     /// </summary>
-    public Task<IReadOnlyList<QuestOperation>> LostAsync(QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost) =>
+    public Task<IReadOnlyList<QuestOperation>> LostAsync(
+        QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost, QuestRebaseLosses losses) =>
         standing is not { Accepted: not null }
             ? tx.ForgetFollowUpsAsync(operation.Quest, takeLost, "yes")
             : Task.FromResult<IReadOnlyList<QuestOperation>>([]);

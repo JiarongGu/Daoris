@@ -31,6 +31,8 @@ internal interface IQuestOperation
     /// </summary>
     /// <param name="standing">The quest as the rebase has replayed it so far.</param>
     /// <param name="takeLost">Whether it lost with this machine's take on the quest.</param>
-    Task<IReadOnlyList<QuestOperation>> LostAsync(QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost) =>
+    /// <param name="losses">What the rebase has replayed, and what it must say on the lost take's conflict.</param>
+    Task<IReadOnlyList<QuestOperation>> LostAsync(
+        QuestTx tx, QuestOperation operation, Quest? standing, bool takeLost, QuestRebaseLosses losses) =>
         Task.FromResult<IReadOnlyList<QuestOperation>>([]);
 }
