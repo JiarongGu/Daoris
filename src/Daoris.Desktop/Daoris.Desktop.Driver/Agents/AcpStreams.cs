@@ -83,7 +83,7 @@ internal sealed class AcpStreams(
     /// <param name="rootId">The session's own id on the wire.</param>
     public bool Take(string? from, string? rootId, JsonElement update)
     {
-        switch (AcpSession.Kind(update))
+        switch (AcpRender.Kind(update))
         {
             case "subagent_spawned":
                 return Spawned(from, rootId, update);
@@ -105,7 +105,7 @@ internal sealed class AcpStreams(
             if (from is null || !_children.TryGetValue(from, out child)) return false;
         }
 
-        child.Console.Update(update, AcpSession.Map(update));
+        child.Console.Update(update, AcpRender.Map(update));
         return true;
     }
 
@@ -180,7 +180,7 @@ internal sealed class AcpStreams(
             ByRoot = onRoot,
         });
         streams.Open(new SessionStream(streamId, SessionStreamKind.Subagent, name));
-        Say($"→ subagent: {AcpSession.OneLine(name)}");
+        Say($"→ subagent: {AcpRender.OneLine(name)}");
         if (onRoot)
         {
             emit(new SessionEvent
@@ -241,7 +241,7 @@ internal sealed class AcpStreams(
         // Stoppable only when the harness says so (CONSOLE3a): its word, never a guess from the task's kind.
         var canStop = update.TryGetProperty("canStop", out var stoppable) && stoppable.ValueKind == JsonValueKind.True;
         streams.Open(new SessionStream(streamId, SessionStreamKind.Task, name, canStop));
-        Say($"→ background: {AcpSession.OneLine(name)}");
+        Say($"→ background: {AcpRender.OneLine(name)}");
         Watch(task, Json.Text(update, "outputFilePath"));
         return true;
     }
@@ -333,7 +333,7 @@ internal sealed class AcpStreams(
     {
         streams.End(streamId, state);
         var what = kind == SessionStreamKind.Subagent ? "subagent" : "background";
-        name = AcpSession.OneLine(name);
+        name = AcpRender.OneLine(name);
         Say(state switch
         {
             "completed" => $"  ✓ {what}: {name}",
