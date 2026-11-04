@@ -32,7 +32,7 @@ namespace Daoris.Driver;
 internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
 {
     /// <summary>The endings a chat goes on from: every one but a stand-down, which never goes on (D137 §2.2).</summary>
-    private static readonly HashSet<string> Ended = new(StringComparer.OrdinalIgnoreCase) { "completed", "declined", "failed", "stopped" };
+    internal static readonly HashSet<string> Ended = new(StringComparer.OrdinalIgnoreCase) { "completed", "declined", "failed", "stopped" };
 
     private ChatContext _context => wiring.Context;
     private IChatRunning _runner => wiring;
@@ -49,7 +49,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// An ended chat whose words wait for its own cooling account, or one held by its limit (LIMITRESUME1c, D206 §3.5): told to the look's
     /// <c>limits</c> stage, which wakes it on its own account at the reset.
     /// </summary>
-    private void Waits(string session) => wiring.Of<LimitWaits>().Add(session);
+    internal void Waits(string session) => wiring.Of<LimitWaits>().Add(session);
 
     /// <summary>What the course answered each conversation's go-on, by session (FOUNDATION1h branch 7): a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
@@ -60,7 +60,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// reading <see cref="AnswersAloneHold"/> made (the course never reads an event file). Where the course would answer another thing than the go-on
     /// does it keeps today's answer (D212's differences 6 and 9), so what it says is heard and the go-on's reading stays its own.
     /// </summary>
-    private LineCourse Decide(PriorSession record, string? judged = null, bool agentGone = false, int? alone = null, LineAnswer? answer = null)
+    internal LineCourse Decide(PriorSession record, string? judged = null, bool agentGone = false, int? alone = null, LineAnswer? answer = null)
     {
         var course = CourseDecision.Decide(
             new CourseFacts(
@@ -332,7 +332,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     }
 
     // CHATFLOW1e: the answering turn's completion an ended chat goes on with another agent's findings under, by record, until its go-on takes it.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Func<bool, Task>> _answering = new(StringComparer.Ordinal);
+    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, Func<bool, Task>> _answering = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Whether an ended conversation can go on with another agent's findings (CHATFLOW1e, the chat-flow design §6.1 (f)), asked before they are
@@ -481,7 +481,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         record.Waiting.Where(word => word.Daoris && DaorisKeys.IsResume(word.Key) && word.Id is not null);
 
     /// <summary>The record as its words stand without Daoris's limit word: what a refusal marks, names and hands on.</summary>
-    private static PriorSession WithoutLimitWords(PriorSession record) =>
+    internal static PriorSession WithoutLimitWords(PriorSession record) =>
         record.Said is { } said && LimitWordsOf(record).Any()
             ? record with { Said = [.. said.Where(word => !(word.Daoris && DaorisKeys.IsResume(word.Key)))] }
             : record;
@@ -494,7 +494,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// a pick; every other conversation, an agent's pick and one from before the pick was kept among them, walks its agent's accounts. Ask
     /// Daoris's room never asks it (<see cref="HelpGoingOnAsync"/>).
     /// </summary>
-    private Task<ResumeChoice> SwitchableAsync(PriorSession record, string adapter, DriverConfig config, string? workspace, CancellationToken ct) =>
+    internal Task<ResumeChoice> SwitchableAsync(PriorSession record, string adapter, DriverConfig config, string? workspace, CancellationToken ct) =>
         _context.Harnesses.ResumeAsync(
             adapter, config, workspace, record.Profile, StartKind.Conversation, ct: ct,
             line: LineKind.Conversation(carries: record.Waiting.Any(word => word.Persons)),
@@ -529,306 +529,10 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         return known is null ? null : await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
     }
 
-    private async Task<ChatStart> GoingOnAsync(
-        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
-    {
-        // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), and a
-        // live one hears words at its door. Ask Daoris's conversation goes on too, in its room (ASKHIST1).
-        var json = await _context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        var record = ServiceClient.ReadRecord(json, sessionId);
-        if (record is not { Kind: "chat", WordsWaiting: true } || record.Teammate
-            || !(Ended.Contains(record.State) || string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase)))
-        {
-            return new(null, $"session `{sessionId}` is no ended conversation of this machine's with words waiting.");
-        }
+    private Task<ChatStart> GoingOnAsync(
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct) =>
+        new GoingOnRun(wiring, this).GoingOnAsync(sessionId, config, onEnded, woke, ct);
 
-        // 🔴 HANDWORDS1 (D163 point 1, D165 point 3): one handed over or moved went on in another, which holds its tree now and takes
-        // its words. Restarted, it would open a second conversation in that tree: it stays as it ended, its words unmarked.
-        if (WordsNever.ContinuedIn(json, sessionId) is { } next)
-        {
-            return new(null, $"conversation `{sessionId}` went on in conversation `{next}`, which takes its words.");
-        }
-
-        // 🔴 Answers alone that would take its line on past its number in a row with nobody between wait for the person, marked before any
-        // mark is cleared; a word of theirs, or their *Go on with this answer*, lets them go.
-        var lines = ServiceClient.ReadRecords(json);
-        var hold = AnswersAloneHold.For(_context.Events, _context.Marks, _context.Home);
-        if (hold.Holds(record, lines, DateTimeOffset.UtcNow))
-        {
-            Decide(record, alone: hold.HeldAt(record.Session, lines));
-            return new(null, $"conversation `{sessionId}`'s answer waits for you: it would take its work on a third time with nobody between.");
-        }
-
-        // The person wrote to it, so it stays in view whatever comes of it (D137 §2.3), and an earlier mark of words it could
-        // not take is past: these are taken up now.
-        new SessionArchive(_context.Home).Unarchive([sessionId]);
-        _context.Marks.Clear(sessionId);
-
-        // 🔴 MODELROLE1d2 (D205 §3.5(b)): one its agent refused at the open began no conversation there, so it is never resumed: its go-on
-        // is a fresh start of its actor, its words the first message, a pick trying only its own agent's entries on its own account, and a
-        // refused continuation handed the brief of its line first. The come-up's go-on takes the same path.
-        if (record.NotOffered)
-        {
-            var fresh = await _move.NotOfferedAsync(record, json, config, onEnded, ct).ConfigureAwait(false);
-            if (fresh.SessionId is null) _context.Note(sessionId, LimitNotes.NotMoved(fresh.Message));
-            return new(fresh.SessionId, fresh.Message);
-        }
-
-        // Its conversation is the adapter's that opened it, so it goes on on that one or not at all. A record naming none (one from before
-        // the adapter was kept) goes on with its role's choice, Chat's order, never the machine's `adapter` key (FOUNDATION1j part iii,
-        // the foundation design §2.4's first row); Chat off, or its entry unread, holds the words with the sentence.
-        string ranOn;
-        try
-        {
-            // FOUNDATION1x: its binding's role first, as a quest's go-on reads it (§2.4).
-            ranOn = record.Adapter is { Length: > 0 } opened
-                ? opened
-                : StartPlan.ContinuedOn(
-                    record, config, "chat", _context.Conversations.RoleOf(sessionId)?.Role, RoleCatalog.ReadHome(_context.Home), new RolePlace());
-        }
-        catch (DriverException unchosen)
-        {
-            return Held(sessionId, HeldWords.Program(unchosen.Message));
-        }
-
-        ISessionAdapter? adapter = null;
-        try
-        {
-            adapter = _context.Harnesses.Adapters.Resolve(ranOn);
-        }
-        catch (DriverException)
-        {
-            // An adapter no longer here (a plugin's, removed): its conversation cannot be resumed.
-        }
-
-        // What can be known before anything is asked of the toolchain, on the account it ran on: the nevers, no words, its
-        // tree, a kept id and a door that resumes. Where the selection lands on another account is judged after it.
-        var kept = _context.Conversations.Read(sessionId);
-        var why = adapter is null
-            ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(record, adapter.Name, adapter.Resumes, record.Profile, kept);
-        if (why is not null || adapter is null || kept is null)
-        {
-            var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
-            // 🔴 SESSCTX1c part B (D189 point 3): no id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
-            // itself in a new part handed the brief; anything else waits for the person, the brief ready. A lost conversation is decided by
-            // the move it goes on in (ConversationLost, which knows the walk's answer); what cannot go on is the course's hold here.
-            if (adapter is not null && reason.Lost) return await LostAsync(record, reason, adapter.Name, config, onEnded, held: true, ct).ConfigureAwait(false);
-            Decide(record, judged: reason.Code, agentGone: adapter is null);
-            return CannotGoOn(record, reason, ranOn);
-        }
-
-        if (string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase))
-        {
-            return await HelpGoingOnAsync(record, adapter, kept, config, onEnded, woke, ct).ConfigureAwait(false);
-        }
-
-        var registry = await _context.Service.RegistryAsync(ct).ConfigureAwait(false);
-        var known = registry
-            .FirstOrDefault(r => string.Equals(r.Repository, record.Repository, StringComparison.OrdinalIgnoreCase));
-        if (known is null || string.IsNullOrWhiteSpace(known.Root))
-        {
-            return Held(sessionId, HeldWords.NoCheckout(record.Repository));
-        }
-
-        // The account it ran on, asked for by name, as a chat's picker names one (D137 §2.2, MSG1g): its conversation lives in
-        // that account's home. Cooling, the words wait for its reset, said with the door out of the wait; unable to run there
-        // at all, it cannot go on, at once and saying why, since nothing carries a chat's words on by itself; anything else the
-        // selection will not start holds the words.
-        // LIMITSWITCH2 (D137's note of 2026-10-25): cooling, and another account of its agent ready, the person's words go on now in a new part
-        // there, through the ended limit move's body, which walks once and opens on what it judged; otherwise they wait for the earliest
-        // reset of any account of its agent, never its own alone.
-        var resume = await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
-        var course = Decide(record, answer: resume.Answer);
-        if (resume.Switched || course is LineCourse.Move { Why: CourseFromWhy.Retry })
-        {
-            StartedFrom? moved;
-            try
-            {
-                moved = await _limit.MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                moved = new StartedFrom(null, false, null, error.Message);
-            }
-
-            // Where nothing opened its words stay on the record, said why where the move said it, for the person's next word.
-            return moved is { SessionId: { } onTo } ? new(onTo, moved.Message) : new(null, moved?.Message ?? $"conversation `{sessionId}` did not go on in a new part now.");
-        }
-
-        if (resume.Waits || course is LineCourse.Wait)
-        {
-            _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
-            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it at the reset.
-            Waits(sessionId);
-            return new(null, resume.Selection.Refusal);
-        }
-
-        if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
-        var selection = resume.Selection;
-        if (!selection.Allowed) return Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
-        {
-            return CannotGoOn(record, account, adapter.Name);
-        }
-
-        // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
-        var limited = LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit);
-
-        // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
-        // so bringing the repository up to date does not rebase it under the conversation.
-        var own = !SamePath(record.Tree!, known.Root!);
-
-        // LANDSYNC2b (D87's 2026-10-15 amendment point 7): a conversation going on in its own tree starts from the line where the line
-        // came to hold some of its commits, as a driven session's does (LANDSYNC2), and is told so after the words. Asked before this
-        // start's own hold below, since bringing a tree up to date holds the repository's trees alone. The person's checkout is never
-        // moved: a conversation in it asks nothing.
-        var inSync = own ? await StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
-        // GITLOCK1: one in the checkout itself holds it too, until the ledger holds it again below.
-        using var starting = TreeLock.TryStarting(_context.Home, known.Root!);
-        if (starting is null) return Held(sessionId, HeldWords.Holding(known.Repository, TreeLock.HolderOf(_context.Home, known.Root!)));
-
-        // 🔴 The ledger's one move out of an ended state, with the person's words waiting (MSG1a, D137 §2.3), before anything
-        // is spawned: it holds the tree again, and refuses where another session holds it (D51).
-        try
-        {
-            await _context.Service.AdvanceAsync(sessionId, "working", GoingOnNote(record.Waiting), ct: ct).ConfigureAwait(false);
-        }
-        catch (DriverException refused)
-        {
-            return Held(sessionId, HeldWords.Program(refused.Message));
-        }
-
-        starting?.Dispose();
-        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
-        var proc = ChildLineage.Opened(_context.Home, sessionId);
-        var handed = false;
-        using var unhanded = new Disposer(() =>
-        {
-            if (!handed) LineageTokens.Current.Unspawned(proc);
-        });
-
-        // Every word waiting once it moved: none can be kept on a record that works (the say door answers `running`), so the
-        // list read now is whole, a word said while it was judged included.
-        var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
-        var words = Continuations.HandedAfterMove(record.Waiting, now);
-        if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
-        // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
-        // rules already read its own files folder (CONV4c). What its start did with its tree against the line after them (LANDSYNC2b).
-        // CONTEXTDRIVE1b (§3 point 2): and Daoris's count for its line, where one moved or stands near what Daoris does on it.
-        var counted = CountTexts.GoOn(LineCountsRead.FactsOf(_context.Home, sessionId, json).Counts);
-        var ask = new ResumeAsk(
-            kept.Conversation, words,
-            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
-            Continuations.AfterWords(inSync, counted),
-            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
-        {
-            Resent = Resent(sessionId, limited),
-        };
-        // SESSCTX1b: a part that continues another keeps reading its line's kept folders, whose files its brief named.
-        var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
-
-        // CHATFLOW1e (§6.1 (c), (f)): a go-on with another agent's findings answers them in its first turn, whose reading is frozen at its end; a
-        // word of the person's that went with them puts their work inside that turn, as a word steered into it does.
-        Func<bool, Task>? answering = null;
-        if (words.Any(word => word.By is not null) && _answering.TryGetValue(sessionId, out var answers))
-        {
-            var persons = words.Any(word => word.Persons);
-            answering = steered => answers(steered || persons);
-        }
-
-        var placed = _runner.RepositoryPlace(
-            config, registry, known, record.Repository!, record.Tree!, continued,
-            answers: await _runner.AnswersFindingsAsync(sessionId, record.Tree!, config).ConfigureAwait(false));
-        handed = true;
-        return await _runner.RunAsync(
-            record.Actor ?? "chat", sessionId,
-            words.Any(word => word.Persons)
-                ? $"conversation `{sessionId}` goes on with your words in its own conversation."
-                : words.All(word => word.Daoris)
-                    // COWORK1b: Daoris's own words alone are no agent's answer.
-                    ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
-                    : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
-            adapter, selection, config, placed, onEnded, ct, new GoingOn(record, ask) { Answering = answering, Proc = proc }).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Ask Daoris's ended conversation goes on with the person's words (ASKHIST1): judged as a chat's is up to its account, then
-    /// the room's one running conversation set aside, the ledger's move, and its own conversation resumed in the room. It reads
-    /// the help chat's set-aside and room; the help chat calls nothing here.
-    /// </summary>
-    private async Task<ChatStart> HelpGoingOnAsync(
-        PriorSession record, ISessionAdapter adapter, HarnessConversation kept, DriverConfig config,
-        Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
-    {
-        var sessionId = record.Session;
-
-        // Its account by name, as a chat's, among the machine's accounts (D89): going on keeps the account it ran on.
-        var resume = await _context.Harnesses
-            .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
-            .ConfigureAwait(false);
-        var course = Decide(record, answer: resume.Answer);
-        if (resume.Waits || course is LineCourse.Wait)
-        {
-            _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
-            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
-            Waits(sessionId);
-            return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
-        }
-
-        if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
-        var selection = resume.Selection;
-        if (!selection.Allowed) return Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
-        {
-            return CannotGoOn(record, account, adapter.Name);
-        }
-
-        // Its own workspace's running one alone (ASKSCOPE1a): another workspace's runs on beside it.
-        if (await _help.SetAsideHelpAsync(sessionId, record.Workspace, ct).ConfigureAwait(false) is { } answering) return Held(sessionId, HeldWords.Answering(answering));
-
-        // 🔴 The ledger's one move out of an ended state (MSG1a, D137 §2.3), before anything is spawned: it holds the room again,
-        // and refuses where another conversation holds it, one another process here runs among them.
-        try
-        {
-            await _context.Service.AdvanceAsync(sessionId, "working", Continuations.GoingOnNoted, ct: ct).ConfigureAwait(false);
-        }
-        catch (DriverException refused)
-        {
-            return Held(sessionId, HeldWords.Program(refused.Message));
-        }
-
-        // COWORKVIEW1a: its process's token and `start` as its move returns, let go wherever it never reaches the runner.
-        var proc = ChildLineage.Opened(_context.Home, sessionId);
-        var handed = false;
-        using var unhanded = new Disposer(() =>
-        {
-            if (!handed) LineageTokens.Current.Unspawned(proc);
-        });
-
-        var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
-        var words = Continuations.HandedAfterMove(record.Waiting, now);
-        if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
-        var ask = new ResumeAsk(
-            kept.Conversation, words,
-            woke is { } until
-                ? LimitNotes.Resumed(until)
-                : Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
-            files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
-        {
-            // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.
-            Resent = Resent(sessionId, LimitHeld.Waiting(_context.Events.After(sessionId, 0).Events, record.Limit)),
-        };
-
-        // ASKSCOPE1b: the room it ran in, its workspace's, or the machine's where it started there before each workspace had its own.
-        var (room, reads) = await _help.HelpRoomNowAsync(sessionId, KnowledgeRoomPaths.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
-            .ConfigureAwait(false);
-        handed = true;
-        return await _runner.RunAsync(
-            record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
-            _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
-    }
 
     /// <summary>
     /// What the ledger's note gains as an ended chat goes on (MSG1b), by what waits: another agent's claims alone are never "your
@@ -888,135 +592,31 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// The person's words of the turns its account's limit refused (LIMITRESUME1c, <see cref="LimitHeld"/>), each with its kept files:
     /// handed again first where its own conversation goes on. None where its limit holds it no more.
     /// </summary>
-    private IReadOnlyList<ChatMessage> Resent(string sessionId, LimitHeld? held) =>
+    internal IReadOnlyList<ChatMessage> Resent(string sessionId, LimitHeld? held) =>
         held is null
             ? []
             : [.. held.Words.Select(word => new ChatMessage(word.Text!, ChatFiles.Kept(_context.Home, sessionId, word.Files ?? [])))];
 
-    /// <summary>
-    /// The agent would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended, its flags
-    /// kept and its note saying why, and its words stay waiting, marked, as where it could not go on. Where the refusal proves the
-    /// conversation lost (SESSCTX1c part B), the words are not marked: the runner goes on in a new part once this run let go
-    /// (<see cref="LostAsync"/>), since the new part starts in the same tree.
-    /// </summary>
-    public async Task WentBackAsync(
-        string sessionId, GoingOn goOn, ContinueReason why, string adapter, Func<string, string, Task>? onEnded)
-    {
-        // 🔴 LIMITRESUME1c (D206 §3.5, B9): Daoris's limit word off first, so a refusal that waits for the person leaves none of it.
-        var record = await LimitWordOffAsync(sessionId, goOn.Record).ConfigureAwait(false) ?? goOn.Record;
-        try
-        {
-            await _context.Service.AdvanceAsync(
-                    sessionId, record.State, Continuations.CannotNote(record, why), interrupted: record.Interrupted,
-                    limit: record.Limit)
-                .ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            // Best-effort, as every conclusion here is: the host may be gone on the same shutdown.
-        }
+    private GoOnRefusals Refusals => new(wiring, this);
 
-        if (!why.Lost) CannotGoOn(record, why, adapter);
-        if (onEnded is not null)
-        {
-            try
-            {
-                await onEnded(sessionId, record.State).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // A listener's failure is its own; the record is already written.
-            }
-        }
-    }
+    /// <summary>The agent would not resume the conversation (MSG1c): the record goes back as it ended and its words wait, marked.</summary>
+    public Task WentBackAsync(string sessionId, GoingOn goOn, ContinueReason why, string adapter, Func<string, string, Task>? onEnded) =>
+        Refusals.WentBackAsync(sessionId, goOn, why, adapter, onEnded);
 
-    /// <summary>
-    /// Where a chat's words cannot go on in it (MSG1c, D137 §2.2): nothing carries a chat's words on by itself, so they stay
-    /// waiting as said and are marked by their ids; its conversation says why with their ids and the reason's code, which the
-    /// page words with its one press (MSG1f); and the machine log says it did not resume.
-    /// </summary>
-    /// <param name="said">Whether the machine log's line is still to be written: false where <see cref="LostAsync"/> wrote it.</param>
-    private ChatStart CannotGoOn(PriorSession record, ContinueReason why, string adapter, bool said = false)
-    {
-        // LIMITRESUME1c (D206 §3.5, B9): never said over Daoris's limit word, which leaves the record as the go-on ends.
-        record = WithoutLimitWords(record);
-        var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
-        _context.Marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
-        var note = Continuations.Cannot(words, why);
-        _context.Output?.Append(record.Session, note.Text!);
-        _context.Events.Keep(record.Session, note, say: null);
-        if (!said) _context.Service.AccountSaid(Reopened(record, why, adapter, words));
-        return new(null, $"it cannot go on in this conversation, because {why.Said}.");
-    }
+    /// <summary>Where a chat's words cannot go on in it (MSG1c, D137 §2.2): they stay waiting, marked, and its conversation says why.</summary>
+    internal ChatStart CannotGoOn(PriorSession record, ContinueReason why, string adapter, bool said = false) => Refusals.CannotGoOn(record, why, adapter, said);
 
-    private AccountLine Reopened(PriorSession record, ContinueReason why, string adapter, IReadOnlyList<string> words) =>
-        Continuations.Reopened(record.Session, adapter, record.State, why, _context.Events.DoorOf(record.Session, words), kind: "chat");
+    /// <summary>A conversation whose own conversation is proven lost goes on in a new part handed Daoris's brief (SESSCTX1c part B).</summary>
+    internal Task<ChatStart> LostAsync(
+        PriorSession record, ContinueReason why, string adapter, DriverConfig choices, Func<string, string, Task>? onEnded, bool held, CancellationToken ct) =>
+        Refusals.LostAsync(record, why, adapter, choices, onEnded, held, ct);
 
-    /// <summary>
-    /// 🔴 SESSCTX1c part B (D189 point 3, the session-context design §2): a conversation whose own conversation is proven lost goes on by
-    /// itself in a new part handed Daoris's brief, then the person's words, its record naming the one it continues, why <c>resume</c>
-    /// (<see cref="BriefedMove"/>). Where nothing opens (no words of the person's, a tree gone, a start refused or failed) the words wait
-    /// as anywhere a conversation cannot go on: marked, said why, the page offering *Go on with Daoris's brief* beside *Start a
-    /// conversation with these words*. The machine log says once that it did not resume, and why.
-    /// </summary>
-    /// <param name="held">Whether the caller holds the session's going-on already (the judgement before a spawn).</param>
-    internal async Task<ChatStart> LostAsync(
-        PriorSession record, ContinueReason why, string adapter, DriverConfig choices, Func<string, string, Task>? onEnded, bool held,
-        CancellationToken ct)
-    {
-        var restarted = record.Waiting.Any(word => word.Daoris && DaorisKeys.IsRestart(word.Key));
-        // 🔴 LIMITRESUME1c (D206 §3.5, B9): Daoris's limit word off first, by its id; it is never handed on, nor the reason to say cannot.
-        record = await LimitWordOffAsync(record.Session, record).ConfigureAwait(false) ?? record;
-        var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
-        _context.Service.AccountSaid(Reopened(record, why, adapter, words));
-
-        // A conversation its limit held keeps the refused turns' words in its events alone: it goes on by the limit's own ended-record
-        // move, its own account allowed since its conversation is lost, handed the brief, those words and the words that waited.
-        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events, record.Limit) is not null))
-        {
-            StartedFrom? moved;
-            try
-            {
-                moved = await _limit.MoveEndedAsync(record.Session, why, choices, onEnded, ct, holding: held, restarted: restarted).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                moved = new StartedFrom(null, false, null, error.Message);
-            }
-
-            if (moved is { SessionId: { } limitTo }) return new(limitTo, moved.Message);
-            // PICKLOST1: its account is the person's pick and cools; the brief's move would refuse the same account and mark the words as
-            // unable to go on, where a picked conversation waits for it, its words with it, and the wake goes on there at its reset.
-            if (moved is { Why: LimitMove.OnPick }) return new(null, moved.Message);
-        }
-
-        if (record.Waiting.Any(word => word.Persons) && !_context.Closing)
-        {
-            StartedFrom moved;
-            try
-            {
-                moved = held
-                    ? await _move.MovingAsync(record.Session, why, HandOverBy.Daoris, choices, onEnded, ct).ConfigureAwait(false)
-                    : await _move.MoveAsync(record.Session, why, HandOverBy.Daoris, choices, onEnded, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
-                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                moved = new StartedFrom(null, false, null, error.Message);
-            }
-
-            if (moved is { SessionId: { } to, Sent: true }) return new(to, moved.Message);
-        }
-
-        return CannotGoOn(record, why, adapter, said: true);
-    }
 
     /// <summary>
     /// What holds a chat's words rather than refusing them (MSG1c): said in its conversation, the words left waiting and
     /// unmarked, so the next word said to it tries again.
     /// </summary>
-    private ChatStart Held(string sessionId, (string Why, Noted Line) held)
+    internal ChatStart Held(string sessionId, (string Why, Noted Line) held)
     {
         _context.Note(sessionId, held.Line);
         return new(null, held.Why);
@@ -1027,7 +627,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// put back as it ended, not left working for a run that will never start, and its conversation says so. Where the ledger
     /// will not move it back, the refusal is said and the next look reads it as it now is.
     /// </summary>
-    private async Task<ChatStart> TakenBackAsync(PriorSession record, CancellationToken ct)
+    internal async Task<ChatStart> TakenBackAsync(PriorSession record, CancellationToken ct)
     {
         var line = new Noted(TakenBackBeforeGoingOn, []);
         // As it ended (SAIDBACK1g): its own note, parts and flags, which the move to working cleared; the line is said in the
@@ -1055,7 +655,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// <see cref="SessionTrees.StartInSyncAsync"/>): what it is told, or null. Git or a disk that fails here is no reason to hold its
     /// words: it goes on in the tree as it stands, told nothing.
     /// </summary>
-    private async Task<string?> StartInSyncAsync(string tree, CancellationToken ct)
+    internal async Task<string?> StartInSyncAsync(string tree, CancellationToken ct)
     {
         try
         {
@@ -1068,7 +668,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>Whether two paths name one folder, whatever their separators or a trailing one.</summary>
-    private static bool SamePath(string a, string b) =>
+    internal static bool SamePath(string a, string b) =>
         string.Equals(
             Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);

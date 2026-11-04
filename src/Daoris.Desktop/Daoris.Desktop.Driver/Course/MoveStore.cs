@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Data.Sqlite;
+using static Daoris.Driver.MoveRows;
 
 namespace Daoris.Driver;
 
@@ -48,37 +49,12 @@ public sealed class MoveStore(
     private const int Since = 4;
 
     /// <summary>SQLite's refusal of a row a unique index already holds.</summary>
-    private const int UniqueRefused = 2067;
+    internal const int UniqueRefused = 2067;
 
-    private static readonly (MoveRecordPhase Phase, string Column)[] Moments =
-    [
-        (MoveRecordPhase.Decided, "decided_at"), (MoveRecordPhase.Quiescing, "quiescing_at"), (MoveRecordPhase.OldEnded, "old_ended_at"),
-        (MoveRecordPhase.Opening, "opening_at"), (MoveRecordPhase.Opened, "opened_at"), (MoveRecordPhase.Copied, "copied_at"),
-        (MoveRecordPhase.Verified, "verified_at"), (MoveRecordPhase.Delivering, "delivering_at"), (MoveRecordPhase.Delivered, "delivered_at"),
-        (MoveRecordPhase.FellBack, "fell_back_at"), (MoveRecordPhase.Held, "held_at"), (MoveRecordPhase.Closed, "closed_at"),
-    ];
 
-    /// <summary>The store's step that added the columns a box's move carries and a quiet move's telling (part 2).</summary>
-    private const int BoxColumnsSince = 5;
 
-    private static readonly string StepFourColumns =
-        "id, record_left, executor, phase, claim_run, claim_generation, how, from_why, from_by, account, recipe_why, recipe_bound, opens, destination, "
-        + "effect, effect_begun, effect_outcome, effect_ended, fell_back_code, held_why, closed_why, "
-        + string.Join(", ", Moments.Select(each => each.Column));
 
-    /// <summary>The store's step that added the offered choice's model and effort (STAFFPOLICY1d).</summary>
-    private const int EntryColumnsSince = 18;
 
-    private static readonly string Columns = StepFourColumns + ", agent, refused_bound, quiet_at, model, effort";
-
-    /// <summary>
-    /// The columns a read names in a store of <paramref name="version"/>: a store a step-4 build left, not yet opened for writing by this
-    /// one, has no step-5 column, and one from before step 17 no model or effort, which read as empty.
-    /// </summary>
-    private static string ColumnsAt(int version) =>
-        version >= EntryColumnsSince ? Columns
-        : version >= BoxColumnsSince ? StepFourColumns + ", agent, refused_bound, quiet_at, NULL AS model, NULL AS effort"
-        : StepFourColumns + ", NULL AS agent, NULL AS refused_bound, NULL AS quiet_at, NULL AS model, NULL AS effort";
 
     private readonly Func<StoreSettled> _settled = settled ?? StartConfirmation.Read;
 
@@ -156,64 +132,9 @@ public sealed class MoveStore(
 
     // ——— A box's import (part 2; §3.3, §13.5).
 
-    /// <summary>
-    /// Write the move an older build's box kept as this store's own row, claimed by this store's run at generation 1, with the import's receipt
-    /// in the same transaction (§13.5): held, nothing written, until the start's confirmation is settled; and refused, nothing written, where
-    /// the record left already has a standing move, which it then waits behind. Its moments are the box's where it says one, else the import's.
-    /// </summary>
-    /// <exception cref="ArgumentException">The box is at a phase no box keeps, or at <c>opened</c> with no destination, or does not read as a decision.</exception>
-    public MoveImported Import(StoreImport receipt, MoveFromBox box)
-    {
-        var decision = box.Decision;
-        Required(decision.Left, "the record it leaves");
-        Known(decision.Executor, MoveExecutors.All, "executor");
-        Known(decision.How, MoveHows.All, "how");
-        Required(decision.Why, "its why");
-        Required(decision.By, "who asked for it");
-        if (box.Phase is not (MoveRecordPhase.Decided or MoveRecordPhase.OldEnded or MoveRecordPhase.Opened))
-        {
-            throw new ArgumentException($"no box keeps a move at `{MovePhases.Word(box.Phase)}`", nameof(box));
-        }
+    /// <summary>Write the move an older build's box kept as this store's own row, with the import's receipt; held until the start is settled, refused where the record already has a standing move.</summary>
+    public MoveImported Import(StoreImport receipt, MoveFromBox box) => new MoveImporter(this).Import(receipt, box);
 
-        if (box.Phase == MoveRecordPhase.Opened) Required(box.Destination, "the record its open made");
-        if (_settled() is { Is: false } waiting) return new MoveImported(null, null, waiting.Said ?? "the start's confirmation is not settled");
-        try
-        {
-            using var store = Open();
-            MoveRecord? made = null;
-            var outcome = store.Import(receipt, write =>
-            {
-                if (StandingToIn(write, decision.Left) is { } to) throw new Unwritten(new MoveImported(null, to, null));
-                var at = Now();
-                try
-                {
-                    Insert(write, decision, box.Phase, box.DecidedAt ?? at, at, box.Phase == MoveRecordPhase.Opened ? box.Destination : null);
-                }
-                catch (SqliteException error) when (error.SqliteExtendedErrorCode == UniqueRefused)
-                {
-                    var standing = StandingIn(write, decision.Left);
-                    if (standing is null) throw;
-                    throw new Unwritten(new MoveImported(null, standing, null));
-                }
-
-                var id = write.Scalar<long>("SELECT last_insert_rowid()");
-                foreach (var word in box.Words)
-                {
-                    write.Execute(
-                        "INSERT INTO move_words (move, transfer, word, producer, position) VALUES ($move, $transfer, $word, $producer, $position)",
-                        ("$move", id), ("$transfer", Required(word.Transfer, "a word's transfer")), ("$word", Required(word.Word, "a word's id")),
-                        ("$producer", word.Producer), ("$position", word.Position));
-                }
-
-                made = ReadIn(write, id);
-            });
-            return outcome.Done ? new MoveImported(made, null, null) : new MoveImported(null, null, outcome.Said ?? "the start's confirmation is not settled");
-        }
-        catch (Unwritten unwritten)
-        {
-            return (MoveImported)unwritten.Answer!;
-        }
-    }
 
     /// <summary>The latest import of a box at <paramref name="path"/> (home-relative) into the move record, or null: what a box read again is compared with.</summary>
     public ImportRecord? LastImport(string path) =>
@@ -226,84 +147,12 @@ public sealed class MoveStore(
                 ("$family", Family), ("$path", path)).FirstOrDefault(),
             null);
 
-    /// <summary>
-    /// Take up a move whose claim's run is dead by the lease's test (§13.4, §19.1), in one guarded update that writes this store's run and
-    /// raises the generation: refused, nothing written, where the move is gone or ended, where its claim is this run's own, where the generation
-    /// moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
-    /// </summary>
-    public MoveTaken Take(long move, long generation)
-    {
-        try
-        {
-            using var store = Open();
-            return store.Write(Family, write =>
-            {
-                var found = ReadIn(write, move) ?? throw Refused(null, MoveTakeRefusals.Gone);
-                if (!found.Stands) throw Refused(found, MoveTakeRefusals.Ended);
-                if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, MoveTakeRefusals.Own);
-                if (found.ClaimGeneration != generation) throw Refused(found, MoveTakeRefusals.Moved);
+    /// <summary>Take up a move whose claim's run is dead by the lease's test, in one guarded update that raises the generation.</summary>
+    public MoveTaken Take(long move, long generation) => new MoveTakes(this).Take(move, generation);
 
-                // A run the store holds no row of cannot be told dead, so it holds, as a start that cannot be read does.
-                if (RunIn(write, found.ClaimRun) is not { } holder || _alive(holder)) throw Refused(found, MoveTakeRefusals.Live);
-                var taken = write.Execute(
-                    "UPDATE moves SET claim_run = $mine, claim_generation = claim_generation + 1 WHERE id = $id AND claim_run = $run AND claim_generation = $generation",
-                    ("$mine", Run), ("$id", move), ("$run", found.ClaimRun), ("$generation", generation));
-                if (taken != 1) throw Refused(found, MoveTakeRefusals.Moved);
-                var now = ReadIn(write, move)!;
-                return new MoveTaken(now, new MoveClaim(move, Run, now.ClaimGeneration), null);
-            });
-        }
-        catch (Unwritten unwritten)
-        {
-            return (MoveTaken)unwritten.Answer!;
-        }
+    /// <summary>Receive a hand-over still waiting from a run that goes no further with it, as a take does.</summary>
+    public MoveTaken Receive(long move, long generation) => new MoveTakes(this).Receive(move, generation);
 
-        static Unwritten Refused(MoveRecord? found, string why) => new(new MoveTaken(found, null, why));
-    }
-
-    /// <summary>
-    /// Receive a hand-over still waiting (FOUNDATION1f-v part c, reading 5 of part a): decided or quiescing and naming its agent, from a run that
-    /// decided it and goes no further with it, a headless host's look or a terminal's verb, which a long-lived host would otherwise hold for good
-    /// and a quitting terminal's run only a look after it is dead. One guarded update that raises the generation, as a take does, so the run that
-    /// decided it writes nothing more under its old claim. Never from a live shell, whose chat runner takes its own (a dead shell's is taken up);
-    /// refused, nothing written, where the move is gone, ended, this run's own, past its wait or naming no agent, where the generation moved
-    /// since <paramref name="generation"/> was read, or where its run is a live shell's or cannot be told.
-    /// </summary>
-    public MoveTaken Receive(long move, long generation)
-    {
-        try
-        {
-            using var store = Open();
-            return store.Write(Family, write =>
-            {
-                var found = ReadIn(write, move) ?? throw Refused(null, MoveTakeRefusals.Gone);
-                if (!found.Stands) throw Refused(found, MoveTakeRefusals.Ended);
-                if (string.Equals(found.ClaimRun, Run, StringComparison.Ordinal)) throw Refused(found, MoveTakeRefusals.Own);
-                if (found is not { Agent: not null, Phase: MoveRecordPhase.Decided or MoveRecordPhase.Quiescing }) throw Refused(found, MoveTakeRefusals.NotWaiting);
-                if (found.ClaimGeneration != generation) throw Refused(found, MoveTakeRefusals.Moved);
-
-                // A run the store holds no row of cannot be told, so it holds; a shell's lives or not by the lease's test, any other kind goes no further.
-                if (RunIn(write, found.ClaimRun) is not { } holder
-                    || (string.Equals(holder.Kind, StoreProcess.Shell, StringComparison.Ordinal) && _alive(holder)))
-                {
-                    throw Refused(found, MoveTakeRefusals.Live);
-                }
-
-                var taken = write.Execute(
-                    "UPDATE moves SET claim_run = $mine, claim_generation = claim_generation + 1 WHERE id = $id AND claim_run = $run AND claim_generation = $generation",
-                    ("$mine", Run), ("$id", move), ("$run", found.ClaimRun), ("$generation", generation));
-                if (taken != 1) throw Refused(found, MoveTakeRefusals.Moved);
-                var now = ReadIn(write, move)!;
-                return new MoveTaken(now, new MoveClaim(move, Run, now.ClaimGeneration), null);
-            });
-        }
-        catch (Unwritten unwritten)
-        {
-            return (MoveTaken)unwritten.Answer!;
-        }
-
-        static Unwritten Refused(MoveRecord? found, string why) => new(new MoveTaken(found, null, why));
-    }
 
     // ——— The phases, under the claim.
 
@@ -632,7 +481,7 @@ public sealed class MoveStore(
     // ——— The writes' own parts.
 
     /// <summary>A move's one row, claimed by this store's run at generation 1, at <paramref name="phase"/> with the moments it has reached.</summary>
-    private void Insert(DesktopWrite write, MoveDecision decision, MoveRecordPhase phase, string decidedAt, string at, string? destination) =>
+    internal void Insert(DesktopWrite write, MoveDecision decision, MoveRecordPhase phase, string decidedAt, string at, string? destination) =>
         write.Execute(
             $"""
             INSERT INTO moves (record_left, executor, how, from_why, from_by, phase, claim_run, claim_generation, account, recipe_why, recipe_bound, agent,
@@ -659,7 +508,7 @@ public sealed class MoveStore(
                 if (move.Phase == to) throw new Unwritten(move);
                 if (move.Phase is not { } from) throw new MoveRefusedException(claim.Move, $"its phase `{move.PhaseWord}` is a newer Daoris's, which this build writes nothing over");
                 if (!MovePhases.Follows(from, to)) throw new MoveRefusedException(claim.Move, $"a move at `{move.PhaseWord}` does not go to `{MovePhases.Word(to)}`");
-                var column = Moments.First(each => each.Phase == to).Column;
+                var column = MoveRows.Moments.First(each => each.Phase == to).Column;
                 Fenced(
                     write, claim, $"phase = $phase, {column} = $at" + (carried is { } set ? $", {set.Column} = $carried" : ""),
                     ("$phase", MovePhases.Word(to)), ("$at", Now()), ("$carried", carried?.Value));
@@ -695,64 +544,6 @@ public sealed class MoveStore(
         if (changed != 1) throw new MoveClaimLostException(claim, "its row changed under the write");
     }
 
-    private static MoveRecord? ReadIn(DesktopWrite write, long id) =>
-        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE id = $id", Map, ("$id", id)).FirstOrDefault();
-
-    private static MoveRecord? StandingIn(DesktopWrite write, string left) =>
-        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE record_left = $left AND {DesktopStore.StandingMoves}", Map, ("$left", left)).FirstOrDefault();
-
-    private static MoveRecord? StandingToIn(DesktopWrite write, string destination) =>
-        write.Query($"SELECT {ColumnsAt(write.Version)} FROM moves WHERE destination = $destination AND {DesktopStore.StandingMoves} ORDER BY id", Map, ("$destination", destination))
-            .FirstOrDefault();
-
-    private static StoreRun? RunIn(DesktopWrite write, string run) =>
-        write.Query(
-            "SELECT run, kind, pid, started, began FROM store_runs WHERE run = $run",
-            row => new StoreRun(row.GetString(0), row.GetString(1), row.GetInt32(2), row.IsDBNull(3) ? null : row.GetInt64(3), row.GetString(4)),
-            ("$run", run)).FirstOrDefault();
-
-    private static MoveRecord Map(SqliteDataReader row)
-    {
-        string? Text(string column)
-        {
-            var at = row.GetOrdinal(column);
-            return row.IsDBNull(at) ? null : row.GetString(at);
-        }
-
-        var moments = new Dictionary<MoveRecordPhase, string>();
-        foreach (var (phase, column) in Moments)
-        {
-            if (Text(column) is { } moment) moments[phase] = moment;
-        }
-
-        int? Number(string column)
-        {
-            var at = row.GetOrdinal(column);
-            return row.IsDBNull(at) ? null : row.GetInt32(at);
-        }
-
-        var bound = row.GetOrdinal("recipe_bound");
-        return new MoveRecord(
-            row.GetInt64(row.GetOrdinal("id")), Text("record_left")!, Text("executor")!, Text("phase")!, Text("claim_run")!,
-            row.GetInt64(row.GetOrdinal("claim_generation")), Text("how")!, Text("from_why")!, Text("from_by")!)
-        {
-            Moments = moments,
-            Opens = Text("opens"),
-            Destination = Text("destination"),
-            Account = Text("account"),
-            RecipeWhy = Text("recipe_why"),
-            RecipeBound = row.IsDBNull(bound) ? null : row.GetInt32(bound),
-            FellBackCode = Text("fell_back_code"),
-            HeldWhy = Text("held_why"),
-            ClosedWhy = Text("closed_why"),
-            Effect = Text("effect") is { } what ? new MoveEffect(what, Text("effect_begun") ?? "", Text("effect_outcome"), Text("effect_ended")) : null,
-            Agent = Text("agent"),
-            RefusedBound = Number("refused_bound"),
-            QuietAt = Text("quiet_at"),
-            Model = Text("model"),
-            Effort = Text("effort"),
-        };
-    }
 
     /// <summary>A read of a store that holds the family, or <paramref name="none"/> where the home has no store or one from before it.</summary>
     private T Reading<T>(Func<DesktopStoreReader, T> read, T none)
@@ -761,20 +552,20 @@ public sealed class MoveStore(
         return reader is { Version: >= Since } ? read(reader) : none;
     }
 
-    private DesktopStore Open() => DesktopStore.Open(Location, StoreProcess.Options(_settled) with { Run = Run, Kind = kind ?? StoreProcess.Kind, Clock = _clock });
+    internal DesktopStore Open() => DesktopStore.Open(Location, StoreProcess.Options(_settled) with { Run = Run, Kind = kind ?? StoreProcess.Kind, Clock = _clock });
 
-    private string Now() => _clock.GetUtcNow().ToString("O", CultureInfo.InvariantCulture);
+    internal string Now() => _clock.GetUtcNow().ToString("O", CultureInfo.InvariantCulture);
 
-    private static string Required(string? value, string what) =>
+    internal static string Required(string? value, string what) =>
         string.IsNullOrWhiteSpace(value) ? throw new ArgumentException($"a move needs {what}") : value;
 
-    private static string Known(string? value, IReadOnlyList<string> words, string what) =>
+    internal static string Known(string? value, IReadOnlyList<string> words, string what) =>
         value is not null && words.Contains(value, StringComparer.Ordinal)
             ? value
             : throw new ArgumentException($"`{value}` is no move's {what}: one of {string.Join(", ", words)}");
 
     /// <summary>A write's answer that writes nothing: thrown out of the store's transaction, so it is rolled back, no revision moved and no wake touched.</summary>
-    private sealed class Unwritten(object? answer) : Exception
+    internal sealed class Unwritten(object? answer) : Exception
     {
         public object? Answer { get; } = answer;
     }

@@ -23,7 +23,7 @@ public sealed class MoveStoreCensusTests
     private static readonly string[] Own =
     [
         "Course/MoveStore.cs", "Course/MoveRecords.cs", "Course/MoveTakeUp.cs", "Course/MoveBoxImports.cs", "Course/MoveDelivery.cs",
-        "Course/MoveResolve.cs", "Course/MoveSaid.cs",
+        "Course/MoveResolve.cs", "Course/MoveSaid.cs", "Course/MoveRows.cs", "Course/MoveImporter.cs", "Course/MoveTakes.cs",
     ];
 
     /// <summary>The importers, which only rows f-v and f-vi may call: importing a box sets it aside from today's readers, which still own it.</summary>
