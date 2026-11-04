@@ -202,7 +202,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
     [Fact]
     public void A_session_with_no_connector_is_told_the_install_and_the_home_commands_that_lay_one_down()
     {
-        var said = Daoris.Driver.Driver.NoConnectorForSession;
+        var said = DrivenProtocolDoor.NoConnectorForSession;
 
         Assert.Contains($"no {KnowledgeConnector.ExecutableName} on this machine", said);
         var install = said.IndexOf("`npm run publish:desktop -- --to <install> --service`", StringComparison.Ordinal);

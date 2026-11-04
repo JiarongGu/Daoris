@@ -179,6 +179,8 @@
     ["Daoris.Desktop.Driver/Loop/DriverOpinions.cs", "SessionWire.Pipe", "g", "behaviour", "an opinion's native door test"],
     ["Daoris.Desktop.Driver/Loop/DriverPartners.cs", ".Wire", "g", "behaviour", "a partner's door read"],
     ["Daoris.Desktop.Driver/Loop/DriverPartners.cs", "SessionWire.Pipe", "g", "behaviour", "a partner's native door test"],
+    ["Daoris.Desktop.Driver/Loop/Run/Hold/SessionHold.cs", ".Wire", "g", "behaviour", "the held session's door reads"],
+    ["Daoris.Desktop.Driver/Loop/Run/Hold/SessionHold.cs", "SessionWire.Acp", "g", "behaviour", "the held session's protocol door tests"],
     ["Daoris.Desktop.Driver/Participants/AccessCommand.cs", "id in a sentence", "-", "words", "the question key's example in the access verb's usage"],
     ["Daoris.Desktop.Driver/Participants/Domain/AccessRules.cs", "AccessKey.ClaudeCode", "o", "behaviour", "the rule table names Claude Code's key"],
     ["Daoris.Desktop.Driver/Participants/Domain/AtWork.cs", "\"claude-code-acp\"", "l", "behaviour", "the door whose turn waits for its children, chosen by id"],

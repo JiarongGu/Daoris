@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// unit a start is: the downloads it is handed kept, the process bracketed by its own lineage token, started through the agents' route and
 /// tracked, a reaper beside it, the capture, a native prompt on its input, the wait for the exit and the capture bounded past it, written once
 /// beneath the contract so each executor holds the run and none prepares a process itself. Every executor's run holds it (ONEWAY1h-i,
-/// through <c>Driver.HoldAsync</c>), a native run's go-on with held words and its resume's one retry too (ONEWAY1h-ii, <see cref="GoOnAsync"/>
+/// through <see cref="SessionHold.HoldAsync{T}"/>), a native run's go-on with held words and its resume's one retry too (ONEWAY1h-ii, <see cref="GoOnAsync"/>
 /// and <see cref="RestartAsync"/>), and a conversation's, its session held open for the person's words (ONEWAY1h-iii, the conversation's
 /// runner).
 /// </summary>
