@@ -69,7 +69,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `PartEnds` | `Events/PartEnds.cs` | The class of each end, read from the journal row alone |
 | `SessionWatch` | `Events/SessionWatch.cs` | Marks a quiet session and brings it to the person; ends nothing by itself |
 | `TransientRetry` | `Agents/TransientRetry.cs` | Retries a transient failure in the same conversation on a fixed backoff |
-| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, trees, strikes, releases, poll; the kept-but-unread `timeoutMinutes` |
+| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, trees, strikes, releases, poll; the kept-but-unread `timeoutMinutes`; its doors over the units below, so callers name it alone |
+| `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigEdits` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands under its lock, and the keyed-map edits; the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
+| `LandingKey`, `LandingRule`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | The landing key's reading, writing and sentences, and the rule, integrate policy, form and names it reads |
+| `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
 | `SessionTrees` | `Workplace/SessionTrees.cs` | Opens a fresh tree; the front over every tree part (`TreeContext`) |
 | `TreeDependencies`, `TreeLocalInputs` | `Workplace/` | Copy installed dependencies and declared machine-local files into a tree as it opens |
 | `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
@@ -271,8 +274,8 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   ended, and `Workplace/TreeSetAside.cs:23-30` makes the look wait for the line; only the press goes on D88's proof.
   The code reads right.
 - D58 makes `strikes` in `driver.json` the count; D229 makes it a seeded rule and refuses the key on a reached home
-  (`Settings/DriverConfig.cs:47-49` is marked transitional). D229 reads right.
-- D228 says a superseded way's doors go with it; `Settings/DriverChoicesCommand.cs:485-486` and
+  (`DriverConfig.Strikes` is marked transitional). D229 reads right.
+- D228 says a superseded way's doors go with it; `Settings/DriverChoicesCommand.cs` and
   `src/Daoris.Service/Daoris.Service.Mcp/ChosenSettingsTools.cs:47-54` keep the retired `timeout` doors, which only
   refuse. The code is today's; ONEWAY1s removes them.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,

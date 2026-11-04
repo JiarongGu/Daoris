@@ -54,7 +54,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
 | `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach |
 | `OfferAsk`, `WalkMemory`, `WalkPass` | same names | What a start asked of the walk, what one walk remembered, and what one pass held |
-| `HarnessSettings`, `AccountSet`, `PoolReceipts` | same names | `harnesses.json`: pins, each agent's one account set, its order and use settings, the fold and its receipts |
+| `HarnessSettings`, `AccountSet`, `PoolReceipts` | same names | `harnesses.json`: pins, each agent's one account set, its order and use settings, the fold and its receipts; `HarnessSettings` keeps its fields, the resolving and `With…` edits and one-line doors over the three units below |
+| `HarnessSettingsFile`, `HarnessSettingsChange`, `HarnessAccountFolders` | same names | The file read and written in the writer's layout; one change under the keep lock, the come-up fold and the pin; where managed versions and accounts live on disk, which folders are accounts, and removing one |
+| `AgentAccountUse`, `AgentAccountLines`, `AccountVerbContext` | same names | `agent account use`, the terminal's words about an account's use and last reading, and what every account verb reads; `AgentAccountsCommand` keeps the other verbs and one-line doors to the lines |
 | `AccountRotation`, `RotatedOpening`, `RotationWords`, `RotationUse`, `UsageCurves`, `SwitchDecision` | same names, `Domain/` | The walk's order, the rotated start's opening and the walk's words, the next start's reason, the curves, a running session's switch (pure); its records and enums (`AccountState`, `WalkStep`, `NextStart`, and the rest) each in a file of their own |
 | `AccountLimits`, `AccountCooling`, `RefusedAccounts`, `AccountSignIns` | same names | Limit words and resets, `cooling.json`, refused credentials, sign-in refusals |
 | `AgentErrors`, `TransientRetry`, `TransientRetries` | same names | The four-kind reader of a door's failure, and the retry in the same conversation |
@@ -246,13 +248,13 @@ Agents page, and `orient-index` and `code-map` once files move.
    no Daoris account waits). D175 and D197 read right.
 8. D73 (trust with no account named writes the machine default's, else the tool's own home) vs D197 point 3 (every account of
    the set, never the own home). D197 reads right.
-9. D57 (toolchain, accounts and usage under `~/.daoris/`) vs `HarnessSettings.cs:835-836` (entries of Daoris's home). The
+9. D57 (toolchain, accounts and usage under `~/.daoris/`) vs `HarnessAccountFolders.ManagedHome` and `ProfileHome` (entries of Daoris's home). The
    code and D63/D172 read right.
 10. D213 point 2 (each fact in one place; no reader asks "own, else owner") vs `AgentErrors.cs:143-185` (own table, then
     owner's), as D210 point 2 prescribes. The code and D210 read right today; D213 is the target.
 11. D213's note of 2026-11-04 (row m-i complete) vs `TASKS.md:29` (m-i still open). The note reads right; the row belongs in
     the archive.
-12. `HarnessSettings.cs:850-852` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
+12. `HarnessAccountFolders.ManagedBinary` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
     (refused). The refusal reads right (D57, D121).
 13. `Registry/ProviderRegistry.cs:12-13` (nothing reads the registry but its tests) vs `RosterReport.cs:376` and
     `AgentsCommand.cs:282`. The callers read right.
