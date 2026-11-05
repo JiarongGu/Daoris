@@ -219,7 +219,6 @@ public sealed class EntriesRoutes(DriverContext context)
         Done = part.Landing?.Landed,
         part.Landing?.Message,
         part.Landing?.Branch,
-        Plugin = part.Landing?.Plugin is { } said ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed } : null,
         LeftOut = TreesRoutes.LeftOut(part.Landing?.LeftOut),
         Conflict = TreesRoutes.Conflict(part.Landing?.Conflict),
     }).ToArray();

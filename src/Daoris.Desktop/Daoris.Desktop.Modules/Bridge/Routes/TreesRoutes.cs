@@ -273,22 +273,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
 
     /// <summary>
-    /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch and what its plugin said,
-    /// the gate's parts, what it left out or the conflict that refused it, and the verb's words.
+    /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch, the gate's parts, what it left
+    /// out or the conflict that refused it, and the verb's words.
     /// </summary>
-    /// <remarks>
-    /// FABRIC-CLOSE1h9: a push held back lands (<c>done</c>) with no <c>plugin</c>, so
-    /// <c>withheld</c> says why it was held, the branch standing and no plugin told, for the page to offer the hand-off. Null wherever
-    /// the push went on or was never asked about; a page before it reads the answer as before.
-    /// </remarks>
     public static object Pressed(
         string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null) => new
     {
         Session = id, Done = landed.Landed, landed.Message, landed.Branch,
-        Plugin = landed.Plugin is { } plugin
-            ? new { Id = plugin.Plugin, plugin.Pushed, plugin.PullRequest, plugin.Message, plugin.Failed }
-            : null,
-        landed.Withheld,
         Review = Waits(gate.Review),
         Opinion = Opinion(gate.Opinion),
         Workflow = WorkflowWaits(gate.WorkflowPart()),
