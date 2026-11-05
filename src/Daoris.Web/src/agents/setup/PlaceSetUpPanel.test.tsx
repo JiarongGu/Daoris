@@ -138,7 +138,7 @@ describe('Set up…, on a place\'s page', () => {
   });
 
   const open = async (place: RegExp) => {
-    await userEvent.click(await screen.findByRole('button', { name: place }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: place }));
     await userEvent.click(await screen.findByRole('button', { name: 'Set up…' }));
   };
 
@@ -384,9 +384,9 @@ describe('Set up…, on a place\'s page', () => {
     show(<Place />);
     await open(/^engine/);
     await userEvent.click(await screen.findByRole('radio', { name: /A branch to push/ }));
-    await userEvent.click(screen.getByRole('button', { name: /^site/ }));
+    await userEvent.click(screen.getByRole('treeitem', { name: /^site/ }));
     expect(await screen.findByRole('button', { name: 'Set up…' })).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: /^engine/ }));
+    await userEvent.click(screen.getByRole('treeitem', { name: /^engine/ }));
     expect(await screen.findByRole('radio', { name: /A branch to push/ })).toBeChecked();
   });
 

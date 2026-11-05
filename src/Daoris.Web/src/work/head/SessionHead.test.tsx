@@ -332,7 +332,7 @@ describe('the attended session\'s head', () => {
         details();
         expect(screen.getByText('提交').nextElementSibling).toHaveTextContent('每次提交前都等你同意。');
         expect(screen.getByText('提交').nextElementSibling).toHaveTextContent('沿用工作区 aurora。');
-        expect(screen.getByText('落地').nextElementSibling).toHaveTextContent('放到分支 feature/{ticket}-{slug} 上，为该仓库设置。');
+        expect(screen.queryByText('落地')).toBeNull();
       } finally {
         await i18n.changeLanguage('en');
       }
@@ -504,7 +504,7 @@ describe('the attended session\'s head', () => {
    */
   it('puts a parked session\'s analysis above its record, verbatim', () => {
     const analysis = 'Two ways forward.\n1. Cap in the scheduler.\n2. Cap in the chunk API.\nI recommend the second: it keeps the budget where the API already is.';
-    render(<SessionHead session={session({ state: 'awaiting-person', note: analysis })} />);
+    render(<SessionHead session={session({ state: 'awaiting-person', note: analysis, noteParts: [{ words: analysis, by: 'agent' }] })} />);
 
     const waiting = screen.getByText('This one is waiting on you');
     expect(screen.getByText(/I recommend the second/)).toBeInTheDocument();
@@ -542,14 +542,14 @@ describe('the attended session\'s head', () => {
    * session says nothing here: its conversation is the answer.
    */
   it('says why an ended session stands where it does, in the record\'s words, and nothing while it runs', async () => {
-    const { unmount } = render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1' })} />);
+    const { unmount } = render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1', noteParts: [{ words: 'the process exited 1', by: 'before' }] })} />);
     expect(screen.queryByText('This one is waiting on you')).not.toBeInTheDocument();
     expect(screen.getByText('the process exited 1')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
     unmount();
 
     const long = `the agent's turn failed with the quest still taken: ${'the ACP agent refused the call. '.repeat(12)}`;
-    const second = render(<SessionHead session={session({ state: 'failed', note: long })} />);
+    const second = render(<SessionHead session={session({ state: 'failed', note: long, noteParts: [{ words: long, by: 'before' }] })} />);
     expect(screen.getByText(long.trim(), { collapseWhitespace: false, exact: false }).closest('.line-clamp-3')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
     expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
@@ -1013,7 +1013,11 @@ describe('the attended session\'s head', () => {
     const onAnswerAsk = vi.fn();
     render(
       <SessionHead
-        session={session({ ...INTAKE, note: 'published nothing: it asks you rather than guess.' })}
+        session={session({
+          ...INTAKE,
+          note: 'published nothing: it asks you rather than guess.',
+          noteParts: [{ words: 'published nothing: it asks you rather than guess.', by: 'before' }],
+        })}
         onResolve={() => {}}
         onAnswerAsk={onAnswerAsk}
       />,
@@ -1078,7 +1082,11 @@ describe('the head’s note, in the reader’s language', () => {
     expect(screen.queryByText('按原文显示')).toBeNull();
     unmount();
 
-    render(<SessionHead session={session({ state: 'failed', note: 'exit 2 with the quest still taken.' })} />);
+    render(<SessionHead session={session({
+      state: 'failed',
+      note: 'exit 2 with the quest still taken.',
+      noteParts: [{ words: 'exit 2 with the quest still taken.', by: 'before' }],
+    })} />);
     expect(screen.getByText('按原文显示')).toBeInTheDocument();
     expect(screen.getByText('exit 2 with the quest still taken.')).toBeInTheDocument();
   });

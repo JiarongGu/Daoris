@@ -34,8 +34,9 @@ const COLUMNS: Record<string, Column> = {
   build: { only: [...CORE, ...WORKING] },
   design: { only: [...CORE, ...WORKING] },
   chat: { only: [...CORE, ...CONVERSING] },
-  intake: { only: without(CORE, MEMORY_CHANGES) },
-  'ask-daoris': { allBut: [...TURNS, ...MEMORY_CHANGES] },
+  // Neither works in a repository of its own, so neither has a helper to ask.
+  intake: { only: without(CORE, [...MEMORY_CHANGES, 'helper_ask']) },
+  'ask-daoris': { allBut: [...TURNS, 'helper_ask', ...MEMORY_CHANGES] },
   help: {
     only: [
       ...without(CORE, ['channel_post', 'channel_read', 'memory_propose', 'quest_publish', 'quest_respond', ...MEMORY_CHANGES]),

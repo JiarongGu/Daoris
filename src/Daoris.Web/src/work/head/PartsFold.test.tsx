@@ -1,10 +1,14 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { cleanup, render as plain, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFold } from './PartsFold';
+
+// The canvas toolbar's tooltips need the provider the app shell holds.
+const render = (ui: React.ReactElement) => plain(ui, { wrapper: Tooltip.Provider });
 
 // HEADFIT1 (the UI/UX design §3.7 and R4, the UX7 design §6.2): the parts' flowchart cost 339 to 484 px above the conversation, more
 // than the whole budget, so the page folds it to one line (how many parts, which the page is on, how the newest began) and opens it

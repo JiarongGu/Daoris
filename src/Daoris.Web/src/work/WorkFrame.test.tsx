@@ -1101,6 +1101,7 @@ const ASKED_QUEST = {
 /** A session on that quest, parked asking the person for two go-aheads. */
 const PARKED_ASKING = {
   ...PARKED, id: 'g0ah3ad0', quest: 'q4sk00', note: 'I need go-aheads 1 and 2 before I can finish.',
+  noteParts: [{ words: 'I need go-aheads 1 and 2 before I can finish.', by: 'agent' }],
 };
 
 /** The ask: two go-aheads the park asked, and one another session asked, which is not the park's to show. */

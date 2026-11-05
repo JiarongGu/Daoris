@@ -63,7 +63,7 @@ describe("a repository place's Workflow", () => {
   it('holds the routes, Gates and the folds of the line and landing, and no sessions rows', () => {
     drawWorkflow(SETUP_DEFAULTS);
     expect(screen.getByRole('list', { name: 'Where work here goes' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Landing' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Landing' })).toBeNull();
     expect(screen.getByRole('button', { name: 'The line' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Gates' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
@@ -97,7 +97,8 @@ describe("a repository place's Workflow", () => {
     await i18n.changeLanguage('zh');
     drawWorkflow(SETUP_DEFAULTS);
     expect(screen.getByRole('list', { name: '工作在这里如何分流' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '落地' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '主线' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '落地' })).toBeNull();
   });
 });
 

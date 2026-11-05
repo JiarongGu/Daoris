@@ -974,13 +974,14 @@ describe('the groups', () => {
     const item = words(orphan);
     expect(item).toMatchObject({ title: 'daoris/orphan', session: null });
     expect(item.detail).toBe(
-      'Blocked: session branch daoris/orphan, Daoris did not record daoris/orphan, so nothing of it is cleaned up: Discard branch… '
+      'Nothing records whose work this is, so nothing of it is cleaned up. '
+      + 'Blocked: session branch daoris/orphan, Daoris did not record daoris/orphan, so nothing of it is cleaned up: Discard branch… '
       + 'in the session branches on its workspace’s Branches removes it');
 
     await i18n.changeLanguage('zh');
     try {
       expect(words(orphan).detail).toBe(
-        '受阻：会话分支 daoris/orphan，Daoris 没有记录 daoris/orphan，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除');
+        '没有任何记录说明这是谁的工作，所以它的内容都不会被清理。 受阻：会话分支 daoris/orphan，Daoris 没有记录 daoris/orphan，所以它的内容都不会被清理：在它所在工作区的“分支”中，按会话分支列表里的“丢弃分支…”即可移除');
     } finally {
       await i18n.changeLanguage('en');
     }

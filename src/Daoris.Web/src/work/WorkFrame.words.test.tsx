@@ -552,6 +552,10 @@ describe('clearing a parked session', () => {
     SESSIONS = [{
       ...PARKED, workspace: 'elsewhere', from: 'f0rm3r00', fromWhy: 'carry-on', fromBy: 'daoris',
       note: 'It stopped with its quest still taken, to ask you:\n\nI will write the dev config only with your go-ahead. Say yes or no here.',
+      noteParts: [
+        { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+        { words: 'I will write the dev config only with your go-ahead. Say yes or no here.', by: 'agent' },
+      ],
     }];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
@@ -597,7 +601,7 @@ describe('clearing a parked session', () => {
    * showing the question with no way to answer and no word why.
    */
   it('says on a teammate\'s parked record why it is not answered here', async () => {
-    SESSIONS = [{ ...PARKED, id: 'person@machine-b/p4rk3d00', note: 'Say yes or no here.' }];
+    SESSIONS = [{ ...PARKED, id: 'person@machine-b/p4rk3d00', note: 'Say yes or no here.', noteParts: [{ words: 'Say yes or no here.', by: 'agent' }] }];
     show('person@machine-b/p4rk3d00');
 
     const card = (await screen.findByText('Say yes or no here.')).closest('section')!;

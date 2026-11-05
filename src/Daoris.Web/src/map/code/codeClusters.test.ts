@@ -73,7 +73,8 @@ describe('edges', () => {
     modules: [mod('a1', 'src/a/a1'), mod('a2', 'src/a/a2'), mod('b1', 'src/b/b1'), mod('b2', 'src/b/b2'), mod('b3', 'src/b/b3')],
     dependencies: [
       { from: 'a1', to: 'b1', kind: 'project' }, { from: 'a1', to: 'b2', kind: 'http' }, { from: 'a2', to: 'b3', kind: 'project' },
-      { from: 'b1', to: 'a1', kind: 'callback' }, { from: 'a1', to: 'a2', kind: 'project' },
+      // Back across, to a module no path from the other side's reaches, so it is a line and no cycle (a cycle condenses, below).
+      { from: 'b2', to: 'a2', kind: 'callback' }, { from: 'a1', to: 'a2', kind: 'project' },
       { from: 'a1', to: 'ghost', kind: 'project' },
     ],
   });

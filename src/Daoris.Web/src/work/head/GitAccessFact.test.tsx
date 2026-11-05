@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
-import type { Session } from '../data/api';
+import i18n from '../../locales/i18n';
+import type { Session } from '../../data/api';
 import { GitAccessFact, gitAccessRow, type SessionGitAccess, type SessionGitAccessHold } from './GitAccessFact';
-import { SessionHead } from './head/SessionHead';
+import { SessionHead } from './SessionHead';
 
 // D241 point 7: a session says the git access it holds now, one fact in its head's Details, with Tighten… beside it that offers only
 // a narrowing and sends it at once; the fact reads from the record the shell pushed, never from today's settings alone.

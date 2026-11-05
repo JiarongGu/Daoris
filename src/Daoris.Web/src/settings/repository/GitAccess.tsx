@@ -166,18 +166,15 @@ export function GitAccessRows({ owner, name, workspace, classes, above, busy = f
             refusal={refusals[cls] ?? null}
             onClear={() => choose(cls, cls, each.value, above.find((one) => one.class === cls)?.value ?? each.value, { access: { [cls]: null } })}
             editor={() => (
-              <>
-                <Segmented
-                  label={t('settings.git.access.field', { class: label, name: target })}
-                  value={each.value}
-                  options={valuesOf(cls).map((value) => ({ value, label: t(`settings.git.access.value.${value}`) }))}
-                  onChange={(value) => !busy && choose(cls, cls, each.value, value, { access: { [cls]: value } })}
-                />
-                {asked(cls)}
-              </>
+              <Segmented
+                label={t('settings.git.access.field', { class: label, name: target })}
+                value={each.value}
+                options={valuesOf(cls).map((value) => ({ value, label: t(`settings.git.access.value.${value}`) }))}
+                onChange={(value) => !busy && choose(cls, cls, each.value, value, { access: { [cls]: value } })}
+              />
             )}
           >
-            {each.source !== owner && asked(cls)}
+            {asked(cls)}
           </Inheritable>
         );
       })}

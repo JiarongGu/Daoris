@@ -1,10 +1,10 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../design/ui';
-import { gitAccessSummary, looseness, type ResolvedGitClass, valueName, valuesOf } from '../settings/repository/GitAccess';
-import type { DetailRow } from './head/DetailsFold';
-import { type Answered, Refused } from './InlineConfirm';
+import { Button } from '../../design/ui';
+import { gitAccessSummary, looseness, type ResolvedGitClass, valueName, valuesOf } from '../../settings/repository/GitAccess';
+import { type Answered, Refused } from '../InlineConfirm';
+import type { DetailRow } from './DetailsFold';
 
 /** What one running session holds of git access now (`STATE`'s `sessionGitAccess`): each class with its value and where it came from. */
 export type SessionGitAccess = { session: string; repository?: string | null; workspace?: string | null; classes: ResolvedGitClass[] };
