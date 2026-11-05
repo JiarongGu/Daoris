@@ -15,10 +15,9 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
 {
     /// <param name="cwd">The folder the session works in.</param>
     /// <param name="servers">What its door is handed of the servers.</param>
-    /// <param name="said">Told what it says about its account's windows.</param>
     public TransportProtocol Of(
         TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, IReadOnlyList<AcpMcpServer> servers,
-        ChatAgent agent, Action<JsonElement> said)
+        ChatAgent agent)
     {
         void Record(SessionEvent e) => wiring.Context.Events.Keep(sessionId, e, run.Say);
 
@@ -33,8 +32,6 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
             Configure = session =>
             {
                 chat.Configure(session);
-                // What it says about its account's windows, kept as it says it.
-                session.LimitsSaid += said;
                 // The person's words said during a turn, as the record keeps them where the session took them.
                 session.OnTaken(delivered =>
                 {

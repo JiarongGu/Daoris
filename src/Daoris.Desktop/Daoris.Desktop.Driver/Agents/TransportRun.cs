@@ -46,6 +46,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     private IReadingSink? _sink;
 
+    // The processes this run has started: the stamp each reading carries of the process that said it.
+    private int _generation;
+
     // The native resume's state its one retry reads and marks (row m-ii); null for a start and for a resume handed none.
     private IResumeState? _resume;
 
@@ -159,7 +162,10 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     // ---- The five members every executor uses today ----
 
-    public override void HandSink(IReadingSink sink) => _sink = sink;
+    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => _start.Session, () => _generation);
+
+    /// <summary>A reading the run's executor says beside its door's own: what a conversation's turn met that its session did not throw to the run.</summary>
+    public void Read(WireReading reading) => Sink().Read(reading);
 
     public override void HandCarriers(RunCarriers carriers) => _carriers = carriers;
 
@@ -374,6 +380,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         _kept.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
         Process = process;
         Proc = proc;
+        Interlocked.Increment(ref _generation);
         return (process, proc);
     }
 
@@ -454,6 +461,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
             Lineage = _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null,
             TypedFailures = protocol.TypedFailures,
         };
+        // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.
+        session.LimitsSaid += windows => sink.Read(new WireReading.WindowsSaid(windows));
         Session = session;
         protocol.Configure?.Invoke(session);
         protocol.Ending?.Open(session);

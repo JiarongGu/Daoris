@@ -445,12 +445,16 @@ internal sealed class ChatRun(
             {
                 if (goOn.Named()) _ = goOnDoor.WentOnAsync(sessionId, goOn, agent.Name);
             },
-            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, offered, agent, Said),
+            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, offered, agent),
         });
 
         var watch = watching.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
+            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog,
+            // The native door's failed result read for the account's limit, cooling it as a protocol conversation's refused turn does.
+            new NativeLimits(
+                failure => agent.Read(harnesses.Adapters, failure, clock().GetUtcNow(), harnesses.Zone),
+                (failure, error) => accounts.Limited(sessionId, agent, selection.Profile, failure.Words ?? "", config.CoolOff, error.Limit) is not null));
         Context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => Context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);

@@ -270,7 +270,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 preamble: browserNotice,
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
-                said: wiring.Said(adapter, selection, sessionId),
+                said: wiring.Said(adapter, selection, sessionId), limits: wiring.NativeLimit(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.
                 goesOnAs: selection,
                 stopMade: stop => endings.StoppedFirst = stop,

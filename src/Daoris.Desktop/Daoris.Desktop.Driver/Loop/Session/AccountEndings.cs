@@ -69,6 +69,27 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     }
 
     /// <summary>
+    /// The native door's limit, read from its failed <c>result</c> as the run says it and cooling the account the session ran as
+    /// (<see cref="NativeLimits"/>), said on the account's line as a protocol door's limit is. A disk that would not take the cool-off costs
+    /// the reading, never the run.
+    /// </summary>
+    public NativeLimits NativeLimit(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => new(
+        failure => AgentErrors.Read(context.Adapters, adapter, failure, context.Harnesses.Clock(), context.Harnesses.Zone),
+        (failure, error) =>
+        {
+            try
+            {
+                if (context.Harnesses.Limited(adapter.Name, selection.Profile, failure.Words, sessionId, config.CoolOff, error.Limit) is not { } read) return false;
+                service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, read.Seen, context.Events.TurnsEnded(sessionId) + 1, used: null));
+                return true;
+            }
+            catch (Exception caught) when (caught is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+        });
+
+    /// <summary>
     /// What a session's door says about the windows of the account it runs as, kept by the roster as the door carries it, for the next
     /// start's walk. A reading not kept costs a start's ranking, never the session.
     /// </summary>

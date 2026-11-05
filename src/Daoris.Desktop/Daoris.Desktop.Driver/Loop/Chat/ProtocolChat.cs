@@ -450,6 +450,12 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             return true;
         }
 
+        // Whatever it was, a turn's failure is one reading on the run's sink, as the driven door's is.
+        if (_open.Task.IsCompletedSuccessfully && _open.Task.Result is { } failedRun)
+        {
+            failedRun.Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Prompt)));
+        }
+
         if (error is AcpTransientExhausted exhausted && Retry is { } retry)
         {
             // Every try failed, so the turn ends `error` and the next word is a turn of this same conversation. No limit, no sign-in and no

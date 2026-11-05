@@ -77,7 +77,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null,
-        string? moved = null)
+        string? moved = null, NativeLimits? limits = null)
     {
         var context = wiring.Context;
         var (service, home, output, log) = (context.Service, context.Home, context.Output, context.Log);
@@ -280,7 +280,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.
                 target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
-                handedServers ?? context.Servers, inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
+                handedServers ?? context.Servers, inbox, resume, keepAs, waitsOnBackground, noConnector, ending,
                 unoffered: target.Access is { } access ? access.Unoffered : SessionRules.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
                 setupChanged: setupChanged,
 
@@ -313,7 +313,8 @@ internal sealed class SessionHold(IRunWiring wiring)
         run.HandSink(ReadingSinks.Of(
             new RecordReadings(sessionId, output, context.Events),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
-            said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows))));
+            said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
+            limits));
 
         // The rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));

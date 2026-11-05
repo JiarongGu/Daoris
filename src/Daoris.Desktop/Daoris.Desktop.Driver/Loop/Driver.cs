@@ -511,6 +511,9 @@ public sealed class Driver(
     internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) =>
         Accounts.Said(adapter, selection, sessionId);
 
+    internal NativeLimits NativeLimit(ISessionAdapter adapter, HarnessSelection selection, string sessionId) =>
+        Accounts.NativeLimit(adapter, selection, sessionId);
+
     internal SessionConclusion AccountRefused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended) =>
         Accounts.Refused(conclusion, adapter, selection, ended);
 
