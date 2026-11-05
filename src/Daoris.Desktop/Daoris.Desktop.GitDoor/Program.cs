@@ -5,7 +5,8 @@ namespace Daoris.Desktop.GitDoor;
 /// <summary>
 /// Daoris's git doors (GITAUTH1b, the git-auth design §4.2 and §4.3), started by git alone: as <c>daoris-git-ssh</c>, git's ssh
 /// (<see cref="GitDoors.Ssh"/>); as <c>git-remote-daoris</c>, the remote helper for a <c>daoris::</c> address
-/// (<see cref="GitDoors.Helper"/>). The file's own name says which, so the publish lays one program out under both names.
+/// (<see cref="GitDoors.Helper"/>); as <c>git-credential-daoris</c>, git's credential helper for an identity's token
+/// (<see cref="GitCredentialDoor"/>). The file's own name says which, so the publish lays one program out under both names.
 /// </summary>
 public static class Program
 {
@@ -15,6 +16,12 @@ public static class Program
         Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
         var name = Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "");
         var folder = Environment.CurrentDirectory;
+        if (name.StartsWith("git-credential-", StringComparison.OrdinalIgnoreCase))
+        {
+            using var input = new StreamReader(Console.OpenStandardInput());
+            return GitCredentialDoor.Run(args, Environment.GetEnvironmentVariable, input, Console.Out, Console.Error);
+        }
+
         if (name.StartsWith("git-remote-", StringComparison.OrdinalIgnoreCase))
         {
             using var input = Console.OpenStandardInput();

@@ -13,6 +13,9 @@ public static class GitRouting
     /// <summary>The landing's grant, handed to one plugin process alone (§6.7; <see cref="GitGrants"/>).</summary>
     public const string GrantVariable = "DAORIS_GIT_GRANT";
 
+    /// <summary>The identity an HTTPS act is carried as, set by the remote helper on its transport alone; the credential door answers for it.</summary>
+    public const string IdentityVariable = "DAORIS_GIT_IDENTITY";
+
     /// <summary>The prefix the rewrite puts before every HTTP and HTTPS address, which <c>GitRemotes.AddressOf</c> takes off.</summary>
     public const string Prefix = "daoris::";
 

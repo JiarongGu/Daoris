@@ -50,8 +50,8 @@ public static class GitLog
     /// <summary>
     /// How the driver's git is wired at its start (§11 <c>git.wired</c>): which git Tools runs (its way, and its version where Tools
     /// records one, never its path: asking git would be one more start on every launch), how the ssh door is named (<c>command</c>,
-    /// <c>git-ssh</c>, or null where none is laid out) and whether the remote helper is. Identities, pointers and GCM join with
-    /// GITAUTH1c and 1d.
+    /// <c>git-ssh</c>, or null where none is laid out) and whether the remote helper is. Identities and pointers join with
+    /// GITAUTH1c.
     /// </summary>
     public static void Wired(string home, string? way, string? version, string? sshForm, bool helper) =>
         Write(home, "git.wired", ("way", way), ("version", version), ("ssh", sshForm), ("helper", helper),

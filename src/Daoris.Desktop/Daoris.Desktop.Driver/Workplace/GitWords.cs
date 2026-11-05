@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The one boundary for words that may hold a secret (GITAUTH1a, D198 point 16; the git-auth design §10): every text from git, ssh,
-/// Git Credential Manager or a landing plugin passes <see cref="Redact"/> before Daoris keeps, says or answers it. Beside
+/// the credential door or a landing plugin passes <see cref="Redact"/> before Daoris keeps, says or answers it. Beside
 /// <see cref="WiringRedact"/>, which cuts what This Daoris shows of a value it was handed; this one cuts what a child wrote.
 /// </summary>
 /// <remarks>

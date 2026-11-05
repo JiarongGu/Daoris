@@ -22,7 +22,11 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
     private readonly string _projects;
     private readonly List<string> _requests = [];
     private readonly List<string> _authorizations = [];
-    private readonly string? _expected;
+    private volatile string? _expected;
+
+    /// <summary>Ask a user and token (HTTP Basic) from now on, or none (null): a fixture shared by a class's tests asks what each test sets.</summary>
+    public void Require((string User, string Token)? basic) =>
+        _expected = basic is null ? null : "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(basic.Value.User + ":" + basic.Value.Token));
 
     /// <summary>The user each request authenticated as (<c>-</c> for none), in order; the token itself is never kept.</summary>
     public IReadOnlyList<string> Users
@@ -37,7 +41,7 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
     {
         _backend = backend;
         _projects = projects;
-        _expected = basic is null ? null : "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(basic.Value.User + ":" + basic.Value.Token));
+        Require(basic);
         _listener.Start();
         _serving = ServeAsync();
     }

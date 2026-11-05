@@ -64,7 +64,7 @@ public static class GitFailures
         "Permission denied (", // ssh: every method the host offered was refused, `(publickey)`, `(password,publickey)`
         "Authentication failed for", // git over HTTP: a credential answered and the host refused it
         "terminal prompts disabled", // git over HTTP: none answered, and git may ask nobody
-        "Cannot prompt because user interactivity has been disabled", // GCM (GITAUTH1d): no sign-in stored for the identity, and it may ask nobody
+        "Cannot prompt because user interactivity has been disabled", // a credential manager of the person's own, under `own`, that has no sign-in and may ask nobody
         "could not read Username for",
         "could not read Password for",
         "The requested URL returned error: 401",

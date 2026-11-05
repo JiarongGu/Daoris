@@ -22,12 +22,12 @@ public sealed record ToolsLocationPress(string Action, string Address);
 public sealed record ToolsGitSetPress(string Key, string? Value);
 
 /// <summary>
-/// One act on a git identity: <c>Action</c> is add-ssh, add-https, test, rename, commits-as, read-only, remove or default, and each
+/// One act on a git identity: <c>Action</c> is add-ssh, add-https, token (set or, with Clear, clear a token of Kind, never said back), test, rename, commits-as, read-only, remove or default, and each
 /// reads the fields it names.
 /// </summary>
 public sealed record GitIdentityPress(
     string Action, string? Identity, string? Host, string? Label, string? Name, string? Email, string? Import, string? User, string? Token,
-    string? Repository, string? Trust, bool Rsa = false, bool Clear = false, bool On = false);
+    string? Repository, string? Trust, bool Rsa = false, bool Clear = false, bool On = false, string? Kind = null);
 
 /// <summary>One pointer written into the choices of a repository's remote, a workspace's host or the machine's host.</summary>
 public sealed record GitUsePress(string Scope, string? Repository, string? Workspace, string? Remote, string? Host, string? Value);

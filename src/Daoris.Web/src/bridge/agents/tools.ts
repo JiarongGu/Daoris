@@ -119,7 +119,8 @@ export const useToolGitSet = () =>
 /** One act on a git identity (GITAUTH1e, the git-auth design §7.1-§7.2), in the words `daoris git identity` uses. */
 export type GitIdentityChange =
   | { action: 'add-ssh'; host: string; label: string; name?: string; email?: string; import?: string; rsa?: boolean }
-  | { action: 'add-https'; host: string; label: string; user?: string; token?: string; name?: string; email?: string }
+  | { action: 'add-https'; host: string; label: string; user: string; token: string; name?: string; email?: string }
+  | { action: 'token'; identity: string; kind?: 'api' | 'https'; token?: string; clear?: boolean }
   | { action: 'test'; identity: string; trust?: string; repository?: string }
   | { action: 'rename'; identity: string; label: string }
   | { action: 'commits-as'; identity: string; name?: string; email?: string; clear?: boolean }
@@ -127,18 +128,14 @@ export type GitIdentityChange =
   | { action: 'remove'; identity: string }
   | { action: 'default'; host: string; identity?: string };
 
-/** The longest a browser sign-in is waited on (§7.2 step 4): the person's own pace, the bridge's thirty seconds being too short. */
-const SIGN_IN_BOUND_MS = 10 * 60_000;
-
 /**
  * A git identity added, tested, changed or removed (GITAUTH1e): the screen's half of `daoris git identity` and
- * `git default`. A refusal is the operation's own sentence. A browser sign-in (`add-https` with no token) waits as long as the
- * person takes; the press that loosens what Daoris's git may use is confirmed in the page first.
+ * `git default`. A refusal is the operation's own sentence. A token goes in and never comes back, only whether it is set; the press
+ * that loosens what Daoris's git may use is confirmed in the page first.
  */
 export const useGitIdentity = () =>
   useMutation({
-    mutationFn: (change: GitIdentityChange) =>
-      call('GIT_IDENTITY', change, change.action === 'add-https' && !change.token ? { timeoutMs: SIGN_IN_BOUND_MS } : undefined) as Promise<Record<string, unknown>>,
+    mutationFn: (change: GitIdentityChange) => call('GIT_IDENTITY', change) as Promise<Record<string, unknown>>,
   });
 
 /** A choice of identity for a scope (§3.2): a repository's remote, a workspace's host or this machine's host; `own` or an id, or none clears it. */

@@ -76,6 +76,7 @@ export const ACTS: GitActs = {
   rename: async () => ({}),
   commitsAs: async () => ({}),
   readOnly: async () => ({}),
+  apiToken: async () => ({}),
   remove: async () => ({ pointing: [] }),
   makeDefault: async () => ({}),
   own: async () => ({}),

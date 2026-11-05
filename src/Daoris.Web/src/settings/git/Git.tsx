@@ -7,7 +7,7 @@ import {
   Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 
-/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS sign-in kept by Git Credential Manager (D198). */
+/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys (D198, D241). */
 export type GitWay = 'ssh' | 'https';
 
 /** An identity's last test as `TOOLS_LIST`'s `identities` answers it (GITAUTH1e, the git-auth design §3.1). */
@@ -30,6 +30,8 @@ export type GitIdentityShown = {
   test?: GitTestShown | null;
   lastUsed?: string | null;
   publicKey?: string | null;
+  /** Whether an API token is set for the host's hosted service; the token itself is never sent here. */
+  apiToken?: boolean;
   keyPage?: string | null;
   repositories: number;
   workspaces: number;
@@ -65,7 +67,7 @@ export type GitAddInput = {
   /** SSH: a key file the person names, imported; absent generates a new key. */
   importFile?: string;
   rsa?: boolean;
-  /** HTTPS: the account, and a token pasted; absent signs in through the browser. */
+  /** HTTPS: the account and its token. */
   user?: string;
   token?: string;
 };
@@ -80,6 +82,8 @@ export type GitActs = {
   rename: (identity: GitIdentityShown, label: string) => Promise<unknown>;
   commitsAs: (identity: GitIdentityShown, who: { name: string; email: string } | null) => Promise<unknown>;
   readOnly: (identity: GitIdentityShown, on: boolean) => Promise<unknown>;
+  /** Set (a value) or clear (null) the identity's API token; the value goes in and is never shown again. */
+  apiToken: (identity: GitIdentityShown, token: string | null) => Promise<unknown>;
   remove: (identity: GitIdentityShown) => Promise<unknown>;
   makeDefault: (identity: GitIdentityShown) => Promise<unknown>;
   /** Choose the person's own sign-ins for a host at this machine, or stop (§3.3); choosing is a widening. */
@@ -103,7 +107,7 @@ export function TestState({ identity }: { identity: GitIdentityShown }) {
 }
 
 /** The first panel an identity's row opens under it; one at a time. */
-type Panel = 'rename' | 'commits' | 'remove' | 'readOnlyOff' | 'trust' | null;
+type Panel = 'rename' | 'commits' | 'apiToken' | 'remove' | 'readOnlyOff' | 'trust' | null;
 
 /** One identity (§7.1): its facts, its test, and the acts its way and state offer. */
 export function GitIdentityRow({ identity, acts, testing = false, answer = null }: {
@@ -122,6 +126,7 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
   const [label, setLabel] = useState(identity.label);
   const [who, setWho] = useState({ name: identity.commitsName ?? '', email: identity.commitsEmail ?? '' });
   const [repository, setRepository] = useState('');
+  const [apiToken, setApiToken] = useState('');
 
   const press = async <T,>(act: () => Promise<T>, then?: (value: T) => void) => {
     setBusy(true);
@@ -197,6 +202,9 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
         >
           {identity.readOnly ? t('settings.git.readOnlyOff') : t('settings.git.readOnlyOn')}
         </Button>
+        <Button variant="ghost" disabled={busy} onClick={() => setPanel(panel === 'apiToken' ? null : 'apiToken')}>
+          {identity.apiToken ? t('settings.git.apiTokenChange') : t('settings.git.apiTokenSet')}
+        </Button>
         <Button variant="danger" disabled={busy} onClick={() => setPanel('remove')}>{t('settings.git.remove')}</Button>
       </div>
 
@@ -270,6 +278,34 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
             </Button>
           )}
           <Button variant="ghost" onClick={() => setPanel(null)}>{t('settings.git.close')}</Button>
+        </form>
+      )}
+
+      {panel === 'apiToken' && (
+        <form
+          className="mt-1 flex min-w-0 flex-wrap items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (apiToken) press(() => acts.apiToken(identity, apiToken), () => { setApiToken(''); setPanel(null); });
+          }}
+        >
+          <input
+            type="password"
+            aria-label={t('settings.git.apiTokenOf', { label: identity.label })}
+            value={apiToken}
+            onChange={(event) => setApiToken(event.target.value)}
+            placeholder={t('settings.git.tokenPlaceholder')}
+            autoComplete="off"
+            className="min-w-0 flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint"
+          />
+          <Button variant="primary" type="submit" disabled={busy || !apiToken}>{t('settings.git.apiTokenSave')}</Button>
+          {identity.apiToken && (
+            <Button variant="ghost" disabled={busy} onClick={() => press(() => acts.apiToken(identity, null), () => setPanel(null))}>
+              {t('settings.git.apiTokenClear')}
+            </Button>
+          )}
+          <Button variant="ghost" onClick={() => setPanel(null)}>{t('settings.git.close')}</Button>
+          <p className="m-0 basis-full text-small text-ink-faint"><Inline text={t('settings.git.apiTokenWhy')} /></p>
         </form>
       )}
 

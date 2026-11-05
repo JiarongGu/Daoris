@@ -178,7 +178,7 @@
       "budget": { "en": 16, "zh": 6 },
       "case": "sentence",
       "keys": [
-        "settings.git.way.*", "settings.git.keyGenerate", "settings.git.keyImport", "settings.git.signInBrowser", "settings.git.signInToken",
+        "settings.git.way.*", "settings.git.keyGenerate", "settings.git.keyImport",
         "settings.git.remotes.asWorkspace", "settings.git.remotes.ownOption", "settings.git.defaultNone",
         "asks.compose.toNobody", "harness.profileOut", "harness.profileRefused", "harness.settings.notSet", "harness.settings.otherModel",
         "harness.settings.toolDefault", "harness.use.keep.none", "harness.use.mode.goal", "harness.use.mode.order",
@@ -203,7 +203,8 @@
       "budget": { "en": 20, "zh": 8 },
       "case": "sentence",
       "keys": [
-        "settings.git.add", "settings.git.test", "settings.git.testAgain", "settings.git.copyKey", "settings.git.rename",
+        "settings.git.add", "settings.git.apiTokenSet", "settings.git.apiTokenChange", "settings.git.apiTokenSave", "settings.git.apiTokenClear",
+        "settings.git.test", "settings.git.testAgain", "settings.git.copyKey", "settings.git.rename",
         "settings.git.renameSave", "settings.git.commitsAsAct", "settings.git.commitsSave", "settings.git.commitsClear", "settings.git.readOnlyOn",
         "settings.git.readOnlyOff", "settings.git.readOnlyOffConfirm", "settings.git.remove", "settings.git.removeConfirm", "settings.git.close",
         "settings.git.cancel", "settings.git.trust", "settings.git.ownStop", "settings.git.ownUse", "settings.git.ownConfirm", "settings.git.browse",

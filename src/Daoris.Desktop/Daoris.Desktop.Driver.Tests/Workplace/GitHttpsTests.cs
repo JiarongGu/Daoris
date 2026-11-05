@@ -3,8 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAUTH1d's tables (the git-auth design §3.3, §4.3 and §14 row 4): what an identity's HTTPS act is handed and what is taken out of
-/// it, the address's host, user-info and password, GCM found beside git, and the resolution of an HTTPS address. No process starts.
+/// The HTTPS tables (the git design §2.3, D241 point 6): what an identity's HTTPS act is handed and what is taken out of it, the
+/// credential door's answers, an identity's tokens, the address's host, user-info and password, and the resolution of an HTTPS address.
+/// No process starts.
 /// </summary>
 public sealed class GitHttpsTests : IDisposable
 {
@@ -24,86 +25,129 @@ public sealed class GitHttpsTests : IDisposable
         return pairs.GroupBy(pair => pair.Key).ToDictionary(group => group.Key, group => group.Last().Value);
     }
 
-    /// <summary>REVIEW2: an HTTPS identity is erased before it is removed; with no GCM found it is kept and the refusal says so.</summary>
     [Fact]
-    public async Task Removing_an_https_identity_with_no_GCM_found_keeps_the_identity_and_says_so()
+    public void An_identitys_act_loses_every_authentication_input_of_the_persons_and_gains_the_credential_door_alone()
     {
         var home = Path.Combine(_root, "data");
-        Directory.CreateDirectory(home);
-        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
-        GitIdentities.Change(home, _ => [new("gi-0000000000c1", "Work", "example.invalid", GitIdentity.Https, null, null, null, null, null, false, null, true)]);
-        var path = Environment.GetEnvironmentVariable("PATH");
-        Directory.CreateDirectory(Path.Combine(_root, "empty"));
-        try
-        {
-            Environment.SetEnvironmentVariable("PATH", Path.Combine(_root, "empty"));
-            var refused = await Assert.ThrowsAsync<DriverException>(() => GitIdentityHttps.RemoveAsync(home, "Work", CancellationToken.None));
-
-            Assert.Contains("(no-gcm)", refused.Message);
-            Assert.Contains("identity was kept", refused.Message);
-            Assert.Single(GitIdentities.Read(home));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("PATH", path);
-        }
-    }
-
-    [Fact]
-    public void An_identitys_act_loses_every_authentication_input_of_the_persons_and_gains_GCM_in_Daoris_namespace()
-    {
-        var home = Path.Combine(_root, "data");
-        var manager = Path.Combine(_root, "git", "git-credential-manager.exe");
+        var door = Path.Combine(_root, "bin");
         var environment = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
         {
             ["GIT_SSL_CERT"] = "c.pem", ["GIT_SSL_KEY"] = "k.pem", ["GIT_SSL_CERT_PASSWORD_PROTECTED"] = "1",
-            ["GCM_TRACE"] = "1", ["GCM_PROVIDER"] = "github", ["GCM_NAMESPACE"] = "theirs", ["GCM_CREDENTIAL_STORE"] = "plaintext",
+            [GitRouting.IdentityVariable] = "gi-inherited0",
             ["HOME"] = "persons", ["USERPROFILE"] = "persons", ["PATH"] = "elsewhere",
         };
 
-        GitHttps.Apply(environment, home, "alice", manager);
+        GitHttps.Apply(environment, home, "gi-000000000001", door);
 
         Assert.DoesNotContain("GIT_SSL_CERT", environment.Keys);
         Assert.DoesNotContain("GIT_SSL_KEY", environment.Keys);
         Assert.DoesNotContain("GIT_SSL_CERT_PASSWORD_PROTECTED", environment.Keys);
-        Assert.DoesNotContain("GCM_TRACE", environment.Keys);
-        Assert.DoesNotContain("GCM_PROVIDER", environment.Keys);
-        Assert.Equal("daoris", environment["GCM_NAMESPACE"]);
-        Assert.Equal("wincredman", environment["GCM_CREDENTIAL_STORE"]);
-        Assert.Equal("never", environment["GCM_INTERACTIVE"]);
+        Assert.Equal("gi-000000000001", environment[GitRouting.IdentityVariable]);
         Assert.Equal(GitHttps.EmptyHome(home), environment["HOME"]);
         Assert.Equal(GitHttps.EmptyHome(home), environment["USERPROFILE"]);
         Assert.True(Directory.Exists(GitHttps.EmptyHome(home)));
         Assert.Empty(Directory.EnumerateFileSystemEntries(GitHttps.EmptyHome(home)));
-        Assert.StartsWith(Path.GetDirectoryName(manager)!, environment["PATH"], StringComparison.Ordinal);
+        Assert.StartsWith(door, environment["PATH"], StringComparison.Ordinal);
 
         Assert.Equal("", environment["GIT_CONFIG_VALUE_0"]);
         Assert.Equal("credential.helper", environment["GIT_CONFIG_KEY_0"]);
         var scope = Scope(environment);
-        Assert.Equal("manager", scope["credential.helper"]);
-        Assert.Equal("daoris", scope["credential.namespace"]);
-        Assert.Equal("wincredman", scope["credential.credentialStore"]);
-        Assert.Equal("never", scope["credential.interactive"]);
-        Assert.Equal("false", scope["credential.trace"]);
-        Assert.Equal("false", scope["credential.traceSecrets"]);
-        Assert.Equal("alice", scope["credential.username"]);
+        Assert.Equal(GitCredentialDoor.Name, scope["credential.helper"]);
         Assert.Equal("", scope["http.extraHeader"]);
         Assert.Equal("", scope["http.cookieFile"]);
     }
 
     [Fact]
-    public void Where_no_GCM_is_found_the_act_still_loses_the_inputs_and_reads_anonymously()
+    public void An_anonymous_act_or_one_with_no_door_laid_still_loses_the_inputs_and_is_answered_no_credential()
     {
-        var environment = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) { ["PATH"] = "x" };
+        foreach (var (identity, door) in new (string?, string?)[] { (null, null), (null, "bin"), ("gi-000000000001", null) })
+        {
+            var environment = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) { ["PATH"] = "x", [GitRouting.IdentityVariable] = "gi-inherited0" };
 
-        GitHttps.Apply(environment, Path.Combine(_root, "data"), "alice", manager: null);
+            GitHttps.Apply(environment, Path.Combine(_root, "data"), identity, door);
 
-        var scope = Scope(environment);
-        Assert.Equal("", scope["credential.helper"]);
-        Assert.DoesNotContain("credential.namespace", scope.Keys);
-        Assert.DoesNotContain("credential.username", scope.Keys);
-        Assert.Equal("", scope["http.extraHeader"]);
-        Assert.DoesNotContain("GCM_NAMESPACE", environment.Keys);
+            var scope = Scope(environment);
+            Assert.Equal("", scope["credential.helper"]);
+            Assert.DoesNotContain(GitRouting.IdentityVariable, environment.Keys);
+            Assert.Equal("x", environment["PATH"]);
+            Assert.Equal("", scope["http.extraHeader"]);
+        }
+    }
+
+    [Fact]
+    public void The_credential_door_answers_the_identitys_token_for_its_own_host_and_nothing_else()
+    {
+        var home = Path.Combine(_root, "data");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        var identity = GitIdentityHttps.AddHttps(home, "git.example.invalid", "Work", "alice", null, null, "throwaway-token");
+        Func<string, string?> Variable = name => name == GitRouting.HomeVariable ? home : name == GitRouting.IdentityVariable ? identity.Id : null;
+        string Ask(string text, Func<string, string?>? variable = null)
+        {
+            var output = new StringWriter();
+            Assert.Equal(0, GitCredentialDoor.Run(["get"], variable ?? Variable, new StringReader(text), output, TextWriter.Null));
+            return output.ToString().Replace("\r\n", "\n");
+        }
+
+        Assert.Equal("username=alice\npassword=throwaway-token\n", Ask("protocol=https\nhost=git.example.invalid\n\n"));
+        Assert.Equal("username=alice\npassword=throwaway-token\n", Ask("protocol=https\nhost=GIT.example.invalid:443\n\n"));
+        Assert.Equal("", Ask("protocol=https\nhost=github.com\n\n"));
+        Assert.Equal("", Ask("protocol=https\nhost=git.example.invalid:8443\n\n"));
+        Assert.Equal("", Ask("protocol=https\nhost=evil.git.example.invalid\n\n"));
+        Assert.Equal("", Ask("protocol=ssh\nhost=git.example.invalid\n\n"));
+        Assert.Equal("", Ask("host=git.example.invalid\n\n"));
+        Assert.Equal("", Ask("protocol=https\nhost=git.example.invalid\n\n", name => name == GitRouting.HomeVariable ? home : null));
+        Assert.Equal("", Ask("protocol=https\nhost=git.example.invalid\n\n", name => name == GitRouting.IdentityVariable ? identity.Id : null));
+        foreach (var verb in new[] { "store", "erase" })
+        {
+            var output = new StringWriter();
+            Assert.Equal(0, GitCredentialDoor.Run([verb], Variable, new StringReader("protocol=https\nhost=git.example.invalid\nusername=x\npassword=y\n\n"), output, TextWriter.Null));
+            Assert.Equal("", output.ToString());
+        }
+
+        var refused = new StringWriter();
+        Assert.Equal(128, GitCredentialDoor.Run([], Variable, TextReader.Null, TextWriter.Null, refused));
+        Assert.StartsWith("git-credential-daoris: ", refused.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_token_lives_in_a_folder_limited_to_the_persons_account_and_is_cleared_and_removed_with_its_identity()
+    {
+        var home = Path.Combine(_root, "data");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        var identity = GitIdentityHttps.AddHttps(home, "git.example.invalid", "Work", "alice", null, null, "throwaway-token");
+
+        GitIdentityTokens.Set(home, identity.Id, GitTokens.Api, "throwaway-api-token");
+
+        var folder = GitTokens.Folder(home, identity.Id);
+        Assert.True(GitPrivateFolder.IsPrivate(folder));
+        Assert.Equal("throwaway-token", GitTokens.Read(home, identity.Id, GitTokens.Https));
+        Assert.Equal("throwaway-api-token", GitTokens.Read(home, identity.Id, GitTokens.Api));
+        Assert.DoesNotContain("throwaway", File.ReadAllText(DaorisHome.Entry(home, HomeEntry.GitIdentities)), StringComparison.Ordinal);
+
+        GitIdentityTokens.Clear(home, identity.Id, GitTokens.Api);
+        Assert.False(GitIdentityTokens.Has(home, identity, GitTokens.Api));
+        Assert.True(GitIdentityTokens.Has(home, identity, GitTokens.Https));
+        Assert.Contains("(token-required)", Assert.Throws<DriverException>(() => GitIdentityTokens.Clear(home, identity.Id, GitTokens.Https)).Message, StringComparison.Ordinal);
+
+        GitIdentityActs.Remove(home, identity.Id);
+        Assert.False(Directory.Exists(folder));
+    }
+
+    [Fact]
+    public void An_SSH_identity_keeps_an_API_token_and_no_HTTPS_one()
+    {
+        var home = Path.Combine(_root, "data");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(_root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
+        GitIdentities.Change(home, _ => [new("gi-0000000000d1", "Deploy", "git.example.invalid", GitIdentity.Ssh, null, null, null, "ed25519", "SHA256:x", false, null, true)]);
+
+        GitIdentityTokens.Set(home, "Deploy", GitTokens.Api, "throwaway-api-token");
+
+        Assert.Equal("throwaway-api-token", GitTokens.Read(home, "gi-0000000000d1", GitTokens.Api));
+        Assert.Contains("(kind)", Assert.Throws<DriverException>(() => GitIdentityTokens.Set(home, "Deploy", GitTokens.Https, "t")).Message, StringComparison.Ordinal);
+        Assert.Contains("(token)", Assert.Throws<DriverException>(() => GitIdentityTokens.Set(home, "Deploy", GitTokens.Api, "two\nlines")).Message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -126,20 +170,6 @@ public sealed class GitHttpsTests : IDisposable
         Assert.Equal(password, GitHttps.HasPassword(address));
         Assert.Equal(bare, GitHttps.Bare(address));
         Assert.Equal(user, GitHttps.UserOf(address));
-    }
-
-    [Fact]
-    public void GCM_is_found_beside_the_git_on_the_path_in_Git_for_Windowss_layout_and_on_the_path_else()
-    {
-        var git = Path.Combine(_root, "Git");
-        Directory.CreateDirectory(Path.Combine(git, "cmd"));
-        Directory.CreateDirectory(Path.Combine(git, "mingw64", "bin"));
-        File.WriteAllText(Path.Combine(git, "cmd", OperatingSystem.IsWindows() ? "git.exe" : "git"), "");
-        var name = OperatingSystem.IsWindows() ? "git-credential-manager.exe" : "git-credential-manager";
-        File.WriteAllText(Path.Combine(git, "mingw64", "bin", name), "");
-
-        Assert.Equal(Path.Combine(git, "mingw64", "bin", name), GitHttps.Manager(variable => variable == "PATH" ? Path.Combine(git, "cmd") : null));
-        Assert.Null(GitHttps.Manager(variable => variable == "PATH" ? Path.Combine(_root, "nowhere") : null));
     }
 
     [Fact]
@@ -175,18 +205,20 @@ public sealed class GitHttpsTests : IDisposable
     }
 
     [Fact]
-    public async Task A_token_with_no_user_and_an_empty_token_are_refused_before_GCM_is_asked()
+    public async Task A_token_with_no_user_and_an_empty_or_missing_token_are_refused_and_no_identity_or_token_is_written()
     {
         var home = Path.Combine(_root, "data");
         Directory.CreateDirectory(home);
 
-        var noUser = await Assert.ThrowsAsync<DriverException>(() =>
-            GitIdentityHttps.AddHttpsAsync(home, "github.com", "Work", null, null, null, "t", "https", CancellationToken.None));
-        var empty = await Assert.ThrowsAsync<DriverException>(() =>
-            GitIdentityHttps.AddHttpsAsync(home, "github.com", "Work", "alice", null, null, "", "https", CancellationToken.None));
+        var noUser = Assert.Throws<DriverException>(() => GitIdentityHttps.AddHttps(home, "github.com", "Work", null, null, null, "t"));
+        var empty = Assert.Throws<DriverException>(() => GitIdentityHttps.AddHttps(home, "github.com", "Work", "alice", null, null, ""));
+        var missing = Assert.Throws<DriverException>(() => GitIdentityHttps.AddHttps(home, "github.com", "Work", "alice", null, null, null));
 
         Assert.Contains("(user)", noUser.Message, StringComparison.Ordinal);
         Assert.Contains("(token)", empty.Message, StringComparison.Ordinal);
+        Assert.Contains("(token)", missing.Message, StringComparison.Ordinal);
         Assert.Empty(GitIdentities.Read(home));
+        Assert.False(Directory.Exists(DaorisHome.Entry(home, HomeEntry.GitTokens)));
+        await Task.CompletedTask;
     }
 }

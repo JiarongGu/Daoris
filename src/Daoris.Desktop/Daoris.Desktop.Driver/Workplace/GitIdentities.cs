@@ -241,44 +241,8 @@ public static class GitKeys
     public static string MakeFolder(string home, string id)
     {
         var folder = Folder(home, id);
-        if (Directory.Exists(folder)) throw new DriverException($"git: {id}'s key folder is there already, and a key is never written over (key-exists)");
-        Directory.CreateDirectory(Path.GetDirectoryName(folder)!);
-        if (OperatingSystem.IsWindows())
-        {
-            var user = System.Security.Principal.WindowsIdentity.GetCurrent().User!;
-            var security = new System.Security.AccessControl.DirectorySecurity();
-            security.SetOwner(user);
-            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            security.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
-                user, System.Security.AccessControl.FileSystemRights.FullControl,
-                System.Security.AccessControl.InheritanceFlags.ContainerInherit | System.Security.AccessControl.InheritanceFlags.ObjectInherit,
-                System.Security.AccessControl.PropagationFlags.None, System.Security.AccessControl.AccessControlType.Allow));
-            // Made with its access in one call, so there is no moment the folder stands with its parent's.
-            FileSystemAclExtensions.Create(new DirectoryInfo(folder), security);
-        }
-        else
-        {
-            Directory.CreateDirectory(folder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        }
-
+        GitPrivateFolder.Make(folder, $"{id}'s key folder", "key-exists");
         return folder;
-    }
-
-    /// <summary>Whether a folder's access is this account's alone, inherited entries removed (the table's check, §3.4).</summary>
-    public static bool IsPrivate(string folder)
-    {
-        if (!OperatingSystem.IsWindows()) return (File.GetUnixFileMode(folder) & (UnixFileMode.GroupRead | UnixFileMode.OtherRead)) == 0;
-        return IsPrivateHere(folder);
-    }
-
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static bool IsPrivateHere(string folder)
-    {
-        var user = System.Security.Principal.WindowsIdentity.GetCurrent().User!;
-        var security = new DirectoryInfo(folder).GetAccessControl();
-        var rules = security.GetAccessRules(true, true, typeof(System.Security.Principal.SecurityIdentifier))
-            .Cast<System.Security.AccessControl.FileSystemAccessRule>().ToList();
-        return security.AreAccessRulesProtected && rules.Count > 0 && rules.All(rule => rule.IdentityReference.Equals(user) && !rule.IsInherited);
     }
 
     /// <summary>Remove an identity's key folder whole (§7.1 <i>Remove…</i>).</summary>

@@ -91,7 +91,7 @@ export const AddSshChinese: StoryObj<typeof Add> = { render: () => <Add host="gi
 /** Azure DevOps takes RSA keys alone, and the form says so. */
 export const AddSshRsaAlone: StoryObj<typeof Add> = { render: () => <Add host="dev.azure.com" /> };
 
-/** Add a git identity, HTTPS: the account and a browser sign-in or a pasted token. */
+/** Add a git identity, HTTPS: the account and its token. */
 export const AddHttps: StoryObj<typeof Add> = { render: () => <Add host="github.com" wayToday="https" /> };
 
 export const AddHttpsNarrow: StoryObj<typeof Add> = { render: () => <Add host="github.com" wayToday="https" />, decorators: [storyWidths.narrow] };
@@ -107,5 +107,5 @@ export const NewKeyToGiveNarrow: StoryObj<typeof Add> = { render: () => <Add add
 
 export const NewKeyToGiveChinese: StoryObj<typeof Add> = { render: () => <Add added={ADDED} />, decorators: [chinese] };
 
-/** An identity saved through Git Credential Manager. */
+/** An HTTPS identity saved with its token in Daoris's own folder. */
 export const HttpsAdded: StoryObj<typeof Add> = { render: () => <Add added={{ ...ADDED, way: 'https', publicKey: null }} /> };

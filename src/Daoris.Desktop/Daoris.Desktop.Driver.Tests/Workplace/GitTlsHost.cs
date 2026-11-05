@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>Git for Windows (2.53 measured) carries Schannel and OpenSSL, its system file choosing one; the tests read no system file, and
 /// Schannel reads <c>http.sslCAInfo</c> only with <c>http.schannelUseSSLCAInfo</c>, so <see cref="TrustedBy"/> names OpenSSL too.
-/// Asks no sign-in, and serves pushes where a repository says <c>http.receivepack</c>: what refuses one is a door.</para>
+/// Asks no sign-in until a test sets <see cref="Basic"/>, and serves pushes where a repository says <c>http.receivepack</c>: what refuses one is a door.</para>
 /// <para>One per test class (<see cref="IClassFixture{TFixture}"/>); each test serves its own repository by a path of its own.</para>
 /// </remarks>
 public sealed class GitTlsHost : IAsyncLifetime
@@ -46,6 +46,18 @@ public sealed class GitTlsHost : IAsyncLifetime
 
     /// <summary>Every request line the backend answered, in order.</summary>
     public IReadOnlyList<string> Requests => _plain?.Requests ?? [];
+
+    /// <summary>The user each request authenticated as (<c>-</c> for none), in order; the token itself is never kept.</summary>
+    public IReadOnlyList<string> Users => _plain?.Users ?? [];
+
+    /// <summary>
+    /// Ask HTTP Basic with this user and token before anything is served, or ask none (null). A class shares one host, so each test
+    /// sets what it needs and clears it at its end.
+    /// </summary>
+    public (string User, string Token)? Basic
+    {
+        set => _plain!.Require(value);
+    }
 
     /// <summary>
     /// <paramref name="info"/>'s git told to trust this host's certificate and no other authority, through git's own configuration

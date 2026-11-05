@@ -303,7 +303,7 @@ public static partial class GitIdentityActs
 
     /// <summary>
     /// Remove an identity (§7.1 <i>Remove…</i>): every pointer at it is cleared, each scope falling to the next step of §3.2, and its
-    /// key folder deleted. Answers the scopes that pointed at it.
+    /// key and token folders deleted. Answers the scopes that pointed at it.
     /// </summary>
     public static IReadOnlyList<string> Remove(string home, string name)
     {
@@ -330,6 +330,7 @@ public static partial class GitIdentityActs
         });
         GitIdentities.Change(home, all => [.. all.Where(each => each.Id != identity.Id)]);
         GitKeys.Remove(home, identity.Id);
+        GitTokens.Remove(home, identity.Id);
         return pointing;
     }
 

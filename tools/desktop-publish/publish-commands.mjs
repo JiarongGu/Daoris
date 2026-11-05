@@ -55,14 +55,14 @@ export function artifactsOf(argv, cwd = process.cwd()) {
 }
 
 /**
- * Daoris's two git doors (GITAUTH1b, D198 point 2; the git-auth design §4.2-§4.3): one program, published framework-dependent and
- * laid out in `app/bin/` whole (its executable, its library and the runtime's two files beside them), then its executable a second
- * time as the remote helper, which loads the same library, since the apphost names its library inside. Twins of
- * `GitWiring.SshDoor` and `GitWiring.RemoteHelper`, which hand a start a door only where it is laid out here: until this lays them
+ * Daoris's three git doors (GITAUTH1b, D198 point 2, D241 point 6; the git-auth design §4.2-§4.3): one program, published framework-dependent and
+ * laid out in `app/bin/` whole (its executable, its library and the runtime's two files beside them), then its executable again
+ * as the remote helper and as the credential door, which load the same library, since the apphost names its library inside. Twins of
+ * `GitWiring.SshDoor`, `GitWiring.RemoteHelper` and `GitCredentialDoor.Exe`, which hand a start a door only where it is laid out here: until this lays them
  * out, nothing an install starts is routed. The shape `GitDoorsProcessTests` lays out from the build and proves.
  */
 export const GIT_DOOR_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.GitDoor';
-export const GIT_DOORS = Object.freeze(['daoris-git-ssh.exe', 'git-remote-daoris.exe']);
+export const GIT_DOORS = Object.freeze(['daoris-git-ssh.exe', 'git-remote-daoris.exe', 'git-credential-daoris.exe']);
 
 /** The doors' publish into `folder`: framework-dependent, the shape the launcher and the driver have; its builds into `artifacts` when given. */
 export function gitDoorPublishCommand(folder, artifacts = null) {
@@ -72,15 +72,15 @@ export function gitDoorPublishCommand(folder, artifacts = null) {
 
 /**
  * Lay the doors' publish in `published` out in `<install>/app/bin/`, beside the launchers (which {@link layCli} replaces whole, so
- * this runs after it), the ssh door copied as the remote helper. Throws naming what the publish did not make.
+ * this runs after it), the ssh door copied as the remote helper and as the credential door. Throws naming what the publish did not make.
  */
 export function layGitDoors(published, install) {
-  const [ssh, helper] = GIT_DOORS;
+  const [ssh, ...others] = GIT_DOORS;
   if (!existsSync(join(published, ssh))) throw new Error(`desktop-publish: the publish of the git doors made no ${ssh}.`);
   const bin = join(install, ...CLI_BIN);
   mkdirSync(bin, { recursive: true });
   for (const name of readdirSync(published)) cpSync(join(published, name), join(bin, name), { recursive: true });
-  cpSync(join(published, ssh), join(bin, helper));
+  for (const name of others) cpSync(join(published, ssh), join(bin, name));
 }
 
 /**
