@@ -10,7 +10,9 @@ import { type Editing, editingOfLine, entryText, type Line, mayEditLine, nameFie
 import { useRoleEditing } from '../roles/RolesView';
 import { fieldsOf, policyDraftOf } from '../roles/staffPolicyDraft';
 import { stateText } from '../roles/StructureSections';
+import { placeKey } from '../roles/supervisorRulesDraft';
 import { AppointedRows } from './AppointedRows';
+import { PlaceSupervisorRules } from './PlaceSupervisorRules';
 
 type Kind = 'machine' | 'workspace' | 'repository';
 
@@ -272,6 +274,7 @@ export function PlaceRolesView({ place, read, answer, editor, appointed, onSourc
           {appointed}
         </div>
       )}
+      <PlaceSupervisorRules place={placeKey(kind, here)} placeName={placeName} editor={editor} />
     </div>
   );
 }

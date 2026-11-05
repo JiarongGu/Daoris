@@ -168,7 +168,7 @@
   "settings.ai.policy.later": "Choices take new work by their weights; a choice that cannot run passes to the next by weight.",
   "settings.ai.policy.choicesNote": "Its choices take new work by their weights. Off is for the roles that take intake or Ask Daoris only. Restore role defaults gives a seeded role back its names, work and place; Clear staffing puts its choices back to as before.",
   "settings.ai.policy.lighter": "Put the lighter choice first; Daoris knows no prices.",
-  "settings.ai.policy.movesNote": "A running line moves to another choice only on a condition set below, at a part's end.",
+  "settings.ai.policy.movesNote": "A running line moves to another choice only by a supervisor rule, at a part's end.",
   "settings.ai.policy.field.weight": "Weight",
   "settings.ai.policy.field.aim": "Aim",
   "settings.ai.policy.field.limits": "Limits",
