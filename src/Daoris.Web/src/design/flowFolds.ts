@@ -2,7 +2,7 @@ import { findStacks, type FlowShape, layoutFlow, type FlowLayout } from './flowL
 
 /**
  * **A flow too large to show whole** (FLOWCHART1d; D186 point 7, the flowchart design §3.6 and trap 16): which nodes fold, as a
- * pure function of the graph's shape, what is current and settled, and which folds the person opened. `Flow` draws each fold as
+ * pure function of the graph's shape, what is current and settled, and which folds the person opened. `RankedFlow` draws each fold as
  * one node with a press, every edge across its boundary drawn to it with its cause, those between its members said in words.
  *
  * @remarks

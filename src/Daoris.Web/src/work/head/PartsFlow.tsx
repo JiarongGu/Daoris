@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Flow } from '../../design/Flow';
+import { LifeFlow } from '../../design/LifeFlow';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { partsFlow } from './partsLife';
 import { ranLine } from '../actors';
@@ -53,7 +53,7 @@ export function PartsFlow({ plan, ...props }: PartsProps & { plan?: EntryAcceptP
   return (
     <nav aria-label={t('work.parts.title')}>
       <PartsHeading entry={entry} attended={attended} />
-      <Flow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} rail={<PartsList {...props} />} />
+      <LifeFlow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} rail={<PartsList {...props} />} />
     </nav>
   );
 }

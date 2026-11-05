@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ExternalLink } from '../../design/links';
-import { Flow } from '../../design/Flow';
+import { LifeFlow } from '../../design/LifeFlow';
 import { Icon, Inline } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { moment } from '../../locales/format';
@@ -89,5 +89,5 @@ export function LandingLifeFlow({ landing }: { landing: LandingOf }) {
       ),
     };
   });
-  return <Flow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
+  return <LifeFlow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
 }

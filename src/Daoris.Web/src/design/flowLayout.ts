@@ -1,7 +1,7 @@
 /**
  * **A flowchart's layout** (FLOWCHART1a1; D186 point 2, the flowchart design §3.1, §3.2 and §3.5): a pure, deterministic
  * function of a graph's shape that says which edges return, each node's rank, the waypoint slots an edge takes through
- * the ranks it skips, each rank's order, and what each placement needs. It holds no positions: `Flow` places the slots
+ * the ranks it skips, each rank's order, and what each placement needs. It holds no positions: `RankedFlow` places the slots
  * with CSS and draws the edges from the boxes they make.
  *
  * @remarks

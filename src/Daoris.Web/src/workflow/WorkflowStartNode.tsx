@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow, type FlowEdge, type FlowNode } from '../design/Flow';
+import type { FlowEdge, FlowNode } from '../design/FlowCanvas';
+import { LifeFlow } from '../design/LifeFlow';
 import { Button, Inline } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowRoute, WorkflowStart } from './current';
@@ -114,7 +115,7 @@ export function LandedLines({ landed, page, repository, onAccept, accepting, onV
 /**
  * **The start node** (FABRIC-PIPELINE1a; D192 point 2, the pipeline design §1.2, §1.3): drawn first on a Workflow tab, the routes the
  * work that comes here takes, read from the choice table the driver keeps: the default, each kind the workspace declares by its label
- * and paths, and the work that lands, each wired to the workflow it names with what chose it, laid out by D186's `Flow`. A route
+ * and paths, and the work that lands, each wired to the workflow it names with what chose it, laid out by D186's flow on the canvas (`LifeFlow`). A route
  * naming nothing says what follows then: Current, or no verification here.
  *
  * @remarks
@@ -178,7 +179,7 @@ export function WorkflowStartNode({ start, page, scope, onAccept, accepting = fa
   return (
     <section aria-labelledby={headId} className="grid min-w-0 gap-2">
       <h3 id={headId} className="m-0 text-body font-semibold text-ink">{title}</h3>
-      <Flow label={title} nodes={[...nodes, ...targets.values()]} edges={edges} entries={['start']} />
+      <LifeFlow label={title} nodes={[...nodes, ...targets.values()]} edges={edges} entries={['start']} />
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useLayoutEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow } from './Flow';
+import { LifeFlow } from './LifeFlow';
 import {
   APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, LARGE_ONE, LARGE_SETTLED, LARGE_THREE, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, type Said,
   UNEQUAL,
@@ -19,7 +19,7 @@ function FixtureFlow({ fixture }: { fixture: Fixture }) {
   const { i18n } = useTranslation();
   const say = (words: Said) => (i18n.language.startsWith('zh') ? words.zh : words.en);
   return (
-    <Flow
+    <LifeFlow
       label={say(fixture.label)}
       entries={fixture.entries}
       nodes={fixture.nodes.map((node) => ({
@@ -42,7 +42,7 @@ function ListChosen({ children }: { children: ReactNode }) {
 }
 
 const meta: Meta<typeof FixtureFlow> = {
-  title: 'Design/Flow',
+  title: 'Design/LifeFlow',
   component: FixtureFlow,
 };
 export default meta;
