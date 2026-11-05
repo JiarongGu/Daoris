@@ -125,7 +125,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 **Permissions and posture**
 
 18. What an agent may do is Daoris's rules in three scopes (machine, workspace, repository) in `permissions.json`, beneath the
-    defaults `connector`, `commit`, `no-push` and `tree-guard`. The union is handed as the harness's command-line settings tier;
+    defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
+    is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
     the harness's own precedence decides, and `deny` wins. (from D72)
 19. Only a harness that takes Claude Code's rule language is handed rules (`TakesSettings`: the two Claude Code doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its

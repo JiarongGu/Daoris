@@ -1778,7 +1778,8 @@ describe('what it may do', () => {
     path: 'C:/somewhere/data/permissions.json',
     defaults: [
       { id: 'connector', list: 'allow', rules: ['mcp__daoris-knowledge__quest_respond'], why: 'The connector.', on: true },
-      { id: 'no-push', list: 'deny', rules: ['Bash(git push:*)'], why: "A push stays the person's (D37).", on: true },
+      { id: 'no-push', list: 'deny', rules: ['Bash(git push:*)'], why: "A push leaves this machine.", on: true, fixed: true },
+      { id: 'no-publish', list: 'deny', rules: [], why: 'Publishing stays the person’s call.', on: true },
     ],
     scopes: [
       { scope: 'machine', allow: ['Bash(npm test:*)'], ask: [], deny: [] },
@@ -1799,7 +1800,7 @@ describe('what it may do', () => {
       (type === 'HARNESSES' ? ROSTER : type === 'RULES' ? RULES : WIRING));
     place();
 
-    expect(await screen.findByText("Daoris's 2 defaults on · 1 rule of yours")).toBeTruthy();
+    expect(await screen.findByText("Daoris's 3 defaults on · 1 rule of yours")).toBeTruthy();
     await unfold('What it may do');
     expect(screen.getByRole('listitem', { name: 'no-push' })).toBeTruthy();
     expect(within(screen.getByRole('list', { name: 'Every session on this machine' })).getByText('Bash(npm test:*)')).toBeTruthy();
@@ -1813,9 +1814,9 @@ describe('what it may do', () => {
     place(notify);
 
     await unfold('What it may do');
-    await userEvent.click(within(screen.getByRole('listitem', { name: 'no-push' })).getByRole('checkbox'));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'default', id: 'no-push', on: false } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('The default no-push is off on this machine.'));
+    await userEvent.click(within(screen.getByRole('listitem', { name: 'no-publish' })).getByRole('checkbox'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'default', id: 'no-publish', on: false } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('The default no-publish is off on this machine.'));
   });
 
   /** PERM2 (D74): a proposal waiting opens the section, and the person's answer lands as `daoris agent rules accept` would. */
