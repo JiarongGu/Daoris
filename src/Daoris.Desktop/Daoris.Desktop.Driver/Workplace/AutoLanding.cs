@@ -93,61 +93,61 @@ public static class AutoLandingNotes
         var named = landed?.Branch ?? branch ?? "";
         var lead = code switch
         {
-            AutoLandingCode.CarriedOn when carry == LandCarry.Conflicted => Noted.Of(NoteCodes.LandingCarriedConflict,
+            AutoLandingCode.CarriedOn when carry == LandCarry.Conflicted => Noted.Of(ChatNoteCodes.LandingCarriedConflict,
                 "accepted: replaying its work onto the line conflicts, so its session was carried on to rebase in its own tree, as follows. "
                 + "It lands when its tree is clean."),
-            AutoLandingCode.CarriedOn => Noted.Of(NoteCodes.LandingCarriedDirty,
+            AutoLandingCode.CarriedOn => Noted.Of(ChatNoteCodes.LandingCarriedDirty,
                 $"accepted: its tree has {uncommitted ?? 0} uncommitted path(s), so its session was carried on to commit them by its repository's "
                 + "conventions, or restore the ones it does not want and say which. It lands when its tree is clean.",
                 ("paths", uncommitted ?? 0)),
-            AutoLandingCode.CarryBound => Noted.Of(NoteCodes.LandingCarryBound,
+            AutoLandingCode.CarryBound => Noted.Of(ChatNoteCodes.LandingCarryBound,
                 $"accepted, but its session was carried on {LandCarry.Bound} times and its tree is still not clean or its work still conflicts, "
                 + "so nothing was landed. It waits for your review: Accept again once it has committed, or decide the rest is not wanted."),
             // The person's yes, kept on it while its session cleaned the tree, landed it: said as theirs (LANDBACK1 part 1).
-            AutoLandingCode.Landed or AutoLandingCode.Advanced when carry is not null => Noted.Of(NoteCodes.LandingAcceptedCarried,
+            AutoLandingCode.Landed or AutoLandingCode.Advanced when carry is not null => Noted.Of(ChatNoteCodes.LandingAcceptedCarried,
                 $"accepted by your press once its tree was clean: its work is on `{named}`.", ("branch", named)),
             // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
-            AutoLandingCode.Landed or AutoLandingCode.Advanced => Noted.Of(NoteCodes.LandingAccepted,
+            AutoLandingCode.Landed or AutoLandingCode.Advanced => Noted.Of(ChatNoteCodes.LandingAccepted,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`.", ("branch", named)),
-            AutoLandingCode.PluginUnready => Noted.Of(NoteCodes.LandingUnready,
+            AutoLandingCode.PluginUnready => Noted.Of(ChatNoteCodes.LandingUnready,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` cannot land work here, so nothing was pushed; "
                 + "`trees hand` gives it the branch once it can.",
                 ("branch", named), ("plugin", plugin)),
-            AutoLandingCode.PluginFailed => Noted.Of(NoteCodes.LandingPluginFailed,
+            AutoLandingCode.PluginFailed => Noted.Of(ChatNoteCodes.LandingPluginFailed,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
             // FABRIC-CLOSE1h14: held there by its landing's gate (CLOSE1h12), whose words lead, so it is never said as its quest's.
-            AutoLandingCode.PushHeld when ByGate(landed?.Withheld) => Noted.Of(NoteCodes.LandingPushGated,
+            AutoLandingCode.PushHeld when ByGate(landed?.Withheld) => Noted.Of(ChatNoteCodes.LandingPushGated,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, but its landing's gate held it before `{plugin}` was told, "
                 + "so nothing was pushed. The first look once the gate lets it go hands the branch on.",
                 ("branch", named), ("plugin", plugin)),
             // FABRIC-CLOSE1h2: judged once more just before its plugin was told, and held there; its own sentence beneath says why.
-            AutoLandingCode.PushHeld =>Noted.Of(NoteCodes.LandingPushHeld,
+            AutoLandingCode.PushHeld =>Noted.Of(ChatNoteCodes.LandingPushHeld,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
                 + "so nothing was pushed. The first look once it stands again hands the branch on.",
                 ("branch", named), ("plugin", plugin)),
-            AutoLandingCode.Nothing => Noted.Of(NoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),
-            AutoLandingCode.Held => Noted.Of(NoteCodes.LandingHeld,
+            AutoLandingCode.Nothing => Noted.Of(ChatNoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),
+            AutoLandingCode.Held => Noted.Of(ChatNoteCodes.LandingHeld,
                 "its quest is done and held for your yes, so its work lands at the look after you release it."),
-            AutoLandingCode.Uncommitted => Noted.Of(NoteCodes.LandingUncommitted,
+            AutoLandingCode.Uncommitted => Noted.Of(ChatNoteCodes.LandingUncommitted,
                 $"not accepted automatically: its tree has {uncommitted ?? 0} uncommitted path(s), which a branch would leave behind. "
                 + "Commit them in the tree or tell the session, then Accept lands it.",
                 ("paths", uncommitted ?? 0)),
-            AutoLandingCode.Exists => Noted.Of(NoteCodes.LandingExists,
+            AutoLandingCode.Exists => Noted.Of(ChatNoteCodes.LandingExists,
                 $"not accepted automatically: `{named}` is already a branch, and Daoris does not move it. It waits for your review.",
                 ("branch", named)),
             // The review's gate held it (REVIEWENV1c): its own code, the gate's sentence beneath (REVIEWENV1c2).
-            AutoLandingCode.Unreviewed => Noted.Of(NoteCodes.LandingUnreviewed,
+            AutoLandingCode.Unreviewed => Noted.Of(ChatNoteCodes.LandingUnreviewed,
                 "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
                 + "after you review it or skip the review."),
             // The second opinion's gate held it (XAGENT1f): its own code since the page words it (XAGENT1g), as the review's wait
             // has since REVIEWENV1c2; the gate's sentence beneath says what waits.
-            AutoLandingCode.Opinion => Noted.Of(NoteCodes.LandingOpinion,
+            AutoLandingCode.Opinion => Noted.Of(ChatNoteCodes.LandingOpinion,
                 "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
                 + "look once the opinion is settled, or you go on without one."),
-            AutoLandingCode.Refused when rebaseTold => Noted.Of(NoteCodes.LandingRebase,
+            AutoLandingCode.Refused when rebaseTold => Noted.Of(ChatNoteCodes.LandingRebase,
                 "not accepted automatically: replaying its work onto the line conflicts, so its session was asked to rebase in its own tree, "
                 + "as follows. It lands at the first look after its tree changes."),
-            _ => Noted.Of(NoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),
+            _ => Noted.Of(ChatNoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),
         };
 
         // The landing's own sentence beneath, as written: it carries git's and the plugin's words beside Daoris's.

@@ -49,7 +49,7 @@ public static class Orphans
         + "started it, and the record had not been told.";
 
     /// <summary><see cref="Note"/> with its code (LANG1a).</summary>
-    public static Noted Noted => Noted.Of(NoteCodes.StoppedOrphan, Note);
+    public static Noted Noted => Noted.Of(EndNoteCodes.StoppedOrphan, Note);
 
     /// <param name="only">One record the person asked to stop, or null for the sweep.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>

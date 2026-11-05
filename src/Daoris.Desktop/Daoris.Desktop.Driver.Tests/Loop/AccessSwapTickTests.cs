@@ -103,7 +103,7 @@ public sealed class AccessSwapTickTests : IDisposable
         Assert.Equal(AccessRules.Asking, service.Permissions("s1"));
         // Never prompted into the process opened under the old setup.
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/prompt");
-        Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsSetup.Code) == true);
+        Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == EndNoteCodes.EndedWordsSetup.Code) == true);
         Assert.DoesNotContain(Events("s1"), e => e.Text?.Contains("never reached", StringComparison.Ordinal) == true);
 
         var look = await Look(service, adapters, processes).RunOnceAsync().WaitAsync(Poll.Patience);

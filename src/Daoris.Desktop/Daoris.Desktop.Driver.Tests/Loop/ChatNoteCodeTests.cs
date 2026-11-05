@@ -224,7 +224,7 @@ public sealed class ChatNoteCodeTests
         Assert.Equal(["chat.told-browser", "chat.told-process", "chat.told-block", "chat.told-where", "person"], codes);
 
         // A hand-over's briefing is Daoris's, never the person's: the note is kept beside the note of where it came from.
-        var handed = new ChatMessage("", []) { TakenOver = Noted.Of(NoteCodes.ChatToldBrowser, "taken over"), Block = block };
+        var handed = new ChatMessage("", []) { TakenOver = Noted.Of(ChatNoteCodes.ChatToldBrowser, "taken over"), Block = block };
         Assert.Contains(ChatRunner.Recorded(handed), each => each.Parts?[0].Code == "chat.told-block");
         Assert.DoesNotContain(ChatRunner.Recorded(handed), each => each.Parts?[0].Code == "chat.told-routing");
     }

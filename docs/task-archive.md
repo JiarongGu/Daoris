@@ -23158,3 +23158,81 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **LAUNCHCHAIN1 — a session's servers start as one process each** (driver, plugins): each `npx` server ran as `cmd /c npx`, an `npx-cli` node, `cmd /c <bin>` and the server's node, with a `conhost` each. → `docs/areas/plugins.md`
 
   **Outcome** 2026-11-05: `SessionServers` and `PackageStarts.Direct` start a server, and an npm-installed agent, as one node from a package installed once under `cache/toolchain/` (`0588c20b3`); an agent named by an `npx` command still runs through npx, Space lists the cached server packages as agent downloads, and the plugins repository's browser READMEs still say npx.
+
+## CODESHAPE1 (2026-11-05)
+
+- [x] **CODESHAPE1 — each contract declared once and the rest generated, then the hubs split into registered domain modules** (all lanes; D231, D228; after CONSOLIDATE1, before SCOPEVERIFY1): a route or command is hand-written in up to nine files, and 267 source files exceed 40 KB. Proof: the ratchet's list shorter, each root under budget, a module tested alone. → `docs/decisions/D231.md`; `docs/areas/code-structure-and-process.md`, `docs/2026-11-04-codeshape-plan.md`
+
+  **Outcome** 2026-11-05: each route and command declared once and generated (A1-A9, B1-B8, C1, D1); the four seams registered (E1-E5); every non-test product file under 40 KB except `Events/NoteCodes.cs` (BL1). F became COMMENTGATE1 (D235); the tools over 40 KB are MERGETOOL1's.
+
+## CONSOLIDATE1 (2026-11-05)
+
+- [x] **CONSOLIDATE1 — the current truth per area, the contradictions settled, one lean way to make a change** (all): sessions read 17,000 words of backlog and hundreds of decisions to find what holds; the truth moves to the area documents. Proof: the plan's four products. → `docs/2026-11-04-consolidation-plan.md`
+
+  **Outcome** 2026-11-04: the current truth in `docs/areas/`, the choices settled (D233 point 4), `change` in the canon, the decisions history behind a status table. `docs/development.md`'s records step (line 269) is BL27's.
+
+## NOCOMPAT1 (2026-11-05)
+
+- [x] **NOCOMPAT1 — every older reader, kept door and old name deleted; one migration converts the home** (all lanes; D232; first): chunks a (the register, floors, the conversion's receipts and undo, the kept record readers, the migration), b (the old workflow engine), c (old names, the launcher, refusing doors, relics). → `docs/decisions/D232.md`
+
+  **Outcome** 2026-11-05: a (the register, its gate and the floor deleted; one migration, `HomeMigration`), b3 to b8, c (the launcher gone) and d merged. b2 stays its own row (NOCOMPAT1b2; BL6, BL11).
+
+## RULESCONVERT1 (2026-11-05)
+
+- [x] **RULESCONVERT1 — a home's supervisor rules converted; it is CONTEXTDRIVE1f** (driver, modules; after CONTEXTDRIVE1e): the conversion had no rules part, so on an existing home every rule write was refused `convert-first`. → `docs/2026-11-03-context-counters-design.md` §6.2, §9 row f
+
+  **Outcome** 2026-11-05: built as the migration's rules step (`Transitional/Migration/RulesStep.cs`): the caps become the machine's rules, a policy's moves become rules at their place, and `strikes` is taken out. The `convert-first` refusal it leaves goes in BL3 (CONTEXTDRIVE1l).
+
+## POOL1d (2026-11-05)
+
+- [x] **POOL1d — the install's fold read rule by rule** (ONEWAY1v, wave 5): the fold of `harnesses.json` was a dry run the person applies by a press. → `docs/areas/agents-and-harnesses.md`, Open
+
+  **Outcome** 2026-11-05: superseded by D232: the migration folds the file once (`HarnessesStep.cs`), and its backup is the undo. D232 rejected a dry run the person applies. ONEWAY1v closes with it.
+
+## CONTEXTONE1 (2026-11-05)
+
+- [x] **CONTEXTONE1 — a repository owns its context and reconciles with the canon; Daoris manages only the sessions it runs** (cli, driver; D230): rows a, b, c, d, d2 and e. → `docs/2026-11-03-context-one-design.md` §4
+
+  **Outcome** 2026-11-05: built. Codex's read of round 2 is a Codex read owed while its spend cap holds, taken as an Opus read (D240 point 9). The older shapes went with NOCOMPAT1.
+
+## FOUNDATION1 (2026-11-05)
+
+- [x] **FOUNDATION1 — one foundation for who acts, how work moves and what is said** (D212): every Part A and Part B row but **n**, the EVENTHOOK1 chain, and **v**, records last. → `docs/2026-10-25-foundation-design.md` §10, §19.12
+
+  **Outcome** 2026-11-05: every row built. n is EVENTHOOK1's own row; v's retirements became the migration's steps under D232.
+
+## WORKFLOWCLEAN1 (2026-11-05)
+
+- [x] **WORKFLOWCLEAN1 — the old workflow logic retired and the default setup updated** (driver, modules, web; D227): waves 1 and 2 (1a to 1i). → `docs/2026-11-02-workflow-cleanup-design.md` §9
+
+  **Outcome** 2026-11-05: waves 1 and 2 are built (`agents/modes.ts` is `['agents', 'setup']`, with no `daoris.agents.setup` flag). y was lit by NOCOMPAT1b3; j is not needed, because no work cycle survives the migration; z is NOCOMPAT1b2's; i and x stay SETUPUX1's.
+
+## SETUPUX1y (2026-11-05)
+
+- [x] **SETUPUX1y — `daoris.agents.setup` lit by default, the old tabs, Roles mode and opener removed** (web; part of SETUPUX1; D221).
+
+  **Outcome** 2026-11-05: built with NOCOMPAT1b3: the opener's `roleSection` names appointed or all roles only, and `placeOf` resolves (`app/opener.ts`). SETUPUX1 keeps i (BL19) and x (installed).
+
+## FABRIC-CUTOVER1h (2026-11-05)
+
+- [x] **FABRIC-CUTOVER1h — a run graph's close** (driver; with WORKFLOWCLEAN1j). → `docs/2026-10-20-fabric-cutover-design.md`
+
+  **Outcome** 2026-11-05: not needed, because no work cycle survives the migration (WORKFLOWCLEAN1j). It reopens on a sighting.
+
+## COMPANYVIEW1 (2026-11-05)
+
+- [x] **COMPANYVIEW1 — the agents' structure configured and seen, as a list and a diagram** (web, modules, driver): every row but **1h**, the steward's marks after STEWARDROLE1d. → `docs/2026-10-31-company-view-design.md` §7
+
+  **Outcome** 2026-11-05: built. 1h, the steward's marks, folds into the parked STEWARDROLE1.
+
+## CODECS1 (2026-11-05)
+
+- [x] **CODECS1 — Daoris's browser plays H.264, AAC and HEVC video** (app; D234): built (`25c2c0493`) on the kit's 0.25.0 and its codecs engine package; `CodecPlaybackProcessTests` passes for H.264 + AAC and for HEVC on the graphics card (`667b0d388`).
+
+  **Outcome** 2026-11-05: closes with SCOPEVERIFY1's green run and the staged install. The check's own project (the modules test project builds the App for this one check) is a note for the install's batch.
+
+## Rows folded into others (2026-11-05)
+
+- [x] Each row below was a second place for text another row already held (D228); its remaining text is in the row named.
+
+  **Outcome** 2026-11-05: WORKFLOWCLEAN1z and FABRIC-CLOSEBIND1 into NOCOMPAT1b2 (the same deletion: the landing rules, the handed node, the plain bind); GITREADONLY1 into GITAUTH1f; QUEUEHANG1 into MERGETOOL1; GITAPP1 part two into OPTIMIZE1a; OPTIMIZE1c (start-up) into PERF1; FLAKE1 into SESSOPT1d as its standing line; SESSONE2i, MIXAGENT3a-iii and SESSONE1c-look into COMMS1k, COMMS1h and COMMS1n; AUTOTIDY1c, SQUASHTIDY1d, PLUGHOOK1d and FABRIC-PERFORM1l into WORKSETUP1 as its tail; WIRING1d's second listing inside ONEWAY1 into the WIRING1d row; TOOL4n into LIMITRESUME1f; SESSCTX1a and FABRIC-C2b into HELPMODE1a3 (one installed spend sitting, D240 point 7); MODELROLE1d3 into MODELROLE1c4 (one installed sitting).

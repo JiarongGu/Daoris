@@ -171,7 +171,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         {
             events.Append("c1", new SessionEvent
             {
-                Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+                Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
             });
             events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
         }
@@ -515,7 +515,7 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Empty(world.Ledger.Opened);
         Assert.Equal(["w1"], world.Ledger.Said("c1"));
         Assert.Equal(("run-thief", "old-ended"), (MoveFrom("c1")!.ClaimRun, MoveFrom("c1")!.PhaseWord));
-        Assert.Contains(Events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitNotMoved.Code) == true);
+        Assert.Contains(Events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitNotMoved.Code) == true);
         Assert.Empty(new LimitBoxes(_home).Pending());
     }
 

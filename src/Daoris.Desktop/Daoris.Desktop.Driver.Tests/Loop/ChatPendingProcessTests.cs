@@ -192,7 +192,7 @@ public sealed class ChatPendingProcessTests : IDisposable
 
         await Poll.Until(
             () => ledger.State(issued) == "failed" && ledger.Said(issued).Count == 1
-                  && Events.After(issued, 0).Events.Any(e => e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitNotMoved.Code) == true),
+                  && Events.After(issued, 0).Events.Any(e => e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitNotMoved.Code) == true),
             () => Seen(ledger, issued));
         Assert.Equal(1, ledger.Count);
         Assert.Empty(Prompts("account-1"));
@@ -293,7 +293,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         Assert.Equal(1, ledger.Count);
         Assert.Equal(["w1"], ledger.Said(refused));
         Assert.Empty(StubFile.Lines(Heard));
-        Assert.Contains(Events.After(refused, 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitNotMoved.Code) == true);
+        Assert.Contains(Events.After(refused, 0).Events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitNotMoved.Code) == true);
     }
 
     /// <summary>

@@ -36,7 +36,7 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         var remade = await trees.EnsureAsync(root, tree.Path);
 
         Assert.Equal((TreeStand.Remade, tree.Branch), (remade.Stand, remade.Branch));
-        Assert.Equal(NoteCodes.TreeRemade.Code, Assert.Single(remade.Said!.Parts).Code);
+        Assert.Equal(StartNoteCodes.TreeRemade.Code, Assert.Single(remade.Said!.Parts).Code);
         Assert.Equal(tree.Branch, (await GitAsync(tree.Path, "rev-parse", "--abbrev-ref", "HEAD")).Trim());
         Assert.Equal(head, (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim());
         Assert.Equal(TreeStand.Stands, (await trees.EnsureAsync(root, tree.Path)).Stand);
@@ -67,8 +67,8 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         Assert.Equal(head, (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim());
         Assert.Equal("", (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').FirstOrDefault(line => line.StartsWith("locked", StringComparison.Ordinal)) ?? "");
         var said = remade.Said!;
-        Assert.Contains(NoteCodes.TreeRemade.Code, said.Parts.Select(part => part.Code));
-        Assert.Contains(NoteCodes.StartedLocalCopied.Code, said.Parts.Select(part => part.Code));
+        Assert.Contains(StartNoteCodes.TreeRemade.Code, said.Parts.Select(part => part.Code));
+        Assert.Contains(StartNoteCodes.StartedLocalCopied.Code, said.Parts.Select(part => part.Code));
         Assert.Contains("`local/allowed-hosts.txt` was not copied: the repository's gates read it, and your checkout does not hold it.", said.Note, StringComparison.Ordinal);
         Assert.DoesNotContain("installed again", said.Note, StringComparison.Ordinal);
         Assert.Contains("`node_modules`", remade.Told, StringComparison.Ordinal);
@@ -135,7 +135,7 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         var gone = await trees.EnsureAsync(root, tree.Path);
 
         Assert.Equal((TreeStand.Gone, tree.Branch), (gone.Stand, gone.Branch));
-        Assert.Equal(NoteCodes.TreeGone.Code, Assert.Single(gone.Said!.Parts).Code);
+        Assert.Equal(StartNoteCodes.TreeGone.Code, Assert.Single(gone.Said!.Parts).Code);
         Assert.False(Directory.Exists(tree.Path));
         Assert.DoesNotContain(tree.Branch, await GitAsync(root, "branch", "--list"), StringComparison.Ordinal);
     }

@@ -127,7 +127,7 @@ public sealed class ParticipantsBoundaryTests : IDisposable
         Assert.Equal((LandingForm.Branch, "chat/{session}-{slug}"), (process.Landing.Rule.Form, process.Landing.Rule.Pattern));
         var note = Assert.Single(events.After("c1a2b3c4", 0).Events, each => each.Kind == SessionEventKind.Note);
         Assert.Equal("This conversation's work follows `chat-steps` v1, the workflow `engine` chose.", note.Text);
-        Assert.Equal(NoteCodes.ChatWorkflow.Code, Assert.Single(note.Parts!).Code);
+        Assert.Equal(ChatNoteCodes.ChatWorkflow.Code, Assert.Single(note.Parts!).Code);
     }
 
     [Fact]

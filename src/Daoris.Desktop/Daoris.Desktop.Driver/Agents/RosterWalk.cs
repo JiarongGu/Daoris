@@ -98,7 +98,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 return new HarnessSelection(pinRefusal)
                 {
                     Absent = AgentAbsence.PinNotInstalled,
-                    RefusalNote = Noted.Of(NoteCodes.HeldPinNotInstalled, pinRefusal, ("agent", resolved.Name), ("version", pinned)),
+                    RefusalNote = Noted.Of(HeldNoteCodes.HeldPinNotInstalled, pinRefusal, ("agent", resolved.Name), ("version", pinned)),
                 };
             }
         }
@@ -135,11 +135,11 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 // An agent with its own tooling names that command, which may hold a path: it is the program's words between the
                 // lead and the line that says Daoris never installs, never a value (ROSTERREFUSE2).
                 RefusalNote = installs
-                    ? Noted.Of(NoteCodes.HeldNotInstalled, absent, ("agent", resolved.Name))
-                    : Noted.Of(NoteCodes.HeldNotInstalledOwn,
+                    ? Noted.Of(HeldNoteCodes.HeldNotInstalled, absent, ("agent", resolved.Name))
+                    : Noted.Of(HeldNoteCodes.HeldNotInstalledOwn,
                             $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — install it with its own tooling (",
                             ("agent", resolved.Name))
-                        .Then("", Noted.Said(own, NoteBy.Program)).Then("). ", Noted.Of(NoteCodes.HeldNeverInstalls, never)),
+                        .Then("", Noted.Said(own, NoteBy.Program)).Then("). ", Noted.Of(HeldNoteCodes.HeldNeverInstalls, never)),
             };
         }
 
@@ -374,7 +374,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 {
                     Readiness = AccountReadiness.SignedOut,
                     Refusal = refusal,
-                    RefusalNote = Noted.Of(NoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
+                    RefusalNote = Noted.Of(HeldNoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
                 };
                 continue;
             }
@@ -451,7 +451,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             + "question could sign the account out. The next start tries again.";
         return new HarnessSelection(words)
         {
-            RefusalNote = Noted.Of(NoteCodes.HeldLocked, words, ("owner", owner), ("accounts", (IReadOnlyList<string>)[.. accounts])),
+            RefusalNote = Noted.Of(HeldNoteCodes.HeldLocked, words, ("owner", owner), ("accounts", (IReadOnlyList<string>)[.. accounts])),
         };
     }
 

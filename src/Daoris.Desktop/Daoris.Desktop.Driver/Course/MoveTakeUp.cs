@@ -105,7 +105,7 @@ public sealed class MoveTakeUp(
     /// <summary>The line a quiet move is said by on its record: its code's English, the page wording it in the reader's language.</summary>
     public static Noted QuietNote(int minutes) =>
         Noted.Of(
-            NoteCodes.MoveQuiet,
+            StartNoteCodes.MoveQuiet,
             $"Its move to a new part has not gone on for {minutes} minutes. The Daoris making it still runs, so the move stays with it; once that Daoris quits, the move is taken up again.",
             ("minutes", minutes));
 

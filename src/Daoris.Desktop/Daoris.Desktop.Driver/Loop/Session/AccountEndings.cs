@@ -101,7 +101,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// path, would hold an account its provider never refused. A door that carries only text gives nothing but its transcript, so there
     /// the exit, which only the harness sets, must say it failed (<see cref="HarnessEnding.Transcript"/>).</para>
     /// <para>And it reads signed out, kept as a reading is, so the hold outlives this process and the page says the account's state;
-    /// its line is one no strike counts (<see cref="NoteCodes.AccountsOwn"/>).</para>
+    /// its line is one no strike counts (<see cref="AccountNoteCodes.AccountsOwn"/>).</para>
     /// </remarks>
     /// <param name="ended">What the harness said of its ending, by its door.</param>
     public SessionConclusion Refused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended)
@@ -134,7 +134,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// 🔴 The pipe door's refusal of the model its actor asked, read from measured words on a silent turn
     /// (<see cref="HarnessEnding.ModelRefused"/>): the one refusal after a prompt was handed that is no failure of the quest's. The
     /// account's <c>refused</c> reading for that model is kept, so the next start's walk passes the account without spawning, and the
-    /// part ends with the account's line, which no strike counts (<see cref="NoteCodes.AccountsOwn"/>), naming the agent and the model
+    /// part ends with the account's line, which no strike counts (<see cref="AccountNoteCodes.AccountsOwn"/>), naming the agent and the model
     /// but no account, since the note travels.
     /// </summary>
     /// <param name="model">The model its actor's choice named; null keeps the conclusion, since a model the person's own command or
@@ -151,7 +151,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
 
         context.Log?.Write("info", "actor.refused", [("session", sessionId), ("agent", agent), ("model", model), ("code", AgentOffers.RefusedCode)]);
         return conclusion.Then(" ", Noted.Of(
-            NoteCodes.AccountRefusedModel,
+            AccountNoteCodes.AccountRefusedModel,
             $"`{agent}` refused `{model}` on the account it ran on, so that account is passed for that model until the agent offers it again. "
             + "It is not counted as a failed session.",
             ("agent", agent), ("model", model)));
@@ -161,7 +161,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// 🔴 A start its agent refused for its sign-in, read from the door's failure by the adapter's table (<see cref="SignInRefusals"/>)
     /// and never from the transcript: the account it ran as reads signed out, kept under the home with its time as a reading is, so the
     /// next start walks past it, and a start held on it names it and its sign-in. The note says why it ended, by a line no strike counts
-    /// (<see cref="NoteCodes.AccountsOwn"/>): the fault is the account's, never the quest's. The tool's own sign-in is never asked by a
+    /// (<see cref="AccountNoteCodes.AccountsOwn"/>): the fault is the account's, never the quest's. The tool's own sign-in is never asked by a
     /// walk, so a reading alone would start it into the same refusal at every look: it is held as a refused credential is, until a
     /// person looks again.
     /// </summary>

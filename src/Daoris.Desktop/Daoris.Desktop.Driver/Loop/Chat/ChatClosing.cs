@@ -47,7 +47,7 @@ internal sealed class ChatClosing(IExecutorWiring wiring, ChatConclusion conclus
         {
             if (Context.Turned.TryGetValue(id, out var chat)) chat.Turns.HoldForClose();
             var idle = update is not null && !UpdateCuts.ContainsKey(id) && conclusion.Spoken(id);
-            Context.Processes.Stop(id, idle ? Noted.Of(NoteCodes.ChatRestarted,
+            Context.Processes.Stop(id, idle ? Noted.Of(ChatNoteCodes.ChatRestarted,
                 "Daoris restarted for an update; this conversation goes on in its own conversation at your next word.") : ChatRunner.ClosedNoted);
         }
 

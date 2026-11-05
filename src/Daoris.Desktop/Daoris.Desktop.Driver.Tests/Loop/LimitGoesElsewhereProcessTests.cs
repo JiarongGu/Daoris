@@ -266,7 +266,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     public async Task A_chat_on_a_pick_or_with_no_other_choice_waits_saying_why(bool picked)
     {
         var config = Config("chat", picked ? Both : [new ActorChoice("acp-stub")]);
-        var code = picked ? NoteCodes.ChatLimitPicked.Code : NoteCodes.ChatLimitNoOther.Code;
+        var code = picked ? ChatNoteCodes.ChatLimitPicked.Code : ChatNoteCodes.ChatLimitNoOther.Code;
         var events = Events;
         var (runner, ledger, client, _, _) = Runner();
         using var r = runner;
@@ -278,11 +278,11 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
         Assert.True(runner.Say(session, "Make the port configurable."));
 
         await Poll.Until(
-            () => events.After(session, 0).Events.Any(e => Coded(e, NoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, session));
+            () => events.After(session, 0).Events.Any(e => Coded(e, ChatNoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, session));
         var said = events.After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Note).ToList();
         var why = Assert.Single(said, e => Coded(e, code));
         Assert.Equal("acp-stub", Coded(why)!.Value("owner"));
-        Assert.True(said.IndexOf(why) < said.FindIndex(e => Coded(e, NoteCodes.ChatLimitWaits.Code)));
+        Assert.True(said.IndexOf(why) < said.FindIndex(e => Coded(e, ChatNoteCodes.ChatLimitWaits.Code)));
         Assert.Equal(1, ledger.Count);
         Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("prompt[second]: ", StringComparison.Ordinal));
     }

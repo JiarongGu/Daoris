@@ -207,7 +207,7 @@ public sealed class AccountWalkGateTests : IDisposable
         Assert.Null(selection.Cooling);
         // LOCKPASSED1: the hold is said by code, the accounts by id, so the page words it.
         var part = Assert.Single(selection.RefusalNote!.Parts);
-        Assert.Equal(NoteCodes.HeldLocked.Code, part.Code);
+        Assert.Equal(HeldNoteCodes.HeldLocked.Code, part.Code);
         Assert.Equal(selection.Refusal, selection.RefusalNote.Note);
         var accounts = Assert.IsAssignableFrom<IReadOnlyList<string>>(Assert.Single(part.Values!, value => value.Key == "accounts").Value);
         Assert.Equal(["account-1"], accounts);

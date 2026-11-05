@@ -78,7 +78,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.Equal((GoOnMarks.AnswersAlone, "codex-acp"), (mark.Why, mark.Agent));
         Assert.Equal(["w9"], mark.Said);
         Assert.True(GoOnMarks.Judged(asker, mark));
-        var held = Assert.Single(Notes("s1", NoteCodes.AnswersHeld.Code));
+        var held = Assert.Single(Notes("s1", HeldNoteCodes.AnswersHeld.Code));
         Assert.Equal(["w9"], held.Words);
         Assert.Equal("codex-acp", held.Parts![0].Value("agent"));
     }
@@ -91,7 +91,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
 
         Assert.False(Hold.Holds(asker, Records(asker, HelperRecord), At));
         Assert.Null(Marks.Read("s1"));
-        Assert.Empty(Notes("s1", NoteCodes.AnswersHeld.Code));
+        Assert.Empty(Notes("s1", HeldNoteCodes.AnswersHeld.Code));
     }
 
     /// <summary>The count runs across a hand-over: the part the line continues and this one, followed back by the record's <c>from</c>.</summary>
@@ -306,7 +306,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.Equal(GoOnMarks.AnswersAlone, Marks.Read("s1")!.Why);
         Assert.Null(Marks.Read("s2"));
         Assert.Equal(0, await Hold.LookAsync(host.Client(), looked, At, CancellationToken.None));
-        Assert.Single(Notes("s1", NoteCodes.AnswersHeld.Code));
+        Assert.Single(Notes("s1", HeldNoteCodes.AnswersHeld.Code));
     }
 
     /// <summary>
@@ -324,7 +324,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
 
         Assert.Equal((true, (string?)null), (answer.Stands, answer.Why));
         Assert.Null(Marks.Read("s1"));
-        Assert.Equal(["w9"], Assert.Single(Notes("s1", NoteCodes.AnswersPassed.Code)).Words);
+        Assert.Equal(["w9"], Assert.Single(Notes("s1", HeldNoteCodes.AnswersPassed.Code)).Words);
         Assert.False(Hold.Holds(asker, Records(asker, HelperRecord), At));
     }
 
@@ -346,7 +346,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.Equal((GoOnMarks.NotNow, "codex-acp"), (mark.Why, mark.Agent));
         Assert.True(GoOnMarks.Judged(asker, mark));
         Assert.False(GoOnMarks.Judged(Asker(said: [Answer("w9"), Said()]), mark));
-        Assert.Single(Notes("s1", NoteCodes.AnswersKept.Code));
+        Assert.Single(Notes("s1", HeldNoteCodes.AnswersKept.Code));
         // Kept, it waits on the person no more: neither act answers it again.
         Assert.Equal((false, AnswersAloneWord.Unheld), (AnswersAloneWord.GoOn(Marks, Events, "s1").Stands, AnswersAloneWord.NotNow(Marks, Events, "s1", At).Why));
     }

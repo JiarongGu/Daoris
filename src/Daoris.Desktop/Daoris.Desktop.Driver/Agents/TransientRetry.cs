@@ -89,7 +89,7 @@ public sealed class TransientRetry
     {
         var minutes = (int)TransientRetry.Delays.Sum(delay => delay.TotalMinutes);
         var line = Noted.Of(
-            NoteCodes.AgentTransientRetrying,
+            EndNoteCodes.AgentTransientRetrying,
             $"{agent}'s provider failed. Daoris tries again in this conversation: up to {TransientRetry.Bound} times, after {minutes} "
             + $"minutes of waits between them, the next at {next:yyyy-MM-dd HH:mm} UTC:",
             ("agent", agent), ("count", TransientRetry.Bound), ("minutes", minutes),

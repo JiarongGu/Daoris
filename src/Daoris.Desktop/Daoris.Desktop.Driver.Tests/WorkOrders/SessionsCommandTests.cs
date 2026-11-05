@@ -848,13 +848,13 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal("stopped", ledger.State("p4rk3d00"));
         Assert.Equal(
             "The person stopped this at a checkpoint. " + SessionMoves.StandingText, ledger.Note("p4rk3d00"));
-        Assert.Equal([NoteCodes.StoppedCheckpointStopped.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
+        Assert.Equal([EndNoteCodes.StoppedCheckpointStopped.Code, EndNoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
         Assert.Equal(("stopped", false), (ledger.State("0rphan00"), ledger.Interrupted("0rphan00")));
-        Assert.Equal([NoteCodes.StoppedOrphan.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("0rphan00"));
+        Assert.Equal([EndNoteCodes.StoppedOrphan.Code, EndNoteCodes.StandingTerminal.Code], ledger.Codes("0rphan00"));
 
         var plain = Family();
         await RunAsync(plain, ["stop", "p4rk3d00"]);
-        Assert.Equal([NoteCodes.StoppedCheckpointStopped.Code], plain.Codes("p4rk3d00"));
+        Assert.Equal([EndNoteCodes.StoppedCheckpointStopped.Code], plain.Codes("p4rk3d00"));
     }
 
     /// <summary>
@@ -887,7 +887,7 @@ public sealed class SessionsCommandTests : IDisposable
         await honour;
 
         Assert.Equal(0, exit);
-        Assert.Equal([NoteCodes.EndedStopped.Code, NoteCodes.StandingTerminal.Code], noted!.Parts.Select(part => part.Code));
+        Assert.Equal([EndNoteCodes.EndedStopped.Code, EndNoteCodes.StandingTerminal.Code], noted!.Parts.Select(part => part.Code));
         Assert.Equal("the person stopped it. " + SessionMoves.StandingText, noted.Note);
     }
 
@@ -905,7 +905,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Contains("finished p4rk3d00", said);
         Assert.Equal(("completed", "awaiting-person"), (ledger.State("p4rk3d00"), ledger.Expected("p4rk3d00")));
-        Assert.Equal([NoteCodes.StoppedCheckpointFinished.Code, NoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
+        Assert.Equal([EndNoteCodes.StoppedCheckpointFinished.Code, EndNoteCodes.StandingTerminal.Code], ledger.Codes("p4rk3d00"));
         Assert.Equal("Taken", ledger.QuestStatus("q1"));
     }
 

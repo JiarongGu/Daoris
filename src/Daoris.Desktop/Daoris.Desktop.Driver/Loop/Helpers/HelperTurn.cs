@@ -262,6 +262,6 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
         turnFailed is { Length: > 0 } failed
             ? SessionConclusion.Of("failed", Observation.Failure(failed))
             : exitCode != 0
-                ? SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedExit, $"it exited with code {exitCode}.", ("exit", exitCode)))
+                ? SessionConclusion.Of("failed", Noted.Of(EndNoteCodes.EndedExit, $"it exited with code {exitCode}.", ("exit", exitCode)))
                 : SessionConclusion.Of("completed", HelperNotes.Helping(asker));
 }

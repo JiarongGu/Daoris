@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The rules a driven session waiting on its own helper is read by (HELPERWAIT1; D163's and D188's notes). A session whose agent asked a
 /// helper and ended its turn so the helper could read waits on that helper, not on the person: it ends <c>completed</c> by
-/// <see cref="NoteCodes.EndedAwaitsHelper"/> (<see cref="Observation.Conclude"/>), the helper's answer reopens it once (D188 point 4), and a
+/// <see cref="EndNoteCodes.EndedAwaitsHelper"/> (<see cref="Observation.Conclude"/>), the helper's answer reopens it once (D188 point 4), and a
 /// helper that ends with no answer brings it back to the person as its park would have (<see cref="Observation.HelperGone"/>).
 /// </summary>
 /// <remarks>
@@ -42,7 +42,7 @@ public static class HelperWaits
     public static bool HoldsTree(PriorSession record) => HelperWaitTrees.HoldsTree(record);
 
     /// <summary>Whether a run's conclusion is the wait on its own helper (<see cref="Observation.AwaitsHelper"/>): its note's code.</summary>
-    public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, NoteCodes.EndedAwaitsHelper);
+    public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, EndNoteCodes.EndedAwaitsHelper);
 
     /// <summary>
     /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (KNOWUSE1a, GOAHEAD2): a real

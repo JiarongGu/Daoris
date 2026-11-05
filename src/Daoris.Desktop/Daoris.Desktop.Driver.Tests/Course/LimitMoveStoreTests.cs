@@ -178,7 +178,7 @@ public sealed class LimitMoveStoreTests : IDisposable
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable." });
         events.Append("c1", new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
@@ -529,7 +529,7 @@ public sealed class LimitMoveStoreTests : IDisposable
         live.Advance(decided.Claim!, MoveRecordPhase.OldEnded);
         live.Opening(decided.Claim!, "chat-move/live");
         var moves = new ConversationMoves(_home, client, Events, store: Store("run-shell", clock), clock: clock);
-        int Quiet() => Events.After("c3", 0).Events.Count(e => e.Parts?.Any(part => part.Code == NoteCodes.MoveQuiet.Code) == true);
+        int Quiet() => Events.After("c3", 0).Events.Count(e => e.Parts?.Any(part => part.Code == StartNoteCodes.MoveQuiet.Code) == true);
 
         var early = await moves.LookAsync(CancellationToken.None);
         clock.Advance(TimeSpan.FromMinutes(11));

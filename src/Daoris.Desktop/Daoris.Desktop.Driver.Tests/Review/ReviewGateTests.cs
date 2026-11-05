@@ -459,7 +459,7 @@ public sealed class ReviewGateTests
 
         var note = AutoLandingNotes.Of(AutoLandingCode.Unreviewed, new TreeLanding(false, gate) { Refusal = AutoLandingCode.Unreviewed });
 
-        Assert.Equal(NoteCodes.LandingUnreviewed.Code, note.Parts![0].Code);
+        Assert.Equal(ChatNoteCodes.LandingUnreviewed.Code, note.Parts![0].Code);
         Assert.Equal(
             "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
             + "after you review it or skip the review.",

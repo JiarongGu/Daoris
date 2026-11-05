@@ -60,10 +60,10 @@ public sealed class CourseBoundaryTests : IDisposable
         Assert.Equal("Daoris kept no id for its conversation, so words written to it cannot go on in it.", ChatRunner.NotKept);
         var stopped = ChatRunner.EndedNote(stopped: true, notKept: false);
         Assert.Equal(ChatRunner.EndedByPersonNote, stopped.Note);
-        Assert.Equal(NoteCodes.ChatEndedByPerson.Code, stopped.Parts![0].Code);
+        Assert.Equal(ChatNoteCodes.ChatEndedByPerson.Code, stopped.Parts![0].Code);
         var ended = ChatRunner.EndedNote(stopped: false, notKept: true);
         Assert.Equal($"the conversation ended; its commits are its record. {ChatRunner.NotKept}", ended.Note);
-        Assert.Equal([NoteCodes.ChatEnded.Code, NoteCodes.ChatNotKept.Code], ended.Parts!.Select(part => part.Code).OfType<string>());
+        Assert.Equal([ChatNoteCodes.ChatEnded.Code, ChatNoteCodes.ChatNotKept.Code], ended.Parts!.Select(part => part.Code).OfType<string>());
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public sealed class CourseBoundaryTests : IDisposable
         Assert.False(Planner.BroughtForward(last, new QuestTake("held")));
 
         Assert.False(Planner.EndedTransient(last));
-        var transient = last with { NoteParts = [NoteCodes.EndedTransient.Part("it kept failing.")] };
+        var transient = last with { NoteParts = [EndNoteCodes.EndedTransient.Part("it kept failing.")] };
         Assert.True(Planner.EndedTransient(transient));
         Assert.False(Planner.EndedTransient(transient with { State = "completed" }));
     }

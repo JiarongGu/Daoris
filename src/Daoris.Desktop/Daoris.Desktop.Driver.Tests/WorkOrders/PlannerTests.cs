@@ -1963,11 +1963,11 @@ public sealed class PlannerTests
             Held = reopened, Hold = reopened ? "source-reopened" : null,
         };
 
-    /// <summary>The session the hold stopped (<see cref="NoteCodes.EndedSourceReopened"/>), as its record ended.</summary>
+    /// <summary>The session the hold stopped (<see cref="EndNoteCodes.EndedSourceReopened"/>), as its record ended.</summary>
     private static PriorSession StoppedByReopen(string session = "s1")
     {
         var noted = Noted.Of(
-            NoteCodes.EndedSourceReopened, "stopped with its quest still taken: the work of `#q1` it grew from was reopened.", ("quest", "q1"));
+            EndNoteCodes.EndedSourceReopened, "stopped with its quest still taken: the work of `#q1` it grew from was reopened.", ("quest", "q1"));
         return new PriorSession(session, "D:/trees/s1", "completed", noted.Note, Repository: "Game") { NoteParts = noted.Parts };
     }
 

@@ -188,8 +188,8 @@ public sealed class NoteSitesTests
         // `account.cooling`'s own shape, its moment and why alone, is never written now: notes from before carry it.
         Assert.DoesNotContain(
             new[] { entry, phrase, entry with { Window = "weekly" } },
-            each => CoolingWords.NoteOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code
-                || CoolingWords.ConversationOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code);
+            each => CoolingWords.NoteOf(each, TimeZoneInfo.Utc).Parts[0].Code == AccountNoteCodes.AccountCooling.Code
+                || CoolingWords.ConversationOf(each, TimeZoneInfo.Utc).Parts[0].Code == AccountNoteCodes.AccountCooling.Code);
     }
 
     [Fact]
