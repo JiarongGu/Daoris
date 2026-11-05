@@ -244,6 +244,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-04-consolidation-plan.md` | Plan: CONSOLIDATE1, the current truth per area, the contradictions settled and one lean way to make a change, before any more features (the owner's yes, 2026-11-04)
 | `2026-11-04-codeshape-plan.md` | Plan: CODESHAPE1, each contract declared once (the contracts project, attributes, the command halves, the file map from folders) and the hubs as registered modules, cut into hour-long chunks A to F
 | `2026-11-05-backlog-plan.md` | Plan: every open row of the backlog closed, folded, parked, held for the owner or the install, or cut into chunks BL0 to BL30 and the sweeps, in waves of five (D237 to D239 reserved)
+| `2026-11-05-git-design.md` | Design: GITDESIGN1, git's place in Daoris: git built into the core with every remote act through the doors, one push, a pull request composed as a place's workflow steps with a hosted-service step that runs no git or CLI, proven in CI against stand-ins, in chunks G1 to G10; proposed for the owner's yes (D241)
 
 ## UI, browser, tools and plugin contracts
 
