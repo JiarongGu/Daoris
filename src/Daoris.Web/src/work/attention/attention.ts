@@ -8,9 +8,8 @@ import type { Tool } from '../../agents/tools';
 import { askName, questName, sessionTitle } from '../identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded } from './accountWords';
-import {
-  CLOSE_SENDER, endSentences, entryDetail, entryName, type GraphEnd, type HeldAttempt, heldFailed, heldWhy, type UnreadableRecord,
-} from '../head/milestone';
+import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
+import { heldWorded } from './heldWorded';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
@@ -675,28 +674,6 @@ export function gitAskWorded(ask: GitAskWait, since?: string | null, t: TFunctio
 
 /** How long a door holds a git go-ahead, in minutes: a held call's bound (`GitAsks.Bound`). */
 export const GIT_ASK_BOUND_MINUTES = 15;
-
-/**
- * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): the step and its attempt, its unit,
- * and why nothing else can say what became of it; a word recorded stays a row, saying so, until the driver's next look applies it.
- */
-function heldWorded(row: PushedAttention, attempt: HeldAttempt): Attention {
-  return {
-    id: row.id,
-    kind: 'work',
-    since: row.since,
-    where: row.where ?? attempt.unit,
-    title: i18n.t('work.milestone.held.title', { node: attempt.node, attempt: attempt.attempt }),
-    detail: attempt.resolution
-      ? i18n.t('work.milestone.held.worded', { node: attempt.node, attempt: attempt.attempt, word: i18n.t(`work.milestone.held.word.${attempt.resolution}`) })
-      // FABRIC-CLOSE1q: a held close's outcome is its door's answer, so its row says what the door answered and that no second close is made.
-      : attempt.plugin === CLOSE_SENDER
-        ? i18n.t('work.milestone.held.close.detail', { why: heldWhy(i18n.t, attempt) })
-        // FABRIC-PERFORM1k: a failure kept for the person waits for their new attempt, not their word on what became of it.
-        : i18n.t(heldFailed(attempt) ? 'work.milestone.held.failedDetail' : 'work.milestone.held.detail', { why: heldWhy(i18n.t, attempt), step: attempt.step }),
-    held: attempt,
-  };
-}
 
 /**
  * A unit's node record that does not read (FABRIC-PERFORM1j, the fabric events design §D3): named by its unit where it still names one,

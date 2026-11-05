@@ -54,7 +54,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
-| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/VerifyRuns.tsx`, `lineSaid.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a person's verification of a branch or a commit bound as a run of its own; a line's runs read with their verdicts (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
+| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Workflows/LineBatching.cs`, `Workflows/VerifyHelds.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/verify/` (`VerifyRuns.tsx`, `lineSaid.ts`), `work/attention/heldWorded.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a landed run bound per batch of a line at a whole look (`LineBatching`, called from `WatchNodes` before the pass); a person's verification of a branch or a commit bound as a run of its own; a held check named by what it verifies (`HeldAttempt.Verification`) and worded on *What needs you*; a line's runs read with their verdicts and batches (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
 | Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs`; `Transitional/Migration/WorkflowsStep.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
@@ -178,11 +178,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `integrate` step's, the bound version's in a run and, outside one (the sweep, the steward's door, the recheck at promotion, the
     card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
     confirmed once before it is blamed. (from D215, D227, D232)
-40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. One run per line at a time, each batch
-    run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. A person's verification of a branch
-    or a commit (`daoris gate verify`, *Verify…*) is a run of its own under the accepted gates; its check's outcome is recorded on
-    `run:<run>` under the `gates` source, and the line's read says each run's verdict (verified, failed naming its gate, not known
-    with why, not now, running, waiting) with each gate from the check's newest result. (from D192)
+40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. Where a repository's landed route names a
+    verification pipeline with accepted gates, each whole look reads its line's tip and binds a run in `workflows/lines/<run>.json`
+    (its `line`, and its `base`: the tip of the line's newest run with a verdict, none for the first) once the tip is past the line's
+    newest run and no run of the line is in flight. A run is settled when every check reached, failed or was stopped; until then it
+    holds the line, an unknown held for the person included, and is never superseded. *Run again* is a new attempt at the run's tip;
+    *Not now* settles it with no verdict, so the next batch, bound at the next landing, takes it in. A failure becomes a fix ask, by
+    the person's press or a standing `ask`. A person's verification of a branch or a commit (`daoris gate verify`, *Verify…*) is a run
+    of its own under the accepted gates that the batching never counts. A check's outcome is recorded on `run:<run>` under the `gates`
+    source; a held or failed check carries what it verifies (repository, commit, line, base, branch, failed gate, why), which *What
+    needs you* words with *Run again* and *Not now*, and the line's read says each run's verdict (verified, failed naming its gate, not
+    known with why, not now, running, waiting) and batch, with each gate from the check's newest result. The versions a workflow keeps
+    include those a run under `lines/` names. (from D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (from D184, D227)
 
 **Set up, conversion and Current**

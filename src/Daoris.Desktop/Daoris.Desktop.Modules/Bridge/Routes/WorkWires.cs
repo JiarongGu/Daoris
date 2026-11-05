@@ -30,14 +30,15 @@ public static class WorkWires
     /// The attempts held for the person as the wire carries them: the page words <c>why</c> by its code. FABRIC-CLOSE1q, additive: <c>words</c>,
     /// the words offered on each (a plugin's three; a held close's recoveries and its stop), which a page before the field reads without.
     /// FABRIC-PERFORM1k, additive: a failure kept for the person, its <c>why</c> <c>failure-kept</c> or <c>tries-spent</c>, its failure's
-    /// <c>code</c>, and its one word <c>again</c>.
+    /// <c>code</c>, and its one word <c>again</c>. Additive: a held check's <c>verification</c>, what it verifies (its run, repository, commit,
+    /// line, base, branch, failed gate and why not known), which a page before the field words as any held step.
     /// </summary>
     public static object[] HeldAnswer(IEnumerable<HeldAttempt> held) =>
     [
         .. held.Select(each => new
         {
             each.Unit, each.Node, each.Attempt, each.Plugin, each.Step, each.NodeState, each.Why, each.Outcome, each.Revision,
-            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words, each.Code,
+            At = each.RecordedAt, each.Resolution, each.ResolvedAt, Said = HeldAttempts.WhySaid(each), each.Words, each.Code, each.Verification,
         }),
     ];
 

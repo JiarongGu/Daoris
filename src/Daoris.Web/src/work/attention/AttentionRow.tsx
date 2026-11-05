@@ -333,7 +333,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'record-close') acts.held?.(item, 'record');
     else if (act === 'resend-close') acts.held?.(item, 'resend');
     else if (act === 'open-records') acts.openRecords?.(item);
-    else if (act === 'again-step') acts.held?.(item, 'again');
+    else if (act === 'again-step' || act === 'again-check') acts.held?.(item, 'again');
+    else if (act === 'stop-check') acts.held?.(item, 'stop');
     else if (act === 'git-try-again') acts.gitTryAgain?.(item);
     else if (act === 'git-set-up' || act === 'git-keep-own' || act === 'git-copy-key' || act === 'git-sign-in' || act === 'git-open'
       || act === 'git-compare') acts.gitSetUp?.(item);
@@ -393,6 +394,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'open-records': return t('work.milestone.unreadable.act.open');
       // FABRIC-PERFORM1k: a failure kept for the person, as `daoris work held … again` names it.
       case 'again-step': return t('work.milestone.held.act.again');
+      // A held verification: *Run again* and *Not now*, as its run's view words them.
+      case 'again-check': return t('workflow.run.check.again');
+      case 'stop-check': return t('workflow.run.check.stop');
       // FABRIC-CLOSE1j: a close found closed only in part, its node waiting again: its stop alone.
       case 'stop-partial': return t('work.milestone.closed.act.stop');
       // GITAUTH1a: a held git remote's one act, *Try again*, the word a quest's retry is.

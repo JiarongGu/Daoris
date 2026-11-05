@@ -11,7 +11,10 @@ namespace Daoris.Driver;
 /// judges, the branch it was asked of where one was, and the declaration's blob the person accepted. Every node of it observes the run itself at
 /// that commit.
 /// </summary>
-/// <param name="Level">Who chose it: <see cref="VerifyRuns.Person"/> for a person's verification of a commit or a branch.</param>
+/// <param name="Level">
+/// Who chose it: <see cref="VerifyRuns.Person"/> for a person's verification of a commit or a branch, else the landed route's level that bound
+/// it for a batch of its line (<see cref="LineBatching"/>).
+/// </param>
 public sealed record VerifyRun(
     string Run, string Repository, string Workspace, string Root, string Workflow, int Version, string Digest, string Commit, string Level, DateTimeOffset At)
 {
@@ -20,6 +23,15 @@ public sealed record VerifyRun(
 
     /// <summary>The blob of <c>daoris.gates.json</c> the route's acceptance names, <c>none</c>, or null where none is accepted.</summary>
     public string? Accepted { get; init; }
+
+    /// <summary>A landed run's line: the branch its batch landed on; null for a person's run.</summary>
+    public string? Line { get; init; }
+
+    /// <summary>
+    /// A landed run's base (the pipeline design §4.3): the tip of the newest run on its line whose check settled with a verdict, so its batch is
+    /// the commits from it to <see cref="Commit"/>; null for the line's first verification and for a person's run.
+    /// </summary>
+    public string? Base { get; init; }
 
     /// <summary>The binding the runtime governs it by, as a graph run's.</summary>
     public WorkflowRunBinding Binding => new(Run, Repository, Workspace, Workflow, Level, At) { Version = Version, Digest = Digest };
@@ -95,6 +107,8 @@ public static class VerifyRuns
             writer.WriteString("commit", run.Commit);
             if (run.Branch is { } branch) writer.WriteString("branch", branch);
             if (run.Accepted is { } accepted) writer.WriteString("gates", accepted);
+            if (run.Line is { } line) writer.WriteString("line", line);
+            if (run.Base is { } from) writer.WriteString("base", from);
             writer.WriteString("level", run.Level);
             writer.WriteString("at", run.At.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
             writer.WriteEndObject();
@@ -121,7 +135,7 @@ public static class VerifyRuns
 
             return new VerifyRun(run, repository, Text("workspace") ?? "", checkout, workflow, at, digest, commit, level, bound)
             {
-                Branch = Text("branch"), Accepted = Text("gates"),
+                Branch = Text("branch"), Accepted = Text("gates"), Line = Text("line"), Base = Text("base"),
             };
         }
         catch (JsonException)

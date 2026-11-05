@@ -69,5 +69,5 @@ public static class LineRunReader
     }
 
     private static WorkflowRunLine Said(VerifyRun line, string verdict) =>
-        new(line.Run, line.Commit, line.Level, line.At, verdict) { Branch = line.Branch };
+        new(line.Run, line.Commit, line.Level, line.At, verdict) { Branch = line.Branch, Line = line.Line, Base = line.Base };
 }

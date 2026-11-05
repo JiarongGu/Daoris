@@ -19,6 +19,14 @@ export function lineWord(t: TFunction, line: RunLine): string {
   }
 }
 
+/** What a landed run judged: what landed on its line since the base, or the line's first verification; null for a person's run. */
+export function lineBatch(t: TFunction, line: RunLine): string | null {
+  if (!line.line) return null;
+  return line.base
+    ? t('workflow.run.line.batch', { line: line.line, base: line.base.slice(0, 7) })
+    : t('workflow.run.line.first', { line: line.line });
+}
+
 /** The check a person may answer now: held unknown for them, with words to say and none said yet. */
 export const heldCheck = (run: WorkflowRun): RunStep | null =>
   run.steps.find((step) => step.node === 'check' && step.held && !step.held.resolution && step.held.words.length > 0) ?? null;

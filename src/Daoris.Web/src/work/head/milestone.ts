@@ -87,6 +87,25 @@ export type HeldAttempt = {
   words?: HeldResolution[] | null;
   /** A failure kept for the person's code, as its plugin gave it (FABRIC-PERFORM1k); absent on an attempt held. */
   code?: string | null;
+  /** What a held check on a verification run verifies; absent on every other attempt, and from a driver before the field. */
+  verification?: HeldVerification | null;
+};
+
+/**
+ * What a held check verifies (the pipeline design §4.4, §4.5): its run, the repository and the full commit it judged, who chose it (`person`
+ * or the landed route's level), the line and base its route bound it on or the branch a person asked it of, the gate that failed, and why its
+ * verdict is not known (`changed`, `bound`, `stopped`, `busy`, or another said as the general).
+ */
+export type HeldVerification = {
+  run: string;
+  repository: string;
+  commit: string;
+  level: string;
+  line?: string | null;
+  base?: string | null;
+  branch?: string | null;
+  gate?: string | null;
+  why?: string | null;
 };
 
 /**

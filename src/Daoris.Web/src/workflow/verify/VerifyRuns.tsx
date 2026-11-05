@@ -3,7 +3,7 @@ import { Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { ago } from '../../locales/format';
 import { PageSection } from '../../work/frame/ViewMain';
 import { CheckHeld } from '../CheckHeld';
-import { heldCheck, lineTone, lineWord } from './lineSaid';
+import { heldCheck, lineBatch, lineTone, lineWord } from './lineSaid';
 import type { CheckHeldAnswer, CheckHeldAsk, WorkflowRun, WorkflowRunAnswer } from '../run';
 
 /** What a repository's Workflow tab is handed of its line: the answer, or that it is on its way or was refused, and the person's word on a held check. */
@@ -57,6 +57,7 @@ function Verification({ run, onHeld }: { run: WorkflowRun; onHeld?: VerifyRunsPr
   if (!line) return null;
   const commit = line.commit.slice(0, 7);
   const held = heldCheck(run);
+  const batch = lineBatch(t, line);
   return (
     <li className="grid min-w-0 gap-1 border-b border-line pb-2 last:border-b-0">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -67,6 +68,7 @@ function Verification({ run, onHeld }: { run: WorkflowRun; onHeld?: VerifyRunsPr
         <span className="text-meta text-ink-faint">
           {t(line.level === 'person' ? 'workflow.run.line.asked' : 'workflow.run.line.started', { when: ago(line.at) })}
         </span>
+        {batch && <span className="text-meta text-ink-soft">{batch}</span>}
       </div>
       {run.problem && <p className="m-0 text-small text-ink-soft">{t('workflow.run.line.unread')}</p>}
       {line.gates.length > 0 && (

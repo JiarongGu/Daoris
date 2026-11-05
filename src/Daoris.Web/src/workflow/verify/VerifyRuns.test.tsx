@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import { FAILED_GATE, lineOf, NOT_NOW, RUNNING, UNKNOWN_HELD, VERIFIED, WAITING } from './lineFixtures';
+import { FAILED_GATE, lineOf, NOT_NOW, RUNNING, UNKNOWN_HELD, VERIFIED, verification, WAITING } from './lineFixtures';
 import { VerifyRuns } from './VerifyRuns';
 
 // FABRIC-PIPELINE1d (the pipeline design §4.4): a repository's verifications on its Workflow tab, each the branch and commit it judged, who
@@ -69,5 +69,24 @@ describe("a repository's verifications", () => {
     expect(failed).toHaveTextContent('退出码 1');
     expect(held).toHaveTextContent('未知：运行超时');
     expect(within(held).getByRole('button', { name: '再运行一次' })).toBeInTheDocument();
+  });
+
+  it("says a landed run's batch: what landed on its line since its base, or the line's first verification, in each language", async () => {
+    const landed = { level: 'repository-landed', branch: null, line: 'main' };
+    const batch = verification('done', 'reached', { ...landed, run: 'v-6666666666666666', verdict: 'verified', base: '1111111111111111111111111111111111111111' });
+    const first = verification('done', 'reached', { ...landed, run: 'v-7777777777777777', verdict: 'verified', base: null });
+    const { unmount } = render(<VerifyRuns answer={lineOf(batch, first)} />);
+
+    let [since, opening] = rows();
+    expect(since).toHaveTextContent('what landed on main since 1111111');
+    expect(since).toHaveTextContent('started');
+    expect(opening).toHaveTextContent('the first verification of main');
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<VerifyRuns answer={lineOf(batch, first)} />);
+    [since, opening] = rows();
+    expect(since).toHaveTextContent('自 1111111 以来合入主线 main 的提交');
+    expect(opening).toHaveTextContent('主线 main 的首次验证');
   });
 });

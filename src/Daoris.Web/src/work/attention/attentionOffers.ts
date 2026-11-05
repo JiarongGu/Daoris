@@ -22,6 +22,8 @@ export type AttentionActId =
   | 'open-records'
   // The person's new attempt on a plugin step's failure kept for them.
   | 'again-step'
+  // A held verification's *Run again* and *Not now*: a check's words, never a step's.
+  | 'again-check' | 'stop-check'
   // The stop of a close found closed only in part, its node waiting again.
   | 'stop-partial'
   // A git remote held because it could not authenticate, tried again on the person's press.
@@ -43,12 +45,13 @@ export type AttentionActId =
 /** The act each word offered on a held attempt is pressed by: a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
   const close = held.plugin === CLOSE_SENDER;
+  const check = held.plugin === 'check';
   return heldWords(held).map((word): AttentionActId => {
     switch (word) {
       case 'record': return 'record-close';
       case 'resend': return 'resend-close';
-      case 'again': return 'again-step';
-      case 'stop': return close ? 'stop-close' : 'stop-step';
+      case 'again': return check ? 'again-check' : 'again-step';
+      case 'stop': return close ? 'stop-close' : check ? 'stop-check' : 'stop-step';
       default: return word;
     }
   });

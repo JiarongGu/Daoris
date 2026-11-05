@@ -186,6 +186,15 @@ internal sealed class WatchNodes
                     .ConfigureAwait(false));
             }
 
+            // The pipeline design §4.3: at a whole look, each line a landed route verifies binds the run it owes before the pass, which reads it
+            // among the runs and so is armed by it.
+            var config = _config();
+            if (whole && LineBatching.Armed(config) && HomeLease.HeldHere(home))
+            {
+                lines.AddRange(await LineBatching.BindAsync(home, config, await service.RegistryAsync(token).ConfigureAwait(false), new NodeRecordFiles(home),
+                    DateTimeOffset.UtcNow, token).ConfigureAwait(false));
+            }
+
             var gates = new NodeGates(home, service);
             pass = await _watch.Stages.TimeAsync("nodes", () => Runtime.PassAsync(new NodeRuntimeLook(_config(), whole)
             {

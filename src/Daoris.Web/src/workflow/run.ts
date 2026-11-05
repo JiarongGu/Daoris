@@ -239,8 +239,12 @@ export interface RunLine {
   run: string;
   commit: string;
   branch?: string | null;
-  /** Who chose it: `person` for a person's verification of a commit or a branch. */
+  /** Who chose it: `person` for a person's verification of a commit or a branch, else the landed route's level that bound it for its line. */
   level: string;
+  /** The line a landed run's batch landed on; absent for a person's run. */
+  line?: string | null;
+  /** Where a landed run's batch begins, the tip of the line's newest run with a verdict; absent for its first verification. */
+  base?: string | null;
   at: string;
   /** `verified`, `failed`, `not-now`, `unknown`, `running` or `waiting`; one the page does not know is said as the driver spelled it. */
   verdict: string;
