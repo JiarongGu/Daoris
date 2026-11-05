@@ -32,7 +32,7 @@ public sealed class ChatRunnerTests : IDisposable
                 {"schemaVersion":2,"entries":["work"],"end":"landing",
                  "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"checks":"light"}},
                           {"id":"review","kind":"review","version":1,"reach":"pressed"},
-                          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","plugin":"none","pattern":"chat/{session}-{slug}"}}],
+                          {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"chat/{session}-{slug}"}}],
                  "wires":[{"id":"b","kind":"after","from":"work","to":"review"},{"id":"e","kind":"after","from":"review","to":"landing"}]}
                 """)), kept: []);
         var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");

@@ -310,7 +310,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.True(result.Done);
         Assert.Equal(1, stand.Changes);
         Assert.Equal(Blob, IntegrationAcceptance.Of(stand.Config, "engine"));
-        Assert.Equal(new SetupLand("integrate", "you", "none", "owner"), PlacePlans.SideOf(stand.Config, "engine", "aurora", WorkflowPorts.Store(_home)).Land);
+        Assert.Equal(new SetupLand("integrate", "you", null, "owner"), PlacePlans.SideOf(stand.Config, "engine", "aurora", WorkflowPorts.Store(_home)).Land);
         Assert.Equal(Blob, new PlaceReceipts(_home).Read(digest)!.Accepted.Single().Blob);
     }
 

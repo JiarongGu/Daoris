@@ -19,9 +19,9 @@ public sealed class SetupPresetsTests
             [
                 ("not-driven", "Not driven", (SetupLand?)null),
                 ("merge-after-accept", "Merge after you accept", new SetupLand("merge", "you")),
-                ("branch-to-push", "A branch to push", new SetupLand("branch", "you", "none")),
-                ("pull-request", "A pull request", new SetupLand("pull-request", "you")),
-                ("integrated", "Integrated into the line", new SetupLand("integrate", "you", "none", "owner")),
+                ("branch-to-push", "A branch to push", new SetupLand("branch", "you")),
+                ("pull-request", "A pull request", new SetupLand("pull-request", "you", "github-pull-request")),
+                ("integrated", "Integrated into the line", new SetupLand("integrate", "you", null, "owner")),
             ],
             SetupPresets.Table.Select(preset => (preset.Id, preset.Name, preset.Land)));
     }
@@ -43,7 +43,7 @@ public sealed class SetupPresetsTests
         Assert.Equal(new SetupMatch("not-driven", []), SetupPresets.Match(driven: false, new SetupLand("merge", "you")));
         Assert.Equal(new SetupMatch("merge-after-accept", []), SetupPresets.Match(driven: true, new SetupLand("merge", "you")));
         Assert.Equal(new SetupMatch("pull-request", []), SetupPresets.Match(driven: true, new SetupLand("pull-request", "you", Plugin)));
-        var own = SetupPresets.Match(driven: true, new SetupLand("integrate", "automatic", "none", "done"));
+        var own = SetupPresets.Match(driven: true, new SetupLand("integrate", "automatic", null, "done"));
         Assert.Equal("integrated", own.Preset);
         Assert.Equal(["accept `automatic`", "request `done`"], own.Own);
         Assert.Equal(new SetupMatch(null, ["method `push`"]), SetupPresets.Match(driven: true, new SetupLand("push", "you")));
@@ -55,10 +55,10 @@ public sealed class SetupPresetsTests
     [InlineData("merge-automatic", "merge", "automatic", null, null)]
     [InlineData("documents", "merge", "automatic", null, null)]
     [InlineData("release", "merge", "you", null, null)]
-    [InlineData("branch-to-push", "branch", "you", "none", null)]
-    [InlineData("pull-request", "pull-request", "you", null, null)]
-    [InlineData("integrated", "integrate", "you", "none", "owner")]
-    [InlineData("integrated-no-press", "integrate", "automatic", "none", "done")]
+    [InlineData("branch-to-push", "branch", "you", null, null)]
+    [InlineData("pull-request", "pull-request", "you", "github-pull-request", null)]
+    [InlineData("integrated", "integrate", "you", null, "owner")]
+    [InlineData("integrated-no-press", "integrate", "automatic", null, "done")]
     public void A_shipped_default_s_delivery_is_derived_from_its_graph(string id, string method, string accept, string? plugin, string? request)
     {
         var shipped = WorkflowDefaults.Of(id)!;

@@ -364,8 +364,11 @@ public static class Involvement
                 NodeKinds.Request => NodeKinds.Request,
                 // LANDNODE1k: the quest's holds, by its node id, whose `yes` the comparison reads.
                 NodeKinds.QuestHolds => NodeKinds.QuestHolds,
+                // A plugin's pull-request step (G8) is the person's merge on the platform, named by the plugin that opens it.
+                _ when PullRequestSteps.PluginOf(node.Kind) is not null => WorkflowKinds.PullRequest,
                 _ => null,
             };
+            if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestSteps.PluginOf(node.Kind))]);
             // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
             IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land
                 ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? "you" : "automatic")]

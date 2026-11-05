@@ -58,7 +58,7 @@ public sealed class PlacePlanTests
         Assert.Equal(["WORKFLOW_SAVE", "WORKFLOW_USE", "SET_LINE"], engine.Changes.Select(change => change.Key));
         Assert.DoesNotContain(engine.Changes, change => change.Key == "SET_LANDING");
         Assert.Equal("`integrated`", engine.Changes.Single(change => change.Key == "WORKFLOW_USE").After);
-        Assert.Equal(new SetupLand("integrate", "you", "none", "owner"), engine.After.Land);
+        Assert.Equal(new SetupLand("integrate", "you", null, "owner"), engine.After.Land);
         var declaration = engine.Declaration!;
         Assert.Equal(("main", Commit, Blob, Declaring), (declaration.Line, declaration.Commit, declaration.Blob, declaration.Text));
         var acceptance = Assert.Single(declaration.Acceptances);

@@ -52,7 +52,24 @@ public abstract class LandedFixture : IDisposable
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", subject.Title ?? "work");
         var landed = await trees.LandAsync(tree.Path, subject, gate: Lands);
         Assert.True(landed.Landed, landed.Message);
+        if (PullRequestPlugin is { } plugin) await OpenedPullRequestAsync(root, landed, plugin);
         return landed;
+    }
+
+    /// <summary>The plugin whose pull-request step a fixture's landings are followed by: the push and the pull request they leave on the record; null for none.</summary>
+    protected virtual string? PullRequestPlugin => null;
+
+    /// <summary>
+    /// What a run's <c>push</c> and a plugin's <c>pull-request</c> step leave after a landing made <paramref name="landing"/>'s branch: it on the
+    /// origin, its pushed tip kept, and the pull request's address and plugin on its entry.
+    /// </summary>
+    protected async Task OpenedPullRequestAsync(string root, TreeLanding landing, string plugin)
+    {
+        var branch = landing.Branch!;
+        await GitAsync(root, "push", "--quiet", "origin", branch);
+        var tip = (await GitAsync(root, "rev-parse", branch)).Trim();
+        new LandedBranches(Home).Pushed("engine", branch, tip);
+        new PullRequestRecords(Home).Keep("engine", branch, plugin, "https://example.test/org/project/_git/engine/pullrequest/7");
     }
 
     /// <summary>

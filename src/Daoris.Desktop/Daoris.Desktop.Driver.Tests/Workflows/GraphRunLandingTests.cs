@@ -77,7 +77,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true });
 
     /// <summary>A branch made for the person, no plugin asked.</summary>
-    private const string BranchLand = """{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}""";
+    private const string BranchLand = """{"method":"branch","pattern":"feature/{quest}-{slug}"}""";
 
     private NodeStatus Status(string node) => new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses[node];
 
@@ -349,7 +349,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
     [Fact]
     public async Task A_branch_land_makes_its_branch_through_the_performer()
     {
-        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"branch","plugin":"none","pattern":"feature/{quest}-{slug}"}"""));
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"branch","pattern":"feature/{quest}-{slug}"}"""));
         Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
         await PassAsync(root, branch, tree, door: door);
         await door.IdleAsync();
