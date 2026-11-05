@@ -563,7 +563,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         SupervisorBound atBound = (session, _) =>
         {
             asked.Add(session);
-            return Task.FromResult(true);
+            return Task.FromResult<string?>(SupervisorWhy.SupervisorBound);
         };
         Assert.Empty(await bound.ReleaseAsync(Session, said.Say, Kept.AddMinutes(4), bound: atBound));
         Assert.Empty(asked);
@@ -580,6 +580,20 @@ public sealed class SupervisorDecisionTests : IDisposable
         await SupervisorQuarantine.DecideAsync(snapshot, looked, said.Say, said.TakeBack, Kept.AddMinutes(5), CancellationToken.None, atBound);
         Assert.Equal(SupervisorWhy.SupervisorBound, looked.LiveOf(Session).Single().Why);
         Assert.Equal(0, said.Says);
+
+        // CONTEXTDRIVE1e: another of the person's rules holding the line at the release moves the decision stale with its own code.
+        var ruled = Decisions();
+        await ruled.KeepAsync(Answer(), Park(), Kept);
+        SupervisorBound ruleHolds = (_, _) => Task.FromResult<string?>(SupervisorWhy.RuleHolds);
+        Assert.Equal([SupervisorState.Stale], await ruled.ReleaseAsync(Session, said.Say, Kept.AddMinutes(5), bound: ruleHolds));
+        Assert.Equal(SupervisorWhy.RuleHolds, ruled.LiveOf(Session).Single().Why);
+        Assert.Equal(0, said.Says);
+
+        var failures = new CountFact(SupervisorRules.Failures, 3, "known", null, "records") { Watch = new CountWatch(3, SupervisorRules.Hold, "machine") };
+        var alone = new CountFact(SupervisorRules.AnswersAlone, 5, "known", null, "admissions") { Watch = new CountWatch(2, SupervisorRules.Hold, "machine") };
+        Assert.Equal(SupervisorWhy.RuleHolds, SupervisorRuleHold.Why(atBound: false, [failures]));
+        Assert.Null(SupervisorRuleHold.Why(atBound: false, [alone, failures with { N = 2 }]));
+        Assert.Equal(SupervisorWhy.SupervisorBound, SupervisorRuleHold.Why(atBound: true, [failures]));
     }
 
     /// <summary>

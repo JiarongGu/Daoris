@@ -31,11 +31,11 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
                     return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 }
 
-                // SUPERVISOR1b (§4.3): the line's count read again here, under the decision's lock, before anything is said; the question's
+                // SUPERVISOR1b (§4.3): the line's counts read again here, under the decision's lock, before anything is said; the question's
                 // mark is read again by the service's own step, which refuses `owner-question` from the file it reads.
-                if (bound is not null && await bound(session, ct).ConfigureAwait(false))
+                if (bound is not null && await bound(session, ct).ConfigureAwait(false) is { } held)
                 {
-                    return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.SupervisorBound);
+                    return book.Move(decision, SupervisorState.Stale, now, held);
                 }
 
                 decision.Receipt ??=Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();

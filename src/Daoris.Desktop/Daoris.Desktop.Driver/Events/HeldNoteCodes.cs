@@ -12,6 +12,9 @@ public static class HeldNoteCodes
     public static readonly NoteCode AnswersPassed = new("answers.passed", []);
     public static readonly NoteCode AnswersKept = new("answers.kept", []);
 
+    // ——— A rule of the person's acted on the line: the count and what it stood at, the rule's number, its place and its act.
+    public static readonly NoteCode SupervisorRule = new("supervisor.rule", ["count", "n", "at", "place", "do"]);
+
     // ——— The limit's wake: its own account ready again at the margin-added `until`, it went on in its own conversation; or its own
     // conversation could not be resumed, by the refusal's code, and it went on briefed.
     public static readonly NoteCode LimitResumed = new("limit.resumed", ["until"]);

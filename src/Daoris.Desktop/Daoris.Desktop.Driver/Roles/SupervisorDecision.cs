@@ -175,15 +175,15 @@ public sealed record SupervisedPark(
     public IReadOnlyList<CountFact>? Counts { get; init; }
 
     /// <summary>Whether a rule of the person's holds the line now on a count other than answers alone, its count at the rule's number (CONTEXTDRIVE1e).</summary>
-    public bool RuleHolds => Counts?.Any(count => count.Count != SupervisorRules.AnswersAlone
-        && count.Watch is { Do: SupervisorRules.Hold, Place: not null } watch && count.N >= watch.At) == true;
+    public bool RuleHolds => SupervisorRuleHold.Holds(Counts);
 }
 
 /// <summary>
-/// Whether <paramref name="session"/>'s line is at D188's answers-alone bound now (SUPERVISOR1b, §4.3), asked by the release under the
-/// decision's lock: a supervisor's word going on would be one more answer alone past it.
+/// What keeps <paramref name="session"/>'s line from taking a supervisor's word now, asked by the release under the decision's lock:
+/// <c>supervisor-bound</c> at D188's answers-alone bound (SUPERVISOR1b, §4.3), <c>rule-holds</c> where another of the person's rules
+/// holds it (CONTEXTDRIVE1e), none where the word may go on.
 /// </summary>
-public delegate Task<bool> SupervisorBound(string session, CancellationToken ct);
+public delegate Task<string?> SupervisorBound(string session, CancellationToken ct);
 
 /// <summary>A decision as it stands, for the page and the tests: whole, from memory, or from the files as history.</summary>
 /// <param name="Earlier">Read from the files of an earlier run of Daoris: history, granting nothing (§6.1).</param>

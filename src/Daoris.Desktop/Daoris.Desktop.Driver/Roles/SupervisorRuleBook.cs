@@ -43,6 +43,13 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
         : record?.Kind == SessionKinds.Chat ? RoleWork.Chat
         : RoleWork.Build;
 
+    /// <summary>The rule on <paramref name="count"/> that acts by <paramref name="does"/> first (its lowest <c>at</c>), for the act's record; none where none does.</summary>
+    public static SupervisorRule? Acting(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, string does) =>
+        effective.TryGetValue(count, out var rules) ? rules.Where(rule => rule.Do == does).MinBy(rule => rule.At) : null;
+
+    /// <summary>The revision <paramref name="place"/>'s set was read at: 0 for a place holding none, or the seed read where none was written.</summary>
+    public long RevisionOf(string place) => Sets.FirstOrDefault(set => set.Place == place)?.Revision ?? 0;
+
     /// <summary>The answers alone in a row a line goes on by before it waits for the person; null where no rule holds it.</summary>
     public static int? AnswersAloneAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold);
 
