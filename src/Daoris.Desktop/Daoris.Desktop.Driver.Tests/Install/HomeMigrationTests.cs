@@ -100,6 +100,27 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     [Fact]
+    public void The_landing_rules_are_taken_out_of_driver_json_once()
+    {
+        const string Old = """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}},"workspaceLandings":{"default":{"form":"merge"}},"cap":2}""";
+        var file = Put(HomeEntry.DriverConfig, Old);
+
+        var migrated = HomeMigration.Run(_home);
+
+        Assert.Null(migrated.Failed);
+        var root = Read(file);
+        Assert.False(root.ContainsKey("landings"));
+        Assert.False(root.ContainsKey("workspaceLandings"));
+        Assert.Equal(2, (int)root["cap"]!);
+        Assert.Equal(Old, File.ReadAllText(Copy(file)));
+        Assert.Contains("data/driver.json", migrated.Changed);
+
+        var again = HomeMigration.Run(_home);
+        Assert.Empty(again.Ran);
+        Assert.DoesNotContain("data/driver.json", again.Changed);
+    }
+
+    [Fact]
     public void A_stopped_run_records_the_steps_before_it_and_the_next_start_runs_the_rest()
     {
         Directory.CreateDirectory(_home);
