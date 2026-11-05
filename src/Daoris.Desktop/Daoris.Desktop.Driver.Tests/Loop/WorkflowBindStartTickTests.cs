@@ -142,7 +142,7 @@ public sealed class WorkflowBindStartTickTests : IDisposable
         var config = DriverConfig.Parse(choices) with
         {
             Drivable = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
+            Actors = StaffedRoles.On("claude-code"),
             Cap = 4,
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },

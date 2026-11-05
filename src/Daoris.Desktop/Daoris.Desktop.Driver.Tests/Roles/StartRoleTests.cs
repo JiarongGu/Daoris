@@ -24,7 +24,6 @@ public sealed class StartRoleTests : IDisposable
 
     private static readonly DriverConfig Config = DriverConfig.Empty with
     {
-        Adapter = "claude",
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>
         {
             ["build"] = [new ActorChoice("claude", "sonnet")],
@@ -205,7 +204,6 @@ public sealed class StartRoleTests : IDisposable
             {"workflows":{"engine":{"default":"staffed"}},"landings":{"engine":{"form":"branch","pattern":"a/{quest}","plugin":"acme.pr"}}}
             """) with
         {
-            Adapter = "own",
             Drivable = ["engine"],
             Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>
             {

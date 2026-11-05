@@ -191,7 +191,7 @@ public sealed class BroughtForwardLookTests : IDisposable
     private static DriverConfig Config() => DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
-        Adapter = "stub",
+        Actors = StaffedRoles.On("stub"),
         Cap = 3,
         PollSeconds = 1,
         Trees = ["engine"],

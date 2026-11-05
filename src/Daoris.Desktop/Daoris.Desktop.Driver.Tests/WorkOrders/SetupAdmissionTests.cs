@@ -19,7 +19,7 @@ public sealed class SetupAdmissionTests
 
     /// <summary>atlas not driven here, its sessions in trees of their own, its set-up quest admitted alone.</summary>
     private static readonly DriverConfig Admitted =
-        (DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = 3 }).WithTrees("atlas", true).WithAdmitted("qs", "atlas");
+        (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 }).WithTrees("atlas", true).WithAdmitted("qs", "atlas");
 
     private static IReadOnlyList<Consideration> Plan(Snapshot snapshot, DriverConfig config) =>
         Planner.Plan(snapshot, config, SessionWire.Acp);

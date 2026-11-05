@@ -56,7 +56,7 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
     {
         output.WriteLine($"the home made in {_made} ms");
         var list = await MeasuredAsync("the service's list of every record (the service's own)", () => Home.Client.SessionList.ListedAsync(true, CancellationToken.None));
-        var driver = new Daoris.Driver.Driver(Home.Client, DriverConfig.Empty with { Adapter = "stub" }, AdapterSet.Built(), Home.Home);
+        var driver = new Daoris.Driver.Driver(Home.Client, DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, AdapterSet.Built(), Home.Home);
         await PassesAsync(driver);
         var look = await MeasuredAsync("look", async () =>
         {

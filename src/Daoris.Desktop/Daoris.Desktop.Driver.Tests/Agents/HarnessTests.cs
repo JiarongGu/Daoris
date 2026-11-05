@@ -807,7 +807,7 @@ public sealed class HarnessSelectionTests : IDisposable
         LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"),
         RunsInOwnHome: ownHome);
 
-    private static DriverConfig Config() => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     /// <summary>
     /// OWNSPACE1a (D175 point 2, amending D48 §2a's own home): with no account named and no Daoris account, a real agent's start

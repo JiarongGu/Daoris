@@ -58,7 +58,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
     private SessionLook Waiting(
         string json, Consideration[]? considered = null, bool fresh = true, Func<string?, string?, CoolingEntry?>? coolingOf = null) =>
         SessionGroups.Waiting(
-            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, DriverConfig.Empty with { Adapter = "claude-code" }, fresh,
+            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") }, fresh,
             coolingOf ?? CoolingOf, TimeZoneInfo.Utc);
 
     [Fact]

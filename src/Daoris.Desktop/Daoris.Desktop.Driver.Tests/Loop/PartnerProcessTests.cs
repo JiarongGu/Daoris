@@ -77,7 +77,7 @@ public sealed class PartnerProcessTests : IDisposable
     {
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code-acp",
+            Actors = StaffedRoles.On("claude-code-acp"),
             Cap = 3,
             // `codex-acp` runs as `codex`'s accounts: both are the stand-in, so nothing here falls back to an agent on the PATH.
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", agent ?? Agent()], ["codex"] = ["node", agent ?? Agent()] },

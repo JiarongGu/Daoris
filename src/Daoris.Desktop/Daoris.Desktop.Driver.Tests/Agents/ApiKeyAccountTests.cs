@@ -61,7 +61,7 @@ public sealed class ApiKeyAccountTests : IDisposable
         }),
         Settings);
 
-    private static DriverConfig Config() => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     [Fact]
     public void A_key_is_kept_under_the_home_beside_the_account_and_never_inside_it()

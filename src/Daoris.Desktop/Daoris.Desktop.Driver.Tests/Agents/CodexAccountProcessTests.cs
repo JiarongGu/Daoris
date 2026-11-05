@@ -101,7 +101,7 @@ public sealed class CodexAccountProcessTests : IDisposable
     // Both named, so nothing on this machine's PATH is asked: the door's binary and the agent's.
     private DriverConfig Config => DriverConfig.Empty with
     {
-        Adapter = "codex-acp",
+        Actors = StaffedRoles.On("codex-acp"),
         Commands = new Dictionary<string, IReadOnlyList<string>>
         {
             ["codex"] = ["node", Script],

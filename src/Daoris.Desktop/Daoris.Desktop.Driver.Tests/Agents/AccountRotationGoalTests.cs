@@ -71,7 +71,7 @@ public sealed class AccountRotationGoalTests : IDisposable
             Zone = Zone,
         };
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private void AccountsOf(string agent, params string[] names)
     {
@@ -304,7 +304,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         var roster = Present();
 
         var carried = await roster.SelectAsync("fake", Config, null, null);
-        var dropped = await roster.SelectAsync("loose", Config with { Adapter = "loose" }, null, null);
+        var dropped = await roster.SelectAsync("loose", Config with { Actors = StaffedRoles.On("loose") }, null, null);
 
         Assert.Equal(Seen.AddHours(4), AccountWindows.WeekOf(_home, "fake", "account-2", Seen, fixedWeek: true));
         Assert.Equal(("account-1", WalkStep.List), (carried.Profile, carried.Choice!.Step));
@@ -372,7 +372,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         var roster = Present();
 
         var work = await roster.SelectAsync("fake", Config, "work", null);
-        var loose = await roster.SelectAsync("loose", Config with { Adapter = "loose" }, null, null);
+        var loose = await roster.SelectAsync("loose", Config with { Actors = StaffedRoles.On("loose") }, null, null);
 
         Assert.Equal(("account-1", (RotatedStart?)null), (work.Profile, work.Rotated));
         Assert.Equal("account-1", loose.Profile);

@@ -222,7 +222,7 @@ public sealed class LookJudgesTests : IDisposable
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         (DriverConfig.Empty with
         {
-            Drivable = ["engine", "tools"], Adapter = "stub", Cap = 3, PollSeconds = 60,
+            Drivable = ["engine", "tools"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 60,
             Opinions = opinions
                 ? new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) { ["engine"] = new(["codex-acp"], [OpinionRules.Steps], false) }
                 : DriverConfig.Empty.Opinions,

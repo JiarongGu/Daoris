@@ -79,7 +79,7 @@ public sealed class PressModelTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub",
+            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Strikes = 1,

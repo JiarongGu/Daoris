@@ -820,7 +820,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     /// <summary>Drivable here, each in trees of its own, on an agent that rides the protocol door, at <paramref name="cap"/>.</summary>
     private static DriverConfig Driven(int cap) =>
         new[] { "atlas", "billing", "cargo", "docs", "echo" }.Aggregate(
-            DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = cap },
+            DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = cap },
             (config, repository) => config.WithDrivable(repository, true).WithTrees(repository, true));
 
     private static WorkspaceSetupStandIn World(params string[] repositories) =>

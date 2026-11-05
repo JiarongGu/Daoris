@@ -88,7 +88,7 @@ public sealed class HelperLookTests : IDisposable
         bool unset = false, Dictionary<string, HelperRule>? workspaces = null, bool drained = false) =>
         new(host.Client(), Drain(DriverConfig.Empty with
         {
-            Adapter = "claude-code-acp", Cap = cap,
+            Actors = StaffedRoles.On("claude-code-acp"), Cap = cap,
             Helpers = unset ? new Dictionary<string, HelperRule>() : new Dictionary<string, HelperRule> { ["reports"] = rule ?? On },
             WorkspaceHelpers = workspaces ?? new Dictionary<string, HelperRule>(),
         }, drained), AdapterSet.Built(), _home)

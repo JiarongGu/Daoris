@@ -86,7 +86,7 @@ public sealed class WalkAgentTickTests : IDisposable
             {
                 Drivable = ["engine"],
                 Trees = ["engine"],
-                Adapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
                 Strikes = 1,
@@ -97,7 +97,7 @@ public sealed class WalkAgentTickTests : IDisposable
                 },
             },
             "build", order);
-        return adapter is null ? config : config with { Adapter = adapter };
+        return adapter is null ? config : config with { Actors = StaffedRoles.On(adapter) };
     }
 
     private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, DriverConfig config)

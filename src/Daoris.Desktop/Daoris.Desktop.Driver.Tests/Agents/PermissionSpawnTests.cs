@@ -308,7 +308,6 @@ public sealed class PermissionSpawnTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = adapter.Name,
             Actors = StaffedRoles.On(adapter.Name),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },

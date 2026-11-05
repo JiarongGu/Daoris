@@ -115,7 +115,7 @@ public sealed class HelpCommandTests : IDisposable
     public void Mode_says_the_mode_and_sets_it_from_the_next_start()
     {
         var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(path, """{ "helperAdapter": "claude-code-acp" }""");
+        File.WriteAllText(path, """{ "cap": 3 }""");
         string Mode(params string[] args)
         {
             var output = new StringWriter();
@@ -130,7 +130,7 @@ public sealed class HelpCommandTests : IDisposable
         // ACCESSSWAP1b (D183's note): the terminal writes the file from another process and tells no running conversation, and says so.
         Assert.Contains("A conversation running now keeps its mode until its next start; the window's choice ends one at its turn's end.", full);
         Assert.Equal(HelpModes.Full, DriverConfig.Load(path).HelpMode);
-        Assert.Equal("claude-code-acp", DriverConfig.Load(path).HelperAdapter);
+        Assert.Equal(3, DriverConfig.Load(path).Cap);
         Assert.Contains("full access", Mode());
         Assert.Contains("already", Mode("full"));
 

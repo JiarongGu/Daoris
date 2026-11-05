@@ -91,7 +91,7 @@ public sealed class StartPlanStaffTests : IDisposable
 
     private StartPlan Plan(string work = "build", params ActorChoice[] choices)
     {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", choices.Length == 0 ? [One, Two] : choices);
+        var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool") }, "build", choices.Length == 0 ? [One, Two] : choices);
         return new StartPlan(work, config, _roster, _adapters, _memory)
         {
             Workspace = "default", Subject = "quest:q1", Named = ("quest", "q1"), Log = _log, Staff = Ledger,
@@ -206,7 +206,7 @@ public sealed class StartPlanStaffTests : IDisposable
         var only =StaffPolicy.Parse($$"""{"rule":"order","choices":[{{Entry(One, ",\"budget\":{\"starts\":1}")}}]}""").Policy!;
         _staffing.Set("build", [One]);
         RoleDoor.Apply(_staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(only));
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [One]);
+        var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool") }, "build", [One]);
         StartPlan Single() => new("build", config, _roster, _adapters, _memory) { Workspace = "default", Subject = "quest:q2", Staff = Ledger };
 
         var opened = await Single().ResolveAsync(CancellationToken.None);

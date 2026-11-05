@@ -35,7 +35,7 @@ public sealed class HandOverAskLookTests : IDisposable
     }
 
     private static DriverConfig Config(string? mode = null) =>
-        (DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] }) is var config && mode is not null
+        (DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] }) is var config && mode is not null
             ? HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } })
             : config;
 

@@ -64,7 +64,7 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     /// <summary>Build's order: <c>first</c> · opus, then <c>second</c> · sonnet; the legacy <c>adapter</c> key written through as <c>first</c>.</summary>
     private static DriverConfig Config => ActorChoices.With(
-        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Adapter = "first", Strikes = 3, PollSeconds = 1 },
+        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("first"), Strikes = 3, PollSeconds = 1 },
         "build", [new ActorChoice("first", "opus"), new ActorChoice("second", "sonnet")]);
 
     private void Cool(string agent, DateTimeOffset until) =>
@@ -115,7 +115,7 @@ public sealed class ContinuedChoiceTests : IDisposable
 
         Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran, rule, Config));
         Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran with { Adapter = null }, rule, Config));
-        Assert.Equal(["first"], OpinionGateLook.Reviewers(press, null, rule, Config with { Adapter = "piped" }));
+        Assert.Equal(["first"], OpinionGateLook.Reviewers(press, null, rule, Config with { Actors = StaffedRoles.On("piped") }));
         Assert.Equal(["dsh"], OpinionGateLook.Reviewers(press with { SameAgent = false, Reviewer = "dsh" }, ran, rule, Config));
         Assert.Equal(["codex-acp"], OpinionGateLook.Reviewers(null, ran, rule, Config));
     }

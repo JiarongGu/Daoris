@@ -381,7 +381,7 @@ public sealed class CodexAccountTests : IDisposable
         };
     }
 
-    private static DriverConfig HolderConfig => DriverConfig.Empty with { Adapter = "fake-door" };
+    private static DriverConfig HolderConfig => DriverConfig.Empty with { Actors = StaffedRoles.On("fake-door") };
 
     private void HolderAccounts(params string[] names)
     {

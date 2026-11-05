@@ -46,23 +46,6 @@ public sealed class ActorChoicesTests
     }
 
     [Fact]
-    public void An_actor_with_no_stored_order_reads_none_whatever_the_single_agent_keys_hold()
-    {
-        var config = DriverConfig.Empty with { Adapter = "claude-code" };
-        config = config.WithIntake("codex-acp").WithHelper("claude-code-acp");
-
-        foreach (var actor in ActorChoices.Ids) Assert.Empty(ActorChoices.Effective(actor, config));
-        // Second opinion and Partner name no agent of their own, and Helper is HelperChoice.Candidates: their callers decide.
-        Assert.Empty(ActorChoices.Effective("opinion", config));
-        Assert.Empty(ActorChoices.Effective("partner", config));
-        Assert.Empty(ActorChoices.Effective("helper", config));
-        // Absent means off, as today.
-        Assert.Empty(ActorChoices.Effective("intake", DriverConfig.Empty));
-        Assert.Equal("before", ActorView.Of("build", config).State);
-        Assert.Equal("off", ActorView.Of("intake", DriverConfig.Empty).State);
-    }
-
-    [Fact]
     public void A_set_order_is_read_in_its_order_each_entry_carrying_what_it_names()
     {
         var config = ActorChoices.With(DriverConfig.Empty, "build", [Opus, Sonnet]);
@@ -90,73 +73,17 @@ public sealed class ActorChoicesTests
     }
 
     [Fact]
-    public void Setting_build_writes_adapter_through_and_keeps_chat_and_brainstorm_on_the_agent_they_ran()
+    public void The_order_survives_the_file()
     {
-        var config = DriverConfig.Empty with { Adapter = "claude-code" };
-
-        var after = ActorChoices.With(config, "build", [Codex, Opus], out var kept);
-
-        Assert.Equal("codex-acp", after.Adapter);
-        Assert.Equal(["chat", "brainstorm"], kept);
-        Assert.Equal([new ActorEffective("claude-code", null, null, "1")], ActorChoices.Effective("chat", after));
-        Assert.Equal([new ActorEffective("claude-code", null, null, "1")], ActorChoices.Effective("brainstorm", after));
-    }
-
-    [Fact]
-    public void Set_build_then_clear_chat_then_change_build_leaves_chat_on_the_agent_it_ran()
-    {
-        // A cleared Chat reads no agent of its own, and the next write that changes `adapter` freezes it where `adapter` stood.
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "claude-code" }, "build", [Codex]);
-        config = ActorChoices.With(config, "chat", null);
-        Assert.Null(ActorChoices.FirstAgent("chat", config));
-
-        config = ActorChoices.With(config, "build", [Opus], out var kept);
-
-        Assert.Equal(["chat"], kept);
-        Assert.Equal("codex-acp", ActorChoices.FirstAgent("chat", config));
-        Assert.Equal("claude-code", ActorChoices.FirstAgent("brainstorm", config));
-        Assert.Equal("claude-code", config.Adapter);
-    }
-
-    [Fact]
-    public void A_write_that_leaves_adapter_as_it_was_makes_nothing_explicit()
-    {
-        var config = DriverConfig.Empty with { Adapter = "claude-code" };
-
-        var after = ActorChoices.With(config, "build", [Opus, Codex], out var kept);
-
-        Assert.Empty(kept);
-        Assert.False(after.Actors.ContainsKey("chat"));
-        Assert.Null(ActorChoices.FirstAgent("chat", after));
-    }
-
-    [Fact]
-    public void Intake_and_ask_daoris_write_their_keys_through_and_off_is_absent()
-    {
-        var config = ActorChoices.With(DriverConfig.Empty, "intake", [Codex, Opus]);
-        config = ActorChoices.With(config, "ask-daoris", []);
-
-        Assert.Equal("codex-acp", config.IntakeAdapter);
-        Assert.Null(config.HelperAdapter);
-        Assert.Equal("off", ActorView.Of("ask-daoris", config).State);
-    }
-
-    [Fact]
-    public void The_order_survives_the_file_and_an_older_build_reads_the_legacy_projection()
-    {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "claude-code" }, "build", [Codex, Opus]);
+        var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") }, "build", [Codex, Opus]);
         config = ActorChoices.With(config, "intake", [Sonnet]);
 
-        var text = config.ToJson();
-        var read = DriverConfig.Parse(text);
+        var read = DriverConfig.Parse(config.ToJson());
 
         Assert.Equal(config.Actors["build"], read.Actors["build"]);
         Assert.Equal(config.Actors["chat"], read.Actors["chat"]);
+        Assert.Equal(config.Actors["intake"], read.Actors["intake"]);
         Assert.Empty(read.ActorErrors);
-        // What a build before row c reads (round 4, Codex 4): `adapter` for Build, Chat and an unnamed Brainstorm, Build's first agent;
-        // `intakeAdapter`; no model anywhere in the keys it knows.
-        Assert.Contains("\"adapter\": \"codex-acp\"", text, StringComparison.Ordinal);
-        Assert.Contains("\"intakeAdapter\": \"claude-code\"", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -175,52 +102,6 @@ public sealed class ActorChoicesTests
         Assert.Equal("claude-code", ActorChoices.FirstAgent("build", ActorChoices.With(read, "build", [Opus])));
     }
 
-    [Fact]
-    public void The_old_intake_and_helper_doors_clear_their_actor_and_the_key_names_no_agent_to_run()
-    {
-        var config = ActorChoices.With(DriverConfig.Empty, "intake", [Codex]);
-
-        config = config.WithIntake("claude-code-acp");
-
-        Assert.False(config.Actors.ContainsKey("intake"));
-        Assert.Equal("claude-code-acp", config.IntakeAdapter);
-        Assert.Null(ActorChoices.FirstAgent("intake", config));
-    }
-
-    /// <summary>
-    /// MODELROLE1d (D205 §6.4, design §13's census): <c>driver intake|helper</c>, <c>SET_ACTOR</c> and <c>setting_propose</c>'s doors
-    /// write Intake's and Ask Daoris's one-choice order; the old setters that take an actor back to as before are left to tests and a
-    /// configuration's own reading, so no production door writes <c>intakeAdapter</c> or <c>helperAdapter</c> past the one judge.
-    /// </summary>
-    [Fact]
-    public void No_door_writes_the_intake_or_helper_key_past_the_actor()
-    {
-        var root = EveryChildIsHandedTheToolsTests.SourceRoot();
-        var writers = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
-            .Where(file => !file.Contains(".Tests", StringComparison.Ordinal)
-                && !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                && Path.GetFileName(file) != "DriverConfig.cs")
-            .Where(file => File.ReadAllText(file) is var text && (text.Contains(".WithIntake(", StringComparison.Ordinal) || text.Contains(".WithHelper(", StringComparison.Ordinal)))
-            .Select(Path.GetFileName)
-            .ToList();
-
-        Assert.Empty(writers);
-    }
-
-    [Fact]
-    public void The_old_intake_and_helper_verbs_write_a_one_choice_order_or_off()
-    {
-        var on = ActorChoices.With(DriverConfig.Empty, "intake", [new ActorChoice("codex-acp")]);
-        var off = ActorChoices.With(on, "ask-daoris", []);
-
-        Assert.Equal([new ActorChoice("codex-acp")], on.Actors["intake"]);
-        Assert.Equal("codex-acp", on.IntakeAdapter);
-        Assert.Empty(off.Actors["ask-daoris"]);
-        Assert.Null(off.HelperAdapter);
-        Assert.Equal("off", ActorView.Of("ask-daoris", off).State);
-    }
-
     /// <summary>
     /// FOUNDATION1 mod-viii: the room's facts read the first agent of an order through the settings' <c>ActorKey.FirstAgent</c>, which the
     /// actors' own reading answers through, so the two are one rule: the same agent for every actor in each state an order is in (stored, off,
@@ -232,9 +113,9 @@ public sealed class ActorChoicesTests
         var states = new[]
         {
             DriverConfig.Empty,
-            DriverConfig.Empty with { Adapter = "claude-code", IntakeAdapter = "codex-acp", HelperAdapter = "dsh" },
-            ActorChoices.With(DriverConfig.Empty with { Adapter = "claude-code" }, "build", [Codex, Opus]),
-            ActorChoices.With(ActorChoices.With(DriverConfig.Empty with { IntakeAdapter = "codex-acp" }, "intake", []), "ask-daoris", [Sonnet]),
+            DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code", "codex-acp", "dsh") },
+            ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") }, "build", [Codex, Opus]),
+            ActorChoices.With(ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code", "codex-acp") }, "intake", []), "ask-daoris", [Sonnet]),
         };
 
         foreach (var config in states)

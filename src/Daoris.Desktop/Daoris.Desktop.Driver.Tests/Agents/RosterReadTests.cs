@@ -78,7 +78,7 @@ public sealed class RosterReadTests : IDisposable
     private static Task<LoginState> NoAsk(string owner, string account, CancellationToken ct) =>
         throw new InvalidOperationException($"`{owner}` account `{account}` was asked its status.");
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "agent" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("agent") };
 
     [Fact]
     public async Task Reading_the_roster_at_a_cold_cache_asks_no_account_and_says_none_was_read()
@@ -142,14 +142,14 @@ public sealed class RosterReadTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "gone", "account-1"));
         new HarnessSettings().WithDefault("gone", "account-1").Save(Settings);
         var roster = Roster(NoAsk);
-        Assert.False((await roster.ReportAsync("gone", Config with { Adapter = "gone" }))!.Present);
+        Assert.False((await roster.ReportAsync("gone", Config with { Actors = StaffedRoles.On("gone") }))!.Present);
         File.WriteAllText(Gone, "");
 
-        var wiring = await roster.WiringAsync("gone", Config with { Adapter = "gone" }, "aurora");
+        var wiring = await roster.WiringAsync("gone", Config with { Actors = StaffedRoles.On("gone") }, "aurora");
 
         Assert.Contains("is not installed on this machine", wiring.Refusal);
 
-        var selection = await roster.SelectAsync("gone", Config with { Adapter = "gone" }, "aurora", null);
+        var selection = await roster.SelectAsync("gone", Config with { Actors = StaffedRoles.On("gone") }, "aurora", null);
 
         Assert.True(selection.Allowed, selection.Refusal);
     }

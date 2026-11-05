@@ -40,7 +40,7 @@ public sealed class HandOverLookTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static DriverConfig Config() => DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
+    private static DriverConfig Config() => DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] };
 
     private readonly HashSet<string> _dead = new(StringComparer.Ordinal);
 

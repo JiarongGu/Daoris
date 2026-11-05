@@ -28,7 +28,7 @@ public sealed class RoleCatalogTests : IDisposable
     internal static StoredRole Stored(RoleRecord role, long revision = 1) => new(role.Id, "set", role.Json(), revision);
 
     private static DriverConfig Staffed(string actor, params ActorChoice[] choices) =>
-        ActorChoices.With(DriverConfig.Empty with { Adapter = "claude" }, actor, choices);
+        ActorChoices.With(StaffedRoles.Config("claude"), actor, choices);
 
     [Fact]
     public void The_catalogue_s_work_vocabulary_is_the_participant_s_work_codes()
@@ -89,10 +89,10 @@ public sealed class RoleCatalogTests : IDisposable
         var catalog = RoleCatalog.Of([]);
         DriverConfig[] configs =
         [
-            DriverConfig.Empty with { Adapter = "claude", IntakeAdapter = "codex", HelperAdapter = "claude" },
-            DriverConfig.Empty with { Adapter = "claude" },
+            DriverConfig.Empty with { Actors = StaffedRoles.On("claude", "codex", "claude") },
+            StaffedRoles.Config("claude"),
             Staffed("build", new ActorChoice("codex", "gpt"), new ActorChoice("claude")),
-            Staffed("intake") with { IntakeAdapter = null },
+            Staffed("intake"),
             Staffed("brainstorm", new ActorChoice("claude"), new ActorChoice("codex")),
         ];
 
@@ -208,7 +208,7 @@ public sealed class RoleCatalogTests : IDisposable
         // FOUNDATION1y-i: no role is not off; the work's starts hold until the person gives it one.
         var found = catalog.RoleFor(ParticipantWork.Intake, Machine);
         Assert.Equal((null, RoleCatalog.NoRole(ParticipantWork.Intake)), (found.Role, found.Held));
-        var held = Assert.Throws<DriverException>(() => catalog.Order(ParticipantWork.Intake, Machine, DriverConfig.Empty with { IntakeAdapter = "codex" }));
+        var held = Assert.Throws<DriverException>(() => catalog.Order(ParticipantWork.Intake, Machine, DriverConfig.Empty with { Actors = StaffedRoles.On("claude", "codex") }));
         Assert.Equal(RoleCatalog.NoRole(ParticipantWork.Intake), held.Message);
         Assert.Empty(RoleCatalog.Of([]).Order(ParticipantWork.Intake, Machine, ActorChoices.With(DriverConfig.Empty, "intake", [])));
     }
@@ -254,7 +254,6 @@ public sealed class RoleCatalogTests : IDisposable
 
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude",
             Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["checker"] = [new ActorChoice("codex", "gpt"), new ActorChoice("claude")] },
         };
         Assert.Equal(ActorChoices.Effective("checker", config), catalog.Order("checker", ParticipantWork.Review, InWorkspace, config));
@@ -289,7 +288,7 @@ public sealed class RoleCatalogTests : IDisposable
         foreach (var (role, work, place, said) in held)
         {
             Assert.Equal((null, said), (catalog.Named(role, work, place).Role, catalog.Named(role, work, place).Held));
-            Assert.Equal(said, Assert.Throws<DriverException>(() => catalog.Order(role, work, place, DriverConfig.Empty with { Adapter = "claude" })).Message);
+            Assert.Equal(said, Assert.Throws<DriverException>(() => catalog.Order(role, work, place, StaffedRoles.Config("claude"))).Message);
         }
 
         // Another role's record that does not read holds the work's own search, never a step naming a role that reads.

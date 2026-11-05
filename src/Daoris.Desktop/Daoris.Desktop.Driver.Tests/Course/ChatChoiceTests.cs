@@ -58,7 +58,7 @@ public sealed class ChatChoiceTests : IDisposable
 
     /// <summary>The machine's <c>adapter</c> key at <paramref name="adapter"/>, and Chat's order at <paramref name="chat"/>.</summary>
     private static DriverConfig Config(string adapter, params string[] chat) =>
-        ActorChoices.With(DriverConfig.Empty with { Adapter = adapter }, "chat", [.. chat.Select(agent => new ActorChoice(agent, null))]);
+        ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On(adapter) }, "chat", [.. chat.Select(agent => new ActorChoice(agent, null))]);
 
     /// <summary>A chat that ended with its tree gone and the words of the person's waiting, its conversation kept for <c>talk</c>.</summary>
     private ChatLedger Ended(string? adapter)

@@ -73,7 +73,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
             {
                 Drivable = ["engine"],
                 Trees = ["engine"],
-                Adapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 10,
                 PollSeconds = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>>
