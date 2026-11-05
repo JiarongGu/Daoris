@@ -113,9 +113,9 @@ internal static class TreeScratch
         var found = new List<string>();
         var folder = Path.Combine(treeRoot, entry.TrimEnd('/'));
         if (!Directory.Exists(folder)) return found;
+        if (tooLarge = OverLimit(folder)) return found;
         var seen = 0;
-        var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
-        foreach (var file in Directory.EnumerateFiles(folder, "*", options))
+        foreach (var file in Directory.EnumerateFiles(folder, "*", Walk))
         {
             if (++seen > ScratchWalkLimit)
             {
@@ -129,6 +129,15 @@ internal static class TreeScratch
 
         return found;
     }
+
+    private static readonly EnumerationOptions Walk = new() { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
+
+    /// <summary>
+    /// Whether the folder holds more than <see cref="ScratchWalkLimit"/> files, counted by name alone: such a folder is too large to look
+    /// through whatever its files hold, so it is answered so before any file's time is read or its bytes compared, which in a build of
+    /// gigabytes costs tens of seconds for the same answer.
+    /// </summary>
+    private static bool OverLimit(string folder) => Directory.EnumerateFiles(folder, "*", Walk).Skip(ScratchWalkLimit).Any();
 
     /// <summary>Whether an ignored path lies under a build or dependency folder (any segment of it names one).</summary>
     internal static bool UnderBuildFolder(string path) =>
@@ -148,9 +157,9 @@ internal static class TreeScratch
         var found = new List<string>();
         var folder = Path.Combine(treeRoot, entry.TrimEnd('/'));
         if (!Directory.Exists(folder)) return found;
+        if (tooLarge = OverLimit(folder)) return found;
         var seen = 0;
-        var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
-        foreach (var file in Directory.EnumerateFiles(folder, "*", options))
+        foreach (var file in Directory.EnumerateFiles(folder, "*", Walk))
         {
             if (++seen > ScratchWalkLimit)
             {
