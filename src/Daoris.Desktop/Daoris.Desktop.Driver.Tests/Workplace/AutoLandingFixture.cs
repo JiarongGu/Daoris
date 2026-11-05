@@ -20,7 +20,6 @@ public abstract class AutoLandingFixture : IDisposable
     protected readonly string _scratch;
     protected readonly string _home;
     protected readonly World _world = new();
-    protected readonly List<object> _frames = [];
     protected readonly List<LandingLine> _lines = [];
 
     protected AutoLandingFixture()
@@ -76,8 +75,7 @@ public abstract class AutoLandingFixture : IDisposable
         var reads = new PressQuests(_world.QuestAsync);
         if (quest is not null) await reads.FindAsync(quest);
         var pressed = await reads.PressedAsync("s1", quest);
-        return await new SessionTrees(_home, Plugins()).LandAsync(
-            tree, new LandingSubject("s1", quest, "Fix the gap"), judged: pressed?.Judged, beforePush: pressed?.BeforePush);
+        return await new SessionTrees(_home).LandAsync(tree, new LandingSubject("s1", quest, "Fix the gap"), judged: pressed?.Judged);
     }
 
     protected const string PushBranch = "feature/q1-fix-the-gap";
@@ -138,45 +136,6 @@ public abstract class AutoLandingFixture : IDisposable
             return Task.FromResult<SayAnswer?>(new SayAnswer(true, "kept for the session to go on with."));
         }
     }
-
-    private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel
-    {
-        public IReadOnlyList<string> Points => [HookPoints.Land];
-        public bool Alive => true;
-        public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
-        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(land(payload));
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    }
-
-    protected bool _pushes = true;
-
-    // What happens as the plugin's process starts, before its frame (LANDPIN2), and as it lands, before it answers (LANDRACE1).
-    protected Action? _starting;
-    protected Action? _landing;
-
-    // The plugin's next answer, once, where a test names one (LANDRACE1's review).
-    protected Func<PluginLanding>? _answer;
-
-    /// <summary>The rule's plugin, faked on its channel: every frame it is told is kept, whichever door told it.</summary>
-    protected LandingPlugins Plugins() => new(_home, start: (_, _, _) =>
-    {
-        _starting?.Invoke();
-        return Task.FromResult<IHookChannel>(new FakeLander(frame =>
-        {
-            lock (_frames) _frames.Add(frame);
-            _landing?.Invoke();
-            if (_answer is { } answer)
-            {
-                _answer = null;
-                return answer();
-            }
-
-            return _pushes
-                ? new PluginLanding(Plugin, true, "https://example.test/pull/7", "pushed it.")
-                : new PluginLanding(Plugin, false, null, "gh is not signed in — run `gh auth login`.");
-        }));
-    });
 
     protected static JsonElement Json(object frame) => JsonDocument.Parse(JsonSerializer.Serialize(frame)).RootElement.Clone();
 
@@ -247,16 +206,7 @@ public abstract class AutoLandingFixture : IDisposable
 
     /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
     protected Task<string?> ClosesAsync(OpinionDue due) =>
-        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None,
-            pushHeld: LandPerformer.PushHeld(_home));
-
-    protected void InstallManifest()
-    {
-        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,Plugin);
-        Directory.CreateDirectory(folder);
-        File.WriteAllText(Path.Combine(folder, "plugin.json"),
-            """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
-    }
+        OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None);
 
     protected static async Task<string> HeadAsync(string tree) => (await GitAsync(tree, "rev-parse", "HEAD")).Trim();
 

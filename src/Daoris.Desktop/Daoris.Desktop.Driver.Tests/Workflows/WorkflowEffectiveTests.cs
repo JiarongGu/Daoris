@@ -13,7 +13,7 @@ public sealed class WorkflowEffectiveTests : IDisposable
     private const string Repo = "engine";
     private const string Space = "aurora";
 
-    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("example.pull-request", [HookPoints.Land, HookPoints.State])];
+    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("example.pull-request", [HookPoints.Perform, HookPoints.State])];
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workflow-effective-" + Guid.NewGuid().ToString("N")[..8]);
 

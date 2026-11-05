@@ -83,9 +83,6 @@ public sealed class HookChangedTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
-            throw new DriverException("the loop never asks a plugin to land work");
-
         public async Task ChangedAsync(object payload, CancellationToken ct)
         {
             if (changed is not null) await changed(payload).WaitAsync(ct);
@@ -132,7 +129,7 @@ public sealed class HookChangedTests : IDisposable
     {
         Assert.Equal("state/changed", HookPoints.StateChanged);
         // A point is additive (PLUGHOOK1a): the earlier points keep their places.
-        Assert.Equal([HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State, HookPoints.StateChanged], HookPoints.All.Take(5));
+        Assert.Equal([HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.State, HookPoints.StateChanged], HookPoints.All.Take(4));
         // The loop's set keeps its process: the shell's bus tells it, and a landing never does.
         Assert.Contains(HookPoints.StateChanged, HookPoints.Loop);
         var kit = PluginKit.Find(HookPoints.StateChanged)!;
@@ -144,7 +141,7 @@ public sealed class HookChangedTests : IDisposable
     public void The_frame_names_what_moved_and_the_sessions_it_was_about_and_nothing_else()
     {
         Assert.Equal(
-            """{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""",
+            """{"scopes":["sessions","landing","diff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""",
             Json(HookFrames.Changed(PluginKit.SampleChange)));
         // A change about no one session names none: any.
         Assert.Equal("""{"scopes":["sweep"],"sessions":null}""", Json(HookFrames.Changed(new StateChangedFrame(["sweep"], null))));

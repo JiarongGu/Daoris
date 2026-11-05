@@ -108,22 +108,6 @@ public sealed class TreesPlanWordsTests
     }
 
     [Fact]
-    public void A_hand_plan_says_the_plugin_its_commits_and_what_would_refuse_it_after_the_plugins_own_lines()
-    {
-        var plan = new HandPlan("game", "daoris/landed", "pushes", "its checkout is gone", "#12", 3);
-
-        var said = TreesPlanWords.HandPlan(plan, ["  plugin:pushes  asked"]);
-
-        Assert.Equal(
-            [
-                "  plugin:pushes  asked",
-                "trees: handing on `daoris/landed` (game) would give plugin `pushes` its 3 commit(s) to push and open the pull request for. "
-                + "Its last pull request: #12 It would be refused now: its checkout is gone",
-            ],
-            said.Out);
-    }
-
-    [Fact]
     public void An_entry_with_no_part_to_land_says_so()
     {
         var entry = new SessionEntry("k", "ask:a1", "game", SessionGroup.Ended, "s1", []);
@@ -170,7 +154,7 @@ public sealed class TreesPlanWordsTests
     public static TheoryData<string> Reads => new()
     {
         nameof(OpenRoutes.SweepPlan), nameof(OpenRoutes.TreesSyncPlan), nameof(OpenRoutes.Landing), nameof(OpenRoutes.EntryLanding),
-        nameof(OpenRoutes.AskLanding), nameof(OpenRoutes.HandoffPlan),
+        nameof(OpenRoutes.AskLanding),
     };
 
     [Theory]
@@ -184,7 +168,6 @@ public sealed class TreesPlanWordsTests
             nameof(OpenRoutes.SweepPlan) => TreesPlanWords.CleanPlan(new SweepPlan([Branch(SweepKind.Empty)], [Landed()]), [], Clean),
             nameof(OpenRoutes.TreesSyncPlan) => TreesPlanWords.SyncPlan(
                 new SyncPlan([Pull()], [], []) { Looked = [new SyncRepository("game", "default", true)] }, Sync, DateTimeOffset.UtcNow),
-            nameof(OpenRoutes.HandoffPlan) => TreesPlanWords.HandPlan(new HandPlan("game", "b", "pushes", null, null, 1), ["  plugin:pushes  asked"]),
             _ => TreesPlanWords.EntryPlan(["trees: accepting `k` (game) would merge its work into `main`, 1 tree(s), oldest first.", "  s1  is held: review"]),
         };
         await using var home = new InstanceTestHome();

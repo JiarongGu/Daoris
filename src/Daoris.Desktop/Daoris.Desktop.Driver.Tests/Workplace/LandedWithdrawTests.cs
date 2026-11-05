@@ -133,7 +133,8 @@ public sealed class LandedWithdrawTests : LandedFixture
     public async Task A_branch_a_plugin_pushed_whose_pull_request_may_still_carry_it_is_refused()
     {
         var (root, trees, branch, tip) = await DiffersAsync();
-        trees.Recorded.Pushed("engine", branch, new PluginLanding("acme.lands", true, "https://example.test/pr/7", "pushed it."), tip);
+        trees.Recorded.Pushed("engine", branch, tip);
+        trees.Recorded.PullRequested("engine", branch, "acme.lands", "https://example.test/pr/7");
 
         var done = await trees.WithdrawLandedAsync(root, "engine", branch, Why);
 

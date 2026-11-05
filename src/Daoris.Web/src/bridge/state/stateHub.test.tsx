@@ -75,27 +75,26 @@ describe('the state hub (STATE_CHANGED)', () => {
     expect(invalid(keys.sweep)).toBe(false);
   });
 
-  it("each scope asks its own family again, and a named session narrows the reviews and hand-offs to its own", () => {
+  it("each scope asks its own family again, and a named session narrows the reviews to its own", () => {
     const { invalid } = holding(
-      keys.allSessions, keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2'), keys.sweep, treesSyncScopeKey,
+      keys.allSessions, keys.diff('s1'), keys.diff('s2'), keys.sweep, treesSyncScopeKey,
       keys.lines, keys.workflow('repository', 'engine'));
 
-    changed({ scopes: ['sessions', 'diff', 'handOff', 'sweep', 'treesSync', 'lines'], sessions: ['s1'] });
+    changed({ scopes: ['sessions', 'diff', 'sweep', 'treesSync', 'lines'], sessions: ['s1'] });
 
-    for (const key of [keys.allSessions, keys.diff('s1'), keys.handOff('s1'), keys.sweep, treesSyncScopeKey, keys.lines,
+    for (const key of [keys.allSessions, keys.diff('s1'), keys.sweep, treesSyncScopeKey, keys.lines,
       keys.workflow('repository', 'engine')]) {
       expect(invalid(key)).toBe(true);
     }
     expect(invalid(keys.diff('s2'))).toBe(false);
-    expect(invalid(keys.handOff('s2'))).toBe(false);
   });
 
-  it("a change about no one session asks every session's review and hand-off again", () => {
-    const { invalid } = holding(keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2'));
+  it("a change about no one session asks every session's review again", () => {
+    const { invalid } = holding(keys.diff('s1'), keys.diff('s2'));
 
-    changed({ scopes: ['diff', 'handOff'] });
+    changed({ scopes: ['diff'] });
 
-    for (const key of [keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2')]) expect(invalid(key)).toBe(true);
+    for (const key of [keys.diff('s1'), keys.diff('s2')]) expect(invalid(key)).toBe(true);
   });
 
   /**
@@ -414,7 +413,6 @@ describe('the state hub (UNDER_WAY)', () => {
         <Hub />
         <Step route="LAND_SESSION_TREE" session="s1" />
         <Step route="LAND_SESSION_TREE" session="s2" />
-        <Step route="HANDOFF" session="s1" />
         <Step route="LAND_SESSION_TREE" session={null} />
       </QueryClientProvider>,
     );
@@ -429,7 +427,6 @@ describe('the state hub (UNDER_WAY)', () => {
     await settled();
     expect(read('LAND_SESSION_TREE', 's1')).toBe('gate');
     expect(read('LAND_SESSION_TREE', 's2')).toBe('none');
-    expect(read('HANDOFF', 's1')).toBe('none');
     expect(read('LAND_SESSION_TREE', null)).toBe('none');
 
     told({ seq: 3, presses: [{ ...LANDING_S1, step: 'landing' }] });

@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { EntryAcceptPlan } from '../../work/review/EntryAccept';
-import type { LandingConflict, LeftOutCommit, PluginLanding } from './trees';
+import type { LandingConflict, LeftOutCommit } from './trees';
 import { call, pluginBound, pressBound } from '../call';
 
 export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
@@ -17,7 +17,6 @@ export type EntryPartLanded = {
   done?: boolean | null;
   message?: string | null;
   branch?: string | null;
-  plugin?: PluginLanding | null;
   leftOut?: LeftOutCommit[] | null;
   conflict?: LandingConflict | null;
 };

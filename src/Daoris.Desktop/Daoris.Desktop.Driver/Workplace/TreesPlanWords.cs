@@ -109,19 +109,6 @@ public static class TreesPlanWords
         return new(said, [], 0);
     }
 
-    /// <summary>What handing a landed branch on would do, in one line — and what would refuse it (WSR5b).</summary>
-    public static string HandPlanned(HandPlan plan)
-    {
-        var line = plan.Plugin is { } plugin
-            ? $"trees: handing on `{plan.Branch}` ({plan.Repository}) would give plugin `{plugin}` its {plan.Commits} commit(s) to push and open the pull request for."
-            : $"trees: `{plan.Branch}` ({plan.Repository}) has no plugin named to hand it to.";
-        if (plan.PullRequest is { } pr) line += $" Its last pull request: {pr}";
-        return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
-    }
-
-    /// <summary><c>trees hand --plan</c>: the plan's one line, after the plugin's own lines.</summary>
-    public static TreesSaid HandPlan(HandPlan plan, IReadOnlyList<string> pluginLines) => new([.. pluginLines, HandPlanned(plan)], [], 0);
-
     /// <summary>
     /// What an entry's Accept would do, in lines (ACCEPTALL1e): where its parts land, then each part's own words: what it shares,
     /// what it leaves out, what it conflicts with, what holds it and what a later part superseded; the page's plan in a terminal's words.

@@ -256,7 +256,6 @@ public sealed class LandDeliveryGitTests : IDisposable
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
 
         Assert.True(landed.Landed, landed.Message);
-        Assert.Null(landed.Plugin);
         Assert.Equal(tip, await RevAsync(root, $"refs/heads/{Named}"));
         Assert.Equal(tip, trees.Recorded.Of("engine", Named)?.Tip);
         Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], Reopened().Phases(claim.Key).Select(each => each.Phase));

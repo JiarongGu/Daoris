@@ -22,9 +22,6 @@ public interface IHookChannel : IAsyncDisposable
 
     Task EndedAsync(object payload, CancellationToken ct);
 
-    /// <summary>The landing's one frame (D100): the branch Daoris made, answered with what the plugin did with it.</summary>
-    Task<PluginLanding> LandAsync(object payload, CancellationToken ct);
-
     /// <summary>
     /// A landed branch's pull request (PLUGHOOK1a, D148), answered with its state. A channel that has no such answer fails as
     /// the plugin's error, which keeps everything where it is.

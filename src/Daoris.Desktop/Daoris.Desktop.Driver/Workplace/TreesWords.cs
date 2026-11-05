@@ -40,7 +40,7 @@ public static class TreesWords
     /// </summary>
     public static TreesSaid Land(TreeLanding landed, IReadOnlyList<string> pluginLines) =>
         new([.. pluginLines, $"trees: {landed.Message}"], [],
-            landed.Landed && landed.Withheld is null && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
+            landed.Landed ? 0 : 1);
 
     /// <summary>
     /// <c>trees land &lt;session&gt;</c> with no running Daoris (WORKFLOWCLEAN1 1c; the cleanup design §2.1): the verb never lands. For a run
@@ -56,20 +56,9 @@ public static class TreesWords
             : new(["trees: accepted; Daoris lands it at its next pass."], [], 0);
     }
 
-    /// <summary><c>trees hand</c>: the plugin's lines, then the hand-off's sentence; 1 where the branch was not pushed.</summary>
-    public static TreesSaid Hand(TreeHand handed, IReadOnlyList<string> pluginLines) =>
-        new([.. pluginLines, $"trees: {handed.Message}"], [], handed.Handed ? 0 : 1);
-
-    /// <summary><c>trees hand</c> refused before it speaks to any plugin: a sentence on the error, exit 1.</summary>
-    public static TreesSaid HandRefused(string sentence) => new([], [$"trees: {sentence}"], 1);
-
     /// <summary>The sentence for a branch name that stands in more than one repository, so the person says which.</summary>
     public static string NamesSeveral(string named, IEnumerable<string> repositories) =>
         $"`{named}` names a landed branch in {string.Join(", ", repositories.Select(r => $"`{r}`"))} — say which with `--repository <name>`.";
-
-    /// <summary>The sentence for a landed branch whose repository has no checkout here to hand it from.</summary>
-    public static string HandNoCheckout(string repository, string branch) =>
-        $"`{repository}` has no checkout on this machine, so there is no `{branch}` here to hand on.";
 
     /// <summary><c>trees clean --yes</c>: each branch removed or kept with why, the folders left, and the count.</summary>
     public static TreesSaid Clean(SweepDone done)

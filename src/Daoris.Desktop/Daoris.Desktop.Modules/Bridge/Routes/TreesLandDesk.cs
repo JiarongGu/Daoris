@@ -248,7 +248,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     /// </summary>
     private static object Refused(string session, TreesSaid said) => new
     {
-        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,
+        Session = session, Done = false, Message = Sentence(said), Branch = (string?)null,
         Review = (object?)null, Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null,
         Said = said.ToWire(), Followed = Array.Empty<string>(), Carried = (object?)null,
     };

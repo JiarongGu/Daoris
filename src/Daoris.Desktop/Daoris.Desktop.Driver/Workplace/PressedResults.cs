@@ -31,100 +31,14 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
     {
         if (quest is null) return null;
         var pressed = await FindAsync(quest, ct).ConfigureAwait(false);
-        return QuestResults.Judged(pressed) ? new PressedResult(session, pressed, token => read(quest.TrimStart('#'), token), late, read) : null;
-    }
-
-    /// <summary>
-    /// The result a person's hand-off of <paramref name="entry"/> is made on (FABRIC-CLOSE1h8, D173's note): the quest of the session
-    /// that last moved the branch (<see cref="LandedBranch.LastSession"/>), not its landing's first, read where the door names the
-    /// branch. The hand-off judges it once more under the branch's hold, just before its plugin is told (<see cref="HandedResult.BeforePush"/>).
-    /// </summary>
-    /// <param name="sessionQuest">The quest a session serves, null for none (<see cref="ServiceClient.SessionQuestAsync"/>).</param>
-    /// <param name="read">The service's quest by id, as it holds it now (<see cref="ServiceClient.FindQuestAsync"/>).</param>
-    public static async Task<HandedResult> HandedAsync(
-        LandedBranch entry, Func<string, CancellationToken, Task<string?>> sessionQuest,
-        Func<string, CancellationToken, Task<QuestView?>> read, CancellationToken ct = default)
-    {
-        // The record keeps no quest per advance, so the session's own is asked: one read, and one more only where it names a quest.
-        var session = entry.LastSession();
-        var quest = await sessionQuest(session, ct).ConfigureAwait(false);
-        var pressed = await new PressQuests(read).PressedAsync(session, quest, ct: ct).ConfigureAwait(false);
-        return new HandedResult(session, pressed, sessionQuest, read);
-    }
-
-    /// <inheritdoc cref="HandedAsync(LandedBranch, Func{string, CancellationToken, Task{string?}}, Func{string, CancellationToken, Task{QuestView?}}, CancellationToken)"/>
-    public static Task<HandedResult> HandedAsync(LandedBranch entry, ServiceClient service, CancellationToken ct = default) =>
-        HandedAsync(entry, service.SessionQuestAsync, service.FindQuestAsync, ct);
-}
-
-/// <summary>
-/// What a person's hand-off is made on (FABRIC-CLOSE1h8 and FABRIC-CLOSE1h10, D173's notes), and its judgement under the branch's hold
-/// just before its plugin is told (<see cref="TreeHandOffs.HandAsync"/>'s <c>beforePush</c>): the session that last moved the branch as
-/// the door read it, and that session's result where one is in.
-/// </summary>
-public sealed class HandedResult
-{
-    private readonly Func<string, CancellationToken, Task<string?>> _sessionQuest;
-    private readonly Func<string, CancellationToken, Task<QuestView?>> _read;
-
-    internal HandedResult(
-        string session, PressedResult? pressed, Func<string, CancellationToken, Task<string?>> sessionQuest,
-        Func<string, CancellationToken, Task<QuestView?>> read)
-    {
-        Session = session;
-        Pressed = pressed;
-        _sessionQuest = sessionQuest;
-        _read = read;
-    }
-
-    /// <summary>The session that last moved the branch as the door read it (<see cref="LandedBranch.LastSession"/>).</summary>
-    public string Session { get; }
-
-    /// <summary>
-    /// Its result as the door read it; null where it holds the hand-off to nothing, so it hands on as before: a session on no quest, or a
-    /// quest whose result is not in (FABRIC-CLOSE1h8's decision 5).
-    /// </summary>
-    public PressedResult? Pressed { get; }
-
-    /// <summary>
-    /// The hand-off's judgement under the branch's hold, just before its plugin is told: told the branch's record as it reads there (the
-    /// session that last moved it, and what the record keeps of that session's advance), and whether the hold waited. The sentence that
-    /// holds the push back (<see cref="TreeHand.Withheld"/>), or null.
-    /// </summary>
-    /// <remarks>
-    /// The person's hand-off stays held to the branch's last session alone (FABRIC-CLOSE1h8's decision 1): it is the person's own word for
-    /// the branch, and the way on every held-back push names, so an earlier session's work it carries is not judged here (FABRIC-CLOSE1h11
-    /// judges the landings' own pushes and the look's hand-on).
-    /// </remarks>
-    public Func<LandedBranch?, bool, CancellationToken, Task<string?>> BeforePush => BeforePushAsync;
-
-    private async Task<string?> BeforePushAsync(LandedBranch? record, bool waited, CancellationToken ct)
-    {
-        // The parent's decision 4: no later session moved the branch, so it is judged as FABRIC-CLOSE1h8 judges it, with no read more.
-        var last = record?.LastSession() ?? Session;
-        if (string.Equals(last, Session, StringComparison.OrdinalIgnoreCase))
-        {
-            return Pressed is null ? null : await Pressed.OwnBeforePushAsync(waited, ct).ConfigureAwait(false);
-        }
-
-        // FABRIC-CLOSE1h10 (D173's note): another session's done moved the branch on before this hand-off held it, so its work rides this
-        // push. The door never read that session's result, so it is read now, whether or not the hold waited, by the person's rule: a
-        // result no longer in holds the push back, and a hold does not. A session on no quest holds it to nothing, as at the door.
-        // FABRIC-CLOSE1h13: the quest its advance keeps, else the service's answer, and a submission made again since its advance holds it
-        // back too, where the advance keeps the one it was accepted on: the branch carries the work that one replaced.
-        var work = record!.Work().Last(each => string.Equals(each.Session, last, StringComparison.OrdinalIgnoreCase));
-        if ((work.Quest ?? await _sessionQuest(last, ct).ConfigureAwait(false)) is not { } quest) return null;
-        var now = await _read(quest.TrimStart('#'), ct).ConfigureAwait(false);
-        return !QuestResults.Judged(now) ? PressedResult.HeldBack("its quest was taken back", last)
-            : PressedResult.SubmittedSince(work, now) ? PressedResult.HeldBack("its quest's submission was made again", last)
-            : null;
+        return QuestResults.Judged(pressed) ? new PressedResult(session, pressed, token => read(quest.TrimStart('#'), token), late) : null;
     }
 }
 
 /// <summary>
-/// The quest result a person's press was made on (FABRIC-CLOSE1h3, D173's note; the fabric design §E5), and the landing's two judgements
-/// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c> and <c>beforePush</c>): once it holds its tree, and once more just before its
-/// plugin is told. The automatic landing's judgements are <see cref="AutoLander"/>'s, of a world read afresh; these read the one quest.
+/// The quest result a person's press was made on (FABRIC-CLOSE1h3, D173's note; the fabric design §E5), and the landing's judgement
+/// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c>), once it holds its tree. The automatic landing's judgements are
+/// <see cref="AutoLander"/>'s, of a world read afresh; this reads the one quest.
 /// </summary>
 /// <remarks>
 /// <para><b>Only the result moving stops a press</b> (the parent's decisions 1 and 2): a reopen or a done turned down (its quest's result
@@ -140,21 +54,16 @@ public sealed class PressedResult
 {
     private readonly Func<CancellationToken, Task<QuestView?>> _again;
     private readonly bool _late;
-    private readonly Func<string, CancellationToken, Task<QuestView?>>? _read;
 
-    /// <param name="read">The service's quest by id, which judges the other sessions' work its push carries (FABRIC-CLOSE1h11).</param>
-    internal PressedResult(
-        string session, QuestView pressed, Func<CancellationToken, Task<QuestView?>> again, bool late,
-        Func<string, CancellationToken, Task<QuestView?>>? read = null)
+    internal PressedResult(string session, QuestView pressed, Func<CancellationToken, Task<QuestView?>> again, bool late)
     {
         Session = session;
         Pressed = pressed;
         _again = again;
         _late = late;
-        _read = read;
     }
 
-    /// <summary>The session pressed, whose hand-off the push's sentence names.</summary>
+    /// <summary>The session pressed.</summary>
     public string Session { get; }
 
     /// <summary>The quest as the press read it.</summary>
@@ -165,14 +74,6 @@ public sealed class PressedResult
     /// (no branch, no advance, no push); null lets it go on.
     /// </summary>
     public Func<bool, CancellationToken, Task<TreeLanding?>> Judged => JudgedAsync;
-
-    /// <summary>
-    /// The landing's judgement just before its plugin is told, told the branch's record as it reads under the branch's hold and whether
-    /// the push waited: the sentence that holds the push back where the result moved, the branch made and recorded and no plugin spoken
-    /// to (<see cref="TreeLanding.Withheld"/>); null lets it begin. FABRIC-CLOSE1h11 (D173's CLOSELAND1 note): the push carries every
-    /// session's work no push carried yet, so each other one is judged too, by the person's rule (<see cref="Carried"/>).
-    /// </summary>
-    public Func<LandedBranch?, bool, CancellationToken, Task<string?>> BeforePush => BeforePushAsync;
 
     /// <summary>
     /// Why the result <paramref name="pressed"/> stood on moved, read as <paramref name="now"/>: its quest taken back (its result no longer
@@ -196,63 +97,4 @@ public sealed class PressedResult
         };
     }
 
-    private async Task<string?> BeforePushAsync(LandedBranch? record, bool waited, CancellationToken ct) =>
-        await OwnBeforePushAsync(waited, ct).ConfigureAwait(false) ?? await CarriedBeforePushAsync(record, ct).ConfigureAwait(false);
-
-    /// <summary>The press's own result judged just before the push (FABRIC-CLOSE1h3), as the person's hand-off judges its last session's.</summary>
-    internal async Task<string?> OwnBeforePushAsync(bool waited, CancellationToken ct)
-    {
-        if (!waited && !QuestResults.Submitted(Pressed)) return null;
-        var now = await _again(ct).ConfigureAwait(false);
-        return Moved(Pressed, now) is { } why ? HeldBack(why, Session) : null;
-    }
-
-    /// <summary>
-    /// FABRIC-CLOSE1h11: each other session whose work the push carries unpushed, judged on the quest the record keeps for it, read now
-    /// whether or not the push waited: the door never read it. Work the record keeps no quest for (a conversation's, a landing from
-    /// before) holds it to nothing, as a session on no quest does at the person's door; where nothing else is carried, nothing is read.
-    /// </summary>
-    private async Task<string?> CarriedBeforePushAsync(LandedBranch? record, CancellationToken ct)
-    {
-        if (record is null || _read is null) return null;
-        foreach (var work in record.UnpushedBesides(Session))
-        {
-            if (work.Quest is not { } quest) continue;
-            var id = quest.TrimStart('#');
-            if (Carried(work, await _read(id, ct).ConfigureAwait(false)) is { } why)
-            {
-                return HeldBack($"session {work.Session}'s quest #{id}, whose work this push carries, {why}", Session);
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Why another session's work a push carries holds it back by the person's rule (FABRIC-CLOSE1h11): its quest's result no longer in
-    /// (<c>was taken back</c>), or, where the record keeps the submission its work was accepted on, another made since
-    /// (<c>was submitted again</c>, FABRIC-CLOSE1h13); null where it stands, held or not.
-    /// </summary>
-    public static string? Carried(LandedWork work, QuestView? now) =>
-        !QuestResults.Judged(now) ? "was taken back"
-        : SubmittedSince(work, now) ? "was submitted again"
-        : null;
-
-    /// <summary>
-    /// Whether <paramref name="now"/> stands on another submission than the one the record keeps for <paramref name="work"/>
-    /// (FABRIC-CLOSE1h13), by machine and sequence. A record that keeps none, or a quest that answers none, says nothing moved.
-    /// </summary>
-    internal static bool SubmittedSince(LandedWork work, QuestView? now) =>
-        work.Submission is { } was && now?.Submission is { } current
-        && (!string.Equals(current.Machine, was.Machine, StringComparison.Ordinal) || current.Sequence != was.Sequence);
-
-    /// <summary>
-    /// The sentence that holds a person's push back just before its plugin is told, for <paramref name="why"/>: it names the hand-off of
-    /// <paramref name="session"/>, the session whose result moved (FABRIC-CLOSE1h3; FABRIC-CLOSE1h10 for a later session's advance).
-    /// </summary>
-    internal static string HeldBack(string why, string session) =>
-        $"{Capital(why)} before its plugin was told, so its push was not tried: the branch stands, and once you have looked at the quest "
-        + $"as it stands, `daoris tree hand {session}` hands it on";
-
-    private static string Capital(string words) => char.ToUpperInvariant(words[0]) + words[1..];
 }

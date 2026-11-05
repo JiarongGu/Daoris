@@ -43,8 +43,6 @@ public sealed class PlacedWorkTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => throw new DriverException("never asked");
-
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
         public Task WatchAsync(WorkWatchFrame frame, CancellationToken ct)

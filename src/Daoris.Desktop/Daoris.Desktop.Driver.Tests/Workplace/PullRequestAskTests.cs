@@ -17,8 +17,8 @@ public sealed class PullRequestAskTests : IDisposable
 
     public PullRequestAskTests()
     {
-        Install("acme.asks", [HookPoints.Land, HookPoints.State]);
-        Install("acme.other", [HookPoints.Land, HookPoints.State]);
+        Install("acme.asks", [HookPoints.State]);
+        Install("acme.other", [HookPoints.State]);
     }
 
     public void Dispose()
@@ -72,7 +72,7 @@ public sealed class PullRequestAskTests : IDisposable
         {
             "acme.broken" => Task.FromException<IHookChannel>(PluginFailures.Mark(new DriverException("could not start"), PluginEvents.Unstartable))
                 .ContinueWith(task => { starts++; return task; }).Unwrap(),
-            "acme.deaf" => Task.FromResult<IHookChannel>(new Answering([], _ => new PullRequestState(PullRequestStates.Open), points: [HookPoints.Land])),
+            "acme.deaf" => Task.FromResult<IHookChannel>(new Answering([], _ => new PullRequestState(PullRequestStates.Open), points: [HookPoints.SessionEnded])),
             _ => Task.FromResult<IHookChannel>(new Answering([], _ => throw PluginFailures.Mark(new DriverException("az: not signed in"), PluginEvents.Errored))),
         }, clock: () => Now);
 
@@ -189,11 +189,10 @@ public sealed class PullRequestAskTests : IDisposable
     /// <summary>A plugin answering each frame from <paramref name="answer"/>: null waits until the frame's bound ends it.</summary>
     private sealed class Answering(List<string> told, Func<string, PullRequestState?> answer, IReadOnlyList<string>? points = null) : IHookChannel
     {
-        public IReadOnlyList<string> Points => points ?? [HookPoints.Land, HookPoints.State];
+        public IReadOnlyList<string> Points => points ?? [HookPoints.State];
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(new PluginLanding("x", false, null, "x"));
 
         public async Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {
