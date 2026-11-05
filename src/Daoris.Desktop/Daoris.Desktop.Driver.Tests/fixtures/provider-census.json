@@ -154,8 +154,6 @@
     ["Daoris.Desktop.Driver/Participants/Domain/AtWork.cs", "StartsWith(agent)", "l", "behaviour", "the agent whose calls a child's line is seen by"],
     ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"claude-code\"", "l", "behaviour", "the lineage reads which agent a child ran as"],
     ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"codex\"", "l", "behaviour", "the lineage reads which agent a child ran as"],
-    ["Daoris.Desktop.Driver/Participants/Domain/DrivenAccess.cs", ".Wire", "o", "behaviour", "the driven access's door reads"],
-    ["Daoris.Desktop.Driver/Participants/Domain/DrivenAccess.cs", "SessionWire.Pipe", "o", "behaviour", "the driven access's native door tests"],
     ["Daoris.Desktop.Driver/Participants/Domain/HelpersVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
     ["Daoris.Desktop.Driver/Platform/DaorisHome.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: the home's run entry (design §9), no agent's door"],
     ["Daoris.Desktop.Driver/Plugins/DeclaredAcpAdapter.cs", "SessionWire", "q", "behaviour", "a plugin's declared door, built on the seam"],
