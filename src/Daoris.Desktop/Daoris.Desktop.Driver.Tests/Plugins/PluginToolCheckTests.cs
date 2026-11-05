@@ -88,10 +88,10 @@ public sealed class PluginToolCheckTests : IDisposable
     [Fact]
     public async Task A_check_runs_in_the_scratch_folder_where_git_finds_no_repository_and_nothing_is_typed_to_it()
     {
-        OnPath("gh");
+        OnPath("pwsh");
         var runner = new Runner(_ => Said(""));
 
-        await CheckAsync(Tool("""{ "id": "gh", "ready": [{ "run": ["gh", "auth", "status"], "says": "Signed in" }] }"""), runner);
+        await CheckAsync(Tool("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "-Command", "exit"], "says": "Signed in" }] }"""), runner);
 
         var check = runner.Calls[^1].Info;
         Assert.Equal(Root, check.WorkingDirectory);
@@ -105,13 +105,13 @@ public sealed class PluginToolCheckTests : IDisposable
     [Fact]
     public async Task A_version_outside_its_range_is_said_in_the_pages_words_and_its_checks_still_run()
     {
-        OnPath("az");
-        var runner = new Runner(info => info.ArgumentList is ["version"] ? Said("""{ "azure-cli": "2.55.0", "azure-cli-core": "2.55.0" }""") : Said(""));
+        OnPath("node");
+        var runner = new Runner(info => info.ArgumentList is ["--version"] ? Said("v22.4.0\n") : Said(""));
 
-        var found = await CheckAsync(Tool("""{ "id": "az", "versions": ">=2.60 <3", "ready": [{ "run": ["az", "account", "show"], "says": "Signed in" }] }"""), runner);
+        var found = await CheckAsync(Tool("""{ "id": "node", "versions": ">=22.10 <23", "ready": [{ "run": ["node", "-e", "0"], "says": "Signed in" }] }"""), runner);
 
         Assert.False(found.Ok);
-        Assert.Equal("Azure CLI 2.55.0, the system's: needs 2.60 or newer, below 3; this is 2.55.0.", found.Sentence);
+        Assert.Equal("Node.js 22.4.0, the system's: needs 22.10 or newer, below 23; this is 22.4.0.", found.Sentence);
         Assert.True(Assert.Single(found.Ready).Ready);
     }
 
@@ -120,10 +120,10 @@ public sealed class PluginToolCheckTests : IDisposable
     {
         var runner = new Runner(_ => throw new InvalidOperationException("nothing is started for a tool that is not there"));
 
-        var found = await CheckAsync(Tool("""{ "id": "gh", "ready": [{ "run": ["gh", "auth", "status"], "says": "Signed in", "fix": "gh auth login" }] }"""), runner);
+        var found = await CheckAsync(Tool("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "-Command", "exit"], "says": "Signed in", "fix": "pwsh -Command login" }] }"""), runner);
 
         Assert.False(found.Ok);
-        Assert.StartsWith("`gh` is not on this machine's PATH.", found.Sentence);
+        Assert.StartsWith("`pwsh` is not on this machine's PATH.", found.Sentence);
         Assert.EndsWith("Its checks were not run.", found.Sentence);
         Assert.Empty(found.Ready);
         Assert.Empty(runner.Calls);
@@ -133,15 +133,15 @@ public sealed class PluginToolCheckTests : IDisposable
     [Fact]
     public async Task A_managed_version_nobody_downloaded_is_refused_and_the_paths_is_never_taken()
     {
-        OnPath("az");
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), """{ "tools": { "az": { "use": "managed", "version": "2.66.0" } } }""");
+        OnPath("node");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), """{ "tools": { "node": { "use": "managed", "version": "22.66.0" } } }""");
         var runner = new Runner(_ => throw new InvalidOperationException("nothing is started for a way that cannot run"));
 
-        var found = await CheckAsync(Tool("""{ "id": "az", "versions": ">=2.60" }"""), runner);
+        var found = await CheckAsync(Tool("""{ "id": "node", "versions": ">=22.60" }"""), runner);
 
         Assert.False(found.Ok);
-        Assert.Contains("2.66.0", found.Sentence);
-        Assert.Equal(ToolWay.Managed, Tools.Resolve(Home, "az", Bin).Way);
+        Assert.Contains("22.66.0", found.Sentence);
+        Assert.Equal(ToolWay.Managed, Tools.Resolve(Home, "node", Bin).Way);
         Assert.Null(found.File);
         Assert.Empty(runner.Calls);
     }
@@ -176,33 +176,33 @@ public sealed class PluginToolCheckTests : IDisposable
     [Fact]
     public async Task A_version_question_that_answers_nothing_fails_only_a_range()
     {
-        OnPath("gh");
+        OnPath("pwsh");
         var runner = new Runner(_ => Said("no numbers here"));
 
-        var ranged = await CheckAsync(Tool("""{ "id": "gh", "versions": ">=2.40" }"""), runner);
+        var ranged = await CheckAsync(Tool("""{ "id": "pwsh", "versions": ">=2.40" }"""), runner);
         Assert.False(ranged.Ok);
-        Assert.Equal("GitHub CLI, the system's: it answered no version to `gh --version`, so `>=2.40` is not checked.", ranged.Sentence);
+        Assert.Equal("PowerShell, the system's: it answered no version to `pwsh --version`, so `>=2.40` is not checked.", ranged.Sentence);
 
-        var any = await CheckAsync(Tool("""{ "id": "gh" }"""), runner);
+        var any = await CheckAsync(Tool("""{ "id": "pwsh" }"""), runner);
         Assert.True(any.Ok, any.Sentence);
-        Assert.Equal("GitHub CLI, the system's; it answered no version to `gh --version`.", any.Sentence);
+        Assert.Equal("PowerShell, the system's; it answered no version to `pwsh --version`.", any.Sentence);
 
-        var silent = await CheckAsync(Tool("""{ "id": "gh", "versions": ">=2.40" }"""), new Runner(_ => new CheckRun(true, null, "", "")));
-        Assert.Equal("GitHub CLI, the system's: it did not answer `gh --version` within 10s, so `>=2.40` is not checked.", silent.Sentence);
+        var silent = await CheckAsync(Tool("""{ "id": "pwsh", "versions": ">=2.40" }"""), new Runner(_ => new CheckRun(true, null, "", "")));
+        Assert.Equal("PowerShell, the system's: it did not answer `pwsh --version` within 10s, so `>=2.40` is not checked.", silent.Sentence);
     }
 
     [Fact]
     public async Task A_check_that_does_not_pass_says_how_it_ended_its_last_words_and_the_fix_the_person_runs()
     {
-        OnPath("az");
+        OnPath("node");
         var runner = new Runner(info => info.ArgumentList is ["account", "show", "--output", "none"]
-            ? new CheckRun(true, 1, "", "WARNING: something\nERROR: Please run 'az login' to setup account.\n")
-            : Said("""{ "azure-cli": "2.66.0" }"""));
+            ? new CheckRun(true, 1, "", "WARNING: something\nERROR: Please run 'node login' to setup account.\n")
+            : Said("v22.66.0"));
 
         var found = await CheckAsync(Tool("""
-            { "id": "az", "ready": [
-              { "run": ["az", "account", "show", "--output", "none"], "says": "Signed in.", "fix": "az login" },
-              { "run": ["az", "extension", "show", "--name", "azure-devops"], "says": "Its devops extension is added" } ] }
+            { "id": "node", "ready": [
+              { "run": ["node", "account", "show", "--output", "none"], "says": "Signed in.", "fix": "node login" },
+              { "run": ["node", "extension", "show", "--name", "azure-devops"], "says": "Its devops extension is added" } ] }
             """), runner);
 
         // The tool itself is there; a check that does not pass is that check's sentence.
@@ -210,8 +210,8 @@ public sealed class PluginToolCheckTests : IDisposable
         var signedIn = found.Ready[0];
         Assert.False(signedIn.Ready);
         Assert.Equal(
-            "not ready: Signed in. `az account show --output none` exited 1: `ERROR: Please run 'az login' to setup account.`. "
-            + "Run `az login` to put it right.",
+            "not ready: Signed in. `node account show --output none` exited 1: `ERROR: Please run 'node login' to setup account.`. "
+            + "Run `node login` to put it right.",
             signedIn.Sentence);
         Assert.True(found.Ready[1].Ready);
 
@@ -222,14 +222,14 @@ public sealed class PluginToolCheckTests : IDisposable
     [Fact]
     public async Task A_check_that_does_not_answer_in_ten_seconds_or_cannot_start_says_so()
     {
-        OnPath("gh");
-        var tool = Tool("""{ "id": "gh", "ready": [{ "run": ["gh", "auth", "status"], "says": "Signed in" }] }""");
+        OnPath("pwsh");
+        var tool = Tool("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "auth", "status"], "says": "Signed in" }] }""");
 
-        var silent = await CheckAsync(tool, new Runner(info => info.ArgumentList is ["--version"] ? Said("gh version 2.63.0") : new CheckRun(true, null, "", "")));
-        Assert.Equal("not ready: Signed in. `gh auth status` did not answer within 10s.", Assert.Single(silent.Ready).Sentence);
+        var silent = await CheckAsync(tool, new Runner(info => info.ArgumentList is ["--version"] ? Said("PowerShell 7.5.3") : new CheckRun(true, null, "", "")));
+        Assert.Equal("not ready: Signed in. `pwsh auth status` did not answer within 10s.", Assert.Single(silent.Ready).Sentence);
 
-        var gone = await CheckAsync(tool, new Runner(info => info.ArgumentList is ["--version"] ? Said("gh version 2.63.0") : new CheckRun(false, null, "", "")));
-        Assert.Equal("not ready: Signed in. `gh` could not be started.", Assert.Single(gone.Ready).Sentence);
+        var gone = await CheckAsync(tool, new Runner(info => info.ArgumentList is ["--version"] ? Said("PowerShell 7.5.3") : new CheckRun(false, null, "", "")));
+        Assert.Equal("not ready: Signed in. `pwsh` could not be started.", Assert.Single(gone.Ready).Sentence);
     }
 
     /// <summary>A check's first word is found as a hook's is (TOOLS5): a name a tool answers for is that tool's file, any other the PATH's.</summary>
@@ -258,10 +258,10 @@ public sealed class PluginToolCheckTests : IDisposable
     {
         var runner = new Runner(_ => throw new InvalidOperationException("nothing is started for an entry that does not read"));
 
-        var found = await CheckAsync(Tool("""{ "id": "az", "versions": "latest" }"""), runner);
+        var found = await CheckAsync(Tool("""{ "id": "pwsh", "versions": "latest" }"""), runner);
 
         Assert.False(found.Ok);
-        Assert.Equal("tool `az`'s `versions` must be a range: `>=2.60`, `>=2.60 <3`, or one exact version.", found.Sentence);
+        Assert.Equal("tool `pwsh`'s `versions` must be a range: `>=2.60`, `>=2.60 <3`, or one exact version.", found.Sentence);
         Assert.Empty(runner.Calls);
     }
 
@@ -282,17 +282,17 @@ public sealed class PluginToolCheckTests : IDisposable
             { "id": "acme.lands", "hooks": { "command": ["node", "lands.mjs"], "points": ["work/land"] }, "tools": [
               { "id": "git", "versions": ">=2.29", "ready": [{ "run": ["git", "status"], "says": "It reads a repository" }] },
               { "id": 7 },
-              { "id": "gh" } ] }
+              { "id": "pwsh" } ] }
             """);
         var manifest = Assert.Single(PluginCatalog.Load(Home).Plugins).Manifest;
 
         var steps = await PluginTrials.ToolStepsAsync(manifest, Home, Root, Bin, runner.RunAsync, CancellationToken.None);
 
-        Assert.Equal(["tool git", "git check 1", "tool 2", "tool gh"], steps.Select(step => step.Name));
+        Assert.Equal(["tool git", "git check 1", "tool 2", "tool pwsh"], steps.Select(step => step.Name));
         Assert.Equal([true, false, false, false], steps.Select(step => step.Ok));
         Assert.Equal("not ready: It reads a repository. `git status` exited 2: `nope`.", steps[1].Sentence);
         Assert.Equal("tool 2 in `tools` needs an `id`: a tool's name in lowercase, like `az`.", steps[2].Sentence);
-        Assert.StartsWith("`gh` is not on this machine's PATH.", steps[3].Sentence);
+        Assert.StartsWith("`pwsh` is not on this machine's PATH.", steps[3].Sentence);
     }
 
     [Fact]

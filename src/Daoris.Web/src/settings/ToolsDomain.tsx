@@ -13,8 +13,8 @@ import {
 } from './Tools';
 
 /**
- * Settings → Tools (TOOLS7, D121 §4.1): each program Daoris runs beside its agents — Git, Node.js, PowerShell, GitHub
- * CLI, Azure CLI — as the system's, a managed version, or a file the person names, and the resource locations its
+ * Settings → Tools (TOOLS7, D121 §4.1): each program Daoris runs beside its agents — Git, Node.js, PowerShell — as the
+ * system's, a managed version, or a file the person names, and the resource locations its
  * versions come from. The screen's half of `daoris tool` (D50), over the same `tools.json`. It holds the list, the
  * presses, the choice on each card and git's question; the cards and the locations below it hold none.
  *

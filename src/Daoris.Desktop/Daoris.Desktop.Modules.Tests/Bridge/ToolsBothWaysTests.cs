@@ -27,7 +27,7 @@ public sealed class ToolsBothWaysTests : DriverModuleBridge
 
     private sealed record Said(int Exit, string Out, string Error, string? File, string Versions);
 
-    /// <summary>The home as each case starts it: <c>tools.json</c>, and GitHub CLI 2.62.0 and 2.63.0 downloaded.</summary>
+    /// <summary>The home as each case starts it: <c>tools.json</c>, and PowerShell 2.62.0 and 2.63.0 downloaded.</summary>
     private void Laid()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(ToolsFile)!);

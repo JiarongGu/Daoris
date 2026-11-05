@@ -147,7 +147,7 @@ public sealed class ToolResourcesTests : IDisposable
     [InlineData("no tools", """{"schema":1}""", null, null, "")]
     [InlineData("one download", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "pwsh 2.62.0 win-x64")]
     [InlineData("versions newest first, platforms in the table’s order", """{"schema":1,"tools":{"pwsh":{"versions":{"2.9.0":{"files":{"win-x64":FILE}},"2.10.0":{"files":{"linux-x64":FILE,"win-x64":FILE}}}}}}""", null, null, "pwsh 2.10.0 win-x64; pwsh 2.10.0 linux-x64; pwsh 2.9.0 win-x64")]
-    [InlineData("two tools", """{"schema":1,"tools":{"node":{"versions":{"24.21.0":{"files":{"win-x64":FILE}}}},"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "pwsh 2.62.0 win-x64; node 24.21.0 win-x64")]
+    [InlineData("two tools", """{"schema":1,"tools":{"node":{"versions":{"24.21.0":{"files":{"win-x64":FILE}}}},"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "node 24.21.0 win-x64; pwsh 2.62.0 win-x64")]
     [InlineData("a tool this build does not run", """{"schema":1,"tools":{"bun":{"versions":{"1.2.0":{"files":{"win-x64":FILE}}}}}}""", null, "names `bun`, which is not a tool this build runs", "")]
     [InlineData("a tool that is not an object", """{"schema":1,"tools":{"pwsh":"2.62.0"}}""", null, "`pwsh` is not an object", "")]
     [InlineData("a tool with no versions", """{"schema":1,"tools":{"pwsh":{}}}""", null, null, "")]
@@ -407,7 +407,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal("sha256", refused.Field);
         Assert.Equal(["first", "built in"], refused.Lists);
         Assert.Equal(
-            $"GitHub CLI 2.62.0 for win-x64 is refused: first names its sha256 as {new string('b', 64)}, and built in as "
+            $"PowerShell 2.62.0 for win-x64 is refused: first names its sha256 as {new string('b', 64)}, and built in as "
             + $"{new string('a', 64)}. Two lists that disagree on one download refuse it, and nothing is fetched until one of them changes",
             refused.Problem);
         Assert.Equal([refused.Problem], merged.Notes);

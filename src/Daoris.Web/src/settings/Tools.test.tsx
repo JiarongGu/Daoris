@@ -6,7 +6,7 @@ import i18n from '../locales/i18n';
 import {
   changes, choiceOf, endSaid, GitSwitch, ToolCard, type ToolChoice, ToolLocations, type ToolShown,
 } from './Tools';
-import { BUILT_IN, GH, GIT, MIRROR, NODE, PWSH } from './toolsFixtures';
+import { BUILT_IN, GIT, MIRROR, NODE, PWSH, PWSH_FILE_GONE } from './toolsFixtures';
 import type { Answered } from '../work/InlineConfirm';
 
 // TOOLS7 (D121 §4.1): one tool's card, git's switch said before it applies, and the resource locations, drawn from
@@ -28,9 +28,9 @@ describe('a tool\'s choice', () => {
   it('opens on the way set, at the version or the file set, else what a person would pick first', () => {
     expect(choiceOf(GIT)).toEqual({ way: 'system', version: '2.51.0', file: '' });
     expect(choiceOf(NODE)).toEqual({ way: 'managed', version: '22.11.0', file: '' });
-    expect(choiceOf(PWSH)).toEqual({ way: 'file', version: '', file: 'C:/somewhere/PowerShell/7/pwsh.exe' });
+    expect(choiceOf(PWSH_FILE_GONE)).toEqual({ way: 'file', version: '', file: 'C:/somewhere/PowerShell/7/pwsh.exe' });
     // A file that does not read refuses every tool and says no way: the card opens on the system's.
-    expect(choiceOf({ ...GH, way: null })).toMatchObject({ way: 'system', version: '2.63.0' });
+    expect(choiceOf({ ...PWSH, way: null })).toMatchObject({ way: 'system', version: '7.4.6' });
   });
 
   it('changes what runs only where it differs from the way set', () => {
@@ -38,8 +38,8 @@ describe('a tool\'s choice', () => {
     expect(at({})).toBe(false);
     expect(at({ version: '20.18.0' })).toBe(true);
     expect(at({ way: 'system' })).toBe(true);
-    expect(at({ file: '  C:/somewhere/PowerShell/7/pwsh.exe ' }, PWSH)).toBe(false);
-    expect(at({ file: 'C:/elsewhere/pwsh.exe' }, PWSH)).toBe(true);
+    expect(at({ file: '  C:/somewhere/PowerShell/7/pwsh.exe ' }, PWSH_FILE_GONE)).toBe(false);
+    expect(at({ file: 'C:/elsewhere/pwsh.exe' }, PWSH_FILE_GONE)).toBe(true);
   });
 });
 
@@ -157,48 +157,48 @@ describe('a tool\'s card', () => {
   });
 
   it('says where no list names a version for this machine, and what changes that', () => {
-    card({ ...GH, offered: [] }, { choice: { way: 'managed', version: '', file: '' } });
+    card({ ...PWSH, offered: [] }, { choice: { way: 'managed', version: '', file: '' } });
 
-    expect(screen.getByText(/No list names a version of GitHub CLI for this machine/)).toBeInTheDocument();
+    expect(screen.getByText(/No list names a version of PowerShell for this machine/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Download' })).toBeNull();
   });
 
   /** A file the person names (§4.1): its whole path, *Browse…* where the window has a picker, and *Use this file*. */
   it('takes a named file by its whole path, with Browse where there is a picker', async () => {
     const onBrowse = vi.fn();
-    const { onChoice, onUse } = card(GH, { choice: { ...choiceOf(GH), way: 'file', file: 'C:/tools/gh.exe' }, onBrowse });
+    const { onChoice, onUse } = card(PWSH, { choice: { ...choiceOf(PWSH), way: 'file', file: 'C:/tools/pwsh.exe' }, onBrowse });
 
     await userEvent.click(screen.getByRole('button', { name: 'Browse…' }));
     expect(onBrowse).toHaveBeenCalled();
-    await userEvent.type(screen.getByRole('textbox', { name: 'The file GitHub CLI runs' }), 'x');
-    expect(onChoice).toHaveBeenLastCalledWith({ way: 'file', version: '2.63.0', file: 'C:/tools/gh.exex' });
+    await userEvent.type(screen.getByRole('textbox', { name: 'The file PowerShell runs' }), 'x');
+    expect(onChoice).toHaveBeenLastCalledWith({ way: 'file', version: '7.4.6', file: 'C:/tools/pwsh.exex' });
     await userEvent.click(screen.getByRole('button', { name: 'Use this file' }));
-    expect(onUse).toHaveBeenCalledWith({ action: 'file', file: 'C:/tools/gh.exe' });
+    expect(onUse).toHaveBeenCalledWith({ action: 'file', file: 'C:/tools/pwsh.exe' });
   });
 
   /** The way set cannot run: the driver's sentence leads, and the tool is marked not found, never run another way. */
   it('leads with the driver\'s sentence when the way set cannot run', () => {
-    card(PWSH);
+    card(PWSH_FILE_GONE);
 
     expect(screen.getByText(/there is no file there — it never falls back to PATH/)).toBeInTheDocument();
     expect(screen.getByText('not found')).toBeInTheDocument();
   });
 
   it('marks a system tool PATH does not find, and says what gives Daoris one', () => {
-    card(GH);
+    card(PWSH);
 
     expect(screen.getAllByText('not found').length).toBeGreaterThan(0);
-    expect(screen.getByText(/GitHub CLI is not on this machine's PATH\. Managed or Custom gives Daoris one/)).toBeInTheDocument();
+    expect(screen.getByText(/PowerShell is not on this machine's PATH\. Managed or Custom gives Daoris one/)).toBeInTheDocument();
   });
 
   it('shows a running download with its stop and its console, and offers no second press', async () => {
-    const { onStop } = card({ ...GH, running: { action: 'download', version: '2.63.0' } }, {
-      choice: { ...choiceOf(GH), way: 'managed' },
+    const { onStop } = card({ ...PWSH, running: { action: 'download', version: '7.4.6' } }, {
+      choice: { ...choiceOf(PWSH), way: 'managed' },
       console: <pre>downloading https://github.com/…</pre>,
     });
 
     expect(screen.getByText('downloading')).toBeInTheDocument();
-    expect(screen.getByText(/GitHub CLI 2\.63\.0 is downloading/)).toBeInTheDocument();
+    expect(screen.getByText(/PowerShell 7\.4\.6 is downloading/)).toBeInTheDocument();
     expect(screen.getByText('downloading https://github.com/…')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Stop download' }));
@@ -285,7 +285,7 @@ describe('the resource locations', () => {
     expect(screen.getByText('https://mirror.example/resources.json')).toBeInTheDocument();
     expect(screen.getByText('mirror.example · fetched 2h ago · 1 version for this machine')).toBeInTheDocument();
     expect(screen.getByText('Built in')).toBeInTheDocument();
-    expect(screen.getByText('built in · 5 versions for this machine')).toBeInTheDocument();
+    expect(screen.getByText('built in · 4 versions for this machine')).toBeInTheDocument();
     const removes = screen.getAllByRole('button', { name: 'Remove' });
     expect(removes).toHaveLength(1);
     await userEvent.click(removes[0]!);
@@ -330,16 +330,16 @@ describe('the resource locations', () => {
 
 describe('how a tool\'s action ended', () => {
   const t = i18n.t.bind(i18n) as unknown as Parameters<typeof endSaid>[0];
-  const end = { tool: 'gh', name: 'GitHub CLI', action: 'download', version: '2.63.0', exitCode: 0, stopped: false };
+  const end = { tool: 'pwsh',name: 'PowerShell', action: 'download', version: '7.4.6', exitCode: 0, stopped: false };
 
   it('says a download, a switch, a stop and a refusal each in its own sentence', () => {
-    expect(endSaid(t, end)).toBe('GitHub CLI 2.63.0 is downloaded and verified. Nothing switched.');
-    expect(endSaid(t, { ...end, action: 'use' })).toBe('GitHub CLI now runs managed 2.63.0.');
-    expect(endSaid(t, { ...end, exitCode: -1, stopped: true })).toBe('The download of GitHub CLI 2.63.0 was stopped. Nothing was kept, and nothing switched.');
+    expect(endSaid(t, end)).toBe('PowerShell 7.4.6 is downloaded and verified. Nothing switched.');
+    expect(endSaid(t, { ...end, action: 'use' })).toBe('PowerShell now runs managed 7.4.6.');
+    expect(endSaid(t, { ...end, exitCode: -1, stopped: true })).toBe('The download of PowerShell 7.4.6 was stopped. Nothing was kept, and nothing switched.');
     // The check is the typed half, and the driver's sentence stands as it wrote it.
-    expect(endSaid(t, { ...end, exitCode: 1, check: 'hash', problem: 'GitHub CLI 2.63.0 was not downloaded: …' }))
-      .toBe('GitHub CLI 2.63.0 is refused by its `hash` check: GitHub CLI 2.63.0 was not downloaded: …');
+    expect(endSaid(t, { ...end, exitCode: 1, check: 'hash', problem: 'PowerShell 7.4.6 was not downloaded: …' }))
+      .toBe('PowerShell 7.4.6 is refused by its `hash` check: PowerShell 7.4.6 was not downloaded: …');
     // An end that failed with no check (a tool error) still says the driver's words.
-    expect(endSaid(t, { ...end, exitCode: 2, problem: 'disk full' })).toBe('GitHub CLI 2.63.0 did not finish: disk full');
+    expect(endSaid(t, { ...end, exitCode: 2, problem: 'disk full' })).toBe('PowerShell 7.4.6 did not finish: disk full');
   });
 });

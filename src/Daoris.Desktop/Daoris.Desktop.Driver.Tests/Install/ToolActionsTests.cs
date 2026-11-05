@@ -123,7 +123,7 @@ public sealed class ToolActionsTests : IDisposable
 
         var busy = Assert.Throws<ToolRefusal>(() => actions.Start("pwsh", "use", "2.62.0", _ => { }));
         Assert.Equal("busy", busy.Check);
-        Assert.Contains("GitHub CLI's download is still running", busy.Message);
+        Assert.Contains("PowerShell's download is still running", busy.Message);
 
         Assert.True(actions.Cancel("pwsh"));
         var end = await run.Ended.WaitAsync(Poll.Patience);
@@ -162,7 +162,7 @@ public sealed class ToolActionsTests : IDisposable
 
         var nothing = await actions.Start("pwsh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal(0, nothing.ExitCode);
-        Assert.Equal("GitHub CLI 2.62.0 is the newest the lists name, and it is downloaded — nothing to do", nothing.Nothing);
+        Assert.Equal("PowerShell 2.62.0 is the newest the lists name, and it is downloaded — nothing to do", nothing.Nothing);
 
         BuiltIn("2.62.0", "2.63.0");
         var moved = await actions.Start("pwsh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);

@@ -82,7 +82,7 @@ public sealed class ToolDownloadsTests : IDisposable
         Assert.Equal(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Package, "bin", "pwsh.exe"), exe);
         Assert.Equal(["2.62.0"], Under());
         Assert.Equal(record, File.ReadAllText(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Record)));
-        Assert.Contains(lines, line => line.Contains("another run downloaded GitHub CLI 2.62.0 meanwhile", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("another run downloaded PowerShell 2.62.0 meanwhile", StringComparison.Ordinal));
     }
 
     [Fact]

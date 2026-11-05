@@ -231,7 +231,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         var refusal = await RefusalAsync(Module(), "TOOLS_USE", new { tool = "pwsh", action = "managed", version = "99.9.9" });
 
         Assert.Contains(Refusals.ToolVersionUnknown, refusal);
-        Assert.Contains("tool=GitHub CLI", refusal);
+        Assert.Contains("tool=PowerShell", refusal);
         Assert.Contains("version=99.9.9", refusal);
         Assert.Null(Written());
     }
@@ -303,7 +303,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
 
         var busy = await RefusalAsync(module, "TOOLS_USE", new { tool = "pwsh", action = "managed", version = "99.1.0" });
         Assert.Contains(Refusals.ToolBusy, busy);
-        Assert.Contains("tool=GitHub CLI", busy);
+        Assert.Contains("tool=PowerShell", busy);
 
         Assert.True((await AnswerAsync(module, "TOOLS_STOP", new { tool = "pwsh" })).GetProperty("stopped").GetBoolean());
         await UntilAsync(() => Raised.Any(m => m.Type == "TOOLS_ENDED"));

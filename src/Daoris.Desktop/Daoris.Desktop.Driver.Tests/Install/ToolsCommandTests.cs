@@ -55,7 +55,7 @@ public sealed class ToolsCommandTests : IDisposable
         }
     }
 
-    /// <summary>A home whose one location's copy offers GitHub CLI 2.62.0 for win-x64, at the archive the host answers.</summary>
+    /// <summary>A home whose one location's copy offers PowerShell 2.62.0 for win-x64, at the archive the host answers.</summary>
     private void Offered()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(ToolsFile)!);
@@ -208,7 +208,7 @@ public sealed class ToolsCommandTests : IDisposable
         host.Answer.SetResult();
 
         Assert.Equal(0, await run.WaitAsync(Poll.Patience));
-        Assert.Contains("GitHub CLI 2.62.0 is downloaded and verified — nothing switches.", _out.ToString(), StringComparison.Ordinal);
+        Assert.Contains("PowerShell 2.62.0 is downloaded and verified — nothing switches.", _out.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
