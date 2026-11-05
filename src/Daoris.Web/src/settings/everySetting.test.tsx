@@ -42,6 +42,7 @@ describe('every machine setting', () => {
       <Tooltip.Provider>
         <DriverCards
           facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, cap: 2 }}
+          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet') }}
           busy={{ access: false, update: false }}
           onGo={vi.fn()}
           onNotify={vi.fn()}
