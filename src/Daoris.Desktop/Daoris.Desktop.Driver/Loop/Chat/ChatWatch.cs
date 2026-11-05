@@ -155,9 +155,9 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
         finally
         {
             Context.Output?.Close(sessionId);
-            SpawnSettings.Remove(rules);
-            SpawnServers.Remove(servers);
-            SpawnSkills.Remove(watched.Skills);
+            SpawnFiles.Remove(rules);
+            SpawnFiles.Remove(servers);
+            SpawnFiles.RemoveFolder(watched.Skills);
         }
     }
 }

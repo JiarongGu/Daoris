@@ -765,9 +765,9 @@ public sealed class PluginCatalogTests : IDisposable
             "browser", "npx", ["-y", "@playwright/mcp@latest"],
             new Dictionary<string, string> { ["HEADLESS"] = "1" });
 
-        Assert.Null(SpawnServers.Write(_home, "s1", []));
+        Assert.Null(ClaudeServers.Write(_home, new ConnectorPlan("s1", [])));
 
-        var path = SpawnServers.Write(_home, "s1", [server]);
+        var path = ClaudeServers.Write(_home, new ConnectorPlan("s1", [server]));
         Assert.NotNull(path);
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Spawn), path);
 
@@ -787,8 +787,33 @@ public sealed class PluginCatalogTests : IDisposable
         AdapterSet.Built().Resolve("stub").HandServers(stub, path);
         Assert.Empty(stub.ArgumentList);
 
-        SpawnServers.Remove(path);
+        SpawnFiles.Remove(path);
         Assert.False(File.Exists(path));
-        SpawnServers.Remove(path); // gone is fine; gone twice is fine
+        SpawnFiles.Remove(path); // gone is fine; gone twice is fine
+    }
+
+    /// <summary>
+    /// AGENTPROVIDER1 row p: a start's connectors are handed by the door's own carrier, asked once. Claude Code's native door writes
+    /// the plan's file and names it, the same file as before; a door whose servers ride its wire, and one that takes none at its spawn,
+    /// has no carrier there, and nothing is written for it.
+    /// </summary>
+    [Fact]
+    public void A_starts_connectors_are_handed_by_the_doors_own_carrier_and_a_door_with_none_is_written_nothing()
+    {
+        var server = new AcpMcpServer("browser", "npx", ["-y", "@playwright/mcp@latest"], new Dictionary<string, string> { ["HEADLESS"] = "1" });
+        var plan = new ConnectorPlan("s1", [server]);
+
+        var info = new ProcessStartInfo();
+        var file = AdapterSet.Built().Resolve("claude-code").ServerHanding()!.Hand(info, _home, plan);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.mcp.json"), file);
+        Assert.Equal(["--mcp-config", file], info.ArgumentList);
+        SpawnFiles.Remove(file);
+
+        foreach (var door in new[] { "claude-code-acp", "codex-acp", "dsh", "stub", "acp-stub" })
+        {
+            Assert.Null(AdapterSet.Built().Resolve(door).ServerHanding());
+        }
+
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.mcp.json")));
     }
 }

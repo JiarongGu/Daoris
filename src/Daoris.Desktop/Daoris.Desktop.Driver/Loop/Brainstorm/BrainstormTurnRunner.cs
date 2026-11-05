@@ -177,7 +177,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
         // The protocol door carries the connector on the wire, with the same scope; the pipe door takes a file under the home.
-        var handed = SpawnServers.Hand(adapter, info, _context.Home, sessionId, [connector]);
+        var handed = adapter.ServerHanding()?.Hand(info, _context.Home, new ConnectorPlan(sessionId, [connector]));
         var rules = _driver.HandRules(
             adapter, info, sessionId, null, null, tree: turn.Room, kept: null, brainstorm: BrainstormPermissions.ToolOf(turn.Turn));
         try

@@ -113,3 +113,31 @@ public interface IConversationHome
     /// <summary>The paths under an account's home a conversation keeps, for this version of the agent (null: any).</summary>
     IReadOnlyList<string> Keeps(string? version);
 }
+
+/// <summary>
+/// How a provider takes the product's rules for one session (the design §4.5): its own settings file, its hooks among them, and the
+/// hard denials its classifier is told. The rules stay the product's one grammar; a provider that takes none states this absent, and the
+/// person's denies reach none of its sessions.
+/// </summary>
+public interface IRuleLanguage
+{
+    /// <summary>Write the session's file under the home and answer its path, which the door hands by its own way.</summary>
+    string Write(string home, string sessionId, HandedRules rules);
+}
+
+/// <summary>
+/// How a door is handed a start's connectors at its spawn (the design §4.4): by a file in its provider's own layout. A door whose
+/// servers ride its wire, or that takes none at its spawn, states this absent, and no file is written for it.
+/// </summary>
+public interface IServerHanding
+{
+    /// <summary>Hand <paramref name="plan"/>'s servers to the process; the file written, which goes with the session, or null for none.</summary>
+    string? Hand(ProcessStartInfo info, string home, ConnectorPlan plan);
+}
+
+/// <summary>How a provider lays out the skills a start is handed (the design §4.5), from plain values Loop composes.</summary>
+public interface ISkillLayout
+{
+    /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>
+    (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, IReadOnlyList<SkillSource> sources);
+}

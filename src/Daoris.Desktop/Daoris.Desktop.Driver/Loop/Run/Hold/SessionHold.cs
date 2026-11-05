@@ -133,8 +133,8 @@ internal sealed class SessionHold(IRunWiring wiring)
                     Tree = cwd,
                 })
             : null;
-        using var servers = new Disposer(() => SpawnServers.Remove(handed));
-        using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
+        using var servers = new Disposer(() => SpawnFiles.Remove(handed));
+        using var ruled = new Disposer(() => SpawnFiles.Remove(rules.File));
 
         // 🔴 The stop made of it, told as the run lets go, whatever ends it: disposed before the run above untracks its processes, its
         // go-ons' among them, so it is read while they still are, for a close that cuts the conclusion off to record that stop.

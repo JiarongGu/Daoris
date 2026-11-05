@@ -538,7 +538,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Write("""{"tools":{"node":{"use":"file","file":"@node"}}}""");
 
         var guard = TreeGuard.For(Home, _root);
-        var path = SpawnSettings.Write(Home, "s1", RuleLists.Empty, [], guard);
+        var path = ClaudeRules.Render(Home, "s1", RuleLists.Empty, [], guard);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var hook = document.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];

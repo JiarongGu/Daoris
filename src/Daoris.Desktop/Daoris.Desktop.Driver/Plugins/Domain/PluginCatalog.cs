@@ -45,8 +45,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
         .OfType<string>()
         .Where(name => name.Trim().Length > 0);
 
-    (string? Folder, IReadOnlyList<string> Plugins) IAgentPlugins.WriteSkills(string home, string sessionId, string to) =>
-        PluginAgentSkills.Write(home, sessionId, this, to);
+    IReadOnlyList<SkillSource> IAgentPlugins.Skills(string to) => PluginAgentSkills.Sources(this, to);
 
     IReadOnlyList<string> IKnowledgePlugins.LandingPlugins() =>
         [.. Plugins.Select(plugin => plugin.Manifest.Id)

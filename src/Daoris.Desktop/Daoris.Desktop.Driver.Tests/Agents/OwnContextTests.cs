@@ -31,8 +31,8 @@ public sealed class OwnContextTests : IDisposable
     [Fact]
     public void Every_settings_file_hides_the_account_synced_set_and_turns_auto_memory_off()
     {
-        var bare = SpawnSettings.Write(Home, "s-bare", RuleLists.Empty, []);
-        var ruled = SpawnSettings.Write(Home, "s-ruled", new RuleLists(["Read"], [], ["Bash(git push*)"]), ["Bash(rm -rf*)"]);
+        var bare = ClaudeRules.Render(Home, "s-bare", RuleLists.Empty, []);
+        var ruled = ClaudeRules.Render(Home, "s-ruled", new RuleLists(["Read"], [], ["Bash(git push*)"]), ["Bash(rm -rf*)"]);
 
         foreach (var file in new[] { bare, ruled })
         {

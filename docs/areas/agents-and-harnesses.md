@@ -69,7 +69,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `HarnessProbe`, `HarnessKeys`, `HarnessSelection`, `StartWiring`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | same names | Version and sign-in questions, API-key accounts, a selection and the wiring a start is handed, one question per home at a time, no real sign-in under a scratch home |
 | `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs`, `Providers/ClaudeCode/ClaudeTrust.cs` and same names | Rules in scopes and defaults, an agent's proposals, Claude Code's folder trust, reach into other checkouts |
-| `SpawnServers`, `SpawnSkills`, `DshProfile` | same names, the last in `Providers/Dsh/` | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
+| `IRuleLanguage`, `ISkillLayout`, `IServerHanding`; `HandedRules`, `SkillSource`, `ConnectorPlan` | `Contract/Ports.cs`; `Contract/`, same names | How a provider takes the product's rules, lays out a start's skills, and how a door takes a start's servers at its spawn, each handed plain values; a provider or door stating one absent is handed none of it |
+| `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands |
+| `SpawnSkills`, `SpawnFiles`, `AdapterParts`, `DshProfile` | same names; `Registry/AdapterParts.cs`; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider and handed by its spawn; what a spawn wrote, removed with the session; a door's rule language, layout and server carrier as today's readers ask an adapter (a plugin's or a test's adapter, which declares none, takes Claude Code's, as before); the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
 | `SessionProcesses`, `LineageTokens` | same names | The live process per session (never sent to the service), and the token each process runs under |
@@ -110,8 +112,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (Claude Code's protocol door, `acp-stub`, a plugin's protocol door; never Codex's or dsh's), the home last; then the
     tools-at-the-start switch (`ENABLE_TOOL_SEARCH=false` for Claude Code); the carriers after all of it. A provider declaring
     a name of Daoris's list is refused at registration, but for the session's tokens. (from D49, D230, D172 point 3)
-13. Servers go on `session/new` on the protocol door. A pipe-door harness that takes a file gets one under the home
-    (`--mcp-config`), removed with the session. Daoris's connector is always offered. A server declared through `npx` is
+13. Servers go on `session/new` on the protocol door. A start hands the rest as one `ConnectorPlan` to the door's own carrier
+    (`IServerHanding`), asked once: Claude Code's native door writes its `.mcp.json` layout under the home (`--mcp-config`),
+    removed with the session; a door with no carrier at its spawn (dsh, the stand-ins) is written nothing. Daoris's connector is
+    always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
     (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
@@ -122,7 +126,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     date, and is not sent on.
     Playwright MCP keeps every request a tab made since its last navigation (about 50 KB each) and has no option that
     bounds it. (`SessionServers`, `ServerPackages`, `ServerKeeper`)
-14. Plugin skills are copied per session under the home's spawn folder and handed by the harness's session-only door
+14. Plugin skills are composed by Plugins as `SkillSource` values, laid out by the door's provider (`ISkillLayout`; Claude Code's
+    copies them per session under the home's spawn folder; a provider that states none, Codex, dsh and the stand-ins, is handed none)
+    and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
 15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that
     run. No account home, vendor folder or the person's tool home is written. (from D230)
@@ -137,7 +143,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     defaults `connector`, `commit`, `no-push`, `no-publish` and `tree-guard`, each switched off by the person but `no-push`, which
     is fixed and opened only by the session's git access Write. The union is handed as the harness's command-line settings tier;
     the harness's own precedence decides, and `deny` wins. (from D72)
-19. Only a harness that takes Claude Code's rule language is handed rules (`TakesSettings`: the two Claude Code doors). Others
+19. Only a harness whose provider states a rule language is handed rules (`IRuleLanguage`: Claude Code's `ClaudeRules`, its settings
+    file with the tree guard's and the lineage hook's entries and the hard denials, for its two doors). Others
     are handed none, and nothing is translated until measured. Such a harness (Codex) holds none of the person's denies: its
     standing block and the access setup say so, and the git doors judge its push, force and delete. (from D72, D213, D233)
 20. A session may propose a rule change with `permission_propose`. A narrowing applies at the next look; a widening waits for

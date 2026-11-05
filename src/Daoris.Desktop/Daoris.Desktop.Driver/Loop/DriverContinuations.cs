@@ -372,10 +372,10 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var (servers, browserNotice, drivesBrowser) = await SessionServers.HandAsync(_context.Home, _context.Servers, _context.Browser, _context.Log, ct).ConfigureAwait(false);
             browserNotice = Driver.JoinNotices(browserNotice, tabNotice);
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
-            var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
+            var handed = adapter.ServerHanding()?.Hand(info, home, new ConnectorPlan(sessionId, servers));
             // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
             // FABRIC-PIPELINE1b (D192 point 5): it goes on under the checks its repository sets now, as it goes on under the prompts
             // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while
             // this run lasts. Its instruction is not handed again, so its words are its first start's.
