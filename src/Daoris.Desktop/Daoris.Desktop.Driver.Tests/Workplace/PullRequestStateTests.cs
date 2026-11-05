@@ -40,7 +40,9 @@ public sealed class PullRequestStateTests : LandedFixture
         Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"), pullRequest: Plugin);
     }
 
-    protected override string? PullRequestPlugin => Plugin;
+    private string? _opens = Plugin;
+
+    protected override string? PullRequestPlugin => _opens;
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(
         Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => _now));
@@ -382,6 +384,7 @@ public sealed class PullRequestStateTests : LandedFixture
         trees.Recorded.Pushed("engine", gone.Branch!, trees.Recorded.Of("engine", gone.Branch!)!.Tip);
         trees.Recorded.PullRequested("engine", gone.Branch!, "acme.gone", "https://example.test/pull/7");
         Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"));
+        _opens = null;
         var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
 
         var plan = await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
