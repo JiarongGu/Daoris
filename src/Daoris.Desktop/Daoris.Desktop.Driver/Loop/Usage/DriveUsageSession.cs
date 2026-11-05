@@ -23,9 +23,9 @@ internal static class DriveUsageSession
           session take-back <id> [<word>]  ·  session reword <id> <word> "…"
               take back one of your words waiting on a parked or ended session before it goes on with them, or put
               new words in its place; with no word, list those waiting with their ids.
-          session go-on-new <id>
-              words that wait for the account a session ran on to cool: go on now in a new session at the driver's
-              next look, handed them, without that session's conversation.
+          session hand-over <id> [--agent <adapter> [--account <name>]]
+              hand a session over to the agent named, or, naming none, let words that wait for the account it ran
+              on to cool go on now in a new session at the driver's next look, handed them, without its conversation.
           session at-work <session> [--json]
               who is at work on a session: its line's parts, what it waits on of others and its co-workers, as the
               window's *At work* draws them (COWORKVIEW1a, COMMS1i).

@@ -75,20 +75,6 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         return new { Session = id, State = state, Message = message };
     }
 
-    public async Task<object?> GoOnNewAsync(SessionGoOnNew press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var service = _loop.Service ?? throw NotReady();
-        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("go-on-new") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
-
-        var answer = await GoOnNew.AskAsync(
-                service, _loop.Home, (adapter, profile) => _loop.Harnesses.CoolingOf(adapter ?? "", profile), id,
-                DateTimeOffset.UtcNow, cancellationToken)
-            .ConfigureAwait(false);
-        if (answer.Sent) _loop.Nudge();
-        return new { answer.Sent, answer.Why, answer.Message };
-    }
-
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

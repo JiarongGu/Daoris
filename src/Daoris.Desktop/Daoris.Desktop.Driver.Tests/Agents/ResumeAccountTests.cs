@@ -195,7 +195,7 @@ public sealed class ResumeAccountTests : IDisposable
             + "agent said, and its conversation is on that account, so your words wait to go on in it then.",
             ResumeWords.Waits(cooling, TimeZoneInfo.Utc));
         Assert.Equal(
-            "To go on now in a new session instead, without that conversation: `daoris session go-on-new s1`.",
+            "To go on now in a new session instead, without that conversation: `daoris session hand-over s1`.",
             ResumeWords.NewSessionDoor("s1"));
         Assert.Equal(
             "To start a conversation with these words now instead, without that one: `daoris session start-from s1`.",

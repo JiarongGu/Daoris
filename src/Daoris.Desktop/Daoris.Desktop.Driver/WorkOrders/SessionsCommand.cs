@@ -25,7 +25,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the family's: 0 done, listed, or the words taken or held · 1 refused, a policy answer · 2 could not,
 /// the usage among them.</para>
 /// </remarks>
-[CommandGroup("session", "list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword", "go-on-new",
+[CommandGroup("session", "list", "stop", "finish", "decline", "archive", "unarchive", "delete", "say", "take-back", "reword",
     "start-from", "hand-over", "helper", "partner", "handback", "opinion", "supervise", "at-work", Nested = ["opinion: ask show stop anyway myself"])]
 public static class SessionsCommand
 {
@@ -36,9 +36,8 @@ public static class SessionsCommand
                daoris session archive <id>… | --ended [--yes]  ·  session unarchive <id>…  ·  session delete <id>
                daoris session say <id> "…" [--file <path>]… [--level ordinary|urgent|now]
                daoris session take-back <id> [<word>]  ·  session reword <id> <word> "…"
-               daoris session go-on-new <id>
                daoris session start-from <id>
-               daoris session hand-over <id> --agent <adapter> [--account <name>]
+               daoris session hand-over <id> [--agent <adapter> [--account <name>]]
                daoris session hand-over <id> --approve|--decline
                daoris session helper <id> "<question>" [--agent <name>]
                daoris session helper --approve|--decline <ask>
@@ -70,9 +69,6 @@ public static class SessionsCommand
                 world, PersonPresses.SessionQueueEdit, SessionsPresses.QueueEditBody(ask), () => SessionsQueueEdit.TakeBackAsync(world, ask, output, ct), output, ct)
                 .ConfigureAwait(false),
             "take-back" or "reword" => await SessionsQueueEdit.TakeBackAsync(world, ask, output, ct).ConfigureAwait(false),
-            "go-on-new" => await SessionsPresses.ThroughAsync(
-                world, PersonPresses.SessionGoOnNew, SessionsPresses.Body(("id", ask.Ids[0])), () => SessionsGoingOn.GoOnNewAsync(world, ask.Ids[0], output, ct), output, ct)
-                .ConfigureAwait(false),
             "start-from" => await SessionsPresses.ThroughAsync(
                 world, PersonPresses.SessionStartFrom, SessionsPresses.Body(("id", ask.Ids[0])), () => SessionsGoingOn.StartFromAsync(world, ask.Ids[0], output, ct), output, ct)
                 .ConfigureAwait(false),

@@ -14,10 +14,11 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
+import { useHandOver } from './conversation';
 import { sentence } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import {
-  PERMISSION_WAITS_KEY, permissionsAgainIn, useAnswerPermission, useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder,
+  PERMISSION_WAITS_KEY, permissionsAgainIn, useAnswerPermission, useArchiveSessions, useDeleteSession, useOpenSessionFolder,
   usePermissionWaits, useSessionGroups, type SessionGrouping, useDecideSessionMemory, useSessionMemory,
 } from './sessions';
 
@@ -182,24 +183,25 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * MSG1g2 (D137 §2.2): *Go on in a new session* names the session alone, and its answer is read field by field, so a
-   * refusal keeps its code and a shell older than the route answers no choice kept; the sessions and the driver are asked
-   * again by the state hub (STATEHUB1d), since the loop takes the choice up at its next look.
+   * MSG1g2 (D137 §2.2), ONEWAY1j: *Go on in a new session* is the hand-over's press naming no agent, so it asks
+   * `SESSION_HAND_OVER` by the session's id alone, and its answer is read field by field, so a refusal keeps its code and a
+   * shell that answers nothing kept nothing; the sessions and the driver are asked again by the state hub (STATEHUB1d).
    */
-  it('asks a new session of DAORIS.DRIVER by the session’s id, and reads its answer defensively', async () => {
+  it('asks a new session of DAORIS.DRIVER as a hand-over naming no agent, and reads its answer defensively', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
-    invoke.mockImplementation(async () => ({ sent: false, why: 'closed', message: '#q1 has closed' }));
-    const { result } = renderHook(() => useGoOnNew(), { wrapper: wrapper(client) });
+    invoke.mockImplementation(async () => ({ sessionId: null, kept: false, why: 'closed', message: '#q1 has closed' }));
+    const { result } = renderHook(() => useHandOver(), { wrapper: wrapper(client) });
 
-    expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: 'closed', message: '#q1 has closed' });
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', { payload: { id: 's1' } });
+    expect(await result.current.mutateAsync({ session: 's1' })).toEqual({ sessionId: null, kept: false, why: 'closed', message: '#q1 has closed' });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 's1', why: 'press' } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', expect.anything());
     expect(invalidate).not.toHaveBeenCalled();
 
-    invoke.mockImplementation(async () => ({ sent: true, why: null, message: 'it goes on in a new session' }));
-    expect(await result.current.mutateAsync('s1')).toEqual({ sent: true, why: null, message: 'it goes on in a new session' });
+    invoke.mockImplementation(async () => ({ sessionId: null, kept: true, why: null, message: 'it goes on in a new session' }));
+    expect(await result.current.mutateAsync({ session: 's1' })).toEqual({ sessionId: null, kept: true, why: null, message: 'it goes on in a new session' });
     invoke.mockImplementation(async () => null);
-    expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: null, message: '' });
+    expect(await result.current.mutateAsync({ session: 's1' })).toEqual({ sessionId: null, kept: false, why: null, message: '' });
   });
 });
 

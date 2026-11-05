@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// MSG1g's door (D137 §2.2, D50): *Go on in a new session*. Words a resume holds while the account its session ran on cools
 /// go on now in a new session, handed them, without that conversation. The person's choice is kept by the words' ids with when
 /// it was given (D143 point 4), and the driver's next look carries the words on; what cannot is refused by a code, before
-/// anything is kept. The library's door, which the modules' route and <c>daoris session go-on-new</c> both call.
+/// anything is kept. The library's door, which the modules' hand-over press and <c>daoris session hand-over &lt;id&gt;</c> both call.
 /// </summary>
 /// <remarks>In-process: the service is a stand-in reached through the real client, and the cool-off is handed in. The fast half.</remarks>
 public sealed class GoOnNewTests : IDisposable
@@ -235,20 +235,20 @@ public sealed class GoOnNewTests : IDisposable
         Assert.False(new NewSessionChoices(_home).Covers(Waiting("w1")));
     }
 
-    // ——— The terminal's door (D50): `daoris session go-on-new <id>`.
+    // ——— The terminal's door (D50): `daoris session hand-over <id>`, naming no agent; `go-on-new` is no verb.
 
     [Fact]
-    public void The_terminal_reads_one_session_s_id_and_its_usage_says_the_verb()
+    public void The_terminal_reads_one_session_s_id_with_no_agent_and_its_usage_says_the_verb()
     {
-        var ask = SessionsCommand.Read(["go-on-new", "s1"], out var problem);
+        var ask = SessionsCommand.Read(["hand-over", "s1"], out var problem);
         Assert.Null(problem);
-        Assert.Equal(("go-on-new", "s1"), (ask!.Verb, ask.Ids[0]));
+        Assert.Equal(("hand-over", "s1", null), (ask!.Verb, ask.Ids[0], ask.Agent));
 
-        Assert.Null(SessionsCommand.Read(["go-on-new"], out problem));
-        Assert.Equal("`go-on-new` takes one session's id.", problem);
-        Assert.Null(SessionsCommand.Read(["go-on-new", "s1", "s2"], out _));
-        Assert.Contains("session go-on-new <id>", SessionsCommand.Usage);
-        Assert.Contains("session go-on-new <id>", DriverCommand.Usage);
+        Assert.Null(SessionsCommand.Read(["go-on-new", "s1"], out _));
+        Assert.Null(SessionsCommand.Read(["hand-over", "s1", "s2"], out _));
+        Assert.Contains("session hand-over <id> [--agent <adapter>", SessionsCommand.Usage);
+        Assert.Contains("session hand-over <id> [--agent <adapter>", DriverCommand.Usage);
+        Assert.DoesNotContain("go-on-new", SessionsCommand.Usage);
     }
 
     /// <summary>One line says what comes of it: 0 kept for the next look, 1 refused with its sentence.</summary>
@@ -259,13 +259,13 @@ public sealed class GoOnNewTests : IDisposable
         var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { CoolingOf = (_, _) => Cooling };
 
         var output = new StringWriter();
-        Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["go-on-new", "s1"], out _)!, world, output));
+        Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "s1"], out _)!, world, output));
         Assert.Equal(
             "sessions: it goes on in a new session at the driver's next look, handed your words; that session starts without this one's conversation.\n",
             output.ToString().ReplaceLineEndings("\n"));
 
         output = new StringWriter();
-        Assert.Equal(1, await SessionsCommand.RunAsync(SessionsCommand.Read(["go-on-new", "cl0sed00"], out _)!, world, output));
+        Assert.Equal(1, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "cl0sed00"], out _)!, world, output));
         Assert.StartsWith("sessions: #q4 has closed, so nothing carries its session's words on by itself", output.ToString());
     }
 
