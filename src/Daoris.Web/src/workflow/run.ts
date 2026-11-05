@@ -225,6 +225,29 @@ export interface WorkflowRun {
    * they are enforced for a conversation, which they are not before CHATFLOW1h. None for a quest's run, and from a shell before it.
    */
   chat?: { run: string; checks?: string | null; enforced: boolean } | null;
+  /** A verification run's commit, branch and verdict (FABRIC-PIPELINE1d); none for a chain's or a chat's, and from a shell before it. */
+  line?: RunLine | null;
+}
+
+/**
+ * A verification run as a repository's line reads it (FABRIC-PIPELINE1d, the pipeline design §4.4): the commit it judged, the branch it was
+ * asked of, who asked it and when, its verdict, and each gate as its checks' newest results say.
+ */
+export interface RunLine {
+  run: string;
+  commit: string;
+  branch?: string | null;
+  /** Who chose it: `person` for a person's verification of a commit or a branch. */
+  level: string;
+  at: string;
+  /** `verified`, `failed`, `not-now`, `unknown`, `running` or `waiting`; one the page does not know is said as the driver spelled it. */
+  verdict: string;
+  /** The gate a failed check named. */
+  gate?: string | null;
+  /** Why it is not known: `changed`, `bound`, `stopped`, `busy`, or another the page says as the general. */
+  why?: string | null;
+  /** Each gate as its check ran it, its verdict in the runner's own word. */
+  gates: { name: string; verdict: string; exit?: number | null; wallSeconds?: number | null }[];
 }
 
 /**
@@ -240,7 +263,7 @@ export interface WorkflowRunAnswer {
 }
 
 /** Whose runs are read: a session's, a quest's or an ask's. */
-export type RunScope = { session: string } | { quest: string } | { ask: string };
+export type RunScope = { session: string } | { quest: string } | { ask: string } | { line: string };
 
 /** What a quest's or an ask's page is handed of its runs (design §7): the runs, and the door that opens one. */
 export type RunLineDoor = { runs: readonly WorkflowRun[]; onOpen?: (run: WorkflowRun) => void };
