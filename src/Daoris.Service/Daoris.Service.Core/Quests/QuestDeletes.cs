@@ -81,6 +81,33 @@ internal sealed class QuestDeletes(
     }
 
     /// <summary>
+    /// Remove a closed quest (the one remover, <see cref="QuestClosedRemoval"/>): tombstoned and carried to its remote when it may have
+    /// travelled, simply gone otherwise, and its kept files forgotten. A quest that is not closed is refused, as <see cref="DeleteAsync"/>
+    /// refuses a closed one.
+    /// </summary>
+    public async Task<QuestDeleteOutcome> RemoveClosedAsync(string id, DateTimeOffset now, CancellationToken ct)
+    {
+        var quest = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
+        if (quest is null) return new(QuestDeleteRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`.", Quest: null);
+
+        var remote = await claims.SharedAtAsync(quest, ct).ConfigureAwait(false);
+        var removal = await quests.RemoveClosedAsync(quest.Id, now, travels: remote is not null, ct).ConfigureAwait(false);
+        if (!removal.Deleted)
+        {
+            return new(QuestDeleteRefusal.Kept, $"Quest `#{quest.Id}` is {quest.Status}, not closed, so it stays.", removal.Quest ?? quest);
+        }
+
+        files?.Forget(quest.Id);
+        if (remote is not null) await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
+        return new(
+            QuestDeleteRefusal.None,
+            removal.Tombstoned
+                ? $"Removed closed quest `#{quest.Id}`; the removal is in its history, where a sync carries it."
+                : $"Removed closed quest `#{quest.Id}`; it never left this machine.",
+            quest);
+    }
+
+    /// <summary>
     /// What the ask that asked a deleted quest now stands as, when this was its last quest: its own sentence
     /// after a blank line, so a person who deleted the quest is told, not left to find the ask changed. Empty for a quest no
     /// ask asked, an ask that goes too, one still carrying another quest, and a closed one, which was already ended.

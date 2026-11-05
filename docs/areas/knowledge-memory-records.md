@@ -133,6 +133,11 @@ one job each, checked by `verify`.
     The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
 31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
     and the loser is kept as a conflict for a person. A take claims by push, waiting 15 seconds at most. (from D68, D69)
+    A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
+    by one remover, `QuestClosedRemoval`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
+    an open or a closed quest, never a taken one), simply gone where it never left. The home migration's `closed-quests` step
+    clears the closed six-character quests the same way; an open one stays until it closes, and the same words published again
+    make a new quest.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
     transcript or private content. (from D47)

@@ -375,13 +375,24 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Somebody's work, or the record of it, is never deleted: a delete does not apply to a quest that
-    /// was taken, done or declined — whichever machine's history it came from.
+    /// Somebody's work is never deleted: a delete does not apply to a taken quest, whichever machine's history it came from. A closed
+    /// quest is removed only by the closed quest's remover (ONEWAY1x), whose tombstone then applies.
     /// </summary>
+    [Fact]
+    public void A_closed_quest_s_removal_applies_and_replays_to_nothing()
+    {
+        var closed = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Done, "a note"),
+        ])!;
+
+        Assert.True(QuestLog.Applies(closed, Op(2, QuestOperationKind.Deleted)));
+        Assert.Null(QuestLog.Replay([Op(0, QuestOperationKind.Published, published: Asked), Op(1, QuestOperationKind.Done, "a note"), Op(2, QuestOperationKind.Deleted)]));
+    }
+
     [Theory]
     [InlineData(QuestOperationKind.Taken)]
-    [InlineData(QuestOperationKind.Done)]
-    [InlineData(QuestOperationKind.Declined)]
     public void A_delete_does_not_apply_to_a_quest_somebody_moved(QuestOperationKind moved)
     {
         var replayed = QuestLog.Replay(
