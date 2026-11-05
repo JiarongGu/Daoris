@@ -111,6 +111,9 @@ public sealed class KnowledgeService(
     private KnowledgeFeeds Feeds => LazyInitializer.EnsureInitialized(
         ref _feeds, () => new(store, registrations, ct => RegistryAsync(ct: ct), RegisterAsync, RefuseNewerIndex, _time))!;
     private KnowledgeCodeMaps CodeMaps => LazyInitializer.EnsureInitialized(ref _codeMaps, () => new(registry, registrations, ReloadRegistryAsync))!;
+    private ReadingBehind? _behind;
+    private ReadingBehind Behind => LazyInitializer.EnsureInitialized(
+        ref _behind, () => new(async ct => store.Refusal is not null || (await store.CountByRepositoryAsync(ct).ConfigureAwait(false)).Count > 0, EnsureIndexedAsync))!;
 
     /// <summary>Whether semantic recall is available, which depends on an embedder being configured.</summary>
     public bool SemanticEnabled => embedder is not null && vectors is not null;
@@ -277,7 +280,7 @@ public sealed class KnowledgeService(
         string? workspace = null, CancellationToken ct = default)
     {
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
-        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        await Behind.ReadyAsync(ct).ConfigureAwait(false);
         // A quest is addressed by the registry, so it answers over an index a newer Daoris wrote, counting nothing in
         // it (KSCHEMA1): each row's entries read none.
         var counts = store.Refusal is null

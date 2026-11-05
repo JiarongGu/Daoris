@@ -182,6 +182,8 @@ internal static class SessionSchema
             await cursor.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        await SessionIndexes.EnsureAsync(db, ct).ConfigureAwait(false);
+
         // HIST1a: the highest revision issued, one row beside the cursor it keeps honest. The table's own maximum goes back
         // when its newest record is deleted, and the push cursor has already passed that number (H2). A store from before
         // starts the mark at the newest revision it holds, so nothing changes for one that never deleted a record. The

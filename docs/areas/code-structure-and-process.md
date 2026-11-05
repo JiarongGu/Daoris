@@ -63,7 +63,9 @@ finishes first and the whole set runs once.
    route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
    `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
    conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
-   send from `AskDoorViews`. The session doors are `SessionRoutes` (the list, the two opens and the state move, on both hosts, with
+   send from `AskDoorViews`. The session doors are `SessionRoutes` (the list, answered by `SessionListAnswers`, which keeps each
+   answer with the store's `StoreMark` in a `MarkedAnswers` and makes it again once any writer of the file has moved the mark; the
+   two opens and the state move, on both hosts, with
    a keyed open's refusal in the answer's own record), `SessionKeepRoutes` (a local host's opens for the conversations the driver
    starts itself, and what it learned of a start), `SessionStoreRoutes` (a finished tree's record, a session's memory and its
    delete) and `SessionWordRoutes` (the person's words on a session); a refusal in a record of its own (a say's word, a delete's

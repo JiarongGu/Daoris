@@ -160,6 +160,9 @@ public sealed class SessionStore
         CancellationToken ct = default) =>
         reads.ListAsync(repository, includeClosed, workspace, ct);
 
+    /// <summary>Where the store's writes stand, by every writer of its file; see <see cref="StoreMark"/>.</summary>
+    public Task<StoreMark> MarkAsync(CancellationToken ct = default) => StoreMark.ReadAsync(_db, ct);
+
     /// <summary>This machine's own records written after a revision, what a push sends (SYNC4); see <see cref="SessionReads.OwnChangedSinceAsync"/>.</summary>
     public Task<IReadOnlyList<(Session Session, long Revision)>> OwnChangedSinceAsync(
         long revision, string workspace, CancellationToken ct = default) =>

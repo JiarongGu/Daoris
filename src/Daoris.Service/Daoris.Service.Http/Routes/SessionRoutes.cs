@@ -11,6 +11,8 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
 {
     private ComposedService Service => host.Service;
 
+    private readonly SessionListAnswers _list = new(host);
+
     public void Map(RouteMap routes)
     {
         routes.Map<ListSessions, SessionResponse[]>(ListAsync);
@@ -19,22 +21,8 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
         routes.Map<AdvanceSession, SessionActionResponse>(AdvanceAsync);
     }
 
-    private async Task<Answer<SessionResponse[]>> ListAsync(ListSessions request, HttpContext http, CancellationToken ct)
-    {
-        var sessions = await Service.Sessions.ListAsync(request.Repository, request.IncludeClosed ?? false, request.Workspace, ct);
-        // Which records the ledger would delete, none at a shared deployment, which has no delete door.
-        var deletable = host.Mode == ServiceMode.Local ? await Service.Ledger.DeletableAsync(sessions, ct) : new HashSet<string>();
-        var answered = await Service.Ledger.WithEntriesAsync(sessions, ct);
-        var local = host.MachineLocal(http);
-        var views = new List<SessionResponse>();
-        foreach (var session in answered)
-        {
-            var head = local && session.Origin is null ? (await Lines.HeadOfLineAsync(Service.Sessions, Service.Quests, session, ct))?.Id : null;
-            views.Add(SessionAnswers.ToSession(session, local) with { Deletable = deletable.Contains(session.Id), Head = head });
-        }
-
-        return views.ToArray();
-    }
+    private async Task<Answer<SessionResponse[]>> ListAsync(ListSessions request, HttpContext http, CancellationToken ct) =>
+        await _list.ListAsync(request.Repository, request.IncludeClosed ?? false, request.Workspace, host.MachineLocal(http), ct);
 
     // The harness version and the profile are observed by the DRIVER before it spawns; the service has no binaries to look at, so it
     // records what it is told and judges none of it. An access setup that is no short map of words is the caller's mistake.

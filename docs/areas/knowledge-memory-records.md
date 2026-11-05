@@ -18,6 +18,7 @@ one job each, checked by `verify`.
 | Unit | File | Its job |
 |---|---|---|
 | `KnowledgeService` | `Core/Knowledge/KnowledgeService.cs` | The one face every door calls; it keeps the index's reading state (refresh, the registered roots, the registry reload) and one-line doors to the types below |
+| `ReadingBehind` | `Core/Knowledge/ReadingBehind.cs` | The registry's wait on the index: only while it holds nothing; otherwise the reading runs behind it, one at a time |
 | `KnowledgeAnswers`, `KnowledgeStandings`, `KnowledgeCitations` | `Core/Knowledge/` | Search with its tier and the records merged in; each hit's standing (`RootProbes` asks a root's uncommitted status once, `DecisionMarks` reads a decision's notes); cite and recheck |
 | `KnowledgeFeeds`, `KnowledgeRegistrar`, `KnowledgeCodeMaps` | `Core/Knowledge/` | The feed doors (a declaration, knowledge, a code map) behind one gate; register, retire and re-stamp; a code map read or held |
 | Feed records | `Core/Knowledge/Records/` | `FeedProvenance`, `FeedOutcome`, `FeedRefusal`, `RepositorySummary` |
@@ -74,7 +75,9 @@ one job each, checked by `verify`.
    knowledge; silence keeps them local. (from D21, D47)
 10. A server over one checkout watches its refs and knowledge folders and reads again when marked stale or five minutes old (one
     minute where nothing can be watched). A host over registered roots judges each root's signature at most once a minute and
-    reads only roots that moved. (from D151, D220)
+    reads only roots that moved. The registry counts what the index holds and waits for a reading only while it holds nothing;
+    otherwise the reading runs behind it, so a rescan or a moved root holds no door that resolves a workspace. The repositories'
+    summary, which answers the reading itself, waits for it. (from D151, D220)
 11. A refresh reads each repository's generation before the registry, so a write made during the refresh refuses that
     repository's write. (from D220)
 12. Every hit and `get` carries one `standing:` line: the reading's commit, `+ uncommitted` (waited for three seconds at most,
@@ -179,7 +182,8 @@ one job each, checked by `verify`.
 `doc-current.test.mjs`, `index-hook.test.mjs`, `merge-rows.test.mjs`, and the CLI's `test/knowledge-server.test.ts`.
 The web: `src/Daoris.Web/src/knowledge/*.test.tsx`, `work/head/SessionMemory.test.tsx`.
 
-**Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`); `cli` (`npm run verify`:
+**Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`, its `Process` category apart);
+`service-process` (the route budgets over a benchmark home of three thousand sessions, run alone); `cli` (`npm run verify`:
 `doc-duplicates`, `doc-system`, `doc-links`, the tools' tests); `tool-tests`; `orient-index`; `code-map`; `universal` (the docs
 gate fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
 Knowledge view and session memory; `deployment` for the shared host.
