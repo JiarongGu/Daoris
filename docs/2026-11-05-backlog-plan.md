@@ -5,6 +5,15 @@ it. It follows D180's big-scope note: builders take whole chunks, write tests an
 calls. At most five run at once. Sonnet takes chunks that follow an exemplar on main; Opus takes designs, first exemplars and
 judgement. Every check runs once, at the scope's end (SCOPEVERIFY2, §5). Each claim below was checked against main at `b9c9d77f1`.
 
+**After D240 (the owner's answers to §2, applied to the records the same day).** Q1: nothing related stays parked, so AGENTPROVIDER1 d
+to u, ONEWAY1h, g and ah, and the parked rows around built rows come back to `TASKS.md`; BL4 and BL8 are no longer the only
+agent-provider chunks, and a host-rows wave follows AGENTPROVIDER1m-i. Q2: Codex's owed reads become Opus reads. Q3: HOMELAYOUT5 and
+ONEWAY1w are built with the owner's sign-ins (wave 5 keeps them). Q4 and Q7 are replaced: git's place is designed first
+(GITDESIGN1, D241), and GITAUTH1b and WORKSETUP1 follow it, so **GITDESIGN1 comes before BL5's git rows and BL9**; WORKSETUP1 makes
+no pull request by default. Q5: the steward sets INTEGRATE1k up from the terminal once the install is staged. Q6: GITAUTH1g stays, so
+GITAPP2n keeps its row. Q8: spend on proofs is allowed, once and small, and reported. Q9: AGENTLYNTAI1 builds against Lyntai's local
+library, with no release.
+
 **First**, the steward rewrites `TASKS.md` from §1: the closes archived, the merges folded, the parked rows moved. Builders then read
 rows that say what is open.
 
