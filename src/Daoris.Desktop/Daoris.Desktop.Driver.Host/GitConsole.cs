@@ -95,8 +95,9 @@ internal static class GitConsole
             }
         }
 
-        // Origin's branches fetched (GITAPP2f): planned alone, pressed through the running Daoris's window or, with none, run here as the journal's act.
-        if (GitFetchCommand.Answers(args))
+        // Origin's branches fetched (GITAPP2f), or one ref pushed to origin (GITAPP2g, n): planned alone, pressed through the running Daoris's
+        // window or, with none, run here as the journal's act.
+        if (GitFetchCommand.Answers(args) || GitPushCommand.Answers(args))
         {
             try
             {
@@ -111,7 +112,9 @@ internal static class GitConsole
                         .Where(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(row.Root))
                         .Select(row => row.Root).FirstOrDefault(root => Directory.Exists(root)),
                     () => runs);
-                return await GitFetchCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
+                return GitPushCommand.Answers(args)
+                    ? await GitPushCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false)
+                    : await GitFetchCommand.RunAsync(args, world, InstanceHost.World(home, "git"), closing.Token).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
             {

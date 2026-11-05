@@ -60,6 +60,12 @@ internal static class DriveUsageRecords
               removing those origin no longer has and naming them, as the Branches tab's Fetch does. --plan says what
               it would do; --yes does it, after your yes in Daoris's window where Daoris runs. Only where Daoris's git
               doors are installed and origin is not set to run another program; refused from a session's terminal.
+          git push <repository> branch|tag <name> [<commit>] [--plan | --yes]
+              push one branch or lightweight tag to origin, never forced and never with -u, as the Branches tab's Push
+              and Push tag do: under a grant for that one update, from where origin had it at the last fetch. A tag
+              is a Dangerous push, which the place's Dangerous value decides at the door. --plan says what it would
+              push; --yes pushes it, after your yes in Daoris's window where Daoris runs. Refused from a session's
+              terminal, where Write denies, or where the identity serving origin is read only.
           git pick|revert <repository> <branch> <commit|A..B> [--plan | --yes]
           git rebase <repository> <branch> <onto> [--plan | --yes]
               edit a branch no tree has out without a working tree, as a branch page's Edit history does: pick or
