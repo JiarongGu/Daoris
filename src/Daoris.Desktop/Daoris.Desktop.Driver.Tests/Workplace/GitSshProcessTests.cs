@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Daoris.Driver;
 using Xunit.Abstractions;
 
@@ -7,8 +9,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The git-auth design §14 row 3's proof over SSH (GITAUTH1c, D198 point 4), against the stand-in host (D241 point 8): an SSH identity
 /// Daoris generated, the host's key trusted at a test's press, a clone, a fetch and a push through Daoris's built ssh door, and a fetch
-/// in another repository by <c>git -C</c>; Windows' OpenSSH, chosen as the ssh, reading the key under its protected folder; and under
-/// <c>own</c>, a repository's <c>BatchMode=no</c> losing to the door's first value.
+/// in another repository by <c>git -C</c>; a branch pushed so and opened as a pull request on <see cref="PullRequestApiHost"/>; Windows'
+/// OpenSSH, chosen as the ssh, reading the key under its protected folder; and under <c>own</c>, a repository's <c>BatchMode=no</c>
+/// losing to the door's first value.
 /// </summary>
 /// <remarks>
 /// <para><b>Its server</b> is <see cref="GitSshHost"/>, in this process on a free loopback port: nothing is installed or started. It
@@ -18,9 +21,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// known-hosts file of the person's is read.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IDisposable
+public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullRequestApiHost>, IDisposable
 {
     private readonly GitSshHost _host;
+
+    private readonly PullRequestApiHost _api;
 
     private readonly ITestOutputHelper _output;
 
@@ -37,9 +42,10 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IDisposable
 
     private string Address => _host.Address(_path);
 
-    public GitSshProcessTests(GitSshHost host, ITestOutputHelper output)
+    public GitSshProcessTests(GitSshHost host, PullRequestApiHost api, ITestOutputHelper output)
     {
         _host = host;
+        _api = api;
         _output = output;
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Path.Combine(_root, "scratch-home"));
@@ -160,6 +166,37 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IDisposable
         Assert.Equal(0, pushed.Exit);
         Assert.StartsWith("SSH-2.0-OpenSSH", pushed.Client, StringComparison.Ordinal);
         _output.WriteLine($"the door's ssh: {pushed.Client}");
+    }
+
+    /// <summary>The design's workflow row in small: the branch pushed through the door under its grant, then opened and read on the API.</summary>
+    [Fact]
+    public async Task A_branch_pushed_through_the_door_is_opened_and_read_as_a_pull_request_on_the_stand_in_API()
+    {
+        await ReadyAsync();
+        await Ok(Git(_root, "clone", Address, Work));
+        await Ok(Git(Work, "switch", "-c", "work/fix"));
+        File.AppendAllText(Path.Combine(Work, "a.txt"), "fixed\n");
+        await Ok(Git(Work, "commit", "-am", "fixed"));
+        var push = Git(Work, "push", "origin", "work/fix");
+        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+        await Ok(push);
+        var pushed = await Ok(Git(Bare, "rev-parse", "refs/heads/work/fix"));
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), pushed);
+
+        var token = "fixture-api-token-" + Guid.NewGuid().ToString("N")[..8];
+        _api.Accept(token);
+        using var http = new HttpClient { BaseAddress = new Uri(_api.Address) };
+        http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var opened = await http.PostAsJsonAsync("/repos/org/engine/pulls", new { title = "Fixed", head = "work/fix", @base = "main", body = "From the door." });
+        Assert.Equal(System.Net.HttpStatusCode.Created, opened.StatusCode);
+        var number = (await opened.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("number").GetInt32();
+        Assert.Equal("open", (await http.GetFromJsonAsync<JsonElement>($"/repos/org/engine/pulls/{number}")).GetProperty("state").GetString());
+
+        _api.Complete(number, pushed);
+        var merged = await http.GetFromJsonAsync<JsonElement>($"/repos/org/engine/pulls/{number}");
+        Assert.Equal(("closed", true, pushed),
+            (merged.GetProperty("state").GetString(), merged.GetProperty("merged").GetBoolean(), merged.GetProperty("merge_commit_sha").GetString()));
+        Assert.All(_api.Calls, call => Assert.True(call.Admitted));
     }
 
     [Fact]

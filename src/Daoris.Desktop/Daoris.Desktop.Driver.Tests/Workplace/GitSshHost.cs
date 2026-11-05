@@ -19,9 +19,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repositories under <see cref="Projects"/>, by the path git asks. A shell answers a greeting and exits 1, as a hosted service's does.
 /// </summary>
 /// <remarks>
-/// <para>Measured with OpenSSH 10.2 and Windows' 9.5: it signs host keys and verifies client keys as RSA (SHA-2) or ECDSA, never
-/// ed25519, whose offer ends the connection unanswered rather than refused; so a key offered here is made as RSA. Its key exchange is ECDH over the NIST curves and its ciphers
-/// AES-CTR; OpenSSH 10 warns on stderr that the exchange is not post-quantum, a line git relays and the doors leave alone.</para>
+/// <para>Measured with Git for Windows' OpenSSH 10.2 (the ssh the door finds on git's path) and Windows' 9.5: it signs host keys and
+/// verifies client keys as RSA (SHA-2) or ECDSA, never ed25519, whose offer ends the connection unanswered rather than refused; so a key
+/// offered here is made as RSA. Its key exchange is ECDH over the NIST curves, which both still offer.</para>
 /// <para>One per test class (<see cref="IClassFixture{TFixture}"/>): each test authorizes its own identity's key and serves its own
 /// repositories by a path of its own. Every connection, key offered and command is counted, so a test can say a held remote did not
 /// connect again and which ssh the door found.</para>
