@@ -251,24 +251,8 @@ internal sealed class RosterUsage(HarnessRoster roster)
                 // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
                 // person's own sign-in and might refresh their token (D197 point 3).
                 var profileHome = HarnessSettings.ProfileHome(roster.Home, owner, account);
-                if (question.Kind == UsageKind.Claude)
-                {
-                    // Run in an empty folder of the home's own, never the repository or OS temp: the CLI keys its project
-                    // state by its working directory, and a read is no project's.
-                    var folder = Path.Combine(profileHome, "usage-read");
-                    Directory.CreateDirectory(folder);
-                    var asking = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed, folder);
-                    var at = roster.Clock();
-                    readings = await CodexUsage.ReadAsync(
-                        asking, ClaudeUsage.Patience, ct,
-                        (incoming, outgoing, patience, token) => ClaudeUsage.AskWithinAsync(incoming, outgoing, patience, at, token))
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    var info = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed);
-                    readings = await CodexUsage.ReadAsync(info, CodexUsage.Patience, ct).ConfigureAwait(false);
-                }
+                readings = await question.AskAsync(new UsageAsk(command.Run, toolchain, profileHome, command.Managed, roster.Clock()), ct)
+                    .ConfigureAwait(false);
             }
 
             // Every window it said kept in the usage history first (USAGECAP1a1): the reader's own parse where it answered one,
@@ -286,7 +270,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
                     owner, key, door,
                     [.. readings.Select(reading => new WindowSeen(
                         reading.Window, reading.Window, null, null, reading.Used, null, reading.Reset, UsageHistory.ResetSaid))],
-                    question.Kind == UsageKind.Claude ? ClaudeUsage.Source : CodexUsage.Method, reader: 0, now, session: null);
+                    question.Source, reader: 0, now, session: null);
             }
 
             if (readings is not { Count: > 0 }) return null;

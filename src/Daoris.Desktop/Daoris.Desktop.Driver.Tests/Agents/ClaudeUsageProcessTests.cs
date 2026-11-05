@@ -77,11 +77,10 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private static readonly UsageQuestion Question = new(
+    private static readonly UsageQuestion Question = new ClaudeUsageQuestion(
         "claude-stand-in",
         ["claude-stand-in", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--strict-mcp-config"],
-        ClaudeUsage.Question.Recorded,
-        UsageKind.Claude);
+        ClaudeUsage.Question.Recorded);
 
     private const string Arguments = "--input-format stream-json --output-format stream-json --verbose --strict-mcp-config";
 

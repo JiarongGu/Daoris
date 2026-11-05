@@ -71,7 +71,7 @@ public sealed class CodexUsageProcessTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private static readonly UsageQuestion Question = new("server-stand-in", ["server-stand-in", "app-server"], CodexUsage.Question.Recorded);
+    private static readonly UsageQuestion Question = new CodexUsageQuestion("server-stand-in", ["server-stand-in", "app-server"], CodexUsage.Question.Recorded);
 
     private HarnessToolchain Toolchain => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "CODEX_HOME", ProbeByPresence: true,
