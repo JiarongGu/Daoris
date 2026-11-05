@@ -147,7 +147,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes`. The cap stays a machine
     setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
-    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. (from D229)
+    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The page writes
+    them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
+    at the revision read, each rule saying what it replaces; a role's editor says the rules naming it and writes none,
+    and its policy record carries the rule and choices alone. A held answer carries its rule (`AnswerRuleWords`) and
+    the head, the foot and *What needs you* say it in one sentence. The room says each place's rules
+    (`HelpRoomRules`); the window says *supervisor rule* and *count*. (from D229)
 
 **The supervisor and the steward**
 
@@ -264,8 +269,11 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 - **CONTEXTDRIVE1e (rest):** the failures park, the tries hold and a move recording their acts through
   `SupervisorRuleActs`; *Details*' Supervisor line and the supervisor's print reading them.
-- **CONTEXTDRIVE1g, h, k:** the rules' editors on the page (no page code reads them yet); a rule's hold on the head and
-  *What needs you*; the room's and glossary's words.
+- **CONTEXTDRIVE1g (rest):** the machine's page mounts the fold only through a place's Roles; `HelpCoverageTests`' rows
+  for the new hooks; the failures and tries holds carry no rule of their own yet, as they record no act.
+- **CONTEXTDRIVE1h (rest):** *Details*' counts (the session read's `counts`), the head's chip with its count, and the
+  frame handing `onChangeRule` (the door to the place's Roles) to the head and the strip.
+- **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `rules` card words.
 - **CONTEXTDRIVE1n, j:** a conversation's course reads the rules; `refer`, the agent supervisor's *course* act.
 - **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
   (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals, `driver list`, the seed) see the default, and about thirty
