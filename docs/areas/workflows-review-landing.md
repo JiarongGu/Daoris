@@ -53,7 +53,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
-| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`) | The `check` node performed by Daoris, off the pass, under the heavy slots |
+| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/VerifyRuns.tsx`, `lineSaid.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a person's verification of a branch or a commit bound as a run of its own; a line's runs read with their verdicts (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
 | Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs`; `Transitional/Migration/WorkflowsStep.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
@@ -166,7 +166,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
     confirmed once before it is blamed. (from D215, D227, D232)
 40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. One run per line at a time, each batch
-    run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. (from D192)
+    run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. A person's verification of a branch
+    or a commit (`daoris gate verify`, *Verify…*) is a run of its own under the accepted gates; its check's outcome is recorded on
+    `run:<run>` under the `gates` source, and the line's read says each run's verdict (verified, failed naming its gate, not known
+    with why, not now, running, waiting) with each gate from the check's newest result. (from D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (from D184, D227)
 
 **Set up, conversion and Current**
@@ -257,7 +260,6 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
 - **FABRIC-SQUASHCHAIN1:** whether the plan and the performer's keeper agree on a squash chain's earlier part waits on the owner's choice.
-- **FABRIC-PIPELINE1d:** the verification run on a line has no view of its own yet.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.

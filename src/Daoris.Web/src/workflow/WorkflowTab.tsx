@@ -8,6 +8,7 @@ import { type WorkflowEditorBridge, WorkflowEditor } from './edit/WorkflowEditor
 import { partSaid } from './said';
 import { type WorkflowDoors, WorkflowChart } from './WorkflowChart';
 import { type VerifyAsk, WorkflowStartNode } from './WorkflowStartNode';
+import { type VerifyRunsProps, VerifyRuns } from './VerifyRuns';
 
 export type { WorkflowDoors } from './WorkflowChart';
 
@@ -29,6 +30,8 @@ export type WorkflowTabProps = {
   accepting?: boolean;
   /** The person's *Verify…* of a branch or a commit under the accepted gates (FABRIC-PIPELINE1d); none, and the start offers no press. */
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
+  /** A repository's verifications with their verdicts (FABRIC-PIPELINE1d), where its landed route names a verification pipeline; none, and none drawn. */
+  verifications?: VerifyRunsProps;
   /** The step editor's bridge (WORKFLOWEDIT1b); none, and the tab says the terminal's way to start a workflow of one's own. */
   editor?: WorkflowEditorBridge;
 };
@@ -84,7 +87,7 @@ export function WorkflowHead({ page, name, current }: { page: 'repository' | 'wo
  * editor (WORKFLOWEDIT1b) below it, whose *Use here* chooses a saved version for this page's place.
  */
 export function WorkflowTab({
-  page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, editor,
+  page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, verifications, editor,
 }: WorkflowTabProps & {
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose page it is. */
@@ -116,6 +119,8 @@ export function WorkflowTab({
           onVerify={onVerify}
         />
       )}
+
+      {page === 'repository' && verifications && <VerifyRuns {...verifications} />}
 
       <WorkflowChart workflow={current} page={page} name={name} doors={doors} />
 
