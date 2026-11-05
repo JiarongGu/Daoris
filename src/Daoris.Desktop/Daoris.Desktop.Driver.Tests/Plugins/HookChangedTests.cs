@@ -141,7 +141,7 @@ public sealed class HookChangedTests : IDisposable
     public void The_frame_names_what_moved_and_the_sessions_it_was_about_and_nothing_else()
     {
         Assert.Equal(
-            """{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""",
+            """{"scopes":["sessions","landing","diff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""",
             Json(HookFrames.Changed(PluginKit.SampleChange)));
         // A change about no one session names none: any.
         Assert.Equal("""{"scopes":["sweep"],"sessions":null}""", Json(HookFrames.Changed(new StateChangedFrame(["sweep"], null))));
