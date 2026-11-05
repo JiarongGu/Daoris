@@ -120,8 +120,6 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
         return posted.Refusal switch
         {
             ChannelRefusal.NotFound => Refusal.NotFound(code, code),
-            ChannelRefusal.HeldElsewhere => Refusal.Conflict(
-                $"Ask `#{request.Id.TrimStart('#')}` is a teammate's, held on their machine: this machine reads its channel and cannot post to it.", code),
             _ => Refusal.BadRequest(code, code),
         };
     }

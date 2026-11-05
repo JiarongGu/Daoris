@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { Channel, ChannelItem } from '../work/channel';
@@ -56,16 +56,16 @@ describe('an ask’s channel', () => {
     expect(within(row('Read the figure published to db')).getByText('Daoris')).toBeInTheDocument();
   });
 
-  /** SESSONE2h: a teammate's ask's channel is read here and posted elsewhere, so it has no composer and no Reply, and says why. */
-  it('read-only, draws the messages and the unread count with no composer, no reply and a sentence saying whose ask it is', () => {
-    render(<ChannelSection channel={CHANNEL({ unread: 2 })} readOnly onPost={() => {}} />);
+  /** SESSONE2i: a message a teammate's person wrote, from their machine, names them and never says You; the person's own still does. */
+  it('names a teammate’s person by their machine, never as You', async () => {
+    const theirs: ChannelItem = { kind: 'message', id: 'bob/t1', at: '2026-10-14T09:09:00Z', person: true, origin: 'bob-laptop', text: 'Keep the old column.' };
+    render(<ChannelSection channel={CHANNEL({ items: [...ITEMS, theirs] })} onPost={() => {}} onRead={() => {}} />);
 
-    expect(within(list()).getAllByRole('listitem')).toHaveLength(ITEMS.length);
-    expect(screen.getByText('2 unread')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
-    expect(screen.getByText(/teammate’s ask, held on their machine/)).toBeInTheDocument();
+    expect(within(row('Keep the old column.')).getByText('A teammate on bob-laptop')).toBeInTheDocument();
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<ChannelSection channel={CHANNEL({ items: [theirs] })} onPost={() => {}} />);
+    expect(within(row('Keep the old column.')).getByText('bob-laptop 上的队友')).toBeInTheDocument();
   });
 
   it('words every code Daoris writes, in either language, and a code it has no words for as it was written', async () => {
@@ -388,8 +388,8 @@ describe('what a message reached', () => {
     expect(screen.getByText('No session of web’s is on this machine to send it to.')).toBeInTheDocument();
   });
 
-  it('offers nothing to send on in a read-only channel, or where no press is handed', () => {
-    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} readOnly onPost={() => {}} onForward={() => {}} />);
+  it('offers nothing to send on where no press is handed, as on a teammate’s ask', () => {
+    render(<ChannelSection channel={CHANNEL({ items: [REACHED] })} onPost={() => {}} />);
     expect(screen.queryByRole('button', { name: /Send to its session/ })).toBeNull();
   });
 

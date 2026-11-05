@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
 import i18n from '../locales/i18n';
@@ -7,9 +8,12 @@ import type { Channel, ElsewhereAsk } from '../work/channel';
 import { TeammateAskPage } from './TeammateAskPage';
 
 // SESSONE2h (D167; the co-working design §2.4): a teammate's ask has no record here, so its page is the channel the sync mirrored,
-// read-only, under what the messages carry (circle, machines, moment); none of the ask page's request, quest or work sections.
+// under what the messages carry (circle, machines, moment); none of the ask page's request, quest or work sections. SESSONE2i: the
+// person posts to it, as to an ask of theirs.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
+
+const POST = () => {};
 
 const ASK: ElsewhereAsk = { id: '7e6f51', workspace: 'default', origins: ['key-a', 'key-b'], latest: '2026-10-15T09:05:00Z', messages: 2, unread: 1 };
 
@@ -24,22 +28,34 @@ const CHANNEL: Channel = {
 describe('a teammate’s ask’s page', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('names the ask by its id, says it is a teammate’s and where it is held, and reads its channel with no composer', () => {
-    render(<TeammateAskPage ask={ASK} channel={CHANNEL} />);
+  it('names the ask by its id, says it is a teammate’s and where it is held, and reads its channel', () => {
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={POST} />);
 
     expect(screen.getByRole('heading', { name: /teammate’s ask #7e6f51/ })).toBeInTheDocument();
-    expect(screen.getByText(/held on their machine/)).toBeInTheDocument();
+    expect(screen.getByText(/their agents read it as yours/)).toBeInTheDocument();
     expect(screen.getByText('default')).toBeInTheDocument();
     expect(screen.getByText('key-a, key-b')).toBeInTheDocument();
     const channel = screen.getByRole('list', { name: 'Channel' });
     expect(within(channel).getAllByRole('listitem')).toHaveLength(2);
     expect(within(channel).getByText('Which column?')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+
+  /** 🔴 SESSONE2i: the composer posts to the teammate's ask, answering one of its messages, with no Send to its session. */
+  it('posts the person’s words to it, answering a message, and offers nothing to send on', async () => {
+    const onPost = vi.fn();
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={onPost} />);
+
+    await userEvent.click(within(screen.getByText('The v3 one.').closest('li')!).getByRole('button', { name: 'Reply' }));
+    await userEvent.type(screen.getByRole('textbox'), 'Thanks: keep the old column a week.');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(onPost).toHaveBeenCalledOnce();
+    expect(onPost.mock.calls[0][0]).toMatchObject({ text: 'Thanks: keep the old column a week.', re: 'm2' });
+    expect(screen.queryByRole('button', { name: /Send to its session/ })).toBeNull();
   });
 
   it('draws none of an ask’s own sections: no proposal, no quests, no publish, no close', () => {
-    render(<TeammateAskPage ask={ASK} channel={CHANNEL} />);
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={POST} />);
 
     for (const name of ['Proposal', 'Quests', 'Review', 'Sessions', 'Files', 'Links']) {
       expect(screen.queryByRole('region', { name })).toBeNull();
@@ -50,22 +66,22 @@ describe('a teammate’s ask’s page', () => {
   /** NOTIFY2g: the service keeps the person's mark on a teammate's ask, so reading its page clears its item in Messages. */
   it('moves the person’s mark through the newest item once what was unread is on the page', () => {
     const onRead = vi.fn();
-    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onRead={onRead} />);
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={POST} onRead={onRead} />);
     expect(onRead).toHaveBeenCalledTimes(1);
     expect(onRead).toHaveBeenCalledWith('2026-10-15T09:05:00Z');
   });
 
   it('says it is reading while the channel is on its way', () => {
-    render(<TeammateAskPage ask={ASK} channel={null} />);
+    render(<TeammateAskPage ask={ASK} channel={null} onPost={POST} />);
     expect(screen.getByText('Reading the channel…')).toBeInTheDocument();
   });
 
   it('is worded in Chinese with the glossary’s names', async () => {
     await i18n.changeLanguage('zh');
-    render(<TeammateAskPage ask={ASK} channel={CHANNEL} />);
+    render(<TeammateAskPage ask={ASK} channel={CHANNEL} onPost={POST} />);
 
     expect(screen.getByRole('heading', { name: /队友的需求 #7e6f51/ })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: '频道' })).toBeInTheDocument();
-    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByText(/对方的智能体把它当作你说的/)).toBeInTheDocument();
   });
 });

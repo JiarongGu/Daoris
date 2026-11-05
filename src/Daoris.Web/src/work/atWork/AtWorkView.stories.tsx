@@ -5,7 +5,7 @@ import { AtWorkView } from './AtWorkView';
 import {
   ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, COWORKERS, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
   JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
-  PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, REVIEWERS, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
+  LINE_SAID, PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, REVIEWERS, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
 // Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
@@ -151,6 +151,10 @@ export const AskedByYouChinese: Story = { args: { held: ASKED_BY({ person: true 
 /** The channel's newest three: a lane part's on its row, the lead's on its own, and the person's under *On the channel*. */
 export const ChannelLastWords: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingLight };
 export const ChannelLastWordsChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingZh };
+
+/** COMMS1k: a line on no ask, its own channel: two alongside parts to each other alone, each on its row, and no *All messages*. */
+export const LineOwnChannel: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: LINE_SAID } }, decorators: routingLight };
+export const LineOwnChannelChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: LINE_SAID } }, decorators: routingZh };
 
 /** A session with an ask and nothing said on its channel yet. */
 export const ChannelNothingSaid: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: [], onOpen: nothing } }, decorators: routingLight };

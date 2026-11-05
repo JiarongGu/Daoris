@@ -172,8 +172,11 @@ unread count and no composer. The ask's page, each session's panel under its hea
 *Group by ask* are molecules over those answers (`asks/ChannelSection.tsx`, `work/channel.ts`), with Daoris's lines worded from
 their codes in the reader's language and the messages shown as written. The messages to one part alone (COMMS1k) come apart from the
 items, as `addressed`, and the section draws them beneath the channel, read-only, with the part and what each reached in its line. **A teammate's ask** (SESSONE2h) has a row in the Asks list's
-*Teammates' asks* group, from the driver's `ASKS_ELSEWHERE` (`useElsewhereAsks`), and a page of its channel alone, read-only
-(`asks/TeammateAskPage.tsx`): this machine holds no record of it, so it has no title and none of an ask's sections. **What a
+*Teammates' asks* group, from the driver's `ASKS_ELSEWHERE` (`useElsewhereAsks`), and a page of its channel alone
+(`asks/TeammateAskPage.tsx`), posted to as an ask's (SESSONE2i): this machine holds no record of it, so it has no title and none
+of an ask's sections, and a teammate's person's message names them by their machine, never *You*. **A line's own channel**
+(COMMS1k), for a line on no ask held here, is read through `CHANNEL_LINE` (`useLineChannel`) and drawn as *At work*'s last words,
+a message to one part naming it. **What a
 message reached** (COWORK1d, D188): an urgent message names its level in a word, each message lists its receipt per repository it
 addresses, and where it waits there or never reached it, *Send to its session* (`useForwardChannel`, the driver's `CHANNEL_FORWARD`)
 sends it on, the person's own press, on the ask's page and a session's panel alike; a teammate's channel offers none.

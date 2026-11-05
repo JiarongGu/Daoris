@@ -146,8 +146,7 @@
   "asks.elsewhere.pill": "Teammate’s",
   "asks.elsewhere.title": "A teammate’s ask #{{id}}",
   "asks.elsewhere.latest": "last message {{ago}}",
-  "asks.elsewhere.note": "This ask belongs to a teammate, so only the channel their machine shared is here. Its request, its quests and its work are theirs to show.",
+  "asks.elsewhere.note": "This ask belongs to a teammate, so only the channel their machine shared is here. Its request, its quests and its work are theirs to show. What you post here goes to their machine, and their agents read it as yours, not their person’s.",
   "asks.elsewhere.from": "From",
-  "asks.elsewhere.last": "Last message",
-  "asks.elsewhere.readOnly": "This is a teammate’s ask, held on their machine: you can read its channel here and cannot write to it."
+  "asks.elsewhere.last": "Last message"
 }

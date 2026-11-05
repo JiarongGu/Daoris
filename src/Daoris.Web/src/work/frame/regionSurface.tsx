@@ -12,7 +12,8 @@ import { WorkflowRunView } from '../../workflow/WorkflowRunView';
 import { noteIsInTheHead } from '../AttendedSession';
 import { AtWorkView } from '../atWork/AtWorkView';
 import type { ExchangeSeek } from '../atWork/exchangeSeek';
-import { lastWords } from '../channel';
+import { useLineChannel } from '../../bridge/sessions/asks';
+import { lastMessages, lastWords } from '../channel';
 import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
 import { panelTabs } from '../console/streams';
@@ -98,6 +99,11 @@ export function useRegionSurfaces({
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  // A line on no ask held here has a channel of its own (COMMS1k), which *At work* draws: read only while *At work* shows.
+  const atWorkShown = following !== null && (placed.places.atWork === 'panel'
+    ? !collapsed && panelView === 'atWork'
+    : !dockClosed && dock === 'atWork');
+  const lineChannel = useLineChannel(attended && !channelAsk ? attended.id : null, { enabled: atWorkShown });
   // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
   const considered = useConsidered().data;
   // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
@@ -270,7 +276,8 @@ export function useRegionSurfaces({
           // COMMS1i: its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
           nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
           seek={atWorkSeek}
-          // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); none for a session with no ask.
+          // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); for a line on no ask held here,
+          // the newest three of its own channel (COMMS1k), which no panel holds.
           channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
             words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
             onOpen: () => {
@@ -278,7 +285,7 @@ export function useRegionSurfaces({
               // Under 768 px the view replaces the conversation: leaving it shows the panel it opened.
               if (layout.dock.mode === 'full') closeDock(true);
             },
-          } : undefined}
+          } : lineChannel ? { words: lastMessages(lineChannel) } : undefined}
           onRetry={() => { void atWork.refetch(); }}
           // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
           streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}

@@ -141,16 +141,24 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, (await host.PostAsync("/api/asks/5d4c3d/channel/read", new { })).Status);
     }
 
-    /// <summary>🔴 Posting to a teammate's ask is refused with its own code, not as an unknown ask: the read is all this machine does there.</summary>
+    /// <summary>
+    /// 🔴 SESSONE2i: the person posts to a teammate's ask as to their own, at their level, and the message is this machine's own, which the
+    /// sync carries to the holder; an ask no message names is still not found.
+    /// </summary>
     [Fact]
-    public async Task A_post_to_a_teammates_ask_is_refused_as_held_elsewhere()
+    public async Task A_post_to_a_teammates_ask_is_kept_to_travel_at_its_level()
     {
         await host.Composed.Messages.MirrorAsync(Teammates("m3", "9a8b7e", "theirs", DateTimeOffset.UtcNow));
 
-        var posted = await host.PostAsync("/api/asks/9a8b7e/channel", new { text = "mine" });
+        var posted = await host.PostAsync("/api/asks/9a8b7e/channel", new { text = "mine", urgent = false });
 
-        Assert.Equal((409, "held-elsewhere"), (posted.Status, posted.Json.GetProperty("code").GetString()));
-        Assert.Single((await host.GetAsync("/api/asks/9a8b7e/channel")).Json.GetProperty("items").EnumerateArray());
+        Assert.Equal(200, posted.Status);
+        var message = posted.Json.GetProperty("message");
+        Assert.Equal(("mine", true, false), (message.GetProperty("text").GetString(), message.GetProperty("person").GetBoolean(), message.GetProperty("urgent").GetBoolean()));
+        var items = (await host.GetAsync("/api/asks/9a8b7e/channel")).Json.GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(2, items.Count);
+        Assert.False(items[1].TryGetProperty("origin", out var origin) && origin.ValueKind == System.Text.Json.JsonValueKind.String);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/9a8b7f/channel", new { text = "mine" })).Status);
     }
 
     private static ChannelMessage From(string origin, string id, string ask, DateTimeOffset at) => new(
