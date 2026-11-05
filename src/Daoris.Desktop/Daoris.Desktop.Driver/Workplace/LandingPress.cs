@@ -26,7 +26,7 @@ internal sealed class LandingPress(
         {
             return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
             {
-                Refusal = AutoLandingCode.Refused,
+                Refusal = LandingCode.Refused,
             };
         }
 
@@ -35,10 +35,10 @@ internal sealed class LandingPress(
         if (refused is null)
         {
             (read, var unread) = TreeDelivering.Read(delivery, context.Home, repository);
-            refused = read is null ? new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused }
-                : read.Unauthorized() is { } revoked ? new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off }
+            refused = read is null ? new(false, $"Nothing was landed: {unread}.") { Refusal = LandingCode.Refused }
+                : read.Unauthorized() is { } revoked ? new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = LandingCode.Off }
                 : read is { Next: DeliveryPhases.Prepared } && read.Begin(DeliveryPhases.Prepared, read.Preparing) is { } notBegun
-                    ? new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused }
+                    ? new(false, $"Nothing was landed: {notBegun}.") { Refusal = LandingCode.Refused }
                 : null;
         }
 
@@ -62,7 +62,7 @@ internal sealed class LandingPress(
     /// <summary>
     /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (LANDRACE1 and its review): where
     /// it is, who accepted it, what its plugin answered (a failure said as a landing says it, with how the branch is pushed), and that
-    /// nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as the look keeps a press's landing.
+    /// nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
     /// </summary>
     internal static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
     {
@@ -75,7 +75,7 @@ internal sealed class LandingPress(
             $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
             + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}.{plugin} Nothing more was landed.", before.Branch)
         {
-            Refusal = AutoLandingCode.Already,
+            Refusal = LandingCode.Already,
             Plugin = before.Said,
         };
     }
@@ -109,7 +109,7 @@ internal sealed class LandingPress(
         // checkout, its status and its files are that checkout's, and a replay or a follow in it would rewrite them: nothing lands.
         if (here is not null && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
-            return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
+            return new(false, $"Nothing was landed: {bound}.") { Refusal = LandingCode.Refused };
         }
 
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
@@ -117,7 +117,7 @@ internal sealed class LandingPress(
         var work = await workReads.WorkAsync(full, ct, uncommitted, here).ConfigureAwait(false);
         if (work is not null && gate?.Process?.JudgesHolds != false && DiscardOffer.Of(full, work) is { } carried)
         {
-            return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
+            return new(false, carried.NotLanded) { Refusal = LandingCode.Carried };
         }
 
         // LANDGIT1c: the dirty check below is told what that judgement's `status` counted, and asks git only where it could not say. Nothing
@@ -142,7 +142,7 @@ internal sealed class LandingPress(
         {
             return new(false, "its workflow does not accept it automatically, so nothing was landed: your Accept lands it.")
             {
-                Refusal = AutoLandingCode.Off,
+                Refusal = LandingCode.Off,
             };
         }
 
@@ -153,7 +153,7 @@ internal sealed class LandingPress(
             && !string.Equals(stands, delivering.Intent.Line, StringComparison.Ordinal))
         {
             return new(false, $"Nothing was landed: its delivery lands into `{delivering.Intent.Line}`, and `{repository}`'s line is "
-                + (stands is null ? "none git can name" : $"`{stands}`") + " now.") { Refusal = AutoLandingCode.Refused };
+                + (stands is null ? "none git can name" : $"`{stands}`") + " now.") { Refusal = LandingCode.Refused };
         }
 
         // The commit the door judged, or the delivery pinned: what lands is that commit or nothing.
@@ -187,10 +187,10 @@ internal sealed class LandingPress(
         {
             // The fetch brought what holds all of it: SQUASHTIDY1f's sentence where its proof now finds it, else nothing to land.
             return Fetched(await workReads.DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } heldNow
-                ? new(false, heldNow.NotLanded) { Refusal = AutoLandingCode.Carried, LeftOut = replaying.Held.LeftOut }
+                ? new(false, heldNow.NotLanded) { Refusal = LandingCode.Carried, LeftOut = replaying.Held.LeftOut }
                 : new(false, $"`{replaying.Branch}` holds nothing `{replaying.OntoName}` lacks: the line already holds "
                     + $"{string.Join(", ", replaying.Held.LeftOut.Select(LandingSyncWords.Each))} — nothing to land.")
-                { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
+                { Refusal = LandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
         }
 
         // LANDNODE1c3 (the land node design §3, §4): under Current the door writes the delivery here, the landing judged and nothing of it made,

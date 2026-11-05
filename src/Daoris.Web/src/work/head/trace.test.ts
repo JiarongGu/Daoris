@@ -12,7 +12,7 @@ import { QUEST_CHAIN, SESSION_CHAIN } from './traceFixtures';
 
 const source = driverSource('TraceCodes.cs');
 // LAND2b's codes, which the chain carries as their own declarations name them: a try's, who accepted, a rule's source.
-const landing = driverSource('AutoLandingCode.cs') + driverSource('WorkplaceFacts.cs');
+const landing = driverSource('LandingCode.cs') + driverSource('WorkplaceFacts.cs');
 
 /** A class's codes as the driver declares them: each `const string`, by its name and value. */
 function declared(holder: string, text = holder.startsWith('Trace') ? source : landing): Map<string, string> {

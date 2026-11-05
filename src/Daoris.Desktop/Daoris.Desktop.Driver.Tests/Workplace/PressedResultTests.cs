@@ -163,8 +163,8 @@ public sealed class PressedResultTests
     /// looked; moved just before the push, the branch stands made and recorded, and the sentence names the hand-off that pushes it.
     /// </summary>
     [Theory]
-    [InlineData("reopened", AutoLandingCode.Undone, "its quest was taken back")]
-    [InlineData("later", AutoLandingCode.Refused, "its quest's submission was made again")]
+    [InlineData("reopened", LandingCode.Undone, "its quest was taken back")]
+    [InlineData("later", LandingCode.Refused, "its quest's submission was made again")]
     public async Task A_moved_result_refuses_under_the_tree_and_holds_the_push_back(string change, string code, string why)
     {
         var service = new Service { Quests = { ["q1"] = Submitted() } };

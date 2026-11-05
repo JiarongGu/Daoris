@@ -426,7 +426,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(apart.Path, "apart.txt", "work beside the chain", "work beside");
         var grewApart = await LandAsync(trees, apart.Path, new LandingSubject("s2", "q1", "Fix the gap"));
         Assert.False(grewApart.Landed);
-        Assert.Equal(AutoLandingCode.Exists, grewApart.Refusal);
+        Assert.Equal(LandingCode.Exists, grewApart.Refusal);
         Assert.Contains("does not grow from `feature/q1-fix-the-gap`", grewApart.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
 
@@ -537,7 +537,7 @@ public sealed class LandingTests : IDisposable
         var refused = await LandAsync(trees, next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
 
         Assert.False(refused.Landed);
-        Assert.Equal(AutoLandingCode.Completed, refused.Refusal);
+        Assert.Equal(LandingCode.Completed, refused.Refusal);
         Assert.Contains("already reads on `main` — its pull request was merged", refused.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
     }
@@ -596,7 +596,7 @@ public sealed class LandingTests : IDisposable
         var entry = trees.Recorded.Of("engine", "feature/q1-fix-the-gap")!;
         Assert.Equal("https://example.test/pull/7", entry.PullRequest);
         Assert.Equal((await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim(), entry.PushedTip);
-        Assert.Equal(AutoLandingCode.Advanced, LandTries.CodeOf(advanced));
+        Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
     }
 
     /// <summary>A plugin faked on the wire's channel: nothing reaches a network or a platform.</summary>

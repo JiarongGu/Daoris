@@ -34,7 +34,7 @@ internal static class CurrentDeliveries
         var (method, graph) = bound is null
             ? (rule.Form == LandingForm.Merge ? "merge" : rule.Plugin is not null ? "pull-request" : "branch", "none")
             : (bound.Method, bound.Graph);
-        TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
+        TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = LandingCode.Refused };
         // The landing goes into the tree's line whatever the record would say, and the repository declares one line: a target is that line or
         // nothing lands (REVIEW2), so a saved version that names another is refused here and never lands.
         if (bound?.Target is { } target && !string.Equals(target, line, StringComparison.Ordinal))

@@ -31,7 +31,7 @@ public static class LandCarry
     public static string? WhyOf(TreeLanding landed) =>
         landed.Landed ? null
         : landed.Conflict is not null ? Conflicted
-        : landed.Refusal == AutoLandingCode.Uncommitted ? Uncommitted
+        : landed.Refusal == LandingCode.Uncommitted ? Uncommitted
         : null;
 
     /// <summary>

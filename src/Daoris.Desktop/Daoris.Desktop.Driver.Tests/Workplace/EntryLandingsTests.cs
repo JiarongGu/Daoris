@@ -127,7 +127,7 @@ public sealed class EntryLandingsTests
         var refused = EntryLandWords.Conflicted("feature/x", "CONFLICT (content): Merge conflict in app.cs.");
 
         Assert.False(refused.Landed);
-        Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
+        Assert.Equal(LandingCode.Refused, refused.Refusal);
         Assert.Contains("onto `feature/x`, its entry's branch, conflicts with the entry's earlier work there", refused.Message);
         Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);    }
 

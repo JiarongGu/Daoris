@@ -31,7 +31,7 @@ public static class ChatLandCommand
         {
             var payload = new { id = session, branch = entered, said = true, follow = true };
             Task<int> Elsewhere() =>
-                Task.FromResult(Print(world, TreesWords.Land(new TreeLanding(false, ChatPresses.Elsewhere) { Refusal = AutoLandingCode.Refused }, [])));
+                Task.FromResult(Print(world, TreesWords.Land(new TreeLanding(false, ChatPresses.Elsewhere) { Refusal = LandingCode.Refused }, [])));
             return world.Instance is null
                 ? await Elsewhere().ConfigureAwait(false)
                 : await InstanceDoor.PressAsync(TreesRoutes.Land, payload, Elsewhere, answer => TreesSaid.ReadWords(world.Output, world.Error)(answer) ?? 2,

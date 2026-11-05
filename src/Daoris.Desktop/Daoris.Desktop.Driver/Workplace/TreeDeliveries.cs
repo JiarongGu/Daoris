@@ -220,7 +220,7 @@ internal sealed class TreeDelivering
 
     /// <summary>
     /// What a landing says that waited for its tree behind its delivery's other starter, which delivered it meanwhile (a press and a pass at
-    /// once): where the work is, and that nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as LANDRACE1's is.
+    /// once): where the work is, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as LANDRACE1's is.
     /// </summary>
     public static TreeLanding Meanwhile(DeliveryRecord delivered)
     {
@@ -230,7 +230,7 @@ internal sealed class TreeDelivering
             $"its delivery {delivered.Key[..12]} was delivered while this landing waited for its tree: its work at {TextBounds.ShortCommit(intent.Tip, 8)} is "
             + (merge ? $"merged into `{intent.Line}`" : $"on `{intent.Branch}`") + ". Nothing more was landed.", merge ? null : intent.Branch)
         {
-            Refusal = AutoLandingCode.Already,
+            Refusal = LandingCode.Already,
         };
     }
 

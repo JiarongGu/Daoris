@@ -37,7 +37,7 @@ public sealed class LandCarryTests : LandedFixture
 
         var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         Assert.False(refused.Landed, refused.Message);
-        Assert.Equal(AutoLandingCode.Uncommitted, refused.Refusal);
+        Assert.Equal(LandingCode.Uncommitted, refused.Refusal);
 
         var carried = await LandCarry.CarryAsync(SayAsync, Home, Subject.Session, tree.Path, refused, record: null, Pressed);
 
@@ -105,7 +105,7 @@ public sealed class LandCarryTests : LandedFixture
         var refused = await trees.LandAsync(tree.Path, Subject);
 
         Assert.False(refused.Landed, refused.Message);
-        Assert.Equal(AutoLandingCode.Uncommitted, refused.Refusal);
+        Assert.Equal(LandingCode.Uncommitted, refused.Refusal);
         var carried = await LandCarry.CarryAsync(SayAsync, Home, Subject.Session, tree.Path, refused, record: null, Pressed);
         Assert.True(carried!.Told, carried.Sentence);
         Assert.Single(_said);

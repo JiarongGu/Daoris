@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record TreeLanding(bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null)
 {
     /// <summary>
-    /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
+    /// A refusal's code (LAND2b), one of <see cref="LandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
     /// chain's branch was merged, <c>completed</c> (LAND2c) where the branch form said so, else null, which a landing at done keeps
     /// as <c>refused</c>. The message says it to a person.
     /// </summary>

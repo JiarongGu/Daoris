@@ -295,7 +295,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     [Fact]
     public void A_press_that_carried_its_session_on_says_so_and_the_plan_says_the_yes_is_kept()
     {
-        var landed = new TreeLanding(false, "Accepted: its session was carried on.") { Refusal = AutoLandingCode.Uncommitted };
+        var landed = new TreeLanding(false, "Accepted: its session was carried on.") { Refusal = LandingCode.Uncommitted };
         var carry = new CarryAnswer(true, LandCarry.Uncommitted, landed.Message);
         var said = TreesWords.Carried(landed, carry, []);
 

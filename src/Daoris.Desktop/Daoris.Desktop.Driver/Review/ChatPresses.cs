@@ -101,17 +101,17 @@ public static class ChatPresses
             // nothing again.
             if (judged.Workflow is not { LetsGo: false } && judged.Opinion is { State: OpinionGateStates.NotAsked, Run: not null } opinion)
             {
-                if (opinion.Asked) return new(Refusal(opinion.Says, AutoLandingCode.Opinion), judged, tip) { Code = Codes.Asked };
+                if (opinion.Asked) return new(Refusal(opinion.Says, LandingCode.Opinion), judged, tip) { Code = Codes.Asked };
                 new OpinionDues(home).Due(new OpinionDue(ask.Session, "", ask.Repository, ask.Workspace, ask.Tree, OpinionRules.Landing, DateTimeOffset.UtcNow)
                 {
                     Run = ask.Run, Tip = tip, Turns = turns(),
                 });
-                return new(Refusal(OpinionGate.AskedAtPress(opinion), AutoLandingCode.Opinion), judged, tip) { Asked = true, Code = Codes.Asked };
+                return new(Refusal(OpinionGate.AskedAtPress(opinion), LandingCode.Opinion), judged, tip) { Asked = true, Code = Codes.Asked };
             }
 
             var landed = await land(judged, ct).ConfigureAwait(false);
             // The pinned path refused a tree that moved past the tip judged: said as the press says it, so the person presses again.
-            if (!landed.Landed && landed.Refusal == AutoLandingCode.Refused
+            if (!landed.Landed && landed.Refusal == LandingCode.Refused
                 && await head(ct).ConfigureAwait(false) is { } now && !string.Equals(now, tip, StringComparison.OrdinalIgnoreCase))
             {
                 landed = landed with { Message = Moved };
@@ -124,7 +124,7 @@ public static class ChatPresses
             if (hold == PressHold.Held) holder!.Release(ask.Session);
         }
 
-        static ChatPressed Refused(string why) => new(Refusal(why, AutoLandingCode.Refused), null, null);
+        static ChatPressed Refused(string why) => new(Refusal(why, LandingCode.Refused), null, null);
     }
 
     private static TreeLanding Refusal(string message, string code) => new(false, message) { Refusal = code };

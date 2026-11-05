@@ -71,7 +71,7 @@ public sealed class ReviewBoundaryTests
         var held = open with { Workflow = cannot };
         Assert.Equal([$"trees: {cannot.Says}"], LandingGateWords.Plan(held));
         Assert.False(held.LetsGo);
-        Assert.Equal(AutoLandingCode.Refused, held.Refusal!.Refusal);
+        Assert.Equal(LandingCode.Refused, held.Refusal!.Refusal);
         var line = LandingGateWords.Held("s1", ("work", "web-app"), held, held.Refusal!, "terminal")!;
         Assert.Equal("workflow.held", line.Event);
         Assert.Contains(("code", (object?)WorkflowGateStates.CannotStart), line.Data);

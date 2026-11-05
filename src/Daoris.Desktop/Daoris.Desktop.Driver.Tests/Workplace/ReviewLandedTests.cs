@@ -57,7 +57,7 @@ public sealed class ReviewLandedTests : LandedFixture
         Assert.NotNull(work);
         Assert.False(work.Holds, "a session whose quest branch the line merged holds nothing to review");
         Assert.Equal(Replayed, work.Held?.Held.Said);
-        Assert.Equal(AutoLandingCode.Carried, landing.Refusal);
+        Assert.Equal(LandingCode.Carried, landing.Refusal);
     }
 
     /// <summary>

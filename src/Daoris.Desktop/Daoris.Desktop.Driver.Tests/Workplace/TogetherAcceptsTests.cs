@@ -70,7 +70,7 @@ public sealed class TogetherAcceptsTests : LandedFixture
 
         var again = await trees.LandAsync(beside.Path, new LandingSubject("s-beside", "q2", "The work beside it"));
         Assert.False(again.Landed);
-        Assert.Equal(AutoLandingCode.Already, again.Refusal);
+        Assert.Equal(LandingCode.Already, again.Refusal);
         Assert.Contains("brought into", again.Message);
         Assert.Single(new LandedBranches(Home).All());
     }
@@ -94,7 +94,7 @@ public sealed class TogetherAcceptsTests : LandedFixture
     public async Task A_member_held_by_its_own_gate_lands_nothing_and_the_operation_stays_ready()
     {
         var (trees, root, _, _, operation) = await ReadyAsync();
-        var held = new HeldGate(new TreeLanding(false, "its review has not passed") { Refusal = AutoLandingCode.Unreviewed });
+        var held = new HeldGate(new TreeLanding(false, "its review has not passed") { Refusal = LandingCode.Unreviewed });
 
         var landed = await AcceptAsync(trees, operation, new Dictionary<string, IWorkplaceGate?> { ["s-other"] = held });
 

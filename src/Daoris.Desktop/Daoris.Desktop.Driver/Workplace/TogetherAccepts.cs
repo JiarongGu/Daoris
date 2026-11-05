@@ -197,5 +197,5 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
         return code == 0 && head.Trim() is { Length: > 0 } tip ? tip : null;
     }
 
-    private static TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = AutoLandingCode.Refused };
+    private static TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = LandingCode.Refused };
 }

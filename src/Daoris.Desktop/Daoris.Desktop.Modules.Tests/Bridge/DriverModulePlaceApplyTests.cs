@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -129,9 +130,9 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
     }
 
     /// <summary>The registry holds atlas, its checkout elsewhere: no line is read, so no git runs.</summary>
-    private sealed class StandIn : HttpMessageHandler
+    private sealed class StandIn : SessionChangesHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {

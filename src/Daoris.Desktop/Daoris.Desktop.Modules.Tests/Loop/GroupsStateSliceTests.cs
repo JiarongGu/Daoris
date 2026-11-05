@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -439,7 +440,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     private static partial Regex PageField();
 
     /// <summary>The service's doors a look at the sessions reads, standing in: the records and the quests as a test sets them.</summary>
-    private sealed class StandIn : HttpMessageHandler
+    private sealed class StandIn : SessionChangesHandler
     {
         private string _sessions = "[]";
         private string _quests = "[]";
@@ -456,7 +457,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             set => Volatile.Write(ref _quests, value);
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var answer = request.RequestUri!.PathAndQuery switch
             {

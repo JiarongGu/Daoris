@@ -86,15 +86,15 @@ public sealed class LandingChainTests : IDisposable
     /// new. Each refusal names what stands in the way; only one whose pull request was merged is <c>completed</c>.
     /// </summary>
     [Theory]
-    [InlineData("unrecorded", AutoLandingCode.Exists, "Daoris does not move a branch it did not make")]
-    [InlineData("moved", AutoLandingCode.Exists, "moved since Daoris landed on it")]
-    [InlineData("checked-out", AutoLandingCode.Exists, "checked out at")]
-    [InlineData("completed", AutoLandingCode.Completed, "its pull request was merged")]
-    [InlineData("kept-completed", AutoLandingCode.Completed, "'s pull request completed, as `acme.lands` answered at 2026-10-04 14:02 UTC")]
-    [InlineData("kept-abandoned", AutoLandingCode.Completed, "'s pull request was abandoned, as `acme.lands` answered")]
+    [InlineData("unrecorded", LandingCode.Exists, "Daoris does not move a branch it did not make")]
+    [InlineData("moved", LandingCode.Exists, "moved since Daoris landed on it")]
+    [InlineData("checked-out", LandingCode.Exists, "checked out at")]
+    [InlineData("completed", LandingCode.Completed, "its pull request was merged")]
+    [InlineData("kept-completed", LandingCode.Completed, "'s pull request completed, as `acme.lands` answered at 2026-10-04 14:02 UTC")]
+    [InlineData("kept-abandoned", LandingCode.Completed, "'s pull request was abandoned, as `acme.lands` answered")]
     [InlineData("kept-open", null, null)]
-    [InlineData("apart", AutoLandingCode.Exists, "does not grow from")]
-    [InlineData("nothing-new", AutoLandingCode.Nothing, "nothing to land")]
+    [InlineData("apart", LandingCode.Exists, "does not grow from")]
+    [InlineData("nothing-new", LandingCode.Nothing, "nothing to land")]
     [InlineData("advances", null, null)]
     public void An_advance_moves_only_a_branch_Daoris_made_at_its_tip_and_never_one_whose_work_is_on_the_line(
         string facts, string? code, string? says)
@@ -239,7 +239,7 @@ public sealed class LandingChainTests : IDisposable
         Assert.Contains("a fresh `feature/q1-fix-the-gap`", told.Message);
         Assert.DoesNotContain("pull request", told.Message);
         Assert.DoesNotContain("plugin", told.Message);
-        Assert.Equal(AutoLandingCode.Completed, told.Refusal);
+        Assert.Equal(LandingCode.Completed, told.Refusal);
 
         var merged = LandingAdvance.Refusal("feature/q1-fix-the-gap", "engine", "daoris/s-2",
             new AdvanceFacts(Entry(), Tip, null, Descends: true, Ahead: 2, Completed: "main"))!;
@@ -253,19 +253,19 @@ public sealed class LandingChainTests : IDisposable
     public void An_advance_is_kept_as_advanced_and_a_merged_branch_waits_as_completed()
     {
         var advanced = new TreeLanding(true, "moved `feature/x` on.", "feature/x") { AdvancedFrom = Tip };
-        Assert.Equal(AutoLandingCode.Advanced, LandTries.CodeOf(advanced));
+        Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
         // The push is still the plugin's: an advance it did not push is kept as that, as a landing's is.
-        Assert.Equal(AutoLandingCode.PluginFailed, LandTries.CodeOf(advanced with
+        Assert.Equal(LandingCode.PluginFailed, LandTries.CodeOf(advanced with
         {
             Plugin = new PluginLanding("acme.lands", Pushed: false, "https://example.test/pull/7", "its pull request is completed"),
         }));
-        Assert.Equal(AutoLandingCode.Completed, LandTries.CodeOf(new TreeLanding(false, "merged") { Refusal = AutoLandingCode.Completed }));
+        Assert.Equal(LandingCode.Completed, LandTries.CodeOf(new TreeLanding(false, "merged") { Refusal = LandingCode.Completed }));
 
-        Assert.True(AutoLandingCode.Closes(AutoLandingCode.Advanced));
-        Assert.False(AutoLandingCode.Closes(AutoLandingCode.Completed));
-        Assert.True(AutoLandingCode.OnChange(AutoLandingCode.Completed));
-        Assert.True(LandTryNotes.Says(AutoLandingCode.Advanced));
-        Assert.True(LandTryNotes.Says(AutoLandingCode.Completed));
+        Assert.True(LandingCode.Closes(LandingCode.Advanced));
+        Assert.False(LandingCode.Closes(LandingCode.Completed));
+        Assert.True(LandingCode.OnChange(LandingCode.Completed));
+        Assert.True(LandTryNotes.Says(LandingCode.Advanced));
+        Assert.True(LandTryNotes.Says(LandingCode.Completed));
     }
 
     /// <summary>
@@ -275,13 +275,13 @@ public sealed class LandingChainTests : IDisposable
     [Fact]
     public void An_advance_is_said_as_an_acceptance_and_a_merged_branch_as_a_refusal()
     {
-        var advanced = LandTryNotes.Of(AutoLandingCode.Advanced,
+        var advanced = LandTryNotes.Of(LandingCode.Advanced,
             new TreeLanding(true, "moved `feature/x` on from 1111111 — 1 more commit(s).", "feature/x") { AdvancedFrom = Tip });
         Assert.Equal(ChatNoteCodes.LandingAccepted.Code, advanced.Parts![0].Code);
         Assert.Contains("moved `feature/x` on", advanced.Text);
 
-        var completed = LandTryNotes.Of(AutoLandingCode.Completed,
-            new TreeLanding(false, "`feature/x`'s work already reads on `main`.") { Refusal = AutoLandingCode.Completed }, branch: "feature/x");
+        var completed = LandTryNotes.Of(LandingCode.Completed,
+            new TreeLanding(false, "`feature/x`'s work already reads on `main`.") { Refusal = LandingCode.Completed }, branch: "feature/x");
         Assert.Equal(ChatNoteCodes.LandingRefused.Code, completed.Parts![0].Code);
         Assert.Contains("already reads on `main`", completed.Text);
     }

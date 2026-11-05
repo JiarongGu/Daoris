@@ -352,7 +352,7 @@ A landed branch's page draws how it landed (FLOWCHART1c, D186): a section above 
 by the branch (`projects/git/RepositoryGitView.tsx`'s `useLandingDoor`): `TRACE` for the session its landing record names, whose
 landing carries the session it was made for, each advance with its session, and the units it carries, and `WORK_STATE` for the
 branch, whose units carry the end, the clean-up and the recovery. `projects/git/landingLife.ts` draws the due entry's tries by
-their codes (`AutoLandingCode`, held to the driver's source with `EndBy`, `PullRequestStates` and `LandedKind`), the landing and
+their codes (`LandingCode`, held to the driver's source with `EndBy`, `PullRequestStates` and `LandedKind`), the landing and
 its advances, the push as a fact with no time and the pull request's latest answer as a snapshot, each hung from the landing.
 `Flow` folds three or more like nodes in a chain into a stack (`flowLayout.ts`' `findStacks`), its boundary edges kept and the
 edges between its members said in its description. The work's milestone and a run's landing step open the page through the
@@ -431,7 +431,7 @@ an `act` warning passes `--reporter=default` (FRAMEACT1, `docs/development.md`).
 the day (a moment said by its time alone when it is today's) stamps that moment on the day the test runs, or fakes the
 clock, never a fixed date that reads as another day's after midnight (FIX-LOG, 2026-10-30).
 
-The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `AutoLandingCode.cs` and
+The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `LandingCode.cs` and
 `WorkplaceFacts.cs` in Knowledge hold their moved vocabulary. The Sweep twin still reads `Landing.cs`. MOD9e's rule in
 `tools/merge-branch.mjs` and its source-read census keep changes to each declaration routed to the page's unit gate.
 

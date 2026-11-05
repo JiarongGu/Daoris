@@ -180,7 +180,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the line's policy. A hand-off pushes to the plugin its card names, and a pull request is asked of the plugin that pushed it. `LINES`
     answers no `landings` and `SESSION_PROCESS` no landing. (from D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
-    no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. (from D227, D228, D232)
+    no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. What a landing try
+    came to is a `LandingCode`. The service answers no `POST /api/quests/{id}/bind`. (from D227, D228, D232)
 
 **Drawing**
 
@@ -242,9 +243,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
 - **WORKFLOWCLEAN1z (NOCOMPAT1b2, NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
-  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the `handed` node in about 22 test files;
-  33 driver test files still naming the deleted landing-rule types; the web's `settings/repository/Landings.tsx` and the Setup,
-  place and structure rows that read `landings` and `workspaceLandings`, which the driver no longer answers; the service's plain bind.
+  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the workspace's Setup tab, once its
+  other rows have a page; `AutoLandingWorld`, whose name still says the auto lander. The service holds no bind door: only its
+  exchange's `BindAsync` writes a quest's closure bind, which service tests seed and the take reads, until a bound run's close no
+  longer reads a bind recorded at the take.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.

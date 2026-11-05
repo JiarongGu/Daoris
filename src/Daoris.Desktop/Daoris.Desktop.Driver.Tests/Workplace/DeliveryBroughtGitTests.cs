@@ -48,7 +48,7 @@ public sealed class DeliveryBroughtGitTests : LandedFixture
         var again = await trees.LandTogetherAsync(operation.Id, Subject, new Dictionary<string, IWorkplaceGate?>(), delivery: new TreeDelivery(store, claim));
         Assert.False(again.Landed, again.Message);
         var own = await trees.LandAsync(beside.Path, new LandingSubject("s-beside", "q2", "The work beside it"));
-        Assert.Equal(AutoLandingCode.Already, own.Refusal);
+        Assert.Equal(LandingCode.Already, own.Refusal);
         Assert.Single(new LandedBranches(Home).All());
         Assert.Equal([Named], (await GitAsync(root, "for-each-ref", "--format=%(refname:short)", "refs/heads/feature/")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
     }

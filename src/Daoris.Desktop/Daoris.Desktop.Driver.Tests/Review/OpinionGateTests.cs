@@ -396,10 +396,10 @@ public sealed class OpinionGateTests
         Assert.True(both.Answers(since.Token));
         Assert.False(both.Answers("o1:" + Read + ":commits-since:0:2"));
         Assert.False(both.Answers(null));
-        Assert.Equal((AutoLandingCode.Opinion, since.Says), (both.Refusal!.Refusal, both.Refusal.Message));
+        Assert.Equal((LandingCode.Opinion, since.Says), (both.Refusal!.Refusal, both.Refusal.Message));
 
         var settled = since with { State = OpinionGateStates.Settled };
-        Assert.Equal(AutoLandingCode.Unreviewed, new LandingGate(settled, unreviewed).Refusal!.Refusal);
+        Assert.Equal(LandingCode.Unreviewed, new LandingGate(settled, unreviewed).Refusal!.Refusal);
         Assert.Null(LandingGate.Open("web-app").Refusal);
     }
 

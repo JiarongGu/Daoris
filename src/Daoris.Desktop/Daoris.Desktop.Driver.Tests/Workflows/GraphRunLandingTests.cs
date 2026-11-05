@@ -141,7 +141,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         Assert.Equal((GraphGateStates.NotJudged, true), (before.Graph!.State, before.GraphPart()!.PressWaits));
         var held = await trees.LandAsync(tree, Work, gate: before);
         Assert.False(held.Landed, held.Message);
-        Assert.Equal(AutoLandingCode.Refused, held.Refusal);
+        Assert.Equal(LandingCode.Refused, held.Refusal);
         Assert.StartsWith("Daoris has not judged run q1's graph at", held.Message);
         Assert.False(await BranchAsync(root, PushBranch));
 
@@ -446,7 +446,7 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         var moved = await trees.LandAsync(tree, Work, gate: gate);
 
         Assert.False(moved.Landed, moved.Message);
-        Assert.Equal(AutoLandingCode.Refused, moved.Refusal);
+        Assert.Equal(LandingCode.Refused, moved.Refusal);
         Assert.Contains("moved after its landing was judged", moved.Message);
         Assert.False(await BranchAsync(root, PushBranch), "nothing is made from a commit nobody judged");
         Assert.Equal(line, await HeadAsync(root));
