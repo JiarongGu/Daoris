@@ -32,7 +32,7 @@ public sealed class CodecPlaybackProcessTests : Bridge
         " h264: v.canPlayType('video/mp4; codecs=\"avc1.42E01E\"'), aac: v.canPlayType('audio/mp4; codecs=\"mp4a.40.2\"')," +
         " hevc: v.canPlayType('video/mp4; codecs=\"hvc1.1.6.L93.B0\"') }; })()";
 
-    [Fact]
+    [ApplicationFact]
     public Task H264_with_AAC_plays() => PlaysAsync("h264-aac.mp4");
 
     [HevcDecoderFact]
@@ -40,9 +40,9 @@ public sealed class CodecPlaybackProcessTests : Bridge
 
     private async Task PlaysAsync(string clip)
     {
-        var exe = ApplicationExecutable();
+        var exe = BuiltApplication.Executable();
         using var host = new LoopbackHost();
-        var bytes = await File.ReadAllBytesAsync(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules.Tests", "fixtures", "media", clip));
+        var bytes = await File.ReadAllBytesAsync(Path.Combine(BuiltApplication.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules.Tests", "fixtures", "media", clip));
         host.Serve("/" + clip, bytes);
         var page = host.Serve("/page.html", System.Text.Encoding.UTF8.GetBytes(
             $"<!doctype html><title>clip</title><video id=v src=\"/{clip}\" muted autoplay playsinline loop></video>"));
@@ -50,7 +50,7 @@ public sealed class CodecPlaybackProcessTests : Bridge
         var port = InAppBrowser.FreePort();
         var options = new EngineBrowserOptions(Path.Combine(Home, "engine"), port, Environment.ProcessId, Background: true);
         using var browser = Process.Start(new ProcessStartInfo(exe, options.ToArguments()) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = Path.GetDirectoryName(exe)! })!;
-        var engineAt = Engine(exe);
+        var engineAt = BuiltApplication.Engine(exe);
         try
         {
             using var engine = new EngineCdp(port);
@@ -72,7 +72,16 @@ public sealed class CodecPlaybackProcessTests : Bridge
             string? plays = null;
             await UntilAsync($"{clip} to play", browser, engineAt, async ct =>
             {
-                plays ??= await tab.EvaluateAsync(CanPlay, ct);
+                if (plays is null)
+                {
+                    plays = await tab.EvaluateAsync(CanPlay, ct);
+                    using var can = JsonDocument.Parse(plays);
+                    if (can.RootElement.GetProperty("h264").GetString() == "")
+                    {
+                        Assert.Fail($"the engine plays no H.264, so it is not the codecs package's build: it says it plays {plays}; {engineAt}");
+                    }
+                }
+
                 seen = await tab.EvaluateAsync(ClipState, ct);
                 using var state = JsonDocument.Parse(seen);
                 var read = state.RootElement;
@@ -132,32 +141,5 @@ public sealed class CodecPlaybackProcessTests : Bridge
             {
             }
         }
-    }
-
-    /// <summary>Which engine the executable lays beside it, by its library's size: the standard CEF's and the codecs package's differ.</summary>
-    private static string Engine(string exe)
-    {
-        var library = new FileInfo(Path.Combine(Path.GetDirectoryName(exe)!, "libcef.dll"));
-        return library.Exists
-            ? $"the engine is {exe}, beside libcef.dll of {library.Length.ToString(CultureInfo.InvariantCulture)} bytes written {library.LastWriteTimeUtc:u}"
-            : $"the engine is {exe}, with no libcef.dll beside it";
-    }
-
-    /// <summary>The application the browser is, built beside this project: the test starts it and builds nothing.</summary>
-    private static string ApplicationExecutable()
-    {
-        var app = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App");
-        var built = Directory.Exists(app)
-            ? Directory.EnumerateFiles(app, "Daoris.Desktop.exe", SearchOption.AllDirectories)
-                .Where(file => file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")).OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
-            : null;
-        return built ?? throw new FileNotFoundException("Daoris.Desktop.App is not built: build it first, the test starts its executable as the browser");
-    }
-
-    private static string RepositoryRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 }

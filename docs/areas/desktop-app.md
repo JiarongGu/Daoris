@@ -191,7 +191,8 @@ web paths are under `src/Daoris.Web/src/`.
     process of its own, on a profile at `<home>/browser/engine`. The shell stops it once the shell is gone. The engine
     is the kit's codecs package (`Shenora.Chromium.Codecs.win-x64`, its own build of CEF), so the browser plays H.264,
     AAC and HEVC, HEVC through the machine's decoder. The codecs are patent-licensed, and the package carries no
-    licence. (from D99, D85, D234)
+    licence. The modules' test project builds this application on Windows, and `CodecPlaybackProcessTests` plays a
+    clip of each on that build, its page held shown: Chrome loads no media in a hidden page. (from D99, D85, D234)
 55. Sessions drive it through an MCP server a plugin declares with `${browser}`, its loopback CDP endpoint. The
     person's Edge on a Daoris profile stays an option. Daoris keeps sign-ins across a restart itself. (from D78, D84)
 

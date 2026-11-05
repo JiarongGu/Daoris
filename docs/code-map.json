@@ -185,6 +185,11 @@
     },
     {
       "from": "Daoris.Desktop.Modules.Tests",
+      "to": "Daoris.Desktop.App",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules.Tests",
       "to": "Daoris.Desktop.Modules",
       "kind": "project"
     },
