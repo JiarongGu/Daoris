@@ -281,5 +281,7 @@ of everything it handed, section by section.
   children.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
   is proposed: one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
-  Today `daoris chat` still runs its own `ChatRunner` beside the instance (`Daoris.Desktop.Driver.Host/ChatConsole.cs`).
+  The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),
+  and a held conversation's head says *Held by a terminal*; no verb holds one yet, and `daoris chat` still runs its own
+  `ChatRunner` beside the instance (`Daoris.Desktop.Driver.Host/ChatConsole.cs`).
 - **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.

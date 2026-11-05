@@ -29,7 +29,7 @@ web paths are under `src/Daoris.Web/src/`.
 | `DriverLoop`'s parts | `Modules/Loop/LoopState.cs`, `LoopRun.cs`, `LookTold.cs`, `LoopComeUp.cs`, `LoopAddress.cs`, `HomeHold.cs`, `TickShown.cs`, `TickSignatures.cs`, `TickErrors.cs`, `AttentionTold.cs`, `OutputTold.cs`, `PipeDecisionAdmission.cs` | What the run brings up and the loop's doors read, in one state type written whole with no lock; the address and pipe named in the home under their own lock with the stop's cancel; one run per loop, declaring what it brings up in the order it is let go in reverse; what each look keeps and tells; what the come-up hears; the home's lease waited for; the tick's shapes, signatures and errors; the attention and console events; the supervisor's decisions' admission. The loop keeps one-line doors, the start and the stop (D231) |
 | `PersonRoutes` | `Modules/Bridge/Routes/PersonRoutes.cs` | `PERSON_KEY` and the person's confirmations, answered to the page |
 | `InstancePipe`, `PipeCensus`, `RouteMarks`, `PipeConfirmations` | `Modules/Platform/` | A terminal's verbs into the running Daoris; each route classed `Open`, `Person`, `Window` or `Role` by its mark, read at start |
-| `InstancePipe`'s parts | `Modules/Platform/PipeState.cs`, `PipeWaitingKeep.cs`, `PipeListener.cs`, `PipeConnection.cs`, `PipeAdmission.cs`, `PipeAsking.cs`, `PipeTakeBacks.cs`, `PipeRestore.cs`, `PipeReserved.cs`, `PipeLimits.cs` | The presses and connections under one gate; the waiting records under their own lock, never taken inside it; the listening, a connection, a request's admission, a person's press from its reservation to its ending, `CANCEL`/`RESULT`/`WITHDRAW`, the restart's restore. The pipe keeps the wire's words, the serve, the close and the run |
+| `InstancePipe`'s parts | `Modules/Platform/PipeState.cs`, `PipeWaitingKeep.cs`, `PipeListener.cs`, `PipeConnection.cs`, `PipeAdmission.cs`, `PipeAsking.cs`, `PipeTakeBacks.cs`, `PipeRestore.cs`, `PipeReserved.cs`, `PipeLimits.cs`, `PipeHolding.cs`, `PipeHold.cs`, `PipeForwarding.cs` | The presses and connections under one gate; the waiting records under their own lock, never taken inside it; the listening, a connection, a request's admission, a person's press from its reservation to its ending, `CANCEL`/`RESULT`/`WITHDRAW`, the restart's restore; a terminal's hold of a conversation (`HOLD`, `LET_GO`) and the bounded forwarding of its lines. The pipe keeps the wire's words, the serve, the close and the run |
 | `WindowsModule` | `Modules/Windows/WindowsModule.cs` | `DAORIS.WINDOWS`: `OPEN`, `OPEN_BROWSER`, `SET_THEME`, `SET_BADGE`, `SET_TITLE`, `SET_NOTICE_WORDS` |
 | Notifier | `App/SessionNotifier.cs`, `Modules/Windows/SessionBalloon.cs`, `MainWindowScopes.cs` | OS balloons in the window's language; which window a click brings forward |
 | Taskbar | `App/TaskbarBadge.cs`, `Modules/Windows/WaitingCount.cs`, `WaitingBadge.cs` | Each main window's count on its button and in its title |
@@ -91,7 +91,12 @@ web paths are under `src/Daoris.Web/src/`.
     refused. A refusal is a 403 with a code, never a 500. (from D156)
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
-    takes it back. The route's name and raw values sit under *Details*. (from D156, D196)
+    takes it back. The route's name and raw values sit under *Details*. A start sent with
+    `hold: true`, or the pipe's `HOLD { session }`, is carded saying so and never rides the standing confirmation; confirmed, it
+    binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
+    and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
+    `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
+    end the hold, each told and logged `person.hold`. (from D156, D196, D238)
 15. A standing confirmation the person grants in the window lets a terminal outside Daoris's agents stop or finish a
     session and hold or resume a repository with no card. Each use is logged and can be revoked at once. (from D201)
 

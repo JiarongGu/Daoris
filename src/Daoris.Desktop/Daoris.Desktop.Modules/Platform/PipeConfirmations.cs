@@ -29,11 +29,12 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// is; <see cref="CheckWithin"/> the longest that judgement may take, in milliseconds, which the page's Confirm waits for (§5.2).
 /// <see cref="Keyed"/> that it carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, §7.1); <see cref="Restored"/> that it
 /// was asked before Daoris restarted and waits again from its record, its <see cref="Asker"/> the record's word, never the system's (§8.1).
+/// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238).
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
     DateTimeOffset Asked, DateTimeOffset? Expires = null, DateTimeOffset? ShownAt = null, IReadOnlyList<PipeNamed>? Named = null,
-    bool WaitedOn = true, bool Checking = false, int? CheckWithin = null, bool Keyed = false, bool Restored = false);
+    bool WaitedOn = true, bool Checking = false, int? CheckWithin = null, bool Keyed = false, bool Restored = false, bool Hold = false);
 
 /// <summary>What waits, told whole at each change, numbered so a window keeps the newest telling (as <c>UNDER_WAY</c> is).</summary>
 public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmation> Waiting);
@@ -63,10 +64,11 @@ public enum PipeConfirmationEnd
 /// <summary>
 /// What the pipe already made of a press it asks (CONFIRMWAIT1a-ii, the confirm-wait design §7.1): its id, minted before its record is
 /// written; when it was asked and shown, where it is restored from its record; whether it carries a key; whether it is restored; and
-/// whether a terminal waits on its line for it.
+/// whether a terminal waits on its line for it; whether its Confirm also makes a hold (RPC1g1).
 /// </summary>
 public sealed record PipeAsAsked(
-    string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true);
+    string Id, DateTimeOffset? Asked = null, DateTimeOffset? ShownAt = null, bool Keyed = false, bool Restored = false, bool WaitedOn = true,
+    bool Hold = false);
 
 /// <summary>How a confirmation ended, and where a ground moved, which one and how (<see cref="PipeConfirmationEnd.Changed"/> alone).</summary>
 public sealed record PipeEnding(PipeConfirmationEnd End, PipeGroundChange? Change = null);
@@ -352,7 +354,8 @@ public sealed class PipeConfirmations : IDisposable
                 WaitedOn: @as?.WaitedOn ?? true,
                 CheckWithin: checkWithin is { } within ? (int)Math.Ceiling(within.TotalMilliseconds) : null,
                 Keyed: @as?.Keyed ?? false,
-                Restored: @as?.Restored ?? false), judge);
+                Restored: @as?.Restored ?? false,
+                Hold: @as?.Hold ?? false), judge);
             // Its ask's line and its place are made together under the lock, so its end can be said only after its ask.
             Write("asked", held.Shown, standing);
             _waiting.Add(held);

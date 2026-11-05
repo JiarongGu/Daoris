@@ -53,6 +53,8 @@ export type Confirmation = {
   keyed?: boolean;
   /** That a terminal's press waits again from its record after a restart, its asker the record's (§7.2, §8.1). */
   restored?: boolean;
+  /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238). */
+  hold?: boolean;
 };
 
 /**
@@ -420,6 +422,8 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
           {waiting.waitedOn != null ? <> {t(waiting.waitedOn ? 'person.waitedOn' : 'person.notWaitedOn')}</> : null}
           {waiting.keyed === true ? <> {t('person.keyed')}</> : null}
         </p>
+        {/* RPC1g1 (D238 point 2): the one Confirm that lets a terminal speak in this conversation says so plainly. */}
+        {waiting.hold === true && <p className="m-0 text-small font-semibold text-ink">{t('person.hold')}</p>}
         <p className="m-0 text-small">{t('person.cannotTell')}</p>
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
           {checking ? (

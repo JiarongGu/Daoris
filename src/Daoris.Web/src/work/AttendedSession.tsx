@@ -77,10 +77,12 @@ export function AttendedSession({
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, heavy, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, gitAsks, gitAccess, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn,
+  answers, gitAsks, gitAccess, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold,
 }: {
   /** Passed straight through to the head: what each running session holds of git access, with *Tighten…* (D241 point 7). */
   gitAccess?: Parameters<typeof SessionHead>[0]['gitAccess'];
+  /** Passed straight through to the head: a terminal holding this conversation, with *Let go of the terminal* (RPC1g1). */
+  terminalHold?: Parameters<typeof SessionHead>[0]['terminalHold'];
   /** Its pieces (COAGENT1b, D199), the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
   /** What its line waits on (COMMS1i): *At work*'s answer, handed to its head's *Waiting on*. Absent, none is drawn. */
@@ -325,6 +327,7 @@ export function AttendedSession({
         answers={answers}
         gitAsks={gitAsks}
         gitAccess={gitAccess}
+        terminalHold={terminalHold}
         entry={entryAccept}
       />
       {/* Its parts as a flowchart, the strip its rail (FLOWCHART1b); Accept's plan, once read, is where they would land. Folded to one

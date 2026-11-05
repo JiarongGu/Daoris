@@ -45,5 +45,11 @@
   "work.head.id": "ID",
   "work.head.copyId": "复制",
   "work.head.copied": "已复制",
-  "work.head.viewRequest": "查看完整需求"
+  "work.head.viewRequest": "查看完整需求",
+  "work.head.held": "由终端持有",
+  "work.head.heldBy": "{{process}}（进程 {{pid}}）在这段对话中代你发言，直到它放开。",
+  "work.head.heldByPid": "进程 {{pid}} 在这段对话中代你发言，直到它放开。",
+  "work.head.heldByUnknown": "一个终端在这段对话中代你发言，直到它放开。",
+  "work.head.letGo": "从终端收回",
+  "work.head.notHeld": "现在没有终端持有这段对话。"
 }

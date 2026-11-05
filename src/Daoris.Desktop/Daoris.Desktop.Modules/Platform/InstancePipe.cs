@@ -60,7 +60,8 @@ namespace Daoris.Desktop;
 /// waiting presses' records are <see cref="PipeWaitingKeep"/>'s, under a lock of their own; neither is taken inside the other, and the
 /// confirmations' lock only inside the gate. The listening is <see cref="PipeListener"/>'s, a connection <see cref="PipeConnection"/>'s,
 /// a request's admission <see cref="PipeAdmission"/>'s, a person's press from its reservation to its ending <see cref="PipeAsking"/>'s,
-/// <c>CANCEL</c>, <c>RESULT</c> and <c>WITHDRAW</c> <see cref="PipeTakeBacks"/>'s and the restart's <see cref="PipeRestore"/>'s. This type
+/// <c>CANCEL</c>, <c>RESULT</c> and <c>WITHDRAW</c> <see cref="PipeTakeBacks"/>'s, the restart's <see cref="PipeRestore"/>'s, and a
+/// terminal's hold of a conversation, <c>HOLD</c> and <c>LET_GO</c>, <see cref="PipeHolding"/>'s. This type
 /// keeps the wire's words, the serve, the close and the run.</para>
 /// </remarks>
 public sealed class InstancePipe : IDisposable
@@ -198,6 +199,7 @@ public sealed class InstancePipe : IDisposable
         Keep = new PipeWaitingKeep(new PipeWaiting(DaorisHome.Entry(home, HomeEntry.PipeWaiting)));
         Asking = new PipeAsking(this);
         TakeBacks = new PipeTakeBacks(this);
+        Holding = new PipeHolding(this, bus);
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
         Confirmations.ShownFirst = Keep.Shown;
@@ -236,6 +238,9 @@ public sealed class InstancePipe : IDisposable
     internal PipeAsking Asking { get; }
 
     internal PipeTakeBacks TakeBacks { get; }
+
+    /// <summary>A terminal's hold of a conversation (RPC1g1, D238): the window's <c>SESSION_HOLDS</c> reads it and <c>SESSION_LET_GO</c> ends one.</summary>
+    public PipeHolding Holding { get; }
 
     internal IMessageDispatcher Dispatcher { get; }
 
@@ -338,6 +343,7 @@ public sealed class InstancePipe : IDisposable
             State.Journal ??= new PipeJournal(DaorisHome.Entry(Home, HomeEntry.Pipe), Limits.Kept);
             _listener = new PipeListener(this, name);
             _progress = _bus.Subscribe("*", IpcRequestEvents.Updated, Progressed);
+            Holding.Listen();
             Name = name;
             var listener = _listener;
             _accepting = Task.Run(() => listener.AcceptAsync(first));
@@ -470,6 +476,7 @@ public sealed class InstancePipe : IDisposable
         BeginStopping();
         Lifetime.Cancel();
         _progress?.Dispose();
+        Holding.Dispose();
         PipeConnection[] open;
         lock (State.Gate)
         {
@@ -493,12 +500,17 @@ public sealed class InstancePipe : IDisposable
     [SupportedOSPlatform("windows")]
     public static PipeSecurity Security() => PipeListener.Security();
 
-    /// <summary>A connection ended: its place freed, and its presses' cards told no terminal waits on them now.</summary>
-    internal void Ended(PipeConnection connection) => _listener?.Ended(connection);
+    /// <summary>A connection ended: its place freed, its presses' cards told no terminal waits on them now, and its hold ended.</summary>
+    internal void Ended(PipeConnection connection)
+    {
+        _listener?.Ended(connection);
+        Holding.ConnectionEnded(connection);
+    }
 
     /// <summary>A request on a connection that said its hello: <see cref="PipeAdmission.Accept"/>.</summary>
-    internal (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection) =>
-        _admission.Accept(request, key, connection);
+    /// <param name="hold">That it was sent with <c>hold: true</c> beside its envelope (RPC1g1).</param>
+    internal (string? Now, Task<string>? Later) Accept(IpcRequest request, string? key, PipeConnection connection, bool hold = false) =>
+        _admission.Accept(request, key, connection, hold);
 
     /// <summary>The kit's tracker told a request's progress: forwarded to the connection that sent it, and to nobody else (§6).</summary>
     private Task Progressed(EventMessage message)

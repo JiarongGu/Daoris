@@ -82,7 +82,7 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
             _ = ReadAsync();
             // The hello first, within its bound: anything else closes the connection unanswered (§6).
             if (await NextAsync(pipe.Limits.Hello, waitWhileBusy: false).ConfigureAwait(false) is not { } first
-                || Parse(first) is not ({ } hello, _)
+                || Parse(first) is not ({ } hello, _, _)
                 || !string.Equals(hello.Module, InstancePipe.Module, StringComparison.OrdinalIgnoreCase) || hello.Type != "HELLO")
             {
                 return;
@@ -94,8 +94,8 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
 
             while (await NextAsync(pipe.Limits.Idle, waitWhileBusy: true).ConfigureAwait(false) is { } line)
             {
-                if (Parse(line) is not ({ } request, var key)) return;
-                var (now, later) = pipe.Accept(request, key, this);
+                if (Parse(line) is not ({ } request, var key, var hold)) return;
+                var (now, later) = pipe.Accept(request, key, this, hold);
                 if (now is not null)
                 {
                     await WriteAsync(now).ConfigureAwait(false);
@@ -146,8 +146,8 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
             }
             catch (OperationCanceledException) when (!pipe.Lifetime.IsCancellationRequested)
             {
-                // Idle is a connection with nothing under way: one waiting on a long press is not.
-                if (waitWhileBusy && Volatile.Read(ref _underWay) > 0) continue;
+                // Idle is a connection with nothing under way: one waiting on a long press is not, nor one holding a conversation.
+                if (waitWhileBusy && (Volatile.Read(ref _underWay) > 0 || pipe.Holding.HeldBy(this) is not null)) continue;
                 return null;
             }
             catch (OperationCanceledException)
@@ -200,10 +200,10 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
     }
 
     /// <summary>
-    /// The kit's envelope on a line, and the <c>key</c> beside it (its sender's secret, which binds the id, a second agent's
-    /// review of RPC1a); null where the line is no request.
+    /// The kit's envelope on a line, the <c>key</c> beside it (its sender's secret, which binds the id, a second agent's review of RPC1a),
+    /// and <c>hold</c> beside it (RPC1g1: a start that holds what it opens); null where the line is no request.
     /// </summary>
-    private static (IpcRequest Request, string? Key)? Parse(string line)
+    private static (IpcRequest Request, string? Key, bool Hold)? Parse(string line)
     {
         try
         {
@@ -212,7 +212,8 @@ internal sealed class PipeConnection(InstancePipe pipe, NamedPipeServerStream st
             var key = document.RootElement.TryGetProperty("key", out var named) && named.ValueKind == JsonValueKind.String
                 ? named.GetString()
                 : null;
-            return (request, key);
+            var hold = document.RootElement.TryGetProperty("hold", out var held) && held.ValueKind == JsonValueKind.True;
+            return (request, key, hold);
         }
         catch (Exception error) when (error is JsonException or NotSupportedException or ArgumentException or InvalidOperationException)
         {

@@ -89,7 +89,7 @@ internal sealed class PipeAsking(InstancePipe pipe)
         var shown = Confirmations.Ask(
             place, request.Module, request.Type, fields, connection.Asker, why,
             judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn, Hold: reserved.Hold));
         lock (_state.Gate)
         {
             _state.WaitingFor[id] = shown.Shown.Id;

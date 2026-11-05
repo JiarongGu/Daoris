@@ -33,6 +33,7 @@
   "person.restoredPid": "记录显示它在 Daoris 重启前由进程 {{pid}} 发出。",
   "person.restoredUnknown": "记录未说明 Daoris 重启前是什么发出了它。",
   "person.keyed": "它带有密钥，因此不会在 Daoris 重启后继续等待。",
+  "person.hold": "确认后，这个终端还能在这段对话中代你发言，直到它放开。",
   "person.values": "它携带的值",
   "person.cannotTell": "Daoris 无法分辨这是你运行的还是智能体运行的。只确认你自己运行的。",
   "person.refuse": "拒绝",
@@ -204,5 +205,6 @@
   "person.route.HARNESSES_REFRESH": "重新读取一个智能体的账户",
   "person.route.REGISTRY.WRITE_DECLARATION": "将一份声明写入仓库",
   "person.route.REMOTES.SET": "将一个工作区接到远端",
-  "person.route.REMOTES.REMOVE": "将一个工作区从所接的远端断开"
+  "person.route.REMOTES.REMOVE": "将一个工作区从所接的远端断开",
+  "person.route.PIPE.HOLD": "持有一段对话"
 }
