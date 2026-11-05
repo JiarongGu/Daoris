@@ -126,6 +126,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Workplace/GitRuns.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = StartClass.Background,
+        // npm installing a session's server's package, once, before the session's start (LAUNCHCHAIN1).
+        ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] = StartClass.Background,
         // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = StartClass.Person,
         // The run over today's transports (AGENTPROVIDER1m-i), every executor's start: its first start's class is its executor's, handed in
@@ -200,6 +202,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
+        ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] =
+            "npm installing a session's server's package into the toolchain, once, before any session starts it: never a session (LAUNCHCHAIN1)",
         ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] =
             "a plugin tool's set-up or sign-in at the person's press, in a console they see: its own tool's command, never a session (ADOSIGNIN1)",
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = "the HTTP host the window waits on",

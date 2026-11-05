@@ -40,9 +40,9 @@ internal sealed class IntegrationAppointments : IIntegrationAppointments
 internal static class IntegrationAuthority
 {
     /// <summary>Null where <paramref name="request"/>'s requester still has the authority it asked with; else the words that say why it does not.</summary>
-    /// <param name="workflows">The saved workflows, whose place's <c>integrate</c> step says who requests now.</param>
+    /// <param name="home">The Daoris home whose saved workflows' place's <c>integrate</c> step says who requests now.</param>
     public static async Task<string?> LapsedAsync(
-        IntegrationRequest request, DriverConfig config, IWorkflowStore workflows, IIntegrationAppointments appointments, CancellationToken ct)
+        IntegrationRequest request, DriverConfig config, string home, IIntegrationAppointments appointments, CancellationToken ct)
     {
         var requester = request.Requester;
         if (requester.Kind == IntegrationRequester.Person) return null;
@@ -62,7 +62,7 @@ internal static class IntegrationAuthority
             return $"`{request.Repository}`'s landing rule no longer carries `integrate`, so a request made under it is no longer admitted";
         }
 
-        var asks = PlaceIntegrate.Of(workflows, config, request.Repository, request.Workspace).Request;
+        var asks = WorkplaceWorkflows.Current.IntegrateOf(home, config,request.Repository, request.Workspace).Request;
         switch (requester.Kind)
         {
             case IntegrationRequester.Daoris:

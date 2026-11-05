@@ -189,7 +189,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public string TreesRoot => _context.TreesRoot;
 
     /// <inheritdoc cref="TreeContext.OneLook"/>
-    internal IDisposable OneLook() => _context.OneLook();
+    internal TreeLook OneLook() => _context.OneLook();
 
     private TreeOpening? _opening;
     private TreeListings? _listings;

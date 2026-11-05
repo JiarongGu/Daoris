@@ -22,6 +22,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (agent, selection, access, permissions, chosen) = (state.Agent, state.Selection, state.Access, state.Permissions, state.Chosen);
         var (handedQuest, stepRole, handedFrom, limitWalks) = (state.HandedQuest, state.StepRole, state.HandedFrom, state.LimitWalks);
         var tree = state.Tree;
+        // The look the tree's stage opened does not follow the flow out of it: taken in again, git's guess at the line stays asked once.
+        tree.OneLook.Reenter();
         var (opened, joinedIn, entryTree, carryingOn, answered, handsOn, inSync) = (tree.Opened, tree.JoinedIn, tree.EntryTree, tree.CarryingOn, tree.Answered, tree.HandsOn, tree.InSync);
         var (sessionId, keyed, fenced, continues) = (state.Opened.SessionId, state.Opened.Keyed, state.Opened.Fenced, state.Opened.Continues);
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
@@ -79,7 +81,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // The servers the plugins hand this session, handed before its instruction is composed, which tells it the browser it was
             // handed. With Daoris's own browser brought up for a server that drives it, or that server left out and the transcript told why.
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(context.Servers, context.Browser, ct).ConfigureAwait(false);
+                await SessionServers.HandNotedAsync(home, context.Servers, context.Browser, context.Log, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             // What waited on the ask's channel for this part's line of work: read for its instruction, never holding the start, and its
             // entry's mark moved once the record works, not before, so a start that fails hands it on.

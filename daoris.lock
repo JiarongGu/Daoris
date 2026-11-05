@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "1068abe2df4aa7bd2309a1eda65d3a3e5634e6086aaf2590a08478e3cec23287",
+  "canonDigest": "2ec0332e9237721f6ce792ac4342b386d9d949870a1bc905c1b56c235d211d79",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -30,7 +30,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "b9e90ff522751124c7da34903cc354a094eb4f8d6d46363bd19f3ee09eacb41f"
+      "sha256": "8e2fd8580d1aa0d8772ed566ce60dc3890a68c1c2bd636cd4a7db95b7a5cb2c5"
     },
     {
       "pack": "core",

@@ -30,7 +30,7 @@ public sealed class IntegrationAuthorityTests : IDisposable
     private DriverConfig Following(string request) => IntegratingWorkflow.Follow(_home, Rule(Gated), request);
 
     private Task<string?> LapsedAsync(IntegrationRequest request, DriverConfig config, IIntegrationAppointments appointments) =>
-        IntegrationAuthority.LapsedAsync(request, config, new WorkflowFiles(_home), appointments, default);
+        IntegrationAuthority.LapsedAsync(request, config, _home, appointments, default);
 
     private static IntegrationRequest Request(IntegrationRequester requester) =>
         new("r1", "engine", "aurora", "feature/q1-fix", Tip, IntegrationRoutes.Recorded, "main", requester, Stewarded.Resolved(), At);

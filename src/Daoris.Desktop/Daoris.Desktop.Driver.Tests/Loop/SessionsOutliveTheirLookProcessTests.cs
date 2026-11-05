@@ -87,6 +87,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         {
             ["drivable"] = new[] { "engine", "tools" },
             ["adapter"] = "stub",
+            ["actors"] = new Dictionary<string, object[]> { ["build"] = [new { agent = "stub" }], ["chat"] = [new { agent = "stub" }], ["brainstorm"] = [new { agent = "stub" }] },
             ["cap"] = 3,
             ["pollSeconds"] = 1,
             ["timeoutMinutes"] = 2,

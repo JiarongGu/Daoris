@@ -93,7 +93,7 @@ public sealed class IntegrationRequestsTests : IDisposable
         WorkingTree.Answered.Value = Git;
         try
         {
-            return await new IntegrationRequests(records, store ?? Fresh(), () => config, new WorkflowFiles(Workflows)).AdmitAsync(ask);
+            return await new IntegrationRequests(records, store ?? Fresh(), () => config, Workflows).AdmitAsync(ask);
         }
         finally
         {
@@ -377,7 +377,7 @@ public sealed class IntegrationRequestsTests : IDisposable
             WorkingTree.Answered.Value = Git;
             try
             {
-                return await new IntegrationRequests(records, store, () => config, new WorkflowFiles(Workflows)).SweepAsync("engine", "aurora", Root);
+                return await new IntegrationRequests(records, store, () => config, Workflows).SweepAsync("engine", "aurora", Root);
             }
             finally
             {

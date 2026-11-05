@@ -25,6 +25,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set; `Resolve` refuses an unknown name |
 | `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | same names | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
 | `StubAdapter`, `AcpStubAdapter`, `Spawning`, `CommitTrailers` | `StubAdapters.cs`, same names | The stand-in adapters; the one assembly of a spawn's process start; the maker's trailer a commit carries |
+| `SessionServers`, `ServerPackages`, `PackageStarts`, `NpxCommand`, `PackageBin` | same names; the last two in `Domain/` | The servers a session is handed, as the harness starts them; a server's package installed once into the toolchain; a package's program started as node and its script; `npx` read as npm reads it; the script a package's manifest names |
 | `SessionTarget`, `ChatTarget`, `EarlierMaker` | same names | What a spawn carries |
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
@@ -101,7 +102,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 12. One assembly serves every kind of session: the adapter's process, then the toolchain's account, binary, pin and key on its
     environment, then the tools-at-the-start switch last (`ENABLE_TOOL_SEARCH=false` for Claude Code). (from D49, D230)
 13. Servers go on `session/new` on the protocol door. A pipe-door harness that takes a file gets one under the home
-    (`--mcp-config`), removed with the session. Daoris's connector is always offered. (from D65, D213)
+    (`--mcp-config`), removed with the session. Daoris's connector is always offered. A server declared through `npx` is
+    handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
+    once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
+    (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
+    server whose package cannot be started is not handed (`server.refused`). A server that drives Daoris's browser is
+    started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
+    seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references.
+    Playwright MCP keeps every request a tab made since its last navigation (about 50 KB each) and has no option that
+    bounds it. (`SessionServers`, `ServerPackages`, `ServerKeeper`)
 14. Plugin skills are copied per session under the home's spawn folder and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
 15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that
@@ -176,7 +185,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 41. The binary is the explicit command, else the managed pin (workspace, then machine), else `PATH`. A pin with nothing
     installed refuses; it never falls back. Daoris never installs an agent unasked. (from D57, D121)
 42. Agents install from their makers' channels into the home's toolchain folder. An ACP adapter is its own package with its own
-    pin; the managed `claude` it runs reads `claude-code`'s pin. (from D57, D121)
+    pin; the managed `claude` it runs reads `claude-code`'s pin. On Windows an agent npm installed starts as the node and script
+    its `.cmd` shim would run, never through the shim's `cmd` (`PackageStarts`). (from D57, D121)
 43. A start's model and effort come from the role's choices, in the tool's own words. The protocol door carries them by
     `session/set_config_option` after the posture and before the first prompt; the pipe door by `--model` and `--effort`. An
     absent value is the account default. (from D205)

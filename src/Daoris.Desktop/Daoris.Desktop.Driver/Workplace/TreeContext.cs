@@ -152,11 +152,12 @@ internal sealed class TreeContext
     /// Only git's guess is kept, never the person's choice: a line set in the choices is still read at each call. A look
     /// inside a look is the outer one's. A look ends with the flow that opened it, so a later look asks git again.
     /// </remarks>
-    internal IDisposable OneLook()
+    internal TreeLook OneLook()
     {
-        if (_look.Value is not null) return Nothing.Instance;
-        _look.Value = new Dictionary<string, Task<string?>>(StringComparer.OrdinalIgnoreCase);
-        return new Ending(_look);
+        if (_look.Value is not null) return TreeLook.Nested;
+        var asked = new Dictionary<string, Task<string?>>(StringComparer.OrdinalIgnoreCase);
+        _look.Value = asked;
+        return new TreeLook(_look, asked);
     }
 
     private Task<string?> GuessAsync(string root, CancellationToken ct)
@@ -167,20 +168,6 @@ internal sealed class TreeContext
         {
             if (look.TryGetValue(key, out var asked) && !asked.IsFaulted && !asked.IsCanceled) return asked;
             return look[key] = CheckoutLine(root, ct);
-        }
-    }
-
-    private sealed class Ending(AsyncLocal<Dictionary<string, Task<string?>>?> look) : IDisposable
-    {
-        public void Dispose() => look.Value = null;
-    }
-
-    private sealed class Nothing : IDisposable
-    {
-        public static readonly Nothing Instance = new();
-
-        public void Dispose()
-        {
         }
     }
 

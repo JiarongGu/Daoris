@@ -158,8 +158,8 @@ test('every template beside a canon skill is named by it, and every template it 
  * The roles a manifest may declare are the canon's (ORIENT2b; D122 §2.7, D151 point 4). `ROLES`' jobs
  * are the canon's roles table cut short, so a role the canon teaches that the CLI does not know is a
  * declaration every adopter is refused, and one the CLI knows that the canon does not teach is a row no
- * adopter has a reason to write. `knowledge`, `skill` and `area` are never declared: the index
- * lists two, the brief its own.
+ * adopter has a reason to write. `knowledge` and `skill` are never declared: the index
+ * lists them.
  */
 test("the canon's roles table and the roles a manifest may declare name the same roles, in one order", () => {
   const text = readText(join(repoRoot, 'canon', 'core', 'knowledge', 'development-documents.md'));
@@ -167,7 +167,7 @@ test("the canon's roles table and the roles a manifest may declare name the same
   const canonRoles = [...table.matchAll(/^\| \*\*([a-z]+)\*\* \|/gm)].map((match) => match[1]!);
   assert.ok(canonRoles.length >= 10, `the scan found ${canonRoles.length} roles in the canon's table, so it proved nothing`);
 
-  assert.deepEqual(canonRoles.filter((role) => !['knowledge', 'skill', 'area'].includes(role)), ROLES.map((row) => row.role));
+  assert.deepEqual(canonRoles.filter((role) => !['knowledge', 'skill'].includes(role)), ROLES.map((row) => row.role));
 });
 
 /**
@@ -500,7 +500,10 @@ test('the universal gates run in verify, not only at release', () => {
   }).scripts.verify;
 
   assert.ok(universal, 'the universal gate is no longer declared — that is not a pass');
-  assert.ok(verify.includes(universal.run), `npm run verify never runs the universal gates: ${universal.run}`);
+  // verify runs it with the built-in patterns alone (a checkout holds no private list); the merge gate runs the full set.
+  // verify writes the index once at its head, so the gate's own index step is not repeated.
+  const command = universal.run.replace(/^node tools\/orient-index\.mjs && /, '');
+  assert.ok(verify.includes(`${command} --allow-builtins-only`),`npm run verify never runs the universal gates: ${universal.run}`);
 });
 
 /**

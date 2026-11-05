@@ -39,7 +39,7 @@ const WHERE_TABLE = [
   '',
   '| Role | Where | Its job |',
   '|---|---|---|',
-  '| decisions | `docs/DECISIONS.md` | numbered decisions, with why and what each rejected |',
+  '| decisions | `docs/DECISIONS.md` | history: why each rule was chosen and what it rejected, read for the reasoning only |',
   '| backlog | `TASKS.md` | open work only |',
   '| changelog | `CHANGELOG.md` | what a user of a release sees changed |',
 ].join('\n');

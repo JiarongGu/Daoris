@@ -83,7 +83,7 @@ public sealed class BrainstormCommandTests : IDisposable
         var (code, said) = Run("Why is the report slow?", "--id", "daily");
 
         Assert.Equal(1, code);
-        Assert.Equal("daoris-driver: Brainstorm `daily` was asked with other words; an id names one brainstorm. Nothing was asked.", said.Trim());
+        Assert.Equal("daoris: Brainstorm `daily` was asked with other words; an id names one brainstorm. Nothing was asked.", said.Trim());
     }
 
     /// <summary>🔴 One writer: with no service the verb says so, says what to start, and writes no file of its own.</summary>

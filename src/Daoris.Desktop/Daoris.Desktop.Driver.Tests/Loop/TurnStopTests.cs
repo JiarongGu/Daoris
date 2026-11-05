@@ -378,6 +378,7 @@ public sealed class TurnStopTests : IDisposable
         Directory.CreateDirectory(plugin);
         File.WriteAllText(Path.Combine(plugin, "plugin.json"),
             """{ "id": "browser", "servers": [ { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"] } ] }""");
+        var playwright = SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
         var argvFile = Path.Combine(_home, "argv.json");
         var script = Path.Combine(_home, "argv-claude.mjs");
         File.WriteAllText(script, """
@@ -410,7 +411,13 @@ public sealed class TurnStopTests : IDisposable
         var argv = System.Text.Json.JsonSerializer.Deserialize<string[]>(File.ReadAllText(argvFile))!;
         var at = Array.IndexOf(argv, "--mcp-config");
         Assert.True(at >= 0, string.Join(" ", argv));
-        Assert.Contains("@playwright/mcp@latest", File.ReadAllText(argv[at + 1]));
+        // LAUNCHCHAIN1: the harness's file names the package's own script, started by node, never `npx`.
+        using (var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(argv[at + 1])))
+        {
+            var browser = file.RootElement.GetProperty("mcpServers").GetProperty("browser");
+            Assert.Equal("node", Path.GetFileNameWithoutExtension(browser.GetProperty("command").GetString()), ignoreCase: true);
+            Assert.Equal(playwright, browser.GetProperty("args")[0].GetString());
+        }
 
         runner.Finish(id);
         await Until(() => service.State(id) is "completed" or "stopped");
@@ -433,6 +440,7 @@ public sealed class TurnStopTests : IDisposable
                 { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] },
                 { "name": "notes", "command": ["notes-mcp"] } ] }
             """);
+        var playwright = SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
         var argvFile = Path.Combine(_home, "argv.json");
         var script = Path.Combine(_home, "argv-claude.mjs");
         File.WriteAllText(script, """
@@ -469,7 +477,12 @@ public sealed class TurnStopTests : IDisposable
         Assert.Contains("notes-mcp", servers);
         Assert.DoesNotContain("${browser}", servers);
         if (shell) Assert.Contains("http://127.0.0.1:4810", servers);
-        else Assert.DoesNotContain("@playwright/mcp", servers);
+        using (var file = System.Text.Json.JsonDocument.Parse(servers))
+        {
+            var handed = file.RootElement.GetProperty("mcpServers");
+            Assert.Equal(shell, handed.TryGetProperty("browser", out var browser));
+            if (shell) Assert.Equal([playwright, "--cdp-endpoint", "http://127.0.0.1:4810"], browser.GetProperty("args").EnumerateArray().Select(each => each.GetString()));
+        }
         // BRW8: handed the browser, the conversation is named as driving it while it runs; withheld, it is not.
         string[] driving = shell ? [id] : [];
         Assert.Equal(driving, processes.DrivingBrowser);

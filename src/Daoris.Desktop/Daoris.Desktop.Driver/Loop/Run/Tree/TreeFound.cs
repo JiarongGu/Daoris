@@ -26,4 +26,4 @@ internal sealed record TreeFound(
     QuestView? Answered,
     PriorSession? HandsOn,
     TreeStartSync? InSync,
-    IDisposable OneLook);
+    TreeLook OneLook);

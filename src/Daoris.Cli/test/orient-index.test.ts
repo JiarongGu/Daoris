@@ -595,7 +595,7 @@ test('--check exits 1 naming each stale file and the command that writes it, and
   assert.equal(written.status, 0, written.stderr);
   const fresh = run('--check');
   assert.equal(fresh.status, 0, fresh.stderr);
-  assert.match(fresh.stdout, /is fresh, 6 files/);
+  assert.match(fresh.stdout, /is fresh, 7 files/);
   assert.equal(run('--chek').status, 2, 'a word it does not know is a usage error');
   fx.cleanup();
 });
@@ -623,7 +623,7 @@ test("this repository's index finds the routes, the verbs, the areas, the fixtur
   assert.ok(driver && Number(driver[1]) > 90, 'the scan found the driver module\'s routes');
   const driverRows = routes.slice(routes.indexOf('## DAORIS.DRIVER')).split('\n## ')[0]!.split('\n').filter((line) => line.startsWith('| `'));
   assert.deepEqual(driverRows.filter((row) => row.split(' | ')[1] === '—'), [], 'every route the page sends the driver has its handler');
-  assert.match(routes, /\| GET \/api\/status \| `Program\.cs:\d+` \|/);
+  assert.match(routes, /\| GET \/api\/status \| `[\w/]+\.cs:\d+` \|/);
 
   const verbs = planned.get('docs/index/verbs.md')!;
   for (const verb of ['`drive`', '`sessions`', '`trees`', '`check`', '`sync`', '`map`', '`shot`', '`verify`']) assert.ok(verbs.includes(verb), `verbs.md lacks ${verb}`);

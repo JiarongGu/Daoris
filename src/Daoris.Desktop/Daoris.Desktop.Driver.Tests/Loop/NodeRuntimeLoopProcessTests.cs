@@ -55,7 +55,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         await GitFixture.GitAsync(root, "branch", "daoris/s1");
         var tip = (await GitFixture.GitAsync(root, "rev-parse", "daoris/s1")).Trim();
         new SessionBranches(_home).Record(new GrownBranch("engine", "default", "daoris/s1", "main", tip, null, DateTimeOffset.UtcNow) { Unit = "unit-b1" });
-        _ledger.Driven("s1", "q1", Path.Combine(_home, "trees", "s1"), state: "completed");
+        _ledger.Driven("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees, "default", "engine", "s1"), state: "completed");
         RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, """
             {"schemaVersion":2,"entries":["deploy"],"end":"land",
              "nodes":[{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},{"id":"land","kind":"land","version":1,"reach":"performed"}],

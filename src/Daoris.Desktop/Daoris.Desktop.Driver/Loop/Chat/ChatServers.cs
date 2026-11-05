@@ -55,7 +55,8 @@ internal sealed class ChatServers(ChatContext context)
         // Ask Daoris takes only the servers the person approved for it; a session, its own.
         var servers = every ? [.. PluginServerTo.All.SelectMany(catalog.ServersTo).DistinctBy(server => server.Name)]
             : to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
-        var handed = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
+        using var log = new MachineLog(home, "driver");
+        var handed = await SessionServers.HandNotedAsync(home, servers, browser, log, ct).ConfigureAwait(false);
         if (every) ServedEvery(plugins, catalog, sessionId, handed.Handed);
         else plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;

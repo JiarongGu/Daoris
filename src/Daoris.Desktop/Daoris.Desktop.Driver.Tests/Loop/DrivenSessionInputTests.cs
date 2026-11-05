@@ -270,6 +270,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             { "id": "in-app-browser", "servers": [
                 { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
             """);
+        SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
         await using var service = StandInService.Start(_repository);
         var processes = new SessionProcesses();
         var driver = Driver(
@@ -300,6 +301,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             { "id": "in-app-browser", "servers": [
                 { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
             """);
+        SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
         await using var service = StandInService.Start(_repository);
         var processes = new SessionProcesses();
         var browser = new InAppBrowserServersTests.LazyBrowser("http://127.0.0.1:4810");
@@ -331,6 +333,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             { "id": "in-app-browser", "servers": [
                 { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
             """);
+        SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
         await using var service = StandInService.Start(_repository);
         var processes = new SessionProcesses();
         var prompts = Path.Combine(_home, "prompts.txt");
