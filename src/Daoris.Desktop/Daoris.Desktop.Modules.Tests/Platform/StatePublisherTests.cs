@@ -598,6 +598,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_HAND_OVER", "driver", null)]
     [InlineData("SET_ACCESS", "driver", null)]
     [InlineData("SET_GIT_ACCESS", "driver", null)]
+    [InlineData("TIGHTEN_SESSION_GIT_ACCESS", "driver", null)]
     [InlineData("LINES", "", null)]
     [InlineData("SET_READ_ACROSS", "driver", null)]
     [InlineData("SET_WRITE_ACROSS", "driver", null)]

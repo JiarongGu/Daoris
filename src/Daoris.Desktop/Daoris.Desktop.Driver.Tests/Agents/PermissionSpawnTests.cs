@@ -67,6 +67,9 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Contains("Bash(git push:*)", deny);
         Assert.Contains("Bash(git -* push)", deny);
         Assert.Contains("Bash(rm -rf:*)", deny);
+        // D241 point 7: what Daoris keeps for git is no session's to read, and the session's access record is begun at its start.
+        Assert.Contains(GitSessionHolds.ProfileDeny(_home), deny);
+        Assert.Equal("engine", Assert.Single(GitSessionAccess.All(_home)).Repository);
         // UNBLOCK4: the same file tells auto mode's classifier a push in any form is the person's, the
         // harness's own hard denials named first so they are kept.
         HoldsThePushInAutoMode(handed);

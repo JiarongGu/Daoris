@@ -581,7 +581,7 @@ public static class GitDoors
         // A grant standing for this address lets the Write through to its updates, which it is taken for once, where it carries them (GitPushDoor).
         var granted = act == GitAct.Write && GitGrants.Read(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow) is not null;
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
-        var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitLog.ClassName(act)).Value;
+        var value = GitSessionAccess.Held(home, variable(GitLog.SessionVariable), repository, workspace).Of(GitLog.ClassName(act)).Value;
         var verdict = GitAccessRules.Judge(act, value, granted, identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
         // Asked at the door while the act waits (§6.6), where Daoris runs to ask: the person's yes lets this one act through.
         if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitLog.ClassName(act), act, key, variable);

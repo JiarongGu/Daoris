@@ -151,6 +151,8 @@ internal static class DriverStateAnswer
             WorkspaceGitAccess = LinesRoutes.GitLevelsOf(config).Workspace.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Classes = LinesRoutes.GitClassesWire(p.Value) }).ToArray(),
             MachineGitAccess = LinesRoutes.GitClassesWire(LinesRoutes.GitLevelsOf(config).Machine),
+            // What each session holds of git access now (D241 point 7): its repository's, narrowed by what the person tightened.
+            SessionGitAccess = SessionGitAccessRoutes.Wire(loop.Home),
             Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = loop.Processes.DrivingBrowser,

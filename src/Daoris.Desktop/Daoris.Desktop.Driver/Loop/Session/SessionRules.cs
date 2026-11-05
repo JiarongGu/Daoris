@@ -34,6 +34,8 @@ internal static class SessionRules
         bool opinion, bool helper, IReadOnlyList<string>? plugins, string? brainstorm,
         IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner)
     {
+        // The record of the git access this session holds, begun at its start for every harness; the doors judge by it.
+        GitSessionAccess.Begin(home, sessionId, repository, workspace);
         if (!adapter.TakesSettings) return (null, null, Handed(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
@@ -73,6 +75,9 @@ internal static class SessionRules
         // person wrote still stands beside them.
         if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
         IReadOnlyList<string> heavyTold = heavy?.HardDeny is { } sentence ? [sentence] : [];
+
+        // What Daoris keeps for git is no session's to read (D241 point 7), whatever shape its rules took.
+        composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 
         var file = SpawnSettings.Write(
             home, sessionId, composed,

@@ -21,7 +21,7 @@ internal static class GitPushDoor
         var id = variable(GitRouting.GrantVariable);
         var grant = GitGrants.Read(home, id, key, DateTimeOffset.UtcNow);
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
-        var dangerous = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Dangerous).Value;
+        var dangerous = GitSessionAccess.Held(home, variable(GitLog.SessionVariable), repository, workspace).Of(GitAccessKeys.Dangerous).Value;
 
         var verdict = GitPushJudge.Judge(updates, kinds, grant, write.Code == "granted", dangerous);
         if (verdict.Allowed && verdict.UsedGrant && !GitGrants.Take(home, id, key, DateTimeOffset.UtcNow))

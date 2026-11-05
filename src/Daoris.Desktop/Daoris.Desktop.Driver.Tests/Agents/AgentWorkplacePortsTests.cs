@@ -44,6 +44,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         var actual = new Dictionary<string, string?> { ["GH_TOKEN"] = "stand-token", ["GIT_CONFIG_COUNT"] = "1", ["GIT_CONFIG_KEY_0"] = "user.name", ["GIT_CONFIG_VALUE_0"] = "kept" };
         var expected = new Dictionary<string, string?>(actual);
         GitWiring.Untoken(expected);
+        GitSessionHolds.Hand(expected, _home);
         GitAuthor.Hand(expected, null);
         GitLongPaths.Hand(expected, true);
         var gits = 0;
