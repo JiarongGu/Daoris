@@ -101,7 +101,7 @@ public sealed partial class CheckoutWritersCensusTests
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
         ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull",
-        ["AutoLandingWorld.cs"] = "a run's `land` performed, a merge rule's move",
+        ["ReviewLandingWorld.cs"] = "a run's `land` performed, a merge rule's move",
         ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
         ["WatchNodes.cs"] = "the integration transport's promotions",

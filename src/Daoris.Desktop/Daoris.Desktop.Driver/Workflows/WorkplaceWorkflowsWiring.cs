@@ -67,7 +67,7 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
     public bool FollowsSaved(DriverConfig config, string repository, string? workspace) =>
         WorkflowSelection.Resolve(config, repository, workspace, null).Workflow != WorkflowSelection.Current;
 
-    // The world is the review's IOpinionWorld, which every world the doors and the look hand the gate is (the review's IAutoLandingWorld
+    // The world is the review's IOpinionWorld, which every world the doors and the look hand the gate is (the review's IReviewLandingWorld
     // among them): the second opinion reads its opinions through it.
     public async Task<IWorkplaceGate> GateAsync(
         TreeGates gates, string path, string? quest, IReviewWorld world, string? session, CancellationToken ct, IWorkplaceProcess? process,

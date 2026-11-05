@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class ChatGraphRunTests : AutoLandingFixture
+public sealed class ChatGraphRunTests : ReviewLandingFixture
 {
     private const string Run = "chat-c1";
 

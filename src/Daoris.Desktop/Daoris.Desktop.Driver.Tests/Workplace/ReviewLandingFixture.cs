@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Nothing here is shared between instances: the scratch folder carries a fresh id, and <c>LandingHolds</c>' gates are keyed by the
 /// home inside it, so two classes running together never meet at a hold or a folder.
 /// </remarks>
-public abstract class AutoLandingFixture : IDisposable
+public abstract class ReviewLandingFixture : IDisposable
 {
     protected const string Plugin = "example.lands";
 
@@ -22,7 +22,7 @@ public abstract class AutoLandingFixture : IDisposable
     protected readonly World _world = new();
     protected readonly List<LandingLine> _lines = [];
 
-    protected AutoLandingFixture()
+    protected ReviewLandingFixture()
     {
         _scratch = Path.Combine(RepoRoot(), "_fixtures", "auto-landing", Guid.NewGuid().ToString("N")[..8]);
         _home = Path.Combine(_scratch, "daoris-home");
@@ -99,7 +99,7 @@ public abstract class AutoLandingFixture : IDisposable
     // ——— the world, the plugin and the fixtures
 
     /// <summary>The service's quests and records, standing in.</summary>
-    protected sealed class World : IAutoLandingWorld
+    protected sealed class World : IReviewLandingWorld
     {
         public Action? ReadingQuests { get; set; }
         public Dictionary<string, QuestView> Quests { get; } = new(StringComparer.OrdinalIgnoreCase);

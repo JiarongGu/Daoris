@@ -43,13 +43,12 @@ describe("a workspace's page", () => {
     render(<WorkspacePage workspace="aurora" repositories={2} tab="branches" onTab={onTab}>the clean-up</WorkspacePage>);
 
     const tabs = screen.getByRole('tablist', { name: "aurora's pages" });
-    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'Workflow', 'Setup']);
+    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'Workflow']);
     await userEvent.click(within(tabs).getByRole('tab', { name: 'Workflow' }));
     expect(onTab).toHaveBeenCalledWith('workflow');
     expect(within(tabs).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveTextContent('the clean-up');
-    await userEvent.click(within(tabs).getByRole('tab', { name: 'Setup' }));
-    expect(onTab).toHaveBeenCalledWith('setup');
+    expect(within(tabs).queryByRole('tab', { name: 'Setup' })).toBeNull();
   });
 
   /** D47 §4, D48 §5: a browser is told the workspace syncs, never where, and has no tab row: one tab is no tabs. */

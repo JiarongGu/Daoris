@@ -83,7 +83,6 @@ public static class InventoryKind
     public const string Line = "line";
     public const string MovedAside = "moved-aside";
     public const string RecoveryRef = "recovery-ref";
-    public const string AutoLanding = "auto-landing";
     public const string History = "history";
     public const string End = "end";
 

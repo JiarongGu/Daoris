@@ -96,8 +96,8 @@ describe("the sync menu's doors", () => {
     expect(await within(main).findByText('https://aurora.example.com')).toBeInTheDocument();
   });
 
-  /** D150 §2.4: the Workspace menu's *This workspace's setup* opens the workspace in view's page at Setup (UX6g). */
-  it("opens This workspace's setup on the workspace in view's page, at Setup", async () => {
+  /** The Workspace menu's *This workspace's setup* leaves Repositories for the Agents place, since the workspace's page has no Setup tab. */
+  it("opens This workspace's setup in the Agents place, not on the workspace's page", async () => {
     machine();
     start();
     const user = userEvent.setup();
@@ -107,8 +107,7 @@ describe("the sync menu's doors", () => {
     await user.click(await screen.findByRole('menuitem', { name: "This workspace's setup" }));
 
     const main = await screen.findByRole('main');
-    expect(await within(main).findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
-    expect(within(main).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(main).getByRole('button', { name: 'Defaults' })).toBeInTheDocument();
+    expect(await within(main).findByText('Choose a place')).toBeInTheDocument();
+    expect(within(main).queryByRole('tab', { name: 'Setup' })).toBeNull();
   });
 });

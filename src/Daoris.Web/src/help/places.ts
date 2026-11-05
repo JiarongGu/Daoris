@@ -73,14 +73,15 @@ export const PLACE_KEPT: readonly { was: HelpPlace; now: HelpPlace }[] = [
 ];
 
 /**
- * A workspace's page's parts (UX6g2b, D150 §4.3): its four tabs and its Setup's two sections, each the door that opens it.
+ * A workspace's page's parts (UX6g2b, D150 §4.3): its three tabs and its setup's sections (`workspace-setup` is its first), each the door that opens it.
  * Prefixed, since a repository's page has three of the tabs' names.
  */
 const WORKSPACE_PARTS: Readonly<Record<string, Pick<StarterDoor, 'workspaceTab' | 'workspaceSection'>>> = {
   'workspace-details': { workspaceTab: 'details' },
   'workspace-branches': { workspaceTab: 'branches' },
   'workspace-workflow': { workspaceTab: 'workflow' },
-  'workspace-setup': { workspaceTab: 'setup' },
+  // The workspace's setup is its place's now: the same door as its defaults, the first of its sections.
+  'workspace-setup': { workspaceSection: 'defaults' },
   'workspace-defaults': { workspaceSection: 'defaults' },
   'workspace-remote': { workspaceSection: 'remote' },
 };

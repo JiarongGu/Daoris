@@ -33,6 +33,7 @@ import { sweepSlice } from '../bridge/repositories/lines';
 import { useStateSlices } from '../bridge/state/slices';
 import { useStateHub } from '../bridge/state/stateHub';
 import { PlaceSessions } from '../agents/setup/PlaceSessions';
+import { WorkspaceSetupPart } from './workspace/WorkspaceView';
 import { PLACES } from '../agents/setup/setupFixtures';
 import { code } from '../test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
@@ -274,7 +275,6 @@ describe("a workspace's page (UX6g)", () => {
   };
   const ACROSS = { repositories: [{ repository: 'engine', workspace: 'aurora', checkout: true, read: true, source: 'default', writesTo: [] }] };
   const WIRED = 'workspace:aurora';
-  const WORKSPACE_TAB = 'daoris.list.projects.workspaceTab';
 
   /** The machine, answered over the bridge; `over` names a type's answer of its own, or a function that gives it as it stands then. */
   const machine = (over: Record<string, unknown> = {}) => {
@@ -343,17 +343,14 @@ describe("a workspace's page (UX6g)", () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'game' })).toBeInTheDocument();
   });
 
-  /** WSR2, WSR1, LANG1c, READ1: a workspace's defaults, each the screen's half of `daoris driver <verb> --workspace`. */
-  it('sets its defaults on Setup, each on DAORIS.DRIVER, and says what changed', async () => {
+  /** WSR2, WSR1, LANG1c, READ1: a workspace's line default, on the place's Workflow, the screen's half of `daoris driver <verb> --workspace`. */
+  it("sets its line on the place's Workflow defaults, on DAORIS.DRIVER, and says what changed", async () => {
     machine();
     const notify = vi.fn();
-    show(<ProjectsView notify={notify} />);
-    await chooseWorkspace('aurora');
-    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
-    expect(window.localStorage.getItem(WORKSPACE_TAB)).toBe('setup');
-    const head = await within(repositoryMain()).findByRole('button', { name: 'Defaults' });
+    show(<WorkspaceSetupPart workspace="aurora" notify={notify} rows="defaults" />);
+    const head = await screen.findByRole('button', { name: 'Defaults' });
     await userEvent.click(head);
-    const defaults = within(repositoryMain()).getByRole('region', { name: 'Defaults' });
+    const defaults = screen.getByRole('region', { name: 'Defaults' });
 
     await userEvent.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[0]!);
     await userEvent.type(within(defaults).getByRole('textbox', { name: 'The line for aurora' }), 'develop{Enter}');
@@ -364,7 +361,7 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(defaults).getByRole('button', { name: 'Never mind' }));
   });
 
-  /** The session language and the reach are the workspace place's Sessions rows now (AGENTSPLACE1f), the same part the Setup tab keeps the rest of. */
+  /** The session language and the reach are the workspace place's Sessions rows (AGENTSPLACE1f). */
   it("sets its sessions' language and reach on the place's Sessions, each on DAORIS.DRIVER, and says what changed", async () => {
     machine();
     const notify = vi.fn();
@@ -426,7 +423,7 @@ describe("a workspace's page (UX6g)", () => {
     const notify = vi.fn();
     const { container } = show(<ProjectsView notify={notify} door={WIRED} section="remote" />);
 
-    const remote = await screen.findByRole('region', { name: 'Remote and reach' });
+    const remote = await screen.findByRole('region', { name: 'Remote' });
     expect(await within(remote).findByText('https://aurora.example.com')).toBeInTheDocument();
     expect(within(remote).getByText('dk_abcd1234…')).toBeInTheDocument();
     expect(container.textContent).not.toContain('dk_abcd1234wxyz');
@@ -467,9 +464,9 @@ describe("a workspace's page (UX6g)", () => {
   /** PERM1 (D72): Claude Code's rules for the workspace, where Settings → Permissions listed them (UX6g). */
   it("removes one of Claude Code's rules for the workspace, as the terminal's action", async () => {
     machine();
-    show(<ProjectsView notify={() => {}} door={WIRED} section="remote" />);
+    show(<PlaceSessions place={{ kind: 'workspace', row: AURORA_PLACE, asked: 'reach' }} notify={() => {}} />);
 
-    const remote = await screen.findByRole('region', { name: 'Remote and reach' });
+    const remote = await screen.findByRole('region', { name: 'Reach' });
     await userEvent.click(await within(remote).findByRole('button', { name: 'remove Bash(make:*)' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', {
       payload: { action: 'remove', rule: 'Bash(make:*)', scope: 'workspace', name: 'aurora' },

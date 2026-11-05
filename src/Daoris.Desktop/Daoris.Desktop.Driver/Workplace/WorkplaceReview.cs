@@ -12,7 +12,7 @@ public interface IReviewWorld
 
 /// <summary>
 /// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are what the
-/// review's gate reads too (REVIEWENV1c), so a look lands nothing the gate holds. The review's <c>IAutoLandingWorld</c> adds the opinions
+/// review's gate reads too (REVIEWENV1c), so a look lands nothing the gate holds. The review's <c>IReviewLandingWorld</c> adds the opinions
 /// the second opinion's part reads (XAGENT1f) and is the world every door hands the look.
 /// </summary>
 public interface IWorkplaceLandingWorld : IReviewWorld
@@ -91,14 +91,13 @@ public interface IWorkplaceGate
 
 /// <summary>
 /// What the workplace asks of the review: the second opinion a landing the gate holds is owed. The review keeps it and implements this,
-/// installed when the driver loads (<c>Review/WorkplaceReviewWiring.cs</c>); it does exactly what <see cref="AutoLander"/> did before it
-/// was a port.
+/// installed when the driver loads (<c>Review/WorkplaceReviewWiring.cs</c>).
 /// </summary>
 internal interface IWorkplaceReview
 {
     /// <summary>
     /// Owe the second opinion for a landing at the landing occasion unless one is owed there already, and unless the loop closed one as
-    /// landed since <paramref name="since"/>. Never throws for a due list that cannot be written (see <c>AutoLander.Owe</c>).
+    /// landed since <paramref name="since"/>. Never throws for a due list that cannot be written.
     /// </summary>
     /// <param name="at">The time the due is made at, read only where one is made.</param>
     void OweLanding(

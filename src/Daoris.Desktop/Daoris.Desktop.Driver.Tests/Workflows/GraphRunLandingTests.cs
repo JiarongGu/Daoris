@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Real git, as the other landing tests, a stand-in for the service's quests and records, and no plugin: nothing reaches a network.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class GraphRunLandingTests : AutoLandingFixture
+public sealed class GraphRunLandingTests : ReviewLandingFixture
 {
     /// <summary>The least a graph run lands by: <c>claimed</c>, then a <c>land</c> by <paramref name="land"/>'s options.</summary>
     private static string ClaimedThenLand(string land) => $$"""

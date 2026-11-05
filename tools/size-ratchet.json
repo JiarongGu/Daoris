@@ -97,7 +97,7 @@
   "src/Daoris.Web/src/help/ProposalCard.test.tsx": 41483,
   "src/Daoris.Web/src/locales/names.test.ts": 42296,
   "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 82164,
-  "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 80142,
+  "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 79957,
   "src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx": 49441,
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 76739,
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 62930,

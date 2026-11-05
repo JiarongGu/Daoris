@@ -46,10 +46,6 @@ const TABLE: Record<string, 'wide' | 'half' | 'narrow'> = {
   'ai/NothingNamedNarrow': 'narrow',
   'ai/NothingNamedChinese': 'wide',
   'ai/NothingNamedChineseNarrow': 'narrow',
-  // A workspace's Setup, its sections open.
-  'workspace/SetupOwnHalf': 'half',
-  'workspace/SetupOwnNarrow': 'narrow',
-  'workspace/SetupProcessChineseHalf': 'half',
 };
 
 const WIDTH_PX = { wide: 80 * 16, half: 39 * 16, narrow: 25 * 16 } as const;

@@ -63,7 +63,7 @@ internal sealed class WatchNodes
         // off the pass; only where this loop holds the home's lease, and never while an update drains (DRAINHOLD1).
         var landingPlugins = new LandingPlugins(home, say: (plugin, line) => watch.Output?.Append($"plugin:{plugin}", line), pluginLog: hooks.Log);
         nodes.Landing = new LandingDoor(
-            () => new LandPerformer(home, new ServiceAutoLandingWorld(service), new SessionTrees(home, landingPlugins),
+            () => new LandPerformer(home, new ServiceReviewLandingWorld(service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
             said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
