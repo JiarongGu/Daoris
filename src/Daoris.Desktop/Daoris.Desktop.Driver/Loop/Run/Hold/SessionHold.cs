@@ -71,7 +71,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
-        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
+        ConnectorPlan? handedPlan = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, HarnessSelection? goesOnAs = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
@@ -280,7 +280,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.
                 target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
-                handedServers ?? context.Servers, inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
+                handedPlan ?? ConnectorPlans.For(sessionId, null, context.Servers), inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
                 unoffered: target.Access is { } access ? access.Unoffered : SessionRules.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
                 setupChanged: setupChanged,
 

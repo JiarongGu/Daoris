@@ -18,6 +18,13 @@ public static class Adoption
     public static bool Unadopted(DoorAbilities? door) => door is { ServersOnWire: true };
 
     /// <summary>
+    /// Whether a door of these abilities may drive a repository, <paramref name="adopted"/> or not: an adopted one by its own servers where
+    /// the door's inherit its environment or ride its wire, the rest by <see cref="Unadopted(DoorAbilities?)"/>.
+    /// </summary>
+    public static bool Drives(DoorAbilities? door, bool adopted) =>
+        adopted ? door is { ServersOnWire: true } or { ServersInherit: true } : Unadopted(door);
+
+    /// <summary>
     /// Whether any of <paramref name="doors"/>, Build's candidates in their order, may drive a repository that has not adopted Daoris:
     /// the plan's answer for the machine, which the start then holds each candidate to.
     /// </summary>

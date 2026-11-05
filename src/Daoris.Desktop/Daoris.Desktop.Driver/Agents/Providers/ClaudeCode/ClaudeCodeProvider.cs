@@ -69,7 +69,11 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
                 Known<bool>.Declared(true, Evidence),
-                Known<bool>.Declared(true, Evidence)),
+                Known<bool>.Declared(true, Evidence),
+                // Its servers inherit its environment (D70's driven path through the repository's own `.mcp.json`), and
+                // `--strict-mcp-config` leaves the agent's own out (the holder's terminal).
+                ServersInherit: Known<bool>.Declared(true, Evidence),
+                OwnServersLeftOut: Known<bool>.Declared(true, "`--strict-mcp-config`")),
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
             new DoorId("claude-code-acp"), Transport.Protocol, new DoorIdentity(null, null, null),

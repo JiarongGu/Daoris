@@ -151,7 +151,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = HelperPass.NoConnector;
-                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? [] : [connector]));
+                handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? [] : [connector], ConnectorPlans.ConnectorOnly));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
@@ -171,7 +171,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 refusesInput: HelperPass.TakesNoWords(ask.Ask.Id),
                 ct: ct,
                 preamble: Driver.JoinNotices(preamble, opening),
-                handedServers: [],
+                handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),

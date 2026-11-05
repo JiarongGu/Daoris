@@ -57,7 +57,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
     /// </param>
     public TransportProtocol For(
         TransportRun run, string sessionId, string cwd, string prompt, string? posture,
-        IReadOnlyDictionary<string, string>? scope, object? meta, IReadOnlyList<AcpMcpServer> servers, DrivenInbox? inbox,
+        IReadOnlyDictionary<string, string>? scope, object? meta, ConnectorPlan plan, DrivenInbox? inbox,
         Action<JsonElement>? said, ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
         Action<ActorAsked>? carried, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
@@ -127,9 +127,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
 
                 // The knowledge host first, then whatever the plugins hand every session: tools the session can reach, under the
                 // repository's own posture like every other tool it has.
-                var offered = new List<AcpMcpServer>();
-                if (connector is not null) offered.Add(connector);
-                offered.AddRange(servers);
+                var offered = plan with { Servers = connector is null ? plan.Servers : [connector, .. plan.Servers] };
 
                 // Whether it waits on its own background work, and a wait between a transient episode's tries, which is Daoris's,
                 // never quiet.

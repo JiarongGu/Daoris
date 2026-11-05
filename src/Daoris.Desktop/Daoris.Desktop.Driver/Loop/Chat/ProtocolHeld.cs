@@ -14,10 +14,10 @@ namespace Daoris.Driver;
 internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadOnlyList<AcpConfigOption>> optionsChanged)
 {
     /// <param name="cwd">The folder the session works in.</param>
-    /// <param name="servers">What its door is handed of the servers.</param>
+    /// <param name="connectors">What its door is handed of the servers: the plan its open reads.</param>
     /// <param name="said">Told what it says about its account's windows.</param>
     public TransportProtocol Of(
-        TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, IReadOnlyList<AcpMcpServer> servers,
+        TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, ConnectorPlan connectors,
         ChatAgent agent, Action<JsonElement> said)
     {
         void Record(SessionEvent e) => wiring.Context.Events.Keep(sessionId, e, run.Say);
@@ -26,7 +26,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
         {
             Posture = posture,
             Meta = meta,
-            Servers = servers,
+            Connectors = connectors,
             TypedFailures = agent.TypedFailures,
             // Its model and effort, told each time they change, so the page offers what the agent does.
             Options = options => optionsChanged(sessionId, ChatOptions.ThePersons(options)),

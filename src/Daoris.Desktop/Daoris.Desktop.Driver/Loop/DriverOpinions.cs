@@ -210,7 +210,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = OpinionPass.NoConnector;
-                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? [] : [connector]));
+                handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? [] : [connector], ConnectorPlans.ConnectorOnly));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, though not their servers: a skill is words, and one that
@@ -232,7 +232,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 ct: ct,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 preamble: Driver.JoinNotices(preamble, opening),
-                handedServers: [],
+                handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: OpinionPass.NoConnector,

@@ -69,6 +69,7 @@ internal sealed class ChatRun(
         // What its door is handed of the servers: the knowledge connector and the plugins', composed once for both doors, so the receipt
         // names the list the spawn got.
         IReadOnlyList<AcpMcpServer> offered = [];
+        var connectors = ConnectorPlans.For(sessionId, null, []);
         Noted? browserNotice = null;
         var drivesBrowser = false;
         string? modeSaid = null;
@@ -169,7 +170,8 @@ internal sealed class ChatRun(
             offered = onWire || place.ConnectorOnPipe
                 ? chatServers.For(sessionId, place.Circle, pluginServers, onWire ? proc : null)
                 : pluginServers;
-            if (agent.Servers is { } handing) servers = handing.Hand(info, home, new ConnectorPlan(sessionId, offered));
+            connectors = ConnectorPlans.For(sessionId, place.Circle, offered);
+            if (agent.Servers is { } handing) servers = handing.Hand(info, home, connectors);
 
             // What Ask Daoris's start handed, kept now its every input is composed and before its process starts, read from the spawn itself:
             // whether its command line or its protocol door's meta names each file.
@@ -445,7 +447,7 @@ internal sealed class ChatRun(
             {
                 if (goOn.Named()) _ = goOnDoor.WentOnAsync(sessionId, goOn, agent.Name);
             },
-            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, offered, agent, Said),
+            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, connectors, agent, Said),
         });
 
         var watch = watching.WatchAsync(

@@ -33,13 +33,27 @@ public sealed record DoorAbilities(
     bool HeldOnWire,
     bool ResumesByRestart)
 {
+    /// <summary>
+    /// Its servers inherit its environment: a native door driving an adopted repository by the repository's own <c>.mcp.json</c>, the session's
+    /// identity arriving with the process's variables (D70, O1-F19). A door that states it absent cannot drive by a repository's own servers.
+    /// </summary>
+    public bool ServersInherit { get; init; }
+
+    /// <summary>It can leave its agent's own servers out of a session, so a start that requires that may use it (CONNECTORS1).</summary>
+    public bool OwnServersLeftOut { get; init; }
+
     /// <summary>A contract door's abilities: its declared ones, the rest its transport's.</summary>
     public static DoorAbilities Of(AgentDoor door) => Of(
         door.Transport,
         Declared(door.Abilities.Interactive, false),
         Declared(door.Abilities.Resumes, door.Transport == Transport.Protocol),
         Declared(door.Abilities.TakesSettings, false),
-        door.Dialect.IsKnown && door.Dialect.Required is INativeDialect);
+        door.Dialect.IsKnown && door.Dialect.Required is INativeDialect) with
+    {
+        // A native door's servers inherit its environment as every one did before the ability was stated; a provider says otherwise.
+        ServersInherit = Declared(door.Abilities.ServersInherit, door.Transport == Transport.Native),
+        OwnServersLeftOut = Declared(door.Abilities.OwnServersLeftOut, false),
+    };
 
     /// <summary>
     /// A door's abilities from its declarations and its transport's: what every door of the transport is given (§2.6), the protocol's
@@ -60,7 +74,10 @@ public sealed record DoorAbilities(
             SetAtOpen: protocol,
             WordsAtNextStep: protocol,
             HeldOnWire: protocol,
-            ResumesByRestart: !protocol);
+            ResumesByRestart: !protocol)
+        {
+            ServersInherit = !protocol,
+        };
     }
 
     private static bool Declared(Known<bool> ability, bool otherwise) => ability.IsKnown ? ability.Required : otherwise;

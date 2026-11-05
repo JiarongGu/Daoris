@@ -286,7 +286,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             {
                 var connector = _driver.Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
-                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? servers : [connector, .. servers]));
+                handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? servers : [connector, .. servers]));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
@@ -308,7 +308,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 ct: ct,
                 scope: scope,
                 preamble: Driver.JoinNotices(preamble, browserNotice),
-                handedServers: servers,
+                handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, servers),
                 drivesBrowser: drivesBrowser,
                 // The intake's own check (§5.5): no try once the person stopped it, or its ask gained quests or went away meanwhile.
                 transientWanted: async retryCt =>

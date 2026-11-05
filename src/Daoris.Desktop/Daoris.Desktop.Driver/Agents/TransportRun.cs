@@ -487,8 +487,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         {
             // 🔴 One going on goes on in its own conversation (MSG1c, D137 §2.2): resumed by the id kept for it, never a new session, which
             // would be a new conversation under the same record.
-            if (conversation is null) await session.OpenAsync(protocol.Cwd, ct, protocol.Servers).ConfigureAwait(false);
-            else await session.ResumeAsync(protocol.Cwd, conversation, ct, protocol.Servers).ConfigureAwait(false);
+            if (conversation is null) await session.OpenAsync(protocol.Cwd, ct, protocol.Connectors).ConfigureAwait(false);
+            else await session.ResumeAsync(protocol.Cwd, conversation, ct, protocol.Connectors).ConfigureAwait(false);
             protocol.Opened?.Invoke();
         }
         catch (Exception error)

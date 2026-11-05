@@ -242,7 +242,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed one under
             // Daoris's home, and the file goes when the session does.
             context.Hooks?.Log.Served(context.Catalog, sessionId, servers);
-            var handed = adapter.ServerHanding()?.Hand(info, home, new ConnectorPlan(sessionId, servers));
+            var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
+            var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // The skills plugins hand sessions, composed under the home, gone with the session.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
@@ -268,7 +269,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
                 preamble: browserNotice,
-                handedServers: servers,
+                handedPlan: connectors,
                 drivesBrowser: drivesBrowser,
                 said: wiring.Said(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.

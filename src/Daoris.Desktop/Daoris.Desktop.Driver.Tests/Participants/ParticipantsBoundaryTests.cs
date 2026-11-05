@@ -161,6 +161,29 @@ public sealed class ParticipantsBoundaryTests : IDisposable
         Assert.Equal("daoris:help — a session needs you", new AttentionEvent(AttentionKind.Parked, "h1", "daoris:help").Headline);
     }
 
+    [Theory]
+    [InlineData(AccessRules.Asking)]
+    [InlineData(AccessRules.Unrestricted)]
+    public void An_asking_or_full_start_on_a_provider_with_no_mode_mapped_is_refused_naming_it(string permissions)
+    {
+        var access = AccessRules.ResolveLevels(
+            new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = permissions } }, null, null);
+        var refused = DrivenAccess.For(access, "engine", new NoModes());
+        Assert.NotNull(refused.Refusal);
+        Assert.Contains("`no-modes`", refused.Refusal, StringComparison.Ordinal);
+        Assert.Null(DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", new NoModes()).Refusal);
+
+        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(new NoModes()));
+        Assert.Contains("`no-modes`", help.Refusal, StringComparison.Ordinal);
+    }
+
+    private sealed class NoModes : ISessionAdapter
+    {
+        public string Name => "no-modes";
+        public SessionWire Wire => SessionWire.Acp;
+        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("no-modes");
+    }
+
     [Fact]
     public void The_required_posture_is_the_one_value_the_protocol_door_reads()
     {

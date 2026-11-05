@@ -189,7 +189,6 @@
     ["Daoris.Desktop.Driver/WorkOrders/Sessions/SessionsWorld.cs", "SessionWire", "s-i", "behaviour", "the world holds the machine door as a value, until s-i"],
     ["Daoris.Desktop.Driver/WorkOrders/Work/WorkPausing.cs", "SessionWire", "s-i", "behaviour", "pausing holds the machine door as a value, until s-i"],
     ["Daoris.Desktop.Driver/WorkOrders/Work/WorkPausing.cs", "SessionWire.Pipe", "s-i", "behaviour", "pausing's machine door default, until s-i"],
-    ["Daoris.Desktop.Driver/Workplace/SessionHomeFiles.cs", ".mcp.json", "p", "behaviour", "the session home's connector file"],
     ["Daoris.Desktop.Driver/Workplace/ToolHomeLeftovers.cs", "CLAUDE_CONFIG_DIR", "h", "behaviour", "the leftovers list hard-codes Claude Code's home variable"],
     ["Daoris.Desktop.Modules/Bridge/DriverContext.cs", "SessionWire", "s-i", "behaviour", "the window's machine door, read from Build's first door's Adoption.Unadopted until s-i"],
     ["Daoris.Desktop.Modules/Bridge/DriverContext.cs", "SessionWire.Acp", "s-i", "behaviour", "the machine door where that door drives an unadopted repository"],

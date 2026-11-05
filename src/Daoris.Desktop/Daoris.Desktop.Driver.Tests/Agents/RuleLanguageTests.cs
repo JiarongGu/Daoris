@@ -17,6 +17,23 @@ public sealed class RuleLanguageTests : IDisposable
     public void Dispose() => GitSeed.Discard(_home);
 
     [Fact]
+    public void The_trust_preflight_reads_the_doors_own_home_and_trust_file_whichever_class_presents_it()
+    {
+        var built = AdapterSet.Built();
+        foreach (var door in new[] { "claude-code", "claude-code-acp" })
+        {
+            var home = built.Resolve(door).Home();
+            Assert.Equal("CLAUDE_CONFIG_DIR", home.Variable);
+            Assert.Equal(ClaudeTrust.FileName, home.TrustFile);
+        }
+
+        Assert.Null(built.Resolve("codex-acp").Home().TrustFile);
+        Assert.Equal("CODEX_HOME", built.Resolve("codex-acp").Home().Variable);
+        Assert.Null(built.Resolve("dsh").Home().TrustFile);
+        Assert.Equal(new DoorHome(null, false, null), new Adapter(false).Home());
+    }
+
+    [Fact]
     public void Each_built_door_takes_its_providers_language_and_a_provider_stating_none_takes_none()
     {
         var built = AdapterSet.Built();

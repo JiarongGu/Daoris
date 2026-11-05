@@ -21,10 +21,10 @@ internal sealed class AcpOpening(
     /// <summary>
     /// A new session: the handshake, a session on the tree, and the posture — everything before the first prompt, done once.
     /// </summary>
-    public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers)
+    public async Task OpenAsync(string cwd, CancellationToken ct, ConnectorPlan? plan)
     {
         await handshake(ct).ConfigureAwait(false);
-        var offered = AcpProtocol.Offer(servers);
+        var offered = AcpProtocol.Offer(plan);
 
         // The rules composed for this session ride here when the adapter takes them (PERM1) —
         // and a session given none sends exactly what it sent before they existed.
@@ -82,13 +82,13 @@ internal sealed class AcpOpening(
     /// account's home is refused <c>resource_not_found</c>.</para>
     /// </remarks>
     /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
-    public async Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers)
+    public async Task ResumeAsync(string cwd, string conversation, CancellationToken ct, ConnectorPlan? plan)
     {
         var initialized = await handshake(ct).ConfigureAwait(false);
         var method = AcpProtocol.ResumeMethod(initialized)
             ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
 
-        var offered = AcpProtocol.Offer(servers);
+        var offered = AcpProtocol.Offer(plan);
         var openMeta = AcpProtocol.OpenMeta(meta, offered);
         object parameters = openMeta is null
             ? new { sessionId = conversation, cwd, mcpServers = offered }
