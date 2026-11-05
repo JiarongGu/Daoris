@@ -199,6 +199,11 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Service.Core",
+      "to": "Daoris.Contracts",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Service.Http",
       "to": "Daoris.Contracts",
       "kind": "project"

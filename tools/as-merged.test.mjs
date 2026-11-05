@@ -256,7 +256,7 @@ test('the merge tool, gating a merge it has not committed, fails the check run t
 });
 
 test("this repository's gates that run the devkit's docs gate run it through this, and the merge tool still orders it as a check", () => {
-  const devkitVerify = /^node tools\/as-merged\.mjs dotnet run --project src\/Daoris\.Devkit\/Daoris\.Devkit\.Cli -- verify\b/;
+  const devkitVerify = /^(?:node tools\/orient-index\.mjs && )?node tools\/as-merged\.mjs dotnet run --project src\/Daoris\.Devkit\/Daoris\.Devkit\.Cli -- verify\b/;
   const universal = JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8')).gates.find((gate) => gate.name === 'universal');
   assert.match(universal.run, devkitVerify);
   const verify = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts.verify;

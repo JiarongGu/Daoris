@@ -45,12 +45,12 @@ A **role** is a document's job. One document per role; the names and paths are t
 | Role | Its one job | Read |
 |---|---|---|
 | **brief** | what this is, the constraint every change serves, the non-negotiables, the layout's non-obvious half, the quick checks and the command that means done, the area documents, and where everything else is | always |
-| **area** | one part of the code: what is true of it now, the lines to start at, the exemplar a new unit mirrors, the folder new behaviour goes in, its tests and its traps | on demand, at the start of every change there |
 | **room** | one folder's own instructions, where an agent works inside that folder | on demand, when working there |
 | **knowledge** | a deep dive one area needs, saying when it applies and what it enforces | on demand, from the index |
 | **skill** | a procedure, invoked by name | its description always, its body on use |
 | **router** | optional: each document, its kind and its standing | whole, at a task's start |
 | **index** | optional: where things are in the code, generated and checked, never edited by hand | by lookup |
+| **areas** | one part of the code: what is true of it now, the lines to start at, the exemplar a new unit mirrors, the folder new behaviour goes in, its tests and its traps | on demand, at the start of every change there |
 | **decisions** | a choice that rejected an alternative: what, why, and what it rejected | by lookup |
 | **backlog** | open work only, a row of a line or two | whole, when picking work |
 | **archive** | one line per finished task: its date, its outcome, and where the detail lives | by lookup |

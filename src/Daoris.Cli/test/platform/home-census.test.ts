@@ -36,6 +36,12 @@ const OWED: readonly { readonly file: string; readonly join: string; readonly wh
     why: '`home` is the main checkout, where the gate tree and its record are kept, no Daoris home',
   },
   {
+    file: 'gate-tree.mjs',
+    join: 'join(home, ...GATE_TREE',
+    like: true,
+    why: '`home` is the main checkout, where the gate tree and its record are kept, no Daoris home',
+  },
+  {
     file: 'desktop-publish.mjs',
     join: 'join(home, ...GATE_TREE',
     like: true,
