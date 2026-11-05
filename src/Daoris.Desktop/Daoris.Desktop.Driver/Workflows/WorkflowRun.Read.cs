@@ -3,8 +3,11 @@ using Microsoft.Data.Sqlite;
 
 namespace Daoris.Driver;
 
-/// <summary>Whose runs are read (WORKFLOW1c): a session's, a quest's, or an ask's. Exactly one is named.</summary>
-public sealed record WorkflowRunAsk(string? Session = null, string? Quest = null, string? Ask = null);
+/// <summary>
+/// Whose runs are read (WORKFLOW1c): a session's, a quest's, an ask's, or a repository's line, its verification runs (FABRIC-PIPELINE1d).
+/// Exactly one is named.
+/// </summary>
+public sealed record WorkflowRunAsk(string? Session = null, string? Quest = null, string? Ask = null, string? Line = null);
 
 /// <summary>
 /// Where a run's records are read (WORKFLOW1c; design §5.1): this machine's service, its home (the landing record, the due list and
@@ -61,6 +64,9 @@ public static class WorkflowRunReader
     public static async Task<WorkflowRunRead> ReadAsync(
         WorkflowRunAsk asked, WorkflowRunSources sources, IWorkflowRunRecords records, CancellationToken ct = default)
     {
+        // A line's verification runs are bound in a folder of their own and name no quest, so the service is not asked for them.
+        if (asked.Line is { } line) return LineRunReader.Read(line, sources.Home, sources.Config, sources.WorkspaceOf, records);
+
         IReadOnlyList<QuestView> quests;
         IReadOnlyList<TracedSession> sessions;
         try
@@ -302,7 +308,7 @@ public static class WorkflowRunReader
         return WorkflowGraphRuns.Derive(
             new WorkflowGraphRunFacts(facts, bound, graph, record)
             {
-                Branches = reads.Branches, Failures = FailedGates(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+                Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
             },
             workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
@@ -344,7 +350,7 @@ public static class WorkflowRunReader
         return WorkflowGraphRuns.Derive(
             new WorkflowGraphRunFacts(facts, run, graph, record)
             {
-                Branches = reads.Branches, Promoted = promoted, Failures = FailedGates(reads.Sources.Home, run, graph, record),
+                Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record),
             },
             workspace, askId);
@@ -362,26 +368,6 @@ public static class WorkflowRunReader
         {
             return null;
         }
-    }
-
-    /// <summary>The gate each failed check named (FABRIC-PIPELINE1d), from its newest attempt's result in the run's folder; a result that is not there or does not read names none.</summary>
-    private static Dictionary<string, string> FailedGates(string home, string run, NodeGraph graph, NodeRecord? record)
-    {
-        var named = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (record is null) return named;
-        foreach (var node in graph.Nodes.Where(each => each.Kind == NodeKinds.Check && record.Statuses.GetValueOrDefault(each.Id)?.State == NodeStates.Failed))
-        {
-            if (record.Attempts.LastOrDefault(attempt => attempt.Node == node.Id && attempt.Plugin == NodeKinds.Check) is not { } attempt) continue;
-            try
-            {
-                if (VerifyResult.Read(VerifyFiles.ResultOf(home, run, attempt.Call.Invocation))?.Failed is { } gate) named[node.Id] = gate;
-            }
-            catch (DriverException)
-            {
-            }
-        }
-
-        return named;
     }
 
     /// <summary>

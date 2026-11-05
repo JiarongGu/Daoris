@@ -32,6 +32,9 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     /// </summary>
     public WorkflowGraphRun? Graph { get; init; }
 
+    /// <summary>A verification run's commit, branch, verdict and gates (FABRIC-PIPELINE1d); null for a chain's or a chat's run.</summary>
+    public WorkflowRunLine? Line { get; init; }
+
     /// <summary>
     /// The first unsettled step; null where all settled or no graph could be read. Problem distinguishes the latter. A graph run stands
     /// where its drawing says (<see cref="WorkflowGraphRun.At"/>), since a node only a failure leads to is never settled.

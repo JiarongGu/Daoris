@@ -524,7 +524,8 @@ public sealed class WorkflowRoutes(DriverContext context)
     }
 
     // Where a piece of work stands in its workflow: the runs
-    // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, exactly one, each step
+    // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, or a repository's `{line}`
+    // (its newest verification runs, each with its verdict), exactly one, each step
     // Current's cell beside where it stands. The records are the service's and this machine's, so it waits for the driver.
     // What names nothing that runs (a chat, a quest not here) is answered as no run with its code, the id and the workflow its
     // words name, and the driver's English sentence: the page words a code it knows in the
@@ -532,10 +533,10 @@ public sealed class WorkflowRoutes(DriverContext context)
     [DriverRoute("WORKFLOW_RUN", PipeClass.Open)]
     private async Task<object?> WorkflowRunAsync(WorkflowRunRead press, CancellationToken cancellationToken)
     {
-        var asked = new WorkflowRunAsk(press.Session, press.Quest, press.Ask);
-        if (new[] { asked.Session, asked.Quest, asked.Ask }.Count(each => each is not null) != 1)
+        var asked = new WorkflowRunAsk(press.Session, press.Quest, press.Ask, press.Line);
+        if (new[] { asked.Session, asked.Quest, asked.Ask, asked.Line }.Count(each => each is not null) != 1)
         {
-            throw new DriverException("a run is read for a `session`, a `quest` or an `ask` — name one of them.");
+            throw new DriverException("a run is read for a `session`, a `quest`, an `ask` or a repository's `line` — name one of them.");
         }
 
         var service = _loop.Service ?? throw NotReady();
