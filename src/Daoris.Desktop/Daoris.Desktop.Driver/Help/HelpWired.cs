@@ -175,11 +175,11 @@ public sealed class HelpWired(string home)
     /// <summary>A start of a conversation going on (MSG1c, ASKHIST1).</summary>
     public const string GoingOn = "going-on";
 
-    /// <summary>The native door.</summary>
-    public const string Pipe = "pipe";
+    /// <summary>The native door, in the sheet's word.</summary>
+    public const string Pipe = AgentCapabilities.Pipe;
 
-    /// <summary>The protocol door.</summary>
-    public const string Acp = "acp";
+    /// <summary>The protocol door, in the sheet's word.</summary>
+    public const string Acp = AgentCapabilities.Acp;
 
     /// <summary>On the spawn: approved for Ask Daoris, or Daoris's own.</summary>
     public const string Handed = "handed";
@@ -347,7 +347,7 @@ public sealed class HelpWired(string home)
             Harness = handed.Harness,
             Version = handed.Version,
             Account = handed.Account,
-            Door = handed.Transport == Transport.Native ? Pipe : Acp,
+            Door = Sheet.WireOf(handed.Transport),
             Posture = handed.Posture is { } posture ? PostureAsked.Parse(posture).Modes : null,
             PermissionMode = handed.PermissionMode,
             Folder = handed.Folder,

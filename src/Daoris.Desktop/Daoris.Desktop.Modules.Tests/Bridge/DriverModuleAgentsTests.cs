@@ -126,6 +126,36 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.False(rows["acme-agent"].GetProperty("installs").GetBoolean());
     }
 
+    /// <summary>
+    /// COAGENT1e (the agent-provider design §6): the roster answers each agent once with its account acts and its doors' sheets, the door
+    /// named for it first, so the page reads an agent's facts from it and never a door standing for its agent; each door's word is its
+    /// sheet's, and a measured row names its evidence.
+    /// </summary>
+    [Fact]
+    public async Task The_roster_answers_each_agent_once_with_its_acts_and_its_doors_sheets()
+    {
+        var roster = await AnswerAsync(Module(), "HARNESSES");
+        var agents = roster.GetProperty("agents").EnumerateArray().ToDictionary(agent => agent.GetProperty("id").GetString()!);
+        static string?[] Doors(JsonElement agent) => [.. agent.GetProperty("doors").EnumerateArray().Select(door => door.GetProperty("door").GetString())];
+
+        var claude = agents["claude-code"];
+        Assert.Equal(["claude-code", "claude-code-acp"], Doors(claude));
+        Assert.Equal("claude-code", claude.GetProperty("lead").GetString());
+        Assert.True(claude.GetProperty("acts").GetProperty("signsIn").GetBoolean());
+        Assert.True(claude.GetProperty("acts").GetProperty("installs").GetBoolean());
+        var protocol = claude.GetProperty("doors")[1];
+        Assert.Equal("acp", protocol.GetProperty("wire").GetString());
+        var steering = protocol.GetProperty("rows").EnumerateArray().Single(row => row.GetProperty("capability").GetString() == "steering");
+        Assert.Equal("measured", steering.GetProperty("source").GetString());
+        Assert.Equal("docs/2026-10-03-steer-evidence.md", steering.GetProperty("evidence").GetString());
+
+        Assert.Equal(["codex-acp"], Doors(agents["codex"]));
+        Assert.True(agents["codex"].GetProperty("acts").GetProperty("deviceCode").GetBoolean());
+        Assert.False(agents.ContainsKey("codex-acp"));
+        Assert.All(roster.GetProperty("harnesses").EnumerateArray(),
+            door => Assert.Contains(door.GetProperty("wire").GetString(), new[] { "acp", "pipe" }));
+    }
+
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
     [Fact]
     public async Task The_harness_roster_answers_this_machine_s_toolchains()
