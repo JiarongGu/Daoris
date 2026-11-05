@@ -13,7 +13,8 @@ public static class ActorAskedChoices
     {
         public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
 
-        public static ActorAsked ForSpawn(string agent, System.Diagnostics.ProcessStartInfo info, ActorAsked? requested = null)
+        public static ActorAsked ForSpawn(
+            string agent, System.Diagnostics.ProcessStartInfo info, SpawnChoiceVariables variables, ActorAsked? requested = null)
         {
             var asked = requested ?? Before(agent);
             ActorValue Command(string flag, ActorValue value)
@@ -29,9 +30,11 @@ public static class ActorAskedChoices
             }
             var model = Command("--model", asked.Model);
             var effort = Command("--effort", asked.Effort);
-            if (model.Source == "account-default" && info.Environment.TryGetValue("ANTHROPIC_MODEL", out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
+            // What the door's program reads from its environment is the door's to say (its spawn's `ChoiceVariables`), never a name here.
+            if (model.Source == "account-default" && variables.Model is { } modelVariable
+                && info.Environment.TryGetValue(modelVariable, out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
                 model = new("environment", ownModel, false);
-            if (info.Environment.TryGetValue("CLAUDE_CODE_EFFORT_LEVEL", out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
+            if (variables.Effort is { } effortVariable && info.Environment.TryGetValue(effortVariable, out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
                 effort = new("environment", ownEffort, false);
             return asked with { Model = model, Effort = effort };
         }

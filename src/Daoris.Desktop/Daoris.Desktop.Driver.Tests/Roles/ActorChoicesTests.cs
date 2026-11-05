@@ -45,6 +45,24 @@ public sealed class ActorChoicesTests
         else Assert.Contains(refusal, said, StringComparison.Ordinal);
     }
 
+    /// <summary>Row n: what a start's asked choice reads from its environment is its door's spawn's to say, never a name in the roles' code.</summary>
+    [Fact]
+    public void The_asked_choice_reads_the_environment_by_the_variables_the_doors_spawn_names()
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("agent");
+        info.Environment["ANTHROPIC_MODEL"] = "opus";
+        info.Environment["CLAUDE_CODE_EFFORT_LEVEL"] = "high";
+
+        var claude = ActorAsked.ForSpawn("claude-code", info, new ClaudeCodeSpawn().ChoiceVariables);
+        Assert.Equal(("environment", "opus"), (claude.Model.Source, claude.Model.Value));
+        Assert.Equal(("environment", "high"), (claude.Effort.Source, claude.Effort.Value));
+
+        var other = ActorAsked.ForSpawn("codex-acp", info, SpawnChoiceVariables.None);
+        Assert.Equal("account-default", other.Model.Source);
+        Assert.Equal("account-default", other.Effort.Source);
+        Assert.Equal(new ClaudeCodeSpawn().ChoiceVariables, new ClaudeAcpSpawn().ChoiceVariables);
+    }
+
     [Fact]
     public void A_set_order_is_read_in_its_order_each_entry_carrying_what_it_names()
     {

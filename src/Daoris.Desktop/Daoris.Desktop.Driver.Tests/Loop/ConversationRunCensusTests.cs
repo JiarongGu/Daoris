@@ -61,6 +61,22 @@ public sealed class ConversationRunCensusTests
     }
 
     /// <summary>
+    /// D243 point 1 on the protocol door: the conversation's turns say a prompt, a word into a running turn and a steer on the run's
+    /// <c>ProtocolWords</c>, never through the session, which they read for its options alone.
+    /// </summary>
+    [Fact]
+    public void The_protocol_conversations_words_go_through_the_runs_words_and_not_the_session()
+    {
+        var chat = Runner().Single(each => each.File == "ProtocolChat.cs").Source;
+        var writing = Regex.Matches(chat, @"\b[Ss]ession\??\.(PromptAsync|SayAsync|SteeredAsync|SteerAsync|RetriedAsync|RecoveredAsync|Retries)\b")
+            .Select(match => match.Value)
+            .ToArray();
+
+        Assert.True(writing.Length == 0, "ProtocolChat writes through the session:\n" + string.Join('\n', writing));
+        Assert.Contains("Words is not { NextStep: true }", chat, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The conversation reads its agent through <c>ChatAgent</c> and the run it makes, as the run reads its door: no file of the conversation's
     /// runner, its turns, its account reads or what it is told names the adapter seam, which row t replaces beneath them.
     /// </summary>

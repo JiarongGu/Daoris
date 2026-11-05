@@ -110,7 +110,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         }
         actor = prior?.Actor ?? actor;
         if (taken is { } role) context.Conversations.KeepRole(sessionId, role.Role, role.Revision);
-        var asked = ActorAsked.ForSpawn(adapter.Name, info, target.Asked ?? prior?.Asked);
+        var asked = ActorAsked.ForSpawn(adapter.Name, info, adapter.ChoiceVariables(), target.Asked ?? prior?.Asked);
 
         // The entry a new start's walk took; a continuation keeps its record's own.
         var choice = target.Choice ?? prior?.Choice ?? "before";

@@ -21,8 +21,8 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
         {
             try
             {
-                if (resume is null) await wiring.OpenAsync(cwd, ct, plan).ConfigureAwait(false);
-                else await wiring.ResumeAsync(cwd, resume, ct, plan).ConfigureAwait(false);
+                await ProtocolOpen.BeginAsync(
+                    resume, () => wiring.OpenAsync(cwd, ct, plan), named => wiring.ResumeAsync(cwd, named, ct, plan)).ConfigureAwait(false);
             }
             catch (AcpChoiceNotOffered refused)
             {
