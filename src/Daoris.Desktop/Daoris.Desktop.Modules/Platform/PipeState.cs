@@ -39,6 +39,9 @@ internal sealed class PipeState
     /// <summary>CONFIRMWAIT1 (§15.2 item 9): each press whose grounds are being read before its card, by its request's id.</summary>
     public Dictionary<string, PipeReserved> Reserved { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>RPC1g1 (D238 point 2): each conversation a connection holds, by the conversation's id (<see cref="PipeHolding"/>).</summary>
+    public Dictionary<string, PipeHold> Holds { get; } = new(StringComparer.Ordinal);
+
     /// <summary>The connections open now.</summary>
     public HashSet<PipeConnection> Connections { get; } = [];
 

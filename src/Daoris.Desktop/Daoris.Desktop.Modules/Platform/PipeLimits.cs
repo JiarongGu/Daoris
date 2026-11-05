@@ -32,6 +32,12 @@ public sealed class PipeLimits
     public int Queued { get; init; } = 64;
 
     /// <summary>
+    /// How many of a held conversation's lines may wait for its terminal (RPC1g1, the terminal-conversation design §3.2): past it the oldest
+    /// is dropped and a gap told, so the bus never waits on a connection.
+    /// </summary>
+    public int Forwarded { get; init; } = 256;
+
+    /// <summary>
     /// How many of the person's presses may wait for the window at once (CONFIRMWAIT1a-i's ten, the confirm-wait design §9.2; RPC1c's
     /// five lasted at most twelve minutes): past it, one is refused. Fewer than <see cref="Connections"/>, which a test holds.
     /// </summary>
