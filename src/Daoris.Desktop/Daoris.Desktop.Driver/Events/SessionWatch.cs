@@ -291,14 +291,14 @@ public sealed class SessionWatch
         var noted = step switch
         {
             { Step: Marked, Call: { } call } => Noted.Of(
-                NoteCodes.WatchQuietCall, $"Nothing came from its agent for {step.Minutes} minutes, while `{call}` ran. Daoris looked in.",
+                EndNoteCodes.WatchQuietCall, $"Nothing came from its agent for {step.Minutes} minutes, while `{call}` ran. Daoris looked in.",
                 ("minutes", step.Minutes), ("call", call)),
             { Step: Marked, Works.Count: > 0 } => Noted.Of(
-                NoteCodes.WatchQuietWork,
+                EndNoteCodes.WatchQuietWork,
                 $"Nothing came from its agent for {step.Minutes} minutes, while its background work {string.Join(", ", step.Works.Select(work => $"`{work}`"))} showed no progress. Daoris looked in.",
                 ("minutes", step.Minutes), ("works", step.Works)),
-            { Step: Marked } => Noted.Of(NoteCodes.WatchQuiet, $"Nothing came from its agent for {step.Minutes} minutes. Daoris looked in.", ("minutes", step.Minutes)),
-            { Outcome: "left" } => Noted.Of(NoteCodes.WatchLeft, "You left it running. Daoris looks in again once it is heard from."),
+            { Step: Marked } => Noted.Of(EndNoteCodes.WatchQuiet, $"Nothing came from its agent for {step.Minutes} minutes. Daoris looked in.", ("minutes", step.Minutes)),
+            { Outcome: "left" } => Noted.Of(EndNoteCodes.WatchLeft, "You left it running. Daoris looks in again once it is heard from."),
             _ => null,
         };
         if (noted is not null)

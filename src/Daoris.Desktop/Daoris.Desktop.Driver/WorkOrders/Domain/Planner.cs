@@ -52,15 +52,15 @@ public static class Planner
 
     /// <summary>
     /// Whether <paramref name="last"/> ended because the person reopened the work its quest grew from
-    /// (<see cref="NoteCodes.EndedSourceReopened"/>): <c>completed</c>, by its note's code, never its English.
+    /// (<see cref="EndNoteCodes.EndedSourceReopened"/>): <c>completed</c>, by its note's code, never its English.
     /// </summary>
     internal static bool StoppedByReopen(PriorSession last) =>
         string.Equals(last.State, "completed", StringComparison.OrdinalIgnoreCase)
-        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedSourceReopened.Code) == true;
+        && last.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedSourceReopened.Code) == true;
 
     /// <summary>
     /// The step before, named where a session ends stopped by the person's reopen of the work its quest grew from (what
-    /// <see cref="Observation.Conclude"/> ends as <see cref="NoteCodes.EndedSourceReopened"/>): its quest held by the reopen as it ends,
+    /// <see cref="Observation.Conclude"/> ends as <see cref="EndNoteCodes.EndedSourceReopened"/>): its quest held by the reopen as it ends,
     /// or gone on with since <paramref name="started"/>, the reopen and the go-on both made while it ran, so the step reads unheld,
     /// taken, grown from another submission than at its start, with no result of its own since. Either way the person's go-on carries
     /// it on with its branch brought up to date with the source's new submission (<see cref="ReopenTelling.BringsToSource"/>); read as

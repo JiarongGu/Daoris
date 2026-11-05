@@ -80,7 +80,7 @@ internal sealed class ChatOptions(ChatContext context)
         var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
         // The option and its value are the agent's own names, facts the page words the sentence around.
         var set = Noted.Of(
-            NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
+            ChatNoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
             ("option", option.Name), ("chosen", chosen));
         context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
         return ThePersons(after);

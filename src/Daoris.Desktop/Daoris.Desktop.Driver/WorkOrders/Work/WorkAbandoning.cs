@@ -15,8 +15,8 @@ public static class WorkAbandoning
 
     /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 54–55).</summary>
     public static Noted NoteOf(WorkScope scope, string id) => scope == WorkScope.Ask
-        ? Noted.Of(NoteCodes.StoppedAbandonedAsk, $"ask `#{id}` abandoned.", ("ask", id))
-        : Noted.Of(NoteCodes.StoppedAbandonedQuest, $"quest `#{id}` abandoned.", ("quest", id));
+        ? Noted.Of(EndNoteCodes.StoppedAbandonedAsk, $"ask `#{id}` abandoned.", ("ask", id))
+        : Noted.Of(EndNoteCodes.StoppedAbandonedQuest, $"quest `#{id}` abandoned.", ("quest", id));
 
     /// <summary>The terminal's door to the first press, and with <c>--reason</c> and <c>--yes</c> the second (design §7.2).</summary>
     public static string Door(WorkScope scope, string id) =>

@@ -12,7 +12,7 @@ internal sealed class SessionOpening(
 {
     /// <summary>
     /// The driver's code for a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c2; its
-    /// <c>NoteCodes.EndedSourceReopened</c>, a twin read here by its spelling): the one ending the ledger reads by a code, since
+    /// <c>EndNoteCodes.EndedSourceReopened</c>, a twin read here by its spelling): the one ending the ledger reads by a code, since
     /// the record's state alone, <c>completed</c>, says the work finished (FABRIC-CLOSE1c26).
     /// </summary>
     internal const string EndedSourceReopened = "ended.source-reopened";

@@ -15,10 +15,10 @@ public sealed class StewardNotesTests
     /// <summary>Each person's code beside its steward's sibling.</summary>
     private static readonly (NoteCode Person, NoteCode Steward)[] Siblings =
     [
-        (NoteCodes.EndedStopped, NoteCodes.EndedStoppedSteward),
-        (NoteCodes.StoppedCheckpointStopped, NoteCodes.StoppedCheckpointStoppedSteward),
-        (NoteCodes.StoppedCheckpointFinished, NoteCodes.StoppedCheckpointFinishedSteward),
-        (NoteCodes.StartedReleased, NoteCodes.StartedReleasedSteward),
+        (EndNoteCodes.EndedStopped, EndNoteCodes.EndedStoppedSteward),
+        (EndNoteCodes.StoppedCheckpointStopped, EndNoteCodes.StoppedCheckpointStoppedSteward),
+        (EndNoteCodes.StoppedCheckpointFinished, EndNoteCodes.StoppedCheckpointFinishedSteward),
+        (StartNoteCodes.StartedReleased, StartNoteCodes.StartedReleasedSteward),
     ];
 
     private static readonly Regex Person = new(@"\b(person|person's|you|your|yours)\b", RegexOptions.IgnoreCase);
@@ -80,7 +80,7 @@ public sealed class StewardNotesTests
             {
                 if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    || Path.GetFileName(file) == "NoteCodes.cs")
+                    || Path.GetFileName(file).EndsWith("NoteCodes.cs", StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -101,5 +101,5 @@ public sealed class StewardNotesTests
     }
 
     private static string Name(NoteCode code) =>
-        typeof(NoteCodes).GetFields().Single(field => field.FieldType == typeof(NoteCode) && ReferenceEquals(field.GetValue(null), code)).Name;
+        NoteCodes.Domains.SelectMany(domain => domain.GetFields()).Single(field => field.FieldType == typeof(NoteCode) && ReferenceEquals(field.GetValue(null), code)).Name;
 }

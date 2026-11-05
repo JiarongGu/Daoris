@@ -167,7 +167,7 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     /// </summary>
     public SessionEvent ToldNote()
     {
-        var told = Noted.Of(NoteCodes.ChatToldDraft, "told the agent the open workflow draft:")
+        var told = Noted.Of(ChatNoteCodes.ChatToldDraft, "told the agent the open workflow draft:")
             .Then(" ", Noted.Said(Lead, NoteBy.Program))
             .Then("\n", Noted.Said(Json, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
@@ -212,7 +212,7 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
         var told = new Dictionary<string, WorkflowDraftTold>(StringComparer.Ordinal);
         foreach (var each in events)
         {
-            if (each is not { Kind: SessionEventKind.Note, Parts: [{ Code: var code }, .., { Code: null, Words: { } json }] } || code != NoteCodes.ChatToldDraft.Code) continue;
+            if (each is not { Kind: SessionEventKind.Note, Parts: [{ Code: var code }, .., { Code: null, Words: { } json }] } || code != ChatNoteCodes.ChatToldDraft.Code) continue;
             try
             {
                 using var document = JsonDocument.Parse(json);

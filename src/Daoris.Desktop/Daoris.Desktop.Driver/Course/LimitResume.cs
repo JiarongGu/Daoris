@@ -34,12 +34,12 @@ internal static class LimitResume
             : null;
 
     /// <summary>
-    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="NoteCodes.EndedTransient"/>): <c>failed</c>,
+    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="EndNoteCodes.EndedTransient"/>): <c>failed</c>,
     /// by its note's code, never its English and never a mark, so no write beside the conclusion can fail the hold open.
     /// </summary>
     internal static bool EndedTransient(PriorSession last) =>
         string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
-        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true;
+        && last.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedTransient.Code) == true;
 
     /// <summary>
     /// Daoris's word at a released transient record's step 1 (AGENTERRORS1a2): the episode's go-on (<c>retry.go-on</c>) with the provider's
@@ -50,13 +50,13 @@ internal static class LimitResume
          DaorisKeys.TransientRelease(record.Session, record.Updated ?? DateTimeOffset.UnixEpoch));
 
     public static string? UpdateBuild(PriorSession record) => record.State == "stopped" && record.Interrupted
-        ? record.NoteParts?.FirstOrDefault(part => part.Code == NoteCodes.UpdateClosed.Code)?.Value("build")?.ToString()
+        ? record.NoteParts?.FirstOrDefault(part => part.Code == EndNoteCodes.UpdateClosed.Code)?.Value("build")?.ToString()
         : null;
 
     /// <summary>The cool-off's <c>until</c> its record's limit line names, as the note keeps it; a fixed word where none is read.</summary>
     public static string Until(PriorSession record) =>
         record.NoteParts?.FirstOrDefault(part =>
-                part.Code == NoteCodes.AccountCoolingWindow.Code || part.Code == NoteCodes.AccountCoolingNoWindow.Code)
+                part.Code == AccountNoteCodes.AccountCoolingWindow.Code || part.Code == AccountNoteCodes.AccountCoolingNoWindow.Code)
             ?.Value("until")?.ToString() is { Length: > 0 } until
             ? until
             : "unsaid";
@@ -91,7 +91,7 @@ internal static class LimitResume
         if (!string.Equals(last.Window ?? "", cooled.Window ?? "", StringComparison.OrdinalIgnoreCase)) return null;
 
         var hit = AccountLine.Bounded(cooled.Window) ?? "limit";
-        return Noted.Of(NoteCodes.LimitNotLifted, $"Its last reset did not lift the limit: {hit}.", ("hit", hit));
+        return Noted.Of(HeldNoteCodes.LimitNotLifted, $"Its last reset did not lift the limit: {hit}.", ("hit", hit));
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ internal static class LimitResume
     /// (<c>limit.resumeRefused</c>), the refusal's own code its <c>why</c>, never <c>account</c>.
     /// </summary>
     public static Noted Refused(ContinueReason why) => Noted.Of(
-        NoteCodes.LimitResumeRefused,
+        HeldNoteCodes.LimitResumeRefused,
         $"Its own conversation could not be resumed ({why.Code}), so it went on in a new session with Daoris's brief.",
         ("why", why.Code));
 }

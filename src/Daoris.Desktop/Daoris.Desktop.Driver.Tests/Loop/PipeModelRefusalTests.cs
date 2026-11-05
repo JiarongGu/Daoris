@@ -162,8 +162,8 @@ public sealed class PipeModelRefusalTests : IDisposable
     public void A_go_on_run_s_words_wait_for_the_next_look_after_a_model_refusal_even_after_a_failure_before()
     {
         var refused = Observation.Conclude(1, "Taken", resumed: true)
-            .Then(" ", Noted.Of(NoteCodes.AccountRefusedModel, "`fake` refused `opus` on the account it ran on.", ("agent", "fake"), ("model", "opus")));
-        var waitedBefore = new PriorSession("s1", null, "failed") { NoteParts = [new NotePart { Code = NoteCodes.EndedWordsWait.Code }] };
+            .Then(" ", Noted.Of(AccountNoteCodes.AccountRefusedModel, "`fake` refused `opus` on the account it ran on.", ("agent", "fake"), ("model", "opus")));
+        var waitedBefore = new PriorSession("s1", null, "failed") { NoteParts = [new NotePart { Code = EndNoteCodes.EndedWordsWait.Code }] };
         var ended = new HarnessEnding(1, "There's an issue with the selected model (opus).", []) { ModelRefused = true };
 
         Assert.Equal(WordsAfter.Wait, FailedTurnWords.Judge(refused, null, ended, waitedBefore));

@@ -100,7 +100,7 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
             var e = events[at];
             if (e.Kind == SessionEventKind.Turn) break;
             if (e.Kind == SessionEventKind.Note
-                && (e.Why is not null || e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitStoppedWaiting.Code) == true))
+                && (e.Why is not null || e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitStoppedWaiting.Code) == true))
             {
                 return null;
             }
@@ -109,7 +109,7 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
         return held;
     }
 
-    /// <summary>A cooling line's code, whichever of its three shapes (<see cref="NoteCodes.AccountCooling"/> and its window's).</summary>
+    /// <summary>A cooling line's code, whichever of its three shapes (<see cref="AccountNoteCodes.AccountCooling"/> and its window's).</summary>
     private static bool Cooling(string code) =>
-        code == NoteCodes.AccountCooling.Code || code == NoteCodes.AccountCoolingWindow.Code || code == NoteCodes.AccountCoolingNoWindow.Code;
+        code == AccountNoteCodes.AccountCooling.Code || code == AccountNoteCodes.AccountCoolingWindow.Code || code == AccountNoteCodes.AccountCoolingNoWindow.Code;
 }

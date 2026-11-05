@@ -240,23 +240,23 @@ public static class HandOverAskNotes
 {
     /// <summary>It waits for the person's yes or no under the rule's <c>ask</c>, naming the agent it would go on with.</summary>
     public static Noted Asked(string agent) =>
-        Noted.Of(NoteCodes.HandOverAsked, $"Its agent asked to hand this session over; it waits for your yes or no to go on with {agent}.", ("agent", agent));
+        Noted.Of(PeerNoteCodes.HandOverAsked, $"Its agent asked to hand this session over; it waits for your yes or no to go on with {agent}.", ("agent", agent));
 
     /// <summary>It goes, by the rule's <c>on</c> or the person's yes: with which agent, once its turn ends.</summary>
     public static Noted Taking(string agent) =>
-        Noted.Of(NoteCodes.HandOverTaking, $"Its agent asked to hand this session over: it goes on with {agent} once its turn ends.", ("agent", agent));
+        Noted.Of(PeerNoteCodes.HandOverTaking, $"Its agent asked to hand this session over: it goes on with {agent} once its turn ends.", ("agent", agent));
 
     /// <summary>
     /// The person asked to hand a quest's session over (HANDOVERSAID1), by the path that made the ask: at a terminal or by the window's
     /// press. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
     /// </summary>
     public static Noted AskedBy(string by, string agent) => by == HandOverAsker.Terminal
-        ? Noted.Of(NoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent))
-        : Noted.Of(NoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent));
+        ? Noted.Of(PeerNoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent))
+        : Noted.Of(PeerNoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent));
 
     /// <summary>It came to nothing before anyone's yes, and why: the rule, the person's no, or what the session or its quest is.</summary>
     public static Noted Refused(string why) =>
-        Noted.Of(NoteCodes.HandOverRefused, $"Its agent's ask to hand this session over was refused: {HandOverAskWhy.Said(why)}.", ("why", why));
+        Noted.Of(PeerNoteCodes.HandOverRefused, $"Its agent's ask to hand this session over was refused: {HandOverAskWhy.Said(why)}.", ("why", why));
 
     /// <summary>
     /// A hand-over let go, by the person's yes, their own ask or the rule's <c>on</c>, that Daoris could not take (HANDOVERSAID1): never
@@ -267,9 +267,9 @@ public static class HandOverAskNotes
     {
         var why = HandOverAskWhy.Of(code);
         return HandOverAskWhy.Ends(why)
-            ? Noted.Of(NoteCodes.HandOverNotTakenEnds,
+            ? Noted.Of(PeerNoteCodes.HandOverNotTakenEnds,
                 $"The hand-over to {agent} was not taken: {HandOverAskWhy.Said(why)}. Nothing goes on with this session.", ("agent", agent), ("why", why))
-            : Noted.Of(NoteCodes.HandOverNotTaken,
+            : Noted.Of(PeerNoteCodes.HandOverNotTaken,
                 $"The hand-over to {agent} was not taken: {HandOverAskWhy.Said(why)}. This session goes on with its own agent.", ("agent", agent), ("why", why));
     }
 

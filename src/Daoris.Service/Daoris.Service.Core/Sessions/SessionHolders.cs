@@ -7,7 +7,7 @@ namespace Daoris.Knowledge;
 internal sealed class SessionHolders(QuestStore quests, SessionStore sessions, KnowledgeService? registry)
 {
     /// <summary>
-    /// The driver's code for a session that ended its turn on its own open helper ask (HELPERWAIT1; its <c>NoteCodes.EndedAwaitsHelper</c>,
+    /// The driver's code for a session that ended its turn on its own open helper ask (HELPERWAIT1; its <c>EndNoteCodes.EndedAwaitsHelper</c>,
     /// a twin read here by its spelling): completed, since it waits on that helper and not on the person.
     /// </summary>
     internal const string EndedAwaitsHelper = "ended.awaits-helper";

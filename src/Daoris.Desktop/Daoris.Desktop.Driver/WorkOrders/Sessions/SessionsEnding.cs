@@ -43,7 +43,7 @@ internal static class SessionsEnding
 
     /// <param name="standing">
     /// That the pipe admitted this stop under the person's standing confirmation: every record it ends, by whichever path, keeps its
-    /// own note and gains <see cref="NoteCodes.StandingTerminal"/> after it.
+    /// own note and gains <see cref="EndNoteCodes.StandingTerminal"/> after it.
     /// </param>
     internal static async Task<int> StopAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct, bool standing = false)
     {

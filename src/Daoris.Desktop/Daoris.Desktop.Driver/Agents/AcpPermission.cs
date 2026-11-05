@@ -57,9 +57,9 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
         wiring.Say($"  permission refused: {(call is { } raw ? AcpRender.Compact(raw) : "a tool call")} {governs}");
         // 🔴 The record names the call as a reader knows it, its title, else its kind: the request's JSON made every refusal four
         // lines of wire. Its id keeps the note with its call; the title is the agent's words, as it may hold a path.
-        var refused = Noted.Of(NoteCodes.RefusedLead, "permission refused:")
+        var refused = Noted.Of(EndNoteCodes.RefusedLead, "permission refused:")
             .Then(" ", Noted.Said(Named(call), NoteBy.Agent))
-            .Then(" ", Noted.Of(NoteCodes.RefusedGoverns, governs));
+            .Then(" ", Noted.Of(EndNoteCodes.RefusedGoverns, governs));
         wiring.Emit(new SessionEvent { Kind = SessionEventKind.Note, Id = callId, Text = refused.Note, Parts = refused.Parts });
 
         await wiring.SendAsync(new JsonObject
@@ -130,7 +130,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
 
         var raw = call is { } shown ? AcpRender.Compact(shown) : "a tool call";
         Said($"  permission held for the person's answer: {raw}",
-            Noted.Of(NoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+            Noted.Of(HeldNoteCodes.AskingHeld, "permission held for the person's answer:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
         var answering = AnsweredAsync(id, raw, callId, title, held, holds.Bound);
         lock (_answering)
         {
@@ -195,7 +195,7 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
             if (end.Chosen is { Allows: true } allowed)
             {
                 Said($"  permission allowed by the person: {raw}",
-                    Noted.Of(NoteCodes.AskingAllowed, "permission allowed by the person:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
+                    Noted.Of(HeldNoteCodes.AskingAllowed, "permission allowed by the person:").Then(" ", Noted.Said(title, NoteBy.Agent)), callId);
                 outcome = new JsonObject { ["outcome"] = "selected", ["optionId"] = allowed.Id };
             }
             else
@@ -204,16 +204,16 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
                 var minutes = Math.Max(1, (int)Math.Ceiling(bound.TotalMinutes));
                 var close = end.Why switch
                 {
-                    PermissionWhy.Answered => Noted.Of(NoteCodes.AskingDenied, "— the person refused it"),
-                    PermissionWhy.Cancelled => Noted.Of(NoteCodes.AskingCancelled, "— the turn was stopped before the person answered"),
+                    PermissionWhy.Answered => Noted.Of(HeldNoteCodes.AskingDenied, "— the person refused it"),
+                    PermissionWhy.Cancelled => Noted.Of(HeldNoteCodes.AskingCancelled, "— the turn was stopped before the person answered"),
                     PermissionWhy.Bound => Noted.Of(
-                        NoteCodes.AskingBound,
+                        HeldNoteCodes.AskingBound,
                         $"— nobody answered within its {minutes}-minute bound, and a turn is never left waiting for ever",
                         ("minutes", minutes)),
-                    _ => Noted.Of(NoteCodes.AskingEnded, "— the session ended before the person answered"),
+                    _ => Noted.Of(HeldNoteCodes.AskingEnded, "— the session ended before the person answered"),
                 };
                 Said($"  permission refused: {raw} {close.Note}",
-                    Noted.Of(NoteCodes.RefusedLead, "permission refused:").Then(" ", Noted.Said(title, NoteBy.Agent)).Then(" ", close), callId);
+                    Noted.Of(EndNoteCodes.RefusedLead, "permission refused:").Then(" ", Noted.Said(title, NoteBy.Agent)).Then(" ", close), callId);
                 outcome = end.Chosen is { } rejection
                     ? new JsonObject { ["outcome"] = "selected", ["optionId"] = rejection.Id }
                     : new JsonObject { ["outcome"] = "cancelled" };
