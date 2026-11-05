@@ -40,6 +40,8 @@ export type CodeGroup = {
   modules: string[];
   /** Every module beneath it. */
   members: string[];
+  /** The folders a cycle's modules come from, where it crosses more than one. */
+  across?: string[];
 };
 
 export type CodeTree = {
@@ -78,6 +80,18 @@ function dirOf(path: string): string {
   const clean = path.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
   const cut = clean.lastIndexOf('/');
   return cut < 0 ? '' : clean.slice(0, cut);
+}
+
+/** The deepest folder that holds every one of `dirs`: their shared leading path segments. */
+function commonDir(dirs: readonly string[]): string {
+  const [first, ...rest] = dirs.map((dir) => (dir === '' ? [] : dir.split('/')));
+  let shared = first ?? [];
+  for (const parts of rest) {
+    let at = 0;
+    while (at < shared.length && at < parts.length && shared[at] === parts[at]) at += 1;
+    shared = shared.slice(0, at);
+  }
+  return shared.join('/');
 }
 
 /** The strongly connected components of two or more modules (Tarjan, without recursion). */
@@ -122,7 +136,10 @@ function components(ids: readonly string[], edges: readonly CodeDependency[]): s
   return found;
 }
 
-/** The folders of a repository's modules, with each cycle that lies in one folder held as a group of its own. */
+/**
+ * The folders of a repository's modules, with each cycle held as a group of its own: in its folder, or, where it crosses folders, in
+ * the nearest folder that holds them all, condensed there for ranking and whole when opened.
+ */
 export function buildTree(input: readonly CodeModule[], supplied: readonly CodeDependency[]): CodeTree {
   const modules = new Map<string, CodeModule>();
   for (const module of input) if (!modules.has(module.id)) modules.set(module.id, module);
@@ -154,12 +171,14 @@ export function buildTree(input: readonly CodeModule[], supplied: readonly CodeD
   const dirs = new Map([...modules.values()].map((module) => [module.id, dirOf(module.path)] as const));
   const inCycle = new Set<string>();
   for (const part of components([...modules.keys()], dependencies)) {
-    const dir = dirs.get(part[0]!)!;
-    if (!part.every((id) => dirs.get(id) === dir)) continue;
     const members = part.sort(byName);
+    const across = [...new Set(members.map((id) => dirs.get(id)!))].sort(byName);
+    // A cycle across folders is held by the nearest folder that holds them all, and says which folders it crosses.
+    const dir = commonDir(across);
     const home = folder(dir);
     const cycle = make(`cycle:${dir}:${members[0]}`, 'cycle', '', dir, home.id);
     cycle.modules = members;
+    if (across.length > 1) cycle.across = across;
     home.groups.push(cycle.id);
     for (const id of members) inCycle.add(id);
   }
@@ -226,7 +245,7 @@ type Laid = { w: number; h: number; parts: Part[] };
  * The world for the groups that are `open`: the root's folders packed by name, an open folder a frame holding its modules in
  * `layerModules`' layers (a cycle in it one condensed unit) and its subfolders packed beneath, a closed group one card.
  */
-export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { cycle?: (count: number) => string } = {}): CodeScene {
+export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { cycle?: (count: number, folders: number) => string } = {}): CodeScene {
   const out = new Map<string, CodeDependency[]>();
   for (const edge of tree.dependencies) {
     const list = out.get(edge.from);
@@ -312,7 +331,8 @@ export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { c
       const box = { x: ox + part.box.x, y: oy + part.box.y, w: part.box.w, h: part.box.h };
       const group = tree.groups.get(part.id);
       if (part.inner && group) {
-        frames.push({ id: part.id, title: group.kind === 'cycle' ? (words.cycle ?? ((n) => `cycle ×${n}`))(group.modules.length) : group.name, box });
+        const cycleTitle = words.cycle ?? ((n) => `cycle ×${n}`);
+        frames.push({ id: part.id, title: group.kind === 'cycle' ? cycleTitle(group.modules.length, group.across?.length ?? 1) : group.name, box });
         emit(part.inner, box.x, box.y);
         continue;
       }

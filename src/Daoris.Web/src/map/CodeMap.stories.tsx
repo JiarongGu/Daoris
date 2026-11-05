@@ -4,7 +4,7 @@ import type { Provenance } from '../data/api';
 import { inDark } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import { type CodeFixture, LONG_IDS, REPOSITORY, SKIPPING_LAYERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
+import { type CodeFixture, CYCLE_ACROSS_FOLDERS, LONG_IDS, REPOSITORY, SKIPPING_LAYERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 
 // A repository's own code map on the canvas (MAP3a; CANVAS1f; D224, the canvas design §3.4), in the shapes a producer writes: this
@@ -57,6 +57,14 @@ export const WithACycleChinese: Story = { ...WithACycle, decorators: [storyWidth
  */
 export const FromATeammate: Story = { args: { fed: FED } };
 export const FromATeammateNarrow: Story = { ...FromATeammate, decorators: [storyWidths.narrow] };
+
+/**
+ * A cycle across three folders, condensed in the folder above them, labelled with the folders it crosses, and whole when opened
+ * (opened here, as a map of seven opens whole; the second story chooses a module outside it).
+ */
+export const ACycleAcrossFolders: Story = { args: { map: CYCLE_ACROSS_FOLDERS } };
+export const ACycleAcrossFoldersChosen: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, decorators: [storyWidths.half] };
+export const ACycleAcrossFoldersChineseDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS }, decorators: [storyWidths.wide, chinese, inDark] };
 
 /** Lines that skip a layer run around the cards between, through the gaps, leaving and entering their cards as every line does. */
 export const LinesAroundCards: Story = { args: { map: SKIPPING_LAYERS, initial: 'app' } };

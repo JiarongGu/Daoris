@@ -90,6 +90,18 @@ export const WITH_A_CYCLE: CodeFixture = {
   ],
 };
 
+/** A cycle that crosses three folders, held by the folder above them, beside modules of those folders that are in no cycle. */
+export const CYCLE_ACROSS_FOLDERS: CodeFixture = {
+  modules: [
+    mod('session', 'src/core/session'), mod('rules', 'src/core/rules'), mod('panel', 'src/web/panel'), mod('board', 'src/web/board'),
+    mod('ledger', 'src/data/ledger'), mod('cache', 'src/data/cache'), mod('cli', 'tools/cli'),
+  ],
+  dependencies: [
+    dep('session', 'ledger', 'calls'), dep('ledger', 'panel', 'notifies'), dep('panel', 'session', 'calls'),
+    dep('session', 'rules'), dep('board', 'panel'), dep('ledger', 'cache'), dep('cli', 'session', 'http'),
+  ],
+};
+
 /** A stack of layers whose top uses what is several layers down: the lines that skip a layer are routed around the cards between. */
 export const SKIPPING_LAYERS: CodeFixture = {
   modules: [

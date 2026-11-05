@@ -7,7 +7,7 @@ import type { ReactElement } from 'react';
 import type { CodeDependency, CodeModule } from '../data/api';
 import { graphIdentity, memoryKey } from '../design/canvas/viewMemory';
 import { buildTree, defaultOpen, layoutCode } from './codeClusters';
-import { type CodeFixture, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
+import { type CodeFixture, CYCLE_ACROSS_FOLDERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld, cutId, FITS } from './CodeMap';
 
 // MAP3a and CANVAS1f: a repository's own code map on the canvas — folders, modules as buttons, only the supplied dependencies as lines.
@@ -167,6 +167,12 @@ describe('a cycle', () => {
     // At five modules everything opens, the cycle too: its frame says so and its members are cards.
     expect(screen.getByText('cycle of 3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'engine, depends on 1' })).toBeInTheDocument();
+  });
+
+  it('across folders is held by the folder above them and says how many it crosses', () => {
+    render(<Host map={CYCLE_ACROSS_FOLDERS} />);
+    expect(screen.getByText('cycle of 3 across 3 folders')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ledger, depends on 2' })).toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,4 @@
-import { type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../data/api';
 import { ago } from '../locales/format';
@@ -118,10 +118,12 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   const base = held?.tree === tree ? held.open : defaultOpen(tree);
   // The chosen module stays drawn: its path is open for as long as it is chosen.
   const open = useMemo(() => (selected !== null && tree.modules.has(selected) ? openingPath(tree, base, selected) : base), [tree, base, selected]);
-  const scene = useMemo(
-    () => layoutCode(tree, open, { cycle: (count) => t('code.cycleTitle', { count }) }),
-    [tree, open, t],
+  // A cycle is named by its size, and by the folders it crosses where it crosses more than one.
+  const cycleTitle = useCallback(
+    (count: number, folders: number) => (folders > 1 ? t('code.cycleAcrossTitle', { count, folders }) : t('code.cycleTitle', { count })),
+    [t],
   );
+  const scene = useMemo(() => layoutCode(tree, open, { cycle: cycleTitle }), [tree, open, cycleTitle]);
   const setOpen = (next: ReadonlySet<string>) => setHeld({ tree, open: next });
 
   const chosenCard = selected !== null && scene.world.boxes.has(selected) ? selected : null;
@@ -170,14 +172,15 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   }, [tree]);
   const nameOf = (id: string) => {
     const group = tree.groups.get(id);
-    return group ? (group.kind === 'cycle' ? t('code.cycleTitle', { count: group.modules.length }) : group.dir || group.name || repository) : id;
+    return group ? (group.kind === 'cycle' ? cycleTitle(group.modules.length, group.across?.length ?? 1) : group.dir || group.name || repository) : id;
   };
   const nodeLabel = (id: string) => {
     const group = tree.groups.get(id);
     if (!group) return t('code.moduleLabel', { id, count: outgoing.get(id) ?? 0 });
-    return group.kind === 'cycle'
-      ? t('code.cycleLabel', { count: group.modules.length })
-      : t('code.folderLabel', { name: nameOf(id), count: group.members.length });
+    if (group.kind === 'folder') return t('code.folderLabel', { name: nameOf(id), count: group.members.length });
+    return group.across
+      ? t('code.cycleAcrossLabel', { count: group.modules.length, folders: group.across.length })
+      : t('code.cycleLabel', { count: group.modules.length });
   };
   const titleOf = (id: string) => nameOf(id);
   const findItems = useMemo(
@@ -200,7 +203,9 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         >
           {!dot && (
             <>
-              <span className="min-w-0 truncate text-small font-semibold text-ink">{group.kind === 'cycle' ? t('code.cycleCard') : group.name || repository}</span>
+              <span className="min-w-0 truncate text-small font-semibold text-ink">
+                {group.kind === 'folder' ? group.name || repository : group.across ? t('code.cycleAcrossCard', { folders: group.across.length }) : t('code.cycleCard')}
+              </span>
               <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">{t('code.times', { count: group.members.length })}</span>
             </>
           )}
