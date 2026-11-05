@@ -146,7 +146,7 @@ public sealed class SessionsThroughInstanceTests
         "reword" => (new("reword") { Ids = [Id], Word = "w1", Text = "instead" }, "SESSION_QUEUE_EDIT",
             $$"""{"session":"{{Id}}","id":"w1","text":"instead","said":true}"""),
         "delete" => (new("delete") { Ids = [Id] }, "SESSION_DELETE", $$"""{"id":"{{Id}}","said":true}"""),
-        "go-on-new" => (new("go-on-new") { Ids = [Id] }, "SESSION_GO_ON_NEW", $$"""{"id":"{{Id}}","said":true}"""),
+        "hand-over-no-agent" => (new("hand-over") { Ids = [Id] }, "SESSION_HAND_OVER", $$"""{"id":"{{Id}}","said":true}"""),
         "start-from" => (new("start-from") { Ids = [Id] }, "SESSION_START_FROM", $$"""{"id":"{{Id}}","said":true}"""),
         "hand-over" => (new("hand-over") { Ids = [Id], Agent = "codex", Account = "work" }, "SESSION_HAND_OVER",
             $$"""{"id":"{{Id}}","agent":"codex","account":"work","said":true}"""),
@@ -174,7 +174,7 @@ public sealed class SessionsThroughInstanceTests
     [InlineData("take-back")]
     [InlineData("reword")]
     [InlineData("delete")]
-    [InlineData("go-on-new")]
+    [InlineData("hand-over-no-agent")]
     [InlineData("start-from")]
     [InlineData("hand-over")]
     [InlineData("helper")]
@@ -214,7 +214,7 @@ public sealed class SessionsThroughInstanceTests
     [InlineData("take-back", "refused")]
     [InlineData("reword", "expired")]
     [InlineData("delete", "refused")]
-    [InlineData("go-on-new", "expired")]
+    [InlineData("hand-over-no-agent", "expired")]
     [InlineData("start-from", "refused")]
     [InlineData("hand-over", "expired")]
     [InlineData("helper", "refused")]

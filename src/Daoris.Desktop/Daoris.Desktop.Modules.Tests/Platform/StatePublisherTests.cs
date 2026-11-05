@@ -430,7 +430,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_DELETE", "sessions,help", "id")]
     [InlineData("STOP_SESSION", "sessions,driver", "id")]
     [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
-    [InlineData("SESSION_GO_ON_NEW", "sessions,driver", "id")]
     // MIXAGENT2b: the person's ask of a helper and their yes to an agent's, each a file the loop's next look takes; the asks' read.
     [InlineData("SESSION_HELPER_ASK", "sessions,driver", "id")]
     [InlineData("SESSION_HELPER_APPROVE", "sessions,driver", "session")]

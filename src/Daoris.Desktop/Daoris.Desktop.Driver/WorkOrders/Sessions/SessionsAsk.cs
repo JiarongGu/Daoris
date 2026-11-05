@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>What <c>daoris session</c> was asked.</summary>
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
-/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c>, <c>start-from</c>, <c>partner</c>, <c>partner-list</c>, <c>partner-stop</c>
+/// <c>take-back</c>, <c>reword</c>, <c>start-from</c>, <c>hand-over</c>, <c>partner</c>, <c>partner-list</c>, <c>partner-stop</c>
 /// or <c>handback</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk

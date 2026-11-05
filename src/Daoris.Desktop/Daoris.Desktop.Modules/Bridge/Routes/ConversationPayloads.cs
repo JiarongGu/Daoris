@@ -18,9 +18,12 @@ public sealed record SessionQueueEditPress(string Session, string Id, System.Tex
 /// <summary>A session by its id: the press that ends its chat, stops its wait, reads its options or its queue, or starts from it.</summary>
 public sealed record SessionIdPress(string Id, bool Said = false);
 
-/// <summary>A session handed over to another agent; <c>Said</c> asks for the verb's own words.</summary>
+/// <summary>
+/// A session handed over to another agent, or, with no <c>Agent</c>, gone on in a new session on the walk's pick; <c>Said</c> asks for the
+/// verb's own words.
+/// </summary>
 public sealed record SessionHandOverPress(
-    string Id, string Agent, string? Account, string? Why, string? AskedBy, string? Model, string? Effort, bool Said = false);
+    string Id, string? Agent, string? Account, string? Why, string? AskedBy, string? Model, string? Effort, bool Said = false);
 
 /// <summary>
 /// The person's answer to a go-ahead an agent asked for, named by its <c>Number</c> on its <c>Ask</c>; the session goes on unless

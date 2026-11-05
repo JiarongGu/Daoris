@@ -1059,15 +1059,15 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1g (D137 §2.2): *Go on in a new session* over the bridge, the driver's door. Words a resume holds while the account
-    /// their session ran on cools are chosen to go on in a new session, the choice kept for the loop's next look; what cannot is
-    /// <c>sent: false</c> with its code and the driver's sentence. Before the service answers, the cold-start sentence.
+    /// MSG1g (D137 §2.2), ONEWAY1j: *Go on in a new session* over the bridge, <c>SESSION_HAND_OVER</c> naming no agent. Words a resume
+    /// holds while the account their session ran on cools are chosen to go on in a new session, the choice kept for the loop's next
+    /// look; what cannot is <c>kept: false</c> with its code and the driver's sentence. Before the service answers, the cold-start
+    /// sentence.
     /// </summary>
     [Fact]
     public async Task Going_on_in_a_new_session_keeps_the_choice_while_its_account_cools_and_refuses_by_code()
     {
-        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SESSION_GO_ON_NEW", new { id = "s1" }));
-
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SESSION_HAND_OVER", new { id = "s1" }));
         using var ledger = new LoopbackHost();
         static string Session(string id, string quest) =>
             $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","profile":"account-1","state":"failed","kind":"driven","created":"2026-10-04T09:00:00Z","updated":"2026-10-04T09:05:00Z","said":[{"id":"w1","text":"Also log the port.","at":"2026-10-04T09:06:00Z","files":[],"reopens":true}]}""";
@@ -1083,13 +1083,14 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         AccountCooling.Cool(loop.Home, new CoolingEntry("claude-code", "account-1", now.AddHours(2), true, "session", now, "s0"), now);
         var module = new DriverModule(Bus, loop);
 
-        var kept = await AnswerAsync(module, "SESSION_GO_ON_NEW", new { id = "s1" });
-        Assert.True(kept.GetProperty("sent").GetBoolean());
+        var kept = await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "s1" });
+        Assert.True(kept.GetProperty("kept").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, kept.GetProperty("sessionId").ValueKind);
         Assert.Equal(JsonValueKind.Null, kept.GetProperty("why").ValueKind);
         Assert.Equal(["w1"], new NewSessionChoices(loop.Home).Read("s1")!.Said);
 
-        var closed = await AnswerAsync(module, "SESSION_GO_ON_NEW", new { id = "s2" });
-        Assert.False(closed.GetProperty("sent").GetBoolean());
+        var closed = await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "s2" });
+        Assert.False(closed.GetProperty("kept").GetBoolean());
         Assert.Equal(GoOnNew.Closed, closed.GetProperty("why").GetString());
         Assert.StartsWith("#q2 has closed, so nothing carries its session's words on by itself", closed.GetProperty("message").GetString());
         Assert.Null(new NewSessionChoices(loop.Home).Read("s2"));
@@ -1143,7 +1144,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1d: the helper, go-on-new, take-back, start-from and hand-over presses answer their verbs' lines when asked, and the ask's
+    /// RPC1d: the helper, take-back, start-from and hand-over presses answer their verbs' lines when asked, and the ask's
     /// approve and decline need no session named, as the verb names only the ask.
     /// </summary>
     [Fact]
@@ -1165,7 +1166,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         foreach (var (route, payload) in new (string, object)[]
         {
-            ("SESSION_GO_ON_NEW", new { id = "nobody1", said = true }),
+            ("SESSION_HAND_OVER", new { id = "nobody1", said = true }),
             ("SESSION_QUEUE_EDIT", new { session = "nobody1", id = "w1", said = true }),
         })
         {

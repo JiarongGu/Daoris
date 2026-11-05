@@ -699,7 +699,7 @@ describe('noteLines', () => {
       expect(lines[0]).toMatch(/^It does not go on yet: `codex`'s own sign-in is cooling until .+ \(Daoris's default: the agent named no time\), /);
       expect(lines.slice(1)).toEqual([
         "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts.",
-        'To go on now in a new session instead, without that conversation: `daoris session go-on-new s1`.',
+        'To go on now in a new session instead, without that conversation: `daoris session hand-over s1`.',
         "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.",
       ]);
       expect(noteLines(zh, { parts }, 'zh').every((line) => line.kind === 'said')).toBe(true);

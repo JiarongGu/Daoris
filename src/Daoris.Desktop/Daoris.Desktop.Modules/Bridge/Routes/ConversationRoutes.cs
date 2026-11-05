@@ -229,14 +229,19 @@ public sealed class ConversationRoutes(DriverContext context)
     [Publishes("SESSION_HAND_OVER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHandOverAsync(SessionHandOverPress press, CancellationToken cancellationToken)
     {
-        var (id, agent) = (press.Id, press.Agent);
+        var id = press.Id;
+        var named = string.IsNullOrWhiteSpace(press.Agent) ? null : press.Agent.Trim();
         // RPC1d: `sessions hand-over` sent over the pipe asks for the verb's own words (the person's press, its reason `press`).
         if (press.Said)
         {
             return await SessionsVerbs.SaidAsync(
-                context, new SessionsAsk("hand-over") { Ids = [id], Agent = agent, Account = press.Account }, cancellationToken)
+                context, new SessionsAsk("hand-over") { Ids = [id], Agent = named, Account = press.Account }, cancellationToken)
                 .ConfigureAwait(false);
         }
+
+        // No agent named: *Go on in a new session*, the walk's pick for the words a cooling account holds.
+        if (named is null) return await GoOnNewPress.AskAsync(_loop, id, cancellationToken).ConfigureAwait(false);
+        var agent = named;
 
         var why = press.Why ?? HandOverWhy.Press;
         // A quest's own session is handed over through `sessions hand-over`'s judge, as a driven move the next look takes: no

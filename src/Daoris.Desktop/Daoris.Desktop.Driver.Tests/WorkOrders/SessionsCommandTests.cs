@@ -313,7 +313,7 @@ public sealed class SessionsCommandTests : IDisposable
     /// <summary>
     /// MSG1f3: the terminal's listing plans afresh, and a fresh plan cannot see a cool-off, so words that resume on an account
     /// that cools read <i>going on</i> there. The listing reads the record's own account's cool-off from the home, as
-    /// <c>go-on-new</c> judges it, and says the reset and the door out of the wait as the loop's look would.
+    /// <c>hand-over</c> naming no agent judges it, and says the reset and the door out of the wait as the loop's look would.
     /// </summary>
     [Fact]
     public async Task Words_whose_own_account_cools_are_listed_under_resumes_later_with_the_door_out()
@@ -337,7 +337,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("Resumes later (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
         Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
-        Assert.Contains("`daoris session go-on-new c00l1ng0`.", said);
+        Assert.Contains("`daoris session hand-over c00l1ng0`.", said);
         Assert.DoesNotContain("going on", said);
     }
 

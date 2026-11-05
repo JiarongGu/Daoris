@@ -427,7 +427,7 @@ describe('the box on every session that takes words', () => {
     const cooling = { until, stated: true, window: 'session', seen: until, assumedZone: false, notBelieved: false };
     driver({ reaches: 'resume' }, { sent: true }, {
       ACCOUNTS: { agents: [{ agent: 'claude-code', speaks: true, own: {}, scopes: [], accounts: [{ name: 'personal', cooling }] }] },
-      SESSION_GO_ON_NEW: { sent: false, why: 'closed', message: '#abc123 has closed, so nothing carries its session’s words on by itself' },
+      SESSION_HAND_OVER: { sessionId: null, kept: false, why: 'closed', message: '#abc123 has closed, so nothing carries its session’s words on by itself' },
       SESSION_START_FROM: { sessionId: 'c4a7c4a7', sent: true, message: 'started' },
       SESSION_HISTORY: {
         session: 's1a2b3c4', earlier: false, latest: 3,
@@ -443,7 +443,8 @@ describe('the box on every session that takes words', () => {
     expect(await screen.findByText(/^Held: its account is cooling until .+; it goes on with this then\.$/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Go on in a new session' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', { payload: { id: 's1a2b3c4' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 's1a2b3c4', why: 'press' } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', expect.anything());
     expect(await screen.findByText('#abc123 has closed, so nothing carries its words on by itself; start a conversation with them instead.'))
       .toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));

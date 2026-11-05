@@ -770,7 +770,7 @@ public sealed class AccountRotationTickTests : IDisposable
             $"the `stub` account `account-1` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and its conversation is "
             + "on that account, so your words wait to go on in it then.",
             verdict.Reason);
-        Assert.EndsWith("`daoris session go-on-new s1`.", verdict.Reason);
+        Assert.EndsWith("`daoris session hand-over s1`.", verdict.Reason);
         var wait = Assert.Single(held.Waits);
         Assert.Equal(("account-1", Until), (wait.Account, wait.Until));
         Assert.Equal(["q1"], wait.Quests);

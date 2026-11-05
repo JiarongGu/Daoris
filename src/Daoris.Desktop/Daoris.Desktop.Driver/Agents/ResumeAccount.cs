@@ -295,7 +295,7 @@ public static class ResumeWords
 
     /// <summary>The door out of the wait where a new session carries the words on: a taken or open quest's session (D137 §2.2).</summary>
     public static string NewSessionDoor(string session) =>
-        $"To go on now in a new session instead, without that conversation: `daoris session go-on-new {session}`.";
+        $"To go on now in a new session instead, without that conversation: `daoris session hand-over {session}`.";
 
     /// <summary><see cref="NewSessionDoor"/> by code (CONVNOTE2g): the session a value, the command the catalogue's.</summary>
     public static Noted NewSessionDoorOf(string session) =>

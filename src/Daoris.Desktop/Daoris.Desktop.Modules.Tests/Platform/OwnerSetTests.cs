@@ -107,7 +107,7 @@ public sealed class OwnerSetTests : IDisposable
 
     [Theory]
     [InlineData("SESSION_QUEUE_EDIT", """{"session":"s1","id":"w1","text":"later"}""")]
-    [InlineData("SESSION_GO_ON_NEW", """{"id":"s1"}""")]
+    [InlineData("SESSION_HAND_OVER", """{"id":"s1"}""")]
     [InlineData("DISCARD_SESSION_TREE", """{"id":"s1","force":true}""")]
     [InlineData("STOP_SESSION", """{"id":"s2"}""")]
     public async Task The_owner_s_press_on_a_session_marks_its_quest_and_every_successor_shares_it(string route, string payload)

@@ -7,7 +7,7 @@ internal static class SessionsGoingOn
     /// Words a resume holds while their account cools go on in a new session at the driver's next look (<see cref="GoOnNew"/>):
     /// one line, exit 0 where the choice is kept, 1 where it is refused, 2 where it could not be kept.
     /// </summary>
-    internal static async Task<int> GoOnNewAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
+    private static async Task<int> GoOnNewAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
         var answer = await GoOnNew.AskAsync(
                 world.Service, world.Home, world.CoolingOf ?? SessionGroups.CoolingOn(world.Home), id, DateTimeOffset.UtcNow, ct)
@@ -45,6 +45,9 @@ internal static class SessionsGoingOn
     /// </summary>
     internal static async Task<int> HandOverAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
+        // No agent named: the words a cooling account holds go on in a new session on the walk's pick, the choice kept for the next look.
+        if (string.IsNullOrWhiteSpace(ask.Agent)) return await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false);
+
         // A quest's own session is no conversation: it opens none here. Judged and decided as a driven move in the store, which the
         // driver's next look takes: it stops the session and carries its quest on in the same tree with the agent named. This run
         // decides it and goes no further, so the loop's look receives it from this run, alive or not.
