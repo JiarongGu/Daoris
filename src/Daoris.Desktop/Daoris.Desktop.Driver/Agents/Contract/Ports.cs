@@ -111,6 +111,15 @@ public interface IChildVocabulary
 
     /// <summary>Whether the agent says a child's end; where it does not, an end stays unknown.</summary>
     bool SaysEnd { get; }
+
+    /// <summary>A reader of one record's lines in this agent's words, new per reading.</summary>
+    IChildLines Lines();
+
+    /// <summary>
+    /// What a line of this agent's appended after a reading names for whether it moves it: the child a call came from, a call from an id
+    /// named with no parent (<see cref="ChildCallKind.Root"/>), or none that can; null where the line is no call, and any line moves it.
+    /// </summary>
+    ChildCall? Wake(System.Text.Json.Nodes.JsonObject line);
 }
 
 /// <summary>

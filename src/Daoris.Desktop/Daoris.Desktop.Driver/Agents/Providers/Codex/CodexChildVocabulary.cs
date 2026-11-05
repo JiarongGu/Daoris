@@ -19,4 +19,10 @@ internal sealed class CodexChildVocabulary : IChildVocabulary
 
     /// <inheritdoc/>
     public bool SaysEnd => false;
+
+    /// <inheritdoc/>
+    public IChildLines Lines() => new CodexChildLines();
+
+    /// <inheritdoc/>
+    public ChildCall? Wake(System.Text.Json.Nodes.JsonObject line) => CodexChildLines.Wake(line);
 }
