@@ -44,6 +44,9 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     public AgentDoor Door => _door;
 
+    /// <summary>The maker the registration states for this door: a declared door's own, any other's its provider's (<see cref="CommitTrailers"/> reads it so).</summary>
+    public string? Maker => Declared ? _door.Identity.Maker : _provider.Identity.Maker;
+
     public string Name => _door.Id.Value;
 
     public SessionWire Wire => _door.Transport == Transport.Protocol ? SessionWire.Acp : SessionWire.Pipe;

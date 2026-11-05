@@ -31,7 +31,7 @@ internal static class ClaudeCodeProvider
 
     public static Provider Registration()
     {
-        var program = new ProgramFacts(
+        var program = new ToolSpec(
             ["claude"], ["--version"], ["npm", "install", "-g", "@anthropic-ai/claude-code"], ["update"], Package: null,
             // A pin comes from the release bucket, against its signed manifest (AGT2b).
             Channel: ClaudeReleases.Channel,
@@ -61,7 +61,7 @@ internal static class ClaudeCodeProvider
 
         var native = new AgentDoor(
             new DoorId("claude-code"), Transport.Native, new DoorIdentity(null, null, null),
-            Known<ProgramFacts>.Absent, home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: true), Evidence),
+            Known<ToolSpec>.Absent, home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: true), Evidence),
             new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
             Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
             Known<IDialect>.Declared(new AdapterNativeDialect(new ClaudeCodeAdapter()), Evidence),
@@ -75,8 +75,8 @@ internal static class ClaudeCodeProvider
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
             new DoorId("claude-code-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
-            Known<ProgramFacts>.Declared(
-                new ProgramFacts(
+            Known<ToolSpec>.Declared(
+                new ToolSpec(
                     ["claude-agent-acp"], ["--version"], ["npm", "install", "-g", "@agentclientprotocol/claude-agent-acp"], null,
                     "@agentclientprotocol/claude-agent-acp", null, null, ProbeByPresence: false),
                 Evidence),
@@ -95,7 +95,7 @@ internal static class ClaudeCodeProvider
             new ProviderId(Id),
             new ProviderIdentity("Claude Code", "Anthropic", "CC", StandIn: false, DeclaredBy: []),
             [native, protocol],
-            Known<ProgramFacts>.Declared(program, Evidence),
+            Known<ToolSpec>.Declared(program, Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey("claude-code"), null, pool), Evidence),
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Declared(usage, Evidence),

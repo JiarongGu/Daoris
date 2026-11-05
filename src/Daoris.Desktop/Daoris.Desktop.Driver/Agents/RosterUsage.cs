@@ -172,11 +172,29 @@ internal sealed class RosterUsage(HarnessRoster roster)
             return [.. list.Select(account => new SwitchCandidate(account, null, Ready: false))];
         }
 
+        var floor = FloorOf(owner);
         return [.. list.Select(account => new SwitchCandidate(
             account,
             SaidOf(owner, account, now),
             Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && roster.Before(owner, account, now).IsReady && !HarnessRoster.SaidOut(reads, account)
-                && (offer is not { } asked || AgentOffers.Offers(roster.Home, asked.Agent, asked.Version, account, now).Session.Judge(asked.Model) is null)))];
+                && (offer is not { } asked || AgentOffers.Offers(roster.Home, asked.Agent, asked.Version, account, now).Session.Judge(asked.Model) is null),
+            floor))];
+    }
+
+    /// <summary>
+    /// How long a reading of the owner's accounts stands: its provider's question's floor (s-iii: Codex's five minutes, Claude's one),
+    /// or null where the owner names no door this build resolves or its agent asks nothing of its server.
+    /// </summary>
+    private TimeSpan? FloorOf(string owner)
+    {
+        try
+        {
+            return UsageOf(owner)?.Fresh;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
     }
 
     /// <summary>What an account last said of its windows, or null where nothing was or the file does not read.</summary>

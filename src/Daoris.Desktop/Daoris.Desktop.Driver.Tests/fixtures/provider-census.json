@@ -8,7 +8,8 @@
     ["Stub", "ClaudeErrors", "the stand-in's error codes are Claude Code's, never its Words, so a stand-in's 529 Overloaded still ends (O1-F5)"],
     ["Stub", "ClaudeLimits", "the stand-in's limit words are Claude Code's, mirrored so a limit can be gated with no account (O1-F5)"],
     ["Stub", "ClaudeSignIn", "the stand-in's sign-in refusal words are Claude Code's, mirrored so a tick can gate one with no account (O1-F5)"],
-    ["Stub", "ClaudeWindows", "the stand-in's window words are Claude Code's, mirrored so a replayed frame is read as Claude Code's (O1-F5)"]
+    ["Stub", "ClaudeWindows", "the stand-in's window words are Claude Code's, mirrored so a replayed frame is read as Claude Code's (O1-F5)"],
+    ["AltStub", "ClaudeErrors", "the second stand-in's error codes are Claude Code's, never its Words, as the first's are, so a 529 Overloaded still ends; its limit, window and sign-in words are its own"]
   ],
   "otherSense": [
     ["Daoris.Desktop.Driver/Workflows/Nodes/WireEvaluation.cs", ".Wire", "a workflow wire's id on an evaluated node, no door"],

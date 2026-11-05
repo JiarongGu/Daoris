@@ -169,7 +169,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
 
     /// <summary>
     /// Whether any entry of Build's order rides the protocol, as the loop plans by it (D70, <see cref="BuildDoor"/>); the pipe, the stricter
-    /// door, when it names none this build has or Build's order does not read.
+    /// door, when Build's order does not read; a door this build does not know is refused (<see cref="UnknownDoorException"/>).
     /// </summary>
     public bool Unadopted(DriverConfig config) => UnadoptedOf(Loop, config);
 
@@ -183,7 +183,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
         {
             return BuildDoor.Drives(loop.Home, config, loop.Harnesses.Adapters);
         }
-        catch (DriverException)
+        catch (DriverException refused) when (refused is not UnknownDoorException)
         {
             return false;
         }

@@ -225,14 +225,14 @@ public sealed class OwnSpaceTests : IDisposable
     }
 
     [Fact]
-    public void Only_the_stub_and_its_protocol_twin_are_exempt_among_the_build_s_agents()
+    public void Only_the_stand_ins_and_their_protocol_twins_are_exempt_among_the_build_s_agents()
     {
         var built = AdapterSet.Built();
         var exempt = built.Names
             .Where(name => built.Resolve(name).Toolchain is { RunsInOwnHome: true })
             .Order(StringComparer.Ordinal);
 
-        Assert.Equal(["acp-stub", "stub"], exempt);
+        Assert.Equal(["acp-stub", "alt-acp-stub", "alt-stub", "stub"], exempt);
     }
 
     /// <summary>

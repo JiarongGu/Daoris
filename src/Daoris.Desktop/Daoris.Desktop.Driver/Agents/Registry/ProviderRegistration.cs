@@ -91,7 +91,7 @@ internal static class ProviderRegistration
     {
         var id = new ProviderId(agent);
         return new Provider(
-            id, new ProviderIdentity(null, null, null, false, []), [], Known<ProgramFacts>.Absent,
+            id, new ProviderIdentity(null, null, null, false, []), [], Known<ToolSpec>.Absent,
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(agent), null, PoolFacts.None), "a name a disabled plugin declares"),
             Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
@@ -142,7 +142,7 @@ internal static class ProviderRegistration
                 declaring?.Product, declaring?.Maker, declaring?.Mark, Providers.IsStandIn(group.Id),
                 [.. group.Doors.Select(set.DeclaredBy).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]),
             doors,
-            declaring is null ? Known<ProgramFacts>.Absent : Known<ProgramFacts>.Declared(ProgramFacts.Of(declaring), evidence),
+            declaring is null ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(declaring), evidence),
             Known<AccountsPart>.Declared(accounts, evidence),
             Empty(tables) ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(tables, evidence),
             usage.Question is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(usage, evidence),
@@ -190,7 +190,7 @@ internal static class ProviderRegistration
             adapter is LegacyDoor { Declared: true } declaredDoor
                 ? declaredDoor.Door.Identity
                 : plugin is null ? new DoorIdentity(null, null, null) : new DoorIdentity(plugin, toolchain?.Product, toolchain?.Maker),
-            toolchain is null || owning ? Known<ProgramFacts>.Absent : Known<ProgramFacts>.Declared(ProgramFacts.Of(toolchain), $"the toolchain of {name}"),
+            toolchain is null || owning ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(toolchain), $"the toolchain of {name}"),
             adapter is LegacyDoor { Declared: true } homed ? homed.Door.Home : DoorHome.Of(toolchain),
             lent,
             Absent(),

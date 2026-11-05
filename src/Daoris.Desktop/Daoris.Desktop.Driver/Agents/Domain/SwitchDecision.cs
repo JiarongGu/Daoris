@@ -4,7 +4,11 @@ namespace Daoris.Driver;
 /// <param name="Account">The account, one of the scope's list other than the session's.</param>
 /// <param name="Said">What it last said about its windows, or null where it said nothing.</param>
 /// <param name="Ready">Not cooling, not refused and signed in: an account that is not is never moved to.</param>
-public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready);
+/// <param name="Floor">
+/// How long a reading of this candidate stands before it is read again: its provider's own read floor (s-iii), or null where its
+/// agent asks nothing of its server and <see cref="SwitchDecision.Fresh"/> stands.
+/// </param>
+public sealed record SwitchCandidate(string Account, AccountSaid? Said, bool Ready, TimeSpan? Floor = null);
 
 /// <summary>What <see cref="SwitchDecision.Decide"/> says of a session at its turn's end (SWITCH1c-i; the switch design §4).</summary>
 public abstract record SwitchChoice
@@ -67,7 +71,7 @@ public static class SwitchDecision
     /// <summary>How long a session that moved by the curve stays where it went (the switch design §2): no flip-flop between two accounts near their curves.</summary>
     public static readonly TimeSpan Hold = TimeSpan.FromMinutes(30);
 
-    /// <summary>A candidate's reading older than this is read again before a move (Claude's read floor, <c>ClaudeUsage.Floor</c>).</summary>
+    /// <summary>The floor of a candidate whose provider states none: a reading older than this is read again before a move (Claude's, <c>ClaudeUsage.Floor</c>).</summary>
     public static readonly TimeSpan Fresh = TimeSpan.FromMinutes(1);
 
     /// <param name="use">The scope's settings: its switch and curve.</param>
@@ -91,7 +95,7 @@ public static class SwitchDecision
         var others = candidates.Where(each => each.Account != account).ToList();
         var held = lastMove is { } at && now - at < Hold;
         if (!held && !othersRead
-            && others.Where(each => each.Ready && Stale(each.Said, now)).Select(each => each.Account).ToList() is { Count: > 0 } stale)
+            && others.Where(each => each.Ready && Stale(each.Said, now, each.Floor ?? Fresh)).Select(each => each.Account).ToList() is { Count: > 0 } stale)
         {
             return new SwitchChoice.ReadOthers(stale);
         }
@@ -118,7 +122,7 @@ public static class SwitchDecision
             : new SwitchChoice.MoveTo(target, tightest.Window.Window, tightest.Window.Used!.Value, tightest.Curve);
     }
 
-    /// <summary>Whether a reading is older than <see cref="Fresh"/>, or nothing was said.</summary>
-    private static bool Stale(AccountSaid? said, DateTimeOffset now) =>
-        said is null || said.Windows.Count == 0 || now - said.Seen > Fresh;
+    /// <summary>Whether a reading is older than the candidate's floor, or nothing was said.</summary>
+    private static bool Stale(AccountSaid? said, DateTimeOffset now, TimeSpan floor) =>
+        said is null || said.Windows.Count == 0 || now - said.Seen > floor;
 }

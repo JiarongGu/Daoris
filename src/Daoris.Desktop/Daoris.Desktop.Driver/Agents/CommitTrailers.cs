@@ -5,15 +5,18 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class CommitTrailers
 {
-    // The adapter declares the maker; the harness knows the model actually selected for the turn.
+    // The registration declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
     // MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
     internal static string For(ISessionAdapter adapter, EarlierMaker? earlier = null) =>
         earlier is not null && !SameMaker(adapter, earlier) ? $"{Own(adapter)}\n\n{Left(earlier)}" : Own(adapter);
 
+    /// <summary>The maker a door's registration states (the door's own for a plugin's, else its provider's); an adapter of the old seam, its toolchain's.</summary>
+    internal static string? MakerOf(ISessionAdapter adapter) => adapter is LegacyDoor door ? door.Maker : adapter.Toolchain?.Maker;
+
     private static string Own(ISessionAdapter adapter)
     {
-        var maker = adapter.Toolchain?.Maker;
+        var maker = MakerOf(adapter);
         if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
             return $"This start runs on `{adapter.Name}`, made by Anthropic. Use the model actually running this session for commit attribution. "
                 + "Your Claude harness adds its Co-Authored-By trailer; let it do so and do not add a duplicate or another maker's trailer.";
@@ -54,7 +57,7 @@ internal static class CommitTrailers
 
     /// <summary>One maker where both harnesses name theirs; else one harness, since a maker this build does not know is told apart by its harness.</summary>
     private static bool SameMaker(ISessionAdapter adapter, EarlierMaker earlier) =>
-        adapter.Toolchain?.Maker is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
+        MakerOf(adapter) is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
             ? string.Equals(maker, earlier.Maker, StringComparison.OrdinalIgnoreCase)
             : string.Equals(adapter.Name, earlier.Adapter, StringComparison.OrdinalIgnoreCase);
 }

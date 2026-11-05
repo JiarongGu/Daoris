@@ -63,25 +63,40 @@ internal static class AgentPinCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var error = world.Instance.Error;
         var home = HarnessSettings.HomeOf(path);
-        var where = HarnessSettings.ManagedHome(home, name, version);
         ChannelStaged? staged = null;
 
-        if (toolchain.Channel is { Length: > 0 } channel)
+        PinPlan plan;
+        try
         {
-            if (HarnessSettings.ManagedBinary(home, name, version, toolchain.Binary) is { } present)
-            {
+            // The one decision both surfaces ask (PinInstall): a channel's version is refused unverifiable before a byte is fetched, a
+            // package's npm is the tools' (TOOLS5, D121 §2.7), its prefix named so what it installs runs on the tools' node.
+            plan = PinInstall.Plan(toolchain, home, name, version, world.Npm);
+        }
+        catch (DriverException refused) when (toolchain.Channel is { Length: > 0 })
+        {
+            await error.WriteLineAsync($"{Prefix}: {refused.Message}").ConfigureAwait(false);
+            await error.WriteLineAsync(NothingPinned).ConfigureAwait(false);
+            return 2;
+        }
+        catch (DriverException refused)
+        {
+            throw new AgentWords(refused.Message);
+        }
+
+        switch (plan.Way)
+        {
+            case PinWay.Present:
                 // An install already in place is the proof it verified — the channel moves it there only after every check.
                 Say($"{Prefix}: `{name}` {version} is already installed where Daoris keeps it — nothing was downloaded.");
-                Say($"  {present}");
-            }
-            else
-            {
+                Say($"  {plan.Present}");
+                break;
+            case PinWay.Channel:
                 Say($"{Prefix}: installing {toolchain.Product ?? name} {version} from {toolchain.Maker ?? "its maker"}'s own release channel, "
                     + "into a directory Daoris owns.");
-                Say($"  {where}");
+                Say($"  {plan.Where}");
                 try
                 {
-                    staged = await ReleaseChannels.StageAsync(channel, where, version, line => Say($"  {line}"), ct, world.Transport)
+                    staged = await ReleaseChannels.StageAsync(plan.Channel!, plan.Where, version, line => Say($"  {line}"), ct, world.Transport)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -95,29 +110,19 @@ internal static class AgentPinCommand
                     await error.WriteLineAsync(NothingPinned).ConfigureAwait(false);
                     return 2;
                 }
-            }
-        }
-        else
-        {
-            Say($"{Prefix}: installing `{toolchain.Package}@{version}` into a directory Daoris owns.");
-            Say($"  {where}");
-            IReadOnlyList<string> command;
-            try
-            {
-                // The npm the tools resolve (TOOLS5, D121 §2.7): its prefix is named, so what it installs runs on the tools' node.
-                command = PinMove.PackageCommand(home, name, toolchain.Package!, version, world.Npm);
-            }
-            catch (DriverException refused)
-            {
-                throw new AgentWords(refused.Message);
-            }
 
-            var installed = await AgentLongCommand.TerminalAsync(world, command, toolchain, "npm", ct).ConfigureAwait(false);
-            if (installed != 0)
-            {
-                if (!ct.IsCancellationRequested) Say(NothingPinned);
-                return installed;
-            }
+                break;
+            default:
+                Say($"{Prefix}: installing `{toolchain.Package}@{version}` into a directory Daoris owns.");
+                Say($"  {plan.Where}");
+                var installed = await AgentLongCommand.TerminalAsync(world, plan.Command!, toolchain, "npm", ct).ConfigureAwait(false);
+                if (installed != 0)
+                {
+                    if (!ct.IsCancellationRequested) Say(NothingPinned);
+                    return installed;
+                }
+
+                break;
         }
 
         return await PublishAsync(world, path, name, version, workspace, staged, ct).ConfigureAwait(false);

@@ -22,7 +22,7 @@ internal static class StubProvider
 
     public static Provider Registration()
     {
-        var program = new ProgramFacts([], ["--version"], null, null, null, null, null, ProbeByPresence: false);
+        var program = new ToolSpec([], ["--version"], null, null, null, null, null, ProbeByPresence: false);
         var pool = new PoolFacts(
             KeyVariable: null,
             // A login flow too, so signing in to another account (D66 §3) can be gated with no account: whatever the configured
@@ -50,7 +50,7 @@ internal static class StubProvider
         var lent = new LentPart(pool, tables with { ErrorWords = null }, UsagePart.None);
         var stub = new AgentDoor(
             new DoorId("stub"), Transport.Native, new DoorIdentity(null, null, null),
-            Known<ProgramFacts>.Absent,
+            Known<ToolSpec>.Absent,
             // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a).
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
@@ -65,7 +65,7 @@ internal static class StubProvider
         var acp = new AgentDoor(
             new DoorId("acp-stub"), Transport.Protocol, new DoorIdentity(null, null, null),
             // Present by a file look: the agent a rehearsal names waits on its stdin for frames, so asking it a version would stall.
-            Known<ProgramFacts>.Declared(new ProgramFacts([], [], null, null, null, null, null, ProbeByPresence: true), Evidence),
+            Known<ToolSpec>.Declared(new ToolSpec([], [], null, null, null, null, null, ProbeByPresence: true), Evidence),
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             // A door onto the stand-in's accounts (TOOL4j): the sign-in, the login question and the limit words are the stub's.
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
@@ -83,7 +83,7 @@ internal static class StubProvider
             new ProviderId("stub"),
             new ProviderIdentity(null, null, null, StandIn: true, DeclaredBy: []),
             [acp, stub],
-            Known<ProgramFacts>.Declared(program, Evidence),
+            Known<ToolSpec>.Declared(program, Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey("stub"), null, pool), Evidence),
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Absent,

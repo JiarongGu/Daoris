@@ -24,7 +24,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' doors, id resolution by kind. `AdapterSet.OwnerOf` (the registry's `OwnerOfAgent`) is the one reader of whose accounts a door runs as and `AdapterSet.ToolchainOf` of a door's or a holder's toolchain; the roster, the terminal's verbs, the window's routes and the hand-over read nothing else. Codex's limit words and usage question are provider `codex`'s: its built door reads them through it, a plugin's door naming `codex-acp` by its `Lent` part, one joined to `codex` neither |
 | `LegacyDoor`, `AdapterNativeDialect`, `AdapterProtocolDialect`, `AdapterAbilities`, `AdapterClaudeSeam`, `RegisteredVariables` | `Registry/` | Presents a contract door to today's readers as an adapter and a toolchain, its spawn the door's recipe completed by the shell; a real door's stream reader and session `_meta` as its adapter class makes them, until rows i and k move them into the provider's folder; `adapter.Abilities()`, a contract door's from its record and a plugin's or a test's adapter from its declarations and wire; whether a start takes Claude Code's seam (a contract door's spawn says, any other protocol adapter does); what every registration declared of a spawn's environment, and the refusal of a declared name of Daoris's list |
 | `ProcessRecipe`, `ISpawn`, `Shell`, `ISessionGit` | `Contract/ProcessRecipe.cs`, `Contract/Ports.cs`, `Transports/` | A door's spawn answers a recipe (program, arguments, input, its own variables); the transports' one shell completes it into every kind of session's process and holds the account half every probe and usage question takes too; the session's git a port the shell declares and Workplace installs, unset throwing |
-| `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model; each door's spawn its own there (`ClaudeCodeSpawn`, `ClaudeAcpSpawn` with `ClaudeAcp`'s seam, `CodexAcpSpawn`, `DshSpawn` with `DshProfile`, `StandInSpawn`) |
+| `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider`, `AltStubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model, and `alt-stub` with `alt-acp-stub`, the second pair, whose limit, window and sign-in words (`AltStubWords`) and home variable are its own; each door's spawn its own there (`ClaudeCodeSpawn`, `ClaudeAcpSpawn` with `ClaudeAcp`'s seam, `CodexAcpSpawn`, `DshSpawn` with `DshProfile`, `StandInSpawn`) |
 | `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set, every door of it through `LegacyDoor` from the registration list; `Resolve` refuses an unknown name |
 | `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | same names | The four real doors' postures as their classes declared them, their spawn members one-line doors to their door's spawn; their toolchains are the old side a test holds equal to the registrations until row t |
 | `StubAdapter`, `AcpStubAdapter`, `Spawning`, `CommitTrailers`, `PinNewest` | `StubAdapters.cs`, same names | The stand-in adapters; Daoris's own variables, a list (the identity variables and what the session's git answers it sets); the maker's trailer a commit carries; the newest release a pin moves to, asked one way for the window and the terminal |
@@ -320,21 +320,22 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Open
 
-- **AGENTPROVIDER1d**'s rest: s-ix on (each disagreeing cell of the owner table, one row each); the toolchain classes
-  `OwnerOf` and `ToolchainOf` still read go with rows f, h and t. The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read
-  through the registry. **1e**'s rest: the provider and door tables are split for Claude Code's and Codex's words, but no door's
-  own table beside the provider's yet (`DoorTablesPart` holds the error words alone); `alt-stub` is not built (row c), so its account
-  cases are still pending nowhere; then s-iii.
-- **AGENTPROVIDER1** host rows (f, h, l, m-ii, n, o, p, q, r, s, u): f's programs as `ToolSpec`s (the type is not in the code; the
-  shape the row names is `ProgramFacts`, which every provider already declares), and the pin's install folded further: the terminal and
-  the window share the move's decision and the package command (`PinMove`), and still run the install each their own way (the terminal at
-  its console and the window redirected, words and lease publication its own), a difference s-ix f4 records when it is made one; s-i's
-  rest: an unknown id refused, never the pipe, on the loop, the window and set-up (each reads it as the pipe today); h's rest:
+- **AGENTPROVIDER1d**'s rest: s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
+  page's own-home question reads the owner's first door and the walk the door's own) and built when the page's `Next` takes the door;
+  the toolchain classes `OwnerOf` and `ToolchainOf` still read go with rows h and t. The roster's `LimitsOf`, `SignInOf`, `WindowsOf`
+  and `UsageOf` read through the registry. **1e**'s rest: the provider and door tables are split for Claude Code's and Codex's words,
+  but no door's own table beside the provider's yet (`DoorTablesPart` holds the error words alone); a candidate's read floor is its
+  provider's (s-iii, `SwitchCandidate.Floor`), the page's floor per agent not yet. `alt-stub` (`Providers/AltStub/`) is built: its own
+  limit, window and sign-in grammar and home variable, one line in `Providers.Built()`, its pending file beside its program.
+- **AGENTPROVIDER1** host rows (h, l, m-ii, n, o, p, q, r, s, u): every provider's and door's program is Install's `ToolSpec`
+  (`Install/ToolSpec.cs`; the old toolchain's facts reach it through `ToolSpecs.Of` until row t), the pin's install is one decision,
+  `PinInstall.Plan`, which the window's actions and the terminal's `agent pin` and `agent update` both ask, each running what it names
+  its own way (the terminal at its console and under the home's lease, the window redirected: s-ix f4); an unknown door id is refused
+  (`UnknownDoorException`), never the pipe, by `Adoption`, `BuildDoor` and the window's, set-up's and the terminal's reads; the commit
+  trailer reads the registration's maker (`CommitTrailers.MakerOf`); h's rest:
   `SpawnRequest` composed by Loop's executor for the shell to read (the shell still reads `SessionTarget` and `ChatTarget`), Platform's
   launcher starting and containing the completed recipe (D201); the identity names are down (`AgentWorkVariables`, `ChildMarks`);
-  `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; `CommitTrailers` still
-  reads the adapter's maker, which the shim takes from the provider's identity, and reads the registry when row t takes the adapter
-  away; the installed proof that
+  `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
   one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by

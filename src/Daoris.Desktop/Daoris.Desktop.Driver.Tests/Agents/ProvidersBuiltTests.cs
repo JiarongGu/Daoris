@@ -115,14 +115,15 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void The_registration_list_holds_each_provider_with_its_doors_on_their_transports()
     {
-        Assert.Equal(["claude-code", "codex", "dsh", "stub"], Providers.Built().Select(provider => provider.Id.Value));
+        Assert.Equal(["claude-code", "codex", "dsh", "stub", "alt-stub"], Providers.Built().Select(provider => provider.Id.Value));
         string Doors(string id) => string.Join(' ', Listed(id).Doors.Select(door => $"{door.Id}:{door.Transport}"));
 
         Assert.Equal("claude-code:Native claude-code-acp:Protocol", Doors("claude-code"));
         Assert.Equal("codex-acp:Protocol", Doors("codex"));
         Assert.Equal("dsh:Protocol", Doors("dsh"));
         Assert.Equal("acp-stub:Protocol stub:Native", Doors("stub"));
-        Assert.Equal(["stub"], Providers.Built().Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
+        Assert.Equal("alt-acp-stub:Protocol alt-stub:Native", Doors("alt-stub"));
+        Assert.Equal(["stub", "alt-stub"], Providers.Built().Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
         Assert.All(Providers.Built(), provider => Assert.Equal(Reach.Everywhere, provider.Reach));
         Assert.All(Providers.Built(), provider => Assert.False(provider.Unavailable));
     }
@@ -345,13 +346,15 @@ public sealed class ProvidersBuiltTests
         Assert.True(Providers.IsStandIn("stub"));
         Assert.True(Providers.IsStandIn("acp-stub"));
         Assert.True(Providers.IsStandIn("ACP-STUB"));
+        Assert.True(Providers.IsStandIn("alt-stub"));
+        Assert.True(Providers.IsStandIn("alt-acp-stub"));
         Assert.False(Providers.IsStandIn("claude-code"));
         Assert.False(Providers.IsStandIn("codex"));
         Assert.False(Providers.IsStandIn("acme"));
         Assert.False(Providers.IsStandIn(""));
         // The registry over the built set reads the same flag for every provider it makes.
         var registry = ProviderRegistry.Of(AdapterSet.Built());
-        Assert.Equal(["stub"], registry.Providers.Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
+        Assert.Equal(["stub", "alt-stub"], registry.Providers.Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
     }
 
     /// <summary>The ports a provider written on the contract alone needs are declared, with the members row b names.</summary>

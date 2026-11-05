@@ -133,15 +133,25 @@ public sealed class ProviderRegistryTests : IDisposable
     [InlineData(new[] { "codex-acp" }, true)]
     [InlineData(new[] { "dsh" }, true)]
     [InlineData(new[] { "stub" }, false)]
-    [InlineData(new[] { "nobody-knows" }, false)]
-    [InlineData(new[] { "nobody-knows", "acp-stub" }, true)]
     [InlineData(new string[0], false)]
     public void Adoption_drives_where_the_loop_planned_the_protocol_door(string[] build, bool drives)
     {
-        // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe; an unknown id the pipe.
+        // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe.
         var adapters = AdapterSet.Built();
         Assert.Equal(drives, Adoption.Drives(build, adapters.AbilitiesOf));
         Assert.Equal(drives, build.Any(door => Adoption.Unadopted(door, adapters.AbilitiesOf)));
+    }
+
+    [Theory]
+    [InlineData(new[] { "nobody-knows" }, "nobody-knows")]
+    [InlineData(new[] { "nobody-knows", "acp-stub" }, "nobody-knows")]
+    [InlineData(new[] { "acp-stub", "nobody-knows" }, "nobody-knows")]
+    public void Adoption_refuses_a_door_nobody_knows_wherever_it_stands(string[] build, string unknown)
+    {
+        Assert.Contains(unknown, build);
+        var adapters = AdapterSet.Built();
+        Assert.Equal("nobody-knows", Assert.Throws<UnknownDoorException>(() => Adoption.Drives(build, adapters.AbilitiesOf)).Door);
+        Assert.Throws<UnknownDoorException>(() => Adoption.Unadopted("nobody-knows", adapters.AbilitiesOf));
     }
 
     [Fact]
@@ -611,14 +621,14 @@ public sealed class ProviderRegistryTests : IDisposable
     // ---- Registration refuses what the identity rules forbid (the design §2.2) ----
 
     private static AgentDoor FakeDoor(string id) => new(
-        new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
+        new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ToolSpec>.Absent,
         new DoorHome(null, false, null), LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
         Known<ISpawn>.Absent, Known<IDialect>.Absent,
         new AbilitiesPart(Known<bool>.Absent, Known<bool>.Absent, Known<bool>.Absent), new DoorTablesPart(null, null), null,
         InstructionsPart.None);
 
     private static Provider FakeProvider(string id, bool unavailable = false, params string[] doors) => new(
-        new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [.. doors.Select(FakeDoor)], Known<ProgramFacts>.Absent,
+        new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [.. doors.Select(FakeDoor)], Known<ToolSpec>.Absent,
         Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
         Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
         Known<VocabularyPart>.Absent, unavailable);

@@ -227,6 +227,25 @@ public sealed class SwitchDecisionTests
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.Room), Decide(Said(0.65), lapsing));
     }
 
+    /// <summary>
+    /// s-iii, old and new: a candidate read three minutes ago is stale under the floor of one minute that stood for every agent, and fresh
+    /// under its own provider's five minutes (Codex's), as the roster already reads it; a candidate stating no floor keeps the minute.
+    /// </summary>
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData(60, true)]
+    [InlineData(300, false)]
+    public void A_candidate_is_read_again_by_its_own_providers_floor(int? floorSeconds, bool read)
+    {
+        TimeSpan? floor = floorSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : null;
+        var candidate = new SwitchCandidate("account-2", Said(0.30, secondsAgo: 180), Ready: true, floor);
+
+        var choice = Decide(Over, [candidate]);
+
+        if (read) Assert.Equal(["account-2"], Assert.IsType<SwitchChoice.ReadOthers>(choice).Accounts);
+        else Assert.IsType<SwitchChoice.MoveTo>(choice);
+    }
+
     [Fact]
     public void The_hold_the_freshness_and_the_margin_are_the_design_s()
     {

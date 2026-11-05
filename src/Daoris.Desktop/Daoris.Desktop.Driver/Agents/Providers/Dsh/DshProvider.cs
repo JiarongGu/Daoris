@@ -13,11 +13,11 @@ internal static class DshProvider
     public static Provider Registration()
     {
         // `-V, --version`, verified against the installed CLI.
-        var program = new ProgramFacts(
+        var program = new ToolSpec(
             ["dsh"], ["--version"], ["npm", "install", "-g", "@deepseek-ai/dsh"], null, "@deepseek-ai/dsh", null, null, ProbeByPresence: false);
         var door = new AgentDoor(
             new DoorId("dsh"), Transport.Protocol, new DoorIdentity(null, null, null),
-            Known<ProgramFacts>.Absent,
+            Known<ToolSpec>.Absent,
             new DoorHome("DSH_HOME", OwnHome: false, TrustFile: null),
             LentPart.None, Known<IDoorOffers>.Absent,
             // Its posture is its own mechanism, an environment variable its spawn sets, never a mode on the wire.
@@ -35,7 +35,7 @@ internal static class DshProvider
             // The name its maker publishes it under (AGENTS2); the binary and the door stay `dsh`, which is what a terminal types.
             new ProviderIdentity("DeepSeek Harness", "DeepSeek", "DH", StandIn: false, DeclaredBy: []),
             [door],
-            Known<ProgramFacts>.Declared(program, Evidence),
+            Known<ToolSpec>.Declared(program, Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey("dsh"), null, PoolFacts.None), Evidence),
             Known<TablesPart>.Absent,
             Known<UsagePart>.Absent,

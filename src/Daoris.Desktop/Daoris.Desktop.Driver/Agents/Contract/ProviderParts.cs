@@ -23,22 +23,6 @@ public sealed record ProviderIdentity(string? Product, string? Maker, string? Ma
 /// </summary>
 public sealed record DoorIdentity(string? DeclaredBy, string? Product, string? Maker);
 
-/// <summary>A program Daoris manages: its binary, how to ask its version, install and update it, and where its release comes from.</summary>
-public sealed record ProgramFacts(
-    IReadOnlyList<string> Binary,
-    IReadOnlyList<string> VersionArguments,
-    IReadOnlyList<string>? Install,
-    IReadOnlyList<string>? UpdateArguments,
-    string? Package,
-    string? Channel,
-    IReadOnlyDictionary<string, string>? PinnedEnvironment,
-    bool ProbeByPresence)
-{
-    public static ProgramFacts Of(HarnessToolchain toolchain) => new(
-        toolchain.Binary, toolchain.VersionArguments, toolchain.Install, toolchain.UpdateArguments, toolchain.Package,
-        toolchain.Channel, toolchain.PinnedEnvironment, toolchain.ProbeByPresence);
-}
-
 /// <summary>
 /// The facts of an account pool a tool declares: the variable an API key is handed in, the login question and the sign-in (its
 /// arguments, its device code and its ports), and the settings file. Never the home variable a spawn sets, whether a start runs in
