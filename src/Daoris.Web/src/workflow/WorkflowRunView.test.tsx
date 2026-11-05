@@ -739,6 +739,22 @@ describe("the work's requests", () => {
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'go-on', words: 'tools has no time' });
   });
 
+  it.each([
+    ['en', 'Send…', 'Send requests', 'Send'],
+    ['zh', '发出…', '发出 requests', '发出'],
+  ])('offers a ready request its Send, sent as the run’s node word, in %s', async (language, open, title, meanIt) => {
+    await i18n.changeLanguage(language);
+    const asked = answerOf(GRAPH_RUN_REQUESTS);
+    const [only] = asked.runs;
+    const steps = only.steps.map((step) => (step.node === 'work.requests' ? { ...step, acts: ['send'] } : step));
+    const onNodeWord = vi.fn().mockResolvedValue({ run: 'q1', node: 'requests', act: 'send', done: true });
+    render(<WorkflowRunView answer={{ ...asked, runs: [{ ...only, steps }] }} onNodeWord={onNodeWord} />);
+
+    await userEvent.click(within(row('requests')).getByRole('button', { name: open }));
+    await userEvent.click(within(screen.getByRole('group', { name: title })).getByRole('button', { name: meanIt }));
+    expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'send', words: null });
+  });
+
   it('opens a quest request where a door is handed in, and draws no list for a run with none', async () => {
     const quest = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(GRAPH_RUN_REQUESTS)} doors={{ quest }} />);

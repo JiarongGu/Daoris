@@ -12,6 +12,7 @@ internal static class PerformedWaits
     /// <summary>The landing the performer made of <paramref name="unit"/> at <paramref name="tip"/>, or null where none ended within the bound.</summary>
     public static async Task<TreeLanding?> AwaitAsync(DriverLoop loop, string session, string unit, string tip, CancellationToken ct)
     {
+        PressSteps.Reach(PressSteps.Pass);
         LandPerformer.Retry(loop.Home, session, unit, tip);
         await loop.PassWholeAsync(GraphPasses.Bound, ct).ConfigureAwait(false);
         var deadline = DateTimeOffset.UtcNow + GraphPasses.Bound;

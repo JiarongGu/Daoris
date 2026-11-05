@@ -431,7 +431,13 @@ public static class PressSteps
     public const string HandOff = "handOff";
 
     /// <summary>
-    /// A landing or hand-off waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, with the session it
+    /// An Accept whose run's <c>land</c> the runtime performs waits for the pass that lands it (LANDHOLD2b), within
+    /// <see cref="GraphPasses.Bound"/>, which the page words beside the button.
+    /// </summary>
+    public const string Pass = "pass";
+
+    /// <summary>
+    /// A hand-off waits behind another one's hold (LANDHOLD2, D145 point 2): said before it waits, with the session it
     /// waits behind where that one said who it is (LANDHOLD3), and the step it was at is said again when it has the hold.
     /// </summary>
     public const string Waiting = "waiting";

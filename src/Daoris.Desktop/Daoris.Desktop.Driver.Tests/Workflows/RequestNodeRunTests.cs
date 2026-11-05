@@ -182,6 +182,46 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         Assert.Contains(pass.Said, line => line.Contains("waits for your send", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// INTEGRATE1p: a ready request under <c>start: you</c> offers the person's <c>send</c>; once the door keeps it the next pass publishes the
+    /// quest once under its key. A request that sends itself offers none and refuses one.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_send_lets_a_held_request_publish_and_an_automatic_one_offers_none()
+    {
+        BoundTo(AskGraph.Replace(",\"start\":\"automatic\"", ""));
+        Read();
+        var runtime = Started();
+        await RunPassAsync(runtime);
+        Assert.Empty(_door.Sent);
+        Assert.Contains(NodeWordActs.Send, RunNodeWords.Acts(AskNode(), Ask));
+
+        var worded = RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.Send, null, () => _now);
+        Assert.True(worded.Done, worded.Refused);
+        Read();
+        await RunPassAsync(runtime, whole: false);
+
+        Assert.Equal([$"{RunId}/ask/1"], _door.Sent.Select(each => each.Key));
+        Assert.Equal(NodeStates.Active, Ask.State);
+        Assert.DoesNotContain(NodeWordActs.Send, RunNodeWords.Acts(AskNode(), Ask));
+
+        // Sent, it is no longer ready: a second send has nothing to wait for.
+        Assert.Equal(RunNodeWords.NotSendable, RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.Send, null, () => _now).Refused);
+    }
+
+    /// <summary>INTEGRATE1p: a request that sends itself (<c>start: automatic</c>) offers no send and refuses one.</summary>
+    [Fact]
+    public async Task An_automatic_request_offers_no_send_and_refuses_one()
+    {
+        BoundTo(AskGraph);
+        Read();
+        await RunPassAsync(Runtime());
+        Assert.Equal(NodeStates.Ready, Ask.State);
+
+        Assert.DoesNotContain(NodeWordActs.Send, RunNodeWords.Acts(AskNode(), Ask));
+        Assert.Equal(RunNodeWords.NotSendable, RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.Send, null, () => _now).Refused);
+    }
+
     /// <summary>A request to the run's own repository is never sent.</summary>
     [Fact]
     public async Task A_request_to_the_runs_own_repository_is_never_sent()

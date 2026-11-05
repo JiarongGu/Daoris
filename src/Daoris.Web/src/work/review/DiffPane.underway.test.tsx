@@ -129,13 +129,13 @@ describe('a press under way, in the review', () => {
   });
 
   /**
-   * LANDHOLD2 (D145 point 2, D173's LANDRACE1 note): the driver says the landing waits behind another landing of its tree, and the
-   * press says so in the page's language, then *Landing…* once it has the hold. Another session's wait is not this one's.
+   * LANDHOLD2b: an Accept whose landing the runtime performs waits for the pass that lands it, never behind a tree's hold: the button
+   * and the note beside it say so and say the pass's bound, in the page's language. Another session's wait is not this one's.
    */
   it.each([
-    ['en', 'Waiting its turn…', 'Landing…'],
-    ['zh', '排队中…', '落地中…'],
-  ])('says it waits behind another landing, in %s, and goes back to the landing once it has the hold', async (language, waiting, landing) => {
+    ['en', 'Awaiting its pass…', 'Landing…', /Accepted\. Daoris lands it at its next pass\. This waits up to 20 seconds/],
+    ['zh', '等待落地…', '落地中…', /Daoris 会在它的下一轮检查时落地它；这里最多等待 20 秒/],
+  ])('says it waits for the pass that lands it and for how long, in %s', async (language, waiting, landing, note) => {
     await i18n.changeLanguage(language);
     try {
       answer();
@@ -143,15 +143,18 @@ describe('a press under way, in the review', () => {
       await screen.findByRole('button', { name: language === 'en' ? 'Accept' : '采纳' });
       const press = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
 
-      told({ seq: 1, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface', step: 'waiting' }] });
+      told({ seq: 1, presses: [{ route: 'LAND_SESSION_TREE', session: 'feedface', step: 'pass' }] });
       await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
       expect(screen.queryByRole('button', { name: waiting })).toBeNull();
+      expect(screen.queryByText(note)).toBeNull();
 
-      told({ seq: 2, presses: [{ ...press, step: 'waiting' }] });
+      told({ seq: 2, presses: [{ ...press, step: 'pass' }] });
       expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
+      expect(screen.getByText(note)).toBeInTheDocument();
 
       told({ seq: 3, presses: [{ ...press, step: 'landing' }] });
       expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
+      expect(screen.queryByText(note)).toBeNull();
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -173,31 +176,6 @@ describe('a press under way, in the review', () => {
 
     told({ seq: 2, presses: [{ ...press, step: 'handOff' }] });
     expect(await screen.findByRole('button', { name: 'Handing off…' })).toBeDisabled();
-  });
-
-  /**
-   * LANDHOLD3: where the driver says which session the wait is behind, the press names it in the page's language; the session is
-   * the driver's word, not translated. A `behind` beside any step but the wait says nothing.
-   */
-  it.each([
-    ['en', 'Waiting behind 0fda18aa…', 'Landing…'],
-    ['zh', '排在 0fda18aa 之后…', '落地中…'],
-  ])('names the session a waiting landing waits behind, in %s', async (language, waiting, landing) => {
-    await i18n.changeLanguage(language);
-    try {
-      answer();
-      root();
-      await screen.findByRole('button', { name: language === 'en' ? 'Accept' : '采纳' });
-      const press = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
-
-      told({ seq: 1, presses: [{ ...press, step: 'waiting', behind: '0fda18aa' }] });
-      expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
-
-      told({ seq: 2, presses: [{ ...press, step: 'landing', behind: '0fda18aa' }] });
-      expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
-    } finally {
-      await i18n.changeLanguage('en');
-    }
   });
 
   /** LANDHOLD3: a hand-off waiting behind another push of its branch names that push's session, in both languages. */
