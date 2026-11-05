@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Contracts;
 using Daoris.Contracts.Sessions;
 
 namespace Daoris.Driver;
@@ -22,18 +23,36 @@ public sealed class SessionListKept
     private string? _mark;
     private Dictionary<string, JsonObject> _held = new(StringComparer.Ordinal);
     private IReadOnlyList<JsonObject> _list = [];
+    private string? _json;
+    private SessionResponse[]? _typed;
 
     internal SessionListKept(ServiceClient service) => _service = service;
 
     /// <summary>Every record in the list's order, each as the service wrote it. A refused read throws with the service's own sentence.</summary>
     /// <exception cref="DriverException">A refused read.</exception>
-    public async Task<IReadOnlyList<JsonObject>> ReadAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<JsonObject>> ReadAsync(CancellationToken ct = default) => CurrentAsync(() => _list, ct);
+
+    /// <summary>
+    /// Every record as the list's text, what a reader of the list's answer parses (<see cref="SessionRecords.Parse"/>): the one read for a
+    /// reader that needs records beside the one it names (a line's other parts, a quest's earlier sessions, every tree). The text is
+    /// written once for each state of the list.
+    /// </summary>
+    /// <exception cref="DriverException">A refused read.</exception>
+    public Task<string> JsonAsync(CancellationToken ct = default) => CurrentAsync(() => _json ??= Written(_list), ct);
+
+    /// <summary>Every record as the declaration types it, for the readers of its fields; read once for each state of the list.</summary>
+    /// <exception cref="DriverException">A refused read.</exception>
+    public Task<SessionResponse[]> ListedAsync(CancellationToken ct = default) => CurrentAsync(
+        () => _typed ??= [.. _list.Select(record => record.Deserialize(ContractJson.Options.GetTypeInfo(typeof(SessionResponse))) as SessionResponse
+            ?? throw new JsonException("a session record did not read as the list declares it"))], ct);
+
+    private async Task<T> CurrentAsync<T>(Func<T> read, CancellationToken ct)
     {
         await _turn.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             if (!Lay(await AskAsync(_mark, ct).ConfigureAwait(false))) Lay(await AskAsync(null, ct).ConfigureAwait(false));
-            return _list;
+            return read();
         }
         finally
         {
@@ -41,11 +60,8 @@ public sealed class SessionListKept
         }
     }
 
-    /// <summary>Every record as the list's text, what a reader of the list's answer parses (<see cref="SessionRecords.Parse"/>).</summary>
-    /// <exception cref="DriverException">A refused read.</exception>
-    public async Task<string> JsonAsync(CancellationToken ct = default)
+    private static string Written(IReadOnlyList<JsonObject> records)
     {
-        var records = await ReadAsync(ct).ConfigureAwait(false);
         using var written = new MemoryStream();
         using (var writer = new Utf8JsonWriter(written))
         {
@@ -60,8 +76,24 @@ public sealed class SessionListKept
     private async Task<JsonObject> AskAsync(string? since, CancellationToken ct)
     {
         var sent = await _service.SendAsync(new ListSessionChanges(since), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return await WholeAsync(ct).ConfigureAwait(false);
         sent.Answered();
         return JsonNode.Parse(sent.Reply.Payload) as JsonObject ?? throw new JsonException("the service answered the sessions' change as no object");
+    }
+
+    // A host from before the change door has only the whole list, which is a change from nothing; this ends when no host older than the door is read.
+    private async Task<JsonObject> WholeAsync(CancellationToken ct)
+    {
+        var sent = await _service.SendAsync(new ListSessions(IncludeClosed: true), ct).ConfigureAwait(false);
+        sent.Answered();
+        var records = JsonNode.Parse(sent.Reply.Payload) as JsonArray ?? throw new JsonException("the service answered the session list as no array");
+        var order = new JsonArray();
+        foreach (var record in records)
+        {
+            if (record?["id"] is JsonValue id && id.TryGetValue<string>(out var named)) order.Add(named);
+        }
+
+        return new JsonObject { ["whole"] = true, ["changed"] = records, ["order"] = order, ["mark"] = null };
     }
 
     // The change laid over what is held: false where the order names a record neither held nor changed.
@@ -92,6 +124,8 @@ public sealed class SessionListKept
         _mark = change["mark"]?.GetValue<string>();
         _held = kept;
         _list = list;
+        _json = null;
+        _typed = null;
         return true;
     }
 }
