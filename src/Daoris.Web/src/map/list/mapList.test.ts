@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MapLine } from './mapLayout';
+import type { MapLine } from '../mapLayout';
 import { mapListGroups } from './mapList';
 
 // CANVAS1e (the canvas design §2.6): the workspace map as a list, the whole reading, grouped as the drawing is read.

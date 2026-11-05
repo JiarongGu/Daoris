@@ -8,7 +8,7 @@ import { lineDrawn } from '../../design/canvas/suppliedCull';
 import { Button, PathText } from '../../design/ui';
 import { CodeCard } from './CodeCards';
 import { RING_MAX } from '../layers';
-import { MapTree } from '../MapTree';
+import { MapTree } from '../list/MapTree';
 import { buildTree, type CodeLine, defaultOpen, dirOf, layoutCode, openingPath } from './codeClusters';
 import { foldable, foldGroup } from './codeFolds';
 import { codeListGroups } from './codeList';

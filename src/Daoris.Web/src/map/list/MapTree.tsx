@@ -1,7 +1,7 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '../design/ui';
-import { cn } from '../lib/cn';
+import { Icon } from '../../design/ui';
+import { cn } from '../../lib/cn';
 import { keyInTree, openedAtStart, type TreeGroup, type TreeRow, treeRows } from './mapTreeModel';
 
 /** One row: the whole row presses it, and a group's chevron, for the pointer, opens or closes it; the arrow keys do the same. */

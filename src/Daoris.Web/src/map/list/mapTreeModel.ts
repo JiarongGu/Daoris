@@ -1,4 +1,4 @@
-import { isComposing, type KeyPress } from '../lib/composing';
+import { isComposing, type KeyPress } from '../../lib/composing';
 
 // The Map's list as one tree on both levels (MAPUX1e; the map UX design §6, §7): the WAI tree pattern the places tree of Agents → Setup
 // keeps (`agents/setup/setupTreeModel.ts`). Pure: the groups in hand and the ones the person opened become the rows in view, and a key

@@ -4,18 +4,18 @@ import { cleanup, render as rtlRender, screen, within } from '@testing-library/r
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
-import i18n from '../locales/i18n';
-import { CodeMapWorld } from './code/CodeMap';
+import i18n from '../../locales/i18n';
+import { CodeMapWorld } from '../code/CodeMap';
 import { MapTree } from './MapTree';
-import { MapWorld } from './MapWorld';
+import { MapWorld } from '../MapWorld';
 import type { TreeGroup } from './mapTreeModel';
-import type { MapNode, Topology } from './topology';
+import type { MapNode, Topology } from '../topology';
 
 // MAPUX1e (the map UX design §6, §7): one tree on both levels with one row in the tab order; each row's counts and states; below 36rem
 // the list is the reading and the detail opens under its row.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));
-vi.mock('../design/useWidth', async (original) => ({ ...(await original<typeof import('../design/useWidth')>()), useWidth: () => measured.width }));
+vi.mock('../../design/useWidth', async (original) => ({ ...(await original<typeof import('../../design/useWidth')>()), useWidth: () => measured.width }));
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0, ...extra });

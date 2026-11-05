@@ -1,4 +1,4 @@
-import type { TreeGroup } from '../mapTreeModel';
+import type { TreeGroup } from '../list/mapTreeModel';
 import { CLOSED_PAST, type CodeTree, defaultOpen, ROOT } from './codeClusters';
 
 // The code map as a tree (MAPUX1e; the map UX design §6): one group per folder by path, closed past 60 modules as the drawing is, each
