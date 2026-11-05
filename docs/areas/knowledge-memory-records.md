@@ -183,7 +183,8 @@ one job each, checked by `verify`.
 The web: `src/Daoris.Web/src/knowledge/*.test.tsx`, `work/head/SessionMemory.test.tsx`.
 
 **Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`, its `Process` category apart);
-`service-process` (the route budgets over a benchmark home of three thousand sessions, run alone); `cli` (`npm run verify`:
+`service-process` (the route budgets over a benchmark home of three thousand sessions, run alone, on the `service` gate's build,
+in the full set and the CI wherever the service's sources or tests change); `cli` (`npm run verify`:
 `doc-duplicates`, `doc-system`, `doc-links`, the tools' tests); `tool-tests`; `orient-index`; `code-map`; `universal` (the docs
 gate fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
 Knowledge view and session memory; `deployment` for the shared host.

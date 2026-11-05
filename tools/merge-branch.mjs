@@ -1289,7 +1289,7 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver', 'web-unit'],
     why: "COMMS1a's sender table, read by the service's, the driver's (SendersTests) and the page's tests alike",
   },
-  { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
+  { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service', 'service-process'], why: "both halves" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
     paths: ['src/Daoris.Cli/test/fixtures/home-files-keep.json'],
@@ -1441,8 +1441,8 @@ export const REACH = Object.freeze([
   },
   {
     lane: 'service',
-    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
-    why: "its suite; the devkit's, the driver's and a page vitest read its sources; the family rehearsal, the page's end-to-end suite and the install run its HTTP host",
+    gates: ['service', 'service-process', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
+    why: "both halves; the devkit, driver and a page vitest read its sources; the family rehearsal, e2e suite and install run its host",
   },
   {
     lane: 'cli',

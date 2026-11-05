@@ -1439,9 +1439,8 @@ const reaches = (paths: string[]): string[] => selected(paths).filter((entry) =>
 const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
 const BASE = ['universal', 'code-map', 'test-map', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
-// GATE5: the real-process halves and the deployment rehearsal, 30 to 70 minutes a merge, run only in the full set.
-// GATESLIM1: and the release and family rehearsals, 11 minutes of light gates plus 27 of the family rehearsal on one service merge.
-const LONG = ['driver-process', 'driver-process-git', 'modules-process', 'deployment'];
+// GATE5: the real-process halves and the deployment rehearsal run only in the full set.
+const LONG = ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'deployment'];
 /** GATESLIM1: what a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
 const BLOCKING = ['universal', 'code-map', 'test-map'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
@@ -1551,7 +1550,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
     ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
       [...BASE, 'service', 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
-    ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
+    ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service', 'service-process']],
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
@@ -1599,7 +1598,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/tool-test/merge-branch.test.ts'], [...BASE, 'tool-tests']],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
-      [...BASE, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
+      [...BASE, 'service', 'service-process', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],
     // The driver's fast CategoryTests read the file too (PROCPAR1), so a change there runs the driver's fast half.
     ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver', 'driver-process', 'modules-process']],
@@ -1638,11 +1637,11 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.equal(slim.kind, 'suite');
   assert.equal(tool.isHeavyGate(slim), false);
 
-  // GATE5's proof: a driver change runs eight gates (the censuses among them, REVIEW2 T6), and says the long four are in the full set before staging.
+  // GATE5's proof: a driver change runs eight gates, and says the desktop's long ones are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
     ['universal', 'code-map', 'test-map', 'cli', 'driver', 'modules', 'censuses', 'rehearse-family']);
-  for (const name of LONG) {
+  for (const name of LONG.slice(1)) {
     const entry = driver.find((candidate) => candidate.gate.name === name)!;
     assert.equal(entry.run, false, name);
     assert.match(entry.why, /^in the full set before staging/, name);
@@ -3312,32 +3311,32 @@ test('every project a .NET project references is in its own component', () => {
 });
 
 // The schedule reads a gate's command; a root script that builds behind its name is read here, one level deep.
-test("what a light gate's script builds behind its name is never a component the Process lane builds", () => {
+test("a light gate whose script builds a Process gate's component runs before it", () => {
   const scripts = (JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
-  const built = new Set(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => tool.dotnetComponent(gate.run)).filter(Boolean));
-  assert.deepEqual([...built], ['src/Daoris.Desktop']);
+  const lane = repoPlan.filter((gate) => tool.isProcessLane(gate) && tool.dotnetComponent(gate.run));
+  assert.deepEqual([...new Set(lane.map((gate) => tool.dotnetComponent(gate.run)))], ['src/Daoris.Service', 'src/Daoris.Desktop']);
+  const { waits } = tool.laneSchedule(repoPlan, { scripts });
   for (const gate of repoPlan.filter((planned) => !tool.isProcessLane(planned))) {
     const script = /^npm run (\S+)$/.exec(gate.run)?.[1];
     if (!script) continue;
     assert.ok(scripts[script], `${gate.name} runs a script the workspace declares`);
     for (const command of scripts[script]!.split('&&')) {
       const component = tool.dotnetComponent(command.trim());
-      assert.ok(component === null || !built.has(component), `${gate.name} builds ${component}, which a Process-lane gate builds too`);
+      for (const half of lane.filter((each) => tool.dotnetComponent(each.run) === component)) assert.ok(waits[half.name]!.after.includes(gate.name), `${half.name} after ${gate.name}`);
     }
   }
 });
 
-test("this repository's light lane runs the desktop suites' fast halves first, and the Process lane waits for what it shares", () => {
+test("this repository's light lane runs the suites' fast halves first, and the Process lane waits for what it shares", () => {
   const schedule = tool.laneSchedule(repoPlan);
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
-  // REHLANE1, REHLANE2, REHLANE2b: the release, family and deployment rehearsals right after the git half, which they run
-  // beside, one after the other.
+    ['service', 'driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'devkit', 'web', 'web-unit', 'web-measured']);
+  // REHLANE1, REHLANE2, REHLANE2b: the rehearsals right after the git half, beside it, one after the other.
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
-  for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
-    // GATEORDER1: and for the heavy light gates (the CLI, service, devkit and web suites), so no Process half runs under their load.
-    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'censuses', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured'], component: 'src/Daoris.Desktop' }, name);
+    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
+  for (const name of ['service-process', 'driver-process', 'driver-process-git', 'modules-process']) {
+    // GATEORDER1: and for the heavy light gates, so no Process half runs under their load.
+    assert.deepEqual(schedule.waits[name], { after: ['service', 'driver', 'modules', 'censuses', 'cli', 'devkit', 'web', 'web-unit', 'web-measured'], component: name === 'service-process' ? 'src/Daoris.Service' : 'src/Daoris.Desktop' }, name);
   }
   assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
