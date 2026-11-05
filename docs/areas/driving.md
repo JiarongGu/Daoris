@@ -193,7 +193,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     list at every change. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
-    `timeoutMinutes` is no setting: nothing reads or says it, and a save keeps it as it keeps any key it does not own. (from D200)
+    `timeoutMinutes` is no setting: nothing reads or says it, a save keeps it as it keeps any key it does not own, and the
+    migration's driver-keys step takes it out. (from D200)
 32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the
     person at 3Q. While it waits on its own background work these are 3Q and 5Q. A wait for a permission answer is
     never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on the
