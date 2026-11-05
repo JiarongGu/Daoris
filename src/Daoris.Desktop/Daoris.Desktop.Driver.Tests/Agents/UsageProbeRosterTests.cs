@@ -66,7 +66,7 @@ public sealed class UsageProbeRosterTests : IDisposable
             },
         };
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake-door" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake-door") };
 
     private void Accounts(string home, params string[] names)
     {

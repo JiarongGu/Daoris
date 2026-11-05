@@ -181,7 +181,6 @@ public sealed class RoleStructureTests : IDisposable
         Assert.Null(AgentOffers.Refused(_home, "fake", null, "work", "m2", refusedAt));
         var config = DriverConfig.Empty with
         {
-            Adapter = "fake",
             Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal)
             {
                 ["build"] = [new("gone"), new("fake", "m1", "high"), new("fake", "m2")],

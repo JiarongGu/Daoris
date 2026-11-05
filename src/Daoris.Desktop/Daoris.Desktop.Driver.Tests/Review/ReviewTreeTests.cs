@@ -169,7 +169,7 @@ public sealed class ReviewTreeTests : IDisposable
         await using var service = OpinionStandIn.Start();
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
@@ -239,7 +239,7 @@ public sealed class ReviewTreeTests : IDisposable
         await using var service = OpinionStandIn.Start();
         var config = DriverConfig.Empty with
         {
-            Adapter = adapter,
+            Actors = StaffedRoles.On(adapter),
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
@@ -270,7 +270,7 @@ public sealed class ReviewTreeTests : IDisposable
         await using var service = OpinionStandIn.Start(refuse: true);
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
         var adapters = AdapterSet.Built();
@@ -307,7 +307,7 @@ public sealed class ReviewTreeTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Adapter = "claude-code",
+                Actors = StaffedRoles.On("claude-code"),
                 TestBound = 4,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingReviewer(), "account-1:opus"] },
             },
@@ -355,7 +355,7 @@ public sealed class ReviewTreeTests : IDisposable
         await using var service = OpinionStandIn.Start();
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             TestBound = 30,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },
         };

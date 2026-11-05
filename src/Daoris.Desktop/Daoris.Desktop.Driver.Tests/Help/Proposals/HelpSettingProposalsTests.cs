@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -255,7 +256,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
                 $$"""{ "id": "{{id}}", "harnesses": [ { "name": "{{harness}}", "command": ["{{harness}}"], "maker": "{{maker}}" } ] }""");
         }
 
-        var config = DriverConfig.Empty with { Adapter = "acme-agent" };
+        var config = DriverConfig.Empty with { Actors = StaffedRoles.On("acme-agent") };
         var proposal = Setting("opinion", "engine", null, "--agents codex-acp,acme-other");
 
         Assert.Contains("`acme-other` is the same agent as the one that does the work here",

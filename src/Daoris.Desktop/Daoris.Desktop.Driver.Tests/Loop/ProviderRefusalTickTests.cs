@@ -82,7 +82,7 @@ public sealed class ProviderRefusalTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
+            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), mode] },

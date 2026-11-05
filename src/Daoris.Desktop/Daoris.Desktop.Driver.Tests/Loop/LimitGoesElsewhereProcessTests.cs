@@ -63,8 +63,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Adapter = "acp-stub",
-                HelperAdapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub", helper: "acp-stub"),
                 Commands = new Dictionary<string, IReadOnlyList<string>>
                 {
                     ["acp-stub"] = ["node", agent, Heard],

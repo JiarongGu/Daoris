@@ -270,7 +270,7 @@ public sealed class LookParallelTests : IDisposable
         var service = _ledger.Client(Poll.Patience);
         var runs = new StandInRuns(service, _ledger);
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine", "tools"] };
+        var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine", "tools"] };
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {

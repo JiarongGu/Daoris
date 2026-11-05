@@ -914,7 +914,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     private static DriverConfig Config(bool trees = true, int cap = 3) => DriverConfig.Empty with
     {
         Drivable = ["engine", "tools"],
-        Adapter = "stub",
+        Actors = StaffedRoles.On("stub"),
         Cap = cap,
         PollSeconds = 1,
         Trees = trees ? ["engine"] : [],

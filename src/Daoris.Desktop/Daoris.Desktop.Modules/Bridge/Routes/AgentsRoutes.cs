@@ -61,7 +61,7 @@ public sealed class AgentsRoutes(DriverContext context)
         return new
         {
             _loop.Harnesses.SettingsPath,
-            Adapter = config.Adapter,
+            Adapter = ActorChoices.BuildAgent(config),
             Harnesses = Doors(_loop.Harnesses, roster),
         };
     }
@@ -277,13 +277,13 @@ public sealed class AgentsRoutes(DriverContext context)
             // The work: a driven session, which is also what a conversation started without a
             // pick takes.
             starts.Add(Start("work", workspace,
-                await _loop.Harnesses.WiringAsync(config.Adapter, config, workspace, cancellationToken)));
+                await _loop.Harnesses.WiringAsync(ActorChoices.BuildAgent(config), config, workspace, cancellationToken)));
 
             // The intake (INT4b, AGT6), once an agent is named for it: the same `SelectAsync`
             // the intake takes for an ask in this circle. 🔴 An agent this build has no adapter
             // for is a held row in the driver's own sentence — the one the intake would hold
             // with — never a refusal of the whole answer, which would take the work's rows too.
-            if (config.IntakeAdapter is { Length: > 0 } intake)
+            if (ActorKey.FirstAgent("intake", config) is { Length: > 0 } intake)
             {
                 StartWiring wiring;
                 try
@@ -300,7 +300,7 @@ public sealed class AgentsRoutes(DriverContext context)
             }
         }
 
-        return new { Adapter = config.Adapter, Starts = starts };
+        return new { Adapter = ActorChoices.BuildAgent(config), Starts = starts };
 
         object Start(string job, string workspace, StartWiring wiring) => new
         {

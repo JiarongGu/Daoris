@@ -609,7 +609,7 @@ public sealed class PlaceApplyTests : IDisposable
 
         public SetupWorld Setup { get; }
 
-        public DriverConfig Config { get; set; } = (DriverConfig.Empty with { Adapter = "claude-code-acp" })
+        public DriverConfig Config { get; set; } = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
             .WithDrivable("engine", true).WithTrees("engine", true)
             .WithDrivable("docs", true).WithTrees("docs", true);
 

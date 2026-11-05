@@ -72,9 +72,9 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         };
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>
-        new(service, DriverConfig.Empty with { Adapter = "fake" }, roster.Adapters, _home, harnesses: roster);
+        new(service, DriverConfig.Empty with { Actors = StaffedRoles.On("fake") }, roster.Adapters, _home, harnesses: roster);
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private void Account()
     {

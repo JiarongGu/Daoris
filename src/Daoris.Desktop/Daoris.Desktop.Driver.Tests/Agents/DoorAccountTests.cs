@@ -78,7 +78,7 @@ public sealed class DoorAccountTests : IDisposable
         return new HarnessRoster(new AdapterSet(adapters), Settings);
     }
 
-    private static DriverConfig Config() => DriverConfig.Empty with { Adapter = "owner-acp" };
+    private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("owner-acp") };
 
     [Fact]
     public async Task A_door_spawns_in_the_owner_s_account_chosen_by_the_owner_s_default()

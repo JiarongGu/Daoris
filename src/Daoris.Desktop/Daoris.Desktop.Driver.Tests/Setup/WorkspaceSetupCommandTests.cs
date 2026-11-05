@@ -24,7 +24,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     }
 
     private static DriverConfig Config => new[] { "atlas", "billing", "cargo" }.Aggregate(
-        DriverConfig.Empty with { Adapter = "claude-code-acp", Cap = 2 },
+        DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 2 },
         (config, repository) => config.WithDrivable(repository, true).WithTrees(repository, true));
 
     private static WorkspaceSetupStandIn World() => new WorkspaceSetupStandIn().With(

@@ -59,7 +59,7 @@ public sealed class LimitResumeTickTests : IDisposable
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"], Trees = ["engine"], Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"), Strikes = 1,
+            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("acp-stub"), Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, "update"] },
         };
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home,
@@ -97,7 +97,7 @@ public sealed class LimitResumeTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
+            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
             Strikes = strikes,

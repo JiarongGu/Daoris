@@ -1228,7 +1228,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = ActorChoices.With(
             first with
             {
-                Adapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub"),
                 Commands = new Dictionary<string, IReadOnlyList<string>>(first.Commands!) { ["acp-second"] = ["node", Agent(), Heard, Gate] },
             },
             "chat", [new ActorChoice("acp-stub"), new ActorChoice("acp-second")]);

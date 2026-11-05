@@ -127,7 +127,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "acp-stub", Actors = StaffedRoles.On("acp-stub"),
+            Actors = StaffedRoles.On("acp-stub"),
             TestBound = 3,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", WatchStandIn.WriteAcp(_home), "background-compute", "60000"] },
@@ -176,7 +176,7 @@ public sealed class SessionWatchProcessTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "stub", Actors = StaffedRoles.On("stub"),
+            Actors = StaffedRoles.On("stub"),
             TestBound = 3,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", WatchStandIn.Write(_home), .. cue] },

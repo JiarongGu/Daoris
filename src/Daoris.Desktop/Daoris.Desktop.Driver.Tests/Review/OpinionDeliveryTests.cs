@@ -32,7 +32,7 @@ public sealed class OpinionDeliveryTests : IDisposable
             new OpinionRule(["codex-acp"], [OpinionRules.Landing]));
 
     private Daoris.Driver.Driver Driver(OpinionStandIn host, StandInGit? git = null) =>
-        new(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, AdapterSet.Built(), _home)
+        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, AdapterSet.Built(), _home)
         {
             OpinionGit = git is null ? WorkingTree.ReadGitAsync : git.Read,
             Passes = (_, _, _) => throw new InvalidOperationException("no recheck is asked here"),
@@ -629,7 +629,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     private Daoris.Driver.Driver ChatDriver(OpinionStandIn host, StandInGit git, IChatSendBacks? runner) =>
-        new(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, AdapterSet.Built(), _home)
+        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, AdapterSet.Built(), _home)
         {
             OpinionGit = git.Read,
             Passes = (_, _, _) => throw new InvalidOperationException("no recheck is asked here"),
@@ -761,7 +761,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         });
         var asked = new List<OpinionPassAsk>();
         var (adapters, roster) = Machine();
-        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, adapters, _home, harnesses: roster)
+        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
         {
             OpinionGit = git.Read,
             SendsBack = runner,
@@ -824,7 +824,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         var chat = runner.Held["c2"] = new Conversation();
         var choices = new List<ReviewerChoice>();
         var (adapters, roster) = Machine();
-        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, adapters, _home, harnesses: roster)
+        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
         {
             OpinionGit = git.Read,
             SendsBack = runner,

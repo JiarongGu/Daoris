@@ -161,7 +161,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine", "tools"],
-            Adapter = "stub", Actors = StaffedRoles.On("stub"),
+            Actors = StaffedRoles.On("stub"),
             Cap = 3,
             TestBound = 2,
             PollSeconds = 1,

@@ -126,7 +126,7 @@ public sealed class TrustHoldTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
+            Actors = StaffedRoles.On("claude-code"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", Harness()] },
         };

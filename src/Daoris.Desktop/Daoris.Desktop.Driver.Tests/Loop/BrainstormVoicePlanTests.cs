@@ -56,7 +56,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
     private static readonly ActorEffective Entry = new("voice", "opus", null, "1");
 
     private static DriverConfig Config => ActorChoices.With(
-        DriverConfig.Empty with { Adapter = "other" }, "brainstorm", [new ActorChoice("voice", "opus"), new ActorChoice("other", "sonnet")]);
+        DriverConfig.Empty with { Actors = StaffedRoles.On("other") }, "brainstorm", [new ActorChoice("voice", "opus"), new ActorChoice("other", "sonnet")]);
 
     private BrainstormTurn Turn(string? workspace) => new("b1", "g1", "voice", _home, "Answer it.", Path.Combine(_home, "g1.json"), 5, Entry)
     {

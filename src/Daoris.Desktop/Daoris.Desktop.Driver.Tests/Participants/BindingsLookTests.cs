@@ -38,7 +38,7 @@ public sealed class BindingsLookTests : IDisposable
     {
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
-            _ledger.Client(), DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] },
+            _ledger.Client(), DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] },
             adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

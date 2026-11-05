@@ -123,7 +123,7 @@ public static class WorkspaceSetup
             AtOnce = atOnce,
             Pilot = pilot,
             Cap = config.Cap,
-            Adapter = config.Adapter,
+            Adapter = ActorChoices.BuildAgent(config),
             Refusals = refusals,
         };
     }

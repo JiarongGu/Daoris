@@ -54,7 +54,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "acp-stub",
+        Actors = StaffedRoles.On("acp-stub"),
         // One failure would park it: a limit must not.
         Strikes = 1,
         PollSeconds = 1,
@@ -63,7 +63,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster, string adapter = "acp-stub")
     {
         SupervisorRuleBook.SeedFresh(_home, Config, () => StoreSettled.Yes);
-        return new(service, Config with { Adapter = adapter, Actors = StaffedRoles.On(adapter) }, AdapterSet.Built(), _home, harnesses: roster);
+        return new(service, Config with { Actors = StaffedRoles.On(adapter) }, AdapterSet.Built(), _home, harnesses: roster);
     }
 
     /// <summary>Observation 4's cut-off, as the driver records one: the quest taken, its session failed with a limit.</summary>

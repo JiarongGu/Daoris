@@ -89,7 +89,6 @@ public sealed class RetryWorkTickTests : IDisposable
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "stub",
         Actors = StaffedRoles.On("stub"),
         TestBound = 1,
         PollSeconds = 1,

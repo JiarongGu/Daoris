@@ -115,7 +115,7 @@ public sealed class ReviewerChoiceTests : IDisposable
             $$"""{ "id": "{{id}}", "harnesses": [ { "name": "{{agent}}", "command": ["${plugin}/agent.mjs"]{{said}} } ] }""");
     }
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "claude-code" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") };
 
     private static OpinionRule Rule(string reviewers) => new([.. reviewers.Split(',')], [OpinionRules.Landing]);
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -57,8 +58,7 @@ internal static class HelpRoomScopeFixture
     /// <summary>Each named workspace declares a kind of work; <c>alpha</c> pauses one of its quests and <c>beta</c> one of its asks.</summary>
     private static DriverConfig Config => DriverConfig.Empty with
     {
-        Adapter = "claude-code",
-        HelperAdapter = "claude-code-acp",
+        Actors = StaffedRoles.On("claude-code", helper: "claude-code-acp"),
         Cap = 3,
         PausedAsks = new Dictionary<string, WorkPause> { ["ab1"] = new WorkPause(At, new Dictionary<string, string>()) },
         PausedQuests = new Dictionary<string, WorkPause> { ["qa1"] = new WorkPause(At, new Dictionary<string, string>()) },

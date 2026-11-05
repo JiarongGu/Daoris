@@ -69,7 +69,7 @@ public sealed class ReviewerPlanTests : IDisposable
     private void Cool(string agent) =>
         AccountCooling.Cool(_home, new CoolingEntry(agent, "account-1", Now.AddHours(30), true, "weekly", Now.AddHours(-1), "s1"), Now);
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "claude-code" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") };
 
     private static OpinionRule Rule(string reviewers) => new([.. reviewers.Split(',')], [OpinionRules.Landing]);
 

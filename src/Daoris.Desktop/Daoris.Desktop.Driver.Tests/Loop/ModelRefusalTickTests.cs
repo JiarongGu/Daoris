@@ -59,7 +59,7 @@ public sealed class ModelRefusalTickTests : IDisposable
             {
                 Drivable = ["engine"],
                 Trees = ["engine"],
-                Adapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
                 // One failure would park it: a choice its agent did not offer must hold none.
@@ -244,7 +244,7 @@ public sealed class ModelRefusalTickTests : IDisposable
             {
                 Drivable = ["engine"],
                 Trees = ["engine"],
-                Adapter = PipeStub.Named,
+                Actors = StaffedRoles.On(PipeStub.Named),
                 TestBound = 1,
                 PollSeconds = 1,
                 Strikes = 1,

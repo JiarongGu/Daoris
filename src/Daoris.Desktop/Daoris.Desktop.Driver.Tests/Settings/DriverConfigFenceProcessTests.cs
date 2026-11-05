@@ -135,7 +135,7 @@ public sealed class DriverConfigFenceProcessTests : IDisposable
         // A minute has passed: the older writer's lock says so, its process still alive.
         var aged = $"{{\"pid\":{older.Id},\"since\":\"{(DateTimeOffset.UtcNow - TimeSpan.FromMinutes(2)).UtcDateTime:yyyy-MM-dd'T'HH:mm:ss.fff'Z'}\"}}\n";
         File.WriteAllText(KeepLock.PathOf(_path), aged);
-        (DriverConfig.Load(_path) with { IntakeAdapter = null }).WithCap(5).Save(_path);
+        DriverConfig.Load(_path).WithCap(5).Save(_path);
         Assert.Equal("{\n  \"cap\": 5\n}\n", File.ReadAllText(_path));
 
         older.StandardInput.Close();

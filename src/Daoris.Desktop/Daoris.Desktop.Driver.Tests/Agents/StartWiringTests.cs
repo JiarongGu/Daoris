@@ -65,7 +65,7 @@ public sealed class StartWiringTests : IDisposable
         return new HarnessRoster(new AdapterSet(adapters), Settings);
     }
 
-    private static DriverConfig Config(string adapter = "agent") => DriverConfig.Empty with { Adapter = adapter };
+    private static DriverConfig Config(string adapter = "agent") => DriverConfig.Empty with { Actors = StaffedRoles.On(adapter) };
 
     private void SignedIn(string owner, string profile)
     {

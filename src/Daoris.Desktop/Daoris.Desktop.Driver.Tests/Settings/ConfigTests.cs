@@ -51,43 +51,6 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// 🔴 The intake is OFF until a harness is named (INT4b). An intake session spends a real login on
-    /// every ask, so silence is the no-model tier INT4a built — and a machine whose file predates the
-    /// field keeps answering asks exactly as it did.
-    /// </summary>
-    [Fact]
-    public void A_config_that_names_no_intake_harness_runs_no_intake()
-    {
-        Assert.Null(DriverConfig.Parse("{}").IntakeAdapter);
-        Assert.Null(DriverConfig.Empty.IntakeAdapter);
-        Assert.Null(DriverConfig.Parse("""{"intakeAdapter":""}""").IntakeAdapter);
-        Assert.DoesNotContain("intakeAdapter", DriverConfig.Empty.ToJson());
-    }
-
-    /// <summary>
-    /// 🔴 Written back by every edit (§1b's trap): `ToJson` writes the keys it knows, so a field this
-    /// record did not model would be deleted by the next checkbox anyone ticked.
-    /// </summary>
-    [Fact]
-    public void The_intake_harness_survives_every_other_edit_and_can_be_turned_off()
-    {
-        TheHarnessSurvives("intakeAdapter", config => config.IntakeAdapter, (config, adapter) => config.WithIntake(adapter));
-    }
-
-    /// <summary>
-    /// Ask Daoris's own agent (HELP1, D89): its own choice, off until named, and kept by every other
-    /// edit — named apart from the intake's, since answering asks and helping a person are two jobs.
-    /// </summary>
-    [Fact]
-    public void Ask_daoris_runs_on_its_own_agent_off_until_named()
-    {
-        Assert.Null(DriverConfig.Parse("{}").HelperAdapter);
-        Assert.DoesNotContain("helperAdapter", DriverConfig.Empty.ToJson());
-        Assert.Null(DriverConfig.Parse("""{"intakeAdapter":"claude-code-acp"}""").HelperAdapter);
-        TheHarnessSurvives("helperAdapter", config => config.HelperAdapter, (config, adapter) => config.WithHelper(adapter));
-    }
-
-    /// <summary>
     /// HELPMODE1a1 (D183 points 1-2): Ask Daoris's access mode is the person's choice, restricted until full is named, written
     /// only while full and kept by every other edit. Anything else the file says reads as restricted, never as full; and an edit
     /// naming another mode is refused.
@@ -110,19 +73,6 @@ public sealed class ConfigTests
         Assert.DoesNotContain("helpMode", restricted);
         Assert.Throws<DriverException>(() => DriverConfig.Empty.WithHelpMode("everything"));
     }
-
-    private static void TheHarnessSurvives(
-        string field, Func<DriverConfig, string?> read, Func<DriverConfig, string?, DriverConfig> set)
-    {
-        var on = DriverConfig.Parse($$"""{"{{field}}":"claude-code-acp","drivable":["engine"]}""");
-
-        var edited = DriverConfig.Parse(on.WithNotify(false).WithDrivable("tools", true).ToJson());
-
-        Assert.Equal("claude-code-acp", read(edited));
-        Assert.Null(read(DriverConfig.Parse(set(edited, null).ToJson())));
-        Assert.Equal("stub", read(DriverConfig.Parse(set(edited, " stub ").ToJson())));
-    }
-
 
     /// <summary>
     /// 🔴 SESSWATCH1a (D200, the session-watch design §3, case 15): <c>timeoutMinutes</c> is kept, never read for a bound. A loaded file
@@ -169,7 +119,6 @@ public sealed class ConfigTests
               "drivable": ["Game", "Tools"],
               "holds": ["Tools"],
               "cap": 3,
-              "adapter": "stub",
               "timeoutMinutes": 10,
               "pollSeconds": 5,
               "commands": { "stub": ["node", "local/agent.mjs"] }
@@ -179,7 +128,6 @@ public sealed class ConfigTests
         Assert.Equal(["Game", "Tools"], config.Drivable);
         Assert.Equal(["Tools"], config.Holds);
         Assert.Equal(3, config.Cap);
-        Assert.Equal("stub", config.Adapter);
         Assert.Equal(10, config.KeptTimeoutMinutes);
         Assert.Equal(5, config.PollSeconds);
         Assert.Equal(["node", "local/agent.mjs"], config.Commands["stub"]);
@@ -194,13 +142,6 @@ public sealed class ConfigTests
         Assert.Empty(config.Drivable);
     }
 
-    /// <summary>The supported harness is the default (D23); the stub is chosen deliberately, by tests.</summary>
-    [Fact]
-    public void The_default_adapter_is_the_supported_harness()
-    {
-        Assert.Equal("claude-code", DriverConfig.Parse("{}").Adapter);
-    }
-
     /// <summary>What is written is what is read back — the file the controls edit and the loop watches.</summary>
     [Fact]
     public void A_config_survives_its_own_round_trip()
@@ -209,14 +150,13 @@ public sealed class ConfigTests
             .WithDrivable("Game", true)
             .WithHold("Game", true)
             with
-        { Cap = 3, Adapter = "stub", Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", "a.mjs"] } };
+        { Cap = 3, Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", "a.mjs"] } };
 
         var read = DriverConfig.Parse(config.ToJson());
 
         Assert.Equal(config.Drivable, read.Drivable);
         Assert.Equal(config.Holds, read.Holds);
         Assert.Equal(3, read.Cap);
-        Assert.Equal("stub", read.Adapter);
         Assert.Equal(["node", "a.mjs"], read.Commands["stub"]);
     }
 

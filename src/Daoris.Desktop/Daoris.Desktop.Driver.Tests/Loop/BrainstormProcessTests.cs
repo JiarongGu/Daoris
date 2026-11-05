@@ -220,7 +220,7 @@ public sealed class BrainstormProcessTests : IDisposable
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with
             {
-                Adapter = "stub", Cap = 3, TestBound = 2,
+                Actors = StaffedRoles.On("stub"), Cap = 3, TestBound = 2,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Protocol()] },
             },
             adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
@@ -316,7 +316,7 @@ public sealed class BrainstormProcessTests : IDisposable
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with
             {
-                Adapter = "stub", Cap = 3, TestBound = 2,
+                Actors = StaffedRoles.On("stub"), Cap = 3, TestBound = 2,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Protocol()] },
             },
             adapters, _home, harnesses: roster)
@@ -395,7 +395,7 @@ public sealed class BrainstormProcessTests : IDisposable
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with
             {
-                Adapter = "stub", Cap = 3, TestBound = 2,
+                Actors = StaffedRoles.On("stub"), Cap = 3, TestBound = 2,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Native()], ["acp-stub"] = ["node", Hanging()] },
                 Brainstorms = new BrainstormRule(BrainstormRules.Ask, [], new BrainstormMinutes(5, 10, 10, 30)),
             },

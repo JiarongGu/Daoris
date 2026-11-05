@@ -106,7 +106,7 @@ public sealed class BrainstormLookTests : IDisposable
         var service = new Service();
         var turns = new Turns();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), config ?? DriverConfig.Empty with { Adapter = "stub", Cap = cap }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), config ?? DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap }, AdapterSet.Built(), _home)
         {
             BrainstormTurns = turns.RunAsync,
         };
@@ -133,7 +133,7 @@ public sealed class BrainstormLookTests : IDisposable
         var reading = new TaskCompletionSource<(string? Root, string? Revision)>(TaskCreationOptions.RunContinuationsAsynchronously);
         var read = 0;
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
             AdapterSet.Built(), _home)
         {
             BrainstormTurns = new Turns().RunAsync,
@@ -169,7 +169,7 @@ public sealed class BrainstormLookTests : IDisposable
         var id = Files.WriteRequest("How should the daily report stop dropping its last day?", "engine", ["stub", "acp-stub"], At);
         var read = 0;
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
             AdapterSet.Built(), _home)
         {
             BrainstormTurns = new Turns().RunAsync,
@@ -234,7 +234,7 @@ public sealed class BrainstormLookTests : IDisposable
         await LookAsync(driver);
         var digest = Files.ReadState(id)!.Packet!;
         Files.WriteSent(id, digest, At);
-        var (draining, _, held) = Start(config: InstallUpdate.Drained(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }));
+        var (draining, _, held) = Start(config: InstallUpdate.Drained(DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }));
 
         var first = await LookAsync(draining);
         var second = await LookAsync(draining);
@@ -310,27 +310,6 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1c (D205 §4.0, round 3's Codex 8): a brainstorm naming no agent, with no policy agents, runs Brainstorm's voice, and a
-    /// change of Build's agent never moves it: the write that changed <c>adapter</c> kept Brainstorm on the agent it ran.
-    /// </summary>
-    [Fact]
-    public async Task After_build_changes_agent_a_brainstorm_naming_none_keeps_its_voice()
-    {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }, "build", [new ActorChoice("acp-stub", "opus")]);
-        Assert.Equal("acp-stub", config.Adapter);
-        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", null, [], At);
-        var (driver, _, turns) = Start(config: config);
-        await LookAsync(driver);
-        Files.WriteSent(id, Files.ReadState(id)!.Packet!, At);
-        turns.Answers["g1"] = Give(("Make the window inclusive of its last day", "yes", "low"));
-        turns.Answers["s1"] = Synthesize(("An inclusive window", 1, ["P1"]));
-
-        await LookAsync(driver);
-
-        Assert.Equal(["stub", "stub"], turns.Seen.Select(seen => seen.Turn.Agent));
-    }
-
-    /// <summary>
     /// 🔴 A malformed answer is a failed pass, never an empty success: its one repair is handed the validator's codes in fixed
     /// words, and a second failure is the pass's, kept with its codes. The document says one maker answered.
     /// </summary>
@@ -398,7 +377,7 @@ public sealed class BrainstormLookTests : IDisposable
         var asked = new List<(string Words, string Repository)>();
         var long_ = new string('x', 13_000);
         var looked = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub" }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, AdapterSet.Built(), _home)
         {
             BrainstormSearches = (words, repository, _) =>
             {
@@ -428,7 +407,7 @@ public sealed class BrainstormLookTests : IDisposable
     }
 
     private static DriverConfig Voices(params ActorChoice[] entries) =>
-        ActorChoices.With(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }, "brainstorm", entries);
+        ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, "brainstorm", entries);
 
     private async Task<(string Id, Turns Turns)> SentAsync(DriverConfig config, IReadOnlyList<string> agents, string[]? members = null, Action<Turns>? arrange = null)
     {
@@ -517,7 +496,7 @@ public sealed class BrainstormLookTests : IDisposable
         var id = Files.WriteRequest("How should the daily report stop dropping its last day?", "engine", ["stub", "acp-stub"], At);
         var turns = new Turns();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
             AdapterSet.Built(), _home)
         {
             BrainstormTurns = turns.RunAsync,

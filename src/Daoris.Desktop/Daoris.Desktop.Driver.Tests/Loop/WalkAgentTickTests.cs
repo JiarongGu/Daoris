@@ -77,8 +77,8 @@ public sealed class WalkAgentTickTests : IDisposable
         ["acp-other"] = new AcpOtherAdapter(),
     });
 
-    /// <summary>The machine's choices with Build's <paramref name="order"/>, and the legacy <c>adapter</c> key <paramref name="adapter"/>.</summary>
-    private DriverConfig Config(IReadOnlyList<ActorChoice> order, string? adapter = null)
+    /// <summary>The machine's choices with Build's <paramref name="order"/>.</summary>
+    private DriverConfig Config(IReadOnlyList<ActorChoice> order)
     {
         var agent = Agent();
         var config = ActorChoices.With(
@@ -86,7 +86,7 @@ public sealed class WalkAgentTickTests : IDisposable
             {
                 Drivable = ["engine"],
                 Trees = ["engine"],
-                Adapter = "acp-stub",
+                Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
                 Strikes = 1,
@@ -97,7 +97,7 @@ public sealed class WalkAgentTickTests : IDisposable
                 },
             },
             "build", order);
-        return adapter is null ? config : config with { Adapter = adapter };
+        return config;
     }
 
     private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, DriverConfig config)
@@ -131,13 +131,11 @@ public sealed class WalkAgentTickTests : IDisposable
     /// there; the quest sits held and no frame reaches the other agent. At the reset the line resumes its own conversation, on its own
     /// account.
     /// </summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("acp-other")]
-    public async Task A_line_at_a_limit_with_every_account_of_its_roles_agent_cooling_waits_for_the_earliest_reset_and_never_opens_on_another_agent(string? legacyAdapter)
+    [Fact]
+    public async Task A_line_at_a_limit_with_every_account_of_its_roles_agent_cooling_waits_for_the_earliest_reset_and_never_opens_on_another_agent()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var driver = Driver(service, Config([Sonnet, Opus], legacyAdapter));
+        var driver = Driver(service, Config([Sonnet, Opus]));
         await LimitedAsync(service, driver);
 
         for (var held = 0; held < 2; held++)
