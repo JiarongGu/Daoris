@@ -301,7 +301,7 @@ export const ACCESS_AT: Readonly<Record<string, string>> = {
 const ROUTING_STANDINGS = new Set(['not-driven', 'no-lanes', 'one-at-a-time', 'open']);
 
 /** The actors' ids (D205 §2.2), each worded by its `work.role.name.*` entry, as *Details* says it. */
-const ACTOR_IDS = new Set(['build', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
+const ACTOR_IDS = new Set(['build', 'design', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
 
 /**
  * One line of a note as the page shows it:

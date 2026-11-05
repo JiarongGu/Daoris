@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RolePolicyRow, RoleRow, RoleUse, SuggestedRole } from '../../data/wiring';
+import type { ActorRow, RoleCatalogue, RoleChangePress, RoleChoice, RolePolicyRow, RoleRow, RoleUse } from '../../data/wiring';
 import { Button, Card, CardHeader, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { authoredEntries, authoredText, composeAuthored } from '../../locales/authored';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
@@ -197,15 +197,6 @@ export function useLine(t: TFunction, use: RoleUse, days: number): string {
   }
 
   return `${span}: ${parts.join(' · ')}`;
-}
-
-/** A suggestion's press: its record and choices set, as `SET_ROLE` takes them, against the revision 0 of an id the catalogue lacks. */
-function suggestionPress(role: SuggestedRole): RoleChangePress {
-  return {
-    change: 'set', id: role.id, revision: 0,
-    role: { name: role.name, takes: role.takes, scope: { kind: role.scopeKind, id: null } },
-    choices: role.choices.map((choice) => ({ agent: choice.agent, model: choice.model ?? null, effort: choice.effort ?? null })),
-  };
 }
 
 /**
@@ -545,24 +536,6 @@ export function RolesCard({
           )}
         </div>
       ))}
-      {catalogue?.suggested.map((role) => {
-        const named = name({ id: role.id, seeded: false, name: role.name });
-        const taken = role.takes.map((work) => t(`settings.ai.roles.work.${work}`)).join(t('settings.ai.role.and'));
-        return (
-          <section key={role.id} aria-label={t('settings.ai.roles.suggested.title', { role: named })} className="mt-3 rounded-control border border-line p-2">
-            <p className="m-0 text-body font-medium text-ink">{t('settings.ai.roles.suggested.title', { role: named })}</p>
-            <p className="m-0 text-small text-ink-soft wrap-anywhere">
-              {t('settings.ai.roles.suggested.body', { role: named, work: taken, choice: role.choices[0] ? entryText(t, role.choices[0]) : '' })}
-            </p>
-            <div className="mt-2 flex gap-2">
-              <Button disabled={locked || editing !== null} onClick={() => press(role.id, suggestionPress(role))}>
-                {t('settings.ai.roles.suggested.add', { role: named })}
-              </Button>
-            </div>
-            {refused?.at === role.id && <Refused sentence={refused.sentence} />}
-          </section>
-        );
-      })}
       <p className="m-0 mt-3 text-small text-ink-faint"><Inline text={t('settings.ai.roles.footnote')} /></p>
     </>
   );

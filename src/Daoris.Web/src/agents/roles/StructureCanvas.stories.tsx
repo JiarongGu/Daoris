@@ -18,7 +18,7 @@ import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WOR
 const nothing = () => {};
 const DOORS: RoleDoors = { agent: nothing, repository: nothing, plugin: nothing };
 const AGENTS = [{ value: 'claude-code', label: 'Claude Code' }, { value: 'codex-acp', label: 'Codex' }];
-const CATALOGUE: RoleCatalogue = { roles: STRUCTURE.roles, works: WORKS, kept: true, suggested: [] };
+const CATALOGUE: RoleCatalogue = { roles: STRUCTURE.roles, works: WORKS, kept: true };
 
 const APPOINTED: AppointedRead = {
   stewardOffered: true, supervisorOffered: true,

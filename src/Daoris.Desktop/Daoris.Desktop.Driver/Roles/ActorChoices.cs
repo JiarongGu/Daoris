@@ -26,7 +26,7 @@ public sealed record ActorEffective(string Agent, string? Model, string? Effort,
 /// </remarks>
 public static class ActorChoices
 {
-    /// <summary>The eight actors' wire ids, in the screen's order (§2.2): the settings' <see cref="ActorKey.Ids"/>.</summary>
+    /// <summary>The nine actors' wire ids, in the screen's order (§2.2): the settings' <see cref="ActorKey.Ids"/>.</summary>
     public static IReadOnlyList<string> Ids => ActorKey.Ids;
 
     /// <summary>The most choices an actor holds: the most voices a brainstorm takes (<c>BrainstormDesk.MostAgents</c>).</summary>
@@ -44,8 +44,11 @@ public static class ActorChoices
     /// </summary>
     public static string BuildAgent(DriverConfig config) => ActorKey.FirstAgent("build", config) ?? DefaultAgent;
 
-    /// <summary>The five roles with an order of their own (the oneway design §2): each holds a written order, never <i>as before</i>.</summary>
-    public static IReadOnlyList<string> Ordered { get; } = ["build", "chat", "brainstorm", "intake", "ask-daoris"];
+    /// <summary>The six roles with an order of their own (the oneway design §2, and Design): each holds a written order, never <i>as before</i>.</summary>
+    public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "chat", "brainstorm", "intake", "ask-daoris"];
+
+    /// <summary>The model and effort Design runs on where nothing else is set: judgement is its work (<c>docs/model-roles.md</c>, build-judgement).</summary>
+    public static ActorChoice DesignSeed { get; } = new(DefaultAgent, "opus", "high");
 
     /// <summary>
     /// A role's seed (ONEWAY1b): the written order a fresh home starts with and the role door's <c>default</c> writes, what a home with none
@@ -54,6 +57,7 @@ public static class ActorChoices
     public static IReadOnlyList<ActorChoice>? Seed(string role) => role switch
     {
         "build" or "chat" or "brainstorm" => [new ActorChoice(DefaultAgent)],
+        "design" => [DesignSeed],
         "intake" or "ask-daoris" => [],
         _ => null,
     };

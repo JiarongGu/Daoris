@@ -20,11 +20,11 @@ public static partial class ActorSuggestion
     /// <summary>The roles the table suggests for, in the screen's order.</summary>
     public static IReadOnlyList<SuggestedChoices> Table { get; } =
     [
-        new("build", [new ActorChoice(RoleSuggestion.ClaudeCode, "sonnet", "high"), new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")]),
-        new("opinion", [new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")]),
-        new("helper", [new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")]),
-        new("partner", [new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")]),
-        new("brainstorm", [new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")]),
+        new("build", [new ActorChoice(ActorChoices.DefaultAgent, "sonnet", "high"), new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
+        new("opinion", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
+        new("helper", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
+        new("partner", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
+        new("brainstorm", [new ActorChoice(ActorChoices.DefaultAgent, "opus", "high")]),
     ];
 
     /// <summary>The table with each choice of an agent the machine has not set up left out, and a role left with none left out whole; null <paramref name="setUp"/> leaves nothing out.</summary>
@@ -46,7 +46,7 @@ public static partial class ActorSuggestion
             line => line.Split('|', StringSplitOptions.TrimEntries), StringComparer.Ordinal);
         ActorChoice? Read(string role) =>
             rows.TryGetValue(role, out var cells) && cells.Length > 4 && Alias().Match(cells[3]) is { Success: true } alias
-                ? new ActorChoice(RoleSuggestion.ClaudeCode, alias.Groups[1].Value.ToLowerInvariant(), cells[4])
+                ? new ActorChoice(ActorChoices.DefaultAgent, alias.Groups[1].Value.ToLowerInvariant(), cells[4])
                 : null;
 
         var settled = Read("build-settled");
@@ -59,6 +59,8 @@ public static partial class ActorSuggestion
             else if (!each.Choices.SequenceEqual(expected!)) found.Add($"{each.Role} is suggested as {Said(each.Choices)}, the reference says {Said(expected!)}.");
         }
 
+        // The seeded Design role runs the reference's judgement row, so a change to it moves the seed with it.
+        if (judgement is not null && ActorChoices.DesignSeed != judgement) found.Add($"design's seed is {ActorChoices.DesignSeed.Said}, the reference says {judgement.Said}.");
         return found;
     }
 

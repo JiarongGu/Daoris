@@ -31,7 +31,6 @@ const CATALOGUE: RoleCatalogue = {
   ],
   works: ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'],
   kept: true,
-  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 const actor = (id: string, state: ActorRow['state'], ...agents: string[]): ActorRow => ({
@@ -137,7 +136,7 @@ describe('The roles', () => {
     expect(onSet).toHaveBeenCalledWith({ change: 'default-all', id: '*' }, expect.anything());
   });
 
-  it('removes an added role after naming the role it falls back to, gives a seeded one back its seed, and takes the suggested Designer, each by the revision it read', () => {
+  it('removes an added role after naming the role it falls back to, and gives a seeded one back its seed, each by the revision it read', () => {
     const { onSet } = card({ catalogue: { ...CATALOGUE, roles: [...CATALOGUE.roles, { ...CATALOGUE.roles[3]!, id: 'night-2', name: 'Night two', scopeKind: 'machine', scopeId: undefined, revision: 5 }] } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Night two' }));
@@ -148,16 +147,10 @@ describe('The roles', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove role' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Restore role defaults: Chat' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add the Designer' }));
 
     expect(onSet).toHaveBeenNthCalledWith(1, { change: 'remove', id: 'night-2', revision: 5 }, expect.anything());
     expect(onSet).toHaveBeenNthCalledWith(2, { change: 'default', id: 'chat', revision: 2 }, expect.anything());
-    expect(onSet).toHaveBeenNthCalledWith(3, {
-      change: 'set', id: 'designer', revision: 0,
-      role: { name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scope: { kind: 'machine', id: null } },
-      choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
-    }, expect.anything());
-    expect(screen.getByText(/can spend more/)).toBeTruthy();
+    expect(onSet).toHaveBeenCalledTimes(2);
   });
 
   it("says the driver's refusal under Save, the editor still open", () => {
@@ -313,7 +306,7 @@ describe('The roles', () => {
   });
 
   describe('a home that keeps no catalogue yet', () => {
-    const unkept = { catalogue: { ...CATALOGUE, kept: false, suggested: [] } };
+    const unkept = { catalogue: { ...CATALOGUE, kept: false } };
 
     it('ONEWAY1a: holds every press, editing none, and says why', () => {
       const { onSet } = card(unkept);
@@ -333,7 +326,7 @@ describe('The roles', () => {
       expect(screen.getByText(/could not be read/)).toBeTruthy();
       unmount();
 
-      render(<RolesCard catalogue={{ ...CATALOGUE, roles: [], suggested: [] }} staffing={[]} agents={AGENTS} onSet={() => {}} />);
+      render(<RolesCard catalogue={{ ...CATALOGUE, roles: [] }} staffing={[]} agents={AGENTS} onSet={() => {}} />);
       expect(screen.getByText('No role is set yet.')).toBeTruthy();
       expect(screen.queryByText(/could not be read/)).toBeNull();
     });

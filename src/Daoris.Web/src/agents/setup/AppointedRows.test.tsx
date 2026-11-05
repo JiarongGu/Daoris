@@ -18,7 +18,7 @@ const STEWARD: RoleRow = {
   id: 'steward', state: 'seed', seeded: true, name: { en: 'Steward', zh: '管家' }, takes: [], scopeKind: 'machine', revision: 0,
   hold: { kind: 'steward', acts: ['drive', 'stop'], holder: null },
 };
-const CATALOGUE: RoleCatalogue = { roles: [SUPERVISOR, STEWARD], works: ['build'], kept: true, suggested: [] };
+const CATALOGUE: RoleCatalogue = { roles: [SUPERVISOR, STEWARD], works: ['build'], kept: true };
 
 const draw = (onSet = vi.fn()) => {
   const editor: PlaceRoleEditor = { agents: [], offers: {}, staffing: [], catalogue: CATALOGUE, read: 'ok', busy: false, onSet };

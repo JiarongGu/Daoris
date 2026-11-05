@@ -36,7 +36,7 @@ const editorRole = (each: RoleRow): EditorRole => ({
 });
 
 const staffing = (rows: RoleRow[], refuse: string | null = null): StepStaffing => ({
-  catalogue: { roles: rows, works: ['build', 'design', 'review'], kept: true, suggested: [] },
+  catalogue: { roles: rows, works: ['build', 'design', 'review'], kept: true },
   read: 'ok',
   actors: [],
   agents: AGENTS,
