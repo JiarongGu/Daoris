@@ -487,10 +487,10 @@ function tailProblems(graph: GraphJson): string[] {
     else if (held.length === 0) problems.push(`${kind}: none held`);
     else problems.push(...held.filter((id) => !after.has(id)).map((id) => `${id}: not after the landing`));
   };
-  check('pushed', method === 'push' || method === 'pull-request');
+  check('push', method === 'push' || method === 'pull-request');
   check('pull-request', method === 'pull-request');
   check('integrate', method === 'integrate');
-  const pushes = graph.nodes.filter((node) => node.kind === 'pushed').map((node) => node.id as string);
+  const pushes = graph.nodes.filter((node) => node.kind === 'push').map((node) => node.id as string);
   if (method === 'pull-request' && pushes.length > 0) {
     const afterPush = reach(pushes);
     problems.push(...graph.nodes.filter((node) => node.kind === 'pull-request' && !afterPush.has(node.id as string)).map((node) => `${String(node.id)}: before the push`));
@@ -504,11 +504,11 @@ describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
   it('adds the pushed and the pull request after the landing for a pull request, between the landing and what followed it', () => {
     const merge = shipped('merge-after-accept');
     const made = setLandMethod(PALETTE, merge, 'landing', 'pull-request');
-    expect(made.added).toEqual(['pushed', 'pull-request']);
+    expect(made.added).toEqual(['push', 'pull-request']);
     expect(made.removed).toEqual([]);
     expect(optionOf(made.draft.nodes.find((node) => node.id === 'landing')!, 'method')).toBe('pull-request');
-    expect(made.draft.wires.filter((each) => each.kind === 'after' && ['landing', 'pushed', 'pull-request'].includes(each.from!)).map(said))
-      .toEqual(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']);
+    expect(made.draft.wires.filter((each) => each.kind === 'after' && ['landing', 'push', 'pull-request'].includes(each.from!)).map(said))
+      .toEqual(['after:landing>push', 'after:push>pull-request', 'after:pull-request>line']);
     expect(made.draft.end).toBe('line');
     expect(tailProblems(graphOf(made.draft))).toEqual([]);
   });
@@ -517,13 +517,13 @@ describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
     const merge = shipped('merge-after-accept');
     const there = setLandMethod(PALETTE, merge, 'landing', 'pull-request').draft;
     const back = setLandMethod(PALETTE, there, 'landing', 'merge');
-    expect([...back.removed].sort()).toEqual(['pull-request', 'pushed']);
+    expect([...back.removed].sort()).toEqual(['pull-request', 'push']);
     expect(graphOf(back.draft)).toEqual(graphOf(merge));
-    // A push keeps its pushed and drops the request.
+    // A push keeps its push and drops the request.
     const pushOnly = setLandMethod(PALETTE, there, 'landing', 'push');
     expect(pushOnly.removed).toEqual(['pull-request']);
     expect(pushOnly.added).toEqual([]);
-    expect(pushOnly.draft.nodes.map((node) => node.kind).filter((kind) => ['pushed', 'pull-request'].includes(kind))).toEqual(['pushed']);
+    expect(pushOnly.draft.nodes.map((node) => node.kind).filter((kind) => ['push', 'pull-request'].includes(kind))).toEqual(['push']);
   });
 
   it('moves the end to the last of the tail where the landing was the end, and back to the landing when the end was a tail step', () => {
@@ -533,7 +533,7 @@ describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
     expect(request.draft.end).toBe('pull-request');
     expect(tailProblems(graphOf(request.draft))).toEqual([]);
     const push = setLandMethod(PALETTE, request.draft, 'landing', 'push');
-    expect(push.draft.end).toBe('pushed');
+    expect(push.draft.end).toBe('push');
     expect(setLandMethod(PALETTE, push.draft, 'landing', 'branch').draft.end).toBe('landing');
   });
 
@@ -628,7 +628,7 @@ describe('an input is proposed from the step it is routed from, and asked where 
 // WORKFLOWCLEAN1 1b: the palette says how each kind is offered, and the page keeps no list of its own.
 describe('how the palette offers each kind', () => {
   it('reads `offered` from the palette: a landing\'s tail with its method, every other step alone', () => {
-    expect([choice('pushed').offered, choice('pull-request').offered, choice('integrate').offered]).toEqual(['tail:push', 'tail:pull-request', 'tail:integrate']);
+    expect([choice('push').offered, choice('pull-request').offered, choice('integrate').offered]).toEqual(['tail:push', 'tail:pull-request', 'tail:integrate']);
     expect(['claimed', 'review', 'land', 'line', 'check'].map((kind) => choice(kind).offered)).toEqual(Array(5).fill('alone'));
     expect(choice('local-release/find').offered).toBe('alone');
   });

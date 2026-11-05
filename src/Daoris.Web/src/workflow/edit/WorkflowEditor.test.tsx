@@ -468,7 +468,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     const graph = saved();
-    expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>pushed', 'after:pushed>pull-request', 'after:pull-request>line']));
+    expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>push', 'after:push>pull-request', 'after:pull-request>line']));
     expect((graph.nodes as { id: string; options?: Record<string, unknown> }[]).find((node) => node.id === 'landing')!.options)
       .toEqual({ method: 'pull-request', pattern: 'feature/{quest}-{slug}/{nope}' });
     expect(graph.end).toBe('line');

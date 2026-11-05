@@ -5,7 +5,7 @@ import '../locales/i18n';
 import { SETTINGS } from '../bridge/generated/routes';
 import { catalogues, en } from '../locales/index';
 import { DriverCards } from './DriverCards';
-import { settingOf } from './MinutesSetting';
+import { settingOf } from './DriverDomain';
 
 /**
  * The page's half of the settings census (D228): the page reads the machine's settings from the one list the driver declares

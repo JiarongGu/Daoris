@@ -10,12 +10,7 @@ const { invoke, notifyReady } = vi.hoisted(() => ({
   notifyReady: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => ({ ...(await import('../../test/sliceShell')).mockedShell(invoke, { notifyReady }), useShenoraEvent: () => {} }));
 
 import { SettingsView } from '../SettingsView';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../../test/shellHarness';
@@ -53,6 +48,8 @@ describe('the git domain', () => {
     expect(await within(screen.getByRole('navigation', { name: 'Settings domains' })).findByRole('button', { name: 'Git' }))
       .toHaveAttribute('aria-current', 'page');
     await waitFor(() => expect(document.querySelector('[data-git-identity="gi-00000000000c"]')).not.toBeNull());
+    // The machine's access is a standing choice of the driver's state, which the shell pushes beside the identities' read.
+    await screen.findByText('Git access on this machine');
     expect(screen.getAllByRole('article').map((article) => article.querySelector('header span')?.textContent))
       .toEqual(['Git identities', 'Defaults by host', 'Your own git sign-ins', 'Git access on this machine']);
     expect(serviceCalls()).toEqual([]);

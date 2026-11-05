@@ -170,7 +170,7 @@
   "workflow.edit.said.redone": "已重做：{{what}}",
   "workflow.edit.kind.claimed": "工作本身",
   "workflow.edit.kind.handed": "已交接",
-  "workflow.edit.kind.pushed": "推送",
+  "workflow.edit.kind.push": "推送",
   "workflow.edit.kind.pull-request": "在托管平台完成",
   "workflow.edit.kind.line": "进入主线",
   "workflow.edit.kind.human": "你的任务",

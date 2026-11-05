@@ -42,7 +42,7 @@
   "workflow.step.unknown": "此页面无法描述的步骤：`{{kind}}`",
   "workflow.step.goAhead": "你的放行",
   "workflow.step.task": "你的任务",
-  "workflow.step.pushed": "推送",
+  "workflow.step.push": "推送",
   "workflow.step.line": "进入主线",
   "workflow.step.questClose": "委托的关闭",
   "workflow.step.join": "汇合",

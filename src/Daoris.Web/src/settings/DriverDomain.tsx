@@ -2,11 +2,19 @@ import { useTranslation } from 'react-i18next';
 import {
   useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useSetQuiet, useUpdateState,
 } from '../bridge/shell';
+import { type MachineSetting, SETTINGS } from '../bridge/generated/routes';
 import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
 import { DriverCards } from './DriverCards';
 import { accessToast } from './repository/Access';
 import type { SettingsDomainProps } from './domains';
+
+/** A machine setting as the driver's one list declares it. */
+export function settingOf(key: string): MachineSetting {
+  const setting = SETTINGS.find((each) => each.key === key);
+  if (!setting) throw new Error(`no machine setting is named ${key}`);
+  return setting;
+}
 
 /**
  * The Driver domain (D75): where this machine's Daoris lives, and the driver's dials over
@@ -48,6 +56,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
 
   return (
     <DriverCards
+      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet') }}
       facts={{
         home: driver.data?.home,
         pluginsFolder,

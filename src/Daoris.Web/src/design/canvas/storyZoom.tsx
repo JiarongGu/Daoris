@@ -1,5 +1,6 @@
 import type { Decorator } from '@storybook/react-vite';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { store } from '../../lib/stored';
 import { memoryKey } from './viewMemory';
 
 // A story's map held at a zoom of its own (MAPUX1a). Stories only: nothing in the product imports this.
@@ -10,10 +11,10 @@ import { memoryKey } from './viewMemory';
  */
 function Kept({ feature, storeKey, k, anchor, children }: { feature: string; storeKey: string; k: number; anchor: string; children: ReactNode }) {
   const at = memoryKey(feature, storeKey);
-  useState(() => localStorage.setItem(at, JSON.stringify({
+  useState(() => store(at, JSON.stringify({
     identity: 'the story\'s own', view: { x: 0, y: 0, k }, anchor: { id: anchor, group: null, screen: { x: 24, y: 24 } }, selected: null,
   })));
-  useLayoutEffect(() => () => localStorage.removeItem(at), [at]);
+  useLayoutEffect(() => () => store(at, null), [at]);
   return <>{children}</>;
 }
 

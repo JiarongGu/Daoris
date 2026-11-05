@@ -110,9 +110,9 @@ describe('a take (§8.6)', () => {
 
   it("brings a landing's tail with its method, and a removed step's ways and the end it replaces", () => {
     const proposal = proposalOf(shipped('merge-after-accept'), shipped('pull-request'));
-    expect(ids(proposal)).toEqual(['step:-line', 'step:~landing', 'step:+pushed', 'step:+pull-request', 'way:~c', 'way:+d', 'graph:~end']);
-    expect([...closureOf(proposal, 'step:~landing')].sort()).toEqual(['step:+pull-request', 'step:+pushed', 'step:~landing', 'way:+d', 'way:~c']);
-    expect([...closureOf(proposal, 'step:+pushed')].sort()).toEqual(['step:+pull-request', 'step:+pushed', 'step:~landing', 'way:+d', 'way:~c']);
+    expect(ids(proposal)).toEqual(['step:-line', 'step:~landing', 'step:+push', 'step:+pull-request', 'way:~c', 'way:+d', 'graph:~end']);
+    expect([...closureOf(proposal, 'step:~landing')].sort()).toEqual(['step:+pull-request', 'step:+push', 'step:~landing', 'way:+d', 'way:~c']);
+    expect([...closureOf(proposal, 'step:+push')].sort()).toEqual(['step:+pull-request', 'step:+push', 'step:~landing', 'way:+d', 'way:~c']);
     expect(closureOf(proposal, 'step:-line')).toEqual(expect.arrayContaining(['step:-line', 'way:~c', 'graph:~end']));
   });
 
@@ -174,7 +174,7 @@ describe('a take (§8.6)', () => {
   it('is settled once every change is named once, taken or left', () => {
     const proposal = proposalOf(shipped('merge-after-accept'), shipped('pull-request'));
     expect(everyNamed(proposal, UNDECIDED)).toBe(false);
-    expect(everyNamed(proposal, { taken: ['step:-line', 'step:~landing', 'step:+pushed'], left: ['step:+pull-request', 'way:~c', 'way:+d', 'graph:~end'] })).toBe(true);
+    expect(everyNamed(proposal, { taken: ['step:-line', 'step:~landing', 'step:+push'], left: ['step:+pull-request', 'way:~c', 'way:+d', 'graph:~end'] })).toBe(true);
   });
 });
 
@@ -183,9 +183,9 @@ describe('the union drawing', () => {
     const proposal = proposalOf(shipped('merge-after-accept'), shipped('pull-request'));
     const draft = draftOf(proposal.base);
     const union = unionOf(draft, proposal, ids(proposal));
-    expect(Object.fromEntries(union.steps)).toEqual({ line: 'removed', landing: 'changed', pushed: 'added', 'pull-request': 'added' });
+    expect(Object.fromEntries(union.steps)).toEqual({ line: 'removed', landing: 'changed', push: 'added', 'pull-request': 'added' });
     expect(Object.fromEntries(union.ways)).toEqual({ c: 'removed', '+c': 'added', '+d': 'added' });
-    expect(union.draft.nodes.map((node) => node.id)).toEqual(['work', 'requests', 'holds', 'content', 'review', 'landing', 'line', 'pushed', 'pull-request']);
+    expect(union.draft.nodes.map((node) => node.id)).toEqual(['work', 'requests', 'holds', 'content', 'review', 'landing', 'line', 'push', 'pull-request']);
     // Nothing the draft holds is changed by drawing it.
     expect(meaning(graphOf(draft))).toBe(meaning(proposal.base!));
   });

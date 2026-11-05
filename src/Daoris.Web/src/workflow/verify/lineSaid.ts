@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
-import type { RunLine, RunStep, WorkflowRun } from './run';
-import { checkWhy } from './runSaid';
+import type { RunLine, RunStep, WorkflowRun } from '../run';
+import { checkWhy } from '../runSaid';
 
 /**
  * A verification's verdict as its status word (FABRIC-PIPELINE1d, the pipeline design §4.4), in a check's own words: *verified*,

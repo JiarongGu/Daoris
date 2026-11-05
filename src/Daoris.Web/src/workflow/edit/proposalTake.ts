@@ -58,7 +58,7 @@ function heldOf(graph: Json): Held {
 }
 
 /** The kinds a `land`'s method brings after it (`NodeGraphs`' land-tail): a push's, a pull request's, an integration's. */
-const TAIL_KINDS: readonly string[] = ['pushed', 'pull-request', 'integrate'];
+const TAIL_KINDS: readonly string[] = ['push','pull-request', 'integrate'];
 
 /** The groups a way's change touches: the base's where it was, the proposal's where it is. */
 function groupsOf(change: WorkflowGraphChange, base: Held, proposed: Held): string[] {

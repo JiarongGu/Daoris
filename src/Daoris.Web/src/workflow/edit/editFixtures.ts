@@ -39,7 +39,7 @@ export const PALETTE: WorkflowPaletteAnswer = {
         { name: 'plugin', type: 'text', choices: [], required: false }, { name: 'squash', type: 'switch', choices: [], required: false },
         { name: 'message', type: 'text', choices: [], required: false }] }),
     kind('line', 'observed', { evidenced: true }),
-    kind('pushed', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, offered: 'tail:push' }),
+    kind('push','observed', { failureBy: 'plugin', personSkips: true, evidenced: true, offered: 'tail:push' }),
     kind('pull-request', 'observed', { failureBy: 'plugin', personSkips: true, evidenced: true, skipBy: 'landing', offered: 'tail:pull-request' }),
     kind('integrate', 'waited', { failureBy: 'integration', evidenced: true, offered: 'tail:integrate',
       options: [{ name: 'request', type: 'choice', choices: ['owner', 'done', 'steward'], required: false },

@@ -8,7 +8,7 @@ import { type WorkflowEditorBridge, WorkflowEditor } from './edit/WorkflowEditor
 import { partSaid } from './said';
 import { type WorkflowDoors, WorkflowChart } from './WorkflowChart';
 import { type VerifyAsk, WorkflowStartNode } from './WorkflowStartNode';
-import { type VerifyRunsProps, VerifyRuns } from './VerifyRuns';
+import { type VerifyRunsProps, VerifyRuns } from './verify/VerifyRuns';
 
 export type { WorkflowDoors } from './WorkflowChart';
 

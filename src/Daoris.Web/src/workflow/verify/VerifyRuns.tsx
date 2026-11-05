@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Inline, Pill, Prose, SkeletonRows } from '../design/ui';
-import { ago } from '../locales/format';
-import { PageSection } from '../work/frame/ViewMain';
-import { CheckHeld } from './CheckHeld';
+import { Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
+import { ago } from '../../locales/format';
+import { PageSection } from '../../work/frame/ViewMain';
+import { CheckHeld } from '../CheckHeld';
 import { heldCheck, lineTone, lineWord } from './lineSaid';
-import type { CheckHeldAnswer, CheckHeldAsk, WorkflowRun, WorkflowRunAnswer } from './run';
+import type { CheckHeldAnswer, CheckHeldAsk, WorkflowRun, WorkflowRunAnswer } from '../run';
 
 /** What a repository's Workflow tab is handed of its line: the answer, or that it is on its way or was refused, and the person's word on a held check. */
 export type VerifyRunsProps = {

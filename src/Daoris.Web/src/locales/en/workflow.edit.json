@@ -170,7 +170,7 @@
   "workflow.edit.said.redone": "Redone: {{what}}",
   "workflow.edit.kind.claimed": "The work",
   "workflow.edit.kind.handed": "Handed on",
-  "workflow.edit.kind.pushed": "The push",
+  "workflow.edit.kind.push": "The push",
   "workflow.edit.kind.pull-request": "Completed on the host",
   "workflow.edit.kind.line": "On the line",
   "workflow.edit.kind.human": "Your task",

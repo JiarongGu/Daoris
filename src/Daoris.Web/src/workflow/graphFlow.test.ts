@@ -175,7 +175,8 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
 
   it('words the renamed steps as the glossary names them', () => {
     const titles = (id: string) => draw(shipped(id).graph).nodes.map((node) => node.title);
-    expect(titles('pull-request')).toContain('Completed on the host');
+    // The pull request is a plugin's step, titled by its node and its plugin; the push is Daoris's own.
+    expect(titles('pull-request')).toEqual(expect.arrayContaining(['The push', 'pull-request by github-pull-request']));
     expect(titles('integrated')).toContain('The integration request');
     expect(titles('release')).toEqual(expect.arrayContaining(['The work', 'Your review', 'The landing', 'On the line']));
   });

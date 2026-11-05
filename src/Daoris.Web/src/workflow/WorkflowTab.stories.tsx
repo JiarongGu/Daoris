@@ -5,7 +5,7 @@ import { storyWidths } from '../design/storyWidths';
 import {
   FULL, GATES_CHANGED, NO_VERIFICATION, NOTHING_SET, PLUGIN_UNREADY, ROUTED, START, WITH_A_FAILURE_PATH, WORK, WORKSPACE,
 } from './fixtures';
-import { FAILED_GATE, lineOf, UNKNOWN_HELD, VERIFIED } from './lineFixtures';
+import { FAILED_GATE, lineOf, UNKNOWN_HELD, VERIFIED } from './verify/lineFixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // The Workflow tab (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2, §6.4), every state the design names drawn
