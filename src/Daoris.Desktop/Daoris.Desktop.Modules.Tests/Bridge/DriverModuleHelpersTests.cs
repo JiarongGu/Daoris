@@ -73,14 +73,17 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
         Assert.Empty(helpers[2].GetProperty("rule").GetProperty("agents").EnumerateArray());
     }
 
-    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none.</summary>
+    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and no session.</summary>
     private sealed class StandInService : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            var body = request.RequestUri!.AbsolutePath == "/api/registry"
-                ? """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]"""
-                : "[]";
+            var body = request.RequestUri!.AbsolutePath switch
+            {
+                "/api/registry" => """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]""",
+                "/api/sessions/changes" => """{"mark":"m1","order":[],"changed":[],"whole":true}""",
+                _ => "[]",
+            };
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
