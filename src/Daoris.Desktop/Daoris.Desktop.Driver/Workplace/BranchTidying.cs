@@ -106,12 +106,8 @@ public sealed class BranchTidying(string home)
                 IReadOnlyList<StrayResult> strays = [];
                 try
                 {
-                    // TREELOCK1: a session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
-                    await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, ct).ConfigureAwait(false);
-                    // AUTOTIDY2c, OPENCUT1: the folders under its trees that are no tree first, so a branch whose folder one was
-                    // goes in the same look rather than being kept as unreadable.
-                    strays = await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, Clock(), ct).ConfigureAwait(false);
-                    pass = await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, ct).ConfigureAwait(false);
+                    // The strays are kept as soon as they are tidied, so a pass that throws after them still says them.
+                    pass = await RepositoryAsync(trees, row, InUseAsync, tidied => strays = tidied, ct).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
                 {
@@ -137,6 +133,21 @@ public sealed class BranchTidying(string home)
         }
 
         Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) => BranchTidying.InUseAsync(home, service, reviewing, token, Clock());
+    }
+
+    /// <summary>One repository's stages, over one reading of its checkout's refs, top and working trees (PERF1c), held for them alone.</summary>
+    private async Task<TidyPass> RepositoryAsync(
+        SessionTrees trees, RepoView row, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
+        Action<IReadOnlyList<StrayResult>> strayed, CancellationToken ct)
+    {
+        // Read at its first question and dropped by every write a stage makes; the stages' own judgements take their own.
+        RefSnapshot.Take(row.Root!);
+        // TREELOCK1: a session lock whose session no longer holds its tree goes first, since the tidy refuses a locked tree.
+        await trees.LetGoUnheldLocksAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
+        // AUTOTIDY2c, OPENCUT1: the folders under its trees that are no tree first, so a branch whose folder one was
+        // goes in the same look rather than being kept as unreadable.
+        strayed(await trees.TidyStraysAsync(row.Root!, row.Repository, row.Workspace, inUse, Clock(), ct).ConfigureAwait(false));
+        return await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, inUse, ct).ConfigureAwait(false);
     }
 
     public static Task<IReadOnlySet<string>> InUseAsync(

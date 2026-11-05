@@ -94,7 +94,7 @@ internal sealed class RefSnapshot
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
         string root, IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
     {
-        if (Held.Value is not { Length: > 0 } held || !GitFacts.ById(arguments)) return null;
+        if (Held.Value is not { Length: > 0 } held || !(GitFacts.ById(arguments) || RefsListing(arguments) || Layout(arguments))) return null;
         var folder = GitFacts.Folder(root);
         for (var at = held.Length - 1; at >= 0; at--)
         {
@@ -104,10 +104,39 @@ internal sealed class RefSnapshot
         return null;
     }
 
+    /// <summary>
+    /// A listing of this checkout's refs by name alone (<c>for-each-ref</c> with only a format and an order, of patterns under
+    /// <c>refs/</c>): what the snapshot's own refs are, kept as they are, until a write of the flow. The content proof listed
+    /// every branch by date once per branch it judged (PERF1c).
+    /// </summary>
+    private static bool RefsListing(IReadOnlyList<string> arguments) =>
+        arguments.Count > 1 && arguments[0] == "for-each-ref"
+        && arguments.Skip(1).All(each => each.StartsWith("--format=", StringComparison.Ordinal)
+            || each.StartsWith("--sort=", StringComparison.Ordinal) || each.StartsWith("refs/", StringComparison.Ordinal))
+        && arguments.Skip(1).Any(each => each.StartsWith("refs/", StringComparison.Ordinal));
+
+    /// <summary>
+    /// Where the checkout's working tree is and which trees git lists for it, as the snapshot's own list reads them: the look's tidy
+    /// asked each once per stage of a repository's pass (PERF1c). A <c>worktree</c> write drops them with the refs.
+    /// </summary>
+    private static bool Layout(IReadOnlyList<string> arguments) =>
+        arguments is ["rev-parse", "--show-toplevel"] or ["worktree", "list", "--porcelain"];
+
+    /// <summary>
+    /// A question's key: its arguments, but the two commits the files of a <c>diff</c> are named between in one order, since the
+    /// names two commits differ in are the same either way round (PERF1c: the content proof asked each pair both ways).
+    /// </summary>
+    private static string KeyOf(IReadOnlyList<string> arguments)
+    {
+        var words = arguments.Where(each => !each.StartsWith('-')).ToList();
+        if (words is not ["diff", _, _]) return string.Join('\0', arguments);
+        return string.Join('\0', arguments.Where(each => each.StartsWith('-')).Prepend("diff").Concat(words.Skip(1).Order(StringComparer.Ordinal)));
+    }
+
     private Task<(int Code, string Stdout, string Stderr)> AskAsync(
         IReadOnlyList<string> arguments, Func<Task<(int Code, string Stdout, string Stderr)>> ask)
     {
-        var key = string.Join('\0', arguments);
+        var key = KeyOf(arguments);
         lock (_gate)
         {
             // An answer in flight is shared; one that came is handed on only where git gave it.
