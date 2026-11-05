@@ -109,7 +109,7 @@ public sealed class ToolInstallTests : IDisposable
         File.WriteAllBytes(archive, Archive.Build("zip", "bin/pwsh.exe=pwsh!badcrc", ""));
 
         var crc = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "zip", Path.Combine(_root, "package"), "bin/pwsh.exe"));
-        Assert.Matches(@"^the archive's `bin/pwsh\.exe` fails its own check — 2 bytes with CRC-32 [0-9a-f]{8}, where it states 2 with [0-9a-f]{8}\z", crc.Message);
+        Assert.Matches(@"^the archive's `bin/pwsh\.exe` fails its own check — 4 bytes with CRC-32 [0-9a-f]{8}, where it states 4 with [0-9a-f]{8}\z", crc.Message);
         var kind = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "rar", Path.Combine(_root, "package"), "bin/pwsh.exe"));
         Assert.Contains("`rar` is not an archive this build unpacks — zip or tar.gz", kind.Message);
     }
@@ -234,14 +234,14 @@ public sealed class ToolInstallTests : IDisposable
     {
         Directory.CreateDirectory(Home);
         Assert.Equal(
-            "no list names a version of GitHub CLI for win-x64 — `daoris tool look` fetches the locations, and "
+            "no list names a version of PowerShell for win-x64 — `daoris tool look` fetches the locations, and "
             + "`daoris tool locations add <address>` adds one",
             ToolInstall.Plan(Home, MergedOf(""), "pwsh", "download", null).Problem);
         Assert.Equal(
-            "GitHub CLI runs the system's: its updates are the machine's, not Daoris's — `daoris tool use pwsh managed` keeps a "
+            "PowerShell runs the system's: its updates are the machine's, not Daoris's — `daoris tool use pwsh managed` keeps a "
             + "version in the home",
             ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "update", null).Problem);
-        Assert.Equal("no list names GitHub CLI 2.64.0 for win-x64", ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "download", "2.64.0").Problem);
+        Assert.Equal("no list names PowerShell 2.64.0 for win-x64", ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "download", "2.64.0").Problem);
     }
 
     // ── A download (§3.6). The CLI's `a download is verified, staged and laid out…` ──────────────────────────────────

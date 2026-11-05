@@ -43,8 +43,8 @@ const answers: Record<string, (payload: Payload) => unknown> = {
     keys: [{ key: 'core.autocrlf', now: 'true' }],
     same: false,
   }),
-  TOOLS_PICK: () => ({ can: true, file: 'C:/tools/gh.exe' }),
-  TAIL_SESSION: (payload) => ({ session: payload?.id, lines: [{ sequence: 1, text: '  downloading https://github.com/cli/cli/…' }], sequence: 1, live: true, dropped: 0 }),
+  TOOLS_PICK: () => ({ can: true, file: 'C:/tools/pwsh.exe' }),
+  TAIL_SESSION: (payload) => ({ session: payload?.id, lines: [{ sequence: 1, text: '  downloading https://github.com/PowerShell/PowerShell/…' }], sequence: 1, live: true, dropped: 0 }),
 };
 
 const calls = (type: string) => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === type);
@@ -77,7 +77,7 @@ describe('the tools domain', () => {
       .toHaveAttribute('aria-current', 'page');
     await screen.findByText('Node.js', { selector: 'span' });
     expect(screen.getAllByRole('article').map((article) => article.querySelector('header span')?.textContent))
-      .toEqual(['Git', 'Node.js', 'PowerShell', 'GitHub CLI', 'Azure CLI', 'Resource locations']);
+      .toEqual(['Git', 'Node.js', 'PowerShell', 'Resource locations']);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', { payload: { held: expect.any(String) } });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', { payload: { ask: true, held: expect.any(String) } });
     expect(serviceCalls()).toEqual([]);
@@ -87,18 +87,18 @@ describe('the tools domain', () => {
   it('uses a managed version on the press, and says its end when the shell announces it', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="tools" />);
-    const gh = await waitFor(() => card('GitHub CLI'));
+    const shell =await waitFor(() => card('PowerShell'));
 
-    await userEvent.click(within(gh).getByRole('radio', { name: 'Managed' }));
-    await userEvent.click(within(gh).getByRole('button', { name: 'Use this version' }));
+    await userEvent.click(within(shell).getByRole('radio', { name: 'Managed' }));
+    await userEvent.click(within(shell).getByRole('button', { name: 'Use this version' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'TOOLS_USE', { payload: { tool: 'gh', action: 'managed', version: '2.63.0' } }));
+      'DAORIS.DRIVER', 'TOOLS_USE', { payload: { tool: 'pwsh', action: 'managed', version: '7.4.6' } }));
     expect(notify).not.toHaveBeenCalled();
     act(() => eventHandlers.get('DAORIS.TOOLS_ENDED')!({
-      tool: 'gh', name: 'GitHub CLI', action: 'use', version: '2.63.0', exitCode: 0, stopped: false,
+      tool: 'pwsh', name: 'PowerShell', action: 'use', version: '7.4.6', exitCode: 0, stopped: false,
     }));
-    expect(notify).toHaveBeenCalledWith('GitHub CLI now runs managed 2.63.0.', 'ok');
+    expect(notify).toHaveBeenCalledWith('PowerShell now runs managed 7.4.6.', 'ok');
   });
 
   /** §4.1: what a switch of git changes is said before it applies, asked of both gits, and the switch is the second press. */
@@ -124,37 +124,37 @@ describe('the tools domain', () => {
   it('names a file from the picker, and says a file that answers no version in the catalogue\'s words', async () => {
     const notify = vi.fn();
     answers.TOOLS_USE = () => {
-      throw { code: 'TOOL_FILE_NO_VERSION', parameters: { tool: 'GitHub CLI', file: 'C:/tools/gh.exe', reason: 'it did not start' } };
+      throw { code: 'TOOL_FILE_NO_VERSION', parameters: { tool: 'PowerShell', file: 'C:/tools/pwsh.exe', reason: 'it did not start' } };
     };
     try {
       show(<SettingsView notify={notify} section="tools" />);
-      const gh = await waitFor(() => card('GitHub CLI'));
+      const shell =await waitFor(() => card('PowerShell'));
 
-      await userEvent.click(within(gh).getByRole('radio', { name: 'Custom' }));
-      await userEvent.click(within(gh).getByRole('button', { name: 'Browse…' }));
+      await userEvent.click(within(shell).getByRole('radio', { name: 'Custom' }));
+      await userEvent.click(within(shell).getByRole('button', { name: 'Browse…' }));
       await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-        'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose GitHub CLI' }, timeoutMs: Infinity }));
-      expect(await within(gh).findByDisplayValue('C:/tools/gh.exe')).toBeInTheDocument();
+        'DAORIS.DRIVER', 'TOOLS_PICK', { payload: { title: 'Choose PowerShell' }, timeoutMs: Infinity }));
+      expect(await within(shell).findByDisplayValue('C:/tools/pwsh.exe')).toBeInTheDocument();
 
-      await userEvent.click(within(gh).getByRole('button', { name: 'Use this file' }));
+      await userEvent.click(within(shell).getByRole('button', { name: 'Use this file' }));
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
-        'GitHub CLI was not set to C:/tools/gh.exe, since it did not answer its version: it did not start', 'error'));
+        'PowerShell was not set to C:/tools/pwsh.exe, since it did not answer its version: it did not start', 'error'));
     } finally {
       answers.TOOLS_USE = (payload) => ({ tool: payload?.tool, action: payload?.action, started: payload?.action === 'managed' });
     }
   });
 
   it('shows a running download\'s console and stops it on the press', async () => {
-    const running = { ...TOOLS, tools: TOOLS.tools.map((tool) => (tool.tool === 'gh' ? { ...tool, running: { action: 'download', version: '2.63.0' } } : tool)) };
+    const running = { ...TOOLS, tools: TOOLS.tools.map((tool) => (tool.tool === 'pwsh' ? { ...tool, running: { action: 'download', version: '7.4.6' } } : tool)) };
     answers.TOOLS_LIST = () => running;
     try {
       show(<SettingsView notify={() => {}} section="tools" />);
-      const gh = await waitFor(() => card('GitHub CLI'));
+      const shell =await waitFor(() => card('PowerShell'));
 
-      expect(await within(gh).findByText(/downloading https:\/\/github\.com\/cli\/cli/)).toBeInTheDocument();
-      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 'tools:gh' } });
-      await userEvent.click(within(gh).getByRole('button', { name: 'Stop download' }));
-      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_STOP', { payload: { tool: 'gh' } }));
+      expect(await within(shell).findByText(/downloading https:\/\/github\.com\/PowerShell\/PowerShell/)).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 'tools:pwsh' } });
+      await userEvent.click(within(shell).getByRole('button', { name: 'Stop download' }));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_STOP', { payload: { tool: 'pwsh' } }));
     } finally {
       answers.TOOLS_LIST = () => TOOLS;
     }

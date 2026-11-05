@@ -37,8 +37,6 @@ public sealed class ToolsChildrenTests : IDisposable
         ("git", "2.51.0", "cmd/git.exe", """["cmd","mingw64/bin"]"""),
         ("node", "22.20.0", "node-v22.20.0-win-x64/node.exe", null),
         ("pwsh", "7.5.3", "pwsh.exe", """["."]"""),
-        ("gh", "2.62.0", "bin/gh.exe", null),
-        ("az", "2.77.0", "bin/az.cmd", """["bin"]"""),
     ];
 
     public ToolsChildrenTests()
@@ -102,7 +100,7 @@ public sealed class ToolsChildrenTests : IDisposable
         {
             var file = name switch
             {
-                "gone" => Path.Combine(_root, "named", "gone", Program("gh")),
+                "gone" => Path.Combine(_root, "named", "gone", Program("pwsh")),
                 "lonely" => Path.Combine(_root, "named", "lonely", Program("node")),
                 _ => Named(name),
             };
@@ -130,12 +128,12 @@ public sealed class ToolsChildrenTests : IDisposable
 
     [Theory]
     [InlineData("no file", null, "two", "unchanged")]
-    [InlineData("every tool the system's", """{"tools":{"git":{"use":"system"},"node":{"use":"system"},"pwsh":{"use":"system"},"gh":{"use":"system"},"az":{"use":"system"}}}""", "two", "unchanged")]
+    [InlineData("every tool the system's", """{"tools":{"git":{"use":"system"},"node":{"use":"system"},"pwsh":{"use":"system"}}}""", "two", "unchanged")]
     [InlineData("git managed: the record's folders, in its order", """{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""", "two", "managed:git/cmd managed:git/mingw64/bin inherited")]
     [InlineData("node managed: the folder its executable is in, when the record names none", """{"tools":{"node":{"use":"managed","version":"22.20.0"}}}""", "two", "managed:node/node-v22.20.0-win-x64 inherited")]
     [InlineData("pwsh managed: a dot is the package itself", """{"tools":{"pwsh":{"use":"managed","version":"7.5.3"}}}""", "two", "managed:pwsh/. inherited")]
-    [InlineData("gh a named file: its folder", """{"tools":{"gh":{"use":"file","file":"@gh"}}}""", "two", "file:gh inherited")]
-    [InlineData("every way at once: the declared order, whatever the file's", """{"tools":{"az":{"use":"managed","version":"2.77.0"},"gh":{"use":"file","file":"@gh"},"pwsh":{"use":"system"},"node":{"use":"file","file":"@node"},"git":{"use":"managed","version":"2.51.0"}}}""", "two", "managed:git/cmd managed:git/mingw64/bin file:node file:gh managed:az/bin inherited")]
+    [InlineData("pwsh a named file: its folder", """{"tools":{"pwsh":{"use":"file","file":"@pwsh"}}}""", "two", "file:pwsh inherited")]
+    [InlineData("every way at once: the declared order, whatever the file's", """{"tools":{"pwsh":{"use":"system"},"node":{"use":"file","file":"@node"},"git":{"use":"managed","version":"2.51.0"}}}""", "two", "managed:git/cmd managed:git/mingw64/bin file:node inherited")]
     [InlineData("a version nobody downloaded puts nothing first", """{"tools":{"git":{"use":"managed","version":"9.9.9"}}}""", "two", "unchanged")]
     [InlineData("a named file that is gone puts nothing first", """{"tools":{"gh":{"use":"file","file":"@gone"}}}""", "two", "unchanged")]
     [InlineData("an entry that does not read puts nothing first", """{"tools":{"git":{"use":"managed"}}}""", "two", "unchanged")]
@@ -294,7 +292,7 @@ public sealed class ToolsChildrenTests : IDisposable
     [Fact]
     public void A_start_is_handed_the_tools_PATH_over_the_one_it_holds_and_nothing_else_changes_but_the_prompts()
     {
-        Write("""{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
+        Write("""{"tools":{"pwsh":{"use":"managed","version":"7.5.3"}}}""");
         var info = new ProcessStartInfo("x");
         info.Environment[Tools.PathVariable] = Inherited("two");
         var before = Unprompted(info.Environment);
@@ -302,7 +300,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
         Tools.Hand(info, Home);
 
-        Assert.Equal(Folder("managed:gh/bin", null) + Path.PathSeparator + Inherited("two"), info.Environment[Tools.PathVariable]);
+        Assert.Equal(Folder("managed:pwsh/.", null) + Path.PathSeparator + Inherited("two"), info.Environment[Tools.PathVariable]);
         var after = Unprompted(info.Environment);
         after.Remove(Tools.PathVariable);
         Assert.Equal(before, after);
@@ -322,7 +320,7 @@ public sealed class ToolsChildrenTests : IDisposable
     [InlineData("npm, node a named file with none beside it: refused, never PATH's", """{"tools":{"node":{"use":"file","file":"@lonely"}}}""", "npm", "refused")]
     [InlineData("npm, node managed at a version nobody downloaded: refused", """{"tools":{"node":{"use":"managed","version":"9.9.9"}}}""", "npm", "refused")]
     [InlineData("git managed: its record's executable", """{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""", "git", "managed")]
-    [InlineData("az managed: a batch file is its executable", """{"tools":{"az":{"use":"managed","version":"2.77.0"}}}""", "az", "managed")]
+    [InlineData("pwsh managed: its record's executable", """{"tools":{"pwsh":{"use":"managed","version":"7.5.3"}}}""", "pwsh", "managed")]
     public void A_commands_first_word_is_the_tool_that_answers_for_it(string name, string? json, string word, string expected)
     {
         Write(json);
@@ -607,7 +605,7 @@ public sealed class ToolsChildrenTests : IDisposable
     [Fact]
     public void A_terminals_environment_block_carries_the_tools_PATH_over_this_processs()
     {
-        Write("""{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
+        Write("""{"tools":{"pwsh":{"use":"managed","version":"7.5.3"}}}""");
 
         // The factory wires the tools into the pseudo-console as it is first used, which every terminal is started through.
         _ = new PseudoConsoleTerminals();
@@ -615,7 +613,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
         var path = block.Split('\0').Single(line => line.StartsWith(Tools.PathVariable + "=", StringComparison.OrdinalIgnoreCase));
         var inherited = Environment.GetEnvironmentVariable(Tools.PathVariable);
-        Assert.Equal(Folder("managed:gh/bin", null) + (string.IsNullOrEmpty(inherited) ? "" : Path.PathSeparator + inherited), path[5..]);
+        Assert.Equal(Folder("managed:pwsh/.", null) + (string.IsNullOrEmpty(inherited) ? "" : Path.PathSeparator + inherited), path[5..]);
         Assert.Contains($"{DaorisHome.Variable}={Home}", block.Split('\0'));
     }
 

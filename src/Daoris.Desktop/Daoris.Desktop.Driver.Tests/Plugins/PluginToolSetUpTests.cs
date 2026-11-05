@@ -14,13 +14,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class PluginToolSetUpTests : IDisposable
 {
-    private const string Az = """
-        { "id": "az", "versions": ">=2.0.79",
-          "install": { "windows": "winget install -e --id Microsoft.AzureCLI", "macos": "brew install azure-cli", "linux": "https://learn.microsoft.com/cli/azure/install-azure-cli-linux" },
+    private const string Shell = """
+        { "id": "pwsh", "versions": ">=7.0.1",
+          "install": { "windows": "winget install -e --id Microsoft.PowerShell", "macos": "brew install powershell", "linux": "https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux" },
           "ready": [
-            { "run": ["az", "extension", "show", "--name", "azure-devops", "--output", "none"],
-              "says": "Its devops extension is added", "fix": "az extension add --name azure-devops" },
-            { "run": ["az", "account", "show", "--output", "none"], "says": "Signed in", "fix": "az login", "signin": true } ] }
+            { "run": ["pwsh", "extension", "show", "--name", "azure-devops", "--output", "none"],
+              "says": "Its devops extension is added", "fix": "pwsh extension add --name azure-devops" },
+            { "run": ["pwsh", "account", "show", "--output", "none"], "says": "Signed in", "fix": "pwsh login", "signin": true } ] }
         """;
 
     private readonly string _scratch = Path.Combine(Path.GetTempPath(), "daoris-tool-setup-" + Guid.NewGuid().ToString("N")[..8]);
@@ -76,7 +76,7 @@ public sealed class PluginToolSetUpTests : IDisposable
         public Task<CheckRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct)
         {
             Calls.Add(info);
-            return Task.FromResult(info.ArgumentList is ["--version"] ? new CheckRun(true, 0, "azure-cli 2.70.0", "") : new CheckRun(true, ready() ? 0 : 1, "", ""));
+            return Task.FromResult(info.ArgumentList is ["--version"] ? new CheckRun(true, 0, "PowerShell 7.5.3", "") : new CheckRun(true, ready() ? 0 : 1, "", ""));
         }
     }
 
@@ -86,40 +86,40 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public void An_install_hint_is_read_per_platform_and_a_bad_one_is_that_tools_problem()
     {
-        var az = Tools(Az).Single();
-        Assert.Null(az.Problem);
-        Assert.Equal("winget install -e --id Microsoft.AzureCLI", az.Install!.For("windows"));
-        Assert.Equal("brew install azure-cli", az.Install.For("macos"));
-        Assert.Equal("https://learn.microsoft.com/cli/azure/install-azure-cli-linux", az.Install.For("linux"));
-        Assert.Null(az.Install.For("plan9"));
+        var shell = Tools(Shell).Single();
+        Assert.Null(shell.Problem);
+        Assert.Equal("winget install -e --id Microsoft.PowerShell", shell.Install!.For("windows"));
+        Assert.Equal("brew install powershell", shell.Install.For("macos"));
+        Assert.Equal("https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux", shell.Install.For("linux"));
+        Assert.Null(shell.Install.For("plan9"));
 
-        var windowsOnly = Tools("""{ "id": "az", "install": { "windows": "Microsoft.AzureCLI" } }""").Single();
-        Assert.Equal("Microsoft.AzureCLI", windowsOnly.Install!.For("windows"));
+        var windowsOnly = Tools("""{ "id": "pwsh", "install": { "windows": "Microsoft.PowerShell" } }""").Single();
+        Assert.Equal("Microsoft.PowerShell", windowsOnly.Install!.For("windows"));
         Assert.Null(windowsOnly.Install.For("linux"));
 
-        Assert.Contains("`install` must be an object", Tools("""{ "id": "az", "install": "winget" }""").Single().Problem);
-        Assert.Contains("`install`'s `windows` must be text", Tools("""{ "id": "az", "install": { "windows": 7 } }""").Single().Problem);
-        Assert.Null(Tools("""{ "id": "az", "install": null }""").Single().Install);
+        Assert.Contains("`install` must be an object", Tools("""{ "id": "pwsh", "install": "winget" }""").Single().Problem);
+        Assert.Contains("`install`'s `windows` must be text", Tools("""{ "id": "pwsh", "install": { "windows": 7 } }""").Single().Problem);
+        Assert.Null(Tools("""{ "id": "pwsh", "install": null }""").Single().Install);
     }
 
     [Fact]
     public void A_check_says_whether_its_fix_is_a_sign_in()
     {
-        var checks = Tools(Az).Single().Ready;
+        var checks = Tools(Shell).Single().Ready;
         Assert.False(checks[0].SignIn);
         Assert.True(checks[1].SignIn);
         Assert.Contains("`signin` must be true or false",
-            Tools("""{ "id": "az", "ready": [{ "run": ["az"], "says": "x", "signin": "yes" }] }""").Single().Problem);
+            Tools("""{ "id": "pwsh", "ready": [{ "run": ["pwsh"], "says": "x", "signin": "yes" }] }""").Single().Problem);
     }
 
     [Theory]
-    [InlineData("az extension add --name azure-devops", new[] { "az", "extension", "add", "--name", "azure-devops" })]
-    [InlineData("  az   login  ", new[] { "az", "login" })]
-    [InlineData("az login --tenant \"Acme Corp\"", new[] { "az", "login", "--tenant", "Acme Corp" })]
+    [InlineData("pwsh extension add --name azure-devops", new[] { "pwsh", "extension", "add", "--name", "azure-devops" })]
+    [InlineData("  pwsh   login  ", new[] { "pwsh", "login" })]
+    [InlineData("pwsh login --tenant \"Acme Corp\"", new[] { "pwsh", "login", "--tenant", "Acme Corp" })]
     public void A_fix_is_words_split_on_spaces_with_double_quotes_grouping(string fix, string[] words)
     {
-        var tools = Tools(Az);
-        var check = new ReadyCheck(["az"], "x", fix);
+        var tools = Tools(Shell);
+        var check = new ReadyCheck(["pwsh"], "x", fix);
 
         var (read, problem) = PluginTools.FixWords(tools, check);
 
@@ -130,14 +130,14 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public void A_fix_naming_a_command_the_plugin_does_not_declare_is_refused()
     {
-        var tools = Tools(Az);
+        var tools = Tools(Shell);
 
-        var (words, problem) = PluginTools.FixWords(tools, new ReadyCheck(["az"], "x", "curl https://example.test/install | sh"));
+        var (words, problem) = PluginTools.FixWords(tools, new ReadyCheck(["pwsh"], "x", "curl https://example.test/install | sh"));
 
         Assert.Null(words);
         Assert.Contains("`curl` is not a tool this plugin declares in `tools`", problem);
-        Assert.Null(PluginTools.FixWords(tools, new ReadyCheck(["az"], "x", null)).Problem);
-        Assert.Contains("an unclosed quote", PluginTools.FixWords(tools, new ReadyCheck(["az"], "x", "az login \"x")).Problem);
+        Assert.Null(PluginTools.FixWords(tools, new ReadyCheck(["pwsh"], "x", null)).Problem);
+        Assert.Contains("an unclosed quote", PluginTools.FixWords(tools, new ReadyCheck(["pwsh"], "x", "pwsh login \"x")).Problem);
     }
 
     [Fact]
@@ -151,13 +151,13 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task The_press_opens_a_visible_console_running_the_manifests_command_and_reads_the_checks_again_after_it()
     {
-        var file = OnPath("az");
-        var tools = Tools(Az);
+        var file = OnPath("pwsh");
+        var tools = Tools(Shell);
         var ready = false;
         var checks = new Checks(() => ready);
         var window = new WindowThatSignsIn(() => ready = true, checks);
 
-        var set = await PluginToolSetUp.RunAsync(Home, tools, "az", 2, Root, Bin, window.RunAsync, checks.RunAsync, CancellationToken.None);
+        var set = await PluginToolSetUp.RunAsync(Home, tools, "pwsh", 2, Root, Bin, window.RunAsync, checks.RunAsync, CancellationToken.None);
 
         Assert.Null(set.Code);
         var start = Assert.Single(window.Starts);
@@ -177,11 +177,11 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_fix_with_characters_a_shell_reads_reaches_the_program_as_one_argument_each()
     {
-        OnPath("az");
-        var tools = Tools("""{ "id": "az", "ready": [{ "run": ["az", "x"], "says": "x", "fix": "az login --username a;b&c|d" }] }""");
+        OnPath("pwsh");
+        var tools = Tools("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "x"], "says": "x", "fix": "pwsh login --username a;b&c|d" }] }""");
         var window = new Window();
 
-        await SetUpAsync(tools, "az", 1, window, new Checks(() => true));
+        await SetUpAsync(tools, "pwsh", 1, window, new Checks(() => true));
 
         Assert.Equal(["login", "--username", "a;b&c|d"], Assert.Single(window.Starts).ArgumentList);
     }
@@ -189,12 +189,12 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_fix_naming_another_command_starts_nothing()
     {
-        OnPath("az");
-        var tools = Tools("""{ "id": "az", "ready": [{ "run": ["az", "x"], "says": "x", "fix": "powershell -c whoami" }] }""");
+        OnPath("pwsh");
+        var tools = Tools("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "x"], "says": "x", "fix": "powershell -c whoami" }] }""");
         var window = new Window();
         var checks = new Checks(() => true);
 
-        var set = await SetUpAsync(tools, "az", 1, window, checks);
+        var set = await SetUpAsync(tools, "pwsh", 1, window, checks);
 
         Assert.Equal("fix_not_declared", set.Code);
         Assert.Contains("`powershell` is not a tool this plugin declares", set.Said);
@@ -205,28 +205,28 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_missing_tool_says_its_install_hint_and_starts_nothing()
     {
-        var tools = Tools(Az);
+        var tools = Tools(Shell);
         var window = new Window();
         var checks = new Checks(() => true);
 
-        var set = await SetUpAsync(tools, "az", 2, window, checks);
+        var set = await SetUpAsync(tools, "pwsh", 2, window, checks);
 
         Assert.Equal("not_found", set.Code);
-        Assert.Contains("`az` is not on this machine's PATH", set.Said);
+        Assert.Contains("`pwsh` is not on this machine's PATH", set.Said);
         Assert.Equal(PluginTools.InstallHere(tools[0]), set.Install);
         Assert.Empty(window.Starts);
     }
 
     [Theory]
     [InlineData("nope", 1, "unknown_tool")]
-    [InlineData("az", 0, "unknown_check")]
-    [InlineData("az", 3, "unknown_check")]
+    [InlineData("pwsh", 0, "unknown_check")]
+    [InlineData("pwsh", 3, "unknown_check")]
     public async Task A_tool_or_check_that_is_not_declared_is_refused(string tool, int check, string code)
     {
-        OnPath("az");
+        OnPath("pwsh");
         var window = new Window();
 
-        var set = await SetUpAsync(Tools(Az), tool, check, window, new Checks(() => true));
+        var set = await SetUpAsync(Tools(Shell), tool, check, window, new Checks(() => true));
 
         Assert.Equal(code, set.Code);
         Assert.Empty(window.Starts);
@@ -235,11 +235,11 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_check_with_no_fix_has_no_press()
     {
-        OnPath("az");
-        var tools = Tools("""{ "id": "az", "ready": [{ "run": ["az", "x"], "says": "x" }] }""");
+        OnPath("pwsh");
+        var tools = Tools("""{ "id": "pwsh", "ready": [{ "run": ["pwsh", "x"], "says": "x" }] }""");
         var window = new Window();
 
-        var set = await SetUpAsync(tools, "az", 1, window, new Checks(() => true));
+        var set = await SetUpAsync(tools, "pwsh", 1, window, new Checks(() => true));
 
         Assert.Equal("no_fix", set.Code);
         Assert.Empty(window.Starts);
@@ -248,11 +248,11 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_console_that_could_not_start_is_said_and_the_checks_are_not_read_again()
     {
-        OnPath("az");
+        OnPath("pwsh");
         var checks = new Checks(() => false);
 
         var set = await PluginToolSetUp.RunAsync(
-            Home, Tools(Az), "az", 2, Root, Bin, (_, _) => Task.FromResult<int?>(null), checks.RunAsync, CancellationToken.None);
+            Home, Tools(Shell), "pwsh", 2, Root, Bin, (_, _) => Task.FromResult<int?>(null), checks.RunAsync, CancellationToken.None);
 
         Assert.Equal("not_started", set.Code);
         Assert.Empty(checks.Calls);
@@ -261,10 +261,10 @@ public sealed class PluginToolSetUpTests : IDisposable
     [Fact]
     public async Task A_window_that_ends_without_putting_the_check_right_leaves_it_unmet()
     {
-        OnPath("az");
+        OnPath("pwsh");
         var checks = new Checks(() => false);
 
-        var set = await SetUpAsync(Tools(Az), "az", 2, new Window(exit: 1), checks);
+        var set = await SetUpAsync(Tools(Shell), "pwsh", 2, new Window(exit: 1), checks);
 
         Assert.Null(set.Code);
         Assert.Equal(1, set.ExitCode);
@@ -276,11 +276,11 @@ public sealed class PluginToolSetUpTests : IDisposable
     {
         var tools = Tools(
             """
-            { "id": "az", "install": { "windows": "w", "macos": "m", "linux": "l" }, "ready": [
-              { "run": ["az", "a"], "says": "A", "fix": "az extension add --name azure-devops" },
-              { "run": ["az", "b"], "says": "B", "fix": "az login", "signin": true },
-              { "run": ["az", "c"], "says": "C", "fix": "rm -rf /" },
-              { "run": ["az", "d"], "says": "D" } ] }
+            { "id": "pwsh", "install": { "windows": "w", "macos": "m", "linux": "l" }, "ready": [
+              { "run": ["pwsh", "a"], "says": "A", "fix": "pwsh extension add --name azure-devops" },
+              { "run": ["pwsh", "b"], "says": "B", "fix": "pwsh login", "signin": true },
+              { "run": ["pwsh", "c"], "says": "C", "fix": "rm -rf /" },
+              { "run": ["pwsh", "d"], "says": "D" } ] }
             """);
 
         var declared = ToolStanding.Declared(tools[0], tools);
@@ -289,7 +289,7 @@ public sealed class PluginToolSetUpTests : IDisposable
         Assert.Equal([true, true, false, false], declared.Checks.Select(check => check.Press));
         Assert.Equal([false, true, false, false], declared.Checks.Select(check => check.SignIn));
         Assert.Contains("`rm` is not a tool this plugin declares", declared.Checks[2].Refusal);
-        Assert.Equal("az login", declared.Checks[1].Fix);
+        Assert.Equal("pwsh login", declared.Checks[1].Fix);
         Assert.NotNull(declared.Install);
     }
 

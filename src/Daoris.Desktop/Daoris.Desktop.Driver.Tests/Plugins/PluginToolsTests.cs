@@ -44,27 +44,27 @@ public sealed class PluginToolsTests : IDisposable
     [InlineData("no tools", null, 0, null, null, null, null, null, 0, null)]
     [InlineData("null is none", "null", 0, null, null, null, null, null, 0, null)]
     [InlineData("none declared", "[]", 0, null, null, null, null, null, 0, null)]
-    [InlineData("not an array", """{ "id": "az" }""", 0, null, null, null, null, null, 0, "`tools` must be an array of the tools the plugin runs")]
+    [InlineData("not an array", """{ "id": "pwsh" }""", 0, null, null, null, null, null, 0, "`tools` must be an array of the tools the plugin runs")]
     [InlineData("Daoris's own", """[{ "id": "git" }]""", 1, "git", "own", "Git", null, null, 0, null)]
-    [InlineData("one Daoris knows and does not run", """[{ "id": "az", "versions": ">=2.60", "for": "Pushes the branch and opens its pull request.", "ready": [{ "run": ["az", "account", "show", "--output", "none"], "says": "Signed in", "fix": "az login" }] }]""", 1, "az", "known", "Azure CLI", null, ">=2.60", 1, null)]
+    [InlineData("one Daoris runs, with a range and a check", """[{ "id": "pwsh", "versions": ">=2.60", "for": "Pushes the branch and opens its pull request.", "ready": [{ "run": ["pwsh", "account", "show", "--output", "none"], "says": "Signed in", "fix": "az login" }] }]""", 1, "pwsh", "own", "PowerShell", null, ">=2.60", 1, null)]
     [InlineData("one Daoris does not know", """[{ "id": "terraform" }]""", 1, "terraform", "other", "terraform", "terraform", null, 0, null)]
     [InlineData("one Daoris does not know, named", """[{ "id": "tf", "name": "Terraform", "command": "terraform", "versionArguments": ["version"] }]""", 1, "tf", "other", "Terraform", "terraform", null, 0, null)]
-    [InlineData("a range with its top", """[{ "id": "az", "versions": ">=2.60 <3" }]""", 1, "az", "known", "Azure CLI", null, ">=2.60 <3", 0, null)]
+    [InlineData("a range with its top", """[{ "id": "pwsh", "versions": ">=2.60 <3" }]""", 1, "pwsh", "own", "PowerShell", null, ">=2.60 <3", 0, null)]
     [InlineData("one exact version", """[{ "id": "node", "versions": "22.11.0" }]""", 1, "node", "own", "Node.js", null, "22.11.0", 0, null)]
-    [InlineData("spaces between and around", """[{ "id": "az", "versions": " >=2.60  <3 " }]""", 1, "az", "known", "Azure CLI", null, " >=2.60  <3 ", 0, null)]
-    [InlineData("four checks", """[{ "id": "gh", "ready": [{ "run": ["gh"], "says": "a" }, { "run": ["gh"], "says": "b" }, { "run": ["gh"], "says": "c" }, { "run": ["gh"], "says": "d" }] }]""", 1, "gh", "known", "GitHub CLI", null, null, 4, null)]
-    [InlineData("an empty argument in a check", """[{ "id": "gh", "ready": [{ "run": ["gh", "auth", "status", "--hostname", ""], "says": "Signed in" }] }]""", 1, "gh", "known", "GitHub CLI", null, null, 1, null)]
-    [InlineData("null fields are none", """[{ "id": "az", "name": null, "command": null, "versionArguments": null, "versions": null, "for": null, "ready": null }]""", 1, "az", "known", "Azure CLI", null, null, 0, null)]
-    [InlineData("a field it does not know is passed over", """[{ "id": "az", "url": "https://example.test/az.zip", "sha256": "00" }]""", 1, "az", "known", "Azure CLI", null, null, 0, null)]
+    [InlineData("spaces between and around", """[{ "id": "pwsh", "versions": " >=2.60  <3 " }]""", 1, "pwsh", "own", "PowerShell", null, " >=2.60  <3 ", 0, null)]
+    [InlineData("four checks", """[{ "id": "git", "ready": [{ "run": ["git"], "says": "a" }, { "run": ["git"], "says": "b" }, { "run": ["git"], "says": "c" }, { "run": ["git"], "says": "d" }] }]""", 1, "git", "own", "Git", null, null, 4, null)]
+    [InlineData("an empty argument in a check", """[{ "id": "git", "ready": [{ "run": ["git", "auth", "status", "--hostname", ""], "says": "Signed in" }] }]""", 1, "git", "own", "Git", null, null, 1, null)]
+    [InlineData("null fields are none", """[{ "id": "pwsh", "name": null, "command": null, "versionArguments": null, "versions": null, "for": null, "ready": null }]""", 1, "pwsh", "own", "PowerShell", null, null, 0, null)]
+    [InlineData("a field it does not know is passed over", """[{ "id": "pwsh", "url": "https://example.test/pwsh.zip", "sha256": "00" }]""", 1, "pwsh", "own", "PowerShell", null, null, 0, null)]
     [InlineData("a broken tool leaves the next one read", """[{ "id": 7 }, { "id": "git" }]""", 2, "git", "own", "Git", null, null, 0, null)]
-    [InlineData("not an object", """["az"]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` is not an object with an `id`")]
+    [InlineData("not an object", """["pwsh"]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` is not an object with an `id`")]
     [InlineData("no id", """[{ "versions": ">=1" }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`: a tool's name in lowercase, like `az`")]
     [InlineData("an id that is not text", """[{ "id": 7 }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`")]
     [InlineData("a blank id", """[{ "id": " " }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` needs an `id`")]
     [InlineData("an id in capitals", """[{ "id": "Az" }]""", 1, null, null, null, null, null, 0, "tool 1 in `tools` has the `id` `Az`, which is not one: lowercase letters, digits, dots and dashes")]
     [InlineData("the second of two", """[{ "id": "git" }, { "id": "a z" }]""", 2, null, null, null, null, null, 0, "tool 2 in `tools` has the `id` `a z`")]
-    [InlineData("an id twice", """[{ "id": "az" }, { "id": "az", "versions": ">=2" }]""", 2, "az", null, null, null, null, 0, "tool `az` is declared twice in `tools`; the first is read")]
-    [InlineData("a known tool's command", """[{ "id": "gh", "command": "gh2" }]""", 1, "gh", null, null, null, null, 0, "tool `gh` is GitHub CLI, which Daoris knows: its name, its file and how its version is asked are Daoris's, so `command` is not a plugin's to declare")]
+    [InlineData("an id twice", """[{ "id": "pwsh" }, { "id": "pwsh", "versions": ">=2" }]""", 2, "pwsh", null, null, null, null, 0, "tool `pwsh` is declared twice in `tools`; the first is read")]
+    [InlineData("a known tool's command", """[{ "id": "git", "command": "git2" }]""", 1, "git", null, null, null, null, 0, "tool `git` is Git, which Daoris knows: its name, its file and how its version is asked are Daoris's, so `command` is not a plugin's to declare")]
     [InlineData("a known tool's name", """[{ "id": "git", "name": "Git" }]""", 1, "git", null, null, null, null, 0, "so `name` is not a plugin's to declare")]
     [InlineData("a known tool's version question", """[{ "id": "node", "versionArguments": ["-v"] }]""", 1, "node", null, null, null, null, 0, "so `versionArguments` is not a plugin's to declare")]
     [InlineData("a name that is not text", """[{ "id": "tf", "name": 5 }]""", 1, "tf", null, null, null, null, 0, "tool `tf`'s `name` must be text: what a person calls it")]
@@ -75,29 +75,29 @@ public sealed class PluginToolsTests : IDisposable
     [InlineData("a blank command", """[{ "id": "tf", "command": " " }]""", 1, "tf", null, null, null, null, 0, "tool `tf`'s `command` must be the name of a program")]
     [InlineData("a version question that is not a list", """[{ "id": "tf", "versionArguments": "version" }]""", 1, "tf", null, null, null, null, 0, "tool `tf`'s `versionArguments` must be an array of text: what prints its version")]
     [InlineData("a version question holding a number", """[{ "id": "tf", "versionArguments": ["version", 2] }]""", 1, "tf", null, null, null, null, 0, "tool `tf`'s `versionArguments` must be an array of text")]
-    [InlineData("not a range", """[{ "id": "az", "versions": ">2.60" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range: `>=2.60`, `>=2.60 <3`, or one exact version")]
-    [InlineData("a word", """[{ "id": "az", "versions": "latest" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("a v before it", """[{ "id": "az", "versions": "v2.60" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("five numbers", """[{ "id": "az", "versions": "1.2.3.4.5" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("its top first", """[{ "id": "az", "versions": "<3 >=2.60" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("a top alone", """[{ "id": "az", "versions": "<3" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("blank", """[{ "id": "az", "versions": "  " }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("versions that are not text", """[{ "id": "az", "versions": 2.6 }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` must be a range")]
-    [InlineData("a range that holds nothing", """[{ "id": "az", "versions": ">=3 <2" }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `versions` `>=3 <2` holds no version: `<2` is not above `>=3`")]
-    [InlineData("a top no higher than its floor", """[{ "id": "az", "versions": ">=2.60 <2.60.0" }]""", 1, "az", null, null, null, null, 0, "holds no version: `<2.60.0` is not above `>=2.60`")]
-    [InlineData("a blank for", """[{ "id": "az", "for": " " }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `for` must be one sentence: why the plugin runs it")]
-    [InlineData("for that is not text", """[{ "id": "az", "for": ["pushes"] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `for` must be one sentence")]
-    [InlineData("ready that is not a list", """[{ "id": "az", "ready": { "run": ["az"], "says": "a" } }]""", 1, "az", null, null, null, null, 0, "tool `az`'s `ready` must be an array of checks")]
-    [InlineData("five checks", """[{ "id": "gh", "ready": [{ "run": ["gh"], "says": "a" }, { "run": ["gh"], "says": "b" }, { "run": ["gh"], "says": "c" }, { "run": ["gh"], "says": "d" }, { "run": ["gh"], "says": "e" }] }]""", 1, "gh", null, null, null, null, 0, "tool `gh` has 5 checks in `ready`, and a tool has at most four")]
-    [InlineData("a check that is not an object", """[{ "id": "az", "ready": ["az login"] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`: the command whose exit 0 means ready, as an array")]
-    [InlineData("a check with no run", """[{ "id": "az", "ready": [{ "says": "Signed in" }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`")]
-    [InlineData("a run that is empty", """[{ "id": "az", "ready": [{ "run": [], "says": "Signed in" }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`")]
-    [InlineData("a run that is a line", """[{ "id": "az", "ready": [{ "run": "az account show", "says": "Signed in" }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`")]
-    [InlineData("a run whose first word is blank", """[{ "id": "az", "ready": [{ "run": [" ", "account"], "says": "Signed in" }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`")]
-    [InlineData("a run holding a number", """[{ "id": "az", "ready": [{ "run": ["az", 7], "says": "Signed in" }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs a `run`")]
-    [InlineData("a check with no says", """[{ "id": "az", "ready": [{ "run": ["az", "account", "show"] }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 needs `says`: what it means when it passes")]
-    [InlineData("a fix that is not text", """[{ "id": "az", "ready": [{ "run": ["az", "account", "show"], "says": "Signed in", "fix": ["az", "login"] }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 1 has a `fix` that is not text: the command a person runs when it does not pass")]
-    [InlineData("the second check", """[{ "id": "az", "ready": [{ "run": ["az", "version"], "says": "Runs" }, { "run": ["az", "account", "show"], "says": " " }] }]""", 1, "az", null, null, null, null, 0, "tool `az`'s check 2 needs `says`")]
+    [InlineData("not a range", """[{ "id": "pwsh", "versions": ">2.60" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range: `>=2.60`, `>=2.60 <3`, or one exact version")]
+    [InlineData("a word", """[{ "id": "pwsh", "versions": "latest" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("a v before it", """[{ "id": "pwsh", "versions": "v2.60" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("five numbers", """[{ "id": "pwsh", "versions": "1.2.3.4.5" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("its top first", """[{ "id": "pwsh", "versions": "<3 >=2.60" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("a top alone", """[{ "id": "pwsh", "versions": "<3" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("blank", """[{ "id": "pwsh", "versions": "  " }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("versions that are not text", """[{ "id": "pwsh", "versions": 2.6 }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` must be a range")]
+    [InlineData("a range that holds nothing", """[{ "id": "pwsh", "versions": ">=3 <2" }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `versions` `>=3 <2` holds no version: `<2` is not above `>=3`")]
+    [InlineData("a top no higher than its floor", """[{ "id": "pwsh", "versions": ">=2.60 <2.60.0" }]""", 1, "pwsh", null, null, null, null, 0, "holds no version: `<2.60.0` is not above `>=2.60`")]
+    [InlineData("a blank for", """[{ "id": "pwsh", "for": " " }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `for` must be one sentence: why the plugin runs it")]
+    [InlineData("for that is not text", """[{ "id": "pwsh", "for": ["pushes"] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `for` must be one sentence")]
+    [InlineData("ready that is not a list", """[{ "id": "pwsh", "ready": { "run": ["pwsh"], "says": "a" } }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s `ready` must be an array of checks")]
+    [InlineData("five checks", """[{ "id": "git", "ready": [{ "run": ["git"], "says": "a" }, { "run": ["git"], "says": "b" }, { "run": ["git"], "says": "c" }, { "run": ["git"], "says": "d" }, { "run": ["git"], "says": "e" }] }]""", 1, "git", null, null, null, null, 0, "tool `git` has 5 checks in `ready`, and a tool has at most four")]
+    [InlineData("a check that is not an object", """[{ "id": "pwsh", "ready": ["pwsh login"] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`: the command whose exit 0 means ready, as an array")]
+    [InlineData("a check with no run", """[{ "id": "pwsh", "ready": [{ "says": "Signed in" }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`")]
+    [InlineData("a run that is empty", """[{ "id": "pwsh", "ready": [{ "run": [], "says": "Signed in" }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`")]
+    [InlineData("a run that is a line", """[{ "id": "pwsh", "ready": [{ "run": "pwsh account show", "says": "Signed in" }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`")]
+    [InlineData("a run whose first word is blank", """[{ "id": "pwsh", "ready": [{ "run": [" ", "account"], "says": "Signed in" }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`")]
+    [InlineData("a run holding a number", """[{ "id": "pwsh", "ready": [{ "run": ["pwsh", 7], "says": "Signed in" }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs a `run`")]
+    [InlineData("a check with no says", """[{ "id": "pwsh", "ready": [{ "run": ["pwsh", "account", "show"] }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 needs `says`: what it means when it passes")]
+    [InlineData("a fix that is not text", """[{ "id": "pwsh", "ready": [{ "run": ["pwsh", "account", "show"], "says": "Signed in", "fix": ["pwsh", "login"] }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 1 has a `fix` that is not text: the command a person runs when it does not pass")]
+    [InlineData("the second check", """[{ "id": "pwsh", "ready": [{ "run": ["pwsh", "version"], "says": "Runs" }, { "run": ["pwsh", "account", "show"], "says": " " }] }]""", 1, "pwsh", null, null, null, null, 0, "tool `pwsh`'s check 2 needs `says`")]
     public void The_tools_read_as_the_cli_reads_them(
         string name, string? tools, int count, string? id, string? kind, string? toolName, string? command, string? versions, int checks,
         string? problem)
@@ -135,13 +135,13 @@ public sealed class PluginToolsTests : IDisposable
               { "id": "node", "versions": ">=22" },
               { "id": "git", "versions": ">=2.29" },
               {
-                "id": "az",
+                "id": "pwsh",
                 "versions": ">=2.60",
                 "for": "Pushes the branch and opens its pull request.",
                 "ready": [
-                  { "run": ["az", "extension", "show", "--name", "azure-devops", "--output", "none"],
-                    "says": "Its devops extension is added", "fix": "az extension add --name azure-devops" },
-                  { "run": ["az", "account", "show", "--output", "none"], "says": "Signed in" }
+                  { "run": ["pwsh", "extension", "show", "--name", "azure-devops", "--output", "none"],
+                    "says": "Its devops extension is added", "fix": "pwsh extension add --name azure-devops" },
+                  { "run": ["pwsh", "account", "show", "--output", "none"], "says": "Signed in" }
                 ]
               },
               { "id": "tf", "name": "Terraform", "command": "terraform", "versionArguments": ["version", "-json"] }
@@ -150,19 +150,19 @@ public sealed class PluginToolsTests : IDisposable
 
         var tools = Assert.Single(PluginCatalog.Load(_home).Plugins).Manifest.Tools;
 
-        Assert.Equal(["node", "git", "az", "tf"], tools.Select(tool => tool.Id));
-        Assert.Equal([PluginToolKind.Own, PluginToolKind.Own, PluginToolKind.Known, PluginToolKind.Other], tools.Select(tool => tool.Kind));
+        Assert.Equal(["node", "git", "pwsh", "tf"], tools.Select(tool => tool.Id));
+        Assert.Equal([PluginToolKind.Own, PluginToolKind.Own, PluginToolKind.Own, PluginToolKind.Other], tools.Select(tool => tool.Kind));
         Assert.All(tools, tool => Assert.Null(tool.Problem));
 
-        var az = tools[2];
-        Assert.Equal("Azure CLI", az.Name);
-        Assert.Null(az.Command);
-        Assert.Null(az.VersionArguments);
-        Assert.Equal("Pushes the branch and opens its pull request.", az.For);
-        Assert.Equal(["az", "extension", "show", "--name", "azure-devops", "--output", "none"], az.Ready[0].Run);
-        Assert.Equal("Its devops extension is added", az.Ready[0].Says);
-        Assert.Equal("az extension add --name azure-devops", az.Ready[0].Fix);
-        Assert.Null(az.Ready[1].Fix);
+        var shell = tools[2];
+        Assert.Equal("PowerShell", shell.Name);
+        Assert.Null(shell.Command);
+        Assert.Null(shell.VersionArguments);
+        Assert.Equal("Pushes the branch and opens its pull request.", shell.For);
+        Assert.Equal(["pwsh", "extension", "show", "--name", "azure-devops", "--output", "none"], shell.Ready[0].Run);
+        Assert.Equal("Its devops extension is added", shell.Ready[0].Says);
+        Assert.Equal("pwsh extension add --name azure-devops", shell.Ready[0].Fix);
+        Assert.Null(shell.Ready[1].Fix);
 
         var tf = tools[3];
         Assert.Equal("Terraform", tf.Name);
@@ -179,7 +179,7 @@ public sealed class PluginToolsTests : IDisposable
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.later");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
-            { "id": "acme.later", "tools": [{ "id": "gh" }], "harnesses": [ { "name": "claude-code", "command": ["claude"] } ] }
+            { "id": "acme.later", "tools": [{ "id": "terraform" }], "harnesses": [ { "name": "claude-code", "command": ["claude"] } ] }
             """);
 
         var refused = Assert.Single(PluginCatalog.Load(_home, AdapterSet.Built().Names).Plugins);
@@ -188,16 +188,18 @@ public sealed class PluginToolsTests : IDisposable
         Assert.NotNull(refused.Problem);
         Assert.Empty(refused.Manifest.Tools);
         Assert.Null(problem);
-        Assert.Equal("gh", Assert.Single(written.Tools).Id);
+        Assert.Equal("terraform", Assert.Single(written.Tools).Id);
     }
 
-    /// <summary>Daoris's own tools are the three it runs itself (D150 point 7); the other two it knows, a plugin declares.</summary>
+    /// <summary>Daoris's own tools are the three it runs itself, and the only tools it declares: no hosted service's command line is one (D242 point 3).</summary>
     [Fact]
-    public void Daoris_runs_three_of_the_tools_it_knows()
+    public void Daoris_declares_only_the_three_tools_it_runs()
     {
         Assert.Equal(["git", "node", "pwsh"], PluginTools.DaorisOwn);
         Assert.All(PluginTools.DaorisOwn, id => Assert.NotNull(Tools.Find(id)));
-        Assert.Equal(["gh", "az"], Tools.Declared.Select(tool => tool.Id).Except(PluginTools.DaorisOwn));
+        Assert.Empty(Tools.Declared.Select(tool => tool.Id).Except(PluginTools.DaorisOwn));
+        Assert.Null(Tools.Find("gh"));
+        Assert.Null(Tools.Find("az"));
         Assert.Empty(PluginManifest.Empty("acme.none").Tools);
     }
 

@@ -5,8 +5,6 @@
   "settings.tools.why.git": "Daoris's own git: session trees, landings, reviews and bringing up to date. A session's git is the same one.",
   "settings.tools.why.node": "Plugins and the servers they hand sessions, a check on what sessions write, and the agents npm installs. Its npm and npx come with it.",
   "settings.tools.why.pwsh": "The terminal's first shell.",
-  "settings.tools.why.gh": "The GitHub plugin's pull requests.",
-  "settings.tools.why.az": "The Azure DevOps plugin's pull requests.",
   "settings.tools.program": "Program",
   "settings.tools.programOf": "How {{name}} is run",
   "settings.tools.use.system": "System",
