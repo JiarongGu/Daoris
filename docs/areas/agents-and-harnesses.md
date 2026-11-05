@@ -106,7 +106,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
     (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
-    server whose package cannot be started is not handed (`server.refused`). (`SessionServers`, `ServerPackages`)
+    server whose package cannot be started is not handed (`server.refused`). A server that drives Daoris's browser is
+    started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
+    seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references.
+    Playwright MCP keeps every request a tab made since its last navigation (about 50 KB each) and has no option that
+    bounds it. (`SessionServers`, `ServerPackages`, `ServerKeeper`)
 14. Plugin skills are copied per session under the home's spawn folder and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (from D170, D230)
 15. Every Claude session's settings file turns auto-memory, synced skills, synced plugins and account connectors off for that

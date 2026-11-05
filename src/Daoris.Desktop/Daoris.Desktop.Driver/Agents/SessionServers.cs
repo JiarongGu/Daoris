@@ -17,7 +17,8 @@ public static class SessionServers
         string home, IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
     {
         var (filled, notice, _, drivers) = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
-        var handed = await DirectAsync(home, filled, log, ct).ConfigureAwait(false);
+        var direct = await DirectAsync(home, filled, log, ct).ConfigureAwait(false);
+        var handed = direct.Select(server => drivers.Contains(server.Name) && !filled.Contains(server) ? ServerKeeper.Wrap(home, server) : server).ToList();
         IReadOnlyList<string> driving = [.. drivers.Where(name => handed.Any(server => server.Name == name))];
         return (handed, notice, driving.Count > 0, driving);
     }
