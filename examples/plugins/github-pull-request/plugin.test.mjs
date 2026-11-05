@@ -66,35 +66,6 @@ const POINTS = {
       "class": "completed"
     }
   },
-  "work/land": {
-    "kind": "act",
-    "patience": 120000,
-    "frame": {
-      "repository": "engine",
-      "workspace": "default",
-      "root": "{root}",
-      "branch": "feature/0fda18-expose-a-streaming-budget",
-      "base": "main",
-      "title": "Expose a streaming budget",
-      "quest": {
-        "id": "0fda18",
-        "title": "Expose a streaming budget"
-      },
-      "session": "s1a2b3c4",
-      "commits": [
-        {
-          "sha": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
-          "subject": "Expose a streaming budget"
-        }
-      ],
-      "pullRequest": null,
-      "acceptedBy": "person",
-      "tip": "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
-      "origin": null,
-      "key": null,
-      "mode": "pull-request"
-    }
-  },
   "work/state": {
     "kind": "query",
     "patience": 30000,
@@ -118,7 +89,6 @@ const POINTS = {
         "sessions",
         "landing",
         "diff",
-        "handOff",
         "sweep",
         "treesSync"
       ],
@@ -196,23 +166,6 @@ const ANSWERS = {
   },
   // An observation's answer is not read: any result will do, and {} is the one to send.
   'session/ended': () => null,
-  'work/land': (answer) => {
-    const wrong = `${JSON.stringify(answer)}, which is not a landing's answer — `
-      + '{ "pushed": true, "pullRequest": "https://…", "message": "…" }, the last two optional';
-    if (answer === null || typeof answer !== 'object' || Array.isArray(answer) || typeof answer.pushed !== 'boolean') return wrong;
-    if (answer.pullRequest !== undefined && answer.pullRequest !== null) {
-      if (typeof answer.pullRequest !== 'string') return wrong;
-      let address;
-      try {
-        address = new URL(answer.pullRequest);
-      } catch {
-        return wrong;
-      }
-      if (address.protocol !== 'https:' && address.protocol !== 'http:') return wrong;
-    }
-    if (answer.message !== undefined && answer.message !== null && typeof answer.message !== 'string') return wrong;
-    return null;
-  },
   'work/state': (answer) => {
     const wrong = `${JSON.stringify(answer)}, which is not a pull request's state — `
       + '{ "state": "open" | "completed" | "abandoned" | "unknown", … }, a completed one naming its mergeCommit and sourceCommit in full';
