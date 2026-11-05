@@ -88,7 +88,7 @@ public static class LandingRules
     /// plugin's part in it. Machine-local, like every note there — a plugin's word never rides the
     /// session record, which travels (D64 §4).
     /// </summary>
-    public static SessionEvent Note(TreeLanding landed) => Press(NoteCodes.LandingPersonAccepted, PersonAccepted, landed.Message);
+    public static SessionEvent Note(TreeLanding landed) => Press(ChatNoteCodes.LandingPersonAccepted, PersonAccepted, landed.Message);
 
     /// <summary>
     /// A press's note by its code (CONVNOTE2c): the lead is Daoris's, its sentence the program's words beneath, as written, for
@@ -107,7 +107,7 @@ public static class LandingRules
     /// </summary>
     public static SessionEvent LeftOutNote(string branch)
     {
-        var said = Noted.Of(NoteCodes.LandingLeftOut,
+        var said = Noted.Of(ChatNoteCodes.LandingLeftOut,
             $"the person left this part out when its line of work landed on `{branch}`: its work did not land there.", ("branch", branch));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
     }
@@ -118,7 +118,7 @@ public static class LandingRules
     /// </summary>
     public static SessionEvent BroughtIntoNote(TogetherBrought brought)
     {
-        var (code, where) = brought.Line ? (NoteCodes.LandingBroughtIntoLine, $"the line `{brought.Into}`") : (NoteCodes.LandingBroughtInto, $"`{brought.Into}`");
+        var (code, where) = brought.Line ? (ChatNoteCodes.LandingBroughtIntoLine, $"the line `{brought.Into}`") : (ChatNoteCodes.LandingBroughtInto, $"`{brought.Into}`");
         var said = Noted.Of(code, $"its work was brought into {where} by another session's Accept (operation {brought.Operation}), so it lands no second time.",
             ("branch", brought.Into), ("operation", brought.Operation));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
@@ -134,7 +134,7 @@ public static class LandingRules
         {
             if (events[at] is not { Kind: SessionEventKind.Note } note) continue;
             if (note.Text is { } text && IsAcceptance(text)) return null;
-            if (note.Parts?.FirstOrDefault(part => part.Code == NoteCodes.LandingLeftOut.Code)?.Value("branch") is string branch) return branch;
+            if (note.Parts?.FirstOrDefault(part => part.Code == ChatNoteCodes.LandingLeftOut.Code)?.Value("branch") is string branch) return branch;
         }
 
         return null;
@@ -158,7 +158,7 @@ public static class LandingRules
     /// plugin's part in it — kept where the landing's own note is, and for the same reason (D100).
     /// </summary>
     public static SessionEvent HandNote(TreeHand handed) =>
-        Press(NoteCodes.LandingPersonHanded, "the person handed this work on:", handed.Message);
+        Press(ChatNoteCodes.LandingPersonHanded, "the person handed this work on:", handed.Message);
 
     /// <summary>What is wrong with a branch pattern, in a sentence, or null when it names one branch per session (the settings' <see cref="LandingKey.Problem(string)"/>).</summary>
     public static string? Problem(string pattern) => LandingKey.Problem(pattern);

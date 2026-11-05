@@ -44,10 +44,10 @@ public sealed class TogetherReadsTests
         var onto = LandingRules.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "feature/x", false, DateTimeOffset.UnixEpoch));
         var part = Assert.Single(onto.Parts!);
         Assert.Equal(SessionEventKind.Note, onto.Kind);
-        Assert.Equal((NoteCodes.LandingBroughtInto.Code, "feature/x", "tg1"), (part.Code, part.Value("branch"), part.Value("operation")));
+        Assert.Equal((ChatNoteCodes.LandingBroughtInto.Code, "feature/x", "tg1"), (part.Code, part.Value("branch"), part.Value("operation")));
 
         var line = LandingRules.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "main", true, DateTimeOffset.UnixEpoch));
-        Assert.Equal(NoteCodes.LandingBroughtIntoLine.Code, Assert.Single(line.Parts!).Code);
+        Assert.Equal(ChatNoteCodes.LandingBroughtIntoLine.Code, Assert.Single(line.Parts!).Code);
         Assert.Contains("the line `main`", line.Text);
     }
 }

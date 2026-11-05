@@ -8,14 +8,14 @@ public static class BackgroundNotes
 {
     /// <summary>Whether the quest waits on that work could not be read, the program's own message beneath (it may hold a path).</summary>
     public static Noted Unread(string message) =>
-        Noted.Of(NoteCodes.BackgroundUnread,
+        Noted.Of(ChatNoteCodes.BackgroundUnread,
                 "— its turn ended while its own background work runs, and whether its quest waits on that work could not be read:")
             .Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>The session waits for the work it names.</summary>
     public static Noted Waits(IReadOnlyList<string> works) =>
         Noted.Of(
-            NoteCodes.BackgroundWaits,
+            ChatNoteCodes.BackgroundWaits,
             $"— its turn ended while its own background work runs: {string.Join(", ", works.Select(name => $"`{name}`"))}. "
             + "The session waits for that work, and goes on when it ends.",
             ("works", works));
@@ -26,7 +26,7 @@ public static class BackgroundNotes
     /// </summary>
     public static Noted WaitOver(IReadOnlyList<string> works) =>
         Noted.Of(
-            NoteCodes.BackgroundWaitOver,
+            ChatNoteCodes.BackgroundWaitOver,
             "— its quest no longer waits on its background work: the session ends, and the work still running ends with it: "
             + $"{string.Join(", ", works.Select(name => $"`{name}`"))}.",
             ("works", works));
@@ -37,7 +37,7 @@ public static class BackgroundNotes
     /// </summary>
     public static Noted TurnLeft() =>
         Noted.Of(
-            NoteCodes.BackgroundTurnLeft,
+            ChatNoteCodes.BackgroundTurnLeft,
             "— its quest no longer waits, and a turn that started on its own was silent: the session ends without that turn's end.");
 
     /// <summary>
@@ -46,7 +46,7 @@ public static class BackgroundNotes
     /// </summary>
     public static Noted QuestClosed() =>
         Noted.Of(
-            NoteCodes.BackgroundQuestClosed,
+            ChatNoteCodes.BackgroundQuestClosed,
             "— its quest no longer waits while the session waited for its agent's next turn: the session ends, and no go-on is sent.");
 
     /// <summary>
@@ -55,7 +55,7 @@ public static class BackgroundNotes
     /// </summary>
     public static Noted CarriedOn(int paths) =>
         Noted.Of(
-            NoteCodes.BackgroundCarriedOn,
+            ChatNoteCodes.BackgroundCarriedOn,
             $"— its quest is done, but its tree holds uncommitted work (paths: {paths}): the session was carried on to commit it by its "
             + "repository's conventions, or to restore what it does not want and say which.",
             ("paths", paths));
@@ -66,7 +66,7 @@ public static class BackgroundNotes
     /// </summary>
     public static Noted CarryBound() =>
         Noted.Of(
-            NoteCodes.BackgroundCarryBound,
+            ChatNoteCodes.BackgroundCarryBound,
             "— its session was carried on for the uncommitted work in its tree and it is still not clean: the session ends, and that "
             + "work waits uncommitted for your review.");
 
@@ -82,9 +82,9 @@ public static class BackgroundNotes
         {
             var (name, state) = ended[each];
             noted = noted.Then(each == 0 ? "" : "; ",
-                Noted.Of(NoteCodes.BackgroundWorkEnded, EndedSaid([ended[each]]), ("work", name), ("state", state)));
+                Noted.Of(ChatNoteCodes.BackgroundWorkEnded, EndedSaid([ended[each]]), ("work", name), ("state", state)));
         }
 
-        return noted.Then(". ", Noted.Of(NoteCodes.BackgroundGoesOn, "The session goes on."));
+        return noted.Then(". ", Noted.Of(ChatNoteCodes.BackgroundGoesOn, "The session goes on."));
     }
 }

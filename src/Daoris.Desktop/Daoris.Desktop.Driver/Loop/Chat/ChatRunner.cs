@@ -382,7 +382,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         "the application closed while this conversation ran; its process was ended with it.";
 
     /// <summary><see cref="ClosedNote"/> with its code.</summary>
-    public static Noted ClosedNoted => Noted.Of(NoteCodes.ChatClosed, ClosedNote);
+    public static Noted ClosedNoted => Noted.Of(ChatNoteCodes.ChatClosed, ClosedNote);
 
     /// <inheritdoc cref="ChatStarts.StartAsync(string, string, DriverConfig, Func{string, string, Task}?, string?, bool?, CancellationToken, string?, ContinuedFrom?, IReadOnlyList{ActorEffective}?, EarlierMaker?, HarnessSelection?, bool, bool, MoveWords?)"/>
     public Task<ChatStart> StartAsync(

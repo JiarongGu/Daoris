@@ -227,13 +227,13 @@ public sealed class OpeningNoteTests : IDisposable
             ["opening.said-at", "opening.said-warned", "opening.said-used", "opening.said-over", "opening.said-at", "opening.said-warned"],
             NoteAssert.Codes(said.Parts));
         NoteAssert.Holds(said);
-        Assert.Equal("opening.said-near", NoteCodes.OpeningSaidNear.Code);
-        Assert.Equal(["window"], NoteCodes.OpeningSaidNear.Values);
+        Assert.Equal("opening.said-near", StartNoteCodes.OpeningSaidNear.Code);
+        Assert.Equal(["window"], StartNoteCodes.OpeningSaidNear.Values);
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearWord);
         // `near at 90%` is no longer written (SWITCH1b-ii): over its curve says the window and the curve's value now.
-        Assert.Equal("opening.said-near-at", NoteCodes.OpeningSaidNearAt.Code);
-        Assert.Equal(["near"], NoteCodes.OpeningSaidNearAt.Values);
-        Assert.Equal(["window", "curve"], NoteCodes.OpeningSaidOver.Values);
+        Assert.Equal("opening.said-near-at", StartNoteCodes.OpeningSaidNearAt.Code);
+        Assert.Equal(["near"], StartNoteCodes.OpeningSaidNearAt.Values);
+        Assert.Equal(["window", "curve"], StartNoteCodes.OpeningSaidOver.Values);
         Assert.Equal(
             new object?[] { "session", 90 },
             new[] { "window", "curve" }.Select(name => said.Parts!.Single(part => part.Code == "opening.said-over").Value(name)));

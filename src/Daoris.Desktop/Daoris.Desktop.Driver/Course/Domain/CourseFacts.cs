@@ -187,8 +187,8 @@ public sealed record CourseLater(string Agent, string? Choice = null, string? Ac
 /// </summary>
 /// <param name="Count">The go-ons by answers alone at the line's end, in a row.</param>
 /// <param name="Bound">How many the line takes in a row (<see cref="AnswersAlone.Bound"/>).</param>
-/// <param name="Released">The person's *Go on with this answer* let it go on (<see cref="NoteCodes.AnswersPassed"/>).</param>
-/// <param name="Kept">The person kept the answer with *Not now*: it goes on only beside words of theirs (<see cref="NoteCodes.AnswersKept"/>).</param>
+/// <param name="Released">The person's *Go on with this answer* let it go on (<see cref="HeldNoteCodes.AnswersPassed"/>).</param>
+/// <param name="Kept">The person kept the answer with *Not now*: it goes on only beside words of theirs (<see cref="HeldNoteCodes.AnswersKept"/>).</param>
 public sealed record CourseAlone(int Count, int Bound = AnswersAlone.Bound, bool Released = false, bool Kept = false)
 {
     /// <summary>Whether one more go-on by answers alone would be held.</summary>

@@ -43,7 +43,7 @@ internal static class NativeWords
             {
                 Kind = SessionEventKind.Note,
                 Text = line,
-                Parts = [(daoris ? NoteCodes.ResumedNativeDaoris : NoteCodes.ResumedNative).Part(line, ("adapter", adapter))],
+                Parts = [(daoris ? StartNoteCodes.ResumedNativeDaoris : StartNoteCodes.ResumedNative).Part(line, ("adapter", adapter))],
             },
             .. words.Select(ChatMessage.Words),
         ];

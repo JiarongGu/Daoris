@@ -19,7 +19,7 @@ internal sealed class LostClaimStop(ILookWiring wiring) : ILookPass
         + "session's take is a conflict on the quest and its work would double someone else's.";
 
     /// <summary><see cref="LostClaim"/> with its code.</summary>
-    public static Noted LostClaimNoted => Noted.Of(NoteCodes.EndedLostClaim, LostClaim);
+    public static Noted LostClaimNoted => Noted.Of(EndNoteCodes.EndedLostClaim, LostClaim);
 
     /// <summary>
     /// What a session whose take lost to the person's reopen of the work its step grew from is told: the claim's answer says so beside
@@ -31,7 +31,7 @@ internal sealed class LostClaimStop(ILookWiring wiring) : ILookPass
         + "it stands now.";
 
     /// <summary><see cref="LostClaimToReopen"/> with its code.</summary>
-    public static Noted LostClaimToReopenNoted => Noted.Of(NoteCodes.EndedLostClaimReopened, LostClaimToReopen);
+    public static Noted LostClaimToReopenNoted => Noted.Of(EndNoteCodes.EndedLostClaimReopened, LostClaimToReopen);
 
     /// <summary>How many claim questions are asked of this machine's host together: local, and each one small.</summary>
     internal const int ClaimsAtOnce = 4;

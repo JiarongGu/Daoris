@@ -379,8 +379,8 @@ public sealed class AcpTests
 
         var answer = Assert.Single(answers);
         Assert.Equal(("selected", "yes"), (answer.GetProperty("outcome").GetString(), answer.GetProperty("optionId").GetString()));
-        Assert.Equal("permission held for the person's answer: `npm start`", Coded(events, NoteCodes.AskingHeld.Code));
-        Assert.Equal("permission allowed by the person: `npm start`", Coded(events, NoteCodes.AskingAllowed.Code));
+        Assert.Equal("permission held for the person's answer: `npm start`", Coded(events, HeldNoteCodes.AskingHeld.Code));
+        Assert.Equal("permission allowed by the person: `npm start`", Coded(events, HeldNoteCodes.AskingAllowed.Code));
         Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
         Assert.Contains(lines, line => line.StartsWith("  permission allowed by the person:", StringComparison.Ordinal));
         Assert.Empty(registry.Held("d1"));
@@ -412,7 +412,7 @@ public sealed class AcpTests
 
         Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
         Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
-        Assert.Equal("permission refused: `npm start` — the person refused it", Coded(events, NoteCodes.AskingDenied.Code));
+        Assert.Equal("permission refused: `npm start` — the person refused it", Coded(events, HeldNoteCodes.AskingDenied.Code));
     }
 
     /// <summary>
@@ -445,7 +445,7 @@ public sealed class AcpTests
             < sent.FindIndex(f => !f.TryGetProperty("method", out _) && f.GetProperty("id").GetRawText() == "900"));
         Assert.Equal(
             "permission refused: `npm start` — the turn was stopped before the person answered",
-            Coded(events, NoteCodes.AskingCancelled.Code));
+            Coded(events, HeldNoteCodes.AskingCancelled.Code));
         Assert.Empty(registry.Held("d1"));
         Assert.False(registry.Answer("d1", "900", "yes").Answered);
     }
@@ -476,7 +476,7 @@ public sealed class AcpTests
         Assert.Empty(registry.Held("d1"));
         Assert.Equal(
             "permission refused: `npm start` — the session ended before the person answered",
-            Coded(events, NoteCodes.AskingEnded.Code));
+            Coded(events, HeldNoteCodes.AskingEnded.Code));
     }
 
     /// <summary>
@@ -499,7 +499,7 @@ public sealed class AcpTests
         await session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Equal("cancelled", Assert.Single(answers).GetProperty("outcome").GetString());
-        Assert.StartsWith("permission refused: `npm start` — nobody answered within its", Coded(events, NoteCodes.AskingBound.Code));
+        Assert.StartsWith("permission refused: `npm start` — nobody answered within its", Coded(events, HeldNoteCodes.AskingBound.Code));
         Assert.Equal("refused", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
         Assert.Empty(registry.Held("d1"));
     }

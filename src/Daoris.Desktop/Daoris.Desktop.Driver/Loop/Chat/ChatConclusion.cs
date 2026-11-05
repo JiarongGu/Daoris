@@ -47,7 +47,7 @@ internal sealed class ChatConclusion(IExecutorWiring wiring)
         if (!watched.Keeps || Context.Conversations.Read(session) is not null || !Spoken(session)) return note;
         using var log = new MachineLog(Context.Home, "driver");
         log.Warn("conversation.unkept", ("session", session), ("adapter", watched.Adapter), ("error", "MissingId"));
-        return note.Then(" ", Noted.Of(NoteCodes.ChatNotKept, ChatEnded.NotKept));
+        return note.Then(" ", Noted.Of(ChatNoteCodes.ChatNotKept, ChatEnded.NotKept));
     }
 
     /// <summary>Whether the person has spoken in a conversation and been heard by it, rather than the driver alone.</summary>
@@ -63,7 +63,7 @@ internal sealed class ChatConclusion(IExecutorWiring wiring)
     private (string State, Noted Note, bool Limit) LimitedEnd(string sessionId, string state, Noted note)
     {
         var personStopped = state == "stopped" && Context.Processes.WasStopRequested(sessionId) && Context.Processes.StopReason(sessionId) is null;
-        if (personStopped || note.Parts.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code)) return (state, note, false);
+        if (personStopped || note.Parts.Any(part => part.Code == EndNoteCodes.EndedChoiceNotOffered.Code)) return (state, note, false);
         if (LimitHeld.Of(Context.Events.After(sessionId, 0).Events) is not { } held) return (state, note, false);
 
         var cooled = held.Cooled is { } line ? Noted.From(line.Text, line.Parts) : null;

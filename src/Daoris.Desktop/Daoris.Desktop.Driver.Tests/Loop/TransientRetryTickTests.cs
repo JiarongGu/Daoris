@@ -156,7 +156,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         Assert.All(prompts.Skip(1), prompt => Assert.StartsWith(
             "The last request failed on the provider's side (Internal error: API Error: 529 Overloaded.",
             Assert.Single(prompt["blocks"]!.AsArray())!.GetValue<string>()));
-        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.AgentTransientRetrying.Code) == true);
+        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == EndNoteCodes.AgentTransientRetrying.Code) == true);
         Assert.False(File.Exists(AccountCooling.PathOf(_home)) && AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, "an outage cooled an account");
         // AGENTERRORS1a2: the record's quiet events the head reads, each wait with when it ends and each try by its number, in order.
         Assert.Equal(

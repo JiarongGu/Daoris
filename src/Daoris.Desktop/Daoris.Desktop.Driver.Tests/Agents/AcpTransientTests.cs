@@ -585,7 +585,7 @@ public sealed class AcpTransientTests
         Assert.Equal(["use port 9090"], taken);
         Assert.Equal(1, retry.Episode!.Tries);
         Assert.Empty(retry.Uncertain);
-        lock (events) Assert.DoesNotContain(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+        lock (events) Assert.DoesNotContain(events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.WordsRefused.Code) == true);
     }
 
     /// <summary>
@@ -614,7 +614,7 @@ public sealed class AcpTransientTests
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Equal(2, agent.Prompts.Count);
         Assert.False(retry.Opened);
-        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.WordsRefused.Code) == true);
     }
 
     /// <summary>
@@ -681,7 +681,7 @@ public sealed class AcpTransientTests
         var outcome = await run.WaitAsync(Poll.Patience);
 
         Assert.Equal(("end_turn", 1, false), (outcome.StopReason, agent.Prompts.Count, retry.Opened));
-        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.WordsRefused.Code) == true);
     }
 
     /// <summary>

@@ -78,7 +78,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         if (stands != 0)
         {
             return new(TreeStand.Gone, branch, Noted.Of(
-                NoteCodes.TreeGone,
+                StartNoteCodes.TreeGone,
                 $"its tree and its branch `{branch}` are both gone, so nothing on this machine holds its work under that name. It does not "
                 + $"start anywhere else: bring the branch `{branch}` back in the repository's checkout and the next look makes its tree "
                 + "again, or end this session.",
@@ -143,7 +143,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
 
         var remade = Noted.Of(
-            NoteCodes.TreeRemade,
+            StartNoteCodes.TreeRemade,
             $"its tree at {full} was gone, so Daoris made it again there on its branch `{branch}`, where its commits are. Anything it had "
             + "not committed went with the folder, and the tree holds what git tracks and what Daoris copies in again from your checkout, "
             + "as an opened tree does: its installed dependencies and the machine-local files its gates read, read-only. What was copied, "
@@ -164,15 +164,15 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
     /// <param name="baseOnLine">Whether the line holds the commit its tree stood at when it opened; null where git could not say.</param>
     internal static bool LeftNothing(PriorSession record, bool? baseOnLine) =>
         baseOnLine == true && record.BaseCommit is { Length: > 0 }
-        && record.NoteParts?.Any(part => part.Code == NoteCodes.EndedTurnFailedOpen.Code) == true;
+        && record.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedTurnFailedOpen.Code) == true;
 
     /// <summary>What a part's record says where it went on in a fresh tree, its own gone with nothing beyond the line (TREEKEEPRETRY1).</summary>
     internal static Noted Fresh(string branch) => Noted.Of(
-        NoteCodes.TreeFresh,
+        StartNoteCodes.TreeFresh,
         $"its tree and its branch `{branch}` were gone, and nothing on them was beyond the line: its last part ended before it took its "
         + "quest, from a commit the line holds. So it goes on in a fresh tree from the line.",
         ("branch", branch));
 
     private static TreeStanding Unmade(string? branch, string sentence) =>
-        new(TreeStand.Unmade, branch, Noted.Of(NoteCodes.TreeUnmade, $"It does not start: {sentence}"));
+        new(TreeStand.Unmade, branch, Noted.Of(StartNoteCodes.TreeUnmade, $"It does not start: {sentence}"));
 }

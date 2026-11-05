@@ -952,7 +952,7 @@ public sealed class HelperLookTests : IDisposable
         await Until(() => Files.ReadState("a1") is { State: HelperStates.Refused });
         var waiting = new PriorSession("s1", "trees/default/reports/s-1", "completed")
         {
-            Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
+            Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
         };
         await driver.HelpersAsync(
             new Snapshot([new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken")], [], [])
@@ -980,7 +980,7 @@ public sealed class HelperLookTests : IDisposable
         {
             ["q1"] = new PriorSession("s1", "trees/default/reports/s-1", "completed")
             {
-                Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
+                Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
             },
         },
     };
@@ -1090,7 +1090,7 @@ public sealed class HelperLookTests : IDisposable
         var driver = Driver(host, pass: null);
         var waiting = new PriorSession("s1", "trees/default/reports/s-1", "completed")
         {
-            Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [], Updated = At,
+            Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [], Updated = At,
         };
         var snapshot = new Snapshot([new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken")], [], [])
         {
@@ -1128,7 +1128,7 @@ public sealed class HelperLookTests : IDisposable
         var driver = Driver(host, pass: null);
         var waiting = new PriorSession("s1", "trees/default/reports/s-1", "completed")
         {
-            Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [], Updated = At,
+            Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [], Updated = At,
         };
         Snapshot Looked(string status) => new([new QuestView("q1", "ask #a1", "reports", "The work", "", status)], [], [])
         {

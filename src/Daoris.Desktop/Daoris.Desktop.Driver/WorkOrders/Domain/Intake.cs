@@ -206,7 +206,7 @@ public static class IntakeObservation
         {
             // Only a person's delete takes an ask away (D95): the ask was settled under it, as a close is.
             return SessionConclusion.Of("stood-down", Observation.Exit(
-                Noted.Of(NoteCodes.IntakeAskDeleted, $"the ask it answered was deleted while it ran{exit}."), exitCode));
+                Noted.Of(PeerNoteCodes.IntakeAskDeleted, $"the ask it answered was deleted while it ran{exit}."), exitCode));
         }
 
         var gained = after.Quests.Skip(before).ToList();
@@ -217,7 +217,7 @@ public static class IntakeObservation
         {
             return SessionConclusion.Of("completed", Observation.Exit(
                 Noted.Of(
-                    NoteCodes.IntakePublished, $"published {Quests(gained)} onto ask `#{after.Id}`{exit}.",
+                    PeerNoteCodes.IntakePublished, $"published {Quests(gained)} onto ask `#{after.Id}`{exit}.",
                     ("quests", gained), ("ask", after.Id)),
                 exitCode));
         }
@@ -226,14 +226,14 @@ public static class IntakeObservation
         // theirs to settle, which is what standing down has always meant.
         if (after.State == "Closed")
         {
-            var closed = Noted.Of(NoteCodes.IntakeAskClosed, $"ask `#{after.Id}` was closed while it ran", ("ask", after.Id));
+            var closed = Noted.Of(PeerNoteCodes.IntakeAskClosed, $"ask `#{after.Id}` was closed while it ran", ("ask", after.Id));
             return SessionConclusion.Of("stood-down", closed.Then(" (", Noted.Said(after.Note ?? "", NoteBy.Person)).Then(")."));
         }
 
         if (gained.Count > 0)
         {
             return SessionConclusion.Of("stood-down", Noted.Of(
-                NoteCodes.IntakeAskAnswered, $"ask `#{after.Id}` was answered while it ran — it became {Quests(gained)}.",
+                PeerNoteCodes.IntakeAskAnswered, $"ask `#{after.Id}` was answered while it ran — it became {Quests(gained)}.",
                 ("ask", after.Id), ("quests", gained)));
         }
 
@@ -242,7 +242,7 @@ public static class IntakeObservation
         if (turnFailed is { Length: > 0 })
         {
             return SessionConclusion.Of("failed", Noted.Of(
-                    NoteCodes.IntakeTurnFailed, $"the agent's turn failed before publishing anything onto ask `#{after.Id}`:", ("ask", after.Id))
+                    PeerNoteCodes.IntakeTurnFailed, $"the agent's turn failed before publishing anything onto ask `#{after.Id}`:", ("ask", after.Id))
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent)));
         }
 
@@ -250,14 +250,14 @@ public static class IntakeObservation
         // and it said so rather than guess. The question is its own last words, on its transcript.
         return exitCode == 0
             ? SessionConclusion.Of("awaiting-person", Noted.Of(
-                NoteCodes.IntakeAsks,
+                PeerNoteCodes.IntakeAsks,
                 $"published nothing: the declarations did not settle ask `#{after.Id}`, so it asks you rather "
                 + "than guess — its question ends its transcript. `daoris ask publish "
                 + $"{after.Id} --to <repository>` answers it; `daoris ask close {after.Id} --reason \"…\"` "
                 + "ends it.",
                 ("ask", after.Id)))
             : SessionConclusion.Of("failed", Noted.Of(
-                NoteCodes.IntakeExit, $"exit {exitCode} before publishing anything onto ask `#{after.Id}`.", ("ask", after.Id), ("exit", exitCode)));
+                PeerNoteCodes.IntakeExit, $"exit {exitCode} before publishing anything onto ask `#{after.Id}`.", ("ask", after.Id), ("exit", exitCode)));
     }
 
     /// <summary>
@@ -269,10 +269,10 @@ public static class IntakeObservation
         // Done is published with every quest closed (USE1c) — the service derives it, and a quest can
         // close between two ticks.
         "Published" or "Done" => SessionConclusion.Of("completed", Noted.Of(
-            NoteCodes.IntakePersonAnswered, $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}.",
+            PeerNoteCodes.IntakePersonAnswered, $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}.",
             ("ask", ask.Id), ("quests", ask.Quests))),
         "Closed" => SessionConclusion.Of("stopped",
-            Noted.Of(NoteCodes.IntakePersonClosed, $"the person closed ask `#{ask.Id}`:", ("ask", ask.Id))
+            Noted.Of(PeerNoteCodes.IntakePersonClosed, $"the person closed ask `#{ask.Id}`:", ("ask", ask.Id))
                 .Then(" ", Noted.Said(ask.Note ?? "", NoteBy.Person))),
         _ => null,
     };
@@ -283,7 +283,7 @@ public static class IntakeObservation
     /// </summary>
     public static SessionConclusion Deleted(string ask) =>
         SessionConclusion.Of("stopped", Noted.Of(
-            NoteCodes.IntakePersonDeleted, $"the person deleted ask `#{ask}`, so there is nothing left for it to wait on.", ("ask", ask)));
+            PeerNoteCodes.IntakePersonDeleted, $"the person deleted ask `#{ask}`, so there is nothing left for it to wait on.", ("ask", ask)));
 
     /// <summary>The ask's own tier word for an intake's publish — the service's spelling.</summary>
     public const string ByIntake = "intake";

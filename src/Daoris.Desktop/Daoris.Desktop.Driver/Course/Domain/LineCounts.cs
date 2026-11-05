@@ -99,7 +99,7 @@ public static class LineCounts
         var newest = members.LastOrDefault();
         var atLeast = cut ? WalkCut : newest is null ? NoRecord : null;
         counts.Add(FromRecords(Quiet, "line", key, "this-end", "ended.quiet", evidence, () =>
-            newest?.NoteParts?.Any(part => part.Code == NoteCodes.EndedQuiet.Code) == true ? 1 : 0, atLeast));
+            newest?.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedQuiet.Code) == true ? 1 : 0, atLeast));
         counts.Add(FromRecords(Limits, "line", key, "this-end", "records", evidence, () => newest?.Limit == true ? 1 : 0, atLeast));
         counts.Add(MovesOf(key, evidence.Moves));
         counts.Add(FromRecords(HandOvers, "line", key, "the-line", "from-why", evidence, () =>

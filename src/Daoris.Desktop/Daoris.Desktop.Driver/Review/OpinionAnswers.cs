@@ -39,16 +39,16 @@ public static class OpinionAnswers
             if (count > 0) counts.Add(Noted.Of(code, text, ("count", count)));
         }
 
-        Add(NoteCodes.OpinionFixed, fixedCount, $"{fixedCount} fixed, each commit read from git as one this turn made");
-        Add(NoteCodes.OpinionUnproven, notMade, $"{notMade} said fixed whose commit git did not read as one this turn made, read as unresolved");
-        Add(NoteCodes.OpinionRejected, rejected, $"{rejected} rejected with its evidence");
-        Add(NoteCodes.OpinionUnresolved, unresolved, $"{unresolved} unresolved");
-        Add(NoteCodes.OpinionUnanswered, unanswered, $"{unanswered} not answered, read as unresolved");
+        Add(PeerNoteCodes.OpinionFixed, fixedCount, $"{fixedCount} fixed, each commit read from git as one this turn made");
+        Add(PeerNoteCodes.OpinionUnproven, notMade, $"{notMade} said fixed whose commit git did not read as one this turn made, read as unresolved");
+        Add(PeerNoteCodes.OpinionRejected, rejected, $"{rejected} rejected with its evidence");
+        Add(PeerNoteCodes.OpinionUnresolved, unresolved, $"{unresolved} unresolved");
+        Add(PeerNoteCodes.OpinionUnanswered, unanswered, $"{unanswered} not answered, read as unresolved");
 
         var noted = new Noted("— ", []).Then(
             "",
             Noted.Of(
-                NoteCodes.OpinionAnswersLead, $"the answers to {opinion.Who}'s {Plural(reading.Findings.Count, "finding")}, as its turn ended:",
+                PeerNoteCodes.OpinionAnswersLead, $"the answers to {opinion.Who}'s {Plural(reading.Findings.Count, "finding")}, as its turn ended:",
                 ("who", opinion.Who), ("count", reading.Findings.Count)));
         for (var each = 0; each < counts.Count; each++) noted = noted.Then(each == 0 ? " " : "; ", counts[each]);
         // The English has always closed an empty list as ": ." (a space with nothing after it).
@@ -57,7 +57,7 @@ public static class OpinionAnswers
             ? noted.Then(
                 " ",
                 Noted.Of(
-                    NoteCodes.OpinionDisputed, $"{Plural(disputed, "`must` finding")} not fixed {(disputed == 1 ? "waits" : "wait")} for the person",
+                    PeerNoteCodes.OpinionDisputed, $"{Plural(disputed, "`must` finding")} not fixed {(disputed == 1 ? "waits" : "wait")} for the person",
                     ("count", disputed))).Then(".")
             : noted;
     }
@@ -69,12 +69,12 @@ public static class OpinionAnswers
     public static Noted Concluded(string opinion, int exitCode, string? turnFailed) =>
         turnFailed is { Length: > 0 } failed
             ? Noted.Of(
-                    NoteCodes.OpinionReviewerFailed, $"the reviewer's turn failed as it read the work for second opinion `{opinion}`:", ("opinion", opinion))
+                    PeerNoteCodes.OpinionReviewerFailed, $"the reviewer's turn failed as it read the work for second opinion `{opinion}`:", ("opinion", opinion))
                 .Then(" ", Noted.Said(failed, NoteBy.Program))
             : exitCode == 0
-                ? Noted.Of(NoteCodes.OpinionReviewerRead, $"it read the work and ended; what it said is second opinion `{opinion}`'s.", ("opinion", opinion))
+                ? Noted.Of(PeerNoteCodes.OpinionReviewerRead, $"it read the work and ended; what it said is second opinion `{opinion}`'s.", ("opinion", opinion))
                 : Noted.Of(
-                    NoteCodes.OpinionReviewerExited,
+                    PeerNoteCodes.OpinionReviewerExited,
                     $"it ended with exit {exitCode} as it read the work; what it said, if anything, is second opinion `{opinion}`'s.",
                     ("opinion", opinion), ("exit", exitCode));
 

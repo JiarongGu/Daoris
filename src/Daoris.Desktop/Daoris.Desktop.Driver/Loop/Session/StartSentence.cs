@@ -26,12 +26,12 @@ internal static class StartSentence
         if (answered is not null)
         {
             var resumed = Noted.Of(
-                NoteCodes.StartedResumesAnswered, $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered",
+                StartNoteCodes.StartedResumesAnswered, $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered",
                 ("quest", quest.Id), ("answered", answered.Id));
             return resumedIn is null
                 ? resumed.Then(".")
                 : resumed.Then(", ", Noted.Of(
-                    NoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
+                    StartNoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
         }
 
         // A further part gone into a free tree of its entry is said, as a start in the root is not. A part whose tree was removed grows
@@ -41,7 +41,7 @@ internal static class StartSentence
             return joinedSession is null
                 ? null
                 : Noted.Of(
-                    NoteCodes.StartedJoined,
+                    StartNoteCodes.StartedJoined,
                     $"goes into the tree of session `{joinedSession}`, which holds the earlier part of this work.",
                     ("session", joinedSession));
         }
@@ -52,40 +52,40 @@ internal static class StartSentence
             ? (written is { Parked: false, Said: not null }
                 // Words to a session that had ended: no answer, and an open quest is started.
                 ? quest.Status == "Open"
-                    ? Noted.Of(NoteCodes.StartedWordsOpen, $"starts `#{quest.Id}` with your words to session `{session}`", facts)
-                    : Noted.Of(NoteCodes.StartedWordsTaken, $"carries `#{quest.Id}` on with your words to session `{session}`", facts)
-                : Noted.Of(NoteCodes.StartedAnswer, $"carries `#{quest.Id}` on with your answer to session `{session}`", facts))
+                    ? Noted.Of(StartNoteCodes.StartedWordsOpen, $"starts `#{quest.Id}` with your words to session `{session}`", facts)
+                    : Noted.Of(StartNoteCodes.StartedWordsTaken, $"carries `#{quest.Id}` on with your words to session `{session}`", facts)
+                : Noted.Of(StartNoteCodes.StartedAnswer, $"carries `#{quest.Id}` on with your answer to session `{session}`", facts))
             : handedOver
                 // The agent it came from, as its record names it; never an account's name or a path (the note travels).
                 ? Noted.Of(
-                    NoteCodes.StartedHandedOver,
+                    StartNoteCodes.StartedHandedOver,
                     $"carries `#{quest.Id}` on: session `{session}` was handed over from {resumes.Adapter ?? "its agent"}",
                     [.. facts, ("agent", resumes.Adapter ?? "its agent")])
             : broughtForward
                 ? Noted.Of(
-                    NoteCodes.StartedBroughtForward,
+                    StartNoteCodes.StartedBroughtForward,
                     $"carries `#{quest.Id}` on: you brought the work of session `{session}` forward after its take lost", facts)
             // The steward's stop released, said as the steward's in the resumed brief, never as the person's.
             : resumes.StewardStopped
-                ? Noted.Of(NoteCodes.StartedReleasedSteward, $"carries `#{quest.Id}` on: the steward stopped session `{session}`, and it was released", facts)
+                ? Noted.Of(StartNoteCodes.StartedReleasedSteward, $"carries `#{quest.Id}` on: the steward stopped session `{session}`, and it was released", facts)
             : resumes.PersonStopped
-                ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
+                ? Noted.Of(StartNoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
             // An open quest carried on in the tree its failed session committed work in before it took the quest.
             : carriesWork
-                ? Noted.Of(NoteCodes.StartedCarriedWork, $"carries `#{quest.Id}` on with the work session `{session}` committed before it failed", facts)
-                : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
+                ? Noted.Of(StartNoteCodes.StartedCarriedWork, $"carries `#{quest.Id}` on with the work session `{session}` committed before it failed", facts)
+                : Noted.Of(StartNoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
 
         // 🔴 Which account, never: the note travels, and its scrubber elides only the record's own account, so another account's name
         // here would reach a teammate.
         if (handedOver && walked)
         {
-            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedHandedWalked, "the account it named could not run it, so another of its agent's did"));
+            carried = carried.Then(", ", Noted.Of(StartNoteCodes.StartedHandedWalked, "the account it named could not run it, so another of its agent's did"));
         }
         else if (elsewhere && !handedOver)
         {
-            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedOtherAccount, "on another account"));
+            carried = carried.Then(", ", Noted.Of(StartNoteCodes.StartedOtherAccount, "on another account"));
         }
-        carried = resumedIn is null ? carried.Then(".") : carried.Then(", ", Noted.Of(NoteCodes.StartedSameTree, "in the tree it worked in."));
+        carried = resumedIn is null ? carried.Then(".") : carried.Then(", ", Noted.Of(StartNoteCodes.StartedSameTree, "in the tree it worked in."));
 
         // Why the answer did not go on in its own conversation.
         return fellBack is null ? carried : carried.Then(" ", Continuations.CarriedOn(fellBack, resumes.Adapter));

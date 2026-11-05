@@ -45,7 +45,7 @@ public sealed class DriverModuleSessionAnswersAloneTests : DriverModuleBridge
         Assert.True(answer.GetProperty("answered").GetBoolean());
         Assert.Equal(JsonValueKind.Null, answer.GetProperty("why").ValueKind);
         Assert.Null(new GoOnMarks(loop.Home).Read("d1"));
-        Assert.Equal(["w3"], Assert.Single(Notes(loop, "d1", NoteCodes.AnswersPassed.Code)).Words);
+        Assert.Equal(["w3"], Assert.Single(Notes(loop, "d1", HeldNoteCodes.AnswersPassed.Code)).Words);
         Assert.Empty((await AnswerAsync(module, "ANSWER_WAITS")).GetProperty("waits").EnumerateArray());
 
         var again = await AnswerAsync(module, "SESSION_ANSWER_ALONE", new { session = "d1", goOn = true });
@@ -64,7 +64,7 @@ public sealed class DriverModuleSessionAnswersAloneTests : DriverModuleBridge
 
         Assert.True(answer.GetProperty("answered").GetBoolean());
         Assert.Equal(GoOnMarks.NotNow, new GoOnMarks(loop.Home).Read("d1")!.Why);
-        Assert.Single(Notes(loop, "d1", NoteCodes.AnswersKept.Code));
+        Assert.Single(Notes(loop, "d1", HeldNoteCodes.AnswersKept.Code));
         Assert.Empty((await AnswerAsync(module, "ANSWER_WAITS")).GetProperty("waits").EnumerateArray());
     }
 

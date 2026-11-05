@@ -207,7 +207,7 @@ public sealed class UsageProbeRosterTests : IDisposable
             "`account-1` 10 min ago, 50% of its session limit and 20% of its weekly limit used, "
             + "about 100% of its session limit by now, projected from Daoris's turns since;",
             selection.SaidLine);
-        var projected = selection.AccountsSaid!.Parts.Single(part => part.Code == NoteCodes.OpeningSaidProjected.Code);
+        var projected = selection.AccountsSaid!.Parts.Single(part => part.Code == StartNoteCodes.OpeningSaidProjected.Code);
         Assert.Equal((100, "session"), (projected.Value("projected"), projected.Value("window")));
     }
 

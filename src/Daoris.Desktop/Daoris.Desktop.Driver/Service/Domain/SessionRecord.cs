@@ -124,7 +124,7 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     public bool Partner => Piece is not null;
 
     /// <summary>
-    /// Whether it ended waiting on its own helper (HELPERWAIT1): completed by <see cref="NoteCodes.EndedAwaitsHelper"/>, read by its
+    /// Whether it ended waiting on its own helper (HELPERWAIT1): completed by <see cref="EndNoteCodes.EndedAwaitsHelper"/>, read by its
     /// note's code, never its English. False for every other record and from a host before parts.
     /// </summary>
     public bool AwaitsHelper { get; init; }

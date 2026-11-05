@@ -172,7 +172,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void Every_code_is_declared_in_the_form_the_page_s_test_parses()
     {
-        var source = File.ReadAllText(SourceFiles.Driver("NoteCodes.cs"));
+        var source = string.Concat(NoteCodes.Domains.Select(domain => File.ReadAllText(SourceFiles.Driver($"{domain.Name}.cs"))));
         var parsed = Regex.Matches(source, @"new\(""(?<code>[a-z][a-z.-]*)"", \[(?<values>[^\]]*)\](?:, Key: ""(?<key>[^""]+)"")?\)")
             .Select(match => match.Groups["code"].Value)
             .ToList();
@@ -189,15 +189,15 @@ public sealed class NoteCodesTests
     [Fact]
     public void A_cooling_line_carries_its_owner_and_the_window_it_named_and_the_old_code_keeps_its_values()
     {
-        Assert.Equal(["until", "why"], NoteCodes.AccountCooling.Values);
-        Assert.Equal(["until", "why", "owner", "window"], NoteCodes.AccountCoolingWindow.Values);
-        Assert.Equal(["until", "why", "owner"], NoteCodes.AccountCoolingNoWindow.Values);
+        Assert.Equal(["until", "why"], AccountNoteCodes.AccountCooling.Values);
+        Assert.Equal(["until", "why", "owner", "window"], AccountNoteCodes.AccountCoolingWindow.Values);
+        Assert.Equal(["until", "why", "owner"], AccountNoteCodes.AccountCoolingNoWindow.Values);
         Assert.All(
-            [NoteCodes.AccountCooling, NoteCodes.AccountCoolingWindow, NoteCodes.AccountCoolingNoWindow],
+            [AccountNoteCodes.AccountCooling, AccountNoteCodes.AccountCoolingWindow, AccountNoteCodes.AccountCoolingNoWindow],
             code => Assert.Same(NoteCodes.Cooling, code.Why));
         // Its owner says whose account, never which: the fault is the account's limit, and no strike (AccountsOwn) reads it.
-        Assert.DoesNotContain(NoteCodes.AccountCoolingWindow, NoteCodes.AccountsOwn);
-        Assert.DoesNotContain(NoteCodes.AccountCoolingNoWindow, NoteCodes.AccountsOwn);
+        Assert.DoesNotContain(AccountNoteCodes.AccountCoolingWindow, AccountNoteCodes.AccountsOwn);
+        Assert.DoesNotContain(AccountNoteCodes.AccountCoolingNoWindow, AccountNoteCodes.AccountsOwn);
     }
 
     /// <summary>
@@ -210,28 +210,28 @@ public sealed class NoteCodesTests
         var note = AutoLandingNotes.Of(AutoLandingCode.Opinion, new TreeLanding(false, "Waits for a second opinion.") { Refusal = AutoLandingCode.Opinion });
 
         Assert.Equal(["landing.opinion", null], NoteAssert.Codes(note.Parts));
-        Assert.Contains(NoteCodes.LandingRefused, NoteCodes.All);
+        Assert.Contains(ChatNoteCodes.LandingRefused, NoteCodes.All);
     }
 
     [Fact]
     public void A_part_carries_only_the_values_its_code_declares()
     {
-        var part = NoteCodes.EndedTimeout.Part("timed out after 30 minutes and was killed.", ("minutes", 30));
+        var part = EndNoteCodes.EndedTimeout.Part("timed out after 30 minutes and was killed.", ("minutes", 30));
         Assert.Equal(30, part.Value("minutes"));
-        Assert.Throws<ArgumentException>(() => NoteCodes.EndedDone.Part("the quest reached done.", ("exit", 1)));
+        Assert.Throws<ArgumentException>(() => EndNoteCodes.EndedDone.Part("the quest reached done.", ("exit", 1)));
         // A null value is not written: the page then shows the part's text.
-        Assert.Empty(NoteCodes.EndedTimeout.Part("timed out.", ("minutes", null)).Values);
+        Assert.Empty(EndNoteCodes.EndedTimeout.Part("timed out.", ("minutes", null)).Values);
     }
 
     [Fact]
     public void A_reason_brings_its_own_values_and_elsewhere_names_the_agent_it_ran_on()
     {
-        var adapter = NoteCodes.WentNewSession.Part("x", NoteCodes.Reason(ContinueWhy.AdapterChanged("claude-code", "codex-acp")));
+        var adapter = StartNoteCodes.WentNewSession.Part("x", NoteCodes.Reason(ContinueWhy.AdapterChanged("claude-code", "codex-acp")));
         Assert.Equal("adapter", adapter.Value("why"));
         Assert.Equal("claude-code", adapter.Value("from"));
         Assert.Equal("codex-acp", adapter.Value("to"));
 
-        var elsewhere = NoteCodes.WentCannot.Part("x", NoteCodes.Reason(ContinueWhy.Of(ContinueWhy.Elsewhere), "codex-acp"));
+        var elsewhere = StartNoteCodes.WentCannot.Part("x", NoteCodes.Reason(ContinueWhy.Of(ContinueWhy.Elsewhere), "codex-acp"));
         Assert.Equal("codex-acp", elsewhere.Value("agent"));
     }
 
@@ -240,8 +240,8 @@ public sealed class NoteCodesTests
     {
         IReadOnlyList<NotePart> parts =
         [
-            NoteCodes.IntakePublished.Part("published `#q1`, `#q2` onto ask `#a1`", ("quests", new[] { "q1", "q2" }), ("ask", "a1")),
-            NoteCodes.EndedExit.Part("exit 3", ("exit", 3)),
+            PeerNoteCodes.IntakePublished.Part("published `#q1`, `#q2` onto ask `#a1`", ("quests", new[] { "q1", "q2" }), ("ask", "a1")),
+            EndNoteCodes.EndedExit.Part("exit 3", ("exit", 3)),
             NotePart.Said("Which branch?", NoteBy.Agent),
         ];
 
@@ -270,7 +270,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void A_part_serializes_in_the_record_s_shape_wherever_it_goes()
     {
-        var json = JsonSerializer.Serialize(new { Parts = new[] { NoteCodes.EndedTimeout.Part("t", ("minutes", 5)), NotePart.Said("w", NoteBy.Person) } });
+        var json = JsonSerializer.Serialize(new { Parts = new[] { EndNoteCodes.EndedTimeout.Part("t", ("minutes", 5)), NotePart.Said("w", NoteBy.Person) } });
 
         Assert.Equal("""{"Parts":[{"code":"ended.timeout","values":{"minutes":5},"text":"t"},{"words":"w","by":"person"}]}""", json);
     }
@@ -290,7 +290,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void A_composed_note_is_its_lines_and_glue_and_each_coded_text_is_inside_it()
     {
-        var noted = Noted.Of(NoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
+        var noted = Noted.Of(EndNoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
             .Then("\n\n", Noted.Said("Which branch?", NoteBy.Agent));
 
         Assert.Equal("It stopped with its quest still taken, to ask you:\n\nWhich branch?", noted.Note);
@@ -298,8 +298,8 @@ public sealed class NoteCodesTests
         Assert.Empty(Noted.Said("", NoteBy.Person).Parts);
 
         // Where the English interleaves two lines, the second rides beside the first, its text already inside the note.
-        var declined = Noted.Of(NoteCodes.EndedDeclined, "the session declined (exit 1); the reason is on the quest.")
-            .Also(NoteCodes.EndedExit.Part("exit 1", ("exit", 1)));
+        var declined = Noted.Of(EndNoteCodes.EndedDeclined, "the session declined (exit 1); the reason is on the quest.")
+            .Also(EndNoteCodes.EndedExit.Part("exit 1", ("exit", 1)));
         NoteAssert.Holds(declined);
         Assert.Equal(["ended.declined", "ended.exit"], declined.Parts.Select(part => part.Code));
     }
@@ -311,8 +311,8 @@ public sealed class NoteCodesTests
     [Fact]
     public void A_quiet_move_is_said_by_its_own_code_carrying_its_minutes_its_english_the_page_s()
     {
-        Assert.Equal("move.quiet", NoteCodes.MoveQuiet.Code);
-        Assert.Equal(["minutes"], NoteCodes.MoveQuiet.Values);
+        Assert.Equal("move.quiet", StartNoteCodes.MoveQuiet.Code);
+        Assert.Equal(["minutes"], StartNoteCodes.MoveQuiet.Values);
 
         var said = MoveTakeUp.QuietNote(12);
 
@@ -779,9 +779,9 @@ public sealed class NoteUnsaidTests
     [Fact]
     public void Someone_s_words_leave_the_note_with_the_space_before_them()
     {
-        var noted = Noted.Of(NoteCodes.EndedTurnFailedTaken, "the agent's turn failed with the quest still taken:")
+        var noted = Noted.Of(EndNoteCodes.EndedTurnFailedTaken, "the agent's turn failed with the quest still taken:")
             .Then(" ", Noted.Said("You've hit your limit · resets 4pm (Europe/London)", NoteBy.Agent))
-            .Then(" ", Noted.Of(NoteCodes.EndedStopped, "the person stopped it."));
+            .Then(" ", Noted.Of(EndNoteCodes.EndedStopped, "the person stopped it."));
 
         var unsaid = noted.Unsaid("You've hit your limit · resets 4pm (Europe/London)", NoteBy.Agent);
 
@@ -793,7 +793,7 @@ public sealed class NoteUnsaidTests
     [Fact]
     public void Words_no_part_holds_or_held_by_another_leave_the_note_as_it_was()
     {
-        var noted = Noted.Of(NoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
+        var noted = Noted.Of(EndNoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
             .Then(" ", Noted.Said("refused", NoteBy.Agent));
 
         Assert.Same(noted, noted.Unsaid("overloaded", NoteBy.Agent));

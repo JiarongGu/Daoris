@@ -206,7 +206,7 @@ public sealed class MovedWordsTests : IDisposable
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable." });
         events.Append("c1", new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
         var words = ledger.Chat("c2", "stopped", "talk", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));

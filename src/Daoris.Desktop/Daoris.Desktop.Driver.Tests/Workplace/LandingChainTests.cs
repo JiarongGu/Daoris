@@ -277,12 +277,12 @@ public sealed class LandingChainTests : IDisposable
     {
         var advanced = AutoLandingNotes.Of(AutoLandingCode.Advanced,
             new TreeLanding(true, "moved `feature/x` on from 1111111 — 1 more commit(s).", "feature/x") { AdvancedFrom = Tip });
-        Assert.Equal(NoteCodes.LandingAccepted.Code, advanced.Parts![0].Code);
+        Assert.Equal(ChatNoteCodes.LandingAccepted.Code, advanced.Parts![0].Code);
         Assert.Contains("moved `feature/x` on", advanced.Text);
 
         var completed = AutoLandingNotes.Of(AutoLandingCode.Completed,
             new TreeLanding(false, "`feature/x`'s work already reads on `main`.") { Refusal = AutoLandingCode.Completed }, branch: "feature/x");
-        Assert.Equal(NoteCodes.LandingRefused.Code, completed.Parts![0].Code);
+        Assert.Equal(ChatNoteCodes.LandingRefused.Code, completed.Parts![0].Code);
         Assert.Contains("already reads on `main`", completed.Text);
     }
 

@@ -290,7 +290,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Refused });
         events.Append("c1", new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
         foreach (var (key, word) in keep ?? new Dictionary<string, string> { ["k1"] = Word }) Ledger.For("c1").Say(key, word);

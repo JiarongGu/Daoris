@@ -309,13 +309,13 @@ public static class CoolingWords
         var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         (string Name, object? Value)[] facts =
             [("owner", entry.Agent), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry))];
-        if (entry.Account is { } account) return Noted.Of(NoteCodes.HeldCoolingAccount, said, [("account", account), .. facts]);
+        if (entry.Account is { } account) return Noted.Of(HeldNoteCodes.HeldCoolingAccount, said, [("account", account), .. facts]);
 
         // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
         // cool-off, since Daoris cannot see that sign-in change (D125 §3.7). UX6e2: opening the Agents place asks nothing
         // (D150 §5.3), so the refresh is its Read again.
-        return Noted.Of(NoteCodes.HeldCoolingOwn, said, facts).Then(" ", Noted.Of(
-            NoteCodes.WaitsReadAgain,
+        return Noted.Of(HeldNoteCodes.HeldCoolingOwn, said, facts).Then(" ", Noted.Of(
+            HeldNoteCodes.WaitsReadAgain,
             "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts."));
     }
 
@@ -353,9 +353,9 @@ public static class CoolingWords
     /// <c>account.cooling</c>, which keeps its old shape for the notes written before.
     /// </summary>
     private static Noted Coded(CoolingEntry entry, string text) => WindowOf(entry) is { } window
-        ? Noted.Of(NoteCodes.AccountCoolingWindow, text,
+        ? Noted.Of(AccountNoteCodes.AccountCoolingWindow, text,
             ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent), ("window", window))
-        : Noted.Of(NoteCodes.AccountCoolingNoWindow, text,
+        : Noted.Of(AccountNoteCodes.AccountCoolingNoWindow, text,
             ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent));
 
     /// <summary>The kind of limit, as its reset named it (<i>hit its weekly limit and </i>), or nothing where it named none.</summary>

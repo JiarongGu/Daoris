@@ -68,7 +68,7 @@ internal static class StaffCourse
     /// <summary>The failed sessions that park <paramref name="quest"/>: its rule's as the look read it, 0 where none holds.</summary>
     internal static int FailuresBound(Snapshot snapshot, string quest) => snapshot.FailuresAt.GetValueOrDefault(quest);
 
-    /// <summary>Whether a record ended on the watcher's quiet end (<see cref="NoteCodes.EndedQuiet"/>), by its code: failed, and the quiet policy's, never the failed one's.</summary>
+    /// <summary>Whether a record ended on the watcher's quiet end (<see cref="EndNoteCodes.EndedQuiet"/>), by its code: failed, and the quiet policy's, never the failed one's.</summary>
     internal static bool EndedQuiet(PriorSession record) =>
         string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase) && record.NoteParts?.Any(part => part.Code == RecordNotes.EndedQuiet) == true;
 
