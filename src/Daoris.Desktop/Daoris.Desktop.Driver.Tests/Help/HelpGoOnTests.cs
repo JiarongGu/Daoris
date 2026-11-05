@@ -28,7 +28,7 @@ public sealed class HelpGoOnTests : IDisposable
     /// <summary>The native door's shape: a pipe that resumes, which reads the conversation it goes on in from its target.</summary>
     private sealed class Native : ISessionAdapter
     {
-        public List<ChatTarget> Asked { get; } = [];
+        public List<SpawnRequest> Asked { get; } = [];
 
         public string Name => "native-talk";
 
@@ -38,12 +38,12 @@ public sealed class HelpGoOnTests : IDisposable
 
         public bool Resumes => true;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("a go-on test spawns nothing");
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
+        public ProcessStartInfo PrepareChat(SpawnRequest request)
         {
-            lock (Asked) Asked.Add(target);
+            lock (Asked) Asked.Add(request);
             throw new InvalidOperationException("a go-on test spawns nothing");
         }
     }
@@ -84,12 +84,12 @@ public sealed class HelpGoOnTests : IDisposable
         events.Append("h1", Shown("w1", "and the remote?"));
 
         await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("h1"))}]");
-        ChatTarget asked;
+        SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal("conv-h1", asked.Resume);
         Assert.Equal(HelpRoom.Repository, asked.Repository);
         Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
-        Assert.Equal("h1", asked.Session);
+        Assert.Equal("h1", asked.Identity[ChildMarks.SessionVariable]);
         // The same record, out of its ended state to working, then ended by the spawn that failed: never a new one.
         Assert.Equal(["working", "failed"], ledger.Moves("h1"));
         Assert.Equal(1, ledger.Count);
@@ -118,9 +118,9 @@ public sealed class HelpGoOnTests : IDisposable
             () => string.Join(" | ", events.After("h1", 0).Events.Select(e => $"{e.Kind}:{e.Text}")));
         Assert.Equal(2, ledger.Count);
         Assert.Equal(("h1", HelpConversations.Brief), (new HelpConversations(_home).Read("h2").From, new HelpConversations(_home).Read("h2").Handed));
-        ChatTarget asked;
+        SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
-        Assert.Equal(("h2", (string?)null), (asked.Session, asked.Resume));
+        Assert.Equal(("h2", (string?)null), (asked.Identity[ChildMarks.SessionVariable], asked.Resume));
         Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
         Assert.Equal(ContinueWhy.Unkept, new GoOnMarks(_home).Read("h1")!.Why);
         Assert.Empty(ledger.Moves("h1"));
@@ -205,7 +205,7 @@ public sealed class HelpGoOnTests : IDisposable
 
         await runner.GoOnAsync("h1", DriverConfig.Empty);
 
-        ChatTarget asked;
+        SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal("conv-h1", asked.Resume);
         Assert.Equal(Path.GetFullPath(alpha), Path.GetFullPath(asked.Root));
@@ -231,7 +231,7 @@ public sealed class HelpGoOnTests : IDisposable
 
         await runner.GoOnAsync("h1", DriverConfig.Empty);
 
-        ChatTarget asked;
+        SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
         Assert.Equal(HelpRoom.Render(machine), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));

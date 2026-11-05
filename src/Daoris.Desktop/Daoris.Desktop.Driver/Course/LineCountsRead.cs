@@ -50,8 +50,12 @@ public sealed class LineCountsRead(
         var evidence = Gather(
             session, recordsJson, new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), new StaffMoves(home), new ContinuationAdmissions(home), home,
             config.Forgiven);
-        return new LineFacts(
-            LineCounts.Facts(LineCounts.Of(session, evidence), Ruled(home, session, evidence)), LineCounts.Parts(session, evidence), LineCounts.GoOns(session, evidence));
+        var parts = LineCounts.Parts(session, evidence);
+        var acts = new SupervisorRuleActs(home);
+        return new LineFacts(LineCounts.Facts(LineCounts.Of(session, evidence), Ruled(home, session, evidence)), parts, LineCounts.GoOns(session, evidence))
+        {
+            Acts = [.. parts.SelectMany(part => acts.Of(part.Session)).OrderBy(act => act.At)],
+        };
     }
 
     /// <summary>The line's effective rules (CONTEXTDRIVE1e); null where the records did not read.</summary>

@@ -32,7 +32,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     {
         public string Name => "fake";
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new();
+        public ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }

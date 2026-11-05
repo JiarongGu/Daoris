@@ -181,7 +181,7 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     {
         public string Name => "no-modes";
         public SessionWire Wire => SessionWire.Acp;
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("no-modes");
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("no-modes");
     }
 
     [Fact]

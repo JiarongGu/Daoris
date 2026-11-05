@@ -56,7 +56,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     /// <summary>An agent with accounts, present by a look, with no login question: only a reading says an account is signed out.</summary>

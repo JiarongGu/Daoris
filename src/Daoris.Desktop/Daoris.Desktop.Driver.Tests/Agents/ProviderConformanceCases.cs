@@ -44,7 +44,7 @@ internal static class ConformanceCases
         OfProvider("admission.not-widened", "a provider unable to widen admission",
             _ => NotYet("the plan's walk reading each choice's provider's Reach before any context or credential is sent")),
         OfProvider("containment.not-widened", "a provider unable to widen containment",
-            _ => NotYet("Platform's launcher starting and containing a completed ProcessRecipe, the door's spawn no longer its own process")),
+            _ => NotYet("the installed launcher, on which a door's process is shown born in the agents' job and unable to leave it")),
         OfProvider("applicability.one-fact-differs", "a measurement equal to the run's effective configuration in all but one of its eight facts refused, for each one (C1-3.2, O1-F11)",
             _ => NotYet("the effective configuration whole, the eight facts a measurement's Applies names and the sheet that admits by them")),
         OfProvider("applicability.other-opening", "a negotiation from another opening with the same versions and posture admitting nothing",

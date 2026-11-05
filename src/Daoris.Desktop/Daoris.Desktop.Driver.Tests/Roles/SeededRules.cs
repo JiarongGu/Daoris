@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The supervisor's rules a test's home decides by, as a fresh home's first start seeds them (<see cref="SupervisorRuleBook.SeedFresh"/>): answers
 /// alone 2 in a row, the failed sessions at <c>strikes</c>, five transient tries; and a role's policy moves as rules at the machine, as the
-/// migration writes them (<see cref="SupervisorRuleBook.FromPolicy"/>). A home whose rules were never written is not reached, and nothing there
+/// fixtures say them (<see cref="PolicyRules.From"/>). A home whose rules were never written is not reached, and nothing there
 /// decides: no count is watched and no policy move is made.
 /// </summary>
 internal static class SeededRules
@@ -17,7 +17,7 @@ internal static class SeededRules
         var world = SupervisorRuleDoor.World(home);
         IReadOnlyList<SupervisorRule> rules = policy is null
             ? SupervisorRuleBook.Seeded(strikes)
-            : [.. SupervisorRuleBook.Seeded(strikes), .. SupervisorRuleBook.FromPolicy(policy, role, SupervisorRules.Machine)];
+            : [.. SupervisorRuleBook.Seeded(strikes), .. PolicyRules.From(policy, role, SupervisorRules.Machine)];
         Assert.True(store.Write(SupervisorRules.Machine, store.Of(SupervisorRules.Machine).Revision, rules, SupervisorRuleBook.SeedDoor, world).Stored);
     }
 }

@@ -1291,10 +1291,10 @@ public sealed class HelperLookTests : IDisposable
 
         public bool Interactive => true;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("a judgement test spawns nothing");
 
-        public System.Diagnostics.ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        public System.Diagnostics.ProcessStartInfo PrepareChat(SpawnRequest request) =>
             throw new InvalidOperationException("a judgement test spawns nothing");
     }
 

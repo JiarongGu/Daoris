@@ -125,7 +125,7 @@ public sealed class AgentPluginPortsTests : IDisposable
     private sealed class Adapter(string name) : ISessionAdapter
     {
         public string Name => name;
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("stand-command");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
         public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins)
         {
             foreach (var plugin in plugins) info.ArgumentList.Add(plugin);

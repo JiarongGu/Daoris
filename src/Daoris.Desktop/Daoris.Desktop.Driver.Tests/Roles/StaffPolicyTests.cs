@@ -24,7 +24,7 @@ public sealed class StaffPolicyTests
         var takes = row["takes"] is JsonArray works ? works.Select(each => each!.GetValue<string>()).ToList() : [RoleWork.Build];
         var role = new RoleRecord("night", AuthoredText.Of("Night"), RoleRecord.Always, takes, RoleScope.Everywhere);
         var staffing = Choices.Take(StaffPolicyFixture.Int(row["choices"]) ?? 2).ToList();
-        var refused = StaffPolicy.Judge(role, staffing, StaffPolicyFixture.Policy(row)!, StaffPolicyFixture.Int(row["strikes"]) ?? 3);
+        var refused = StaffPolicy.Judge(role, staffing, StaffPolicyFixture.Policy(row)!);
 
         if (StaffPolicyFixture.Text(row["refused"]) is { } said)
         {
@@ -50,22 +50,28 @@ public sealed class StaffPolicyTests
                 new StaffChoice(StaffKey.Of(Choices[0]), Weight: 3),
                 new StaffChoice(StaffKey.Of(Choices[2]), Weight: 1, Share: 40, Budget: new StaffBudget(Starts: 6), Takes: [RoleWork.Design]),
             ],
-            new Dictionary<string, StaffMove>
-            {
-                [StaffConditions.Limit] = new(StaffActions.Weighted),
-                [StaffConditions.Transient] = new(StaffActions.Weighted, After: 2),
-                [StaffConditions.Budget] = new(StaffActions.Wait, UpTo: 30),
-            },
-            Most: 3);
+            new Dictionary<string, StaffMove>());
 
         var text = policy.Write();
 
         Assert.Equal(
-            """{"rule":"weight","choices":[{"agent":"claude-code","model":"sonnet","effort":"high","weight":3},{"agent":"codex","effort":"medium","weight":1,"share":40,"budget":{"starts":6},"takes":["design"]}],"moves":{"limit":"weighted","transient":{"do":"weighted","after":2},"budget":{"do":"wait","upTo":30}},"most":3}""",
+            """{"rule":"weight","choices":[{"agent":"claude-code","model":"sonnet","effort":"high","weight":3},{"agent":"codex","effort":"medium","weight":1,"share":40,"budget":{"starts":6},"takes":["design"]}]}""",
             text);
         var (read, refused) = StaffPolicy.Parse(text);
         Assert.Null(refused);
         Assert.Equal(text, read!.Write());
+    }
+
+    [Fact]
+    public void A_stored_moves_or_most_is_passed_over_and_the_next_write_holds_neither()
+    {
+        var (read, refused) = StaffPolicy.Parse("""{"rule":"order","choices":[{"agent":"a"}],"moves":{"limit":"next","transient":{"do":"weighted","after":2}},"most":3}""");
+
+        Assert.Null(refused);
+        Assert.Empty(read!.Moves);
+        Assert.Null(read.Most);
+        Assert.Equal("""{"rule":"order","choices":[{"agent":"a","weight":1}]}""", read.Write());
+        Assert.DoesNotContain(StaffCapabilities.Fields, field => field.StartsWith("moves", StringComparison.Ordinal) || field == "most");
     }
 
     [Theory]
@@ -77,8 +83,6 @@ public sealed class StaffPolicyTests
     [InlineData("""{"rule":"order","choices":[{"agent":"a","weight":1.5}]}""", "weight")]
     [InlineData("""{"rule":"order","choices":[{"agent":"a","budget":{"starts":2.5}}]}""", "budget")]
     [InlineData("""{"rule":"order","choices":[{"agent":"a","takes":"design"}]}""", "takes")]
-    [InlineData("""{"rule":"order","choices":[],"moves":{"limit":7}}""", "limit")]
-    [InlineData("""{"rule":"order","choices":[],"most":"three"}""", "most")]
     public void A_record_of_the_wrong_shape_is_refused_by_the_policy_code_saying_what(string text, string said)
     {
         var (read, refused) = StaffPolicy.Parse(text);
@@ -118,8 +122,7 @@ public sealed class StaffPolicyTests
         var policy = new StaffPolicy(
             StaffRules.Weight,
             [new StaffChoice(StaffKey.Of(Choices[0]), Weight: 3, Share: 60), new StaffChoice(StaffKey.Of(Choices[1]), Weight: 1, Takes: [RoleWork.Design])],
-            new Dictionary<string, StaffMove> { [StaffConditions.Limit] = new(StaffActions.Weighted) },
-            Most: 2);
+            new Dictionary<string, StaffMove>());
 
         var rekeyed = policy.Rekeyed([Choices[2], Choices[0]]);
 
@@ -127,8 +130,6 @@ public sealed class StaffPolicyTests
             [(StaffKey.Of(Choices[2]), 1, (int?)null), (StaffKey.Of(Choices[0]), 3, 60)],
             rekeyed.Choices.Select(each => (each.Key, each.Weight, each.Share)).ToList());
         Assert.Equal(StaffRules.Weight, rekeyed.Rule);
-        Assert.Equal(StaffActions.Weighted, rekeyed.Moves[StaffConditions.Limit].Do);
-        Assert.Equal(2, rekeyed.Most);
     }
 
     [Fact]
@@ -137,8 +138,7 @@ public sealed class StaffPolicyTests
         var draft = new StaffPolicy(
             StaffRules.Weight,
             [new StaffChoice(StaffKey.Of(Choices[0]), Weight: 3, Budget: new StaffBudget(Starts: 6)), new StaffChoice(StaffKey.Of(Choices[1]), Weight: 1)],
-            new Dictionary<string, StaffMove> { [StaffConditions.Quiet] = new(StaffActions.Next) },
-            Most: 5);
+            new Dictionary<string, StaffMove>());
         var staffing = Choices.Take(2).ToList();
 
         var first = StaffPolicy.Preset(StaffPresets.First, staffing, draft);
@@ -151,14 +151,12 @@ public sealed class StaffPolicyTests
         Assert.Equal(StaffRules.Weight, even.Rule);
         Assert.Equal([1, 1], even.Choices.Select(each => each.Weight));
         Assert.Equal(new StaffBudget(Starts: 6), even.Choices[0].Budget);
-        Assert.Equal(StaffActions.Weighted, even.Moves[StaffConditions.Limit].Do);
-        Assert.Equal(StaffActions.Next, even.Moves[StaffConditions.Quiet].Do);
-        Assert.Equal(3, even.Most);
+        Assert.Empty(even.Moves);
+        Assert.Null(even.Most);
 
         var weighted = StaffPolicy.Preset(StaffPresets.Weighted, staffing, draft);
         Assert.Equal([3, 1], weighted.Choices.Select(each => each.Weight));
-        Assert.Equal(StaffActions.Weighted, weighted.Moves[StaffConditions.Limit].Do);
-        Assert.Equal(3, weighted.Most);
+        Assert.Empty(weighted.Moves);
 
         Assert.Equal([1, 1], StaffPolicy.Preset(StaffPresets.Weighted, staffing, null).Choices.Select(each => each.Weight));
         Assert.Equal([StaffPresets.First, StaffPresets.Even, StaffPresets.Weighted], StaffPresets.Names);

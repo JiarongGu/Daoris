@@ -263,7 +263,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_conversation_that_goes_on_resumes_its_kept_conversation_on_the_native_door()
     {
-        var target = new ChatTarget("Game", "D:/trees/chat-1", "http://localhost:5177") { Resume = "0b5e7c1a" };
+        var target = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null) with { Resume = "0b5e7c1a" };
 
         var arguments = new ClaudeCodeAdapter().PrepareChat(target, ["claude"]).ArgumentList.ToList();
 
@@ -278,7 +278,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_new_conversation_and_a_protocol_door_carry_no_resume_flag()
     {
-        var fresh = new ChatTarget("Game", "D:/trees/chat-1", "http://localhost:5177");
+        var fresh = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null);
         var going = fresh with { Resume = "0b5e7c1a" };
 
         Assert.DoesNotContain("--resume", new ClaudeCodeAdapter().PrepareChat(fresh, ["claude"]).ArgumentList);

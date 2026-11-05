@@ -40,7 +40,7 @@ public interface ISessionAdapter
     /// <summary>
     /// The harness's own mode that asks nothing, in <b>its own vocabulary</b>, for Ask Daoris's full access (HELPMODE1a1, D183
     /// point 1) and a driven session whose repository's permission prompts are unrestricted (AUTONOMY1b, D184 point 2): a
-    /// <c>--permission-mode</c> on the native door (<see cref="ChatTarget.PermissionMode"/>, <see cref="DrivenAccess.PermissionMode"/>),
+    /// <c>--permission-mode</c> on the native door (<see cref="SpawnRequest.Mode"/>, <see cref="DrivenAccess.PermissionMode"/>),
     /// a mode on the protocol door, which the session must set or fail (<see cref="PostureAsked.Required"/>).
     /// </summary>
     /// <remarks>
@@ -77,11 +77,11 @@ public interface ISessionAdapter
     string? ReadingPosture => null;
 
     /// <summary>
-    /// The process that would be the session: spawned in the root, target delivered, output
-    /// redirected so the driver can keep the transcript. Preparation only — the driver owns the
-    /// process lifetime, because observing it is the driver's half of the contract (D46 §5).
+    /// The process that would be the session, for the <see cref="SpawnRequest"/> its executor composed: spawned in the root, target
+    /// delivered, output redirected so the driver can keep the transcript. Preparation only — the driver owns the process lifetime,
+    /// because observing it is the driver's half of the contract (D46 §5).
     /// </summary>
-    ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command);
+    ProcessStartInfo Prepare(SpawnRequest request);
 
     /// <summary>
     /// Whether this harness can be wired for turn-taking (D49 §3) — stdin carrying the person's
@@ -170,7 +170,7 @@ public interface ISessionAdapter
     int? InstructionFileLimit => null;
 
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
-    ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+    ProcessStartInfo PrepareChat(SpawnRequest request) =>
         throw new DriverException(
             $"the `{Name}` adapter cannot hold a conversation — it spawns an agent that takes its "
             + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
@@ -219,8 +219,9 @@ public interface ISessionAdapter
     bool Resumes => Wire == SessionWire.Acp;
 
     /// <summary>
-    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation it kept, under the same posture a start has;
-    /// its next turn goes on its input, written by the driver (AGENTLYNTAI1s-i, <see cref="NativePrompt"/>). Null where this adapter knows none.
+    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation the request names (<see cref="SpawnRequest.Resume"/>),
+    /// under the same posture a start has; its next turn goes on its input, written by the driver (AGENTLYNTAI1s-i, <see cref="NativePrompt"/>).
+    /// Null where this adapter knows none.
     /// </summary>
-    ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
+    ProcessStartInfo? PrepareResume(SpawnRequest request) => null;
 }

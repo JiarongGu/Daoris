@@ -46,7 +46,7 @@ public sealed class PermissionSeamTests
     public void A_pipe_door_conversation_takes_them_too()
     {
         var adapter = AdapterSet.Built().Resolve("claude-code");
-        var info = adapter.PrepareChat(new ChatTarget("engine", Path.GetTempPath(), "http://localhost:5177"), command: null);
+        var info = adapter.PrepareChat(SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", null));
 
         adapter.HandSettings(info, File);
 

@@ -101,7 +101,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     private static UsageQuestion Claude => new ClaudeUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);

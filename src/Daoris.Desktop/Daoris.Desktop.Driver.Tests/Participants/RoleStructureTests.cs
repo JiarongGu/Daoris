@@ -38,7 +38,7 @@ public sealed class RoleStructureTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     /// <summary>The fake agent, present by a file look, whose every status and usage question is written down and fails.</summary>

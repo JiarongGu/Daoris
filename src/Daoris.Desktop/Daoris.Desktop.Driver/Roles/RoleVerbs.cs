@@ -75,7 +75,7 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string PolicyGrammar =
         "`driver role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>]… [--share <n>=<1-99>]… "
-        + "[--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--on <condition>=<action>[:<after>|:<minutes>]]… [--most <1-8>] [--clear]` "
+        + "[--budget <n>=<starts>/day]… [--takes <n>=<work,…>]… [--clear]` "
         + "(<n> is a choice's number in the role's staffing)";
 
     /// <summary>
@@ -96,11 +96,6 @@ public sealed class RoleVerb : ChoiceVerb
         var press = StaffPolicyFlags.Read(args.Skip(3).ToList(), choices, existing, PolicyGrammar);
         var (policy, refused) = StaffPolicyDoor.Judge(role, choices, press, existing, kept: true);
         if (refused is not null) throw new ChoiceWords($"`driver role policy`: {refused.Said}");
-        if (RuledPolicy.On(role, press, policy).Refused is { } ruled)
-        {
-            throw new ChoiceWords($"`role policy`: {ruled.Said}");
-        }
-
         var payload = new JsonObject
         {
             ["change"] = "set",

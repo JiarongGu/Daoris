@@ -51,6 +51,14 @@ public sealed class CountTextsTests
             """.ReplaceLineEndings("\n"),
             CountTexts.Print(facts));
 
+        // A rule's acts follow the go-ons, oldest first, said from the rule's codes and numbers alone; none, no section.
+        Assert.DoesNotContain("acts", CountTexts.Print(facts), StringComparison.Ordinal);
+        var rule = new SupervisorRule("failures", SupervisorRules.Failures, "in-a-row", 3, SupervisorRules.Hold, null, "repository:engine", null);
+        var acted = CountTexts.Print(facts with { Acts = [new RuleActed("q1", "s2", rule, 4, 3, Known: true, "start", At.AddMinutes(20))] });
+        Assert.EndsWith(
+            "Its rules' acts, oldest first:\n- 2026-11-03 09:20 UTC, session s2: the person's rule for this repository: failed sessions on this quest stood at 3, and Daoris waits for the person after 3",
+            acted, StringComparison.Ordinal);
+
         // A rule of the person's is named as theirs, with its place.
         var ruled = CountTexts.Print(new LineFacts([Handed[0] with { Watch = new CountWatch(3, "hold", "repository:engine") }], [], []));
         Assert.Contains("- count:answers-alone=2 (exact): answers alone in a row, from the line's admission; the person's rule for this repository: Daoris waits for the person after 3", ruled, StringComparison.Ordinal);

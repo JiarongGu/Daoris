@@ -333,10 +333,10 @@ public sealed class PermissionSpawnTests : IDisposable
         /// <summary>The instruction the session was given, as every door composes it.</summary>
         public string Prompt { get; private set; } = "";
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+        public ProcessStartInfo Prepare(SpawnRequest request)
         {
-            Prompt = TargetPrompt.Compose(target);
-            return new StubAdapter().Prepare(target, command);
+            Prompt = request.Identity["DAORIS_TARGET"] ?? "";
+            return new StubAdapter().Prepare(request);
         }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile)
@@ -355,9 +355,9 @@ public sealed class PermissionSpawnTests : IDisposable
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+        public ProcessStartInfo Prepare(SpawnRequest request)
         {
-            var info = new StubAdapter().Prepare(target, command);
+            var info = new StubAdapter().Prepare(request);
             info.RedirectStandardInput = true;
             return info;
         }

@@ -143,9 +143,7 @@ public static class RoleDoor
                     var existing = staffing.Policy(role.Id);
                     var (resolved, refusedPolicy) = StaffPolicyDoor.Judge(role, effective, policy, existing, held is not null);
                     if (refusedPolicy is not null) throw new RoleRefusedException(refusedPolicy);
-                    var (kept, brought, notSaved) = RuledPolicy.On(role, policy, resolved);
-                    if (notSaved is not null) throw new RoleRefusedException(notSaved);
-                    resolved = kept;
+                    var brought = RuledPolicy.Of(role, policy);
                     if (brought.Count > 0) presetRules.Add((RuledPolicy.PlaceOf(role.Scope), brought));
 
                     saves.Add((role.Id, resolved, effective, policy.Read ?? existing.Revision));

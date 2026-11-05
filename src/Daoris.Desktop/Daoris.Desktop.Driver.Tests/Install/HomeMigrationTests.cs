@@ -78,7 +78,7 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.Equal(2, rules.Single(rule => rule.Count == SupervisorRules.AnswersAlone).At);
         Assert.Equal(4, rules.Single(rule => rule.Count == SupervisorRules.Failures).At);
         Assert.Equal(TransientRetry.Bound, rules.Single(rule => rule.Count == SupervisorRules.Tries).At);
-        Assert.Equal(StaffPolicy.MostByDefault, rules.Single(rule => rule.Count == SupervisorRules.Moves).At);
+        Assert.Equal(SupervisorRuleBook.MovesByDefault, rules.Single(rule => rule.Count == SupervisorRules.Moves).At);
     }
 
     [Fact]

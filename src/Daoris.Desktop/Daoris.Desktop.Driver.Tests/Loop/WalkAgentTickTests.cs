@@ -288,11 +288,10 @@ public sealed class WalkAgentTickTests : IDisposable
 
         public bool Interactive => true;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            Shell.Start(ProcessRecipe.Of(command!) with { Input = true }, SpawnRequests.Of(target, command));
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
+            Shell.Start(ProcessRecipe.Of(request.Command!) with { Input = true }, request);
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
-            Shell.Chat(ProcessRecipe.Of(command!), SpawnRequests.Of(target, command));
+        public ProcessStartInfo PrepareChat(SpawnRequest request) => Shell.Chat(ProcessRecipe.Of(request.Command!), request);
 
         public HarnessToolchain? Toolchain => new(
             Binary: [],

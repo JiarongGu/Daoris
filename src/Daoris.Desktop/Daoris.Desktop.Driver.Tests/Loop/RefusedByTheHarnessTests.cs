@@ -56,7 +56,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
 
         public IStreamMapper? StructuredOutput() => structured ? new ClaudeStreamJson() : null;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     private HarnessRoster Roster(SessionWire wire = SessionWire.Pipe, bool structured = true) =>

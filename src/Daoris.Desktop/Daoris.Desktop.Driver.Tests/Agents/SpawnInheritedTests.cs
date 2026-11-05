@@ -14,7 +14,7 @@ public sealed class SpawnInheritedTests
         QuestId: "abc123", Title: "Fix the flaky gate", Body: "It fails one run in five.", Asker: "Platform",
         Repository: "Game", Root: "D:/fam/Game", ServiceUrl: "http://localhost:5177");
 
-    private static ChatTarget Chat() => new("Game", "D:/fam/Game", "http://localhost:5177");
+    private static SpawnRequest Chat() => SpawnRequests.Chat("Game", "D:/fam/Game", "http://localhost:5177", null);
 
     private static readonly string[] Planted =
         ["CLAUDE_CONFIG_DIR", "ANTHROPIC_API_KEY", "DISABLE_UPDATES", "CODEX_HOME", "DSH_HOME", StubAdapter.ConfigVariable];

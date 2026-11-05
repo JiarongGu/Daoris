@@ -81,6 +81,6 @@ public sealed class RuleLanguageTests : IDisposable
     {
         public string Name => "stand-agent";
         public bool TakesSettings => takesSettings;
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("stand-command");
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
     }
 }

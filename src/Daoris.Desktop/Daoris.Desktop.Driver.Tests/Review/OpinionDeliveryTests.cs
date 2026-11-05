@@ -607,7 +607,7 @@ public sealed class OpinionDeliveryTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     /// <summary>The build's own agents by name, each present by a file look, so a recheck's reviewer walk asks no real binary.</summary>

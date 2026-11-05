@@ -118,11 +118,11 @@ public sealed class TransportRunProcessTests : IDisposable
 
         public bool Resumes => true;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Start(target, "claude");
+        public ProcessStartInfo Prepare(SpawnRequest request) => Start(request, "claude");
 
-        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
+        public ProcessStartInfo? PrepareResume(SpawnRequest request)
         {
-            var info = Start(target, "resume", "--resume", conversation);
+            var info = Start(request, "resume", "--resume", request.Resume!);
             info.RedirectStandardInput = true;
             return info;
         }
@@ -133,13 +133,16 @@ public sealed class TransportRunProcessTests : IDisposable
 
         public IStreamMapper? StructuredOutput() => structured ? new ClaudeStreamJson() : null;
 
-        private ProcessStartInfo Start(SessionTarget target, params string[] arguments) =>
-            Shell.Start(new ProcessRecipe("node", [Path.Combine(home, "agent.cjs"), .. arguments]), SpawnRequests.Of(target, null));
+        private ProcessStartInfo Start(SpawnRequest request, params string[] arguments) =>
+            Shell.Start(new ProcessRecipe("node", [Path.Combine(home, "agent.cjs"), .. arguments]), request);
     }
 
     private TransportRun Over(ISessionAdapter adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
     {
-        var start = new TransportStart(info, StartClass.Person) { Target = Target(), Selection = new HarnessSelection(null) };
+        var start = new TransportStart(info, StartClass.Person)
+        {
+            Target = Target(), Request = SpawnRequests.Of(Target(), null), Selection = new HarnessSelection(null),
+        };
         return new TransportRun(new DriverTransportHost(_driver), adapter, shape is null ? start : shape(start));
     }
 

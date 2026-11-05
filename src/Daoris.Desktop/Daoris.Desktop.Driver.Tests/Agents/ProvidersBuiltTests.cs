@@ -205,7 +205,7 @@ public sealed class ProvidersBuiltTests
         ISessionAdapter old = Old().Resolve(name);
         var door = AdapterSet.Built().Resolve(name);
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
-        var chat = new ChatTarget("repo", Path.GetTempPath(), "http://svc");
+        var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
         IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
 
         Assert.IsType<LegacyDoor>(door);
@@ -237,7 +237,7 @@ public sealed class ProvidersBuiltTests
         ISessionAdapter old = Old().Resolve(name);
         var door = AdapterSet.Built().Resolve(name);
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
-        var chat = new ChatTarget("repo", Path.GetTempPath(), "http://svc");
+        var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
         IReadOnlyList<string> command = ["agent", "--flag"];
         IReadOnlyList<string> plugins = ["plugins/one"];
 
@@ -346,7 +346,7 @@ public sealed class ProvidersBuiltTests
     {
         var shimmed = AdapterSet.Built();
         var target = new SessionTarget("q-1", "t", "b", "a", "repo", "/root", "http://x");
-        var chat = new ChatTarget("repo", "/root", "http://x");
+        var chat = SpawnRequests.Chat("repo", "/root", "http://x", null);
 
         foreach (var name in new[] { "stub", "acp-stub" })
         {

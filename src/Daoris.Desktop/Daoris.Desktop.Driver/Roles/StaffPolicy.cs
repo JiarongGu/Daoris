@@ -95,16 +95,6 @@ public static class StaffConditions
     public const string Budget = "budget";
 
     public static IReadOnlyList<string> Codes { get; } = [Limit, SignedOut, ModelRefused, Transient, Failed, Quiet, Budget];
-
-    /// <summary>The actions <paramref name="condition"/> allows (§4's table); none for a condition this build does not observe.</summary>
-    public static IReadOnlyList<string> Allowed(string condition) => condition switch
-    {
-        Limit or Budget => [StaffActions.Next, StaffActions.Weighted, StaffActions.Wait, StaffActions.Ask],
-        SignedOut or ModelRefused or Transient => [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Hold],
-        Failed => [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Hold, StaffActions.Retry],
-        Quiet => [StaffActions.Next, StaffActions.Weighted, StaffActions.Retry],
-        _ => [],
-    };
 }
 
 /// <summary>What a met condition does (§4).</summary>
@@ -150,21 +140,18 @@ public static class StaffPresets
 }
 
 /// <summary>
-/// A role's staffing policy (STAFFPOLICY1a, D226; the staff policy design §2): its rule, an entry for each of its choices by tuple in the
-/// staffing's order, a move for each condition the person set, and the most moves to another choice a line makes in 24 hours. Kept apart
-/// from the choices in <c>role_policy</c>, bound to them by <see cref="Digest"/>; no row is <see cref="StaffRules.Order"/> and every move
-/// as today.
+/// A role's staffing policy (STAFFPOLICY1a, D226; the staff policy design §2): its rule and an entry for each of its choices by tuple in the
+/// staffing's order. Kept apart from the choices in <c>role_policy</c>, bound to them by <see cref="Digest"/>; no row is
+/// <see cref="StaffRules.Order"/>. <see cref="Moves"/> and <see cref="Most"/> are never stored: <see cref="SupervisorRuleBook.Course"/> sets
+/// them from a line's effective rules, for the course to read.
 /// </summary>
 public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices, IReadOnlyDictionary<string, StaffMove> Moves, int? Most = null)
 {
     /// <summary>The code of every refusal of a policy, in the role refusals' closed set (<see cref="RoleCatalog.Codes"/>).</summary>
     public const string Code = "policy";
 
-    /// <summary>The bound once the person sets any move and names none (§2.2).</summary>
-    public const int MostByDefault = 3;
-
-    /// <summary>The most moves to another choice a line makes in 24 hours: none while every move is as today, else 3 unless named.</summary>
-    public int? Bound => Most ?? (Moves.Count > 0 ? MostByDefault : null);
+    /// <summary>The most moves to another choice a line makes in 24 hours: the rules' moves bound, else none while every move is as today.</summary>
+    public int? Bound => Most ?? (Moves.Count > 0 ? SupervisorRuleBook.MovesByDefault : null);
 
     /// <summary>The entry for <paramref name="key"/>, or null where the policy names none (weight 1, no limits).</summary>
     public StaffChoice? Of(StaffKey key) => Choices.FirstOrDefault(choice => choice.Key == key);
@@ -178,15 +165,15 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
 
     /// <summary>
     /// The policy re-keyed to <paramref name="choices"/> (§2.2): each entry whose tuple is still listed kept, in the staffing's order; a new
-    /// choice at weight 1 with no limits; a removed choice's entry dropped. The rule, the moves and the bound stay.
+    /// choice at weight 1 with no limits; a removed choice's entry dropped. The rule stays.
     /// </summary>
     public StaffPolicy Rekeyed(IReadOnlyList<ActorChoice> choices) =>
         this with { Choices = [.. choices.Select(choice => Of(StaffKey.Of(choice)) ?? new StaffChoice(StaffKey.Of(choice)))] };
 
     /// <summary>
     /// The draft a preset fills (§2.4) for <paramref name="choices"/>: <see cref="StaffPresets.First"/> the order and nothing else; the two
-    /// spreads the weight rule, every weight 1 or the draft's, a limit moved by weight and at most 3 moves, the draft's limits and other
-    /// moves kept.
+    /// spreads the weight rule, every weight 1 or the draft's, the draft's limits kept; their limit move and bound are rules
+    /// (<see cref="SupervisorRuleBook.PresetRules"/>), not the policy's.
     /// </summary>
     /// <exception cref="ArgumentException">No such preset.</exception>
     public static StaffPolicy Preset(string preset, IReadOnlyList<ActorChoice> choices, StaffPolicy? draft)
@@ -197,26 +184,20 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
         }
 
         if (preset is not (StaffPresets.Even or StaffPresets.Weighted)) throw new ArgumentException($"`{preset}` is not a preset — one of {string.Join(", ", StaffPresets.Names)}.", nameof(preset));
-        var moves = new Dictionary<string, StaffMove>(draft?.Moves ?? new Dictionary<string, StaffMove>(), StringComparer.Ordinal)
-        {
-            [StaffConditions.Limit] = new(StaffActions.Weighted),
-        };
-
         StaffChoice Filled(ActorChoice choice)
         {
             var kept = draft?.Of(StaffKey.Of(choice)) ?? new StaffChoice(StaffKey.Of(choice));
             return preset == StaffPresets.Even ? kept with { Weight = 1 } : kept;
         }
 
-        return new StaffPolicy(StaffRules.Weight, [.. choices.Select(Filled)], moves, MostByDefault);
+        return new StaffPolicy(StaffRules.Weight, [.. choices.Select(Filled)], new Dictionary<string, StaffMove>());
     }
 
     /// <summary>
     /// Whether <paramref name="policy"/> may be the policy of <paramref name="role"/> staffed by <paramref name="choices"/> (§2.5), for every
-    /// door alike: the refusal, code <see cref="Code"/>, or null where it may. <paramref name="strikes"/> is the failures that park a quest,
-    /// which bound a fatal error's <c>after</c>.
+    /// door alike: the refusal, code <see cref="Code"/>, or null where it may.
     /// </summary>
-    public static RoleRefusal? Judge(RoleRecord role, IReadOnlyList<ActorChoice>? choices, StaffPolicy policy, int strikes = 3)
+    public static RoleRefusal? Judge(RoleRecord role, IReadOnlyList<ActorChoice>? choices, StaffPolicy policy)
     {
         var id = role.Id;
         var of = $"`{id}`'s policy";
@@ -268,33 +249,6 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
             }
         }
 
-        foreach (var (condition, move) in policy.Moves)
-        {
-            if (!StaffConditions.Codes.Contains(condition, StringComparer.Ordinal))
-            {
-                return Refused($"{of} moves on `{condition}`, which is not a condition Daoris observes — one of {string.Join(", ", StaffConditions.Codes)}.");
-            }
-
-            var allowed = StaffConditions.Allowed(condition);
-            if (!allowed.Contains(move.Do, StringComparer.Ordinal)) return Refused($"{of} moves on `{condition}` by `{move.Do}`, which `{condition}` does not allow — one of {string.Join(", ", allowed)}.");
-            if (move.After is { } after)
-            {
-                if (AfterRange(condition, strikes) is not { } range) return Refused($"{of} counts `after` on `{condition}`, which counts no tries: only transient and failed do.");
-                if (after < range.Least || after > range.Most)
-                {
-                    var most = range.Most == int.MaxValue ? "or more" : $"to {range.Most}";
-                    return Refused($"{of}'s `after` of {after} on `{condition}` is not from {range.Least} {most}.");
-                }
-            }
-
-            if (move.UpTo is { } upTo)
-            {
-                if (move.Do != StaffActions.Wait) return Refused($"{of} bounds `{condition}` by `upTo`, which is only for a wait.");
-                if (upTo is < 5 or > 600) return Refused($"{of}'s `upTo` of {upTo} minutes on `{condition}` is not from 5 to 600.");
-            }
-        }
-
-        if (policy.Most is { } bound && bound is < 1 or > 8) return Refused($"{of}'s `most` of {bound} moves a day is not from 1 to 8.");
         return null;
     }
 
@@ -306,20 +260,9 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
         return works;
     }
 
-    /// <summary>
-    /// The tries or strikes a condition's <c>after</c> counts: a transient episode's tries up to its bound, a fatal error's strikes short of
-    /// the park, any where strikes never park; null for a condition that counts none.
-    /// </summary>
-    private static (int Least, int Most)? AfterRange(string condition, int strikes) => condition switch
-    {
-        StaffConditions.Transient => (1, TransientRetry.Bound),
-        StaffConditions.Failed => (1, strikes > 0 ? strikes - 1 : int.MaxValue),
-        _ => null,
-    };
-
     private static RoleRefusal Refused(string said) => new(Code, said);
 
-    /// <summary>The record as <c>role_policy.policy</c> keeps it: compact, the moves in the conditions' order.</summary>
+    /// <summary>The record as <c>role_policy.policy</c> keeps it: compact, its rule and choices.</summary>
     public string Write() => StaffJson.Write(writer =>
     {
         writer.WriteString("rule", Rule);
@@ -349,40 +292,7 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
         }
 
         writer.WriteEndArray();
-        if (Moves.Count > 0)
-        {
-            writer.WriteStartObject("moves");
-            foreach (var (condition, move) in Moves.OrderBy(each => Rank(each.Key)).ThenBy(each => each.Key, StringComparer.Ordinal))
-            {
-                if (move.After is null && move.UpTo is null)
-                {
-                    writer.WriteString(condition, move.Do);
-                    continue;
-                }
-
-                writer.WriteStartObject(condition);
-                writer.WriteString("do", move.Do);
-                if (move.After is { } after) writer.WriteNumber("after", after);
-                if (move.UpTo is { } upTo) writer.WriteNumber("upTo", upTo);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndObject();
-        }
-
-        if (Most is { } most) writer.WriteNumber("most", most);
     });
-
-    /// <summary>A condition's place in <see cref="StaffConditions.Codes"/>; one this build does not observe after them.</summary>
-    private static int Rank(string condition)
-    {
-        for (var i = 0; i < StaffConditions.Codes.Count; i++)
-        {
-            if (StaffConditions.Codes[i] == condition) return i;
-        }
-
-        return int.MaxValue;
-    }
 
     /// <summary>
     /// The record <paramref name="text"/> holds, or the refusal saying why it is not one; fields it does not know are passed over, and every
@@ -430,31 +340,12 @@ public sealed record StaffPolicy(string Rule, IReadOnlyList<StaffChoice> Choices
                 choices.Add(new StaffChoice(at, weight ?? 1, share, budget, takes));
             }
 
-            var moves = new Dictionary<string, StaffMove>(StringComparer.Ordinal);
-            if (root.TryGetProperty("moves", out var set))
-            {
-                if (set.ValueKind != JsonValueKind.Object) return (null, Refused("the policy's moves are not an object of conditions."));
-                foreach (var each in set.EnumerateObject())
-                {
-                    if (Move(each.Value) is not { } move) return (null, Refused($"the policy's move on `{each.Name}` is not an action, nor one with its count or its bound."));
-                    moves[each.Name] = move;
-                }
-            }
-
-            if (!Whole(root, "most", out var most)) return (null, Refused("the policy's most is not a whole number."));
-            return (new StaffPolicy(rule, choices, moves, most), null);
+            return (new StaffPolicy(rule, choices, new Dictionary<string, StaffMove>()), null);
         }
         catch (JsonException error)
         {
             return (null, Refused($"the policy does not read: {error.Message.TrimEnd('.', ' ')}."));
         }
-    }
-
-    private static StaffMove? Move(JsonElement value)
-    {
-        if (value.ValueKind == JsonValueKind.String) return new StaffMove(value.GetString()!);
-        if (value.ValueKind != JsonValueKind.Object || Json.Text(value, "do") is not { } action) return null;
-        return Whole(value, "after", out var after) && Whole(value, "upTo", out var upTo) ? new StaffMove(action, after, upTo) : null;
     }
 
     /// <summary>Whether <paramref name="name"/> is absent or a whole number, read into <paramref name="value"/>.</summary>

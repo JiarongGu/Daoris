@@ -1,37 +1,12 @@
-using System.Diagnostics;
-
 namespace Daoris.Driver;
 
 /// <summary>
-/// A start's <see cref="SpawnRequest"/> composed from the target its executor composed: a driven start's, a native resume's and a
-/// conversation's, the one place whose work each serves is turned into its identity variables (ENVLEAK1).
+/// A start's <see cref="SpawnRequest"/>, composed by its executor: a driven start's and a native resume's from the target the executor
+/// composed, a conversation's from its place, the one place whose work each serves is turned into its identity variables (ENVLEAK1). A
+/// door's spawn and the transports' shell read the request alone.
 /// </summary>
 internal static class SpawnRequests
 {
-    /// <summary>A driven start's process: the door's recipe for the target's request, completed by the shell.</summary>
-    public static ProcessStartInfo Started(
-        ISpawn spawn, SessionTarget target, IReadOnlyList<string>? command, IReadOnlyCollection<string>? strip = null)
-    {
-        var request = Of(target, command);
-        return Shell.Start(spawn.Start(request), request, strip);
-    }
-
-    /// <summary>A native resume's process, or null where the door resumes none.</summary>
-    public static ProcessStartInfo? Resumed(
-        ISpawn spawn, SessionTarget target, IReadOnlyList<string>? command, string conversation, IReadOnlyCollection<string>? strip = null)
-    {
-        var request = Of(target, command) with { Resume = conversation };
-        return spawn.Resume(request) is { } recipe ? Shell.Start(recipe, request, strip) : null;
-    }
-
-    /// <summary>A conversation's process: the door's recipe for the target's request, completed by the shell.</summary>
-    public static ProcessStartInfo Chatted(
-        ISpawn spawn, ChatTarget target, IReadOnlyList<string>? command, IReadOnlyCollection<string>? strip = null)
-    {
-        var request = Of(target, command);
-        return Shell.Chat(spawn.Chat(request), request, strip);
-    }
-
     /// <summary>A driven start's request: the target's posture and asked choice, its home, and whose work it serves.</summary>
     public static SpawnRequest Of(SessionTarget target, IReadOnlyList<string>? command) =>
         new(target.Repository, target.Root, target.ServiceUrl)
@@ -40,15 +15,15 @@ internal static class SpawnRequests
         };
 
     /// <summary>
-    /// A conversation's request (D49 §3): no quest's variable at all, rather than an empty one, which would read as an id that failed to
-    /// parse; its own record (CHATTAKE1b), so a connector its agent starts from the repository's server list marks this conversation.
+    /// A conversation's request (D49 §3), its command, choice, mode and own conversation set by its runner: no quest's variable at all,
+    /// rather than an empty one, which would read as an id that failed to parse; its own record (CHATTAKE1b), so a connector its agent
+    /// starts from the repository's server list marks this conversation.
     /// </summary>
-    public static SpawnRequest Of(ChatTarget target, IReadOnlyList<string>? command) =>
-        new(target.Repository, target.Root, target.ServiceUrl)
+    public static SpawnRequest Chat(string repository, string root, string serviceUrl, string? session) =>
+        new(repository, root, serviceUrl)
         {
-            Command = command, Asked = target.Asked, Mode = target.PermissionMode, Resume = target.Resume,
-            Identity = target.Session is { } session
-                ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = session }
+            Identity = session is { } own
+                ? new Dictionary<string, string?> { [ChildMarks.SessionVariable] = own }
                 : new Dictionary<string, string?>(),
         };
 

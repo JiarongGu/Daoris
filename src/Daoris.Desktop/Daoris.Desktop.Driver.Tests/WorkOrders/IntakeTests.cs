@@ -975,8 +975,8 @@ public sealed class IntakeTests : IDisposable
         public bool TakesSettings => true;
         public string? HandedText { get; private set; }
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            new StubAdapter().Prepare(target, command);
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
+            new StubAdapter().Prepare(request);
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) =>
             HandedText = File.ReadAllText(settingsFile);

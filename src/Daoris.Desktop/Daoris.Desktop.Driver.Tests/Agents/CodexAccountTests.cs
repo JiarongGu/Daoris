@@ -353,7 +353,7 @@ public sealed class CodexAccountTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     /// <summary>`fake-door` runs as `fake`'s accounts, and no `fake` door exists: `fake` is declared, as `codex` is.</summary>

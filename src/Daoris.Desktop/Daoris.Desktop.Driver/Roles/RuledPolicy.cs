@@ -1,27 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A role's policy beside the supervisor's rules: its moves and their bound are the rules, so a press setting them is refused naming the
-/// rules' door, and a preset's limit move and bound become rules naming the role, written beside the policy in its one transaction.
+/// A role's policy beside the supervisor's rules: a line's moves and their bound are the rules, so a preset's limit move and bound become
+/// rules naming the role, written beside the policy in its one transaction.
 /// </summary>
 public static class RuledPolicy
 {
-    /// <summary>
-    /// The policy saved, the rules a preset brings with it at the role's place, or the refusal of a move set through the policy door.
-    /// </summary>
-    public static (StaffPolicy? Policy, IReadOnlyList<SupervisorRule> Rules, RoleRefusal? Refused) On(RoleRecord role, RolePolicyPress press, StaffPolicy? resolved)
-    {
-        if (resolved is null || (resolved.Moves.Count == 0 && resolved.Most is null)) return (resolved, [], null);
-        var place = PlaceOf(role.Scope);
-        if (press.Preset is not null)
-        {
-            return (resolved with { Moves = new Dictionary<string, StaffMove>(), Most = null }, SupervisorRuleBook.FromPolicy(resolved, role.Id, place), null);
-        }
-
-        return (null, [], new RoleRefusal(StaffPolicy.Code,
-            $"on this home a line's moves to another choice and their bound are the supervisor's rules, so `{role.Id}`'s `moves` and `most` were not saved: "
-            + $"set them with `daoris role rules --place {place} --roles {role.Id} --set <count>=<at>:<do>`."));
-    }
+    /// <summary>The rules a press's preset brings with it, at the role's place; none for a press that names no preset.</summary>
+    public static IReadOnlyList<SupervisorRule> Of(RoleRecord role, RolePolicyPress press) =>
+        press is { Preset: { } preset, Clear: false } ? SupervisorRuleBook.PresetRules(preset, role.Id, PlaceOf(role.Scope)) : [];
 
     /// <summary>The supervisor's place a role's scope is: the machine, a workspace or a repository.</summary>
     public static string PlaceOf(RoleScope scope) => scope.Kind == RoleScope.Machine ? SupervisorRules.Machine : $"{scope.Kind}:{scope.Id}";

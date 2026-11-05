@@ -372,9 +372,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
         public HarnessToolchain? Toolchain => _stub.Toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => _stub.Prepare(target, command);
+        public ProcessStartInfo Prepare(SpawnRequest request) => _stub.Prepare(request);
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => _stub.PrepareChat(target, command);
+        public ProcessStartInfo PrepareChat(SpawnRequest request) => _stub.PrepareChat(request);
     }
 
     /// <summary>
