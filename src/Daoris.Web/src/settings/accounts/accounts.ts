@@ -209,6 +209,8 @@ export type AgentAccounts = {
    * as its page opens ask (SWITCH1d). A shell older than that answers none, and neither is offered.
    */
   reads?: boolean;
+  /** How long a reading of its accounts stands, in seconds, its question's own; a shell older than that answers none. */
+  readFloor?: number | null;
   /**
    * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
    * its agent last said of its windows where a press read them (CODEXUSE3); a shell older than that answers none.

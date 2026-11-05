@@ -243,7 +243,7 @@ public sealed class AgentsRoutes(DriverContext context)
                 continue;
             }
 
-            if (toolchain is null || !string.Equals(_loop.Harnesses.Adapters.OwnerOf(name), agent, StringComparison.OrdinalIgnoreCase)) continue;
+            if (toolchain is null || !string.Equals(_loop.Harnesses.Adapters.Registry.OwnerOfAgent(name).Value, agent, StringComparison.OrdinalIgnoreCase)) continue;
             if (string.Equals(name, agent, StringComparison.OrdinalIgnoreCase)) return name;
             first ??= name;
         }
@@ -362,7 +362,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var profile = press.Profile;
         // 🔴 Whose accounts an action on this door touches (AGT7): a door's accounts, defaults
         // and keys are its OWNER's. Its pin and its installer stay its own.
-        var owner = _loop.Harnesses.Adapters.OwnerOf(harness);
+        var owner = _loop.Harnesses.Adapters.Registry.OwnerOfAgent(harness).Value;
 
         // 🔴 An account that is an API key (AGT3, D67 §1). The key crosses this bridge once,
         // inward, and is answered only by its handle — here, on the roster, and in any event.

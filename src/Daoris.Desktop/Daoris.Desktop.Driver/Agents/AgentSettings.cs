@@ -238,7 +238,7 @@ public static class AccountSettings
         _ = harnesses.Toolchain(harness)
             ?? throw new DriverException(
                 $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-        var owner = harnesses.Adapters.OwnerOf(harness);
+        var owner = harnesses.Adapters.Registry.OwnerOfAgent(harness).Value;
         var file = harnesses.AccountToolchain(harness)?.SettingsFile
             ?? throw new DriverException(
                 $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "

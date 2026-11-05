@@ -205,7 +205,9 @@ internal static class ProviderRegistration
                     ? Known<bool>.Declared(adapter.Resumes, "the protocol transport's default", Eligibility.Applies)
                     : Known<bool>.Declared(adapter.Resumes, "ISessionAdapter.Resumes"),
                 Known<bool>.Declared(adapter.TakesSettings, "ISessionAdapter.TakesSettings")),
-            new DoorTablesPart(keyedItself ? null : toolchain?.ErrorWords, toolchain?.TurnReport),
+            keyedItself || toolchain is null
+                ? new DoorTablesPart(null, toolchain?.TurnReport)
+                : new DoorTablesPart(toolchain.ErrorWords, toolchain.TurnReport, toolchain.Limits, toolchain.Windows, toolchain.SignIn, toolchain.Refused),
             declared,
             new InstructionsPart(adapter.LoadsTreeSkills, adapter.InstructionFileLimit));
     }

@@ -126,7 +126,7 @@ internal sealed class LegacyDoor : ISessionAdapter
 
         var facts = program.Required;
         var pool = keyedItself ? _provider.Accounts.Required.Facts : _door.Lent.Accounts;
-        var tables = keyedItself ? (_provider.Tables.IsKnown ? _provider.Tables.Required : TablesPart.None) : _door.Lent.Tables;
+        var tables = keyedItself ? (_provider.Tables.IsKnown ? _provider.Tables.Required : TablesPart.None) : _door.Tables.Own;
         var usage = keyedItself ? (_provider.Usage.IsKnown ? _provider.Usage.Required : UsagePart.None) : _door.Lent.Usage;
         var errors = keyedItself ? tables.ErrorWords : _door.Tables.ErrorWords;
         // A built-in door states no identity of its own: its provider's is its (claude-code-acp's is Claude Code's).

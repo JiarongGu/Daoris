@@ -454,6 +454,7 @@ internal static class ConformanceCases
         if (provider.Tables.IsKnown) tables.Add(("its tables", provider.Tables.Required));
         if (provider.Lent.IsKnown) tables.Add(("what it lends", provider.Lent.Required.Tables));
         tables.AddRange(provider.Doors.Select(door => ($"{door.Id}'s own", door.Lent.Tables)));
+        tables.AddRange(provider.Doors.Select(door => ($"{door.Id}'s door words", door.Tables.Own)));
         var errors = tables.Select(each => (each.Where, Words: each.Tables.ErrorWords))
             .Concat(provider.Doors.Select(door => ($"{door.Id}'s door tables", Words: door.Tables.ErrorWords)));
 

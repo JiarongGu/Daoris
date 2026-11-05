@@ -41,7 +41,7 @@ internal static class CodexProvider
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(false, Evidence)),
             // Its typed failure categories, marked only for a client that asks for them (CODEXSTATUS1).
-            new DoorTablesPart(CodexErrors.Words, null),
+            new DoorTablesPart(CodexErrors.Words, null, Limits: CodexLimits.Words),
             new AccountKey(CodexAccounts.Agent),
             // Codex reads at most 32 KiB of its instruction file, so the standing block carries the repository's rules.
             new InstructionsPart(LoadsTreeSkills: false, FileLimit: 32_768));

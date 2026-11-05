@@ -173,6 +173,26 @@ public sealed class ProvidersBuiltTests
             Assert.Null(codex.Lent.Required.Usage.Question);
             Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Lent.Tables.Limits);
             Assert.Same(CodexUsage.Question, registry.Door("codex-acp").Lent.Usage.Question);
+            // The door's own words stand beside the provider's: the door says its limits as Codex does, and the lent words are the same.
+            Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Tables.Limits);
+            Assert.Same(registry.Door("codex-acp").Tables.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
+        }
+    }
+
+    /// <summary>
+    /// A door keyed by its provider's name declares no words of its own (the provider holds them), and a door of Claude Code's
+    /// reads its provider's by its key, so neither carries a table beside the provider's.
+    /// </summary>
+    [Fact]
+    public void A_door_keyed_by_its_provider_or_by_its_key_declares_no_account_words_of_its_own()
+    {
+        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        foreach (var name in new[] { "claude-code", "claude-code-acp", "dsh" })
+        {
+            var own = registry.Door(name).Tables.Own;
+            Assert.Null(own.Limits);
+            Assert.Null(own.Windows);
+            Assert.Null(own.SignIn);
         }
     }
 

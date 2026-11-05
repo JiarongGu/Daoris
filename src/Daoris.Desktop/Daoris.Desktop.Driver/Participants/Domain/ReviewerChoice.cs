@@ -28,7 +28,7 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
         var toolchain = adapters.ToolchainOf(carried ?? given);
         var agent = carried ?? given;
         return new AgentFamily(
-            agent, adapters.OwnerOf(agent), Declared(toolchain?.Product), Declared(toolchain?.Maker),
+            agent, adapters.Registry.OwnerOfAgent(agent).Value, Declared(toolchain?.Product), Declared(toolchain?.Maker),
             carried is null ? null : adapters.DeclaredBy(carried));
     }
 
