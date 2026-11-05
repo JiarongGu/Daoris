@@ -3,7 +3,7 @@ using Daoris.Contracts.Sessions;
 namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
-/// The driver's session records, served by every host: the list, the two opens (a driven record for a quest, a chat) and the move of
+/// The driver's session records, served by every host: the list and one record of it, the two opens (a driven record for a quest, a chat) and the move of
 /// the ledger's state machine. State only; the service never spawns a process, and the judgement is the shared ledger's, so this door
 /// and any other cannot drift. The records answer the machine-local parts of themselves to a caller on this machine only.
 /// </summary>
@@ -16,6 +16,11 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
     public void Map(RouteMap routes)
     {
         routes.Map<ListSessions, SessionResponse[]>(ListAsync);
+        // A teammate's record is named `machine/id`, whose slash travels escaped and stays so in the address's value.
+        routes.Map<ReadSession, SessionResponse>(async (request, http, ct) =>
+            await _list.OneAsync(Uri.UnescapeDataString(request.Id), host.MachineLocal(http), ct) is { } one
+                ? one
+                : Refusal.NotFound($"No session `{request.Id}`."));
         routes.Map<OpenSession, SessionOpenResponse>(OpenAsync);
         routes.Map<OpenChat, SessionOpenResponse>(OpenChatAsync);
         routes.Map<AdvanceSession, SessionActionResponse>(AdvanceAsync);

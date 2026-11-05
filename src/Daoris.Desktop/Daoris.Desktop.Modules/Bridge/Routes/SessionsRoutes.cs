@@ -435,9 +435,7 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var id = press.Id;
         var service = _loop.Service ?? throw NotReady();
-        var records = SessionRecords.Parse(await SessionRecords.ReadAsync(
-            service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false));
-        var record = records.FirstOrDefault(row => string.Equals(row.Id, id, StringComparison.Ordinal))
+        var record = (await service.SessionList.OneJsonAsync(id, cancellationToken).ConfigureAwait(false) is { } one ? SessionRecords.One(one) : null)
             ?? throw Refusals.Because(
                 Refusals.SessionUnknown, $"No session here is {id}, so there is no folder to open.",
                 ("session", id), ("context", "folder"));

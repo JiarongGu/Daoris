@@ -226,7 +226,8 @@ public sealed class SessionOpenDoors
         var candidates = new List<string>();
         try
         {
-            var reply = (await _service.SendAsync(new ListSessions(IncludeClosed: true), ct).ConfigureAwait(false)).Reply;
+            // The open ones: a record this open made is open, since nothing has run in it.
+            var reply = (await _service.SendAsync(new ListSessions(), ct).ConfigureAwait(false)).Reply;
             if (reply.Ok)
             {
                 using var json = JsonDocument.Parse(reply.Payload);

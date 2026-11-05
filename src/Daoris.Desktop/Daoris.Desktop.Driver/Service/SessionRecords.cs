@@ -19,8 +19,23 @@ public static class SessionRecords
         if (document.RootElement.ValueKind != JsonValueKind.Array) return records;
         foreach (var session in document.RootElement.EnumerateArray())
         {
-            if (session.ValueKind != JsonValueKind.Object || Text(session, "id") is not { Length: > 0 } id) continue;
-            records.Add(new SessionRecord(id, Text(session, "repository") ?? "", Text(session, "state") ?? "")
+            if (Read(session) is { } record) records.Add(record);
+        }
+
+        return records;
+    }
+
+    /// <summary>One record as the service answers it alone (<see cref="SessionListDoors.OneJsonAsync"/>), read as the list's are; null with no id.</summary>
+    public static SessionRecord? One(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return Read(document.RootElement);
+    }
+
+    private static SessionRecord? Read(JsonElement session)
+    {
+        if (session.ValueKind != JsonValueKind.Object || Text(session, "id") is not { Length: > 0 } id) return null;
+        return new SessionRecord(id, Text(session, "repository") ?? "", Text(session, "state") ?? "")
             {
                 Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
                 TookQuest = Text(session, "tookQuest") is { Length: > 0 } tookQuest ? tookQuest : null,
@@ -60,10 +75,7 @@ public static class SessionRecords
                 AwaitsHelper = Text(session, "state") == "completed" && Carries(session, RecordNotes.EndedAwaitsHelper),
                 // LIMITRESUME1d (D206 §3.1): an account's limit made its failure; absent from a host before the flag.
                 Limit = session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True,
-            });
-        }
-
-        return records;
+            };
     }
 
     /// <summary>

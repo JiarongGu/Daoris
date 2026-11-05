@@ -18,6 +18,16 @@ public sealed record ListSessions(string? Repository = null, bool? IncludeClosed
 }
 
 /// <summary>
+/// One record as the list answers it, closed or open, of any workspace: a reader of one session asks for it alone. Not found for an
+/// unknown id.
+/// </summary>
+public sealed record ReadSession(string Id) : IRoute<SessionResponse>
+{
+    public static string Method => "GET";
+    public static string Path => "/api/sessions/{id}";
+}
+
+/// <summary>
 /// The move of the ledger's state machine. Not found for an unknown record; a conflict for a terminal record, an illegal move, a tree
 /// another session holds, or words that changed; a bad request for an unknown state name.
 /// </summary>
@@ -167,6 +177,8 @@ public sealed record MoveSaid(string Id, string? Word, string? To = null) : IRou
 [JsonSerializable(typeof(DeleteSession))]
 [JsonSerializable(typeof(JudgeSessionDelete))]
 [JsonSerializable(typeof(ListSessions))]
+[JsonSerializable(typeof(ReadSession))]
+[JsonSerializable(typeof(SessionResponse))]
 [JsonSerializable(typeof(AdvanceSession))]
 [JsonSerializable(typeof(OpenSession))]
 [JsonSerializable(typeof(OpenChat))]

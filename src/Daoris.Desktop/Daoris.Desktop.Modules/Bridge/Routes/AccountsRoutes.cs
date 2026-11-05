@@ -280,8 +280,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
         if (_loop.Service is not { } service) return null;
         try
         {
-            var json = await SessionRecords.ReadAsync(
-                service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false);
+            // The open ones: an ended record counts nothing.
+            var json = await service.SessionList.JsonAsync(includeClosed: false, cancellationToken).ConfigureAwait(false);
             return RunningOn(json, Owners(_loop.Harnesses));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or IOException or JsonException

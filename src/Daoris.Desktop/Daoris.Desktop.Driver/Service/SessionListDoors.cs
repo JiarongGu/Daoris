@@ -25,6 +25,19 @@ public sealed class SessionListDoors
         return sent.Reply.Payload;
     }
 
+    /// <summary>
+    /// One record as the list answers it, open or closed (<c>GET /api/sessions/{id}</c>), the text the readers read from; null where the
+    /// service has no record of that id.
+    /// </summary>
+    /// <exception cref="DriverException">A refused read other than none.</exception>
+    public async Task<string?> OneJsonAsync(string id, CancellationToken ct = default)
+    {
+        var sent = await _service.SendAsync(new ReadSession(id), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        sent.Answered();
+        return sent.Reply.Payload;
+    }
+
     internal async Task<SessionResponse[]> ListedAsync(bool includeClosed, CancellationToken ct) =>
         (await _service.SendAsync(new ListSessions(IncludeClosed: includeClosed ? true : null), ct).ConfigureAwait(false)).Answered();
 

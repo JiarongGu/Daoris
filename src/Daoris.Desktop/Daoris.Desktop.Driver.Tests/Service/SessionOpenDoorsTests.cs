@@ -128,6 +128,8 @@ public sealed class SessionOpenDoorsTests
         Assert.Single(host.Heard.Where(call => call.Body is not null));
         Assert.True(answer.Held);
         Assert.Equal(["candidate"], answer.Candidates);
+        // The held read asks the open ones, never every record.
+        Assert.Equal("/api/sessions", host.Heard[^1].Path);
     }
 
     [Fact]
