@@ -114,6 +114,17 @@ internal static class ProviderRegistration
             : declaring is null ? TablesPart.None : TablesPart.Of(declaring, withErrors: true);
         var usage = new UsagePart((references ?? declaring)?.Usage);
 
+        // A holder (`codex`) has no door of its id, and the words and the usage question its built door says its accounts in are the
+        // agent's, not the door's: the provider holds them, and the door is read through it (row d, O3-F2). What a joined plugin door
+        // reads of it stays its `Lent` part's below.
+        if (group.Holder is not null
+            && group.Doors.Order(StringComparer.Ordinal).FirstOrDefault(name => set.DeclaredBy(name) is null) is { } builtDoor
+            && set.Resolve(builtDoor).Toolchain is { } builtToolchain)
+        {
+            tables = TablesPart.Of(builtToolchain, withErrors: false);
+            usage = new UsagePart(builtToolchain.Usage);
+        }
+
         // What a harness naming this id reads of it, one level (O4-F1): all that it declares, but a holder's words and usage
         // question, which no door carries here and none reads (`codex`, until a correction of its own).
         var lent = group.Holder is { } holder
