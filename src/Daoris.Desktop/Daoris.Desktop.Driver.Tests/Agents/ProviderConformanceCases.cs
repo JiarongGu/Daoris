@@ -245,7 +245,7 @@ internal static class ConformanceCases
         var name = $"`{door.Id}`";
 
         Assert.Equal((door.Postures.Ordinary, door.Postures.Asking, door.Postures.Full), (adapter.AcpPosture, adapter.AskingPosture, adapter.FullPosture));
-        var help = HelpAccess.For(HelpModes.Full, adapter).Refusal;
+        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(adapter)).Refusal;
         var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", adapter).Refusal;
         var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", adapter).Refusal;
         if (door.Postures.Full is { Length: > 0 })

@@ -31,7 +31,7 @@ public sealed class AdapterTests
         var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, adapter);
         var composed = TargetPrompt.Composed(target);
         var process = ChatRunner.ProcessTold(
-            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), CommitRules.DefaultSource), null, adapter: adapter);
+            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), CommitRules.DefaultSource), null, agent: new ChatAgent(adapter));
         foreach (var words in new[] { composed.Text, process.Words })
         {
             Assert.Contains($"`{name}`", words);
