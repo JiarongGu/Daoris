@@ -712,11 +712,11 @@ public sealed class HandOverTests : IDisposable
     // ——— A quest's session (MIXAGENT1a-ii, D163 point 1): judged by the quest's state, whose take it is, the session's place
     // among the quest's runs here, and the named agent's door; kept as a box the driver's next look takes.
 
-    /// <summary>The roster as the terminal reads it for a driven start: an agent's accounts and the wire its door rides.</summary>
+    /// <summary>The roster as the terminal reads it for a driven start: an agent's accounts and whether it drives an unadopted repository.</summary>
     private static HandOverAgent? Drives(string agent) => agent switch
     {
-        "codex-acp" => new(["work", "home"], SessionWire.Acp),
-        "claude-code" => new(["account-1"], SessionWire.Pipe),
+        "codex-acp" => new(["work", "home"], Unadopted: true),
+        "claude-code" => new(["account-1"], Unadopted: false),
         _ => null,
     };
 

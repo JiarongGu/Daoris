@@ -110,7 +110,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // Through the roster's live set, not the one the runner was built with: the driver's tick hands the roster the build's adapters plus
         // whatever the plugins declare, so a harness declared since the shell started is a harness a conversation can run on now.
         var resolved = walking ? null! : harnesses.Adapters.Resolve(adapter);
-        if (!walking && !resolved.Interactive) return new(null, NotInteractive(resolved.Name));
+        if (!walking && !resolved.Abilities().Interactive) return new(null, NotInteractive(resolved.Name));
 
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var known = snapshot.Repositories
@@ -148,7 +148,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
                 if (chosen is not null) adapter = chosen.Agent;
                 walking = order.Count > 1;
                 resolved = walking ? null! : harnesses.Adapters.Resolve(adapter);
-                if (!walking && !resolved.Interactive) return new(null, NotInteractive(resolved.Name));
+                if (!walking && !resolved.Abilities().Interactive) return new(null, NotInteractive(resolved.Name));
             }
         }
         catch (DriverException error)
@@ -276,7 +276,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
             pending.Entry = chosen!;
             context.Pending.Link(pending, sessionId);
         }
-        else if (chosen is not null && resolved.Wire == SessionWire.Acp)
+        else if (chosen is not null && resolved.Abilities().SetAtOpen)
         {
             // The replacement runs where the refused record ran: its own tree kept, or the checkout. Its open moves the moving words the
             // refused record keeps, which it names and read, and any of the person's kept there since, in its own step.

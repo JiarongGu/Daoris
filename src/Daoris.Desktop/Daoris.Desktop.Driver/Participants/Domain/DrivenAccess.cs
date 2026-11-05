@@ -94,7 +94,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             : "this agent takes no rules, so the person's own denies and the tree guard do not reach it";
         if (permissions is not (AccessRules.Asking or AccessRules.Unrestricted))
         {
-            var own = adapter.Wire == SessionWire.Pipe ? "the permission mode driven sessions always ran in there"
+            var own = !adapter.Abilities().SetAtOpen ? "the permission mode driven sessions always ran in there"
                 : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {Spelled(posture)} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
             return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Name}`, {own} (D81); {keeps}.") { Repository = repository };

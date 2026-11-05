@@ -81,7 +81,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         // resume (SESSCTX1c, D189's amendment; HoldAsync tried it): it never opened it, which a crash, a failed sign-in or a flag it
         // rejected ends the same way, so it is `exited`, never `gone`, and the record carries on as any refused resume's does. Read from
         // the structure, never from its words.
-        if (resume.Refused is null && adapter.Wire == SessionWire.Pipe && !resume.Named && exitCode is int failed && failed != 0)
+        if (resume.Refused is null && adapter.Abilities().ResumesByRestart && !resume.Named && exitCode is int failed && failed != 0)
         {
             resume.Refused = ContinueWhy.Of(ContinueWhy.Exited);
         }

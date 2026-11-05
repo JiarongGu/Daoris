@@ -13,8 +13,8 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     /// <summary>The door's name, which a record, a reading and a log line name the agent by.</summary>
     public string Name => adapter.Name;
 
-    /// <summary>The door the conversation runs on: the native pipe or the protocol door.</summary>
-    public SessionWire Wire => adapter.Wire;
+    /// <summary>What the conversation's door can do (<see cref="DoorAbilities"/>).</summary>
+    public DoorAbilities Abilities => adapter.Abilities();
 
     /// <summary>Whether the agent takes Daoris's rules file: a flag on the pipe, the session's meta on the protocol door.</summary>
     public bool TakesSettings => adapter.TakesSettings;

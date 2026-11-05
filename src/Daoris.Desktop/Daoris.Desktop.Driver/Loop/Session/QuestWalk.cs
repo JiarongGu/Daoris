@@ -29,7 +29,7 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         (string Code, string Why)? Gate(ActorEffective entry, ISessionAdapter adapter)
         {
             if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) return (StartPasses.NoPosture, unposed);
-            return !adopted && adapter.Wire != SessionWire.Acp
+            return !adopted && !Adoption.Unadopted(adapter.Abilities())
                 ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris")
                 : null;
         }

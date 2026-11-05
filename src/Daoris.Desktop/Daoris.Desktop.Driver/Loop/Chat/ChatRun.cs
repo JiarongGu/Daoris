@@ -95,7 +95,7 @@ internal sealed class ChatRun(
                 new ChatTarget(place.Name, workTree, service.BaseUrl)
                 {
                     Asked = carrying,
-                    Resume = agent.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
+                    Resume = agent.Abilities.ResumesByRestart ? goOn?.Ask.Conversation : null,
                     // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door.
                     PermissionMode = place.PermissionMode,
                     // Its own record, so a take through the connector its harness starts marks it.
@@ -142,7 +142,7 @@ internal sealed class ChatRun(
                     home, sessionId, composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop.
                     ChildLineage.HookFor(home, sessionId));
-                if (agent.Wire == SessionWire.Pipe) agent.HandSettings(info, rules);
+                if (!agent.Abilities.RulesOnWire) agent.HandSettings(info, rules);
                 else meta = agent.Meta(rules, skillPlugins);
             }
 
@@ -165,17 +165,18 @@ internal sealed class ChatRun(
             // The servers the plugins hand every session, on this door too. The protocol door carries them on `session/new`; a driven or
             // intake session on the pipe is handed a file, and a conversation on the pipe was handed nothing at all. A room has no `.mcp.json`
             // of its own, so its connector goes in the same file.
-            offered = agent.Wire == SessionWire.Acp || place.ConnectorOnPipe
-                ? chatServers.For(sessionId, place.Circle, pluginServers, agent.Wire == SessionWire.Acp ? proc : null)
+            var onWire = agent.Abilities.ServersOnWire;
+            offered = onWire || place.ConnectorOnPipe
+                ? chatServers.For(sessionId, place.Circle, pluginServers, onWire ? proc : null)
                 : pluginServers;
-            if (agent.Wire == SessionWire.Pipe) servers = agent.HandServers(info, home, sessionId, offered);
+            if (!onWire) servers = agent.HandServers(info, home, sessionId, offered);
 
             // What Ask Daoris's start handed, kept now its every input is composed and before its process starts, read from the spawn itself:
             // whether its command line or its protocol door's meta names each file.
             if (helpMode is not null)
             {
-                var pipe = agent.Wire == SessionWire.Pipe;
-                wiring.Of<HelpAccessSwap>().KeepWired(sessionId, new HelpHanded(helpMode, goOn is not null, agent.Name, agent.Wire, workTree)
+                var pipe = !agent.Abilities.SetAtOpen;
+                wiring.Of<HelpAccessSwap>().KeepWired(sessionId, new HelpHanded(helpMode, goOn is not null, agent.Name, agent.Abilities.Transport, workTree)
                 {
                     Version = selection.Version,
                     Account = selection.Profile,
@@ -307,7 +308,7 @@ internal sealed class ChatRun(
         // A conversation going on hands its words to the native door only once its watch began, so a word the person says meanwhile goes after
         // them; the protocol door waits for its session to open anyway.
         var tracked = goOn is null ? null : new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (agent.Wire == SessionWire.Acp)
+        if (agent.Abilities.HeldOnWire)
         {
             chat = new ProtocolChat(
                 Changed,

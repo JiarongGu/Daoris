@@ -147,7 +147,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             // Its connector and nothing else, as a reviewer's is: no plugin's server, which could write where a helper may not.
             string? handed = null;
             string? preamble = null;
-            if (adapter.Wire == SessionWire.Pipe)
+            if (!adapter.Abilities().ServersOnWire)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = HelperPass.NoConnector;

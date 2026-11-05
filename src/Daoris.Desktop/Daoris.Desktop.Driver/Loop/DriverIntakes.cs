@@ -282,7 +282,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             string? handed = null;
             string? preamble = null;
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
-            if (adapter.Wire == SessionWire.Pipe)
+            if (!adapter.Abilities().ServersOnWire)
             {
                 var connector = _driver.Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;

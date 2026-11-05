@@ -206,7 +206,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             // protocol door carries the connector on the wire; the pipe door takes a file under the home, as an intake's does.
             string? handed = null;
             string? preamble = null;
-            if (adapter.Wire == SessionWire.Pipe)
+            if (!adapter.Abilities().ServersOnWire)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = OpinionPass.NoConnector;

@@ -10,9 +10,8 @@ namespace Daoris.Driver;
 public sealed record ChannelStaged(string Where, string Staging, string Executable);
 
 /// <summary>
-/// The makers' own release channels this build installs a pin from (AGT2b; PUSH1f2e): Claude Code's release bucket
-/// (<see cref="ClaudeReleaseDownloads"/>) and Codex's releases (<see cref="CodexReleaseDownloads"/>), the CLI's <c>channels.ts</c>
-/// until it left. A pin is staged where no reader takes it and no other run meets it, <c>&lt;where&gt;.part-&lt;pid&gt;</c>, holding
+/// The makers' own release channels this build installs a pin from (AGT2b; PUSH1f2e), each Install's <see cref="IReleaseSource"/> in
+/// <see cref="Sources"/>, the CLI's <c>channels.ts</c> until it left. A pin is staged where no reader takes it and no other run meets it, <c>&lt;where&gt;.part-&lt;pid&gt;</c>, holding
 /// nothing while it downloads, then published by one folder move after a look again at what is there (the alone-path design §1.4): a
 /// terminal's pin publishes under the home's lease, which it waited for; the window's loop holds its home already.
 /// </summary>
@@ -21,36 +20,27 @@ public static class ReleaseChannels
     /// <summary>Where a channel's install is staged, beside the folder it becomes, then its process's id.</summary>
     public const string Staging = ".part";
 
+    /// <summary>The release sources this build installs from, Install's own (<see cref="IReleaseSource"/>).</summary>
+    public static IReadOnlyList<IReleaseSource> Sources { get; } = [new ClaudeReleaseSource(), new CodexReleaseSource()];
+
     /// <summary>The channels this build installs from.</summary>
-    public static IReadOnlyList<string> Known { get; } = [ClaudeReleases.Channel, CodexReleases.Channel];
+    public static IReadOnlyList<string> Known { get; } = [.. Sources.Select(source => source.Channel)];
 
     /// <summary>Whether this build installs from <paramref name="channel"/>.</summary>
     public static bool Knows(string channel) => Known.Contains(channel, StringComparer.Ordinal);
 
+    /// <summary>The source of <paramref name="channel"/>.</summary>
+    /// <exception cref="DriverException">The channel is not one this build knows.</exception>
+    public static IReleaseSource Of(string channel) =>
+        Sources.FirstOrDefault(source => string.Equals(source.Channel, channel, StringComparison.Ordinal)) ?? throw Unknown(channel);
+
     /// <summary>Refuse a version the channel cannot install verifiably, before anything is fetched.</summary>
     /// <exception cref="DriverException">It is not one exact release the channel installs; or the channel is not one this build knows.</exception>
-    public static void RefuseVersion(string channel, string version)
-    {
-        switch (channel)
-        {
-            case ClaudeReleases.Channel:
-                ClaudeReleases.RefuseVersion(version);
-                break;
-            case CodexReleases.Channel:
-                CodexReleases.RefuseVersion(version);
-                break;
-            default:
-                throw Unknown(channel);
-        }
-    }
+    public static void RefuseVersion(string channel, string version) => Of(channel).RefuseVersion(version);
 
     /// <summary>The exact version a channel names as its newest release (USE1a), what an update pins.</summary>
-    public static Task<string> LatestAsync(string channel, CancellationToken ct, HttpMessageHandler? transport = null) => channel switch
-    {
-        ClaudeReleases.Channel => ClaudeReleaseDownloads.LatestAsync(ct, transport),
-        CodexReleases.Channel => CodexReleaseDownloads.LatestAsync(ct, transport),
-        _ => throw Unknown(channel),
-    };
+    public static Task<string> LatestAsync(string channel, CancellationToken ct, HttpMessageHandler? transport = null) =>
+        Of(channel).LatestAsync(ct, transport);
 
     /// <summary>
     /// A pin's first half: fetched and verified into its own staging, <c>&lt;where&gt;.part-&lt;pid&gt;</c>. Its start sweeps the
@@ -66,7 +56,8 @@ public static class ReleaseChannels
         HttpMessageHandler? transport = null, string? platform = null, (string Key, string Fingerprint)? trust = null,
         int? process = null, Func<int, bool>? running = null)
     {
-        RefuseVersion(channel, version);
+        var source = Of(channel);
+        source.RefuseVersion(version);
         Sweep(where, running ?? Running);
         var staging = StagingOf(where, process ?? Environment.ProcessId);
         var kept = false;
@@ -75,9 +66,7 @@ public static class ReleaseChannels
             if (Directory.Exists(where + Staging)) Directory.Delete(where + Staging, recursive: true);
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
             Directory.CreateDirectory(Path.Combine(staging, "package"));
-            var executable = channel == ClaudeReleases.Channel
-                ? await ClaudeReleaseDownloads.StageAsync(staging, version, write, ct, transport, platform, trust).ConfigureAwait(false)
-                : await CodexReleaseDownloads.StageAsync(staging, version, write, ct, transport, platform).ConfigureAwait(false);
+            var executable = await source.StageAsync(staging, version, write, ct, new ReleaseFetch(transport, platform, trust)).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
             kept = true;
             return new ChannelStaged(where, staging, executable);

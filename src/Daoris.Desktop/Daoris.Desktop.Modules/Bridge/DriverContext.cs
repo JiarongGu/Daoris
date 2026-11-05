@@ -181,7 +181,9 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     {
         try
         {
-            return ActorChoices.FirstAgent("build", config) is { } first ? loop.Harnesses.Adapters.Resolve(first).Wire : SessionWire.Pipe;
+            return ActorChoices.FirstAgent("build", config) is { } first && Adoption.Unadopted(first, loop.Harnesses.Adapters.AbilitiesOf)
+                ? SessionWire.Acp
+                : SessionWire.Pipe;
         }
         catch (DriverException)
         {

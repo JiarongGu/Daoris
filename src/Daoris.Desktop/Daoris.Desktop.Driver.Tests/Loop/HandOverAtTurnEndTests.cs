@@ -146,7 +146,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
             _home, client, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), store: new MoveStore(_home, () => StoreSettled.Yes),
             scope: MoveTakeUpScope.LeaseHolder);
         var pressed = await QuestHandOver.AskAsync(
-            client, moves, _ => new HandOverAgent([], SessionWire.Acp), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person);
+            client, moves, _ => new HandOverAgent([], Unadopted: true), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person);
         Assert.True(pressed.Kept, pressed.Message);
         // FOUNDATION1f-v part c: the press is kept as a driven move in the store, never a box.
         Assert.Equal("dsh", new MoveStore(_home).Standing("s1")!.Agent);
