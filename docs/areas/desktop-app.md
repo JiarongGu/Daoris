@@ -217,7 +217,12 @@ web paths are under `src/Daoris.Web/src/`.
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds
     its modules in their folders, folded together or one at a time; a cycle, across folders too, is one card in the
-    nearest folder holding it; its lines run around its cards. (from D150, D67, D224)
+    nearest folder holding it; its lines run around its cards. Each zoom says less about the same cards: a repository,
+    module or folder has its words at the full tier, its name alone at the chip tier and nothing inside at the dot
+    tier, and the chosen and the focused keep their name beside the card at every tier. One choice stands forward on
+    both levels (its lines and neighbours at full ink, the rest at 40%), is said once in one polite line under the
+    drawing, and a double press counts as one press. A repository's detail has a door to its page; *Back to the map*
+    from a code map chooses and reveals the repository and returns the focus. (from D150, D67, D224, D239)
 62. Doctrine is never written from the window; it shows the command to run. (from D31)
 
 ## Where a change goes
@@ -274,9 +279,9 @@ web paths are under `src/Daoris.Web/src/`.
 - **AGENTSPLACE1**: the place pages carry the Roles, Workflow and Sessions sections, which `setupLit` waits on.
 - **FLOWCHART2h**: the workflow editor seen in the installed window.
 - **COMPANYVIEW1**: the agents' structure configured and seen, as a list and as a diagram (remaining rows).
-- **MAPUX1**: the Map's UI and UX. The design (`docs/2026-11-06-map-ux-design.md`) is proposed: what each zoom shows, one
-  choice read in one line and one detail, find on the level shown, the list as one tree, *Back to the map* returning with the
-  repository chosen. Today a card draws the same at the full and chip tiers, and *Which quests* opens on all of them.
+- **MAPUX1**: the Map's UI and UX (`docs/2026-11-06-map-ux-design.md`). Built: the tiers' content, the choice forward, its
+  line and the detail's door to the repository's page, *Back to the map* choosing and revealing the repository. Open: find
+  on the level shown, the list as one tree, the empty and failing cases, and *Which quests* opening on all of them.
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.

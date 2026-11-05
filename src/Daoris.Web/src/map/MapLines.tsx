@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import type { EdgeContext } from '../design/canvas/SuppliedCanvas';
 import { lineDrawn } from '../design/canvas/suppliedCull';
-import type { MapLine } from './mapLayout';
+import type { Drawn, MapLine } from './mapLayout';
 import type { ChainEdge, Live } from './topology';
 
 /**
@@ -49,7 +49,7 @@ export const lineLabel = (t: (key: string) => string, label: string, live: Live)
   (live ? `${label}${t(`map.lineLive.${live}`)}` : label);
 
 /** What a line is named for a reader and in the list: its kind, its ends and its count, and a session on it now. */
-export function lineName(t: TFunction, line: MapLine): string {
+export function lineName(t: TFunction, line: Drawn): string {
   switch (line.kind) {
     case 'depends': return t('map.dependsLabel', { from: line.edge.from, to: line.edge.to });
     case 'knowledge': return t('map.knowledgeLabel', { a: line.edge.a, b: line.edge.b, count: line.edge.groups });
@@ -98,6 +98,9 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
   const litNode = hovered ?? (selected !== null && !chosenLine ? selected : null);
   const forward = (line: MapLine) => (hovered === null && chosenLine ? selected === line.id : litNode === null || line.from === litNode || line.to === litNode);
   const dotted = context.tier === 'dot';
+  // A line at the dot tier is 1 px of ink; at the chip tier its count is said only where the eye is (§3 of the map UX design).
+  const thin = dotted ? { strokeWidth: 1 } : undefined;
+  const counted = (line: MapLine) => !dotted && (context.tier === 'full' || line.id === selected || (hovered !== null && (line.from === hovered || line.to === hovered)));
 
   return (
     <>
@@ -123,21 +126,21 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
         let count: ReactElement | null = null;
         switch (line.kind) {
           case 'depends':
-            shown = <path d={line.d} fill="none" strokeDasharray={DEPENDS_DASH} markerEnd="url(#map-arrow-declared)" className={cn('shown stroke-ink-soft', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
+            shown = <path d={line.d} fill="none" strokeDasharray={DEPENDS_DASH} markerEnd="url(#map-arrow-declared)" style={thin} className={cn('shown stroke-ink-soft', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
             break;
           case 'knowledge':
-            shown = <path d={line.d} fill="none" strokeDasharray="5 5" className={cn('shown stroke-ink-faint', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
+            shown = <path d={line.d} fill="none" strokeDasharray="5 5" style={thin} className={cn('shown stroke-ink-faint', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
             break;
           case 'asks': {
             const open = line.edge.open > 0;
-            shown = <path d={line.d} fill="none" strokeDasharray={ASKS_DASH} markerEnd={marker(open)} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')} />;
+            shown = <path d={line.d} fill="none" strokeDasharray={ASKS_DASH} markerEnd={marker(open)} style={thin} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')} />;
             count = <Count x={line.mid.x} y={line.mid.y} open={open} count={line.edge.quests.length} live={line.edge.live} />;
             break;
           }
           case 'chains': {
             const open = chainOpen(line.edge);
             const steps = line.edge.steps.length + line.edge.waiting.length;
-            shown = <path d={line.d} fill="none" strokeDasharray={CHAIN_DASH} strokeLinecap="round" markerEnd={marker(open)} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')} />;
+            shown = <path d={line.d} fill="none" strokeDasharray={CHAIN_DASH} strokeLinecap="round" markerEnd={marker(open)} style={thin} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')} />;
             count = <Count x={line.mid.x} y={line.mid.y} open={open} count={steps} live={line.edge.live} />;
             break;
           }
@@ -146,7 +149,7 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
             shown = (
               <path
                 d={line.d} fill="none" markerEnd={marker(open)}
-                style={{ strokeWidth: (chosen ? 2 : 0) + 1.5 + Math.min(line.edge.quests.length, 6) * 0.5 }}
+                style={thin ?? { strokeWidth: (chosen ? 2 : 0) + 1.5 + Math.min(line.edge.quests.length, 6) * 0.5 }}
                 className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong')}
               />
             );
@@ -164,7 +167,7 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
           >
             <path d={line.d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
             {shown}
-            {!dotted && count}
+            {counted(line) && count}
           </g>
         );
       })}

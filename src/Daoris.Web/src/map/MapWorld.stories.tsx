@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { keptAtZoom } from '../design/canvas/storyZoom';
 import { memoryKey } from '../design/canvas/viewMemory';
 import { inDark } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
@@ -111,6 +112,23 @@ export const WorkspacesChineseDark: Story = { args: { topology: blocks() }, deco
 /** A line chosen: it stands forward alone and the rest step back. */
 export const ALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } } };
 export const ALineChosenRing: Story = { args: { topology: RING, line: { kind: 'quests', from: 'game', to: 'engine' } }, decorators: [storyWidths.half] };
+
+/**
+ * Each zoom says less about the same cards (MAPUX1a): at 100% a name, its count and the session in words; at 50% the name and count; at
+ * 25% a dot, the ring kept, and the chosen card's name beside it. The anchor keeps the view on the first repository.
+ */
+const atZoom = (k: number) => keptAtZoom('map', 'story', k, 'repo-00');
+export const Zoom100: Story = { decorators: [atZoom(1), storyWidths.wide] };
+export const Zoom50: Story = { decorators: [atZoom(0.5), storyWidths.wide] };
+export const Zoom25: Story = { decorators: [atZoom(0.25), storyWidths.wide] };
+export const Zoom100Chinese: Story = { decorators: [atZoom(1), storyWidths.wide, chinese] };
+export const Zoom50Chinese: Story = { decorators: [atZoom(0.5), storyWidths.wide, chinese] };
+export const Zoom25Chinese: Story = { decorators: [atZoom(0.25), storyWidths.wide, chinese] };
+/** The chosen and its neighbours stand forward, the rest at 40%; at 25% the chosen card keeps its name beside it. */
+export const ChoiceForward: Story = { args: { line: { kind: 'node', id: 'repo-03' } }, decorators: [atZoom(1), storyWidths.wide] };
+export const ChoiceForwardChinese: Story = { args: { line: { kind: 'node', id: 'repo-03' } }, decorators: [atZoom(0.5), storyWidths.wide, chinese] };
+export const ChoiceLabelledAtTheDotTier: Story = { args: { line: { kind: 'node', id: 'repo-03' } }, decorators: [atZoom(0.25), storyWidths.half] };
+export const ChoiceForwardRing: Story = { args: { topology: RING, line: { kind: 'node', id: 'engine' } }, decorators: [storyWidths.half] };
 
 /** *Show as list* pressed, as a keyboard reaches it in the toolbar. */
 const asList: Story['play'] = async ({ canvasElement }) => {

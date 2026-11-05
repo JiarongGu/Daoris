@@ -250,7 +250,7 @@ test('a repository opens its own code map, and one without says where it would g
   await page.getByRole('button', { name: 'media', exact: true }).click();
   await expect(page.getByText('loads video and image fields named by the media config')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Back to the workspace' }).click();
+  await page.getByRole('button', { name: 'Back to the map' }).click();
   await page.getByRole('button', { name: /^game, \d+ open/ }).click();
   await page.getByRole('button', { name: 'Open code map' }).click();
   await expect(page.getByText('game keeps no code map')).toBeVisible();

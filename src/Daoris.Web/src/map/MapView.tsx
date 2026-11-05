@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodeMapDetail, CodeMapWorld } from './code/CodeMap';
+import { ChoiceLine } from './ChoiceLine';
+import { codeChoice, mapChoice } from './choiceWords';
 import type { MapSelection } from './MapLines';
 import { MapWorld } from './MapWorld';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
@@ -25,7 +27,7 @@ const SHARED = 0.75;
  * convergence findings, the live sessions — so it adds no request shape the service does not serve,
  * and nothing machine-local: the same map in a browser and on the desktop (D47 §4).
  */
-export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest }: {
+export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest, onOpenRepository }: {
   notify: Notify;
   /**
    * The repository whose code map it opens on, where a door named one: a repository's page (FRAME1e). The Map then
@@ -35,6 +37,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   onOpenConvergence?: () => void;
   /** A quest named in a detail opens on its page, on Quests (UX5 U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
+  /** A repository named in a detail opens on its page, on Repositories (MAPUX1b). */
+  onOpenRepository?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
   const registry = useRegistry();
@@ -49,17 +53,27 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   const [code, setCode] = useState<string | null>(opening);
   const [module, setModule] = useState<string | null>(null);
   const codeMap = useCodeMap(code);
+  // Whether a door (a repository's page) opened the code map rather than the detail's press: it decides where the focus goes back to.
+  const [byDoor, setByDoor] = useState(opening !== null);
+  // The repository a way back chooses and shows on the workspace map, once its card is drawn.
+  const [arriving, setArriving] = useState<{ id: string; focus: boolean } | null>(null);
+  const openCode = (repository: string) => { setByDoor(false); setCode(repository); };
   useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);
 
   if (code !== null) {
     const back = () => {
-      // The focus goes back to the press that opened the code map (UX6h3d); a map a door opened has none, so the heading.
-      const press = t('map.detail.openCode');
-      returnFocus({
-        find: () => buttonNamed(press),
-        settled: () => document.querySelector('h1')?.textContent !== t('code.title', { repository: code }) && document.querySelector('[aria-busy]') === null,
-        fallback: () => document.querySelector<HTMLElement>('h1'),
-      });
+      // Back chooses and shows the repository (MAPUX1c). The focus goes to the press that opened the code map (UX6h3d), or, where a
+      // door opened it and there was no press, to the repository's card, which the canvas focuses once drawn.
+      if (!byDoor) {
+        const press = t('map.detail.openCode');
+        returnFocus({
+          find: () => buttonNamed(press),
+          settled: () => document.querySelector('h1')?.textContent !== t('code.title', { repository: code }) && document.querySelector('[aria-busy]') === null,
+          fallback: () => [...document.querySelectorAll<HTMLElement>('[data-flow-node]')].find((card) => card.getAttribute('data-flow-node') === code) ?? null,
+        });
+      }
+      setSelected({ kind: 'node', id: code });
+      setArriving({ id: code, focus: byDoor });
       setCode(null);
       setModule(null);
     };
@@ -106,6 +120,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
                 onSelect={setModule}
                 version={answer.fed?.commit}
               />
+              <ChoiceLine choice={codeChoice(t, answer.dependencies, module)} hint={t('code.detail.hint')} />
               <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
             </Card>
             <Card>
@@ -175,7 +190,9 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4): one canvas either way. */}
-          <MapWorld topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} />
+          <MapWorld topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} reveal={arriving} />
+          {/* The Map's one live region: the choice, said once per choice. */}
+          <ChoiceLine choice={mapChoice(t, all, selected)} hint={t('map.detail.hint')} />
           {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
               number in a node, which no key named until the window showed it (POLISH4). A kind out of
               sight leaves the key with its lines. */}
@@ -198,7 +215,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
             topology={all}
             selected={selected}
             onOpenConvergence={onOpenConvergence}
-            onOpenCode={setCode}
+            onOpenCode={openCode}
+            onOpenRepository={onOpenRepository}
             onOpenQuest={onOpenQuest}
           />
         </Card>

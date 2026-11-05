@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Provenance } from '../../data/api';
+import { keptAtZoom } from '../../design/canvas/storyZoom';
 import { inDark } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
@@ -78,6 +79,20 @@ export const OneFolderFoldedNarrowChinese: Story = { args: { map: CYCLE_ACROSS_F
 /** The cycle across folders folded alone: one card, labelled with the folders it crosses. */
 export const ACycleAcrossFoldersFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen };
 export const ACycleAcrossFoldersFoldedDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen, decorators: [storyWidths.half, inDark] };
+
+/**
+ * Each zoom says less about the same cards (MAPUX1a): at 100% a module's id, a folder's name and ×n; at 50% the id's last segment; at
+ * 25% a dot, and the chosen module's name beside it. The folders are the map's own, opened whole.
+ */
+const atZoom = (k: number) => keptAtZoom('code', 'daoris@local', k, 'Daoris.Desktop.Driver');
+export const Zoom100: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(1), storyWidths.wide] };
+export const Zoom50: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(0.5), storyWidths.wide] };
+export const Zoom25: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(0.25), storyWidths.wide] };
+export const Zoom100Chinese: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(1), storyWidths.wide, chinese] };
+export const Zoom50Chinese: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(0.5), storyWidths.wide, chinese] };
+export const Zoom25Chinese: Story = { args: { initial: 'Daoris.Desktop.Driver' }, decorators: [atZoom(0.25), storyWidths.wide, chinese] };
+/** A map of 500: closed folders at 50% say their name and ×n; at 25% the chosen folder's frame keeps its title. */
+export const HundredsZoom50: Story = { args: { map: syntheticMap(500) }, decorators: [keptAtZoom('code', 'daoris@local', 0.5, 'module-0000'), storyWidths.wide] };
 
 /** Lines that skip a layer run around the cards between, through the gaps, leaving and entering their cards as every line does. */
 export const LinesAroundCards: Story = { args: { map: SKIPPING_LAYERS, initial: 'app' } };

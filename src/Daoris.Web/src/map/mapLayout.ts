@@ -22,7 +22,7 @@ const TITLE = 28;
 const BLOCK_GAP = 40;
 const PAD = 16;
 
-type Drawn =
+export type Drawn =
   | { kind: 'quests'; edge: QuestEdge }
   | { kind: 'asks'; edge: AskEdge }
   | { kind: 'chains'; edge: ChainEdge }
