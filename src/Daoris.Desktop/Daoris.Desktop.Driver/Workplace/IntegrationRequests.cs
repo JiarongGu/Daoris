@@ -23,8 +23,8 @@ namespace Daoris.Driver;
 /// and who accepted it, are copied from the record as it holds them for its tip: the Accept it records is done. Only a record that does not
 /// say who accepted that tip, one from before that was kept, holds no proof to read.</para>
 /// </remarks>
-/// <param name="workflows">The saved workflows, whose place's <c>integrate</c> step says who requests outside a run (<see cref="PlaceIntegrate"/>).</param>
-public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config, IWorkflowStore workflows)
+/// <param name="home">The Daoris home whose saved workflows' <c>integrate</c> step says who requests outside a run (<see cref="PlaceIntegrate"/>).</param>
+public sealed class IntegrationRequests(IIntegrationRecords records, IIntegrationRequestStore store, Func<DriverConfig> config, string home)
 {
     /// <summary>
     /// Admit <paramref name="ask"/>, or refuse it in a sentence that says why and that nothing was requested. An admitted request is kept in
@@ -41,7 +41,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         }
 
         // Who requests and where a conflict goes are the place's workflow's `integrate` step's; the line's policy says the rest.
-        var policy = PlaceIntegrate.Of(workflows, settings, ask.Repository, ask.Workspace).Over(integrate);
+        var policy = WorkplaceWorkflows.Current.IntegrateOf(home, settings, ask.Repository, ask.Workspace).Over(integrate);
         if (DoorRefusal(ask, policy) is { } closed) return Refuse(IntegrationRefusals.Door, closed);
         return ask.Route switch
         {
@@ -164,7 +164,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     {
         var settings = config();
         if (LandingRules.Line(settings, repository, workspace).Rule is not { Form: LandingForm.Branch, Integrate: not null }
-            || PlaceIntegrate.Of(workflows, settings, repository, workspace).Request != LandingIntegrate.Done)
+            || WorkplaceWorkflows.Current.IntegrateOf(home, settings, repository, workspace).Request != LandingIntegrate.Done)
         {
             return [];
         }

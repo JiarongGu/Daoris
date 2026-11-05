@@ -30,7 +30,7 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
 
     /// <summary>The door over this home's own records and settings, read as the driver reads them.</summary>
     private IntegrationRequests Door(IntegrationStore store) =>
-        new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), new WorkflowFiles(Home));
+        new(new HomeIntegrationRecords(Home), store, () => DriverConfig.Load(DaorisHome.Entry(Home, HomeEntry.DriverConfig)), Home);
 
     /// <summary>This home's own request store, in its desktop store (INTEGRATE1e part e2).</summary>
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);

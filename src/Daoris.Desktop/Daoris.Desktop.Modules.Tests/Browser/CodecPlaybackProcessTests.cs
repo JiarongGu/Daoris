@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class CodecPlaybackProcessTests : Bridge
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan Limit = Poll.Patience;
 
     [Fact]
     public Task H264_with_AAC_plays() => PlaysAsync("h264-aac.mp4");
