@@ -256,6 +256,20 @@ public sealed class TreesWordsTests : IAsyncLifetime
     }
 
     [Fact]
+    public void A_trees_name_given_for_a_session_names_the_session_that_holds_the_tree()
+    {
+        var records = new[] { new SessionRecord("7ca1353a", "engine", "completed") { Tree = Path.Combine("trees", "s-92ed2c8c") } };
+
+        var said = TreesWords.TreeNamedForSession(records, "s-92ed2c8c");
+
+        Assert.NotNull(said);
+        Assert.Contains("session `7ca1353a`'s", said.Error[0]);
+        Assert.Contains("takes the session", said.Error[0]);
+        Assert.Equal(1, said.Code);
+        Assert.Null(TreesWords.TreeNamedForSession(records, "s1a2b3c4"));
+    }
+
+    [Fact]
     public async Task A_landing_the_review_reads_as_landed_says_not_again_on_the_output_exit_1()
     {
         var entry = new LandedBranch("engine", "aurora", "daoris/s-landed00", "main", "abc123", "s1a2b3c4", null, "work", new DateTimeOffset(2026, 10, 18, 9, 0, 0, TimeSpan.Zero));

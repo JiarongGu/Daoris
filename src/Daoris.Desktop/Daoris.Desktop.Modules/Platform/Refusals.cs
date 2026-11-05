@@ -40,6 +40,9 @@ public static class Refusals
     /// <summary>A conversation asked for before the loop's service is answering.</summary>
     public const string DriverNotReady = "DRIVER_NOT_READY";
 
+    /// <summary>A press or read whose service read ran past the client's own bound: the service did not answer in time, so try again.</summary>
+    public const string ServiceBusy = "SERVICE_BUSY";
+
     /// <summary>A harness action this build does not have.</summary>
     public const string HarnessActionUnknown = "HARNESS_ACTION_UNKNOWN";
     public const string HarnessProfileNeeded = "HARNESS_PROFILE_NEEDED";
