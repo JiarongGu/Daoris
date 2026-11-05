@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// What a harness naming <c>codex</c> reads of it is its sign-in alone, no words and no usage question, as today. Codex's limit
-/// words and usage question are the door's, lent to a harness naming <c>codex-acp</c>, until row e moves the accounts' readers.
+/// words and usage question are the agent's, which its door is read through, and they are lent by reference to a harness naming
+/// <c>codex-acp</c>.
 /// </remarks>
 internal static class CodexProvider
 {
@@ -28,8 +29,8 @@ internal static class CodexProvider
                 Evidence),
             // Its home must exist before `initialize` completes (ACP3); every managed home is made before a launch.
             new DoorHome("CODEX_HOME", OwnHome: false, TrustFile: null),
-            // What Codex says when a limit refuses a turn (TOOL4k), and how an account's windows are asked (CODEXUSE1), since this
-            // door forwards none of them.
+            // The same words and question, lent to a harness naming this door (O3-F2): a plugin's door onto `codex-acp` reads Codex's
+            // by reference, while one joined to `codex` reads neither.
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
             Known<PortRef>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
@@ -51,8 +52,10 @@ internal static class CodexProvider
             [door],
             Known<ProgramFacts>.Declared(ProgramFacts.Of(holder), Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(CodexAccounts.Agent), null, pool), Evidence),
-            Known<TablesPart>.Absent,
-            Known<UsagePart>.Absent,
+            // What Codex says when a limit refuses a turn (TOOL4k) and how an account's windows are asked (CODEXUSE1) are the agent's:
+            // its built door is read through them, and a harness naming `codex` still reads its sign-in alone (its `Lent` part below).
+            Known<TablesPart>.Declared(TablesPart.None with { Limits = CodexLimits.Words }, Evidence),
+            Known<UsagePart>.Declared(new UsagePart(CodexUsage.Question), Evidence),
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
             Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
             Known<IConversationHome>.Absent,

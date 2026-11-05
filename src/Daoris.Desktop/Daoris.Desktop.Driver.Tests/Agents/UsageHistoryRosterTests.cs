@@ -104,12 +104,16 @@ public sealed class UsageHistoryRosterTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private HarnessRoster Asked(UsageKind kind) =>
+    private static UsageQuestion Claude => new ClaudeUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
+
+    private static UsageQuestion Codex => new CodexUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
+
+    private HarnessRoster Asked(UsageQuestion question) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = new Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
-                Usage: new UsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded, kind))),
+                Usage: question)),
         }), DaorisHome.Entry(_home, HomeEntry.Harnesses))
         {
             Clock = () => _now,
@@ -150,7 +154,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
             .Replace($"\"utilization\":23,\"resets_at\":\"{At(3.5)}\"", "\"utilization\":0,\"resets_at\":null", StringComparison.Ordinal);
         _answer = ClaudeUsage.Read(Frame(body), _now);
 
-        await Read(Asked(UsageKind.Claude), "account-1");
+        await Read(Asked(Claude), "account-1");
 
         var kept = History().Readings;
         Assert.Equal(
@@ -175,7 +179,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
         var seconds = (double hours) => (Seen + TimeSpan.FromHours(hours)).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
         _answer = CodexUsage.Read(Frame(Placed(CodexUsage.Question.Recorded[0].Frame, "<reset>", seconds(3.5), seconds(100.25))));
 
-        await Read(Asked(UsageKind.Codex), "account-1");
+        await Read(Asked(Codex), "account-1");
 
         Assert.Equal(
             [("300-minute", "session", "codex", 0.01), ("10080-minute", "weekly", "codex", 0.15)],
@@ -188,7 +192,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
     [Fact]
     public async Task Another_plan_as_read_begins_the_account_s_next_epoch()
     {
-        var roster = Asked(UsageKind.Claude);
+        var roster = Asked(Claude);
         _answer = ClaudeUsage.Read(Frame(ClaudeAnswer()), _now);
         await Read(roster, "account-1");
 
@@ -241,13 +245,13 @@ public sealed class UsageHistoryRosterTests : IDisposable
                 "account":{"email_address":"{{Email}}","organization_name":"{{Org}}","api_key":"{{Key}}"}
                 """, StringComparison.Ordinal);
         _answer = ClaudeUsage.Read(Frame(body), _now);
-        await Read(Asked(UsageKind.Claude), "account-1");
+        await Read(Asked(Claude), "account-1");
 
         var codex = Placed(CodexUsage.Question.Recorded[0].Frame, "<reset>", "1790000000", "1790000000")
             .Replace("\"limitId\":\"codex\"", $"\"limitId\":\"{Email}\",\"accountId\":\"{Key}\",\"planType\":\"{Org}\"", StringComparison.Ordinal);
         _now += TimeSpan.FromMinutes(10);
         _answer = CodexUsage.Read(Frame(codex));
-        await Read(Asked(UsageKind.Codex), "account-2");
+        await Read(Asked(Codex), "account-2");
 
         var text = string.Concat(Directory.EnumerateFiles(UsageHistory.FolderOf(_home)).Select(File.ReadAllText));
         Assert.NotEmpty(History().Readings);

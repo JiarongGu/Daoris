@@ -54,7 +54,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private static readonly UsageQuestion Question = new("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
+    private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
     private HarnessToolchain Toolchain(UsageQuestion? usage = null, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
@@ -189,7 +189,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         // Within the margin of its session's curve, so a start past the floor asks it again (USAGEPROBE1).
         Answers("account-1", 0.85, 0.10);
         Answers("account-2", 0.10, 0.10);
-        var roster = Roster(new UsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded, UsageKind.Claude));
+        var roster = Roster(new ClaudeUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded));
         int FirstAsked() => Asked().Count(asked => asked == "fake/account-1");
 
         await StartAsync(roster);

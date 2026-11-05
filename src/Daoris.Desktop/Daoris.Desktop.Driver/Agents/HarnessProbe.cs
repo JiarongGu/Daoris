@@ -52,8 +52,11 @@ public static class HarnessProbe
         HarnessReport? prior = null,
         Func<string, bool>? asks = null,
         Func<DateTimeOffset>? clock = null,
-        Action<string?, LoginRead, DateTimeOffset>? answered = null)
+        Action<string?, LoginRead, DateTimeOffset>? answered = null,
+        string? accountOf = null)
     {
+        // Whose accounts it lists (AGT7): the key the registry answers (AdapterSet.OwnerOf), the agent itself where none is given.
+        var owner = accountOf ?? adapter;
         var now = clock ?? (() => DateTimeOffset.UtcNow);
         // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
         // managed pin, then PATH. A presence answer computed from PATH while a pin is set is an answer
@@ -73,7 +76,7 @@ public static class HarnessProbe
                 + $"`daoris agent pin {adapter} {run.Pinned}` installs it, and "
                 + $"`daoris agent unpin {adapter}` goes back to PATH",
                 toolchain.ProfileVariable,
-                settings.FirstOf(toolchain.Owner(adapter)),
+                settings.FirstOf(owner),
                 []);
         }
 
@@ -86,7 +89,6 @@ public static class HarnessProbe
         var profiles = new List<ProfileReport>();
 
         // A door lists its OWNER's accounts (AGT7): the same directories, so one tool shows one list.
-        var owner = toolchain.Owner(adapter);
         foreach (var name in HarnessSettings.Profiles(home, owner))
         {
             var profileHome = HarnessSettings.ProfileHome(home, owner, name);

@@ -47,7 +47,7 @@ public sealed class ChatAgentTests : IDisposable
         Assert.Equal(adapter.FrameInterrupt(), agent.FrameInterrupt());
         Assert.Equal(adapter.StructuredOutput() is null, agent.StructuredOutput() is null);
         Assert.Equal(CommitTrailers.For(adapter), agent.Trailers());
-        Assert.Equal(TurnBinding.Of(adapter, "account-1"), agent.Binding("account-1"));
+        Assert.Equal(TurnBinding.Of(AdapterSet.Built(), adapter, "account-1"), agent.Binding(AdapterSet.Built(), "account-1"));
     }
 
     /// <summary>The conversation's process is its door's own, then equipped by the one call every session's is (D230 point 3).</summary>

@@ -247,10 +247,4 @@ public sealed record HarnessToolchain(
     /// with no configuration-home variable, which no account of Daoris's can be handed to. Otherwise it takes a Daoris account.
     /// </summary>
     public bool StartsInOwnHome => RunsInOwnHome || ProfileVariable is not { Length: > 0 };
-
-    /// <summary>
-    /// Whose accounts this runs as (AGT7): <see cref="AccountOf"/> for a door onto another agent,
-    /// else itself. Accounts, their defaults and their keys live under this name; a pin does not.
-    /// </summary>
-    public string Owner(string name) => AccountOf is { Length: > 0 } owner ? owner : name;
 }

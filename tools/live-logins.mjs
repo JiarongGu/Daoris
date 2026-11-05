@@ -31,8 +31,18 @@ const EXEMPT = '// live-logins: refused, never started';
 // This census's own test, whose planted cases are its evidence.
 const OWN_TEST = 'tools/live-logins.test.mjs';
 
-/** The doors onto another agent's accounts, by their toolchains' `AccountOf`; the stub's twin is left out, the stub having no binary. */
-export const ACCOUNT_AGENTS = { 'claude-code-acp': 'claude-code', 'codex-acp': 'codex' };
+// The driver's answer of whose accounts each door runs as, written down once and held equal to the registry's by ProviderRegistryTests
+// (AGENTPROVIDER1 row d), so this census keeps no list of its own.
+const OWNERS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-owner.json';
+
+/** The doors onto another agent's accounts, `{ door: agent }`: each built door whose owner is not itself, but a stand-in's twin, which runs in its own home. */
+export function accountAgents(root) {
+  const built = JSON.parse(readFileSync(join(root, OWNERS), 'utf8')).cases.find((each) => each.name === 'built');
+  if (!built) throw new Error(`${OWNERS} holds no "built" case`);
+  return Object.fromEntries(
+    Object.entries(built.doors).filter(([door, cell]) => cell.owner !== door && !cell.ownHome).map(([door, cell]) => [door, cell.owner]),
+  );
+}
 
 const escape = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -104,7 +114,7 @@ function commandSets(text) {
 }
 
 /** The breaches in `text`, a file at `path`: `{ found, exempt }`, each found `path:line: kind — what`. */
-export function scanText(path, text, rules) {
+export function scanText(path, text, rules, owners) {
   const found = [];
   let exempt = 0;
   text.split(/\r?\n/).forEach((line, at) => {
@@ -117,7 +127,7 @@ export function scanText(path, text, rules) {
     }
   });
   for (const { line, keys } of commandSets(text)) {
-    for (const [door, agent] of Object.entries(ACCOUNT_AGENTS)) {
+    for (const [door, agent] of Object.entries(owners)) {
       if (keys.has(door) && !keys.has(agent)) {
         found.push(`${path}:${line}: an agent command that falls back to PATH — \`${door}\` is named and \`${agent}\`, whose accounts it runs as, is not`);
       }
@@ -131,11 +141,12 @@ export function checkLiveLogins(root) {
   const binaries = agentBinaries(root);
   if (binaries.length === 0) throw new Error(`no agent binary is declared under ${TOOLCHAINS}`);
   const rules = patterns(binaries);
+  const owners = accountAgents(root);
   const problems = [];
   let exempt = 0;
   for (const top of ['src', 'tools']) {
     for (const file of files(join(root, top), (f) => isTest(rel(root, f)) && rel(root, f) !== OWN_TEST)) {
-      const scanned = scanText(rel(root, file), readFileSync(file, 'utf8'), rules);
+      const scanned = scanText(rel(root, file), readFileSync(file, 'utf8'), rules, owners);
       problems.push(...scanned.found);
       exempt += scanned.exempt;
     }

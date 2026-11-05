@@ -33,7 +33,7 @@ public static class ClaudeUsage
     private const string UsageLine = """{"type":"control_request","request_id":"usage","request":{"subtype":"get_usage","skip_behaviors":true}}""";
 
     /// <summary>The question Claude's native door declares for its owner (usage-read evidence, the request and its answer).</summary>
-    public static UsageQuestion Question { get; } = new(
+    public static UsageQuestion Question { get; } = new ClaudeUsageQuestion(
         "claude-code",
         ["claude", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--strict-mcp-config"],
         [
@@ -42,8 +42,7 @@ public static class ClaudeUsage
                 "2026-10-12",
                 "claude 2.1.296's response to get_usage with skip_behaviors, over stream-json outside Daoris's driver (the usage-read evidence); the server's limit rows, usage credits and the account's plan words left out, each reset written <reset>",
                 "2.1.296"),
-        ],
-        UsageKind.Claude);
+        ]);
 
     /// <summary>The question's name as the usage history writes a reading's source (USAGECAP1a1).</summary>
     public const string Source = "get_usage";

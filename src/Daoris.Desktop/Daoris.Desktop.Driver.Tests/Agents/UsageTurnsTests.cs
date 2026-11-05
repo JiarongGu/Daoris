@@ -311,16 +311,16 @@ public sealed class UsageTurnsTests : IDisposable
 
         Assert.Equal(
             new TurnBinding("claude-code", "account-1", "claude-code", UsageHistory.PerTurn),
-            TurnBinding.Of(adapters.Resolve("claude-code"), "account-1"));
+            TurnBinding.Of(adapters, adapters.Resolve("claude-code"), "account-1"));
         Assert.Equal(
             new TurnBinding("claude-code", "account-1", "claude-code-acp", UsageHistory.PerTurn),
-            TurnBinding.Of(adapters.Resolve("claude-code-acp"), "account-1"));
+            TurnBinding.Of(adapters, adapters.Resolve("claude-code-acp"), "account-1"));
         Assert.Equal(
             new TurnBinding(CodexAccounts.Agent, "account-2", "codex-acp", UsageHistory.MeaningUnknown),
-            TurnBinding.Of(adapters.Resolve("codex-acp"), "account-2"));
+            TurnBinding.Of(adapters, adapters.Resolve("codex-acp"), "account-2"));
         // The tool's own sign-in is named as its readings name it; an agent with no accounts has none to name.
-        Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters.Resolve("claude-code"), null).Account);
-        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(new Bare("bare"), "account-1"));
+        Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters, adapters.Resolve("claude-code"), null).Account);
+        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(adapters, new Bare("bare"), "account-1"));
     }
 
     // ——— The model: what the door's split agrees on with the turn's total.
@@ -400,7 +400,7 @@ public sealed class UsageTurnsTests : IDisposable
     {
         const string Email = "someone@example.com", Org = "Acme Holdings", Key = "sk-ant-api03-secret", Words = "the agent said this";
         var events = Watched();
-        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(AdapterSet.Built().Resolve("claude-code"), "account-1"));
+        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(AdapterSet.Built(), AdapterSet.Built().Resolve("claude-code"), "account-1"));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = $"{Words} {Email} {Key}", At = Now.AddMinutes(-1) });
 
         var mapper = new ClaudeStreamJson();

@@ -12,7 +12,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { checkLiveLogins, isTest } from './live-logins.mjs';
+import { accountAgents, checkLiveLogins, isTest } from './live-logins.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(root, 'local', 'scratch', 'live-logins-test');
@@ -21,11 +21,30 @@ after(() => rmSync(scratch, { recursive: true, force: true }));
 
 const TOOLCHAIN = 'public static class T {\n  A = new(Binary: ["claude"]);\n  B = new(Binary: ["codex"]);\n}\n';
 
+// The driver's owner table in miniature: two doors onto another agent's accounts, and a stand-in's twin, which runs in its own home.
+const OWNERS = JSON.stringify({
+  cases: [
+    {
+      name: 'built',
+      doors: {
+        'claude-code': { owner: 'claude-code' },
+        'claude-code-acp': { owner: 'claude-code' },
+        'codex-acp': { owner: 'codex' },
+        'acp-stub': { owner: 'stub', ownHome: true },
+      },
+    },
+  ],
+});
+
 let n = 0;
 /** A fresh tree holding the toolchain and `{ 'src/A.Tests/X.cs': 'source' }`; returns its root. */
 function tree(files) {
   const dir = join(scratch, `t${n++}`);
-  for (const [rel, text] of Object.entries({ 'src/Daoris.Desktop/Daoris.Desktop.Driver/T.cs': TOOLCHAIN, ...files })) {
+  for (const [rel, text] of Object.entries({
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/T.cs': TOOLCHAIN,
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-owner.json': OWNERS,
+    ...files,
+  })) {
     const full = join(dir, rel);
     mkdirSync(dirname(full), { recursive: true });
     writeFileSync(full, text);
@@ -37,6 +56,11 @@ const cs = (body) => ({ 'src/X.Tests/X.cs': `namespace N;\npublic class X {\n${b
 
 test('the tree passes', () => {
   assert.deepEqual(checkLiveLogins(root).problems, []);
+});
+
+test('the doors onto another agent are read from the driver\'s owner table, a stand-in\'s twin left out', () => {
+  assert.deepEqual(accountAgents(tree({})), { 'claude-code-acp': 'claude-code', 'codex-acp': 'codex' });
+  assert.deepEqual(accountAgents(root), { 'claude-code-acp': 'claude-code', 'codex-acp': 'codex' });
 });
 
 test('the agents are read from the toolchains', () => {
