@@ -111,7 +111,7 @@ public static class GitPushActs
         }, ct).ConfigureAwait(false);
         if (run.Refused || run.Act is null || run.Outcome == ActOutcomes.Done) return run;
 
-        var said = runs.Journal.Steps(run.Act).LastOrDefault(each => each.Kind == ActStepKinds.Push)?.Said;
+        var said = runs.Journal.Steps(run.Act).LastOrDefault(each => each.Kind == ActStepKinds.Push)?.Said?.TrimEnd('.', ' ');
         return string.IsNullOrEmpty(said) ? run : run with { Notes = Capital(said) + ".", Said = $"{run.Said} {Capital(said)}." };
     }
 

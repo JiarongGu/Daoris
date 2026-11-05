@@ -9,6 +9,7 @@ import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStand
 import { Deleted } from './Deleted';
 import { DeleteRef } from './DeleteRef';
 import { NewRef, type RefActs } from './NewRef';
+import { PushRef } from './PushRef';
 import { RenameRef, type RenamedRef } from './RenameRef';
 import { Renamed } from './Renamed';
 import { FetchOrigin } from './FetchOrigin';
@@ -168,6 +169,7 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
               {line && <Facts><Said text={standing(t, line, branch.ahead, branch.behind)} /></Facts>}
               {acts && branch.commit && (
                 <div className="grid min-w-0 gap-1">
+                  {acts.push && <PushRef kind="branch" name={branch.name} commit={branch.commit} push={acts.push} />}
                   <RenameRef name={branch.name} commit={branch.commit} acts={acts} onRenamed={setMoved} />
                   <DeleteRef name={branch.name} commit={branch.commit} acts={acts} onDeleted={setGone} />
                 </div>
