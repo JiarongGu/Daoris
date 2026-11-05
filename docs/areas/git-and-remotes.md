@@ -18,7 +18,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 | Unit | File | Its job |
 |---|---|---|
-| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace and token variables, names the doors where laid |
+| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace, token and the inbox's two messaging variables (each executable's entry strips them too), names the doors where laid |
 | The doors | `GitDoors.cs`, `GitCredentialDoor.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe`, `git-remote-daoris.exe` and `git-credential-daoris.exe`: class each act by its remote command, judge it, apply the identity; the third answers an identity's token to git for its own host |
 | Which repository, which address | `GitFolders.cs`, `GitRemotes.cs`, `GitRemoteRows.cs` | The repository from the act's folder; the one address reader; Setup's remote rows and what serves each |
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |

@@ -213,9 +213,8 @@ Knowledge view and session memory; `deployment` for the shared host.
 9. D21 and D47 (people sign in to a shared host with OIDC) vs the service, which has no OIDC code. The code is today's truth.
 10. D30 (the web's primary view is convergence) vs `src/Daoris.Web/src/knowledge/modes.ts:8,18-21` (Search first and default).
     The code reads right.
-11. D212 point 3 (Ask Daoris refused `helper_ask`) and D230's CONTEXTONE1d2 note (a session is listed only what it may call) vs
-    `Mcp/CallTable.cs:68-73,137-139` and `fixtures/call-table.json:43-44`, which serve `helper_ask` to Ask Daoris and an intake
-    that `Core/Sessions/HelperBox.cs:129-140` refuses. The refusal reads right; the listing is a defect.
+11. (Resolved.) `Mcp/CallTable.cs` (`Unowned`) refuses `helper_ask` to Ask Daoris and an intake, as `Core/Sessions/HelperBox.cs`
+    does, and `fixtures/call-table.json` pins both columns without it.
 12. D22 (depend on released siblings, never a working tree) vs `src/Daoris.Service/Directory.Packages.props:19-22` (a local
     Lyntai build until its next release). The code is today's truth.
 13. D21 (`local/` a hard exclusion in shared mode) vs `Core/Knowledge/DisclosurePolicy.cs:17-25` (no path rule): `local/` stays

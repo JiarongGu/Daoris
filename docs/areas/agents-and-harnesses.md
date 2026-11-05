@@ -110,7 +110,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
     server whose package cannot be started is not handed (`server.refused`). A server that drives Daoris's browser is
     started under `server-keeper.mjs`, which starts it afresh when its working set passes 512 MB, checked every 15
-    seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references.
+    seconds and only with no call in flight; the tabs are the browser's, so a chat loses only its snapshot references: a call that names a `ref` from before the
+    restart is answered by the keeper itself with a fresh `browser_snapshot` and a sentence saying the reference is out of
+    date, and is not sent on.
     Playwright MCP keeps every request a tab made since its last navigation (about 50 KB each) and has no option that
     bounds it. (`SessionServers`, `ServerPackages`, `ServerKeeper`)
 14. Plugin skills are copied per session under the home's spawn folder and handed by the harness's session-only door

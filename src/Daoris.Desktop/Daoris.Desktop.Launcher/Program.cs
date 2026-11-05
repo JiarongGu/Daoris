@@ -58,6 +58,9 @@ public static class Launcher
     {
         // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
         Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
+        // The inbox's variables leave with it (the event hook design §6.3).
+        Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);
+        Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_TOKEN", null);
 
         // Before anything is shown: Windows reads a process's id when it first presents something. A
         // failure changes nothing a person can see but where a refusal's button goes.

@@ -13,6 +13,12 @@ public static class ChildMarks
     public const string RoleKeyVariable = "DAORIS_ROLE_KEY";
 
     /// <summary>
+    /// The two variables a Claude Code session's shell carries for its inbox (the event hook design §6.3): its socket and its token.
+    /// No Daoris executable or start passes them on, so an agent Daoris starts never holds the steward's inbox.
+    /// </summary>
+    public static readonly IReadOnlyList<string> MessagingVariables = ["CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN"];
+
+    /// <summary>
     /// The variable a session's process carries its lineage token in (COWORKVIEW1a), set anew at each spawn. 🔴 The lineage hook and
     /// the connector's <c>LineageFile.ProcVariable</c> spell it as twins.
     /// </summary>

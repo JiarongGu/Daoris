@@ -35,6 +35,9 @@ using ModelContextProtocol.Server;
 
 // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
 Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
+// The inbox's variables leave with it (the event hook design §6.3).
+Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);
+Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_TOKEN", null);
 
 // JSON-RPC over stdio is UTF-8, and on Windows the console defaults to the system ANSI codepage —
 // so without this every em dash and every CJK character in the corpus arrives as mojibake. This

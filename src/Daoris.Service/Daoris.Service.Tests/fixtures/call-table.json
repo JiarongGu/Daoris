@@ -36,12 +36,12 @@
     },
     "intake": {
       "only": [
-        "channel_post", "channel_read", "handback_read", "helper_ask", "knowledge_convergence", "knowledge_get", "knowledge_repositories",
+        "channel_post", "channel_read", "handback_read", "knowledge_convergence", "knowledge_get", "knowledge_repositories",
         "knowledge_search", "line_read", "memory_get", "memory_propose", "memory_search", "quest_list", "quest_publish", "quest_respond", "registry"
       ]
     },
     "ask-daoris": {
-      "allBut": ["brainstorm_give", "brainstorm_synthesize", "memory_end", "memory_write"]
+      "allBut": ["brainstorm_give", "brainstorm_synthesize", "helper_ask", "memory_end", "memory_write"]
     },
     "help": {
       "only": [
