@@ -101,8 +101,57 @@ public sealed class ProviderRegistryTests : IDisposable
     [Fact]
     public void A_transport_is_the_wire_the_adapter_declares()
     {
-        Assert.Equal(Transport.Native, TransportOf.Wire(SessionWire.Pipe));
-        Assert.Equal(Transport.Protocol, TransportOf.Wire(SessionWire.Acp));
+        Assert.Equal(Transport.Native, AdapterAbilities.TransportOf(SessionWire.Pipe));
+        Assert.Equal(Transport.Protocol, AdapterAbilities.TransportOf(SessionWire.Acp));
+    }
+
+    [Fact]
+    public void Every_built_door_reads_its_abilities_as_its_adapter_answered_them()
+    {
+        // Row g: a caller's door test reads the door's ability; each one answers what the wire test answered.
+        foreach (var name in AdapterSet.Built().Names)
+        {
+            var adapter = AdapterSet.Built().Resolve(name);
+            var abilities = adapter.Abilities();
+            var protocol = adapter.Wire == SessionWire.Acp;
+            Assert.Equal(protocol, abilities.ServersOnWire);
+            Assert.Equal(protocol, abilities.RulesOnWire);
+            Assert.Equal(protocol, abilities.SetAtOpen);
+            Assert.Equal(protocol, abilities.WordsAtNextStep);
+            Assert.Equal(protocol, abilities.HeldOnWire);
+            Assert.Equal(!protocol, abilities.ResumesByRestart);
+            Assert.Equal(adapter.Interactive, abilities.Interactive);
+            Assert.Equal(adapter.Resumes, abilities.Resumes);
+            Assert.Equal(adapter.TakesSettings, abilities.TakesSettings);
+            Assert.Equal(protocol || adapter.StructuredOutput() is not null, abilities.Structured);
+        }
+    }
+
+    [Theory]
+    [InlineData(new[] { "claude-code" }, false)]
+    [InlineData(new[] { "claude-code", "claude-code-acp" }, true)]
+    [InlineData(new[] { "codex-acp" }, true)]
+    [InlineData(new[] { "dsh" }, true)]
+    [InlineData(new[] { "stub" }, false)]
+    [InlineData(new[] { "nobody-knows" }, false)]
+    [InlineData(new[] { "nobody-knows", "acp-stub" }, true)]
+    [InlineData(new string[0], false)]
+    public void Adoption_drives_where_the_loop_planned_the_protocol_door(string[] build, bool drives)
+    {
+        // The loop's cases (`StartDoor`): the protocol where any of Build's candidates rides it, else the pipe; an unknown id the pipe.
+        var adapters = AdapterSet.Built();
+        Assert.Equal(drives, Adoption.Drives(build, adapters.AbilitiesOf));
+        Assert.Equal(drives, build.Any(door => Adoption.Unadopted(door, adapters.AbilitiesOf)));
+    }
+
+    [Fact]
+    public void A_dsh_door_holds_no_conversation_by_its_declared_ability()
+    {
+        // The chat's two tests of `Interactive` read the door's declaration, never the transport's (C2-1.1).
+        var dsh = AdapterSet.Built().Resolve("dsh").Abilities();
+        Assert.Equal(Transport.Protocol, dsh.Transport);
+        Assert.False(dsh.Interactive);
+        Assert.True(AdapterSet.Built().Resolve("codex-acp").Abilities().Interactive);
     }
 
     /// <summary>§5: a key resolves to its pool, the key and the providers holding it, and a pool that holds none is no pool.</summary>

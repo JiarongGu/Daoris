@@ -23,7 +23,9 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         var built = AdapterSet.Built();
         try
         {
-            return built.WithPlugins(PluginCatalog.Load(home, built.Names)).Resolve(ActorChoices.BuildAgent(config)).Wire;
+            return Adoption.Unadopted(ActorChoices.BuildAgent(config), built.WithPlugins(PluginCatalog.Load(home, built.Names)).AbilitiesOf)
+                ? SessionWire.Acp
+                : SessionWire.Pipe;
         }
         catch (DriverException)
         {

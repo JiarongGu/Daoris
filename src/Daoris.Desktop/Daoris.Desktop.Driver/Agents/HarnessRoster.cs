@@ -216,8 +216,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public bool Structured(string adapter) => Structured(adapters.Resolve(adapter));
 
     /// <inheritdoc cref="Structured(string)"/>
-    public static bool Structured(ISessionAdapter adapter) =>
-        adapter.Wire == SessionWire.Acp || adapter.StructuredOutput() is not null;
+    public static bool Structured(ISessionAdapter adapter) => adapter.Abilities().Structured;
 
     /// <inheritdoc cref="RosterReport.ReportAsync"/>
     public Task<HarnessReport?> ReportAsync(string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, string? account = null)

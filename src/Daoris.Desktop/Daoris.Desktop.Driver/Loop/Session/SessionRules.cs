@@ -90,7 +90,7 @@ internal static class SessionRules
             // Which agent made each call, and each subagent's start and stop: the part's children bound by its lineage.
             ChildLineage.HookFor(home, sessionId));
         var handed = Handed(takes: true, rules, composed, workspace, repository);
-        if (adapter.Wire == SessionWire.Pipe)
+        if (!adapter.Abilities().RulesOnWire)
         {
             adapter.HandSettings(info, file);
             return (file, null, handed);

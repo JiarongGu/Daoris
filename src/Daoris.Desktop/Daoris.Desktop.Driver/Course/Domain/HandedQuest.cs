@@ -1,9 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What the roster says of an agent a quest's session may go on with: its accounts and the wire its door rides (MIXAGENT1a-ii).</summary>
+/// <summary>What the roster says of an agent a quest's session may go on with: its accounts and whether it drives an unadopted repository (MIXAGENT1a-ii).</summary>
 /// <param name="Accounts">The accounts the roster holds for the agent; none is the tool's own sign-in.</param>
-/// <param name="Wire">The door it drives by: the protocol door hands the quest's connector itself, the pipe door only in an adopted repository (D70).</param>
-public sealed record HandOverAgent(IReadOnlyList<string> Accounts, SessionWire Wire);
+/// <param name="Unadopted">It may drive a repository that has not adopted Daoris (<see cref="Adoption.Unadopted(DoorAbilities?)"/>): a door
+/// whose servers ride its wire hands the quest's connector itself, any other only in an adopted repository (D70).</param>
+public sealed record HandOverAgent(IReadOnlyList<string> Accounts, bool Unadopted);
 
 /// <summary>
 /// A quest handed to another agent (MIXAGENT1a-ii, D163 point 1), as this machine holds it: the agent and account its next start

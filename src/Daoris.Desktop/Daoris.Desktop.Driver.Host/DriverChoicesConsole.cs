@@ -60,7 +60,8 @@ internal static class DriverChoicesConsole
         SessionWire wire;
         try
         {
-            wire = AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names)).Resolve(ActorChoices.BuildAgent(config)).Wire;
+            var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names));
+            wire = Adoption.Unadopted(ActorChoices.BuildAgent(config), adapters.AbilitiesOf) ? SessionWire.Acp : SessionWire.Pipe;
         }
         catch (DriverException)
         {

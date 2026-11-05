@@ -136,7 +136,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
 
             string? handed = null;
             string? preamble = null;
-            if (adapter.Wire == SessionWire.Pipe)
+            if (!adapter.Abilities().ServersOnWire)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = PartnerPass.NoConnector;
