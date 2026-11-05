@@ -21,6 +21,7 @@ public static class GitAccessCommand
     public const string Usage =
         """
         usage: daoris git access [<repository>|--workspace <workspace>|--machine] [read=<v>] [write=<v>] [--one-value <v>] [--clear] [--json]
+               daoris git access --session <id> [read=<v>] [write=<v>] [dangerous=<v>] [--json]
                daoris git asks [--json]
                daoris git answer <ask> allow|refuse
         """;
@@ -118,12 +119,14 @@ public static class GitAccessCommand
         var edit = new GitAccessEdit();
         var set = new List<KeyValuePair<string, string?>>();
         string? oneValue = null;
+        string? session = null;
         var clear = false;
         for (var at = 1; at < args.Count; at++)
         {
             var arg = args[at];
             if (arg == "--json") continue;
-            if (arg == "--machine") edit = edit with { Machine = true };
+            if (arg == "--session" && at + 1 < args.Count) session = args[++at];
+            else if (arg == "--machine") edit = edit with { Machine = true };
             else if (arg == "--clear") clear = true;
             else if (arg == "--workspace" && at + 1 < args.Count) edit = edit with { Workspace = args[++at] };
             else if (arg == "--one-value" && at + 1 < args.Count) oneValue = args[++at];
@@ -134,6 +137,13 @@ public static class GitAccessCommand
             }
             else if (!arg.StartsWith("--", StringComparison.Ordinal) && edit.Repository is null) edit = edit with { Repository = arg };
             else throw new DriverException($"those words are not a git verb.\n{Usage}");
+        }
+
+        if (session is not null)
+        {
+            if (oneValue is not null || clear || edit.Repository is not null || edit.Workspace is not null || edit.Machine)
+                throw new DriverException($"a session's git access is read or tightened with its own class words alone.\n{Usage}");
+            return GitSessionAccessVerb.Run(world.Home, session, set, json, output);
         }
 
         var changing = set.Count > 0 || oneValue is not null || clear;

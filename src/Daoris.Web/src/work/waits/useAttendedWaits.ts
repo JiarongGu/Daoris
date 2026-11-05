@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
   type HandOverWord, useAnswerAlone, useAnswerPermission, useAnswerWaits, useApproveHandOver, useAttention, useDeclineHandOver,
-  useGitAnswer, usePermissionWaits, useRules, useSessionHandOverAsk, useSessionHelpers, useSessionPartners, type useSay,
+  useDriver, useGitAnswer, usePermissionWaits, useRules, useSessionHandOverAsk, useSessionHelpers, useSessionPartners, type useSay,
+  useTightenSessionGitAccess,
 } from '../../bridge/shell';
+import type { SessionGitAccessHold } from '../GitAccessFact';
 import type { Session } from '../../data/api';
 import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
@@ -178,6 +180,16 @@ export function useAttendedWaits({
     }),
     busy: gitAnswer.isPending,
   } : null;
+  const tighten = useTightenSessionGitAccess();
+  const driver = useDriver();
+  const heldGitAccess: SessionGitAccessHold | null = attended && here && driver.data?.sessionGitAccess ? {
+    records: driver.data.sessionGitAccess,
+    onTighten: (session, access, answered) => tighten.mutate({ id: session, access }, {
+      onSuccess: () => answered.done(),
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+    busy: tighten.isPending,
+  } : null;
 
   // What waits on the person, handed to the head and to the strip at the foot alike (WAITFOOT1b, D168 point 3): one object, so
   // a press in either place is the same press with the same pending, and its answer, the record read again, settles both.
@@ -222,6 +234,8 @@ export function useAttendedWaits({
     answers: heldAnswers,
     // A git go-ahead its git door holds (GITAUTH1f): one of its waits, at the head and at the foot alike.
     gitAsks: heldGitAsks,
+    // What each running session holds of git access, with the press that tightens it (D241 point 7).
+    gitAccess: heldGitAccess,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said

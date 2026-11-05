@@ -72,7 +72,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs": 44729,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeConfirmTests.cs": 86936,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/PipeStandingTests.cs": 50516,
-  "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs": 42425,
+  "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs": 42488,
   "src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs": 54422,
   "src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs": 173590,
   "src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs": 46876,

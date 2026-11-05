@@ -509,3 +509,9 @@ export const useSetAccess = () => useDriverChange('SET_ACCESS') as Change<Access
  * edits. A separate route from `SET_ACCESS`. A refusal is the driver's sentence, verbatim; a widening is confirmed by the page first.
  */
 export const useSetGitAccess = () => useDriverChange('SET_GIT_ACCESS') as Change<GitAccessChange>;
+
+/**
+ * Tighten what one running session holds of git access (D241 point 7): the classes to narrow, each to a value tighter than it holds,
+ * over the record `daoris git access --session` edits. It only narrows, so nothing is confirmed; a refusal is the driver's sentence.
+ */
+export const useTightenSessionGitAccess = () => useDriverChange('TIGHTEN_SESSION_GIT_ACCESS') as Change<{ id: string; access: Record<string, string> }>;

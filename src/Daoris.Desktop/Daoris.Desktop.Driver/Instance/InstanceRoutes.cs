@@ -219,7 +219,6 @@ public static class PersonPresses
 
     /// <summary><c>git access …</c> where it loosens a class (GITAUTH1f): a level's git access widened.</summary>
     public static InstanceRoute SetGitAccess { get; } = Person("SET_GIT_ACCESS");
-
     /// <summary><c>git answer &lt;ask&gt; allow|refuse</c> (GITAUTH1f, §6.6): a git go-ahead answered, as its row in What needs you answers it.</summary>
     public static InstanceRoute GitAnswer { get; } = Person("GIT_ANSWER");
 

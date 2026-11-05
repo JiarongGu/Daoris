@@ -7,7 +7,7 @@ import type {
 } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccessLevel } from '../settings/repository/Access';
-import type { GitAccessLevel } from '../settings/repository/GitAccess';
+import type { GitAccessLevel, ResolvedGitClass } from '../settings/repository/GitAccess';
 import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { HelperRule } from '../settings/repository/Helpers';
@@ -183,6 +183,11 @@ export type DriverState = {
   gitAccess?: { repository: string; classes: GitAccessLevel }[];
   workspaceGitAccess?: { workspace: string; classes: GitAccessLevel }[];
   machineGitAccess?: GitAccessLevel;
+  /**
+   * What each running session holds of git access now (D241 point 7): its repository's, narrowed by what the person tightened
+   * (a class whose source is `session`) — absent on a shell older than it, and for a session begun before it.
+   */
+  sessionGitAccess?: { session: string; repository?: string | null; workspace?: string | null; classes: ResolvedGitClass[] }[];
   /**
    * This machine's heavy gates (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): for each repository whose own `daoris.gates.json` marks no
    * heavy gate, the list `run-heavy` runs for it in its order — absent on a shell older than it, which offers no heavy gates section.

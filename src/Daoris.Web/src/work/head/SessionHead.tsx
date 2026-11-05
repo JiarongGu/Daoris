@@ -17,6 +17,7 @@ import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } fro
 import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from '../AccessFact';
+import { gitAccessRow, type SessionGitAccessHold } from '../GitAccessFact';
 import { ChoiceChip } from './ChoiceChip';
 import type { WaitEvents } from '../waits/anchors';
 import type { Answered } from '../InlineConfirm';
@@ -112,8 +113,10 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn,
+  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess,
 }: {
+  /** What each running session holds of git access (D241 point 7), the frame's: *Details*' *Git access* row, with *Tighten…*. */
+  gitAccess?: SessionGitAccessHold | null;
   /**
    * What its line waits on (COMMS1i, the comms design §7): *At work*'s answer, whose *Waiting on* line the head draws in the same words,
    * and the door that opens *At work*. Absent where the frame holds no answer for it.
@@ -566,6 +569,8 @@ export function SessionHead({
           { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
           // The access it started under (SESSACCESS1, D184 point 1): each pause as its record keeps it, never today's settings.
           accessRow(t, session),
+          // What it holds of git access now, one fact, narrowed by what the person tightened (D241 point 7).
+          gitAccessRow(t, session, gitAccess),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           ...actorRows(t, session),

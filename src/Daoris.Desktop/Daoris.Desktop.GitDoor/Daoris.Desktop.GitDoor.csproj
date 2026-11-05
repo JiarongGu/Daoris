@@ -27,6 +27,7 @@
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitHelperPush.cs" Link="GitHelperPush.cs" />
     <!-- The person's git access, read from the driver's file, and the go-ahead a door holds an act for (GITAUTH1f, §6.5 and §6.6). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAccessKeys.cs" Link="GitAccessKeys.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitSessionAccess.cs" Link="GitSessionAccess.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAsks.cs" Link="GitAsks.cs" />
     <!-- A go-ahead is held only while an instance of Daoris holds the home, read from the home's lease (GITAUTH1f). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitDoorAsks.cs" Link="GitDoorAsks.cs" />

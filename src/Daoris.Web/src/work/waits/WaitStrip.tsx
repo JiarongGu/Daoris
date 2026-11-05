@@ -16,6 +16,7 @@ import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPla
 import type { EntryPress } from '../review/EntryAccept';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
+import type { SessionGitAccessHold } from '../GitAccessFact';
 import { GitAsk, gitAsksFor, type GitAskWaits } from './GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
@@ -71,6 +72,8 @@ export type WaitProps = {
    * and its pending. Absent where nothing reads them (a browser).
    */
   gitAsks?: GitAskWaits | null;
+  /** What each running session holds of git access, handed to the head's *Details* alone (D241 point 7); the strip draws none. */
+  gitAccess?: SessionGitAccessHold | null;
   /**
    * The rules it proposed that the person still answers (PROPOSEHERE1b, D74): the machine's proposals as the shell read them,
    * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
