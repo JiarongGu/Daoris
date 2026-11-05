@@ -1,12 +1,14 @@
-import { type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CodeDependency, CodeModule, Provenance } from '../data/api';
-import { ago } from '../locales/format';
-import { cn } from '../lib/cn';
-import { CanvasList } from '../design/canvas/CanvasList';
-import { type EdgeContext, type NodeState, SuppliedCanvas } from '../design/canvas/SuppliedCanvas';
-import { Button, PathText } from '../design/ui';
+import type { CodeDependency, CodeModule, Provenance } from '../../data/api';
+import { ago } from '../../locales/format';
+import { cn } from '../../lib/cn';
+import { CanvasList } from '../../design/canvas/CanvasList';
+import { type EdgeContext, type NodeState, SuppliedCanvas } from '../../design/canvas/SuppliedCanvas';
+import { lineDrawn } from '../../design/canvas/suppliedCull';
+import { Button, PathText } from '../../design/ui';
 import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
+import { foldable, foldGroup } from './codeFolds';
 
 /** Characters of an id a card can hold at the meta size before it would run past its edge. */
 export const FITS = 17;
@@ -45,7 +47,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
           <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
         </marker>
       </defs>
-      {lines.map((line) => {
+      {lines.filter((line) => lineDrawn(context.culled, line.from, line.to)).map((line) => {
         const chosen = context.selected === line.id;
         const lit = (focus !== null && forward(line)) || chosen;
         const back = !forward(line);
@@ -113,15 +115,16 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   const tree = useMemo(() => buildTree(modules, dependencies), [modules, dependencies]);
   // Which groups the person opened, for the tree they were opened on; a changed map starts from its own default.
   const [held, setHeld] = useState<{ tree: typeof tree; open: ReadonlySet<string> } | null>(null);
-  const [listed, setListed] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const base = held?.tree === tree ? held.open : defaultOpen(tree);
   // The chosen module stays drawn: its path is open for as long as it is chosen.
   const open = useMemo(() => (selected !== null && tree.modules.has(selected) ? openingPath(tree, base, selected) : base), [tree, base, selected]);
-  const scene = useMemo(
-    () => layoutCode(tree, open, { cycle: (count) => t('code.cycleTitle', { count }) }),
-    [tree, open, t],
+  // A cycle is named by its size, and by the folders it crosses where it crosses more than one.
+  const cycleTitle = useCallback(
+    (count: number, folders: number) => (folders > 1 ? t('code.cycleAcrossTitle', { count, folders }) : t('code.cycleTitle', { count })),
+    [t],
   );
+  const scene = useMemo(() => layoutCode(tree, open, { cycle: cycleTitle }), [tree, open, cycleTitle]);
   const setOpen = (next: ReadonlySet<string>) => setHeld({ tree, open: next });
 
   const chosenCard = selected !== null && scene.world.boxes.has(selected) ? selected : null;
@@ -163,6 +166,17 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     onSelect(id);
   };
 
+  // One folder folded alone: the chosen module's own, which its choice holds open, so the choice is released and the focus goes to
+  // the card the module now stands in.
+  const folding = selected !== null && tree.modules.has(selected) ? foldable(tree, open, selected) : null;
+  const foldChosen = () => {
+    if (folding === null || selected === null) return;
+    setLine(null);
+    setOpen(foldGroup(tree, open, folding));
+    focusing.current = selected;
+    onSelect(null);
+  };
+
   const outgoing = useMemo(() => {
     const counts = new Map<string, number>();
     for (const each of tree.dependencies) counts.set(each.from, (counts.get(each.from) ?? 0) + 1);
@@ -170,14 +184,15 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   }, [tree]);
   const nameOf = (id: string) => {
     const group = tree.groups.get(id);
-    return group ? (group.kind === 'cycle' ? t('code.cycleTitle', { count: group.modules.length }) : group.dir || group.name || repository) : id;
+    return group ? (group.kind === 'cycle' ? cycleTitle(group.modules.length, group.across?.length ?? 1) : group.dir || group.name || repository) : id;
   };
   const nodeLabel = (id: string) => {
     const group = tree.groups.get(id);
     if (!group) return t('code.moduleLabel', { id, count: outgoing.get(id) ?? 0 });
-    return group.kind === 'cycle'
-      ? t('code.cycleLabel', { count: group.modules.length })
-      : t('code.folderLabel', { name: nameOf(id), count: group.members.length });
+    if (group.kind === 'folder') return t('code.folderLabel', { name: nameOf(id), count: group.members.length });
+    return group.across
+      ? t('code.cycleAcrossLabel', { count: group.modules.length, folders: group.across.length })
+      : t('code.cycleLabel', { count: group.modules.length });
   };
   const titleOf = (id: string) => nameOf(id);
   const findItems = useMemo(
@@ -200,7 +215,9 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         >
           {!dot && (
             <>
-              <span className="min-w-0 truncate text-small font-semibold text-ink">{group.kind === 'cycle' ? t('code.cycleCard') : group.name || repository}</span>
+              <span className="min-w-0 truncate text-small font-semibold text-ink">
+                {group.kind === 'folder' ? group.name || repository : group.across ? t('code.cycleAcrossCard', { folders: group.across.length }) : t('code.cycleCard')}
+              </span>
               <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">{t('code.times', { count: group.members.length })}</span>
             </>
           )}
@@ -227,23 +244,19 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setHeld(null); }}>
         {t('code.foldAgain')}
       </Button>
-      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setListed(!listed)}>
-        {t(listed ? 'canvas.asGraph' : 'canvas.asList')}
-      </Button>
+      {folding !== null && (
+        <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" data-code-fold="" onClick={foldChosen}>
+          {t('code.foldFolder', { name: nameOf(folding) })}
+        </Button>
+      )}
     </>
   );
-
-  if (listed) {
-    return (
-      <div className="grid gap-2">
-        <div className="flex flex-wrap items-center gap-1">{tools}</div>
-        <CanvasList
-          label={t('code.canvas', { repository })} groups={lists} selected={selected}
-          onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
-        />
-      </div>
-    );
-  }
+  const list = (
+    <CanvasList
+      label={t('code.canvas', { repository })} groups={lists} selected={selected}
+      onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
+    />
+  );
 
   return (
     <div ref={wrapper}>
@@ -258,6 +271,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         renderNode={renderNode}
         renderEdges={(context) => <CodeEdges lines={scene.lines} context={context} focus={context.hovered ?? chosenCard} name={nameOf} />}
         tools={tools}
+        list={list}
       />
     </div>
   );

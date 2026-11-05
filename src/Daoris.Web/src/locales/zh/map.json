@@ -21,6 +21,7 @@
   "map.detail.uses": "声明依赖",
   "map.detail.usedBy": "被这些仓库声明依赖",
   "map.kind.knowledge": "两边学到的同一件事",
+  "map.listRepositories": "仓库",
   "map.when.title": "哪些委托",
   "map.when.all": "全部",
   "map.when.open": "仅未关闭的",

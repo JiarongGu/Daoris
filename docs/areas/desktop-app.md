@@ -168,9 +168,11 @@ web paths are under `src/Daoris.Web/src/`.
 46. Edges are ink, never a status hue. The nodes are one ordered list with one Tab stop. The edges are one
     `aria-hidden` drawing. (from D186)
 47. Every graph stands on one canvas: a viewport with pan and zoom, a minimap only past twice the viewport, and a list
-    below 36rem. No feature moves nodes or saves positions. (from D224)
-48. A placed world is HTML that CSS lays out and the canvas measures. A positioned world arrives with coordinates.
-    One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. (from D224)
+    offered at every width, standing below 36rem where nothing else fits. No feature moves nodes or saves positions. The
+    maps keep the viewer's view; one kept under a changed graph says the selection is gone. (from D224)
+48. A placed world is HTML that CSS lays out and the canvas measures. A positioned world arrives with coordinates: past
+    400 nodes only those near the view and the focused and selected are mounted, and below 4 px of `text-meta` the rest
+    are dots. One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. (from D224)
 
 **Translation**
 
@@ -209,7 +211,9 @@ web paths are under `src/Daoris.Web/src/`.
 60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Workflow
     and Setup; a workspace's are Details, Branches, Workflow and Setup. (from D150, D147)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
-    workspace's repositories and what moved between them, plus the code map, drawn on the canvas. (from D150, D67, D224)
+    workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds
+    its modules in their folders, folded together or one at a time; a cycle, across folders too, is one card in the
+    nearest folder holding it; its lines run around its cards. (from D150, D67, D224)
 62. Doctrine is never written from the window; it shows the command to run. (from D31)
 
 ## Where a change goes
@@ -262,8 +266,6 @@ web paths are under `src/Daoris.Web/src/`.
 ## Open
 
 - **CANVAS1g**: the canvas in the installed window, with FLOWCHART2h.
-- **CANVAS1e/f remainders**: culling and the dot layer, the map's list view, the selection-gone notice; for the code
-  map, lines routed around boxes, a cycle across folders condensed, one folder folded alone.
 - **SETUPUX1x, SETUPUX1y**: the set-up experience seen in the installed window, then Agents → Setup lit by default.
 - **AGENTSPLACE1**: the place pages carry the Roles, Workflow and Sessions sections, which `setupLit` waits on.
 - **FLOWCHART2h**: the workflow editor seen in the installed window.

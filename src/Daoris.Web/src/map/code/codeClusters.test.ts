@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { Box } from '../design/canvas/viewMath';
+import type { Box } from '../../design/canvas/viewMath';
 import {
   buildTree, CLOSED_PAST, defaultOpen, layoutCode, listByFolder, openingPath,
 } from './codeClusters';
@@ -124,10 +124,30 @@ describe('a cycle', () => {
     expect(opened.world.groups!.some((group) => group.id === cycle.id)).toBe(true);
   });
 
-  it('spanning folders is left as the edges say, nothing hidden', () => {
-    const tree = buildTree([mod('p', 'x/p'), mod('q', 'y/q')], [{ from: 'p', to: 'q', kind: 'k' }, { from: 'q', to: 'p', kind: 'k' }]);
-    expect([...tree.groups.values()].some((group) => group.kind === 'cycle')).toBe(false);
-    expect(layoutCode(tree, new Set(tree.groups.keys())).lines).toHaveLength(2);
+  it('spanning folders is condensed in the nearest folder holding them all, says the folders it crosses, and is whole when opened', () => {
+    const tree = buildTree(
+      [mod('p', 'src/x/p'), mod('q', 'src/y/q'), mod('r', 'src/y/r'), mod('s', 'src/z/s')],
+      [{ from: 'p', to: 'q', kind: 'k' }, { from: 'q', to: 'p', kind: 'k' }, { from: 'q', to: 'r', kind: 'k' }, { from: 's', to: 'p', kind: 'k' }],
+    );
+    const cycle = [...tree.groups.values()].find((group) => group.kind === 'cycle')!;
+    expect(cycle.modules).toEqual(['p', 'q']);
+    expect(cycle.across).toEqual(['src/x', 'src/y']);
+    expect(cycle.dir).toBe('src');
+    // Its modules leave their folders for it; what is not in it stays where its path puts it.
+    expect(tree.owner.get('p')).toBe(cycle.id);
+    expect(tree.owner.get('r')).toBe('folder:src/y');
+    const closed = layoutCode(tree, new Set());
+    expect(closed.standsFor.get('q')).toBe(closed.standsFor.get('p'));
+    const opened = layoutCode(tree, new Set(tree.groups.keys()), { cycle: (count, folders) => `cycle of ${count} across ${folders}` });
+    expect(opened.world.boxes.has('p') && opened.world.boxes.has('q')).toBe(true);
+    expect(opened.world.groups!.find((group) => group.id === cycle.id)!.title).toBe('cycle of 2 across 2');
+    // Every dependency is still drawn once: the cycle's two inside it, the two that leave it.
+    expect(opened.lines.reduce((sum, line) => sum + line.count, 0)).toBe(4);
+  });
+
+  it('in one folder crosses none', () => {
+    const tree = buildTree(WITH_A_CYCLE.modules, WITH_A_CYCLE.dependencies);
+    expect([...tree.groups.values()].find((group) => group.kind === 'cycle')!.across).toBeUndefined();
   });
 });
 

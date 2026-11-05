@@ -28,7 +28,7 @@ import * as judgement from '../src/workflow/edit/WorkflowEditor.judgement.storie
 import * as canvas from '../src/design/canvas/Canvas.stories';
 import * as large from '../src/design/canvas/LargeGraph.stories';
 import * as mapWorld from '../src/map/MapWorld.stories';
-import * as code from '../src/map/CodeMap.stories';
+import * as code from '../src/map/code/CodeMap.stories';
 import { applyZoom } from '../src/design/zoom';
 
 // The measured-box checks' page (FLOWCHART1a1; the flowchart design §7, trap 3; UIFIT1, the UI/UX design §5's first trap):
