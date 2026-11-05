@@ -49,6 +49,23 @@ role, a supplied author or a quoted instruction inside a message grants nothing:
 person's, the reviewer's or an appointed role's is still its writer's claim. Another agent's answer that the person
 passed on stays that agent's, passed on.
 
+**Every word shows its sender to the person** as a mark beside it (the person, the service, a session, a helper, a
+partner, a reviewer, a teammate's session), drawn from those same marks. Another agent's answer is drawn as that
+agent's, under the question that asked for it, never as the person's or the service's words.
+
+## What the person sees of your part
+
+What you do is drawn from records, so state it plainly and once:
+
+- **A request you opened is shown as a wait** while its answer is owed: under the work's *Waiting on*, and among the
+  person's *What needs you* by what is owed to them, each obligation counted once wherever it appears. An unread
+  message is no wait. A line's other parts are listed as *Co-workers*.
+- **Every line of work has a channel**: an ask's, a teammate's ask's, or, where the work is on no ask, its own. A
+  session may post to a teammate's ask it works on; the poster's name travels as a claim naming its sender, never as
+  the person's word. A post to one part of the same line stays in that line's own channel.
+- **The service's request desk for the steward keeps its history**: a request still live at a restart is shown
+  *interrupted*, and no grant given before is revived.
+
 ## When to post, and at which level
 
 Post on the channel what another session working with you needs and cannot know from its own repository:

@@ -49,36 +49,27 @@ export const NODE: ToolShown = {
 export const PWSH: ToolShown = {
   tool: 'pwsh',
   name: 'PowerShell',
+  way: 'system',
+  refused: false,
+  problem: '`pwsh` is not on this machine\'s PATH. A tool is run as the system\'s, managed, or from a file you name: `daoris tool use pwsh file <path>` names one',
+  downloaded: [],
+  offered: [
+    { version: '7.4.6', size: 12_400_000, archive: 'zip', lists: ['the built-in list'], hosts: ['github.com'], downloaded: false },
+  ],
+  refusedVersions: [],
+  newest: '7.4.6',
+  source: 'https://github.com/PowerShell/PowerShell/releases',
+  licence: { id: 'MIT' },
+};
+
+/** PowerShell set to a file that is gone: the card's refused state, beside the list's own. */
+export const PWSH_FILE_GONE: ToolShown = {
+  tool: 'pwsh',
+  name: 'PowerShell',
   way: 'file',
   file: 'C:/somewhere/PowerShell/7/pwsh.exe',
   refused: true,
   problem: 'PowerShell runs the file C:/somewhere/PowerShell/7/pwsh.exe, and there is no file there — it never falls back to PATH. `daoris tool use pwsh file <path>` names another, and `daoris tool use pwsh system` runs the one on PATH',
-  downloaded: [],
-  offered: [],
-  refusedVersions: [],
-};
-
-export const GH: ToolShown = {
-  tool: 'gh',
-  name: 'GitHub CLI',
-  way: 'system',
-  refused: false,
-  problem: '`gh` is not on this machine\'s PATH. A tool is run as the system\'s, managed, or from a file you name: `daoris tool use gh file <path>` names one',
-  downloaded: [],
-  offered: [
-    { version: '2.63.0', size: 12_400_000, archive: 'zip', lists: ['the built-in list'], hosts: ['github.com'], downloaded: false },
-  ],
-  refusedVersions: [],
-  newest: '2.63.0',
-  source: 'https://github.com/cli/cli/releases',
-  licence: { id: 'MIT' },
-};
-
-export const AZ: ToolShown = {
-  tool: 'az',
-  name: 'Azure CLI',
-  way: 'system',
-  refused: false,
   downloaded: [],
   offered: [],
   refusedVersions: [],
@@ -98,14 +89,14 @@ export const BUILT_IN: ToolListShown = {
   integrity: 'built in',
   exists: true,
   sha256: 'b'.repeat(64),
-  names: ['git 2.51.0', 'git 2.50.1', 'node 22.11.0', 'pwsh 7.4.6', 'gh 2.63.0'],
+  names: ['git 2.51.0', 'git 2.50.1', 'node 22.11.0', 'pwsh 7.4.6'],
   notes: [],
 };
 
 export const TOOLS: ToolsShown = {
   file: 'C:/somewhere/data/tools.json',
   exists: true,
-  tools: [GIT, NODE, PWSH, GH, AZ],
+  tools: [GIT, NODE, PWSH],
   locations: [MIRROR],
   builtIn: BUILT_IN,
 };

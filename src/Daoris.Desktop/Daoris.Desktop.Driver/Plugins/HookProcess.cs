@@ -59,7 +59,7 @@ public sealed class HookProcess : IHookChannel
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>Its first word is resolved, never handed to the system bare</b> (TOOLS5, D121 §2.4): a name a tool
-    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>gh</c>, <c>az</c>…) is the file Tools resolves, and any
+    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>pwsh</c>) is the file Tools resolves, and any
     /// other is found on the child's <c>PATH</c> as an agent's is — both through the shim rule the agents' doors use,
     /// since a bare name started with no shell finds only an <c>.exe</c>. Its environment is the tools', so a landing
     /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
@@ -179,8 +179,6 @@ public sealed class HookProcess : IHookChannel
     public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => _peer.ConsiderAsync(payload, ct);
 
     public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
-
-    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
 
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 

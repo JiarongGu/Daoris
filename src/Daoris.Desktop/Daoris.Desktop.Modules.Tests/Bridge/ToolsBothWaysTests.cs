@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class ToolsBothWaysTests : DriverModuleBridge
 {
-    private const string Before = """{"tools":{"gh":{"use":"managed","version":"2.62.0"}},"locations":["https://lists.example/r.json"]}""";
+    private const string Before = """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}},"locations":["https://lists.example/r.json"]}""";
 
     private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
@@ -27,17 +27,17 @@ public sealed class ToolsBothWaysTests : DriverModuleBridge
 
     private sealed record Said(int Exit, string Out, string Error, string? File, string Versions);
 
-    /// <summary>The home as each case starts it: <c>tools.json</c>, and GitHub CLI 2.62.0 and 2.63.0 downloaded.</summary>
+    /// <summary>The home as each case starts it: <c>tools.json</c>, and PowerShell 2.62.0 and 2.63.0 downloaded.</summary>
     private void Laid()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(ToolsFile)!);
         File.WriteAllText(ToolsFile, Before);
         foreach (var version in new[] { "2.62.0", "2.63.0" })
         {
-            var folder = ToolInstall.VersionFolder(Home, "gh", version);
+            var folder = ToolInstall.VersionFolder(Home, "pwsh", version);
             Directory.CreateDirectory(Path.Combine(folder, Tools.Package, "bin"));
-            File.WriteAllText(Path.Combine(folder, Tools.Package, "bin", "gh.exe"), "gh");
-            File.WriteAllText(Path.Combine(folder, Tools.Record), """{"exe":"bin/gh.exe"}""");
+            File.WriteAllText(Path.Combine(folder, Tools.Package, "bin", "pwsh.exe"), "pwsh");
+            File.WriteAllText(Path.Combine(folder, Tools.Record), """{"exe":"bin/pwsh.exe"}""");
         }
 
         // Bytes that are no program: the system will not start them, so they answer no version either way.
@@ -46,7 +46,7 @@ public sealed class ToolsBothWaysTests : DriverModuleBridge
 
     private Said Now(StringWriter output, StringWriter error, int exit) => new(
         exit, output.ToString(), error.ToString(), File.Exists(ToolsFile) ? File.ReadAllText(ToolsFile) : null,
-        string.Join(",", ToolInstall.Downloaded(Home, "gh")));
+        string.Join(",", ToolInstall.Downloaded(Home, "pwsh")));
 
     private async Task<Said> AloneAsync(string[] words)
     {
@@ -81,14 +81,14 @@ public sealed class ToolsBothWaysTests : DriverModuleBridge
     }
 
     [Theory]
-    [InlineData("use gh system")]
+    [InlineData("use pwsh system")]
     [InlineData("use git system")]
     [InlineData("use git file <home>/nowhere/git.exe")]
     [InlineData("use git file <home>/junk.exe")]
-    [InlineData("delete gh 2.63.0")]
-    [InlineData("delete gh 2.62.0")]
-    [InlineData("delete gh 2.61.0")]
-    [InlineData("delete gh ../2.62.0")]
+    [InlineData("delete pwsh 2.63.0")]
+    [InlineData("delete pwsh 2.62.0")]
+    [InlineData("delete pwsh 2.61.0")]
+    [InlineData("delete pwsh ../2.62.0")]
     [InlineData("locations add https://mirror.example/r.json")]
     [InlineData("locations add https://lists.example/r.json")]
     [InlineData("locations remove https://lists.example/r.json")]
@@ -114,7 +114,7 @@ public sealed class ToolsBothWaysTests : DriverModuleBridge
     public async Task A_look_with_no_location_says_the_same_both_ways()
     {
         Laid();
-        File.WriteAllText(ToolsFile, """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
+        File.WriteAllText(ToolsFile, """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""");
         var (output, error) = (new StringWriter(), new StringWriter());
         var alone = await ToolsCommand.RunAsync(["look"], World(output, error), CancellationToken.None);
 

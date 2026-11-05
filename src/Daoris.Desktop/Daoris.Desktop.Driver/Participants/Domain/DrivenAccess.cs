@@ -95,7 +95,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         if (permissions is not (AccessRules.Asking or AccessRules.Unrestricted))
         {
             var own = !adapter.Abilities().SetAtOpen ? "the permission mode driven sessions always ran in there"
-                : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {Spelled(posture)} mode, the first it offers"
+                : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
             return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Name}`, {own} (D81); {keeps}.") { Repository = repository };
         }
@@ -114,23 +114,25 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         // has no wire to hold one on, since the harness answers its own asks under `-p`.
         var waits = $"each request waits for the person to allow it once or refuse it, and one nobody answers in "
             + $"{(int)HeldPermissions.Bound.TotalMinutes} minutes is refused";
+        var abilities = adapter.Abilities();
         var does = unrestricted
             ? "which asks nothing"
-            : adapter.Wire == SessionWire.Pipe
+            : !abilities.HeldOnWire
                 ? "where a tool its rules do not allow is refused: the native door has no wire to hold a request on, so it cannot hold one "
                   + "for the person, and the session uses only what its rules allow"
                 : !adapter.TakesSettings
                     ? $"which asks before acting; {waits}, and this agent takes no rules, so it does unasked only what that mode allows"
                     : $"which asks before any tool its rules do not allow; {waits}";
-        var said = adapter.Wire == SessionWire.Pipe
+        // A door whose mode is set at its open carries it in its posture; any other takes a permission mode on its command line.
+        var said = !abilities.SetAtOpen
             ? $"Permission prompts: {permissions} on `{adapter.Name}`, the `{mode}` permission mode, {does}; {keeps}."
             : $"Permission prompts: {permissions} on `{adapter.Name}`, the agent's `{mode}` mode, {does}; {keeps}.";
         // The protocol door's asking mode carries the mark that holds its requests for the person (AcpSession.PersonAnswers).
-        return adapter.Wire == SessionWire.Pipe
+        return !abilities.SetAtOpen
             ? new(permissions, said) { PermissionMode = mode, Repository = repository }
             : new(permissions, said)
             {
-                Posture = unrestricted ? $"{AgentPostures.Required}{mode}" : $"{AgentPostures.Required}{AcpSession.PersonAnswers}{mode}",
+                Posture = new PostureAsked(mode, Required: true, PersonAnswers: !unrestricted).Wire(),
                 Repository = repository,
             };
     }
@@ -149,11 +151,6 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     /// <summary>The person's two ways on from a value the harness cannot run: auto for the repository, or another agent.</summary>
     private static string WayOn(string repository) =>
         $"Set its permission prompts to `auto` (`daoris place access {repository} permissions=auto`), or choose another agent for it.";
-
-    /// <summary>A posture list as a sentence says it: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
-    private static string Spelled(string posture) => string.Join(
-        " or ",
-        posture.TrimStart(AgentPostures.Required).Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(mode => $"`{mode}`"));
 
     /// <summary>
     /// The permission prompts a record says it started under (AUTONOMY1a's <c>access</c>), read as a stored shape: a record from before

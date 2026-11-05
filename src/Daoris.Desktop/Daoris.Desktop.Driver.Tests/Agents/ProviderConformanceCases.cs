@@ -432,7 +432,6 @@ internal static class ConformanceCases
         else
         {
             refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
-            refused.Add((transport.RestartAsync(never), "a restart"));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
@@ -759,7 +758,7 @@ internal static class ConformanceCases
     private static ProcessStartInfo Prepared(ConformanceRun run, Provider provider) =>
         new LegacyDoor(provider, provider.Doors[0]).Prepare(run.Target(), run.Command());
 
-    /// <summary>A provider of one native door, declaring at most a home variable: the cases' second and third providers.</summary>
+    /// <summary>A provider of one native door, at most a home variable: the cases' other providers.</summary>
     private static Provider Bare(string id, string? variable)
     {
         var door = new AgentDoor(
@@ -773,8 +772,8 @@ internal static class ConformanceCases
             new DoorTablesPart(null, null), null, InstructionsPart.None);
         return new Provider(
             new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ProgramFacts>.Absent,
-            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
-            Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
+            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
+            Known<IChildVocabulary>.Absent, Rules: default, Skills: default, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }
 

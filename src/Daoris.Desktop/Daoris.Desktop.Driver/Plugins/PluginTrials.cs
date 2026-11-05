@@ -345,14 +345,6 @@ public static class PluginTrials
                 await peer.ChangedAsync(frame, ct).ConfigureAwait(false);
                 return "answered; an observation changes nothing.";
 
-            case HookPoints.Land:
-            {
-                var landing = await peer.LandAsync(frame, ct).ConfigureAwait(false);
-                return (landing.Pushed ? "pushed" : "not pushed")
-                    + (landing.PullRequest is { } address ? $", pull request {address}" : "")
-                    + $" — {landing.Message}";
-            }
-
             case HookPoints.State:
             {
                 var state = await peer.StateAsync(frame, ct).ConfigureAwait(false);

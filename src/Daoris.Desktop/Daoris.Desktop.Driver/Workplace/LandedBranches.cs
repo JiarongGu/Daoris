@@ -102,15 +102,6 @@ public sealed class LandedBranches(string home)
     /// </summary>
     public void Record(LandedBranch entry) => Edit(all => [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)), entry]);
 
-    /// <summary>
-    /// What a plugin answered when it pushed the branch (D100), kept on its entry. An answer naming no pull request keeps the
-    /// one the entry holds: a push after an advance grows the pull request already open (LAND2c).
-    /// </summary>
-    public void Pushed(string repository, string branch, PluginLanding said, string tip) => Edit(all =>
-        [.. all.Select(each => Standing(each, repository, branch)
-            ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest ?? each.PullRequest, PushedTip = tip }
-            : each)]);
-
     /// <summary>The pull request a plugin's <c>pull-request</c> step opened for the branch (G8), kept on its entry beside the plugin that opened it.</summary>
     public void PullRequested(string repository, string branch, string plugin, string address) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch) ? each with { Plugin = plugin, PullRequest = address } : each)]);

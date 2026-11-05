@@ -99,7 +99,7 @@ public sealed class SessionServersTests : IDisposable
         var (handed, _, _, _) = await SessionServers.HandNotedAsync(
             _home, [Npx("-y", "@playwright/mcp@0.0.82")], browser: null, log: null, CancellationToken.None);
 
-        var file = SpawnServers.Write(_home, "s1", handed)!;
+        var file = ClaudeServers.Write(_home, new ConnectorPlan("s1", handed))!;
 
         using var written = JsonDocument.Parse(File.ReadAllText(file));
         var server = written.RootElement.GetProperty("mcpServers").GetProperty("browser");

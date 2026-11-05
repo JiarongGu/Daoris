@@ -37,7 +37,6 @@ function answer() {
   let land: (value: unknown) => void = () => {};
   invoke.mockImplementation((_module: string, type: string) => {
     if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
-    if (type === 'HANDOFF_PLAN') return Promise.resolve({ session: 's1a2b3c4', branch: null });
     if (type === 'LANDING') return Promise.resolve(PLAN);
     if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { land = resolve; });
     return Promise.resolve({});
@@ -155,46 +154,6 @@ describe('a press under way, in the review', () => {
       told({ seq: 3, presses: [{ ...press, step: 'landing' }] });
       expect(await screen.findByRole('button', { name: landing })).toBeDisabled();
       expect(screen.queryByText(note)).toBeNull();
-    } finally {
-      await i18n.changeLanguage('en');
-    }
-  });
-
-  /** LANDHOLD2: a hand-off that waits behind the push of its branch says so, and says *Handing off…* once it has the hold. */
-  it('says a hand-off waits behind another push of its branch', async () => {
-    answer();
-    const asked = invoke.getMockImplementation()!;
-    invoke.mockImplementation((module: string, type: string) => type === 'HANDOFF_PLAN'
-      ? Promise.resolve({ session: 's1a2b3c4', branch: 'feature/0fda18-fix-the-gap', repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 })
-      : asked(module, type));
-    root();
-    await screen.findByRole('button', { name: 'Hand to example.lands' });
-    const press = { route: 'HANDOFF', session: 's1a2b3c4' };
-
-    told({ seq: 1, presses: [{ ...press, step: 'waiting' }] });
-    expect(await screen.findByRole('button', { name: 'Waiting its turn…' })).toBeDisabled();
-
-    told({ seq: 2, presses: [{ ...press, step: 'handOff' }] });
-    expect(await screen.findByRole('button', { name: 'Handing off…' })).toBeDisabled();
-  });
-
-  /** LANDHOLD3: a hand-off waiting behind another push of its branch names that push's session, in both languages. */
-  it.each([
-    ['en', 'Waiting behind 0fda18aa…'],
-    ['zh', '排在 0fda18aa 之后…'],
-  ])('names the session a waiting hand-off waits behind, in %s', async (language, waiting) => {
-    await i18n.changeLanguage(language);
-    try {
-      answer();
-      const asked = invoke.getMockImplementation()!;
-      invoke.mockImplementation((module: string, type: string) => type === 'HANDOFF_PLAN'
-        ? Promise.resolve({ session: 's1a2b3c4', branch: 'feature/0fda18-fix-the-gap', repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 })
-        : asked(module, type));
-      root();
-      await screen.findByRole('button', { name: language === 'en' ? 'Hand to example.lands' : /example\.lands/ });
-
-      told({ seq: 1, presses: [{ route: 'HANDOFF', session: 's1a2b3c4', step: 'waiting', behind: '0fda18aa' }] });
-      expect(await screen.findByRole('button', { name: waiting })).toBeDisabled();
     } finally {
       await i18n.changeLanguage('en');
     }

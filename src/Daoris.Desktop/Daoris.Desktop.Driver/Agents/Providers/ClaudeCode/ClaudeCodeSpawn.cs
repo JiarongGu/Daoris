@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// runs under the repository's own checked-in permission configuration, as an interactive session there would. Nothing at the outward
 /// boundary is auto-approved by the driver: a session that cannot proceed ends.</para>
 /// </remarks>
-internal sealed class ClaudeCodeSpawn : ISpawn
+internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
 {
     private static readonly string[] Program = ["claude"];
 
@@ -84,6 +84,14 @@ internal sealed class ClaudeCodeSpawn : ISpawn
     {
         info.ArgumentList.Add("--mcp-config");
         info.ArgumentList.Add(configFile);
+    }
+
+    /// <summary>The plan's servers as its own file (<see cref="ClaudeServers"/>), named on the command line; none where there are none.</summary>
+    public string? Hand(ProcessStartInfo info, string home, ConnectorPlan plan)
+    {
+        var file = ClaudeServers.Write(home, plan);
+        if (file is not null) HandServers(info, file);
+        return file;
     }
 
     /// <summary>

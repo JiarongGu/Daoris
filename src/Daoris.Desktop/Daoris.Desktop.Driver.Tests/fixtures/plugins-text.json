@@ -49,7 +49,7 @@
         "data/plugins/acme.tickets/.daoris-source.json": "{\"folder\":\"<root>/checkout/tickets\"}",
         "data/plugins/acme.tickets/plugin.json": "{\"id\":\"acme.tickets\",\"name\":\"Acme tickets\",\"version\":\"2.0.0\",\"servers\":[{\"name\":\"tickets\",\"command\":[\"tickets\"],\"to\":[\"help\"],\"allow\":[\"search\"],\"writes\":[\"create_issue\"]},{\"name\":\"docs\",\"command\":[\"docs\"]}],\"skills\":[{\"name\":\"triage\",\"to\":[\"help\"]},{\"name\":\"write-up\",\"to\":[\"sessions\",\"help\"]}]}",
         "data/plugins/acme.tooled/.daoris-source.json": "{ not json",
-        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"gh\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
+        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"git\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
         "data/plugins/browser/.daoris-source.json": "{\"offer\":\"browser\"}",
         "data/plugins/browser/plugin.json": "{ \"id\": \"browser\", \"servers\": [ { \"name\": \"browser\", \"command\": [\"npx\", \"-y\", \"@playwright/mcp@latest\"] } ] }",
         "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
@@ -73,7 +73,7 @@
         "                           from <root>/checkout/tickets; `daoris plugin update acme.tickets` takes a newer one",
         "  acme.tooled              Acme tooled",
         "                           declares nothing and speaks nothing",
-        "                           runs GitHub CLI >=2.60, Node.js, Acme CLI >=1 <2",
+        "                           runs Git >=2.60, Node.js, Acme CLI >=1 <2",
         "                           tool not read: tool 4 in `tools` has the `id` `Bad Id`, which is not one: lowercase letters, digits, dots and dashes, like `az`.",
         "                           ⚠ `.daoris-source.json` does not read (it is not JSON: <why>).",
         "                           icon not drawn: `icon` `missing.svg` is not a file in the plugin's folder.",
@@ -94,7 +94,7 @@
         "data/plugins/acme.tickets/.daoris-source.json": "{\"folder\":\"<root>/checkout/tickets\"}",
         "data/plugins/acme.tickets/plugin.json": "{\"id\":\"acme.tickets\",\"name\":\"Acme tickets\",\"version\":\"2.0.0\",\"servers\":[{\"name\":\"tickets\",\"command\":[\"tickets\"],\"to\":[\"help\"],\"allow\":[\"search\"],\"writes\":[\"create_issue\"]},{\"name\":\"docs\",\"command\":[\"docs\"]}],\"skills\":[{\"name\":\"triage\",\"to\":[\"help\"]},{\"name\":\"write-up\",\"to\":[\"sessions\",\"help\"]}]}",
         "data/plugins/acme.tooled/.daoris-source.json": "{ not json",
-        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"gh\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
+        "data/plugins/acme.tooled/plugin.json": "{\"id\":\"acme.tooled\",\"name\":\"Acme tooled\",\"icon\":\"missing.svg\",\"tools\":[{\"id\":\"git\",\"versions\":\">=2.60\",\"for\":\"Opens the pull request.\"},{\"id\":\"node\"},{\"id\":\"acme-cli\",\"name\":\"Acme CLI\",\"versions\":\">=1 <2\"},{\"id\":\"Bad Id\"}]}",
         "data/plugins/browser/.daoris-source.json": "{\"offer\":\"browser\"}",
         "data/plugins/browser/plugin.json": "{ \"id\": \"browser\", \"servers\": [ { \"name\": \"browser\", \"command\": [\"npx\", \"-y\", \"@playwright/mcp@latest\"] } ] }",
         "data/plugins/future/plugin.json": "{ \"id\": \"future\", \"apiVersion\": 99 }",
@@ -109,7 +109,7 @@
       ],
       "before": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
-        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **PowerShell**, signed in: `pwsh login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"x.mjs\"], \"points\": [\"work/land\"] } }",
         "app/plugin-offers/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }",
         "app/plugin-offers/acme.unsound/plugin.json": "{ \"id\": \"acme.unsound\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
@@ -125,7 +125,7 @@
         "daoris: Daoris's own plugins, offered by this install, not installed (<root>/app/plugin-offers):",
         "  acme.offered             Acme offered 3.0.0",
         "                           speaks on work/land",
-        "                           needs: GitHub CLI, signed in: `gh auth login`; Git, which pushes the branch",
+        "                           needs: PowerShell, signed in: `pwsh login`; Git, which pushes the branch",
         "                           `daoris plugin add --offer acme.offered` installs it; nothing runs before that.",
         "  acme.unsound             acme.unsound",
         "                           ⚠ declares agent `dsh`, which this build already carries — a plugin adds an agent and never replaces one."
@@ -133,7 +133,7 @@
       "err": [],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
-        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **PowerShell**, signed in: `pwsh login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"x.mjs\"], \"points\": [\"work/land\"] } }",
         "app/plugin-offers/acme.taken/plugin.json": "{ \"id\": \"acme.taken\" }",
         "app/plugin-offers/acme.unsound/plugin.json": "{ \"id\": \"acme.unsound\", \"harnesses\": [ { \"name\": \"dsh\", \"command\": [\"x\"] } ] }",
@@ -489,7 +489,7 @@
       ],
       "before": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
-        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **PowerShell**, signed in: `pwsh login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }"
       },
       "exit": 0,
@@ -502,10 +502,10 @@
       "err": [],
       "after": {
         "INSTALLED.md": "# Daoris — installed desktop\n",
-        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "app/plugin-offers/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **PowerShell**, signed in: `pwsh login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "app/plugin-offers/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }",
-        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\",\n  \"digest\": \"sha256:526cc9185d3b966df4cf5cf4d31d59869ddb2856b01ab6149e87e5f652d85a71\"\n}\n",
-        "data/plugins/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **GitHub CLI**, signed in: `gh auth login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
+        "data/plugins/acme.offered/.daoris-source.json": "{\n  \"offer\": \"acme.offered\",\n  \"digest\": \"sha256:be7e7bf65fa4cb39fd97211951e8418b76579e802a7d0cc91aa0613b7736b9cd\"\n}\n",
+        "data/plugins/acme.offered/README.md": "# Acme offered\n\n## What it needs\n\n- **PowerShell**, signed in: `pwsh login`\n- Git, which\n  pushes the branch\n\n## Else\n\n- not this\n",
         "data/plugins/acme.offered/plugin.json": "{ \"id\": \"acme.offered\", \"name\": \"Acme offered\", \"version\": \"3.0.0\", \"hooks\": { \"command\": [\"node\", \"${plugin}/x.mjs\"], \"points\": [\"work/land\"] } }"
       },
       "changed": "an offer's record carries the digest of the files its install copied, so a copy edited since is told from one as it was installed (LANDPIN3b, D119)"

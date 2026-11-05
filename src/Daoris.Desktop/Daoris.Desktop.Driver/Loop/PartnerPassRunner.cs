@@ -136,11 +136,11 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
 
             string? handed = null;
             string? preamble = null;
-            if (!adapter.Abilities().ServersOnWire)
+            if (adapter.ServerHanding() is { } handing)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = PartnerPass.NoConnector;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
+                handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, null, connector is null ? [] : [connector], ConnectorPlans.ConnectorOnly));
             }
 
             // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its
@@ -161,8 +161,8 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 // process's agents' job, then the piece's beneath it, before the harness runs, and is never started outside the piece's.
                 piece: PieceJobs.NameOf(piece),
                 preamble: Driver.JoinNotices(preamble, opening),
-                handedServers: [],
-                said: _driver.Said(adapter, selection, sessionId),
+                handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
                 minutes: bound,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 noConnector: PartnerPass.NoConnector,

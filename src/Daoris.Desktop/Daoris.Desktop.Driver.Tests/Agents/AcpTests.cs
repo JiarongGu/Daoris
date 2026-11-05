@@ -1621,8 +1621,7 @@ public sealed class AcpTests
     [InlineData("?!")]
     public async Task A_required_posture_is_set_where_the_agent_offers_it(string marks)
     {
-        Assert.Equal('!', AgentPostures.Required);
-        Assert.Equal(AgentPostures.Required, HelpModes.Required);
+        Assert.True(PostureAsked.Parse($"{marks}auto").Required);
         var agent = PostureAgent("""
             {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
@@ -1655,7 +1654,7 @@ public sealed class AcpTests
                 _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
             };
         });
-        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}bypassPermissions");
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, new PostureAsked("bypassPermissions", Required: true).Wire());
         try
         {
             var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("D:/fam/Game", CancellationToken.None));
@@ -2111,7 +2110,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var servers = agent.Frame(1).GetProperty("params").GetProperty("mcpServers");
         var server = Assert.Single(servers.EnumerateArray());
@@ -2152,7 +2151,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, meta: new { claudeCode = new { options = new { settings = "s.json" } } })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal((int)AcpProtocol.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
@@ -2165,7 +2164,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal(15000, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
@@ -2880,8 +2879,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 A model the agent refuses at the set, where the start re-asks, ends the open before any prompt: the refusal is the re-ask's,
-    /// coded <c>not-offered</c> for a value its list did not name, the session closed, and the outcome carries it, so the record ends
-    /// <c>choice-not-offered</c>. The opening's list is told as the agent's offers first.
+    /// coded <c>not-offered</c> for a value its list lacked, the session closed, the record ending <c>choice-not-offered</c>.
     /// </summary>
     [Fact]
     public async Task A_model_refused_at_the_open_with_nothing_else_ends_it_before_any_prompt()
@@ -2892,7 +2890,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("mythos", null),
-            ModelRefused = refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); },
+            ModelRefused = ChoiceReask.Of(refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); }),
             OffersRead = options => offered = options,
         };
 
@@ -2920,7 +2918,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null),
+            ModelRefused = ChoiceReask.Of(refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null)),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
@@ -2945,7 +2943,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = _ => Task.FromResult<ActorAsked?>(Entry(null, "low")),
+            ModelRefused = ChoiceReask.Of(_ => Task.FromResult<ActorAsked?>(Entry(null, "low"))),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);

@@ -22,7 +22,7 @@ public sealed class PipeGroundsCensusTests
         Assert.Equal(Timeless.Order(StringComparer.Ordinal), timeless.Select(each => each.Key).Order(StringComparer.Ordinal));
         Assert.All(timeless, each => Assert.False(string.IsNullOrWhiteSpace(each.Value.Timeless)));
         Assert.All(PipeTargets.Daoris.Rows.Where(each => each.Value.Grounds.Count > 0), each => Assert.Null(each.Value.Timeless));
-        foreach (var verb in new[] { "DELETE", "CLEAR", "DISCARD", "DROP", "SWEEP", "SYNC", "LAND", "ABANDON", "FREE", "STOP", "END", "ARCHIVE", "HANDOFF" })
+        foreach (var verb in new[] { "DELETE", "CLEAR", "DISCARD", "DROP", "SWEEP", "SYNC", "LAND", "ABANDON", "FREE", "STOP", "END", "ARCHIVE" })
         {
             Assert.DoesNotContain(timeless, each => each.Key.Contains(verb, StringComparison.Ordinal));
         }
@@ -300,12 +300,6 @@ public sealed class PipeGroundsCensusTests
             """{"tools":[{"tool":"git","way":"managed","version":"2.47","downloaded":[{"version":"2.47","size":"@@SIZE@@"}],"name":"@@WORDS@@"}]}""",
             """{"tools":[{"tool":"git","way":"managed","version":"2.47","downloaded":[{"version":"2.48"}]}]}""",
             """{"tool":"git","version":"2.47"}"""
-        },
-        {
-            "HANDOFF", "HANDOFF_PLAN",
-            """{"session":"s1","branch":"quest/x","repository":"Lyntai","plugin":"github","commits":2,"pullRequest":"@@WORDS@@"}""",
-            """{"session":"s1","branch":"quest/x","repository":"Lyntai","plugin":"github","commits":3}""",
-            """{"id":"s1"}"""
         },
         {
             "LAND_ENTRY", "ENTRY_LANDING",

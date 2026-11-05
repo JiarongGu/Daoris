@@ -5,7 +5,7 @@ internal static class TreesConsoleSource
 {
     private static readonly string[] Parts =
     [
-        "TreesConsole.cs", "TreesCleanVerb.cs", "TreesEntryLandVerb.cs", "TreesHandVerb.cs", "TreesRemoveVerb.cs", "TreesStateVerb.cs", "TreesUsage.cs",
+        "TreesConsole.cs", "TreesCleanVerb.cs", "TreesEntryLandVerb.cs", "TreesRemoveVerb.cs", "TreesStateVerb.cs", "TreesUsage.cs",
     ];
 
     /// <summary>The console's source and its verbs', in one text; <paramref name="hostFolder"/> is the driver host's folder.</summary>

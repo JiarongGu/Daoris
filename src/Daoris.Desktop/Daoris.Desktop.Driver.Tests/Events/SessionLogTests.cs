@@ -503,7 +503,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// LAND2b (design §8): each try to land a done session is one <c>landing.auto</c> line, codes and counts and a plugin's id,
+    /// LAND2b (design §8): each try to land a done session is one <c>landing.auto</c> line, codes and counts,
     /// never a sentence; and none once the watch has let go.
     /// </summary>
     [Fact]
@@ -511,14 +511,14 @@ public sealed class SessionLogTests : IDisposable
     {
         using var w = Watch();
 
-        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", LandingCode.PluginFailed, 2, null, "acme.lands", false));
+        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", LandingCode.Refused, 2, null));
         w.Watch.Dispose();
-        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", LandingCode.Landed, 1, null, null, null));
+        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", LandingCode.Landed, 1, null));
 
         var line = Assert.Single(Named("landing.auto"));
         Assert.Equal("info", line.GetProperty("level").GetString());
         Assert.Equal(
-            """{"session":"s1","repository":"engine","workspace":"aurora","code":"plugin-failed","commits":2,"uncommitted":null,"plugin":"acme.lands","pushed":false}""",
+            """{"session":"s1","repository":"engine","workspace":"aurora","code":"refused","commits":2,"uncommitted":null}""",
             Data(line).GetRawText());
     }
 

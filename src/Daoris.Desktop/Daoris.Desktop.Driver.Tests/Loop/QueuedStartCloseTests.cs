@@ -116,7 +116,8 @@ public sealed class QueuedStartCloseTests : IDisposable
         await using var run = new TransportRun(
             new DriverTransportHost(driver), adapter,
             new TransportStart(new ProcessStartInfo(Nowhere), StartClass.Person) { Target = target, Selection = new HarnessSelection(null) });
-        run.HandRecords(new RunRecords("s1", Path.Combine(_home, "s1.log"), Events: driver.Context.Events));
+        run.HandStart(run.Start with { Session = "s1", Transcript = Path.Combine(_home, "s1.log") });
+        run.HandSink(new RecordReadings("s1", null, driver.Context.Events));
         var ended = new AgentRunEnd(0, null, new HarnessEnding(0, null, []), Named: true);
 
         using (Refusing())

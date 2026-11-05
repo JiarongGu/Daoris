@@ -44,8 +44,8 @@ public sealed class LandedIntegrateTests : IDisposable
         Assert.Equal(new LandedIntegrate(LandingIntegrate.Owner, LandedIntegrate.Rule), read.Integrate);
         Assert.Equal(new LandedIntegrate(LandingIntegrate.Done, LandedIntegrate.Rule), Assert.Single(read.Advances).Integrate);
 
-        // A plugin's answer rewrites the file whole: both stay, each equal to itself read twice.
-        landings.Pushed("engine", "feature/q1-fix", new PluginLanding("acme.lands", true, null, "pushed"), "tip00002");
+        // A push's record rewrites the file whole: both stay, each equal to itself read twice.
+        landings.Pushed("engine", "feature/q1-fix", "tip00002");
         var again = new LandedBranches(Home).Of("engine", "feature/q1-fix")!;
         Assert.Equal(read.Integrate, again.Integrate);
         Assert.Equal(read.Advances[0], again.Advances[0]);

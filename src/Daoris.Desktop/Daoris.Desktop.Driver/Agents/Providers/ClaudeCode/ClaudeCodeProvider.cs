@@ -22,7 +22,10 @@ internal static class ClaudeCodeProvider
         Org: @"""orgName""\s*:\s*""([^""]+)""",
         Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
 
-    private const string Evidence = "Claude Code's declaration";
+    /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking (D184 point 4).</summary>
+    public const string Id = "claude-code";
+
+    private const string Evidence ="Claude Code's declaration";
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
 
@@ -66,7 +69,11 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
                 Known<bool>.Declared(true, Evidence),
-                Known<bool>.Declared(true, Evidence)),
+                Known<bool>.Declared(true, Evidence),
+                // Its servers inherit its environment (D70's driven path through the repository's own `.mcp.json`), and
+                // `--strict-mcp-config` leaves the agent's own out (the holder's terminal).
+                ServersInherit: Known<bool>.Declared(true, Evidence),
+                OwnServersLeftOut: Known<bool>.Declared(true, "`--strict-mcp-config`")),
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
             new DoorId("claude-code-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
@@ -87,7 +94,7 @@ internal static class ClaudeCodeProvider
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 
         return new Provider(
-            new ProviderId("claude-code"),
+            new ProviderId(Id),
             new ProviderIdentity("Claude Code", "Anthropic", "CC", StandIn: false, DeclaredBy: []),
             [native, protocol],
             Known<ProgramFacts>.Declared(program, Evidence),
@@ -95,7 +102,9 @@ internal static class ClaudeCodeProvider
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Declared(usage, Evidence),
             Known<LentPart>.Declared(new LentPart(pool, tables with { ErrorWords = null }, usage), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Declared(new ClaudeSettingsFile(), Evidence), Known<IChildVocabulary>.Absent,
+            Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence),
+            Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

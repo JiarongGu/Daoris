@@ -76,7 +76,7 @@ public static class PluginPage
             {
                 To = server.To, Allow = server.Allow, Writes = server.Writes,
             }, server))],
-            manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(plugin, catalog) : null,
+            manifest.Hooks?.Points.Contains(HookPoints.Perform, StringComparer.Ordinal) == true ? Landing(plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),
             PluginFolders.Tests(entry.Folder, CountBound))
@@ -112,7 +112,7 @@ public static class PluginPage
 
     private static bool DrivesBrowser(string text) => text.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal);
 
-    /// <summary>Whether the plugin can land work here; no rule names it, since a workflow's <c>land</c> does.</summary>
+    /// <summary>Whether the plugin can open pull requests here; no rule names it, since a workflow's <c>pull-request</c> step does.</summary>
     private static PageLanding Landing(string plugin, PluginCatalog catalog) => new([], LandingPlugins.ProblemOf(plugin, catalog));
 
     /// <summary>Where it came from, and what an update would do: <c>waits</c> with what changes, <c>current</c>, or the refusal.</summary>

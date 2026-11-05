@@ -49,7 +49,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
         var stdout = new Harness();
         var stderr = new Harness();
         var capture = HarnessCapture.CaptureAsync(
-            stdout, stderr, transcript, "s1", output: null, CancellationToken.None, preamble: "— a fact about this run");
+            stdout, stderr, transcript, ReadingSinks.None, CancellationToken.None, preamble: "— a fact about this run");
 
         try
         {
@@ -77,7 +77,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
         var stdout = new Harness();
         var stderr = new Harness();
         var capture = HarnessCapture.CaptureStructuredAsync(
-            stdout, stderr, transcript, "s2", output: null, events: null, new ClaudeStreamJson(), prompt: null,
+            stdout, stderr, transcript, ReadingSinks.None, new ClaudeStreamJson(), prompt: null,
             CancellationToken.None);
 
         try

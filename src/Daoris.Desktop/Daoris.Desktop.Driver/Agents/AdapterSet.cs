@@ -83,19 +83,18 @@ public sealed class AdapterSet(
             : null;
 
     /// <summary>
-    /// This set plus every harness the catalogue's contributing plugins declare (D64 §3). The
-    /// catalogue has already refused any name this set carries, so nothing here can be replaced —
-    /// a plugin adds, and the built-in set is exactly what it was.
+    /// This set plus <paramref name="more"/> doors and the agents they declare. A name this set carries is kept as it is, so nothing here can
+    /// be replaced: a door joins, and the set it joins is exactly what it was. Who offers the doors is the caller's (<c>WithPlugins</c>).
     /// </summary>
-    public AdapterSet WithPlugins(IAgentPlugins catalog)
+    public AdapterSet Joined(IEnumerable<ISessionAdapter> more, IEnumerable<string> declaredAgents)
     {
         var joined = new Dictionary<string, ISessionAdapter>(adapters, StringComparer.OrdinalIgnoreCase);
-        foreach (var adapter in catalog.Adapters)
+        foreach (var adapter in more)
         {
             joined.TryAdd(adapter.Name, adapter);
         }
 
-        return new AdapterSet(joined, holders, [.. (declared ?? []).Concat(catalog.DeclaredAgents).Distinct(StringComparer.OrdinalIgnoreCase)]);
+        return new AdapterSet(joined, holders, [.. (declared ?? []).Concat(declaredAgents).Distinct(StringComparer.OrdinalIgnoreCase)]);
     }
 
     public ISessionAdapter Resolve(string name)

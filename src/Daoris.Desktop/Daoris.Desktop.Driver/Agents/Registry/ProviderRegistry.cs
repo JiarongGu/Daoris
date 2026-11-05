@@ -195,6 +195,13 @@ public sealed class ProviderRegistry
     public DoorId ReportingDoorOf(DoorId door) =>
         AccountAgentOf(door) is { } agent && _doors.TryGetValue(agent.Name, out var named) ? named.Door.Id : door;
 
+    /// <summary>The settings file port of the agent whose account <paramref name="agent"/> runs as (its <c>Models</c> part), or null where its provider states none.</summary>
+    public ISettingsFile? SettingsOf(string agent) =>
+        (_doors.TryGetValue(agent, out var door) ? AccountAgentOf(door.Door.Id)?.Name : agent) is { } owner
+        && _providers.TryGetValue(owner, out var holder) && holder.Models.IsKnown
+            ? holder.Models.Required
+            : null;
+
     /// <summary>The tool's settings file an agent's account keeps its model and effort in (<c>AgentsCommand</c>): a door's account agent's, a holder's own.</summary>
     public string? SettingsFileOf(string agent) =>
         _doors.TryGetValue(agent, out var door)

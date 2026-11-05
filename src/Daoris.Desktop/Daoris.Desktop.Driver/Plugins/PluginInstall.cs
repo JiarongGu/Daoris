@@ -113,7 +113,7 @@ public static class PluginInstall
         var staging = Path.Combine(root, $".adding-{manifest.Id}-{Guid.NewGuid():N}");
         try
         {
-            PluginFolders.CopyTree(folder, staging);
+            TreeCopy.Copy(folder, staging);
             // Where it came from, in the copy before it is renamed in (PLUG9 c): one move for both.
             PluginSource.Write(staging, source);
             PluginFolders.MoveInto(staging, target);
@@ -269,7 +269,7 @@ public static class PluginInstall
         var aside = Path.Combine(root, $".removing-{plan.Id}-{stamp}");
         try
         {
-            PluginFolders.CopyTree(plan.From, staging);
+            TreeCopy.Copy(plan.From, staging);
             PluginSource.Write(staging, plan.Source);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -329,7 +329,7 @@ public static class PluginInstall
         try
         {
             PluginFolders.Make(root);
-            PluginFolders.CopyTree(folder, staging);
+            TreeCopy.Copy(folder, staging);
             PluginSource.Write(staging, source);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

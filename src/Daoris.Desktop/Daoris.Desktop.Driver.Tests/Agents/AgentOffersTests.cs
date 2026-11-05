@@ -22,6 +22,36 @@ public sealed class AgentOffersTests : IDisposable
         AgentOffers.Judge(AgentOffers.Read(_home), "claude-code-acp", version, account, model, at ?? Now);
 
     /// <summary>
+    /// Row n: a door's offers are read in two scopes, a session's from the account's own reading at this version and the account defaults'
+    /// from what the provider states; one account's refusal passes that account while another of the same door and version is tried, and a
+    /// reading of another version offers nothing.
+    /// </summary>
+    [Fact]
+    public void Offers_are_read_per_account_in_two_scopes()
+    {
+        Assert.Null(AgentOffers.Offered(_home, "claude-code-acp", "1.0.0", "acct-1", ["sonnet"], ["low", "max"], Now));
+        Assert.Null(AgentOffers.Offered(_home, "claude-code-acp", "1.0.0", "acct-2", ["sonnet", "opus"], null, Now));
+        Assert.Null(AgentOffers.Refused(_home, "claude-code-acp", "1.0.0", "acct-1", "opus", Now));
+        var readings = AgentOffers.Read(_home);
+        var defaults = new AccountDefaultOffers(["low", "medium", "high", "xhigh"]);
+
+        var first = AgentOffers.Offers(readings, "claude-code-acp", "1.0.0", "acct-1", Now, defaults);
+        var second = AgentOffers.Offers(readings, "claude-code-acp", "1.0.0", "acct-2", Now, defaults);
+
+        Assert.Equal(["sonnet"], first.Session.Models);
+        Assert.Equal(["low", "max"], first.Session.Efforts);
+        Assert.Equal(["opus"], first.Session.Refused);
+        Assert.Equal(AgentOffers.NotOffered, first.Session.Judge("opus"));
+        Assert.Null(second.Session.Judge("opus"));
+        Assert.Equal(["sonnet", "opus"], second.Session.Models);
+        // The session scope holds `max`, which the account defaults never do.
+        Assert.DoesNotContain("max", first.Defaults.Efforts);
+        Assert.Same(SessionOffers.None, AgentOffers.Offers(readings, "claude-code-acp", "2.0.0", "acct-1", Now).Session);
+        Assert.Empty(AgentOffers.Offers(readings, "claude-code-acp", "1.0.0", "acct-1", Now).Defaults.Efforts);
+        Assert.Empty(AgentOffers.Offers(readings, "claude-code-acp", "1.0.0", "acct-1", Now.AddDays(2)).Session.Refused);
+    }
+
+    /// <summary>
     /// §3.3: two accounts offering differently are judged apart, each for the model asked, by the account's own refusal; a list that
     /// lacks a model is no pass by itself (MODELROLE1a: Claude's door lists aliases and takes a full id), and account default is never
     /// judged.

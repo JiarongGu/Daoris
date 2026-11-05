@@ -26,9 +26,7 @@ const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'work
 
 function answer(landing: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
-    if (type === 'SESSION_DIFF') return DIFF;
-    if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-    if (type === 'LANDING') return landing;
+    if (type === 'SESSION_DIFF') return DIFF;    if (type === 'LANDING') return landing;
     return {};
   });
 }
@@ -86,9 +84,7 @@ describe('the review’s forced discard', () => {
   function drive(forced: Array<{ done: boolean; message: string } | Error>) {
     const queue = [...forced];
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: { force?: boolean } }) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      if (type === 'LANDING') return PLAN;
+      if (type === 'SESSION_DIFF') return DIFF;      if (type === 'LANDING') return PLAN;
       if (type === 'DISCARD_SESSION_TREE') {
         if (!options?.payload?.force) return { done: false, message: NAMES };
         const next = queue.shift()!;
@@ -168,9 +164,7 @@ describe('the review of a tree holding uncommitted work', () => {
 
   function drive(diff: Record<string, unknown>, plan: Record<string, unknown> = PLAN) {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      if (type === 'LANDING') return plan;
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };      if (type === 'LANDING') return plan;
       return {};
     });
   }
@@ -234,9 +228,7 @@ describe('the review against the latest line', () => {
 
   function drive(diff: Record<string, unknown>) {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      if (type === 'LANDING') return PLAN;
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };      if (type === 'LANDING') return PLAN;
       return {};
     });
   }
@@ -304,9 +296,7 @@ describe('the review of a tree with nothing beyond the line', () => {
 
   function drive(diff: Record<string, unknown>) {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      if (type === 'LANDING') return BRANCH_PLAN;
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };      if (type === 'LANDING') return BRANCH_PLAN;
       return {};
     });
   }

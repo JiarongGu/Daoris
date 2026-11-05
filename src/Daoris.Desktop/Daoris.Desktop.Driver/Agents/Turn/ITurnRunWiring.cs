@@ -10,10 +10,10 @@ internal interface ITurnRunWiring : ITurnPromptWiring, ITurnReadWiring
     void Begin(CancellationToken stops, Action<IAgentWord>? asked, IAgentInbox? inbox, TransientRetry? retry, Action? prompted);
 
     /// <summary>A new session opened on the tree.</summary>
-    Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null);
+    Task OpenAsync(string cwd, CancellationToken ct, ConnectorPlan? plan = null);
 
     /// <summary>A conversation resumed instead of a session opened.</summary>
-    Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null);
+    Task ResumeAsync(string cwd, string conversation, CancellationToken ct, ConnectorPlan? plan = null);
 
     /// <summary>The session closed politely, bounded.</summary>
     Task CloseAsync(CancellationToken ct);

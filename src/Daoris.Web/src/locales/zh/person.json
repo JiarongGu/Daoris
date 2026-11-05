@@ -91,7 +91,6 @@
   "person.route.TREES_SYNC": "将仓库的分支更新到最新",
   "person.route.LAND_ENTRY": "采纳一条工作线并将其落地",
   "person.route.LAND_ASK": "采纳一个需求的工作并将其落地",
-  "person.route.HANDOFF": "将一个已落地的分支交接给插件，由它推送",
   "person.route.OPINION_ANYWAY": "越过第二意见中有争议的发现继续",
   "person.route.OPINION_MYSELF": "由你自己回答第二意见中有争议的发现",
   "person.route.DISCARD_SESSION_BRANCH": "删除一个会话分支",

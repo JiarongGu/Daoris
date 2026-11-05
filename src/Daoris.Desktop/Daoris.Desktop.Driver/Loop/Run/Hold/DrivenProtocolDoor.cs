@@ -57,10 +57,10 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
     /// </param>
     public TransportProtocol For(
         TransportRun run, string sessionId, string cwd, string prompt, string? posture,
-        IReadOnlyDictionary<string, string>? scope, object? meta, IReadOnlyList<AcpMcpServer> servers, DrivenInbox? inbox,
-        Action<JsonElement>? said, ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
+        IReadOnlyDictionary<string, string>? scope, object? meta, ConnectorPlan plan, DrivenInbox? inbox,
+        ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
-        Action<ActorAsked>? carried, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
+        Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
         Action<IReadOnlyList<ChatMessage>> handedBack)
     {
@@ -127,17 +127,13 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
 
                 // The knowledge host first, then whatever the plugins hand every session: tools the session can reach, under the
                 // repository's own posture like every other tool it has.
-                var offered = new List<AcpMcpServer>();
-                if (connector is not null) offered.Add(connector);
-                offered.AddRange(servers);
+                var offered = plan with { Servers = connector is null ? plan.Servers : [connector, .. plan.Servers] };
 
                 // Whether it waits on its own background work, and a wait between a transient episode's tries, which is Daoris's,
                 // never quiet.
                 wiring.Watch.OwnWork(sessionId, () => session.WaitsOnOwnWork, () => [.. session.BackgroundRunning.Select(task => task.Name)]);
                 if (retry is not null) wiring.Watch.Transient(sessionId, () => session.WaitsOnTransient);
 
-                // What it says about its account's windows, kept as it says it.
-                if (said is not null) session.LimitsSaid += said;
                 using var stops = context.Output is null ? null : context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
 
                 // Under its run's light checks, a call or a background task past its bound is told to it once, as Daoris's urgent word,

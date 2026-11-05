@@ -154,9 +154,9 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Null(meta);
         Assert.Equal(HandedNones.Agent, handed.None);
         var posture = Daoris.Driver.SessionRules.PassPosture(Pass(), adapter);
-        Assert.Equal($"{AgentPostures.Required}read-only", posture);
-        Assert.NotEqual(adapter.AcpPosture, posture!.TrimStart(AgentPostures.Required));
-        Assert.NotEqual(adapter.FullPosture, posture.TrimStart(AgentPostures.Required));
+        Assert.Equal(new PostureAsked("read-only", Required: true).Wire(), posture);
+        Assert.NotEqual(adapter.AcpPosture, PostureAsked.Parse(posture).Modes);
+        Assert.NotEqual(adapter.FullPosture, PostureAsked.Parse(posture).Modes);
         Assert.Contains("`read-only`", BrainstormPermissions.Unoffered("read-only", "it offers `agent`"), StringComparison.Ordinal);
     }
 

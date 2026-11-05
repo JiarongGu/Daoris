@@ -45,8 +45,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
         .OfType<string>()
         .Where(name => name.Trim().Length > 0);
 
-    (string? Folder, IReadOnlyList<string> Plugins) IAgentPlugins.WriteSkills(string home, string sessionId, string to) =>
-        PluginAgentSkills.Write(home, sessionId, this, to);
+    IReadOnlyList<SkillSource> IAgentPlugins.Skills(string to) => PluginAgentSkills.Sources(this, to);
 
     IReadOnlyList<string> IKnowledgePlugins.LandingPlugins() =>
         [.. Plugins.Select(plugin => plugin.Manifest.Id)
@@ -451,10 +450,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                     return (PluginManifest.Empty(id), "`hooks` needs a `command` and the `points` it listens on.");
                 }
 
-                // LANDNODE1e: only JSON true says it keeps the delivery key; the modes are read as strings, anything else is none.
-                hooks = new PluginHooks(command, points,
-                    spoken.TryGetProperty("key", out var keyed) && keyed.ValueKind == JsonValueKind.True,
-                    Strings(spoken, "modes", expanded) ?? []);
+                hooks = new PluginHooks(command, points);
             }
 
             var servers = new List<PluginServer>();

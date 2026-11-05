@@ -71,12 +71,11 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
 {
     /// <param name="memberGates">Each member's gate by session; a member with none is held by nothing.</param>
     /// <param name="judged">The head's own judgement again under the hold, as its press makes it.</param>
-    /// <param name="beforePush">The head's own judgement before its push.</param>
     /// <param name="delivery">The head's unit's delivery this Accept performs; null lands by the rule, as before.</param>
     public async Task<TreeLanding> LandAsync(
         string operationId, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivery? delivery = null)
     {
         var store = new TogetherOperations(context.Home);
@@ -118,9 +117,6 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
                     ? Refused("it is no longer ready to accept")
                     : null;
             },
-            beforePush: async (landing, waited, token) =>
-                (beforePush is null ? null : await beforePush(landing, waited, token).ConfigureAwait(false))
-                ?? await RecheckAsync(context.Config(), root, operation, checkedTip, line, token).ConfigureAwait(false),
             together: operation.Id, beside: beside, delivery: delivery).ConfigureAwait(false);
 
         await SettleAsync(store, root, operation.Id, landed, target, (workspace, line), ct).ConfigureAwait(false);

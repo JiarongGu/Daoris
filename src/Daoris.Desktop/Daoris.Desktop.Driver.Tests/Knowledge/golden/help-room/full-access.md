@@ -159,7 +159,7 @@ about the quest, ask or place the card named.
 A plugin runs on this machine as the person (one that lands work pushes with their sign-in), so making
 one is work, not a setting: never write one yourself. Propose it
 as an ask (`ask_propose`) at the workspace of the repository that holds plugins, naming it as the receiver:
-what the plugin should do, and the point it speaks on (`quest/consider`, to hold a quest before it starts; `session/ended`, to hear how a session ended; `work/land`, to push a branch Daoris made and open its pull request; `work/state`, to say whether a landed branch's pull request completed, and with which commit; `state/changed`, to hear what a press or a terminal's verb changed of what the driver holds; `work/watch`, to be told which units await its steps; `work/step`, to report what became of a step it performs or observes; `work/perform`, to perform a step of the work, once per attempt, with what it makes removed at the end).
+what the plugin should do, and the point it speaks on (`quest/consider`, to hold a quest before it starts; `session/ended`, to hear how a session ended; `work/state`, to say whether a landed branch's pull request completed, and with which commit; `state/changed`, to hear what a press or a terminal's verb changed of what the driver holds; `work/watch`, to be told which units await its steps; `work/step`, to report what became of a step it performs or observes; `work/perform`, to perform a step of the work, once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step pushes nothing and opens the pull request).
 The session there makes it with its tests, and the person reviews and lands it. Find that repository
 in `registry` by what it says it owns. If none says so,
 the person decides where plugins live (a repository of their own, connected like any other), so ask
@@ -173,7 +173,7 @@ person installs it, and one that lands work runs only where a branch rule names 
 plugin, see whether one of these does the job: propose installing it with `plugin_propose` (`add`, and
 `offer` its id, never a path), and say what it needs, which the person sets up themselves.
 
-- `github-pull-request` (GitHub pull request 1.0.0): speaks on `work/land`, to push a branch Daoris made and open its pull request; needs: gh, signed in: `gh auth login`.
+- `github-pull-request` (GitHub pull request 1.0.0): speaks on `work/land`; needs: gh, signed in: `gh auth login`.
 - `in-app-browser` (In-app browser 1.0.0): hands every session `browser`; needs: node on the PATH.
 - `example.agent`: speaks on `custom/point`, `session/ended`, to hear how a session ended; declares `acme-agent`
 
@@ -277,7 +277,7 @@ rule's plugin pushes it and opens a pull request without asking each time. A mer
 done quest's work is then merged into its line with no press. It is the person's standing
 say-so, so propose it only when they ask for it.
 No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,
-or the Plugins place), so never propose a rule naming one until it is installed; this install offers `github-pull-request`, which you may propose installing first.
+or the Plugins place), so never propose a rule naming one.
 
 ## Where you may take the person
 

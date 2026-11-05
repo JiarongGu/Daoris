@@ -95,7 +95,7 @@ public static class ToolsCommand
                daoris tool download <tool> [<version>] · update <tool> · delete <tool> <version>
                daoris tool locations [add|remove <address>] · look
                daoris tool git ssh <command> | --clear
-        `daoris tool …` runs these; the tools are git, node, pwsh, gh and az.
+        `daoris tool …` runs these; the tools are git, node and pwsh.
         Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 

@@ -84,16 +84,26 @@ public static class AgentOffers
     /// does not name, answering its alias, so only the agent's own refusal at an open passes an account.
     /// </remarks>
     public static string? Judge(
-        IReadOnlyList<OfferReading> readings, string agent, string? version, string? account, string? model, DateTimeOffset now)
+        IReadOnlyList<OfferReading> readings, string agent, string? version, string? account, string? model, DateTimeOffset now) =>
+        Offers(readings, agent, version, account, now).Session.Judge(model);
+
+    /// <summary>
+    /// What <paramref name="door"/> offers at <paramref name="version"/> on <paramref name="account"/>, read from the offers store in two scopes
+    /// (<see cref="DoorOffers"/>): the session scope is the account's own reading, one account's refusal passing that account while another of
+    /// the same door and version is tried; the default scope is <paramref name="defaults"/>, what the provider's schema keeps. A reading of
+    /// another version is a hint and offers nothing.
+    /// </summary>
+    public static DoorOffers Offers(
+        IReadOnlyList<OfferReading> readings, string door, string? version, string? account, DateTimeOffset now,
+        AccountDefaultOffers? defaults = null)
     {
-        if (string.IsNullOrWhiteSpace(model)) return null;
         var key = account ?? OwnHome;
         var reading = readings.FirstOrDefault(each =>
-            string.Equals(each.Agent, agent, StringComparison.OrdinalIgnoreCase) && string.Equals(each.Account, key, StringComparison.OrdinalIgnoreCase));
-        if (reading is null || !string.Equals(reading.Version, version, StringComparison.Ordinal)) return null;
-        if (reading.RefusedAt is not { } refusedAt || now - refusedAt >= Fresh) return null;
-        if (!reading.Refused.Contains(model, StringComparer.OrdinalIgnoreCase)) return null;
-        return reading.Models?.Contains(model, StringComparer.OrdinalIgnoreCase) == true ? RefusedCode : NotOffered;
+            string.Equals(each.Agent, door, StringComparison.OrdinalIgnoreCase) && string.Equals(each.Account, key, StringComparison.OrdinalIgnoreCase));
+        var session = reading is null || !string.Equals(reading.Version, version, StringComparison.Ordinal)
+            ? SessionOffers.None
+            : new SessionOffers(reading.Models, reading.Efforts, reading.RefusedAt is { } at && now - at < Fresh ? reading.Refused : []);
+        return new DoorOffers(door, version, account, session, defaults ?? AccountDefaultOffers.None);
     }
 
     /// <summary>

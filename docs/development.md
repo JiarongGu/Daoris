@@ -266,8 +266,13 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
 **How a merge goes now** (CISCOPE1e, D207's design §4). A branch lands through the queue, in three steps and this order:
 
-1. **The records commit, on the branch.** The row moved to the archive, `TASKS.md`, the changelog, any FIX-LOG entry: what the
-   merge carries beyond the branch's own work. The tool commits nothing it was not handed.
+1. **The records commit, on the branch.** What the merge carries beyond the branch's own work: a finished row moved from
+   `TASKS.md` to the archive with one outcome line, a row left open rewritten in place and kept inside the backlog's
+   `words` budget in `daoris.json` (`daoris check` reports it; condense a row, never drop work), the changelog, and the
+   fix log. A regression is a dated entry with its root cause. A sighting of a flake is not a backlog line: it goes
+   under the open entry for its kind, `FLAKE1` (a test that fails under load and passes alone), `TEST1` (a Node process
+   aborting on Windows) or `REH1` (the release rehearsal's canon-upgrade phase), and is fixed only where its cause is
+   found; a capture is no permission to change timeout policy. The tool commits nothing it was not handed.
 2. **`<branch> --preview`.** The merge against main's tip, made with `git merge-tree` so no file of the checkout moves; its
    diff, any conflict, and its scoped run are printed, and the tip you read is recorded.
 3. **`<branch> --message <file>`**, the file under `local/` holding the merge commit's message, verbatim, with its

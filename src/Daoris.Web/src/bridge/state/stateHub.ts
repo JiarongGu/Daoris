@@ -17,9 +17,6 @@ import { AT_WORK } from '../sessions/atWork';
  */
 export type StateChanged = { scopes?: unknown; sessions?: unknown };
 
-/** Every session's hand-off plan: the prefix `keys.handOff` keys each under. */
-const allHandOffs: QueryKey = keys.handOff('').slice(0, -1);
-
 /**
  * Each scope the driver names, and the page's queries it asks again (D169 point 6). The one place a press's change reaches
  * the cache, so the window that pressed, a second window and a view mounted later read alike. `sessions` narrows only what is
@@ -31,7 +28,6 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // Every plan and gate, with the second opinions and what of them waits, which sit under the landings' key; and each unit's milestone.
   ['landing', () => [keys.allLandings, keys.allWorkState]],
   ['diff', (sessions) => sessions?.map((session) => keys.diff(session)) ?? [keys.allDiffs]],
-  ['handOff', (sessions) => sessions?.map((session) => keys.handOff(session)) ?? [allHandOffs]],
   ['sweep', () => [keys.sweep, keys.allWorkState]],
   ['treesSync', () => [treesSyncScopeKey]],
   // Each repository's rules, and the Current workflow drawn from them, which sits under their key.
@@ -184,16 +180,6 @@ export function useUnderWayStep(route: string, session: string | null): string |
   const told = useTold();
   if (session === null) return null;
   return told.presses.find((press) => press.route === route && press.session === session)?.step ?? null;
-}
-
-/**
- * The session whose landing or push a press of `route` for `session` waits behind (LANDHOLD3), where the driver says its step is
- * the wait and the holder said who it is; null otherwise.
- */
-export function useUnderWayBehind(route: string, session: string | null): string | null {
-  const told = useTold();
-  if (session === null) return null;
-  return told.presses.find((press) => press.route === route && press.session === session)?.behind ?? null;
 }
 
 /** The entry or ask a press of this window's was sent for, as `LAND_ENTRY` and `LAND_ASK` name it. */

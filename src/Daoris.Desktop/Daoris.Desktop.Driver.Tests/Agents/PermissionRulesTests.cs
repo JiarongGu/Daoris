@@ -484,7 +484,7 @@ public sealed class PermissionRulesTests : IDisposable
             PermissionRules.Add(PermissionRules.Load(_home), RuleScope.Machine, null, RuleList.Ask, "WebFetch"),
             "default", "engine");
 
-        var path = SpawnSettings.Write(_home, "s1", rules, hardDeny: []);
+        var path = ClaudeRules.Render(_home, "s1", rules, hardDeny: []);
 
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.settings.json"), path);
         var text = File.ReadAllText(path!);
@@ -497,7 +497,7 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal(["WebFetch"], permissions.GetProperty("ask").EnumerateArray().Select(e => e.GetString()));
         Assert.Contains("Bash(git push)", permissions.GetProperty("deny").EnumerateArray().Select(e => e.GetString()));
 
-        SpawnSettings.Remove(path);
+        SpawnFiles.Remove(path);
         Assert.False(File.Exists(path));
     }
 
@@ -505,13 +505,13 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void Nothing_to_hand_still_hands_the_sessions_own_context()
     {
-        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, []);
+        var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, []);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         Assert.Equal(
-            ["permissions", .. SpawnSettings.OwnContext.Select(pair => pair.Key)],
+            ["permissions", .. ClaudeRules.OwnContext.Select(pair => pair.Key)],
             document.RootElement.EnumerateObject().Select(property => property.Name));
-        Assert.All(SpawnSettings.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
+        Assert.All(ClaudeRules.OwnContext, pair => Assert.Equal(pair.Value, document.RootElement.GetProperty(pair.Key).GetBoolean()));
     }
 
     // ——— PERM4: a driven session may commit.
@@ -559,7 +559,7 @@ public sealed class PermissionRulesTests : IDisposable
     public void A_push_in_each_form_meets_a_deny_rule_in_the_composed_file(string command)
     {
         var file = PermissionRules.Load(_home);
-        var path = SpawnSettings.Write(
+        var path = ClaudeRules.Render(
             _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
@@ -600,7 +600,7 @@ public sealed class PermissionRulesTests : IDisposable
     public void The_spawn_file_tells_auto_modes_classifier_a_push_in_any_form_is_the_persons()
     {
         var file = PermissionRules.Load(_home);
-        var path = SpawnSettings.Write(
+        var path = ClaudeRules.Render(
             _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
@@ -624,7 +624,7 @@ public sealed class PermissionRulesTests : IDisposable
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
         string[] Written(string id, IReadOnlyList<string> hardDeny)
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, id, rules, hardDeny)!));
+            using var document = JsonDocument.Parse(File.ReadAllText(ClaudeRules.Render(_home, id, rules, hardDeny)!));
             return [.. document.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!)];
         }
 
@@ -675,7 +675,7 @@ public sealed class PermissionRulesTests : IDisposable
         var tree = Path.Combine(_home, "engine");
         var guard = TreeGuard.For(_home, tree);
 
-        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), [], guard);
+        var path = ClaudeRules.Render(_home, "s1", PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), [], guard);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var entry = Assert.Single(document.RootElement.GetProperty("hooks").GetProperty("PreToolUse").EnumerateArray());
@@ -696,7 +696,7 @@ public sealed class PermissionRulesTests : IDisposable
         var target = Path.Combine(_home, "engine");
         var guard = TreeGuard.For(_home, tree, [target]);
 
-        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, [], guard);
+        var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, [], guard);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var hook = document.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];
@@ -707,13 +707,13 @@ public sealed class PermissionRulesTests : IDisposable
     public void No_guard_is_no_hooks_key_and_a_guard_alone_is_still_a_file()
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
-        using (var plain = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s1", rules, [])!)))
+        using (var plain = JsonDocument.Parse(File.ReadAllText(ClaudeRules.Render(_home, "s1", rules, [])!)))
         {
             Assert.False(plain.RootElement.TryGetProperty("hooks", out _));
         }
 
         var nothing = PermissionRules.Compose(Off(PermissionRules.Load(_home), "connector", "commit"), "default", "engine");
-        var alone = SpawnSettings.Write(_home, "s2", nothing, [], TreeGuard.For(_home, _home));
+        var alone = ClaudeRules.Render(_home, "s2", nothing, [], TreeGuard.For(_home, _home));
         Assert.NotNull(alone);
         using var guarded = JsonDocument.Parse(File.ReadAllText(alone!));
         Assert.True(guarded.RootElement.TryGetProperty("hooks", out _));

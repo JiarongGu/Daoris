@@ -254,11 +254,6 @@ public sealed class LandingChainTests : IDisposable
     {
         var advanced = new TreeLanding(true, "moved `feature/x` on.", "feature/x") { AdvancedFrom = Tip };
         Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
-        // The push is still the plugin's: an advance it did not push is kept as that, as a landing's is.
-        Assert.Equal(LandingCode.PluginFailed, LandTries.CodeOf(advanced with
-        {
-            Plugin = new PluginLanding("acme.lands", Pushed: false, "https://example.test/pull/7", "its pull request is completed"),
-        }));
         Assert.Equal(LandingCode.Completed, LandTries.CodeOf(new TreeLanding(false, "merged") { Refusal = LandingCode.Completed }));
 
         Assert.True(LandingCode.Closes(LandingCode.Advanced));
@@ -299,7 +294,7 @@ public sealed class LandingChainTests : IDisposable
         landings.Record(Entry() with { AcceptedBy = AcceptedBy.Person, Pushed = true, Plugin = "acme.lands", PullRequest = "https://example.test/pull/7" });
 
         landings.Advanced("ENGINE", "feature/q1-fix-the-gap", new LandedAdvance(Tip, Next, At.AddHours(1), "s2") { AcceptedBy = AcceptedBy.Auto });
-        landings.Pushed("engine", "feature/q1-fix-the-gap", new PluginLanding("acme.lands", Pushed: true, PullRequest: null, "pushed it."), Next);
+        landings.Pushed("engine", "feature/q1-fix-the-gap", Next);
 
         var entry = new LandedBranches(_home).Landing("s2")!;
         Assert.Equal("s1", entry.Session);
@@ -338,49 +333,4 @@ public sealed class LandingChainTests : IDisposable
         Assert.StartsWith("`s1` landed on `feature/q1-fix-the-gap` in `engine` on 2026-10-04 12:00 UTC;",
             LandedReviewWords.Describe("s1", new LandedReview(entry, LandedState.Standing)));
     }
-
-    // ——— what the plugin is told
-
-    /// <summary>
-    /// The frame carries the pull request the landing already holds, so a plugin pushes and opens no second one, and who
-    /// accepted the work, so the description it writes is true. A first landing's frame says none, and the person.
-    /// </summary>
-    [Fact]
-    public void The_landing_frame_carries_the_pull_request_and_who_accepted_it()
-    {
-        var first = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s1", []));
-        Assert.Equal(JsonValueKind.Null, first.GetProperty("pullRequest").ValueKind);
-        Assert.Equal(AcceptedBy.Person, first.GetProperty("acceptedBy").GetString());
-
-        var advance = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s2", [],
-            PullRequest: "https://example.test/pull/7", AcceptedBy: AcceptedBy.Auto));
-        Assert.Equal("https://example.test/pull/7", advance.GetProperty("pullRequest").GetString());
-        Assert.Equal(AcceptedBy.Auto, advance.GetProperty("acceptedBy").GetString());
-
-        // The kit's sample is the same function's: a plugin made with the kit sees both fields.
-        var sample = PluginKit.Find(HookPoints.Land)!.Frame;
-        Assert.True(sample.ContainsKey("pullRequest"));
-        Assert.Equal(AcceptedBy.Person, sample["acceptedBy"]!.GetValue<string>());
-    }
-
-    /// <summary>
-    /// LANDPIN2 (D173's FABRIC-END7 note): the frame names the commit the landing judged, which a plugin pushes to the branch rather than
-    /// the branch as it stands at the push. A frame from before it says none, and the kit's sample says its own commit.
-    /// </summary>
-    [Fact]
-    public void The_landing_frame_carries_the_commit_judged()
-    {
-        var judged = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s1",
-            [new LandingCommit("3f2a9c1e", "Fix")], Tip: "3f2a9c1e"));
-        Assert.Equal("3f2a9c1e", judged.GetProperty("tip").GetString());
-
-        var before = Frame(new LandingFrame("engine", "aurora", "/root", "feature/x", "main", "Fix", "q1", "s1", []));
-        Assert.Equal(JsonValueKind.Null, before.GetProperty("tip").ValueKind);
-
-        var sample = PluginKit.Find(HookPoints.Land)!.Frame;
-        Assert.Equal(PluginKit.SampleLanding.Commits[^1].Sha, sample["tip"]!.GetValue<string>());
-    }
-
-    private static JsonElement Frame(LandingFrame frame) =>
-        JsonDocument.Parse(JsonSerializer.Serialize(HookFrames.Land(frame))).RootElement.Clone();
 }

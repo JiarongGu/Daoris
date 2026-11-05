@@ -23267,3 +23267,10 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **FABRIC-PIPELINE1d — the `check` performed and a person's verification of a commit or branch, its verdict recorded and shown** (driver, modules, web; D192).
 
   **Outcome** 2026-11-06: BL22: `LineRunReader` reads a line's verification runs back with their verdicts (`WorkflowRunLine`); `workflow run --line` and `WORKFLOW_RUN {line}`; the Workflow tab's *Verifications* with *Run again* and *Not now* on a held check, en and zh.
+
+## SESSOPT1d and SESSCOMMIT1 (2026-11-06)
+
+- [x] **SESSOPT1d — the documentation relocation completed** (steward): the backlog stays within its budget, and FLAKE1, TEST1 and REH1 get diagnostic evidence homes. **FLAKE1**, tests that fail in a full run and pass alone, is this home's standing line: each sighting is recorded, and fixed only where its cause is found; a capture is no permission to change timeout policy (the sightings to 2026-11-04 are at `9f58e4f2a:TASKS.md`). → `docs/2026-10-02-session-economy-design.md` §4.3
+- [x] **SESSCOMMIT1 — the doctrine names the process's source**. → `docs/2026-11-02-parked-triage.md`, WORKFLOWCLEAN1
+
+  **Outcome** 2026-11-06: BL27: the backlog is within its budget (6,423 of 6,600 words); FLAKE1, TEST1 and REH1 keep their open fix-log entries as their evidence homes, and `docs/development.md`'s records step says so. The canon's `persist-working-state` rule names the process's source (D164 point 4: where the starting tool tells the commit and landing process, follow it; otherwise the repository's own rules stand), synced here and to both examples.

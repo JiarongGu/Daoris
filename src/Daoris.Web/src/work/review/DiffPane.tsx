@@ -5,11 +5,10 @@ import { WorkflowHold } from '../../workflow/WorkflowHold';
 import type { Session } from '../../data/api';
 import { sentence } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { ExternalLink } from '../../design/links';
 import { store, stored } from '../../lib/stored';
 import {
-  type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay, useUnderWayBehind, useUnderWayStep, useUnderWaySubject,
+  type LandingConflict, useDiscardSessionTree, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
+  useUnderWay, useUnderWayStep, useUnderWaySubject,
 } from '../../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -65,7 +64,7 @@ const LANDING_WORDS: Record<string, string> = {
  * session's landing, the review says where the work landed, above what it reads; once a tidy took the
  * tree, what it reads is the landed branch, in the repository's own checkout. While the review reads as
  * landed — the branch stands, or the tree is gone — accepting and sending back are not offered, and
- * discarding only where a tree is still here; the hand-off stays where one applies.
+ * discarding only where a tree is still here.
  *
  * **Work the line holds by content is never offered to land again** (SQUASHTIDY1f, D102's note). Where a squash merge or a
  * cherry-pick put the tree's commits on the line or a branch of the person's (`discards`, the reader's fact the session's head
@@ -187,28 +186,19 @@ export function DiffPane({
   const leftOutOf = plannable ? landing.data?.leftOutOf ?? null : null;
   const say = useSay();
   const discard = useDiscardSessionTree();
-  // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
-  // or not a tree is still here, since a tidy removes it and the branch stands.
-  const handOff = useHandOff(session);
-  const hand = useHandOffPress();
   // What is under way for this session, whichever view or window pressed it (STATEHUB1c, D169 point 7): the head's landing reads
   // *Landing…* here too, and so does a review remounted by a tab switch mid-press. Never this component's own press alone.
   const underWay = {
     land: useUnderWay('LAND_SESSION_TREE', session),
     discard: useUnderWay('DISCARD_SESSION_TREE', session),
-    hand: useUnderWay('HANDOFF', session),
-    // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
+    // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands. An Accept says it
+    // waits for the pass that lands it (LANDHOLD2).
     landStep: useUnderWayStep('LAND_SESSION_TREE', session),
-    // LANDHOLD2: a hand-off says it waits behind another push of its branch; an Accept says it waits for the pass that lands it.
-    handStep: useUnderWayStep('HANDOFF', session),
-    // LANDHOLD3: and it names the session it waits behind, where the holder said who it is.
-    handBehind: useUnderWayBehind('HANDOFF', session),
     // Its line of work's one Accept, or its ask's, lands this part too (ACCEPTALL1h): a press carries its entry or ask, not its parts.
     entry: useUnderWaySubject('LAND_ENTRY', entry),
     ask: useUnderWaySubject('LAND_ASK', ask),
   };
   const landsNow = underWay.land || underWay.entry || underWay.ask;
-  const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
   // they have ticked off. Keyed by path, reset by attending a different session.
@@ -223,10 +213,6 @@ export function DiffPane({
   const [shown, setShown] = useState<string | null>(null);
   // Whatever the tree layer last said, done or refused. Its sentence is the contract.
   const [said, setSaid] = useState<string | null>(null);
-  // The pull request the rule's plugin opened, where it opened one (D100) — one press from the sentence.
-  const [opened, setOpened] = useState<string | null>(null);
-  // FABRIC-CLOSE1h9: the press landed but its push was held back (`withheld`), so the hand-off is its way on, not an ordinary landing.
-  const [pushHeld, setPushHeld] = useState(false);
   // The second press. It exists only because the first one produced the sentence above.
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   // The held discard's ask (SQUASHTIDY1f), open under the acts until it answers.
@@ -241,8 +227,6 @@ export function DiffPane({
     setConfirmingDiscard(false);
     setAskingHeld(false);
     setSaid(null);
-    setOpened(null);
-    setPushHeld(false);
   }
 
   // 🔴 Which session an answer is FOR. A refusal that landed after the person moved on armed the forced
@@ -252,21 +236,17 @@ export function DiffPane({
   attended.current = session;
 
   const act = (
-    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } | null; withheld?: string | null }>,
+    run: Promise<{ done: boolean; message: string }>,
     onDone?: () => void,
     onRefused?: () => void,
   ) => {
     const askedFor = session;
     const current = () => attended.current === askedFor;
     setSaid(null);
-    setOpened(null);
-    setPushHeld(false);
     void run.then(
       (result) => {
         if (!current()) return;
         setSaid(result.message);
-        setOpened(result.plugin?.pullRequest ?? null);
-        setPushHeld(result.done && Boolean(result.withheld));
         if (result.done) onDone?.();
         else onRefused?.();
       },
@@ -292,7 +272,6 @@ export function DiffPane({
           return;
         }
         setSaid(result.message);
-        setOpened(null);
         answered.done();
       },
       (error: unknown) => {
@@ -369,23 +348,9 @@ export function DiffPane({
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
   // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66) — but for
   // work that already landed (REVIEW2), whose next move is its branch's, not the session's.
-  const acts = !treeHere && !sendBack && !handable ? null : (
+  const acts = !treeHere && !sendBack ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
-      {said && !confirmingDiscard && !pushHeld && <p className="m-0 text-small text-ink-soft">{said}</p>}
-      {/* A press whose push was held back (FABRIC-CLOSE1h9): the driver's sentence as written, and the hand-off as its way on. */}
-      {said && pushHeld && (
-        <div className="grid gap-1 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          <p className="m-0">{said}</p>
-          <p className="m-0">{t('work.review.pushHeld')}</p>
-        </div>
-      )}
-      {said && opened && (
-        <p className="m-0 text-small">
-          <ExternalLink href={opened} className="text-accent underline underline-offset-2">
-            {t('work.review.pullRequest')}
-          </ExternalLink>
-        </p>
-      )}
+      {said && !confirmingDiscard && <p className="m-0 text-small text-ink-soft">{said}</p>}
       {/* Where Accept would be, a tree with nothing beyond its line (REVIEWBASE4): a landed one's note already says where it went. */}
       {!said && nothingBeyond && !asLanded && <NothingToLand line={nothingBeyond.line} />}
       {/* A part the person left out of its entry's Accept (ACCEPTALL1c): said first, since its next move is Discard's. */}
@@ -447,17 +412,6 @@ export function DiffPane({
       {!said && held && (
         <p className="m-0 text-small text-ink-soft"><Inline text={held.says} /></p>
       )}
-      {/* The branch the landing made, and who can push it now (WSR5b) — and what stands in the way. */}
-      {!said && handable && (
-        <p className="m-0 text-small text-ink-faint">
-          <Inline text={t('work.review.handOn', { branch: handable.branch, plugin: handable.plugin })} />
-        </p>
-      )}
-      {!said && handable?.problem && (
-        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          {t('work.review.handProblem', { problem: handable.problem })}
-        </p>
-      )}
 
       {/* LANDHOLD2b: the Accept waits for the pass that lands it, never behind a tree's hold, and says for how long. */}
       {landsNow && underWay.landStep === 'pass' && <PassNote />}
@@ -483,22 +437,6 @@ export function DiffPane({
         )}
 
         {heldPress && !askingHeld && <HeldDiscardButton onAsk={() => setAskingHeld(true)} />}
-
-        {handable && (
-          <Button
-            // A press that could only be refused is not offered (UX5 U66): the sentence above says why.
-            disabled={underWay.hand || Boolean(handable.problem)}
-            onClick={() => act(hand.mutateAsync(session))}
-          >
-            {!underWay.hand
-              ? t('work.review.hand', { plugin: handable.plugin })
-              : underWay.handStep === 'waiting'
-                ? underWay.handBehind
-                  ? t('work.review.handingWaitingBehind', { session: underWay.handBehind })
-                  : t('work.review.handingWaiting')
-                : t('work.review.handing')}
-          </Button>
-        )}
 
         {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
 

@@ -225,68 +225,6 @@ public sealed class HookSetLogTests : IDisposable
         Assert.Equal("updated", whys["b.newer"]);
     }
 
-    // ——— the landing and the hand-off
-
-    [Theory]
-    [InlineData(true, "landing", "pushed")]
-    [InlineData(false, "hand", "not-pushed")]
-    public async Task A_landings_one_frame_is_started_called_and_stopped_by_its_door(bool pushed, string by, string answer)
-    {
-        Catalog(("acme.lands", ["work/land"], "1.0.0"));
-        var plugins = new LandingPlugins(_home,
-            start: (_, say, _) =>
-            {
-                say($"{Words} on stderr");
-                return Task.FromResult<IHookChannel>(new FakeChannel(["work/land"],
-                    land: _ => new PluginLanding("acme.lands", pushed, "https://example.test/pull/7?token=" + Words, $"{Words} said")));
-            },
-            log: _log);
-
-        var said = by == "landing"
-            ? await plugins.LandAsync("acme.lands", Landing())
-            : await plugins.HandAsync("acme.lands", Landing());
-
-        Assert.Equal(pushed, said.Pushed);
-        var lines = Lines();
-        Assert.Equal(["plugin.started", "plugin.called", "plugin.stopped"], lines.Select(l => l.Event));
-        Assert.Equal(by, Text(lines[0], "by"));
-        Assert.Equal(("work/land", answer), (Text(lines[1], "point"), Text(lines[1], "answer")));
-        Assert.Equal(("ended", by), (Text(lines[2], "why"), Text(lines[2], "by")));
-        // Never the pull request's address, the plugin's sentence or its stderr.
-        Assert.DoesNotContain(Words, Raw());
-        Assert.DoesNotContain("example.test", Raw());
-    }
-
-    [Fact]
-    public async Task A_landing_plugin_that_fails_is_a_line_and_one_that_was_never_spoken_to_is_none()
-    {
-        var plugins = new LandingPlugins(_home,
-            start: (plugin, _, _) => plugin.Manifest.Id switch
-            {
-                "a.late" => Task.FromResult<IHookChannel>(new FakeChannel(["work/land"])
-                {
-                    Throw = Mark(new DriverException($"plugin `a.late` did not answer `hook/work/land` within 120s. {Words}"), PluginEvents.Late),
-                }),
-                "b.deaf" => Task.FromResult<IHookChannel>(new FakeChannel([])),
-                _ => throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process could not start — {Words}"),
-            },
-            log: _log);
-        Catalog(("a.late", ["work/land"], "1.0.0"), ("b.deaf", ["work/land"], "1.0.0"), ("c.broken", ["work/land"], "1.0.0"));
-
-        Assert.True((await plugins.LandAsync("a.late", Landing())).Failed);
-        Assert.True((await plugins.LandAsync("b.deaf", Landing())).Failed);
-        Assert.True((await plugins.LandAsync("c.broken", Landing())).Failed);
-        // Not installed: refused before anything is spoken to, so nothing happened to a plugin.
-        Assert.True((await plugins.LandAsync("d.absent", Landing())).Failed);
-
-        var failed = Lines().Where(l => l.Event == "plugin.failed").ToDictionary(l => Text(l, "plugin")!);
-        Assert.Equal(("work/land", "late", "landing"), (Text(failed["a.late"], "where"), Text(failed["a.late"], "kind"), Text(failed["a.late"], "by")));
-        Assert.Equal(("work/land", "unreadable"), (Text(failed["b.deaf"], "where"), Text(failed["b.deaf"], "kind")));
-        Assert.Equal(("start", "unstartable"), (Text(failed["c.broken"], "where"), Text(failed["c.broken"], "kind")));
-        Assert.DoesNotContain(Lines(), l => Text(l, "plugin") == "d.absent");
-        Assert.DoesNotContain(Words, Raw());
-    }
-
     // ——— served, tried, tested
 
     [Fact]
@@ -519,9 +457,6 @@ public sealed class HookSetLogTests : IDisposable
     private static SessionEnded Ended() =>
         new("s1", "engine", "completed", ByPerson: false, Quest: "q1", Adapter: "acp-stub");
 
-    private static LandingFrame Landing() =>
-        new("engine", "default", "D:/fam/engine", "feature/q1-fix", "main", "Fix", "q1", "s1", []);
-
     private List<LogLine> Lines() =>
         [.. MachineLogReader.Read(DaorisHome.Entry(_home, HomeEntry.Logs), new LogFilter()).Lines];
 
@@ -537,7 +472,7 @@ public sealed class HookSetLogTests : IDisposable
     private static List<string> Keys(LogLine line) => [.. line.Data.EnumerateObject().Select(p => p.Name)];
 
     private sealed class FakeChannel(
-        IReadOnlyList<string> points, Func<object, HookDecision>? consider = null, Func<object, PluginLanding>? land = null) : IHookChannel
+        IReadOnlyList<string> points, Func<object, HookDecision>? consider = null) : IHookChannel
     {
         public IReadOnlyList<string> Points => points;
 
@@ -555,11 +490,6 @@ public sealed class HookSetLogTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) =>
             Throw is { } error ? Task.FromException(error) : Task.CompletedTask;
-
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
-            Throw is { } error
-                ? Task.FromException<PluginLanding>(error)
-                : Task.FromResult(land?.Invoke(payload) ?? new PluginLanding("acme", true, null, "pushed"));
 
         public ValueTask DisposeAsync()
         {

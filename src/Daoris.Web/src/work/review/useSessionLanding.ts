@@ -86,14 +86,12 @@ export function useSessionLanding({
     result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message;
   // A landing's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
   const landed = (answered: Answered) => ({
-    onSuccess: (result: { done: boolean; message: string; withheld?: string | null; press?: string | null }) => {
+    onSuccess: (result: { done: boolean; message: string; press?: string | null }) => {
       if (!result.done) {
         answered.refused(pressRefusal(result));
         return;
       }
-      // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
-      if (result.withheld) notify(`${result.message} ${t('work.review.pushHeldReview')}`, 'error');
-      else notify(result.message);
+      notify(result.message);
       answered.done();
     },
     onError: (error: unknown) => answered.refused(sentence(error)),

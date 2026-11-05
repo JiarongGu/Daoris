@@ -189,7 +189,7 @@ public sealed class AgentCoursePortsTests
         var retry = new TransientRetry
         {
             Read = failure => new(failure.ErrorKind == "rate_limit" ? AgentErrorKind.Limit : failure.ErrorKind == "fatal" ? AgentErrorKind.Fatal : AgentErrorKind.Transient,
-                DoorFailure.OfPrompt(failure), "stand"),
+                DoorFailures.OfPrompt(failure), "stand"),
             KeepGoOn = (_, _, _) => Task.FromResult<IAgentWord?>(goOn),
             LimitRefused = words => refused.AddRange(words),
         };

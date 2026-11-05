@@ -91,8 +91,8 @@ public static class AccessRules
     /// <summary>Go-aheads: never asked, save what the ask itself demands (D184 point 5).</summary>
     public const string Never = AccessKey.Never;
 
-    /// <summary>Questions: as Claude Code's console asks them (D184 point 4), today's behaviour until AUTONOMY1e.</summary>
-    public const string ClaudeCode = AccessKey.ClaudeCode;
+    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e.</summary>
+    public static string ConsoleAsks => AccessKey.ConsoleAsks;
 
     /// <summary>The pauses, in the order every door and the record say them (the settings' <see cref="AccessKey.Pauses"/>).</summary>
     public static IReadOnlyList<AccessPause> Pauses => AccessKey.Pauses;

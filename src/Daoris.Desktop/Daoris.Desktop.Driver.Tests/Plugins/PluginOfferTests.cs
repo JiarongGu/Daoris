@@ -43,7 +43,7 @@ public sealed class PluginOfferTests : IDisposable
 
         - **node** on the PATH
           (it is a `node` script).
-        - **gh**, signed in: `gh auth login`.
+        - **pwsh**, signed in: `pwsh login`.
 
         ## When something fails
 
@@ -89,7 +89,7 @@ public sealed class PluginOfferTests : IDisposable
             return PluginOffers.Needs(plugin);
         }
 
-        string[] needs = ["node on the PATH (it is a `node` script).", "gh, signed in: `gh auth login`."];
+        string[] needs = ["node on the PATH (it is a `node` script).", "pwsh, signed in: `pwsh login`."];
         Assert.Empty(At(null));
         Assert.Empty(At("# x\n\nNothing about needs.\n"));
         Assert.Equal(needs, At(Readme.Replace("\r\n", "\n")));
@@ -113,7 +113,7 @@ public sealed class PluginOfferTests : IDisposable
         Assert.False(github.Installed);
         // As the manifest writes it: `${plugin}` stays, never a path on this machine.
         Assert.Equal(["node", "${plugin}/land.mjs"], github.Manifest.Hooks!.Command);
-        Assert.Equal(["node on the PATH (it is a `node` script).", "gh, signed in: `gh auth login`."], github.Needs);
+        Assert.Equal(["node on the PATH (it is a `node` script).", "pwsh, signed in: `pwsh login`."], github.Needs);
         Assert.Contains("needs plugin API 99", listed.Single(offer => offer.Id == "future").Problem);
         Assert.Contains("which this build already carries", listed.Single(offer => offer.Id == "shadow").Problem);
     }

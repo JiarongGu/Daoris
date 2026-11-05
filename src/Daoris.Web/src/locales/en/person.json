@@ -91,7 +91,6 @@
   "person.route.TREES_SYNC": "bring the repositories' branches up to date",
   "person.route.LAND_ENTRY": "accept a line of work and land it",
   "person.route.LAND_ASK": "accept an ask's work and land it",
-  "person.route.HANDOFF": "hand a landed branch off to a plugin, which pushes it",
   "person.route.OPINION_ANYWAY": "go on past a second opinion's disputed findings",
   "person.route.OPINION_MYSELF": "answer a second opinion's disputed findings yourself",
   "person.route.DISCARD_SESSION_BRANCH": "delete a session branch",

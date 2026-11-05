@@ -41,13 +41,6 @@ public static class HelpModes
     public static string? ChangedSince(string? ran, string now) => Recorded(ran) == Recorded(now)
         ? null
         : $"Ask Daoris's mode changed since this conversation last ran: it ran {Runs(Recorded(ran))}, and goes on {Runs(now)}.";
-
-    /// <summary>
-    /// The mark before a protocol door's posture that must be set (<c>AcpSession.SetPostureAsync</c>): an agent that does not offer
-    /// it fails the start, so a full start never runs in a narrower mode under the full label (D183 point 3), nor a driven start in
-    /// another mode than its repository's asking or unrestricted permission prompts name (AUTONOMY1b, <see cref="DrivenAccess"/>).
-    /// </summary>
-    public const char Required = AgentPostures.Required;
 }
 
 /// <summary>
@@ -114,7 +107,7 @@ public sealed record HelpAccess(string Mode, string Said)
             : new(HelpModes.Full, $"Ask Daoris runs with full access on `{adapter.Name}`, as the person chose: the agent's `{full}` mode, "
                 + $"which asks nothing, with every plugin server here; {denies}.")
             {
-                Posture = $"{HelpModes.Required}{full}",
+                Posture = new PostureAsked(full, Required: true).Wire(),
             };
     }
 }

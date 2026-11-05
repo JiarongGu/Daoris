@@ -122,7 +122,7 @@ public sealed class AcpResumeTests
         var lines = new List<string>();
 
         var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, meta: new { claudeCode = new { options = new { settings = "D:/daoris-data/s.json" } } })
-            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, Servers, resume: "0b5e7c1a");
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, new ConnectorPlan("s-1", Servers), resume: "0b5e7c1a");
 
         Assert.Equal(["initialize", "session/resume", "session/prompt", "session/close"], agent.Methods);
         var resumed = agent.Params("session/resume");
@@ -143,7 +143,7 @@ public sealed class AcpResumeTests
     {
         var agent = Answering(Both);
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, Servers, resume: "0b5e7c1a");
+            .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, new ConnectorPlan("s-1", Servers), resume: "0b5e7c1a");
         Assert.Equal(15000, agent.Params("session/resume").GetProperty("_meta").GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
 
         var bare = Answering(Both);
@@ -362,7 +362,7 @@ public sealed class AcpResumeTests
 
         var chat = Answering(Both);
         var session = new AcpSession(chat.Incoming, chat.Outgoing, _ => { });
-        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, Servers);
+        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, new ConnectorPlan("chat-1", Servers));
         await session.PromptAsync(["See the trace."], CancellationToken.None, files: files);
         session.Release();
 
@@ -387,7 +387,7 @@ public sealed class AcpResumeTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
         var sent = false;
 
-        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, Servers);
+        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, new ConnectorPlan("chat-1", Servers));
         var stop = await session.PromptAsync(["Port 8080.", "No, 9090."], CancellationToken.None, () => sent = true);
 
         Assert.Equal(["initialize", "session/resume", "session/prompt"], agent.Methods);

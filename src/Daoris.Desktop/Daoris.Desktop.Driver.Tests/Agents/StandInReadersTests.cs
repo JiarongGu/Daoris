@@ -130,6 +130,6 @@ public sealed class StandInReadersTests
 
         public IEnumerable<string> DeclaredAgents { get; } = [adapter.Name];
 
-        public (string? Folder, IReadOnlyList<string> Plugins) WriteSkills(string home, string sessionId, string to) => (null, []);
+        public IReadOnlyList<SkillSource> Skills(string to) => [];
     }
 }

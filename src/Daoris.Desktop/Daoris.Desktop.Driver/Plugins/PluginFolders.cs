@@ -123,19 +123,6 @@ internal static class PluginFolders
     /// <summary>A folder made, with every folder above it.</summary>
     public static void Make(string folder) => Directory.CreateDirectory(folder);
 
-    /// <summary>File by file; a link is neither followed nor copied, as the CLI's copy does (D3).</summary>
-    public static void CopyTree(string from, string to)
-    {
-        Directory.CreateDirectory(to);
-        foreach (var entry in new DirectoryInfo(from).EnumerateFileSystemInfos())
-        {
-            if (entry.LinkTarget is not null) continue;
-            var target = Path.Combine(to, entry.Name);
-            if (entry is DirectoryInfo directory) CopyTree(directory.FullName, target);
-            else if (entry is FileInfo file) file.CopyTo(target);
-        }
-    }
-
     /// <summary>A staged folder renamed into its place, as every folder Daoris owns is (<see cref="AtomicFile.MoveFolder"/>).</summary>
     public static void MoveInto(string staging, string target) => AtomicFile.MoveFolder(staging, target);
 

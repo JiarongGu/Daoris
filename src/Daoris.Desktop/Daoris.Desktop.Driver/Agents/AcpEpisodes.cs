@@ -54,7 +54,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
         catch (Exception error) when (error is not OperationCanceledException)
         {
             wiring.Say($"[the agent's failure could not be read: {error.Message}]");
-            read = new AgentError(AgentErrorKind.Fatal, DoorFailure.OfPrompt(refused), AgentErrors.Unread);
+            read = new AgentError(AgentErrorKind.Fatal, DoorFailures.OfPrompt(refused), AgentErrors.Unread);
         }
 
         if (read.Failure.Where != where) read = read with { Failure = read.Failure with { Where = where } };

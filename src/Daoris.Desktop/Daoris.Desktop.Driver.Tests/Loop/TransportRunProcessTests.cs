@@ -94,6 +94,21 @@ public sealed class TransportRunProcessTests : IDisposable
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "engine", Path.Combine(_home, "engine"), "http://127.0.0.1:9") { Home = _home };
 
     /// <summary>
+    /// The run handed its start's own facts and the sink a driven executor composes (row l): the record and its console, and the conversation
+    /// its harness names kept under <paramref name="keepAs"/>.
+    /// </summary>
+    private void Hand(
+        TransportRun run, ISessionOutput? output = null, string? keepAs = null, HarnessWords? own = null, IReadOnlyList<SessionEvent>? opening = null,
+        string? lineageHome = null)
+    {
+        run.HandStart(run.Start with { Session = "s1", Transcript = Transcript, Own = own, Opening = opening, LineageHome = lineageHome });
+        run.HandSink(ReadingSinks.Of(
+            new RecordReadings("s1", output, _events),
+            keepAs is null ? null
+                : ReadingSinks.On<WireReading.ConversationNamed>(named => _driver.Context.Conversations.Keep("s1", keepAs, named.Conversation))));
+    }
+
+    /// <summary>
     /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
     /// for its carriers.
     /// </summary>
@@ -142,7 +157,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var adapter = new Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("plain"));
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events));
+        Hand(run);
 
         await run.OpenAsync(Bound);
 
@@ -173,9 +188,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var adapter = new Scripted(_home, structured: true);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"));
-        run.HandRecords(new RunRecords(
-            "s1", Transcript, Events: _events, KeepAs: "scripted", Own: new HarnessWords(),
-            Opening: [new SessionEvent { Kind = SessionEventKind.Note, Text = "started on `scripted`" }]));
+        Hand(run, keepAs: "scripted", own: new HarnessWords(), opening: [new SessionEvent { Kind = SessionEventKind.Note, Text = "started on `scripted`" }]);
 
         await run.OpenAsync(Bound);
         var end = await run.EndAsync(Bound);
@@ -204,7 +217,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var adapter = new Scripted(_home, structured: true);
         var named = 0;
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"), start => start with { Named = () => named++ });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "scripted", Own: new HarnessWords()));
+        Hand(run, keepAs: "scripted", own: new HarnessWords());
         run.HandCarriers(new RunCarriers("settings.json", "servers.json"));
         await run.OpenAsync(Bound);
         await run.EndAsync(Bound);
@@ -239,7 +252,7 @@ public sealed class TransportRunProcessTests : IDisposable
     /// transcript appended, its opening not said again, said as the retry it is, and the resume told it was tried again.
     /// </summary>
     [Fact]
-    public async Task A_restart_is_the_same_start_once_more_appended_with_its_opening_said_once()
+    public async Task A_resume_that_failed_before_naming_its_conversation_is_tried_once_more_by_the_run_with_its_opening_said_once()
     {
         var resume = new ResumeAsk(
             "conv-1", [new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true)],
@@ -254,23 +267,18 @@ public sealed class TransportRunProcessTests : IDisposable
         };
         File.WriteAllText(Transcript, "the record's earlier lines\n");
         await using var run = Over(
-            adapter, adapter.Prepare(Target(), null).WithArguments("again", Path.Combine(_home, "marker")),
-            start => start with { Named = () => resume.Named = resume.Prompted = true, Again = resume.Again });
-        run.HandRecords(new RunRecords("s1", Transcript, Output: output, Events: _events, KeepAs: "scripted", Own: new HarnessWords(), Opening: opening));
+            adapter, adapter.Prepare(Target(), null).WithArguments("again", Path.Combine(_home, "marker")));
+        Hand(run, output, keepAs: "scripted", own: new HarnessWords(), opening: opening);
 
-        await run.ResumeAsync("conv-1", Bound);
-        var first = await run.EndAsync(Bound);
-
-        Assert.Equal(1, first.Exit);
-        Assert.False(first.Named);
-        Assert.False(resume.Retried);
-
-        var again = await run.RestartAsync(Bound);
+        // The first process exits 1 before its `init`; the run tries the same resume once more on its own, and its end is the retry's.
+        await run.ResumeAsync("conv-1", Bound, resume);
+        var again = await run.EndAsync(Bound);
 
         Assert.Equal(0, again.Exit);
         Assert.True(again.Named);
         Assert.True(resume.Retried);
         Assert.True(resume.Named);
+        Assert.True(resume.Prompted);
         var transcript = File.ReadAllText(Transcript);
         Assert.StartsWith("the record's earlier lines", transcript, StringComparison.Ordinal);
         Assert.Contains("not a frame", transcript);
@@ -300,7 +308,7 @@ public sealed class TransportRunProcessTests : IDisposable
         using var within = LineageTokens.Within(tokens);
         var adapter = new Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+        Hand(run, lineageHome: _home);
 
         await run.OpenAsync(Bound);
         var end = await run.EndAsync(Bound);
@@ -324,7 +332,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var moved = ChildLineage.Opened(_home, "s1");
         var adapter = new Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"), start => start with { Moved = moved });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+        Hand(run, lineageHome: _home);
 
         await run.OpenAsync(Bound);
         await run.EndAsync(Bound);
@@ -346,7 +354,7 @@ public sealed class TransportRunProcessTests : IDisposable
         info.RedirectStandardInput = true;
         var written = 0;
         await using var run = Over(adapter, info, start => start with { Prompt = "Log the port.", Written = () => written++ });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, Own: new HarnessWords()));
+        Hand(run, own: new HarnessWords());
 
         await run.OpenAsync(Bound);
         var end = await run.EndAsync(Bound);
@@ -377,7 +385,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.False(File.Exists(Transcript));
         var process = run.Process;
         run.HandStart(start with { Prompt = "Log the port." });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, Own: new HarnessWords()));
+        Hand(run, own: new HarnessWords());
         await run.OpenAsync(Bound);
         var end = await run.EndAsync(Bound);
 
@@ -397,7 +405,7 @@ public sealed class TransportRunProcessTests : IDisposable
         using var within = LineageTokens.Within(tokens);
         var adapter = new Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("hangs"));
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events));
+        Hand(run);
         await run.OpenAsync(Bound);
         var proc = run.Proc!;
 
@@ -415,7 +423,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var command = ProviderFiles.Of("stub").Command("acp-stub", "--scenario", scenario, "--seen", seen);
         var adapter = AdapterSet.Built().Resolve("acp-stub");
         var run = Over(adapter, adapter.Prepare(Target(), command), start => start with { Protocol = protocol });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "acp-stub"));
+        Hand(run, keepAs: "acp-stub");
         return (run, seen);
     }
 
@@ -615,7 +623,7 @@ public sealed class TransportRunProcessTests : IDisposable
             },
             Named = () => Interlocked.Increment(ref named),
         });
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, KeepAs: "scripted"));
+        Hand(run, keepAs: "scripted");
 
         await run.OpenAsync(Bound);
         await Poll.Until(() => Volatile.Read(ref turns) == 1, () => "no turn's end was told", Poll.Patience);
@@ -650,7 +658,7 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.Equal(TokenReading.Gone, tokens.Reading(unspawned));
 
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
-        run.HandRecords(new RunRecords("s1", Transcript, Events: _events, LineageHome: _home));
+        Hand(run, lineageHome: _home);
         var proc = await run.BracketAsync("s1", Bound);
         await run.SpawnAsync("s1", Bound);
         await run.OpenAsync(Bound);

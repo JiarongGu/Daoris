@@ -6,7 +6,7 @@
  *
  * With `--connector <daoris-knowledge executable>` (a build of `src/Daoris.Service/Daoris.Service.Mcp`), Daoris's own
  * connector is handed beside the stand-in as the driver hands it a session, and each agent calls its `knowledge_search`;
- * with `--lineage-hook <lineage-hook.mjs>` (the driver's, `src/Daoris.Desktop/Daoris.Desktop.Driver/Participants/hooks/`) Claude
+ * with `--lineage-hook <lineage-hook.mjs>` (the driver's, `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/ClaudeCode/hooks/`) Claude
  * Code is handed the driver's lineage hook too. Both write the session's lineage file under the run's home (FABRIC-C1a).
  *
  * One run is one folder, `_fixtures/fabric-probe/<run>/` (gitignored): a scratch repository with one empty commit, a
@@ -157,7 +157,7 @@ export function claudeLaunch({ files, run, text, model, node = process.execPath,
   const mcp = { mcpServers: { [SERVER_NAME]: { type: 'stdio', ...probeServer(files, run, node) } } };
   if (connector) mcp.mcpServers[CONNECTOR_NAME] = { type: 'stdio', ...connectorServer(files, run, connector) };
   const logger = { type: 'command', command: node, args: [HOOK, files.hookLog], timeout: 30 };
-  // The driver's lineage hook as the driver hands it (`SpawnSettings`, FABRIC-C1a): on the connector's calls and each
+  // The driver's lineage hook as the driver hands it (`ClaudeRules`, FABRIC-C1a): on the connector's calls and each
   // subagent's start and stop, appending to the session's lineage file.
   const lineage = connector && lineageHook
     ? { type: 'command', command: node, args: [lineageHook, lineageFile(files, run)], timeout: 10 }

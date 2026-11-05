@@ -128,7 +128,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         var guard = TreeGuard.For(_home, _home, [Path.Combine(_home, "also")]);
         Assert.Equal(TreeGuard.Source, File.ReadAllText(guard.Script));
         Assert.Equal(node, guard.Node);
-        var file = SpawnSettings.Write(_home, "s1", RuleLists.Empty, [], guard, new LineageHook("lineage-script", "lineage-file"));
+        var file = ClaudeRules.Render(_home, "s1", RuleLists.Empty, [], guard, new LineageHook("lineage-script", "lineage-file"));
         using var document = JsonDocument.Parse(File.ReadAllText(file!));
         var hooks = document.RootElement.GetProperty("hooks");
         Assert.Equal(["PreToolUse", "SubagentStart", "SubagentStop"], hooks.EnumerateObject().Select(pair => pair.Name));
@@ -138,7 +138,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         Assert.Equal(["type", "command", "args", "timeout"], command.EnumerateObject().Select(pair => pair.Name));
         Assert.Equal([guard.Script, guard.Tree, .. guard.Also], command.GetProperty("args").EnumerateArray().Select(arg => arg.GetString()));
         Assert.Equal(30, command.GetProperty("timeout").GetInt32());
-        SpawnSettings.Remove(file);
+        SpawnFiles.Remove(file);
         Assert.False(File.Exists(file));
         File.Delete(node);
         Assert.Contains("the tree guard runs on Node.js", Assert.Throws<DriverException>(() => TreeGuard.For(_home, _home)).Message);

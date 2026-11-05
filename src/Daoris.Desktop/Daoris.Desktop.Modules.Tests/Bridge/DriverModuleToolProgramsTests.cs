@@ -26,15 +26,15 @@ public sealed class DriverModuleToolProgramsTests : DriverModuleBridge
     public async Task A_named_file_that_answers_its_version_is_written_and_the_list_says_the_version_it_runs_at()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var gh = Stub("gh.cmd", "gh version 2.63.0 (2024-11-27)");
+        var gh = Stub("pwsh.cmd", "PowerShell 2.63.0");
         var module = Module();
 
-        var answered = await AnswerAsync(module, "TOOLS_USE", new { tool = "gh", action = "file", file = gh });
+        var answered = await AnswerAsync(module, "TOOLS_USE", new { tool = "pwsh", action = "file", file = gh });
         Assert.Equal("2.63.0", answered.GetProperty("version").GetString());
-        Assert.Equal(gh, Tools.Read(Home).Entries["gh"].File);
+        Assert.Equal(gh, Tools.Read(Home).Entries["pwsh"].File);
 
         var listed = (await AnswerAsync(module, "TOOLS_LIST", new { ask = true })).GetProperty("tools").EnumerateArray()
-            .Single(tool => tool.GetProperty("tool").GetString() == "gh");
+            .Single(tool => tool.GetProperty("tool").GetString() == "pwsh");
         Assert.Equal(gh, listed.GetProperty("resolved").GetString());
         Assert.Equal("2.63.0", listed.GetProperty("asked").GetString());
     }

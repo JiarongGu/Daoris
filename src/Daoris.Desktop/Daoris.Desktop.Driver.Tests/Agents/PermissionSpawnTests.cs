@@ -81,7 +81,7 @@ public sealed class PermissionSpawnTests : IDisposable
     private void HoldsThePushInAutoMode(JsonDocument handed)
     {
         var hardDeny = handed.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!).ToList();
-        Assert.Equal(SpawnSettings.HarnessDefaults, hardDeny[0]);
+        Assert.Equal(ClaudeRules.HarnessDefaults, hardDeny[0]);
         Assert.Equal(PermissionRules.HardDeny(PermissionRules.Load(_home)), hardDeny.Skip(1));
     }
 

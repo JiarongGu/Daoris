@@ -133,8 +133,9 @@ Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` s
 The driver's `Participants/` owns the participant's own files (FOUNDATION1 mod-xii, D212): the helpers and partners (their
 judges, rules, words, notes, pieces, instructions, files, doors, choices and verbs, `Domain/` and the two command files), the
 harness conversations and the chat run's bindings (`HarnessConversations`, `ChatRunBinds`), and the access rules, command and
-lease, the driven access, the child lineage with its bindings, wiring and hook script (`hooks/lineage-hook.mjs`, logical name
-`Daoris.Driver.lineage-hook.mjs`), the look's facts, the running sessions and the participant-work rule
+lease, the driven access, the child lineage with its bindings and wiring (the hook script that writes Claude Code's lines into it is
+Claude Code's own, `Agents/Providers/ClaudeCode/hooks/lineage-hook.mjs`, logical name `Daoris.Driver.lineage-hook.mjs`), the look's
+facts, the running sessions and the participant-work rule
 (`Domain/ParticipantWork.cs`). The files kept their sub-folders below the old `Conversations/` or `Sessions/` (`Domain/`, `Helpers/`,
 `Partners/`, `GoOn/`, `Chat/`); tests are mirrored under `Driver.Tests/Participants/`. Namespaces remain `Daoris.Driver`, and the
 files moved byte-identically; D212 records their upward cuts.
@@ -403,10 +404,10 @@ row of the call layer's table (`CallTable`, read by the work of the record its `
 repository's own `.mcp.json` server inherits): a session in a repository the 18 tools of `CallTable.CoreServed` and its own kind's (a
 build 25, about 39 KB of definitions; a chat 22; an intake 16; a helper 12), Ask Daoris every tool but four (54, about 95 KB, of 102 KB
 for all 58). Nothing new rides the spawn: the kind is the record's, and the table is the one the connector already refused calls by.
-Since CONTEXTONE1e every Claude session's own settings file (`SpawnSettings`, handed by `--settings` on the pipe door and
-`_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) carries `SpawnSettings.OwnContext`:
+Since CONTEXTONE1e every Claude session's own settings file (Claude Code's rule language, `ClaudeRules`, handed by `--settings` on the
+pipe door and `_meta.claudeCode.options.settings` on the protocol door, both Claude Code's command-line tier) carries `ClaudeRules.OwnContext`:
 `autoMemoryEnabled: false`, `syncClaudeAiSkills: false`, `syncClaudeAiPlugins: false` and `disableClaudeAiConnectors: true`. Its skills are
-then the tree's and the per-session plugin copy's (`SpawnSkills`), its connectors the ones it is handed and the tree's, and its memory
+then the tree's and the per-session plugin copy's (`ClaudeSkills`), its connectors the ones it is handed and the tree's, and its memory
 Daoris's (D220); the file is written for every such session, rules or none. Claude Code 2.1.314's own schema says that tier stops the
 account's synced skills and plugins for that invocation alone and moves nothing, so the account's home is never written
 (`HarnessSettings.ProfileHome`). Its bundled skills stay, the same for every account. Codex takes no settings and is unchanged: it reads

@@ -1,11 +1,13 @@
 namespace Daoris.Driver;
 
-/// <summary>The contributing adapters and all declared account owners, with Plugins retaining skill composition.</summary>
+/// <summary>The contributing adapters, all declared account owners, and the skills the plugins hand a destination.</summary>
 public interface IAgentPlugins
 {
     IEnumerable<ISessionAdapter> Adapters { get; }
     IEnumerable<string> DeclaredAgents { get; }
-    (string? Folder, IReadOnlyList<string> Plugins) WriteSkills(string home, string sessionId, string to);
+
+    /// <summary>The skills the contributing plugins hand <paramref name="to"/>, each judged sound, in catalogue order.</summary>
+    IReadOnlyList<SkillSource> Skills(string to);
 }
 
 /// <summary>A declared adapter's provenance, independent of its implementation.</summary>

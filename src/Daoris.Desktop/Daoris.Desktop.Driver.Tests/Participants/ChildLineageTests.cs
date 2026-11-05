@@ -144,21 +144,21 @@ public sealed class ChildLineageTests : IDisposable
     [Fact]
     public void The_hook_is_written_under_the_home_as_shipped_and_handed_with_the_session_s_file()
     {
-        var hook = ChildLineage.HookFor(_home, "s1");
+        var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"));
 
         Assert.NotNull(hook);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Hooks, "lineage-hook.mjs"), hook.Script);
-        Assert.Equal(ChildLineage.Source, File.ReadAllText(hook.Script));
+        Assert.Equal(ClaudeLineageHook.Source, File.ReadAllText(hook.Script));
         Assert.Equal(ChildLineage.PathOf(_home, "s1"), hook.File);
-        Assert.DoesNotContain("\r", ChildLineage.Source, StringComparison.Ordinal);
+        Assert.DoesNotContain("\r", ClaudeLineageHook.Source, StringComparison.Ordinal);
     }
 
     [Fact]
     public void The_spawn_file_hands_the_lineage_hook_on_the_connector_s_calls_and_each_subagent_s_start_and_stop()
     {
-        var lineage = ChildLineage.HookFor(_home, "s1")!;
+        var lineage = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
 
-        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, [], lineage: lineage);
+        var path = ClaudeRules.Render(_home, "s1", RuleLists.Empty, [], lineage: lineage);
 
         Assert.NotNull(path);
         using var document = JsonDocument.Parse(File.ReadAllText(path));
@@ -177,11 +177,11 @@ public sealed class ChildLineageTests : IDisposable
     [Fact]
     public void Beside_the_tree_guard_each_keeps_its_own_entry_and_the_trace_says_the_guard_only_where_it_is()
     {
-        var lineage = ChildLineage.HookFor(_home, "s1")!;
+        var lineage = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
         var guard = TreeGuard.For(_home, _home);
 
-        using var both = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s1", RuleLists.Empty, [], guard, lineage)!));
-        using var alone = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s2", RuleLists.Empty, [], lineage: lineage)!));
+        using var both = JsonDocument.Parse(File.ReadAllText(ClaudeRules.Render(_home, "s1", RuleLists.Empty, [], guard, lineage)!));
+        using var alone = JsonDocument.Parse(File.ReadAllText(ClaudeRules.Render(_home, "s2", RuleLists.Empty, [], lineage: lineage)!));
 
         Assert.Equal(
             [TreeGuard.Matcher, "mcp__daoris-knowledge__.*"],

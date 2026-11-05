@@ -467,7 +467,7 @@ public sealed class ClaudeStreamJsonTests
             var stdout = new StringReader(string.Join('\n', Init, PushCall, PushDenied, PushResult, DeniedTurn));
 
             await HarnessCapture.CaptureStructuredAsync(
-                stdout, new StringReader(""), Path.Combine(home, "s1.log"), "s1", output: null, events,
+                stdout, new StringReader(""), Path.Combine(home, "s1.log"), new RecordReadings("s1", null, events),
                 new ClaudeStreamJson(), prompt: "push it", CancellationToken.None);
 
             var written = string.Join('\n', Directory.GetFiles(DaorisHome.Entry(home, HomeEntry.Logs)).Select(StubFile.Text));
@@ -514,8 +514,9 @@ public sealed class ClaudeStreamJsonTests
             var told = new List<System.Text.Json.JsonElement>();
             var events = new SessionEvents(home);
             await HarnessCapture.CaptureStructuredAsync(
-                new StringReader(string.Join('\n', Init, Whole, frame, Result)), new StringReader(""), Path.Combine(home, "s1.log"), "s1",
-                output: null, events, new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None, said: told.Add);
+                new StringReader(string.Join('\n', Init, Whole, frame, Result)), new StringReader(""), Path.Combine(home, "s1.log"),
+                ReadingSinks.Of(new RecordReadings("s1", null, events), ReadingSinks.On<WireReading.WindowsSaid>(windows => told.Add(windows.Windows))),
+                new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None);
 
             Assert.Equal(0.88, Assert.Single(told).GetProperty("unifiedWindows").GetProperty("five_hour").GetProperty("utilization").GetDouble());
             Assert.DoesNotContain("rate_limit", File.ReadAllText(Path.Combine(home, "s1.log")));
@@ -577,7 +578,7 @@ public sealed class ClaudeStreamJsonTests
             var stdout = new StringReader(string.Join('\n', Init, Status, Start, Delta1, Delta2, Whole, Result));
 
             var used = await HarnessCapture.CaptureStructuredAsync(
-                stdout, new StringReader("a warning on stderr"), transcript, "s1", output: null, events,
+                stdout, new StringReader("a warning on stderr"), transcript, new RecordReadings("s1", null, events),
                 new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None);
 
             var text = File.ReadAllText(transcript);
