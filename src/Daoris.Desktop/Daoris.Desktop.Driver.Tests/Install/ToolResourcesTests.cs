@@ -38,7 +38,7 @@ public sealed class ToolResourcesTests : IDisposable
     private static readonly string Hash = new('a', 64);
 
     /// <summary>The file every structural row uses, as the token <c>FILE</c>.</summary>
-    private const string FileToken = """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""";
+    private const string FileToken = """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""";
 
     private string Home => Path.Combine(_root, "data");
 
@@ -57,8 +57,8 @@ public sealed class ToolResourcesTests : IDisposable
     private static string Expand(string text) => text.Replace("FILE", FileToken, StringComparison.Ordinal)
         .Replace("\"SHA\"", $"\"{Hash}\"", StringComparison.Ordinal);
 
-    /// <summary>One file of <c>gh</c> 2.62.0 for <c>win-x64</c>, in a list otherwise sound.</summary>
-    private static string OneFile(string file) => """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":{"win-x64":""" + file + "}}}}}}";
+    /// <summary>One file of <c>pwsh</c> 2.62.0 for <c>win-x64</c>, in a list otherwise sound.</summary>
+    private static string OneFile(string file) => """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":""" + file + "}}}}}}";
 
     /// <summary>What a list offers, in one line: each tool in ordinal order, its versions newest first, its platforms in the table's order.</summary>
     private static string Summary(ResourceList list)
@@ -145,23 +145,23 @@ public sealed class ToolResourcesTests : IDisposable
     [InlineData("a schema that is text", """{"schema":"1","tools":{}}""", """is schema "1", and this build reads schema 1""", null, "")]
     [InlineData("tools that are a list", """{"schema":1,"tools":[]}""", "`tools` is not an object", null, "")]
     [InlineData("no tools", """{"schema":1}""", null, null, "")]
-    [InlineData("one download", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "gh 2.62.0 win-x64")]
-    [InlineData("versions newest first, platforms in the table’s order", """{"schema":1,"tools":{"gh":{"versions":{"2.9.0":{"files":{"win-x64":FILE}},"2.10.0":{"files":{"linux-x64":FILE,"win-x64":FILE}}}}}}""", null, null, "gh 2.10.0 win-x64; gh 2.10.0 linux-x64; gh 2.9.0 win-x64")]
-    [InlineData("two tools", """{"schema":1,"tools":{"node":{"versions":{"24.21.0":{"files":{"win-x64":FILE}}}},"gh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "gh 2.62.0 win-x64; node 24.21.0 win-x64")]
+    [InlineData("one download", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "pwsh 2.62.0 win-x64")]
+    [InlineData("versions newest first, platforms in the table’s order", """{"schema":1,"tools":{"pwsh":{"versions":{"2.9.0":{"files":{"win-x64":FILE}},"2.10.0":{"files":{"linux-x64":FILE,"win-x64":FILE}}}}}}""", null, null, "pwsh 2.10.0 win-x64; pwsh 2.10.0 linux-x64; pwsh 2.9.0 win-x64")]
+    [InlineData("two tools", """{"schema":1,"tools":{"node":{"versions":{"24.21.0":{"files":{"win-x64":FILE}}}},"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, null, "pwsh 2.62.0 win-x64; node 24.21.0 win-x64")]
     [InlineData("a tool this build does not run", """{"schema":1,"tools":{"bun":{"versions":{"1.2.0":{"files":{"win-x64":FILE}}}}}}""", null, "names `bun`, which is not a tool this build runs", "")]
-    [InlineData("a tool that is not an object", """{"schema":1,"tools":{"gh":"2.62.0"}}""", null, "`gh` is not an object", "")]
-    [InlineData("a tool with no versions", """{"schema":1,"tools":{"gh":{}}}""", null, null, "")]
-    [InlineData("versions that are not an object", """{"schema":1,"tools":{"gh":{"versions":[]}}}""", null, "`gh`'s `versions` is not an object", "")]
-    [InlineData("a version that is a tag", """{"schema":1,"tools":{"gh":{"versions":{"v2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`gh` `v2.62.0` is not an exact version", "")]
-    [InlineData("a version of five numbers", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0.1.1":{"files":{"win-x64":FILE}}}}}}""", null, "`gh` `2.62.0.1.1` is not an exact version", "")]
-    [InlineData("a version with no files", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{}}}}}""", null, "`gh` 2.62.0 has no `files` object", "")]
-    [InlineData("files that are a list", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":[]}}}}}""", null, "`gh` 2.62.0 has no `files` object", "")]
-    [InlineData("a platform this build does not know", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":{"win-x86":FILE}}}}}}""", null, "names `win-x86`, which is not a platform this build knows", "")]
-    [InlineData("a file that does not read", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":{"win-x64":{}}}}}}}""", null, "`gh` 2.62.0 for win-x64 is skipped — ", "")]
-    [InlineData("one file skipped beside one that reads", """{"schema":1,"tools":{"gh":{"versions":{"2.62.0":{"files":{"win-x64":FILE,"linux-x64":7}}}}}}""", null, "`gh` 2.62.0 for linux-x64 is skipped — it is not an object", "gh 2.62.0 win-x64")]
-    [InlineData("a source that is no address", """{"schema":1,"tools":{"gh":{"source":"http://example.org/releases","versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`gh`'s `source` is not https://, or http:// to this machine, and is not shown", "gh 2.62.0 win-x64")]
-    [InlineData("a licence with no id", """{"schema":1,"tools":{"gh":{"licence":{"url":"https://example.org/licence"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`gh`'s `licence` names no `id`, and is not shown", "gh 2.62.0 win-x64")]
-    [InlineData("a licence whose address is no address", """{"schema":1,"tools":{"gh":{"licence":{"id":"MIT","url":"ftp://example.org/licence"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`gh`'s licence `url` is not https://, or http:// to this machine, and is not shown", "gh 2.62.0 win-x64")]
+    [InlineData("a tool that is not an object", """{"schema":1,"tools":{"pwsh":"2.62.0"}}""", null, "`pwsh` is not an object", "")]
+    [InlineData("a tool with no versions", """{"schema":1,"tools":{"pwsh":{}}}""", null, null, "")]
+    [InlineData("versions that are not an object", """{"schema":1,"tools":{"pwsh":{"versions":[]}}}""", null, "`pwsh`'s `versions` is not an object", "")]
+    [InlineData("a version that is a tag", """{"schema":1,"tools":{"pwsh":{"versions":{"v2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`pwsh` `v2.62.0` is not an exact version", "")]
+    [InlineData("a version of five numbers", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0.1.1":{"files":{"win-x64":FILE}}}}}}""", null, "`pwsh` `2.62.0.1.1` is not an exact version", "")]
+    [InlineData("a version with no files", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{}}}}}""", null, "`pwsh` 2.62.0 has no `files` object", "")]
+    [InlineData("files that are a list", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":[]}}}}}""", null, "`pwsh` 2.62.0 has no `files` object", "")]
+    [InlineData("a platform this build does not know", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x86":FILE}}}}}}""", null, "names `win-x86`, which is not a platform this build knows", "")]
+    [InlineData("a file that does not read", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":{}}}}}}}""", null, "`pwsh` 2.62.0 for win-x64 is skipped — ", "")]
+    [InlineData("one file skipped beside one that reads", """{"schema":1,"tools":{"pwsh":{"versions":{"2.62.0":{"files":{"win-x64":FILE,"linux-x64":7}}}}}}""", null, "`pwsh` 2.62.0 for linux-x64 is skipped — it is not an object", "pwsh 2.62.0 win-x64")]
+    [InlineData("a source that is no address", """{"schema":1,"tools":{"pwsh":{"source":"http://example.org/releases","versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`pwsh`'s `source` is not https://, or http:// to this machine, and is not shown", "pwsh 2.62.0 win-x64")]
+    [InlineData("a licence with no id", """{"schema":1,"tools":{"pwsh":{"licence":{"url":"https://example.org/licence"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`pwsh`'s `licence` names no `id`, and is not shown", "pwsh 2.62.0 win-x64")]
+    [InlineData("a licence whose address is no address", """{"schema":1,"tools":{"pwsh":{"licence":{"id":"MIT","url":"ftp://example.org/licence"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}""", null, "`pwsh`'s licence `url` is not https://, or http:// to this machine, and is not shown", "pwsh 2.62.0 win-x64")]
     public void A_list_reads_as_the_cli_reads_it(string name, string text, string? problem, string? note, string offers)
     {
         var list = ToolResources.Parse(Expand(text), "a list");
@@ -176,7 +176,7 @@ public sealed class ToolResourcesTests : IDisposable
     [Fact]
     public void A_list_that_does_not_read_names_itself_offers_nothing_and_says_a_newer_Daoris_may_read_it()
     {
-        var list = ToolResources.Parse("""{"schema":2,"tools":{"gh":{}}}""", "https://example.org/r.json");
+        var list = ToolResources.Parse("""{"schema":2,"tools":{"pwsh":{}}}""", "https://example.org/r.json");
 
         Assert.Equal(
             "https://example.org/r.json is schema 2, and this build reads schema 1: nothing in it is read, and a newer Daoris may read it",
@@ -188,55 +188,55 @@ public sealed class ToolResourcesTests : IDisposable
     [Fact]
     public void A_tool_this_build_does_not_run_is_kept_by_name_and_nothing_of_it_is_read()
     {
-        var list = ToolResources.Parse(Expand("""{"schema":1,"tools":{"bun":{"versions":{"1.2.0":{"files":{"win-x64":FILE}}}},"gh":{}}}"""), "first");
+        var list = ToolResources.Parse(Expand("""{"schema":1,"tools":{"bun":{"versions":{"1.2.0":{"files":{"win-x64":FILE}}}},"pwsh":{}}}"""), "first");
 
         Assert.Equal(["bun"], list.Unknown);
-        Assert.Equal(["gh"], list.Tools.Keys);
+        Assert.Equal(["pwsh"], list.Tools.Keys);
         Assert.Equal(["first names `bun`, which is not a tool this build runs: nothing of it is offered"], list.Notes);
     }
 
     // ── Rule 4: one file. The CLI's `a file reads as the driver reads it` ─────────────────────────────────
 
     [Theory]
-    [InlineData("the whole file", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", null, "bin")]
-    [InlineData("its folders named", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":["bin","."]}""", null, "bin,.")]
-    [InlineData("folders of null", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":null}""", null, "bin")]
-    [InlineData("an executable at the root", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"gh.exe"}""", null, ".")]
-    [InlineData("an executable two folders down", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"gh_2.62.0/bin/gh.exe"}""", null, "gh_2.62.0/bin")]
-    [InlineData("a tar.gz", """{"url":"https://example.org/gh.tar.gz","sha256":"SHA","size":10,"archive":"tar.gz","exe":"bin/gh"}""", null, "bin")]
-    [InlineData("an address on this machine", """{"url":"http://127.0.0.1:8080/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", null, "bin")]
-    [InlineData("a hash in capitals", """{"url":"https://example.org/gh.zip","sha256":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", null, "bin")]
-    [InlineData("not an object", "\"gh.zip\"", "it is not an object", null)]
-    [InlineData("no address", """{"sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "it names no `url`", null)]
-    [InlineData("an address that is not text", """{"url":7,"sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "it names no `url`", null)]
-    [InlineData("an address over http to another host", """{"url":"http://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "`url` is not https://, or http:// to this machine", null)]
-    [InlineData("an address that is no address", """{"url":"gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "`url` is not https://, or http:// to this machine", null)]
-    [InlineData("no hash", """{"url":"https://example.org/gh.zip","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "`sha256` is not 64 hex digits", null)]
-    [InlineData("a short hash", """{"url":"https://example.org/gh.zip","sha256":"abc","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "`sha256` is not 64 hex digits", null)]
-    [InlineData("a hash that is not hex", """{"url":"https://example.org/gh.zip","sha256":"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg","size":10,"archive":"zip","exe":"bin/gh.exe"}""", "`sha256` is not 64 hex digits", null)]
-    [InlineData("no size", """{"url":"https://example.org/gh.zip","sha256":"SHA","archive":"zip","exe":"bin/gh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
-    [InlineData("a size of nothing", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":0,"archive":"zip","exe":"bin/gh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
-    [InlineData("a size below nothing", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":-10,"archive":"zip","exe":"bin/gh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
-    [InlineData("a size with a fraction", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10.5,"archive":"zip","exe":"bin/gh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
-    [InlineData("a size that is text", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":"10","archive":"zip","exe":"bin/gh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
-    [InlineData("no archive", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"exe":"bin/gh.exe"}""", "`archive` is not zip or tar.gz", null)]
-    [InlineData("an archive nobody reads", """{"url":"https://example.org/gh.7z","sha256":"SHA","size":10,"archive":"7z","exe":"bin/gh.exe"}""", "`archive` is not zip or tar.gz", null)]
-    [InlineData("an archive in capitals", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"ZIP","exe":"bin/gh.exe"}""", "`archive` is not zip or tar.gz", null)]
-    [InlineData("no executable", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip"}""", "it names no `exe`", null)]
-    [InlineData("an executable that climbs out", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"../gh.exe"}""", "`exe` is not a relative path inside the archive", null)]
-    [InlineData("an executable with a backslash", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin\\gh.exe"}""", "`exe` is not a relative path inside the archive", null)]
-    [InlineData("an executable from the root", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"/gh.exe"}""", "`exe` is not a relative path inside the archive", null)]
-    [InlineData("an executable on a drive", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"C:/gh.exe"}""", "`exe` is not a relative path inside the archive", null)]
-    [InlineData("an executable that is a folder", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/"}""", "`exe` is not a relative path inside the archive", null)]
-    [InlineData("folders that climb out", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":["../bin"]}""", "`paths` is not a list of folders inside the archive", null)]
-    [InlineData("no folders", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":[]}""", "`paths` is not a list of folders inside the archive", null)]
-    [InlineData("folders that are text", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":"bin"}""", "`paths` is not a list of folders inside the archive", null)]
-    [InlineData("a folder that is a number", """{"url":"https://example.org/gh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/gh.exe","paths":["bin",7]}""", "`paths` is not a list of folders inside the archive", null)]
+    [InlineData("the whole file", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", null, "bin")]
+    [InlineData("its folders named", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":["bin","."]}""", null, "bin,.")]
+    [InlineData("folders of null", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":null}""", null, "bin")]
+    [InlineData("an executable at the root", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"pwsh.exe"}""", null, ".")]
+    [InlineData("an executable two folders down", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"gh_2.62.0/bin/pwsh.exe"}""", null, "gh_2.62.0/bin")]
+    [InlineData("a tar.gz", """{"url":"https://example.org/pwsh.tar.gz","sha256":"SHA","size":10,"archive":"tar.gz","exe":"bin/pwsh"}""", null, "bin")]
+    [InlineData("an address on this machine", """{"url":"http://127.0.0.1:8080/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", null, "bin")]
+    [InlineData("a hash in capitals", """{"url":"https://example.org/pwsh.zip","sha256":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", null, "bin")]
+    [InlineData("not an object", "\"pwsh.zip\"", "it is not an object", null)]
+    [InlineData("no address", """{"sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "it names no `url`", null)]
+    [InlineData("an address that is not text", """{"url":7,"sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "it names no `url`", null)]
+    [InlineData("an address over http to another host", """{"url":"http://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`url` is not https://, or http:// to this machine", null)]
+    [InlineData("an address that is no address", """{"url":"pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`url` is not https://, or http:// to this machine", null)]
+    [InlineData("no hash", """{"url":"https://example.org/pwsh.zip","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`sha256` is not 64 hex digits", null)]
+    [InlineData("a short hash", """{"url":"https://example.org/pwsh.zip","sha256":"abc","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`sha256` is not 64 hex digits", null)]
+    [InlineData("a hash that is not hex", """{"url":"https://example.org/pwsh.zip","sha256":"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg","size":10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`sha256` is not 64 hex digits", null)]
+    [InlineData("no size", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","archive":"zip","exe":"bin/pwsh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
+    [InlineData("a size of nothing", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":0,"archive":"zip","exe":"bin/pwsh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
+    [InlineData("a size below nothing", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":-10,"archive":"zip","exe":"bin/pwsh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
+    [InlineData("a size with a fraction", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10.5,"archive":"zip","exe":"bin/pwsh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
+    [InlineData("a size that is text", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":"10","archive":"zip","exe":"bin/pwsh.exe"}""", "`size` is not a whole number of bytes above 0", null)]
+    [InlineData("no archive", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"exe":"bin/pwsh.exe"}""", "`archive` is not zip or tar.gz", null)]
+    [InlineData("an archive nobody reads", """{"url":"https://example.org/pwsh.7z","sha256":"SHA","size":10,"archive":"7z","exe":"bin/pwsh.exe"}""", "`archive` is not zip or tar.gz", null)]
+    [InlineData("an archive in capitals", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"ZIP","exe":"bin/pwsh.exe"}""", "`archive` is not zip or tar.gz", null)]
+    [InlineData("no executable", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip"}""", "it names no `exe`", null)]
+    [InlineData("an executable that climbs out", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"../pwsh.exe"}""", "`exe` is not a relative path inside the archive", null)]
+    [InlineData("an executable with a backslash", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin\\pwsh.exe"}""", "`exe` is not a relative path inside the archive", null)]
+    [InlineData("an executable from the root", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"/pwsh.exe"}""", "`exe` is not a relative path inside the archive", null)]
+    [InlineData("an executable on a drive", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"C:/pwsh.exe"}""", "`exe` is not a relative path inside the archive", null)]
+    [InlineData("an executable that is a folder", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/"}""", "`exe` is not a relative path inside the archive", null)]
+    [InlineData("folders that climb out", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":["../bin"]}""", "`paths` is not a list of folders inside the archive", null)]
+    [InlineData("no folders", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":[]}""", "`paths` is not a list of folders inside the archive", null)]
+    [InlineData("folders that are text", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":"bin"}""", "`paths` is not a list of folders inside the archive", null)]
+    [InlineData("a folder that is a number", """{"url":"https://example.org/pwsh.zip","sha256":"SHA","size":10,"archive":"zip","exe":"bin/pwsh.exe","paths":["bin",7]}""", "`paths` is not a list of folders inside the archive", null)]
     public void A_file_reads_as_the_cli_reads_it(string name, string file, string? why, string? paths)
     {
         var list = ToolResources.Parse(Expand(OneFile(file)), "a list");
         Assert.True(list.Problem is null, name);
-        var read = list.Tools.TryGetValue("gh", out var gh) && gh.Versions.TryGetValue("2.62.0", out var files)
+        var read = list.Tools.TryGetValue("pwsh", out var tool) && tool.Versions.TryGetValue("2.62.0", out var files)
             && files.TryGetValue("win-x64", out var found) ? found : null;
 
         if (why is null)
@@ -248,7 +248,7 @@ public sealed class ToolResourcesTests : IDisposable
         {
             Assert.True(read is null, $"{name}: a file that does not read is skipped");
             Assert.True(list.Notes.Count == 1, $"{name}: {string.Join(" / ", list.Notes)}");
-            Assert.StartsWith("a list: `gh` 2.62.0 for win-x64 is skipped — ", list.Notes[0]);
+            Assert.StartsWith("a list: `pwsh` 2.62.0 for win-x64 is skipped — ", list.Notes[0]);
             Assert.True(list.Notes[0].Contains(why, StringComparison.Ordinal), $"{name}: {list.Notes[0]}");
         }
     }
@@ -258,12 +258,12 @@ public sealed class ToolResourcesTests : IDisposable
     {
         var upper = string.Concat(Enumerable.Repeat("AB", 32));
         var list = ToolResources.Parse(
-            OneFile($$"""{"url":"https://example.org/gh.zip","sha256":"{{upper}}","size":15512013,"archive":"zip","exe":"bin/gh.exe"}"""),
+            OneFile($$"""{"url":"https://example.org/pwsh.zip","sha256":"{{upper}}","size":15512013,"archive":"zip","exe":"bin/pwsh.exe"}"""),
             "a list");
 
-        var file = list.Tools["gh"].Versions["2.62.0"]["win-x64"];
+        var file = list.Tools["pwsh"].Versions["2.62.0"]["win-x64"];
         Assert.Equal(
-            ("https://example.org/gh.zip", upper.ToLowerInvariant(), 15512013L, "zip", "bin/gh.exe", "bin"),
+            ("https://example.org/pwsh.zip", upper.ToLowerInvariant(), 15512013L, "zip", "bin/pwsh.exe", "bin"),
             (file.Url, file.Sha256, file.Size, file.Archive, file.Exe, string.Join(',', file.Paths)));
     }
 
@@ -271,15 +271,15 @@ public sealed class ToolResourcesTests : IDisposable
     public void A_lists_source_and_licence_read_with_the_tool_and_a_byte_order_mark_is_not_part_of_the_text()
     {
         var list = ToolResources.Parse(
-            "\uFEFF" + Expand("""{"schema":1,"tools":{"git":{"source":"https://github.com/git-for-windows/git/releases","licence":{"id":"GPL-2.0-only","url":"https://example.org/COPYING"},"versions":{}},"gh":{"licence":{"id":"MIT"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}"""),
+            "\uFEFF" + Expand("""{"schema":1,"tools":{"git":{"source":"https://github.com/git-for-windows/git/releases","licence":{"id":"GPL-2.0-only","url":"https://example.org/COPYING"},"versions":{}},"pwsh":{"licence":{"id":"MIT"},"versions":{"2.62.0":{"files":{"win-x64":FILE}}}}}}"""),
             "a list");
 
         Assert.Null(list.Problem);
         Assert.Equal("https://github.com/git-for-windows/git/releases", list.Tools["git"].Source);
         Assert.Equal(new ToolLicence("GPL-2.0-only", "https://example.org/COPYING"), list.Tools["git"].Licence);
         Assert.Empty(list.Tools["git"].Versions);
-        Assert.Equal(new ToolLicence("MIT", null), list.Tools["gh"].Licence);
-        Assert.Null(list.Tools["gh"].Source);
+        Assert.Equal(new ToolLicence("MIT", null), list.Tools["pwsh"].Licence);
+        Assert.Null(list.Tools["pwsh"].Source);
     }
 
     // ── The merge (§3.4). The CLI's `lists merge as the driver merges them` ──────────────────────────────
@@ -371,27 +371,27 @@ public sealed class ToolResourcesTests : IDisposable
 
     [Theory]
     [InlineData("nothing read", null, null, null, "win-x64", "")]
-    [InlineData("the list built in, alone", null, null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [built in] 2.62.0=maker.example newest 2.62.0")]
-    [InlineData("a location adds a newer version", "gh 2.63.0 win-x64 b mirror.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.63.0=mirror.example 2.62.0=maker.example newest 2.63.0")]
-    [InlineData("lists that agree under other addresses are mirrors, the person’s first", "gh 2.62.0 win-x64 a mirror.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.62.0=mirror.example+maker.example newest 2.62.0")]
-    [InlineData("one address named twice is tried once", "gh 2.62.0 win-x64 a maker.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.62.0=maker.example newest 2.62.0")]
-    [InlineData("lists that disagree on the hash refuse that version, and only that one", "gh 2.62.0 win-x64 b other.example; gh 2.63.0 win-x64 c other.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.63.0=other.example refused 2.62.0(sha256) newest 2.63.0")]
-    [InlineData("lists that disagree on the size", "gh 2.62.0 win-x64 a other.example size=11", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] refused 2.62.0(size) newest -")]
-    [InlineData("lists that disagree on the archive", "gh 2.62.0 win-x64 a other.example archive=tar.gz", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] refused 2.62.0(archive) newest -")]
-    [InlineData("lists that disagree on the executable", "gh 2.62.0 win-x64 a other.example exe=gh.exe", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] refused 2.62.0(exe) newest -")]
-    [InlineData("lists that disagree on the folders for PATH", "gh 2.62.0 win-x64 a other.example paths=bin,.", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] refused 2.62.0(paths) newest -")]
-    [InlineData("a third list refuses what two agreed on", "gh 2.62.0 win-x64 a mirror.example", "gh 2.62.0 win-x64 a other.example", "gh 2.62.0 win-x64 b maker.example", "win-x64", "gh [first, second, built in] refused 2.62.0(sha256) newest -")]
-    [InlineData("a disagreement on another platform refuses nothing here", "gh 2.62.0 linux-x64 b other.example", null, "gh 2.62.0 win-x64 a maker.example; gh 2.62.0 linux-x64 a maker.example", "win-x64", "gh [first, built in] 2.62.0=maker.example newest 2.62.0")]
-    [InlineData("and refuses it on its own platform", "gh 2.62.0 linux-x64 b other.example", null, "gh 2.62.0 win-x64 a maker.example; gh 2.62.0 linux-x64 a maker.example", "linux-x64", "gh [first, built in] refused 2.62.0(sha256) newest -")]
-    [InlineData("a version for another platform is not offered here", null, null, "gh 2.62.0 linux-x64 a maker.example", "win-x64", "gh [built in] newest -")]
-    [InlineData("the newest is by number, whichever list names it", "gh 2.9.0 win-x64 a m.example", null, "gh 2.10.0 win-x64 b m.example", "win-x64", "gh [first, built in] 2.10.0=m.example 2.9.0=m.example newest 2.10.0")]
-    [InlineData("a refused version is never the newest", "gh 2.63.0 win-x64 b x.example", "gh 2.63.0 win-x64 c y.example", "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, second, built in] 2.62.0=maker.example refused 2.63.0(sha256) newest 2.62.0")]
-    [InlineData("a tool this build does not run offers nothing, and is named", "bun 1.2.0 win-x64 a x.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [built in] 2.62.0=maker.example newest 2.62.0 | bun? [first]")]
-    [InlineData("a list that does not read offers nothing", "!", null, "gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [built in] 2.62.0=maker.example newest 2.62.0")]
-    [InlineData("the licence is the first list’s that names one", "gh licence Apache-2.0; gh 2.63.0 win-x64 b m.example", null, "gh licence MIT; gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.63.0=m.example 2.62.0=maker.example newest 2.63.0 licence Apache-2.0 from first")]
-    [InlineData("a list naming no licence leaves it to the next", "gh 2.63.0 win-x64 b m.example", null, "gh licence MIT; gh 2.62.0 win-x64 a maker.example", "win-x64", "gh [first, built in] 2.63.0=m.example 2.62.0=maker.example newest 2.63.0 licence MIT from built in")]
-    [InlineData("no platform offers nothing", null, null, "gh 2.62.0 win-x64 a maker.example", null, "gh [built in] newest -")]
-    [InlineData("every tool in the declared order", null, null, "gh 2.62.0 win-x64 a m.example; git 2.56.0 win-x64 b m.example", "win-x64", "git [built in] 2.56.0=m.example newest 2.56.0 | gh [built in] 2.62.0=m.example newest 2.62.0")]
+    [InlineData("the list built in, alone", null, null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [built in] 2.62.0=maker.example newest 2.62.0")]
+    [InlineData("a location adds a newer version", "pwsh 2.63.0 win-x64 b mirror.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.63.0=mirror.example 2.62.0=maker.example newest 2.63.0")]
+    [InlineData("lists that agree under other addresses are mirrors, the person’s first", "pwsh 2.62.0 win-x64 a mirror.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.62.0=mirror.example+maker.example newest 2.62.0")]
+    [InlineData("one address named twice is tried once", "pwsh 2.62.0 win-x64 a maker.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.62.0=maker.example newest 2.62.0")]
+    [InlineData("lists that disagree on the hash refuse that version, and only that one", "pwsh 2.62.0 win-x64 b other.example; pwsh 2.63.0 win-x64 c other.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.63.0=other.example refused 2.62.0(sha256) newest 2.63.0")]
+    [InlineData("lists that disagree on the size", "pwsh 2.62.0 win-x64 a other.example size=11", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] refused 2.62.0(size) newest -")]
+    [InlineData("lists that disagree on the archive", "pwsh 2.62.0 win-x64 a other.example archive=tar.gz", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] refused 2.62.0(archive) newest -")]
+    [InlineData("lists that disagree on the executable", "pwsh 2.62.0 win-x64 a other.example exe=pwsh.exe", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] refused 2.62.0(exe) newest -")]
+    [InlineData("lists that disagree on the folders for PATH", "pwsh 2.62.0 win-x64 a other.example paths=bin,.", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] refused 2.62.0(paths) newest -")]
+    [InlineData("a third list refuses what two agreed on", "pwsh 2.62.0 win-x64 a mirror.example", "pwsh 2.62.0 win-x64 a other.example", "pwsh 2.62.0 win-x64 b maker.example", "win-x64", "pwsh [first, second, built in] refused 2.62.0(sha256) newest -")]
+    [InlineData("a disagreement on another platform refuses nothing here", "pwsh 2.62.0 linux-x64 b other.example", null, "pwsh 2.62.0 win-x64 a maker.example; pwsh 2.62.0 linux-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.62.0=maker.example newest 2.62.0")]
+    [InlineData("and refuses it on its own platform", "pwsh 2.62.0 linux-x64 b other.example", null, "pwsh 2.62.0 win-x64 a maker.example; pwsh 2.62.0 linux-x64 a maker.example", "linux-x64", "pwsh [first, built in] refused 2.62.0(sha256) newest -")]
+    [InlineData("a version for another platform is not offered here", null, null, "pwsh 2.62.0 linux-x64 a maker.example", "win-x64", "pwsh [built in] newest -")]
+    [InlineData("the newest is by number, whichever list names it", "pwsh 2.9.0 win-x64 a m.example", null, "pwsh 2.10.0 win-x64 b m.example", "win-x64", "pwsh [first, built in] 2.10.0=m.example 2.9.0=m.example newest 2.10.0")]
+    [InlineData("a refused version is never the newest", "pwsh 2.63.0 win-x64 b x.example", "pwsh 2.63.0 win-x64 c y.example", "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, second, built in] 2.62.0=maker.example refused 2.63.0(sha256) newest 2.62.0")]
+    [InlineData("a tool this build does not run offers nothing, and is named", "bun 1.2.0 win-x64 a x.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [built in] 2.62.0=maker.example newest 2.62.0 | bun? [first]")]
+    [InlineData("a list that does not read offers nothing", "!", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [built in] 2.62.0=maker.example newest 2.62.0")]
+    [InlineData("the licence is the first list’s that names one", "pwsh licence Apache-2.0; pwsh 2.63.0 win-x64 b m.example", null, "pwsh licence MIT; pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.63.0=m.example 2.62.0=maker.example newest 2.63.0 licence Apache-2.0 from first")]
+    [InlineData("a list naming no licence leaves it to the next", "pwsh 2.63.0 win-x64 b m.example", null, "pwsh licence MIT; pwsh 2.62.0 win-x64 a maker.example", "win-x64", "pwsh [first, built in] 2.63.0=m.example 2.62.0=maker.example newest 2.63.0 licence MIT from built in")]
+    [InlineData("no platform offers nothing", null, null, "pwsh 2.62.0 win-x64 a maker.example", null, "pwsh [built in] newest -")]
+    [InlineData("every tool in the declared order", null, null, "pwsh 2.62.0 win-x64 a m.example; git 2.56.0 win-x64 b m.example", "win-x64", "git [built in] 2.56.0=m.example newest 2.56.0 | pwsh [built in] 2.62.0=m.example newest 2.62.0")]
     public void Lists_merge_as_the_cli_merges_them(string name, string? first, string? second, string? builtIn, string? platform, string offers)
     {
         Assert.True(offers == Render(Merged(first, second, builtIn, platform)), $"{name}: {Render(Merged(first, second, builtIn, platform))}");
@@ -400,8 +400,8 @@ public sealed class ToolResourcesTests : IDisposable
     [Fact]
     public void A_refusal_names_both_lists_and_both_hashes_and_nothing_is_fetched_until_one_changes()
     {
-        var merged = Merged("gh 2.62.0 win-x64 b other.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64");
-        var refused = Assert.Single(merged.Tools.Single(tool => tool.Tool == "gh").Refused);
+        var merged = Merged("pwsh 2.62.0 win-x64 b other.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64");
+        var refused = Assert.Single(merged.Tools.Single(tool => tool.Tool == "pwsh").Refused);
 
         Assert.Equal("2.62.0", refused.Version);
         Assert.Equal("sha256", refused.Field);
@@ -416,11 +416,11 @@ public sealed class ToolResourcesTests : IDisposable
     [Fact]
     public void An_offered_version_carries_every_address_and_every_list_that_names_it_and_its_file_once()
     {
-        var merged = Merged("gh 2.62.0 win-x64 a mirror.example", null, "gh 2.62.0 win-x64 a maker.example", "win-x64");
-        var offered = Assert.Single(merged.Tools.Single(tool => tool.Tool == "gh").Versions);
+        var merged = Merged("pwsh 2.62.0 win-x64 a mirror.example", null, "pwsh 2.62.0 win-x64 a maker.example", "win-x64");
+        var offered = Assert.Single(merged.Tools.Single(tool => tool.Tool == "pwsh").Versions);
 
-        Assert.Equal(("2.62.0", Hash, 10L, "zip", "bin/gh.exe", "bin"), (offered.Version, offered.Sha256, offered.Size, offered.Archive, offered.Exe, string.Join(',', offered.Paths)));
-        Assert.Equal(["https://mirror.example/gh-2.62.0.zip", "https://maker.example/gh-2.62.0.zip"], offered.Urls);
+        Assert.Equal(("2.62.0", Hash, 10L, "zip", "bin/pwsh.exe", "bin"), (offered.Version, offered.Sha256, offered.Size, offered.Archive, offered.Exe, string.Join(',', offered.Paths)));
+        Assert.Equal(["https://mirror.example/pwsh-2.62.0.zip", "https://maker.example/pwsh-2.62.0.zip"], offered.Urls);
         Assert.Equal(["first", "built in"], offered.Lists);
         Assert.Equal(Tools.Declared.Select(tool => tool.Id), merged.Tools.Select(tool => tool.Tool));
     }
@@ -469,11 +469,11 @@ public sealed class ToolResourcesTests : IDisposable
         const string first = "https://mirror.example/resources.json";
         const string second = "http://localhost:5177/resources.json";
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Tools), $$"""{"locations":["{{first}}","{{second}}"]}""");
-        var firstText = ListText("gh 2.63.0 win-x64 b mirror.example");
+        var firstText = ListText("pwsh 2.63.0 win-x64 b mirror.example");
         Directory.CreateDirectory(Path.GetDirectoryName(ToolResources.LocationCopy(Home, first))!);
         File.WriteAllText(ToolResources.LocationCopy(Home, first), firstText);
         Directory.CreateDirectory(Path.Combine(_root, "app"));
-        File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("gh 2.62.0 win-x64 a maker.example"));
+        File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("pwsh 2.62.0 win-x64 a maker.example"));
 
         // A folder for the application that holds no list, so the one beside the home is read.
         var lists = ToolResources.ReadLists(Home, Path.Combine(_root, "elsewhere"));
@@ -486,7 +486,7 @@ public sealed class ToolResourcesTests : IDisposable
         Assert.Equal([$"{second} has not been fetched yet, so it names nothing"], lists[1].Notes);
         Assert.Equal(ToolResources.BesideHome(Home), lists[2].Path);
         Assert.Equal(
-            $"gh [{first}, {ToolResources.BuiltIn}] 2.63.0=mirror.example 2.62.0=maker.example newest 2.63.0",
+            $"pwsh [{first}, {ToolResources.BuiltIn}] 2.63.0=mirror.example 2.62.0=maker.example newest 2.63.0",
             Render(ToolResources.Merge(lists, "win-x64")));
     }
 
@@ -495,15 +495,15 @@ public sealed class ToolResourcesTests : IDisposable
     {
         var application = Path.Combine(_root, "application");
         Directory.CreateDirectory(application);
-        File.WriteAllText(Path.Combine(application, ToolResources.FileName), ListText("gh 2.62.0 win-x64 a beside.example"));
+        File.WriteAllText(Path.Combine(application, ToolResources.FileName), ListText("pwsh 2.62.0 win-x64 a beside.example"));
         Directory.CreateDirectory(Path.Combine(_root, "app"));
-        File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("gh 2.62.0 win-x64 a home.example"));
+        File.WriteAllText(Path.Combine([_root, .. ToolResources.Layout]), ListText("pwsh 2.62.0 win-x64 a home.example"));
 
         Assert.Equal(Path.Combine(application, ToolResources.FileName), ToolResources.BuiltInFor(Home, application));
         Assert.Equal(ToolResources.BesideHome(Home), ToolResources.BuiltInFor(Home, Path.Combine(_root, "elsewhere")));
         Assert.Equal(Path.Combine([_root, .. ToolResources.Layout]), ToolResources.BesideHome(Home));
         Assert.Equal(
-            "gh [the built-in list] 2.62.0=beside.example newest 2.62.0",
+            "pwsh [the built-in list] 2.62.0=beside.example newest 2.62.0",
             Render(ToolResources.Merge(ToolResources.ReadLists(Home, application), "win-x64")));
     }
 

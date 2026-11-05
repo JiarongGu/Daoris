@@ -19,7 +19,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
 {
     private static string Platform => ToolResources.Current ?? "win-x64";
 
-    private static readonly byte[] Archive = LoopbackHost.Zip("bin/gh.exe", "gh");
+    private static readonly byte[] Archive = LoopbackHost.Zip("bin/pwsh.exe", "pwsh");
 
     /// <summary>A resource list naming one version of one tool at one address.</summary>
     private static string List(string tool, string version, string url, byte[] bytes, string? sha256 = null) => new JsonObject
@@ -43,7 +43,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
                                 ["sha256"] = sha256 ?? LoopbackHost.Sha256(bytes),
                                 ["size"] = bytes.Length,
                                 ["archive"] = "zip",
-                                ["exe"] = "bin/gh.exe",
+                                ["exe"] = "bin/pwsh.exe",
                             },
                         },
                     },
@@ -75,7 +75,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
             ["sha256"] = new string('0', 64),
             ["size"] = size,
             ["archive"] = "zip",
-            ["url"] = "https://maker.example/gh.zip",
+            ["url"] = "https://maker.example/pwsh.zip",
             ["lists"] = new JsonArray("the built-in list"),
             ["exe"] = $"bin/{tool}.exe",
             ["paths"] = new JsonArray("bin"),
@@ -104,7 +104,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     {
         var answered = await AnswerAsync(Module(), "TOOLS_LIST");
 
-        Assert.Equal(["git", "node", "pwsh", "gh", "az"], answered.GetProperty("tools").EnumerateArray().Select(t => t.GetProperty("tool").GetString()!));
+        Assert.Equal(["git", "node", "pwsh"],answered.GetProperty("tools").EnumerateArray().Select(t => t.GetProperty("tool").GetString()!));
         Assert.All(answered.GetProperty("tools").EnumerateArray(), tool =>
         {
             Assert.Equal("system", tool.GetProperty("way").GetString());
@@ -129,18 +129,18 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task The_list_answers_downloaded_versions_what_the_lists_offer_and_each_location()
     {
-        LaidOut("gh", "99.0.0", size: 4321);
-        LaidOut("gh", "98.0.0");
-        Tools.UseManaged(Home, "gh", "99.0.0");
+        LaidOut("pwsh", "99.0.0", size: 4321);
+        LaidOut("pwsh", "98.0.0");
+        Tools.UseManaged(Home, "pwsh", "99.0.0");
         var address = "http://127.0.0.1:9/list.json";
-        Located(address, List("gh", "99.1.0", "http://127.0.0.1:9/gh.zip", Archive));
+        Located(address, List("pwsh", "99.1.0", "http://127.0.0.1:9/pwsh.zip", Archive));
 
         var answered = await AnswerAsync(Module(), "TOOLS_LIST");
-        var gh = Tool(answered, "gh");
+        var gh = Tool(answered, "pwsh");
 
         Assert.Equal("managed", gh.GetProperty("way").GetString());
         Assert.Equal("99.0.0", gh.GetProperty("version").GetString());
-        Assert.Equal(Tools.ManagedExecutable(Home, "gh", "99.0.0").File, gh.GetProperty("resolved").GetString());
+        Assert.Equal(Tools.ManagedExecutable(Home, "pwsh", "99.0.0").File, gh.GetProperty("resolved").GetString());
         var downloaded = gh.GetProperty("downloaded").EnumerateArray().ToList();
         Assert.Equal(["99.0.0", "98.0.0"], downloaded.Select(d => d.GetProperty("version").GetString()!));
         Assert.Equal(4321, downloaded[0].GetProperty("size").GetInt64());
@@ -158,7 +158,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         Assert.Equal(address, location.GetProperty("address").GetString());
         Assert.Equal("this machine", location.GetProperty("integrity").GetString());
         Assert.True(location.GetProperty("fetched").ValueKind == JsonValueKind.String, "its copy's time is when it was fetched");
-        Assert.Equal(["gh 99.1.0"], Strings(location.GetProperty("names")));
+        Assert.Equal(["pwsh 99.1.0"], Strings(location.GetProperty("names")));
         Assert.Equal(64, location.GetProperty("sha256").GetString()!.Length);
     }
 
@@ -166,17 +166,17 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task A_version_two_lists_disagree_on_is_listed_as_refused_and_never_started()
     {
-        Located("http://127.0.0.1:9/a.json", List("gh", "99.1.0", "http://127.0.0.1:9/a.zip", Archive));
-        Located("http://127.0.0.1:9/b.json", List("gh", "99.1.0", "http://127.0.0.1:9/b.zip", Archive, sha256: new string('a', 64)));
+        Located("http://127.0.0.1:9/a.json", List("pwsh", "99.1.0", "http://127.0.0.1:9/a.zip", Archive));
+        Located("http://127.0.0.1:9/b.json", List("pwsh", "99.1.0", "http://127.0.0.1:9/b.zip", Archive, sha256: new string('a', 64)));
         var module = Module();
 
-        var gh = Tool(await AnswerAsync(module, "TOOLS_LIST"), "gh");
+        var gh = Tool(await AnswerAsync(module, "TOOLS_LIST"), "pwsh");
         var refused = gh.GetProperty("refusedVersions").EnumerateArray().Single();
         Assert.Equal("99.1.0", refused.GetProperty("version").GetString());
         Assert.Equal("sha256", refused.GetProperty("field").GetString());
         Assert.DoesNotContain(gh.GetProperty("offered").EnumerateArray(), o => o.GetProperty("version").GetString() == "99.1.0");
 
-        var refusal = await RefusalAsync(module, "TOOLS_DOWNLOAD", new { tool = "gh", version = "99.1.0" });
+        var refusal = await RefusalAsync(module, "TOOLS_DOWNLOAD", new { tool = "pwsh", version = "99.1.0" });
         Assert.Contains(Refusals.ToolDownloadRefused, refusal);
         Assert.Contains("check=conflict", refusal);
         Assert.Contains("version=99.1.0", refusal);
@@ -186,14 +186,14 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task Use_the_systems_writes_the_file_the_terminal_edits()
     {
-        LaidOut("gh", "99.0.0");
-        Tools.UseManaged(Home, "gh", "99.0.0");
+        LaidOut("pwsh", "99.0.0");
+        Tools.UseManaged(Home, "pwsh", "99.0.0");
 
-        var answered = await AnswerAsync(Module(), "TOOLS_USE", new { tool = "gh", action = "system" });
+        var answered = await AnswerAsync(Module(), "TOOLS_USE", new { tool = "pwsh", action = "system" });
 
         Assert.Equal("system", answered.GetProperty("way").GetString());
-        Assert.Equal("system", Written()!["tools"]!["gh"]!["use"]!.GetValue<string>());
-        Assert.Null(Written()!["tools"]!["gh"]!["version"]);
+        Assert.Equal("system", Written()!["tools"]!["pwsh"]!["use"]!.GetValue<string>());
+        Assert.Null(Written()!["tools"]!["pwsh"]!["version"]);
     }
 
     /// <summary>
@@ -228,7 +228,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task Managed_at_a_version_no_list_names_is_refused_and_nothing_switches()
     {
-        var refusal = await RefusalAsync(Module(), "TOOLS_USE", new { tool = "gh", action = "managed", version = "99.9.9" });
+        var refusal = await RefusalAsync(Module(), "TOOLS_USE", new { tool = "pwsh", action = "managed", version = "99.9.9" });
 
         Assert.Contains(Refusals.ToolVersionUnknown, refusal);
         Assert.Contains("tool=GitHub CLI", refusal);
@@ -240,14 +240,14 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task Using_a_downloaded_version_switches_in_the_answer_itself()
     {
-        LaidOut("gh", "99.0.0");
+        LaidOut("pwsh", "99.0.0");
 
-        var answered = await AnswerAsync(Module(), "TOOLS_USE", new { tool = "gh", action = "managed", version = "99.0.0" });
+        var answered = await AnswerAsync(Module(), "TOOLS_USE", new { tool = "pwsh", action = "managed", version = "99.0.0" });
 
         Assert.False(answered.GetProperty("started").GetBoolean());
         Assert.Equal(0, answered.GetProperty("ended").GetProperty("exitCode").GetInt32());
-        Assert.Equal("managed", Written()!["tools"]!["gh"]!["use"]!.GetValue<string>());
-        Assert.Equal("99.0.0", Written()!["tools"]!["gh"]!["version"]!.GetValue<string>());
+        Assert.Equal("managed", Written()!["tools"]!["pwsh"]!["use"]!.GetValue<string>());
+        Assert.Equal("99.0.0", Written()!["tools"]!["pwsh"]!["version"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -258,26 +258,26 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     public async Task A_download_is_answered_once_started_and_its_end_is_news_after()
     {
         using var host = new LoopbackHost();
-        var url = host.Serve("/gh.zip", Archive);
-        Located(host.Address + "/list.json", List("gh", "99.1.0", url, Archive));
+        var url = host.Serve("/pwsh.zip", Archive);
+        Located(host.Address + "/list.json", List("pwsh", "99.1.0", url, Archive));
         var module = Module();
 
-        var answered = await AnswerAsync(module, "TOOLS_DOWNLOAD", new { tool = "gh", version = "99.1.0" });
+        var answered = await AnswerAsync(module, "TOOLS_DOWNLOAD", new { tool = "pwsh", version = "99.1.0" });
         Assert.True(answered.GetProperty("started").GetBoolean());
         Assert.Equal("99.1.0", answered.GetProperty("version").GetString());
 
         await UntilAsync(() => Raised.Any(m => m.Type == "TOOLS_ENDED"));
         var ended = Payload(Raised.Single(m => m.Type == "TOOLS_ENDED"));
-        Assert.Equal("gh", ended.GetProperty("Tool").GetString());
+        Assert.Equal("pwsh", ended.GetProperty("Tool").GetString());
         Assert.Equal("download", ended.GetProperty("Action").GetString());
         Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
         // Its lines are the console's, under the tool's own key, and the console says the action ended.
-        var console = await AnswerAsync(module, "TAIL_SESSION", new { id = "tools:gh" });
+        var console = await AnswerAsync(module, "TAIL_SESSION", new { id = "tools:pwsh" });
         Assert.NotEmpty(console.GetProperty("lines").EnumerateArray());
         Assert.False(console.GetProperty("live").GetBoolean());
 
-        Assert.Equal(["99.1.0"], ToolInstall.Downloaded(Home, "gh"));
-        var gh = Tool(await AnswerAsync(module, "TOOLS_LIST"), "gh");
+        Assert.Equal(["99.1.0"], ToolInstall.Downloaded(Home, "pwsh"));
+        var gh = Tool(await AnswerAsync(module, "TOOLS_LIST"), "pwsh");
         Assert.Equal("system", gh.GetProperty("way").GetString());
         Assert.True(gh.GetProperty("running").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
     }
@@ -290,27 +290,27 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     public async Task A_running_download_refuses_a_second_and_the_persons_stop_ends_it_leaving_nothing()
     {
         using var host = new LoopbackHost();
-        var url = host.Stall("/gh.zip");
-        Located(host.Address + "/list.json", List("gh", "99.1.0", url, Archive));
+        var url = host.Stall("/pwsh.zip");
+        Located(host.Address + "/list.json", List("pwsh", "99.1.0", url, Archive));
         var module = Module();
 
-        Assert.True((await AnswerAsync(module, "TOOLS_DOWNLOAD", new { tool = "gh", version = "99.1.0" })).GetProperty("started").GetBoolean());
+        Assert.True((await AnswerAsync(module, "TOOLS_DOWNLOAD", new { tool = "pwsh", version = "99.1.0" })).GetProperty("started").GetBoolean());
         await host.Stalled.Task.WaitAsync(Poll.Patience);
 
-        var running = Tool(await AnswerAsync(module, "TOOLS_LIST"), "gh").GetProperty("running");
+        var running = Tool(await AnswerAsync(module, "TOOLS_LIST"), "pwsh").GetProperty("running");
         Assert.Equal("download", running.GetProperty("action").GetString());
         Assert.Equal("99.1.0", running.GetProperty("version").GetString());
 
-        var busy = await RefusalAsync(module, "TOOLS_USE", new { tool = "gh", action = "managed", version = "99.1.0" });
+        var busy = await RefusalAsync(module, "TOOLS_USE", new { tool = "pwsh", action = "managed", version = "99.1.0" });
         Assert.Contains(Refusals.ToolBusy, busy);
         Assert.Contains("tool=GitHub CLI", busy);
 
-        Assert.True((await AnswerAsync(module, "TOOLS_STOP", new { tool = "gh" })).GetProperty("stopped").GetBoolean());
+        Assert.True((await AnswerAsync(module, "TOOLS_STOP", new { tool = "pwsh" })).GetProperty("stopped").GetBoolean());
         await UntilAsync(() => Raised.Any(m => m.Type == "TOOLS_ENDED"));
         var ended = Payload(Raised.Single(m => m.Type == "TOOLS_ENDED"));
         Assert.True(ended.GetProperty("Stopped").GetBoolean());
-        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh")), "a stop leaves nothing under tools/gh");
-        Assert.False((await AnswerAsync(module, "TOOLS_STOP", new { tool = "gh" })).GetProperty("stopped").GetBoolean());
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh")), "a stop leaves nothing under tools/gh");
+        Assert.False((await AnswerAsync(module, "TOOLS_STOP", new { tool = "pwsh" })).GetProperty("stopped").GetBoolean());
     }
 
     /// <summary>
@@ -320,22 +320,22 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     [Fact]
     public async Task A_delete_removes_a_version_nothing_uses_and_refuses_the_one_in_use_and_one_not_there()
     {
-        LaidOut("gh", "99.0.0");
-        LaidOut("gh", "98.0.0");
-        Tools.UseManaged(Home, "gh", "99.0.0");
+        LaidOut("pwsh", "99.0.0");
+        LaidOut("pwsh", "98.0.0");
+        Tools.UseManaged(Home, "pwsh", "99.0.0");
         var module = Module();
 
-        var inUse = await RefusalAsync(module, "TOOLS_DELETE", new { tool = "gh", version = "99.0.0" });
+        var inUse = await RefusalAsync(module, "TOOLS_DELETE", new { tool = "pwsh", version = "99.0.0" });
         Assert.Contains(Refusals.ToolInUse, inUse);
         Assert.Contains("version=99.0.0", inUse);
 
-        var gone = await RefusalAsync(module, "TOOLS_DELETE", new { tool = "gh", version = "97.0.0" });
+        var gone = await RefusalAsync(module, "TOOLS_DELETE", new { tool = "pwsh", version = "97.0.0" });
         Assert.Contains(Refusals.ToolNotDownloaded, gone);
         Assert.Contains("version=97.0.0", gone);
 
-        var deleted = await AnswerAsync(module, "TOOLS_DELETE", new { tool = "gh", version = "98.0.0" });
+        var deleted = await AnswerAsync(module, "TOOLS_DELETE", new { tool = "pwsh", version = "98.0.0" });
         Assert.Equal("98.0.0", deleted.GetProperty("version").GetString());
-        Assert.Equal(["99.0.0"], ToolInstall.Downloaded(Home, "gh"));
+        Assert.Equal(["99.0.0"], ToolInstall.Downloaded(Home, "pwsh"));
     }
 
     /// <summary>
@@ -448,7 +448,7 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
     public async Task A_look_fetches_each_location_keeps_what_reads_and_says_what_failed()
     {
         using var host = new LoopbackHost();
-        var list = List("gh", "99.2.0", host.Address + "/gh.zip", Archive);
+        var list = List("pwsh", "99.2.0", host.Address + "/pwsh.zip", Archive);
         Tools.AddLocation(Home, host.Serve("/list.json", System.Text.Encoding.UTF8.GetBytes(list)));
         Tools.AddLocation(Home, host.Address + "/gone.json");
         var module = Module();
@@ -456,8 +456,8 @@ public sealed class DriverModuleToolsTests : DriverModuleBridge
         var looks = (await AnswerAsync(module, "TOOLS_LOOK")).GetProperty("looks").EnumerateArray().ToList();
 
         Assert.Equal(["fetched", "failed"], looks.Select(l => l.GetProperty("outcome").GetString()!));
-        Assert.Equal(["gh 99.2.0"], Strings(looks[0].GetProperty("added")));
-        Assert.Contains("99.2.0", Tool(await AnswerAsync(module, "TOOLS_LIST"), "gh").GetProperty("newest").GetString());
+        Assert.Equal(["pwsh 99.2.0"], Strings(looks[0].GetProperty("added")));
+        Assert.Contains("99.2.0", Tool(await AnswerAsync(module, "TOOLS_LIST"), "pwsh").GetProperty("newest").GetString());
     }
 
     /// <summary>

@@ -115,11 +115,11 @@ public sealed class DownloadClearingTests : IDisposable
     [Fact]
     public async Task A_managed_tools_version_is_kept_and_its_other_versions_go()
     {
-        var used = Tool("gh", "2.62.0");
-        var old = Tool("gh", "2.61.0");
-        ToolsFile("""{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
+        var used = Tool("pwsh", "2.62.0");
+        var old = Tool("pwsh", "2.61.0");
+        ToolsFile("""{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""");
 
-        Assert.Equal("used", Row(Uses(), "tool", "gh", "2.62.0").Keeps);
+        Assert.Equal("used", Row(Uses(), "tool", "pwsh", "2.62.0").Keeps);
         await PressAsync(Uses(), Later);
 
         Assert.True(Directory.Exists(used));
@@ -227,10 +227,10 @@ public sealed class DownloadClearingTests : IDisposable
     public async Task Only_what_was_asked_goes_and_a_name_never_reaches_past_a_listed_folder()
     {
         var asked = Agent("claude-code", "2.0.1");
-        var other = Tool("gh", "2.61.0");
+        var other = Tool("pwsh", "2.61.0");
 
         var cleared = await DownloadClearing.ClearAsync(
-            Home, [new DownloadAsked("agent", "claude-code", "2.0.1"), new DownloadAsked("tool", "gh", "../../data"), new DownloadAsked("agent", "claude-code", "9.9.9")],
+            Home, [new DownloadAsked("agent", "claude-code", "2.0.1"), new DownloadAsked("tool", "pwsh", "../../data"), new DownloadAsked("agent", "claude-code", "9.9.9")],
             new DownloadJudge(() => Uses(), () => Later));
 
         Assert.Equal(["removed", "gone", "gone"], cleared.Select(each => each.Outcome));
@@ -242,10 +242,10 @@ public sealed class DownloadClearingTests : IDisposable
     [Fact]
     public async Task A_staged_download_is_never_listed_and_an_unfinished_clearing_goes_at_the_next_press()
     {
-        var staged = ToolInstall.VersionFolder(Home, "gh", "2.63.0") + ".part";
+        var staged = ToolInstall.VersionFolder(Home, "pwsh", "2.63.0") + ".part";
         Directory.CreateDirectory(staged);
         // A run's own staging (PUSH1f2c), named by its process: never a version either.
-        var running = ToolInstall.StagingOf(ToolInstall.VersionFolder(Home, "gh", "2.64.0"), Environment.ProcessId);
+        var running = ToolInstall.StagingOf(ToolInstall.VersionFolder(Home, "pwsh", "2.64.0"), Environment.ProcessId);
         Directory.CreateDirectory(running);
         var unfinished = HarnessSettings.ManagedHome(Home, "claude-code", "2.0.1") + ".0123abcd" + DownloadClearing.Aside;
         Directory.CreateDirectory(Path.Combine(unfinished, "bin"));
@@ -319,7 +319,7 @@ public sealed class DownloadClearingTests : IDisposable
         var acp = Agent("codex-acp", "0.5.0", "codex-acp");
         var claude = Agent("claude-code", "2.0.1");
         var shim = Agent("gemini", "0.3.0", "gemini");
-        var gh = Tool("gh", "2.61.0");
+        var gh = Tool("pwsh", "2.61.0");
         var info = new ProcessStartInfo(Path.Combine(acp, "bin", "codex-acp.exe"));
         info.ArgumentList.Add("--flag");
         info.Environment[ClaudeAcp.ExecutableVariable] = Path.Combine(claude, "bin", "claude.exe");
@@ -328,7 +328,7 @@ public sealed class DownloadClearingTests : IDisposable
         wrapped.ArgumentList.Add("/c");
         wrapped.ArgumentList.Add(Path.Combine(shim, "node_modules", ".bin", "gemini.cmd"));
 
-        Assert.Equal(["agent/claude-code/2.0.1", "agent/codex-acp/0.5.0", "tool/gh/2.61.0"], DownloadClearing.Handed(Home, info));
+        Assert.Equal(["agent/claude-code/2.0.1", "agent/codex-acp/0.5.0", "tool/pwsh/2.61.0"], DownloadClearing.Handed(Home, info));
         Assert.Equal(["agent/gemini/0.3.0"], DownloadClearing.Handed(Home, wrapped));
         Assert.Empty(DownloadClearing.Handed(Home, new ProcessStartInfo("claude")));
     }
@@ -365,7 +365,7 @@ public sealed class DownloadClearingTests : IDisposable
         using var ledger = new StandInLedger();
         ledger.Working("s-1", "Engine", Path.Combine(_root, "tree"));
         var claude = Agent("claude-code", "2.0.1");
-        var gh = Tool("gh", "2.61.0");
+        var gh = Tool("pwsh", "2.61.0");
         var first = new ProcessStartInfo(Path.Combine(claude, "bin", "claude.exe"));
         var goOn = new ProcessStartInfo("claude");
         goOn.Environment[Tools.PathVariable] = Path.Combine(gh, Tools.Package, "bin");
@@ -378,7 +378,7 @@ public sealed class DownloadClearingTests : IDisposable
 
         var running = Assert.Single(await service.LiveSessionsAsync(CancellationToken.None));
         Assert.Equal("s-1", running.Id);
-        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], running.Resolved);
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/pwsh/2.61.0"], running.Resolved);
     }
 
     /// <summary>
@@ -389,13 +389,13 @@ public sealed class DownloadClearingTests : IDisposable
     public void The_running_sessions_are_read_with_what_their_starts_were_handed()
     {
         var running = ServiceClient.ReadRunning("""
-            [ { "id": "s1", "created": "2026-10-20T09:00:00+00:00", "resolved": ["agent/claude-code/2.0.1", "tool/gh/2.61.0"] },
+            [ { "id": "s1", "created": "2026-10-20T09:00:00+00:00", "resolved": ["agent/claude-code/2.0.1", "tool/pwsh/2.61.0"] },
               { "id": "s2", "created": "2026-10-21T09:00:00+00:00" },
               { "id": "alice-laptop/s3", "created": "2026-10-21T09:00:00+00:00", "resolved": ["agent/codex/0.40.0"] } ]
             """);
 
         Assert.Equal(["s1", "s2"], running.Select(session => session.Id));
-        Assert.Equal(["agent/claude-code/2.0.1", "tool/gh/2.61.0"], running[0].Resolved);
+        Assert.Equal(["agent/claude-code/2.0.1", "tool/pwsh/2.61.0"], running[0].Resolved);
         Assert.Equal((new DateTimeOffset(2026, 10, 21, 9, 0, 0, TimeSpan.Zero), (IReadOnlyList<string>?)null), (running[1].Started, running[1].Resolved));
     }
 
@@ -711,16 +711,16 @@ public sealed class DownloadClearingTests : IDisposable
     [Fact]
     public async Task Tools_delete_of_a_version_a_session_runs_is_refused_the_same_way()
     {
-        var folder = Tool("gh", "2.61.0");
+        var folder = Tool("pwsh", "2.61.0");
 
         var refused = await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(
-            Home, "gh", "2.61.0", _ => Task.FromResult(Running(new LiveSession("s-gh", Later.AddDays(-1), ["tool/gh/2.61.0"])))));
+            Home, "pwsh", "2.61.0", _ => Task.FromResult(Running(new LiveSession("s-gh", Later.AddDays(-1), ["tool/pwsh/2.61.0"])))));
 
         Assert.Equal(ToolRefusal.Held, refused.Check);
         Assert.Contains("s-gh", refused.Message, StringComparison.Ordinal);
         Assert.Contains(("reason", refused.Message), refused.Facts);
         Assert.True(Directory.Exists(folder));
-        Assert.Equal(folder, await ToolInstall.DeleteAsync(Home, "gh", "2.61.0", _ => Task.FromResult(LiveSessions.None)));
+        Assert.Equal(folder, await ToolInstall.DeleteAsync(Home, "pwsh", "2.61.0", _ => Task.FromResult(LiveSessions.None)));
         Assert.False(Directory.Exists(folder));
     }
 
@@ -728,12 +728,12 @@ public sealed class DownloadClearingTests : IDisposable
     [Fact]
     public async Task Tools_delete_of_a_held_version_is_refused_and_leaves_it_whole()
     {
-        var folder = Tool("gh", "2.61.0");
+        var folder = Tool("pwsh", "2.61.0");
 
         var refused = await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(
-            Home, "gh", "2.61.0", _ => Task.FromResult(LiveSessions.None), move: (_, _) => throw new IOException("in use")));
+            Home, "pwsh", "2.61.0", _ => Task.FromResult(LiveSessions.None), move: (_, _) => throw new IOException("in use")));
 
         Assert.Equal(ToolRefusal.Held, refused.Check);
-        Assert.True(File.Exists(Path.Combine(folder, Tools.Package, "bin", "gh.exe")));
+        Assert.True(File.Exists(Path.Combine(folder, Tools.Package, "bin", "pwsh.exe")));
     }
 }

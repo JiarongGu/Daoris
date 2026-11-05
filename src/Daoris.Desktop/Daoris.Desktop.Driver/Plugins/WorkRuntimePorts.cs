@@ -13,6 +13,12 @@ public interface IWorkPerformPort
     int? GenerationOf(string plugin);
 
     /// <summary>
+    /// The current generation of the process generation <paramref name="held"/> belongs to: the same plugin's other place has its own, so an
+    /// attempt or an event is fenced against the process that took it, never another place's (D241 point 5).
+    /// </summary>
+    int? GenerationOf(string plugin, int held) => GenerationOf(plugin);
+
+    /// <summary>
     /// One receipt's removal asked of the plugin's current process (FABRIC-PERFORM1d, §D3), with that process's generation. A port that has
     /// no cleanup adapter refuses, and the receipt is asked again on its back-off.
     /// </summary>
