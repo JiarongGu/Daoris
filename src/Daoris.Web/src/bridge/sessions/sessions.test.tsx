@@ -7,10 +7,8 @@ import type { ReactNode } from 'react';
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../../test/sliceShell')).mockedShell(invoke),
   useShenoraEvent: () => undefined,
 }));
 
@@ -35,21 +33,21 @@ describe('the sessions domain', () => {
     invoke.mockReset();
   });
 
-  /** The list reads each session's group from the host's one reader, every session or the ones it names. */
-  it('asks the groups of DAORIS.DRIVER, for every session or the ones named', async () => {
+  /** The list reads each session's group from the groups slice's one snapshot, every session or the ones it names, and asks no route. */
+  it('reads the groups from the snapshot of DAORIS.DRIVER, for every session or the ones named', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     invoke.mockImplementation(async () => ({ sessions: [parked] }));
 
     const every = renderHook(() => useSessionGroups(), { wrapper: wrapper(client) });
     await waitFor(() => expect(every.result.current.data).toEqual([parked]));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
 
     const some = renderHook(() => useSessionGroups(['s3', 's1', 's3']), { wrapper: wrapper(client) });
     await waitFor(() => expect(some.result.current.data).toEqual([parked]));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: { ids: ['s3', 's1'] } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
   });
 
-  /** An answer with no rows in it is none, never a crash: a host older than the route says nothing of them. */
+  /** A snapshot with no rows in it is none, never a crash. */
   it('reads an answer without rows as no rows', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     invoke.mockImplementation(async () => ({}));

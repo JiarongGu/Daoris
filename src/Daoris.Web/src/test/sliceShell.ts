@@ -260,15 +260,17 @@ export async function moved() {
  * wrapper of it such as `publishing`), its slices are answered from `invoke`'s answers, and each window holds them. `available` says
  * whether a shell is here.
  */
-export function mockedShell(invoke: Invoke, { available = () => true, notifyReady, through = invoke }: {
+export function mockedShell(invoke: Invoke, { available = () => true, notifyReady, through = invoke, holds = true }: {
   available?: () => boolean; notifyReady?: () => Promise<void>; through?: Invoke;
+  /** False where the test mounts the page's own `ShellSignals`, which holds the slices itself, so each is read once. */
+  holds?: boolean;
 } = {}) {
   const shell = answeringSlices(through, invoke);
   const bridge = notifyReady ? { notifyReady } : {};
   return {
     isShenoraAvailable: available,
     getBridge: () => ({ isAvailable: available(), invoke: shell, ...bridge }),
-    useShenora: () => holdingSlices(shell, { isAvailable: available(), bridge }),
+    useShenora: () => (holds ? holdingSlices(shell, { isAvailable: available(), bridge }) : { isAvailable: available(), bridge }),
   };
 }
 

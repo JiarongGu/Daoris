@@ -9,10 +9,8 @@ import { QueryClient } from '@tanstack/react-query';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
   useShenoraEvent: () => undefined,
 }));
 

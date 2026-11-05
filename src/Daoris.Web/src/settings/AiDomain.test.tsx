@@ -11,18 +11,12 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   eventHandlers: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', async () => {
-  const { answeringSlices, holdingSlices } = await import('../test/sliceShell');
-  const shell = answeringSlices(invoke);
-  return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
-    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
-    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-      eventHandlers.set(`${module}.${type}`, handler);
-    },
-  };
-});
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
+  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+    eventHandlers.set(`${module}.${type}`, handler);
+  },
+}));
 
 import i18n from '../locales/i18n';
 import { SettingsView } from './SettingsView';

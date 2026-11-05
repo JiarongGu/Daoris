@@ -9,16 +9,10 @@ import userEvent from '@testing-library/user-event';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', async () => {
-  const { answeringSlices, holdingSlices } = await import('../test/sliceShell');
-  const shell = answeringSlices(invoke);
-  return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
-    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
-    useShenoraEvent: () => undefined,
-  };
-});
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
+  useShenoraEvent: () => undefined,
+}));
 
 import type { GitBranchList, GitGraphPage } from '../bridge/repositories/git';
 import {

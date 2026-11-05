@@ -26,9 +26,7 @@ vi.mock('@shenora/react', async () => {
   return {
     ...actual,
     WindowCommands,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
     useShenoraEvent: () => {},
     useWindowMaximized: () => false,
   };

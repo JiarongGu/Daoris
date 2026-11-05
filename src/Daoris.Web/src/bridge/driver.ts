@@ -31,7 +31,7 @@ import { askHeld } from './state/held';
 export type DriverState = {
   /**
    * Whether the driver's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*.
-   * Absent on a shell older than it, which is read as up, as this answer alone said before.
+   * Left out where the shell does not say, which is read as up.
    */
   ready?: boolean;
   /** What *Try again* did, on the answer to `RETRY_QUEST` alone (SESSUX1b); absent on every other answer. */
@@ -42,19 +42,19 @@ export type DriverState = {
   trees: string[];
   /**
    * Repositories whose checkout the person let Daoris change the files of (GITAPP2b, the git-writes design §2): off where absent.
-   * Absent on a shell older than it, which offers no switch.
+   * Left out where none is set: the pageoffers no switch.
    */
   checkoutWrites?: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
   /**
    * Who is driving Daoris's browser (BRW8): the running sessions the driver handed a server that drives
-   * it, from the handing until each ends. Absent on a shell older than it, which says nothing.
+   * it, from the handing until each ends. Left out where none is set: the pagesays nothing.
    */
   drivingBrowser?: string[];
   /**
    * The set-ups waiting for the person's review here (REVIEWENV1d), each with whether Daoris serves its tab now: the strip's
-   * chip beside the browser's door. Absent on a shell older than it, and where the loop carries no browser, which shows nothing.
+   * chip beside the browser's door. Left out where none is set, and where the loop carries no browser, which shows nothing.
    */
   inReview?: ReviewShown[];
   /** What *Show it again* said (REVIEWENV1d), on the answer to `SHOW_REVIEW_AGAIN` alone; absent on every other answer. */
@@ -65,27 +65,27 @@ export type DriverState = {
   strikes: number;
   /**
    * How long an account cools when its agent names no time, in minutes (TOOL4g, D125 §2.2): the file's, or the hour.
-   * Absent on a shell older than it, and the setting is then not offered.
+   * Left out where none is set, and the setting is then not offered.
    */
   coolOff?: number;
-  /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; absent on an older shell. */
+  /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
-  /** How many sessions Daoris starts at once on this machine (CAPSET1); absent on a shell older than the setting's route. */
+  /** How many sessions Daoris starts at once on this machine (CAPSET1); left out where none is set. */
   cap?: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
   /**
    * The agent an ask the declarations leave opens an intake session on (INT4b), or "" — asks are
-   * answered by declarations only. Never null: the bridge leaves a null out, and absent is how a
-   * shell older than the intake reads.
+   * answered by declarations only. Never null: the bridge leaves a null out, and absent is how
+   * none reads.
    */
   intakeAdapter?: string;
-  /** The agent Ask Daoris runs on (HELP1, D89), or "" for none; absent on a shell older than it. */
+  /** The agent Ask Daoris runs on (HELP1, D89), or "" for none; left out where none is set. */
   helperAdapter?: string;
   /**
    * Ask Daoris's access mode as the person chose it (HELPMODE1a2, D183 point 2): `restricted` or `full`, what each conversation's
-   * next turn takes (ACCESSSWAP1); a value the page does not know reads as restricted (`helpModeOf`). Absent on a shell older than
-   * it, which offers no choice. A conversation's own mode, the one its start got, is its history row's `mode`.
+   * next turn takes (ACCESSSWAP1); a value the page does not know reads as restricted (`helpModeOf`). Left out where none is set:
+   * the page offers no choice. A conversation's own mode, the one its start got, is its history row's `mode`.
    */
   helpMode?: string;
   /**
@@ -93,7 +93,7 @@ export type DriverState = {
    * operations chosen and those it acts on (`built`); housekeeping's, and the chosen settings' (HELPMODE1c3). What each start of Ask
    * Daoris and every call of its tools read; `pending` while a conversation running here was handed another choice, which its next
    * turn takes (ACCESSSWAP1). And the browser's, read only from its plugin's approval: no `built`, `changed` since approval, and
-   * the `plugin` whose tab changes it, absent where none here offers it. Absent on a shell older than it, which draws no configured
+   * the `plugin` whose tab changes it, absent where none here offers it. Left out where none is set: the pagedraws no configured
    * access.
    */
   helpGrants?: { id: string; chosen: string[]; built?: string[]; pending?: boolean; changed?: boolean; plugin?: string | null }[];
@@ -103,13 +103,13 @@ export type DriverState = {
    * shell, which ended none so.
    */
   helpSwapping?: string[];
-  /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
+  /** The Daoris home (D63): the directory every machine-local file lives in. Left out where none is set. */
   home?: string;
-  /** The lines as set (WSR2), by repository — absent on a shell older than them. */
+  /** The lines as set (WSR2), by repository — left out where none is set. */
   lines?: { repository: string; branch: string }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceLines?: { workspace: string; branch: string }[];
-  /** Reading across as set (D107), by repository — absent on a shell older than it. */
+  /** Reading across as set (D107), by repository — left out where none is set. */
   readAcross?: { repository: string; read: boolean }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceReadAcross?: { workspace: string; read: boolean }[];
@@ -117,24 +117,24 @@ export type DriverState = {
   writeAcross?: { repository: string; to: string[] }[];
   /**
    * Each repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, and when they
-   * set them, or null where the file does not say — absent on a shell older than it.
+   * set them, or null where the file does not say — left out where none is set.
    */
   standing?: { repository: string; says: string; at?: string | null }[];
   /**
    * The session languages as set (LANG1c, D142 point 7): what each repository's sessions are asked to write to the person in,
-   * a code of the driver's table — absent on a shell older than it.
+   * a code of the driver's table — left out where none is set.
    */
   languages?: { repository: string; language: string }[];
   /** And by workspace, for each repository there that sets none of its own, and its intake. */
   workspaceLanguages?: { workspace: string; language: string }[];
   /**
    * The driver's closed table each option is named from (LANG1c): its code and the name a session's line gives it, so adding a
-   * language is a row there and needs no catalogue here. Absent on a shell older than it, which offers no session language.
+   * language is a row there and needs no catalogue here. Left out where none is set: the pageoffers no session language.
    */
   languageTable?: LanguageOption[];
   /**
    * The review rules as set (REVIEWENV1a, D154 point 2): where each repository's work is shown to the person before it lands,
-   * or none here — absent on a shell older than it, which offers no review row.
+   * or none here — left out where none is set: the pageoffers no review row.
    */
   reviews?: { repository: string; rule: ReviewRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
@@ -143,7 +143,7 @@ export type DriverState = {
   reviewed?: ReviewLook | null;
   /**
    * The second-opinion rules as set (XAGENT1a, D155 point 3): which other agent reads each repository's work before it lands,
-   * or none here — absent on a shell older than it, which offers no second-opinion row.
+   * or none here — left out where none is set: the pageoffers no second-opinion row.
    */
   opinions?: { repository: string; rule: OpinionRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
@@ -164,14 +164,14 @@ export type DriverState = {
   workspaceHelpers?: { workspace: string; rule: HelperRule }[];
   /**
    * The hand-over rules as set (MIXAGENT1c, D163 point 3): what an agent's ask to hand its session over does in each repository —
-   * absent on a shell older than it, which offers no hand-over row.
+   * left out where none is set: the pageoffers no hand-over row.
    */
   handOver?: { repository: string; rule: HandOverRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceHandOver?: { workspace: string; rule: HandOverRule }[];
   /**
    * The access setups as set (AUTONOMY1a, D184 point 1): what each repository's sessions start under, full access or the pauses it
-   * names — absent on a shell older than it, which offers no access section. What each repository resolves to is `LINES`' `access`.
+   * names — left out where none is set: the pageoffers no access section. What each repository resolves to is `LINES`' `access`.
    */
   access?: { repository: string; setting: AccessLevel }[];
   /** And by workspace, for each pause a repository there does not name. */
@@ -180,29 +180,29 @@ export type DriverState = {
   machineAccess?: AccessLevel;
   /**
    * Git access as set (GITAUTH1f, the git-auth design §6.4): the classes each repository, workspace and this machine sets, none
-   * being Daoris's default — absent on a shell older than it. What each repository resolves to is `LINES`' `gitAccess`.
+   * being Daoris's default — left out where none is set. What each repository resolves to is `LINES`' `gitAccess`.
    */
   gitAccess?: { repository: string; classes: GitAccessLevel }[];
   workspaceGitAccess?: { workspace: string; classes: GitAccessLevel }[];
   machineGitAccess?: GitAccessLevel;
   /**
    * What each running session holds of git access now (D241 point 7): its repository's, narrowed by what the person tightened
-   * (a class whose source is `session`) — absent on a shell older than it, and for a session begun before it.
+   * (a class whose source is `session`) — left out where none is set, and for a session begun before it.
    */
   sessionGitAccess?: { session: string; repository?: string | null; workspace?: string | null; classes: ResolvedGitClass[] }[];
   /**
    * This machine's heavy gates (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): for each repository whose own `daoris.gates.json` marks no
-   * heavy gate, the list `run-heavy` runs for it in its order — absent on a shell older than it, which offers no heavy gates section.
+   * heavy gate, the list `run-heavy` runs for it in its order — left out where none is set: the pageoffers no heavy gates section.
    */
   heavyGates?: { repository: string; gates: HeavyGate[] }[];
   /**
    * Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4): `light` or `heavy-at-end` by
-   * repository, none being today's — absent on a shell older than it, which offers no sessions' checks row.
+   * repository, none being today's — left out where none is set: the pageoffers no sessions' checks row.
    */
   sessionChecks?: { repository: string; checks: string }[];
   /**
    * The person's standing confirmation (TERMTRUST1a, D201; the terminal-trust design §6.1), as the shell's `StandingNow` says it: read
-   * only through `standingOf` (`bridge/person.ts`), since the bridge leaves its nulls out. Absent on a shell older than it and where
+   * only through `standingOf` (`bridge/person.ts`), since the bridge leaves its nulls out. Left out where none is set and where
    * the shell serves no pipe, which draws no row.
    */
   standingConfirmation?: unknown;
@@ -627,7 +627,7 @@ const heavySlotQuery = (client: QueryClient, repository: string, enabled: boolea
   // Told by event (NOBLOCK1): the shell answers what it holds, and its look at the slot's records comes as `ANSWERED`.
   queryFn: () => askHeld('HEAVY_SLOT', client, keys.heavySlot(repository), { repository }, readHeavySlot),
   enabled: enabled && repository !== '',
-  // A shell older than the route answers none, which reads as no heavy run, asked again at the free slot's pace.
+  // A route that answers none reads as no heavy run, asked again at the free slot's pace.
   retry: false,
   refetchInterval: (query: { state: { data?: HeavySlot | null } }) => heavySlotAgainIn(query.state.data),
 });

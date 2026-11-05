@@ -36,7 +36,7 @@ export type SetupSectionId =
 
 /**
  * A repository's git remotes with the identity each resolves to (GITAUTH1e, the git-auth design §7.3), and the presses that choose one
- * for a remote; absent on a shell older than it or where the remotes are not read, and the section is not drawn.
+ * for a remote; left out where none is set or where the remotes are not read, and the section is not drawn.
  */
 export type GitSetup = {
   remotes: GitRemoteShown[];
@@ -57,7 +57,7 @@ export type GitAccessSetup = {
 
 /**
  * This machine's heavy gates for it (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note), used where its own `daoris.gates.json` marks none, and
- * the press that sets the whole list or clears it; absent on a shell older than it, and the section is not drawn.
+ * the press that sets the whole list or clears it; left out where none is set, and the section is not drawn.
  */
 export type HeavySetup = {
   /** In the order they run; none where none is set here. */
@@ -78,7 +78,7 @@ export type HeavySetup = {
 
 /**
  * The access setup its sessions start under (AUTONOMY1d, D184 points 1-3), as the driver resolves it, and the press that changes it
- * here; absent on a shell older than it, and the section is not drawn.
+ * here; left out where none is set, and the section is not drawn.
  */
 export type AccessSetup = {
   /** Its workspace, which a value from it names. */
@@ -117,23 +117,23 @@ export type WorkSetup = {
   /** Its line as the driver resolved it, and what said so; absent where the driver has not answered. */
   line?: RepositoryLine | null;
   onLine?: (branch: string | undefined) => void;
-  /** Sets the line's policy, or with null withdraws it (`SET_LINE`'s `policy`); absent on a shell older than it, and no policy is offered. */
+  /** Sets the line's policy, or with null withdraws it (`SET_LINE`'s `policy`); left out where none is set, and no policy is offered. */
   onLinePolicy?: (policy: LandingIntegrate | null) => void;
   /**
    * Where its work is reviewed before it lands (REVIEWENV1a, D154 point 2), as the driver resolves it: its own, its
-   * workspace's, or none set; absent on a shell older than it, and no row is offered.
+   * workspace's, or none set; left out where none is set, and no row is offered.
    */
   review?: RepositoryReview | null;
   onReview?: (edit: ReviewEdit) => void;
   /**
    * Which other agent reads its work before it lands (XAGENT1a, D155 point 3), as the driver resolves it: its own, its
-   * workspace's, or none set; absent on a shell older than it, and no row is offered.
+   * workspace's, or none set; left out where none is set, and no row is offered.
    */
   opinion?: RepositoryOpinion | null;
   onOpinion?: (edit: OpinionEdit) => void;
   /**
    * How its work is committed (DOORS1b, D164's amendment points 1 and 3), as the driver resolves it: its own, its workspace's,
-   * or Daoris's default; absent on a shell older than it, and no row is offered.
+   * or Daoris's default; left out where none is set, and no row is offered.
    */
   commits?: RepositoryCommits | null;
   onCommits?: (edit: CommitEdit) => void;
@@ -141,29 +141,29 @@ export type WorkSetup = {
 
 /** The language its sessions write to the person in (LANG1c), what a helper its agent asks for does, and its standing answer (KNOWUSE1b). */
 export type SessionsSetup = {
-  /** As the driver resolved it, its workspace's by the table's name, and the table; absent on a shell older than it. */
+  /** As the driver resolved it, its workspace's by the table's name, and the table; left out where none is set. */
   language?: { resolved: RepositoryLanguage | null; inherited?: string; table: LanguageOption[]; onSet: (language: string | null) => void };
   /**
    * What a helper its agent asks for does (DOORS1b, D163 point 3), as the driver resolves it: its own, its workspace's, or
-   * Daoris's default; absent on a shell older than it, and no row is offered.
+   * Daoris's default; left out where none is set, and no row is offered.
    */
   helpers?: RepositoryHelpers | null;
   onHelpers?: (edit: HelperEdit) => void;
   /**
    * What an agent's ask to hand its session over does (MIXAGENT1c, D163 point 3), as the driver resolves it: its own, its
-   * workspace's, or Daoris's default; absent on a shell older than it, and no row is offered.
+   * workspace's, or Daoris's default; left out where none is set, and no row is offered.
    */
   handOver?: RepositoryHandOver | null;
   onHandOver?: (edit: HandOverEdit) => void;
   /** Its standing answer, the person's words and when they set them; null for none. */
   standing?: { says: string; at?: string | null } | null;
-  /** Keep a standing answer, or with null clear it; absent on a shell older than it, and nothing is offered. */
+  /** Keep a standing answer, or with null clear it; left out where none is set, and nothing is offered. */
   onStanding?: (says: string | null) => void;
 };
 
 /** Whether agents outside it read its checkout, what its sessions also write into (READ1, D107), and its rules (PERM1). */
 export type ReachSetup = {
-  /** As the driver resolved it; absent on a shell older than it. */
+  /** As the driver resolved it; left out where none is set. */
   across?: RepositoryAcross | null;
   /** What stands under a reading of its own: its workspace's, else Daoris's, which reads. */
   readAbove?: { read: boolean; source: 'workspace' | 'default' };
@@ -178,7 +178,7 @@ export type ReachSetup = {
   /**
    * The switch *Daoris may change this checkout's files* (GITAPP2b, the git-writes design §2): off by default, and on it says how many
    * sessions already run in the checkout (`running`: null where the sessions could not be read, absent while they are on their way).
-   * Absent on a shell older than it, and no row is drawn.
+   * Left out where none is set, and no row is drawn.
    */
   checkout?: { on: boolean; running?: number | null; onChange: (on: boolean) => void };
 };
