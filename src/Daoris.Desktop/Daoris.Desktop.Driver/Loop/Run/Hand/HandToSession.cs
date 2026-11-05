@@ -22,6 +22,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var (agent, selection, access, permissions, chosen) = (state.Agent, state.Selection, state.Access, state.Permissions, state.Chosen);
         var (handedQuest, stepRole, handedFrom, limitWalks) = (state.HandedQuest, state.StepRole, state.HandedFrom, state.LimitWalks);
         var tree = state.Tree;
+        // The look the tree's stage opened does not follow the flow out of it: taken in again, git's guess at the line stays asked once.
+        tree.OneLook.Reenter();
         var (opened, joinedIn, entryTree, carryingOn, answered, handsOn, inSync) = (tree.Opened, tree.JoinedIn, tree.EntryTree, tree.CarryingOn, tree.Answered, tree.HandsOn, tree.InSync);
         var (sessionId, keyed, fenced, continues) = (state.Opened.SessionId, state.Opened.Keyed, state.Opened.Fenced, state.Opened.Continues);
         var (carry, workTree, runBound, setUp) = (state.Carry, state.WorkTree, state.Bound, state.SetUp);
