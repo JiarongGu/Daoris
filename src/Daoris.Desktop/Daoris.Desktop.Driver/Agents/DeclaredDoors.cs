@@ -21,7 +21,7 @@ public static class DeclaredDoors
             $"the {declared.DeclaredBy} plugin's declaration"),
         new DoorHome(declared.ProfileVariable, declared.OwnHome, null),
         LentPart.None,
-        Known<PortRef>.Absent,
+        Known<IDoorOffers>.Absent,
         new PosturesPart(declared.Posture, null, null, null),
         Known<ISpawn>.Declared(new DeclaredSpawn(declared.Command), "the plugin's declared command"),
         Known<IDialect>.Absent,

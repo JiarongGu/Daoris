@@ -92,7 +92,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
         Assert.Equal("ended.choice-not-offered", Code(refused));
         // The list named `opus` and the set refused it: that account's `refused` reading, kept before the record ended.
-        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Offers(_home, "acp-stub", null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
 
         var ran = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
@@ -110,7 +110,7 @@ public sealed class ModelRefusalTickTests : IDisposable
             Assert.False(ServiceClient.ReadStrikes(records).ContainsKey("q1"));
         }
 
-        Assert.Null(AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-2", "opus", DateTimeOffset.UtcNow));
+        Assert.Null(AgentOffers.Offers(_home, "acp-stub", null, "account-2", DateTimeOffset.UtcNow).Session.Judge("opus"));
 
         // Its conversation record says which model was refused and on which agent, by code.
         var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events;
@@ -219,7 +219,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         var codes = refused["noteParts"]!.AsArray().Select(part => part?["code"]?.GetValue<string>()).ToList();
         Assert.Equal("account.refused-model", codes[^1]);
         Assert.DoesNotContain("account-1", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.NotNull(AgentOffers.Judge(AgentOffers.Read(_home), PipeStub.Named, null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.NotNull(AgentOffers.Offers(_home, PipeStub.Named, null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
 
         // MODELREFUSE1: the same look went on to account-2.
         var ran = service.Session("s2");

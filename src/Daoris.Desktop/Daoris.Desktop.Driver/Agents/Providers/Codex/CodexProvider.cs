@@ -32,7 +32,7 @@ internal static class CodexProvider
             // The same words and question, lent to a harness naming this door (O3-F2): a plugin's door onto `codex-acp` reads Codex's
             // by reference, while one joined to `codex` reads neither.
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
-            Known<PortRef>.Absent,
+            Known<IDoorOffers>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
             Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
             Known<IDialect>.Absent,

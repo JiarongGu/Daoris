@@ -341,7 +341,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(["account-1", "account-2"], service.Asked.Select(asked => asked["reviewer"]!["account"]!.GetValue<string>()));
         Assert.Equal(["starting", "working", "failed"], service.States("r1"));
         Assert.Equal(["starting", "working", "completed"], service.States("r2"));
-        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Offers(_home, "acp-stub", null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
         Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, "work", "reports")));
     }
 

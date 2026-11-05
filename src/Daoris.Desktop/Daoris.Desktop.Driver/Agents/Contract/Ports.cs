@@ -123,6 +123,17 @@ public interface ISettingsFile
     IReadOnlyList<string> SessionOnly { get; }
 }
 
+/// <summary>
+/// What a session on one door may carry for a model and an effort (the design §2.3, row n), the session scope of <see cref="DoorOffers"/>: the
+/// provider's settings file where it states one, extended by the efforts only a native session carries on a door that says so, and a door that
+/// states nothing carries what its open last listed on any account.
+/// </summary>
+public interface IDoorOffers
+{
+    /// <summary>The choices a session on this door offers, or null where nothing states or has listed any.</summary>
+    ChoicesOffered? Of(string home, string door, ISettingsFile? provider);
+}
+
 /// <summary>What a conversation keeps under an account's home, by the agent's version (the design §2.3).</summary>
 public interface IConversationHome
 {

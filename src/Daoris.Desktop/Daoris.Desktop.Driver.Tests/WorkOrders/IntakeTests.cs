@@ -693,7 +693,7 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("failed", refused["state"]!.GetValue<string>());
         Assert.Equal("account-1", service.Intakes[0]["profile"]!.GetValue<string>());
         Assert.StartsWith("Not started: `acp-stub` did not offer `opus`", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Offers(_home, "acp-stub", null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
         Assert.Null(service.AskOf("a1b2c3")["intake"]);
         Assert.Empty(service.Published);
         Assert.Empty(new AttentionWatch().Observe(refusedLook).Where(item => item.Kind == AttentionKind.Ended));

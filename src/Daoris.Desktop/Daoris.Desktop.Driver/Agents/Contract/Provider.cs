@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// An agent with one or more doors (AGENTPROVIDER1; the agent-provider design §2.1, §2.3): one registration of a sealed record of
 /// parts. What is a fact about another program is declared data, each fact in one place; every part is required, and a part stated
 /// absent (<see cref="Known{T}.Absent"/>) reads as today's behaviour for an agent that says nothing (D53). Row a names the parts and
-/// fills the ones today's toolchains declare; the parts whose ports a later row declares are <see cref="PortRef"/>s stated absent.
+/// fills the ones today's toolchains declare.
 /// </summary>
 /// <param name="Id">The agent's id, unique among providers and never another provider's door's.</param>
 /// <param name="Identity">Product, maker, mark, stand-in, and the plugins that declared a provider made from declarations.</param>
@@ -50,8 +50,7 @@ public sealed record Provider(
 /// <summary>
 /// A way into a provider's agent, today an adapter keeping its id (the design §2.3): its transport, its identity as its declaration
 /// says it, its home (the variable its spawn hands an account's home in, its own home and trust file, each its own), what a harness
-/// naming its id reads of it, its postures and abilities. The parts whose ports a later row declares (offers, spawn, dialect) are
-/// <see cref="PortRef"/>s stated absent.
+/// naming its id reads of it, its postures and abilities, and what a session on it may carry (<see cref="Offers"/>).
 /// </summary>
 /// <remarks>
 /// <see cref="Lent"/> is the door's own account words, which a harness naming this door's id reads; a door that gives its provider its
@@ -66,7 +65,7 @@ public sealed record AgentDoor(
     Known<ProgramFacts> Program,
     DoorHome Home,
     LentPart Lent,
-    Known<PortRef> Offers,
+    Known<IDoorOffers> Offers,
     PosturesPart Postures,
     Known<ISpawn> Spawn,
     Known<IDialect> Dialect,

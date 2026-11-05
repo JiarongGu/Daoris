@@ -764,7 +764,7 @@ internal static class ConformanceCases
     {
         var door = new AgentDoor(
             new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
-            new DoorHome(variable, true, null), LentPart.None, Known<PortRef>.Absent,
+            new DoorHome(variable, true, null), LentPart.None, Known<IDoorOffers>.Absent,
             new PosturesPart(null, null, null, null), Known<ISpawn>.Declared(new BareSpawn(), "a conformance case's provider"), Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(false, "a conformance case's provider"),

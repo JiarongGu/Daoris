@@ -134,10 +134,10 @@ public sealed class PipeModelRefusalTests : IDisposable
         var line = conclusion.Parts![^1];
         Assert.Equal(("fake", "opus"), (line.Value("agent")?.ToString(), line.Value("model")?.ToString()));
         Assert.DoesNotContain("account-1", conclusion.Note, StringComparison.Ordinal);
-        Assert.NotNull(AgentOffers.Judge(AgentOffers.Read(_home), "fake", "2.1.281", "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.NotNull(AgentOffers.Offers(_home, "fake", "2.1.281", "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
         // Only that model, on that account.
-        Assert.Null(AgentOffers.Judge(AgentOffers.Read(_home), "fake", "2.1.281", "account-1", "sonnet", DateTimeOffset.UtcNow));
-        Assert.Null(AgentOffers.Judge(AgentOffers.Read(_home), "fake", "2.1.281", "account-2", "opus", DateTimeOffset.UtcNow));
+        Assert.Null(AgentOffers.Offers(_home, "fake", "2.1.281", "account-1", DateTimeOffset.UtcNow).Session.Judge("sonnet"));
+        Assert.Null(AgentOffers.Offers(_home, "fake", "2.1.281", "account-2", DateTimeOffset.UtcNow).Session.Judge("opus"));
     }
 
     /// <summary>A run that was not refused, or that asked no model of its actor's, keeps its conclusion and writes no reading.</summary>

@@ -1,14 +1,7 @@
 namespace Daoris.Driver;
 
 // The parts of the provider contract (AGENTPROVIDER1 row a; the agent-provider design §2.3), each a plain record of declared data. A
-// part whose port arrives in a later row is a `PortRef` stated absent: row a changes nothing that runs, so it states what today's
-// toolchains declare and nothing it would have to invent.
-
-/// <summary>
-/// The name of a port a later row declares (the design §11), held in a part until then. A part stated absent reads as today's
-/// behaviour for an agent that says nothing (D53).
-/// </summary>
-public sealed record PortRef(string Name);
+// part stated absent reads as today's behaviour for an agent that says nothing (D53).
 
 /// <summary>Whether an agent may be asked to work in any repository, or only those opened to it (the design §2.3, OPENROUTER1's).</summary>
 public enum Reach

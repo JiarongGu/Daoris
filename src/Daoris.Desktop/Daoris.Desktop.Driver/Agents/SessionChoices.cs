@@ -14,16 +14,8 @@ public static class SessionChoices
     /// <summary>The choices a session on <paramref name="door"/> offers, or null where nothing states or has listed any.</summary>
     public static ChoicesOffered? Of(string home, ProviderRegistry registry, string door)
     {
-        if (registry.SettingsOf(door) is { } file)
-        {
-            var native = registry.Door(door).Transport == Transport.Native;
-            return new ChoicesOffered(file.Models, native ? [.. file.Efforts, .. file.SessionOnly] : file.Efforts);
-        }
-
-        var listed = AgentOffers.Read(home)
-            .Where(reading => string.Equals(reading.Agent, door, StringComparison.OrdinalIgnoreCase) && (reading.Models is not null || reading.Efforts is not null))
-            .OrderByDescending(reading => reading.At)
-            .FirstOrDefault();
-        return listed is null ? null : new ChoicesOffered(listed.Models ?? [], listed.Efforts ?? []);
+        // A door the registry does not hold states nothing, so what its open listed is all there is.
+        var part = registry.Doors.Any(each => string.Equals(each.Value, door, StringComparison.Ordinal)) ? registry.Door(door).Offers : default;
+        return (part.IsKnown ? part.Required : ListedOffers.Instance).Of(home, door, registry.SettingsOf(door));
     }
 }

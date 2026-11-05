@@ -25,6 +25,9 @@ public sealed record SessionOffers(IReadOnlyList<string>? Models, IReadOnlyList<
     /// <summary>No reading stands: every account is tried.</summary>
     public static SessionOffers None { get; } = new(null, null, []);
 
+    /// <summary>When the account last refused a model at an open, where it has; what a refused start names as its moment.</summary>
+    public DateTimeOffset? RefusedAt { get; init; }
+
     /// <summary>
     /// Why this account passes <paramref name="model"/> (<see cref="AgentOffers.NotOffered"/> where its list lacks it, <see cref="AgentOffers.RefusedCode"/>
     /// where the list offered it and the open refused it anyway), or null where the account is tried. A list that lacks a model is never a pass
