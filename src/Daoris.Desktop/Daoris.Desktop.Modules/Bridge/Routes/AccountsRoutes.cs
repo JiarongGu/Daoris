@@ -48,7 +48,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         var doors = new List<(string Owner, string Door, HarnessToolchain Toolchain)>();
         foreach (var name in roster.Adapters.Names)
         {
-            if (Known(roster, name) is { } toolchain) doors.Add((toolchain.Owner(name), name, toolchain));
+            if (Known(roster, name) is { } toolchain) doors.Add((roster.Adapters.OwnerOf(name), name, toolchain));
         }
 
         return new
@@ -325,7 +325,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>Each door's account owner (AGT7), the door itself where this build knows no toolchain for it.</summary>
-    public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter)?.Owner(adapter) ?? adapter;
+    public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter) is null ? adapter : roster.Adapters.OwnerOf(adapter);
 
     private static string Key(string agent, string account) => $"{agent}/{account}".ToLowerInvariant();
 
@@ -467,9 +467,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// ask it too, as the screen's own door.
     /// </summary>
     internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
-        (harnesses.Toolchain(harness)
-            ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's."))
-        .Owner(harness);
+        harnesses.Toolchain(harness) is null
+            ? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.")
+            : harnesses.Adapters.OwnerOf(harness);
 
     /// <summary>
     /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent account order</c> writes it: each name an

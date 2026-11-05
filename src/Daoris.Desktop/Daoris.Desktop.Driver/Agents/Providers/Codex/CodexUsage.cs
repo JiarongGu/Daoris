@@ -45,7 +45,7 @@ public static class CodexUsage
     public static readonly TimeSpan Fresh = TimeSpan.FromMinutes(5);
 
     /// <summary>The question Codex's door declares for its owner: Codex's own app server (usage evidence §1, §2).</summary>
-    public static UsageQuestion Question { get; } = new(
+    public static UsageQuestion Question { get; } = new CodexUsageQuestion(
         "codex",
         ["codex", "app-server"],
         [

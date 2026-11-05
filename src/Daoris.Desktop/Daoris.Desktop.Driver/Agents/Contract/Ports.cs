@@ -81,8 +81,8 @@ public interface IUsageQuestion
     /// <summary>The answers the reader was written against.</summary>
     IReadOnlyList<RecordedFrame> Recorded { get; }
 
-    /// <summary>The protocol the command speaks.</summary>
-    UsageKind Kind { get; }
+    /// <summary>The question's name as the usage history writes a reading's source.</summary>
+    string Source { get; }
 
     /// <summary>How long a reading stands before an account is asked again.</summary>
     TimeSpan Fresh { get; }

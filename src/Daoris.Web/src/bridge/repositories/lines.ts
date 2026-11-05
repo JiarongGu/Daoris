@@ -285,7 +285,7 @@ type RecoveryDropAnswer = {
 };
 
 /**
- * The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): the screen's half of `daoris-driver
+ * The person's delete of the recovery refs nothing holds (RECOVERYDROP1, D102's CLEANUP1 note): the screen's half of `daoris
  * work recovery drop`. One call per repository, in turn, each naming the refs with the commits the page showed, which the driver
  * verifies in the delete itself; a ref a holder keeps or that moved is skipped and its reason is the answer's. What it moved is asked
  * again by the state hub, as the route declares it, and never by this hook (STATEHUB1f).

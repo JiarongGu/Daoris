@@ -76,7 +76,7 @@ public sealed class CurveMoveTests : IDisposable
         {
             ["talk"] = new Talk("talk", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new UsageQuestion("talk", ["talk-agent", "usage"], [], UsageKind.Claude))),
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });
         return new HarnessRoster(adapters, Settings)
         {

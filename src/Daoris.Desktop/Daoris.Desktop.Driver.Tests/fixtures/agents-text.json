@@ -305,7 +305,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `no-push` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris-driver git access`."
+        "daoris: `no-push` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris git access`."
       ],
       "after": {}
     },

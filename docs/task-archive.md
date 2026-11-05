@@ -23249,3 +23249,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **LANDHOLD2b — the wait's cause and bound beside the button** (web): the Accept no longer waits behind a tree's hold, so the cause and the bound shown are the pass's (`GraphPasses.Bound`). → `docs/2026-11-02-parked-triage.md`, WORKFLOWCLEAN1
 
   **Outcome** 2026-11-05: BL16 and BL16b: a session is told its landing squashes from the run's land options, and a conversation in its own tree is shown to hear its process once over a stand-in harness (`ChatProcessToldProcessTests`); the Accept says the pass it waits for and its bound beside the button (`PassNote`, `GraphPasses.Bound` pinned at 20 s).
+
+## CALLTABLE2 (2026-11-05)
+
+- [x] **CALLTABLE2 — a session is never offered a tool its box refuses** (service): the call table offers `helper_ask` to Ask Daoris and an intake, and `HelperBox.cs:129-140` refuses both. Proof: the census pins the table against the box. → `docs/areas/knowledge-memory-records.md`, Contradictions 11
+
+  **Outcome** 2026-11-05: BL24: `CallTable.Unowned` refuses `helper_ask` to Ask Daoris and to an intake, as `HelperBox` does; the census `fixtures/call-table.json` agrees.

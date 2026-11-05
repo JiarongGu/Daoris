@@ -3,7 +3,7 @@
 ## What it does
 
 Daoris's git reaches code hosts as git identities of its own. It hands no credential of the person's unless the person chooses it.
-Every process Daoris starts gets its git from `GitWiring`: nothing prompts, and every remote act passes one of two doors.
+Every process Daoris starts gets its git from `GitWiring`: nothing prompts, and every remote act passes Daoris's doors.
 The ssh door carries SSH; the remote helper carries HTTP and HTTPS through a `daoris::` rewrite.
 At each act a door finds the repository, applies the identity its remote points at, and asks one judge about the act's class.
 A remote that cannot authenticate is held, and said once in *What needs you*, until something changes it.
@@ -20,17 +20,17 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 | Unit | File | Its job |
 |---|---|---|
-| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace and token variables, names the doors where laid |
+| Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace, token and the inbox's two messaging variables (each executable's entry strips them too), names the doors where laid |
 | The doors | `GitDoors.cs`, `GitCredentialDoor.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe`, `git-remote-daoris.exe` and `git-credential-daoris.exe`: class each act by its remote command, judge it, apply the identity; the third answers an identity's token to git for its own host |
 | Which repository, which address | `GitFolders.cs`, `GitRemotes.cs`, `GitRemoteRows.cs` | The repository from the act's folder; the one address reader; Setup's remote rows and what serves each |
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |
 | Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitIdentityTokens.cs`, `GitSshFiles.cs`, `GitHostKeys.cs` | Generate or import a key, add an HTTPS identity with its token and test it, set or clear an API token, Daoris's `ssh_config` and `known_hosts`, host-key compare |
 | Secrets at rest | `GitTokens.cs`, `GitPrivateFolder.cs`, `GitKeys` in `GitIdentities.cs` | `profiles/git/tokens/<id>/` (`https`, `api`) beside `profiles/git/keys/<id>/`, each folder made limited to the person's account before a byte is written |
-| Identity verbs | `GitIdentityCommand.cs` | `daoris-driver git identity` and `git use`; a widening pressed through the running window |
+| Identity verbs | `GitIdentityCommand.cs` | `daoris git identity` and `git use`; a widening pressed through the running window |
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
-| The move | `GitMove.cs`, `GitMoved.cs` | Where both doors are laid, a remote nothing serves gets no credential of the person's; the ssh door's one line |
+| The move | `GitMove.cs`, `GitMoved.cs` | Where all three doors are laid, a remote nothing serves gets no credential of the person's; the ssh door's one line |
 | Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, door or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitGrantRef.cs` | One verdict per act; a grant in `run/git/grants` bound to its address and its refs (ref, new commit, old commit where known) |
@@ -82,8 +82,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
    folder first on that transport's `PATH` and `DAORIS_GIT_IDENTITY` naming the identity: `git-credential-daoris.exe` answers
    `get` with that identity's `https` token and user for the identity's own host and nothing for any other host, and changes
    nothing on `store` or `erase`. A remote nothing serves, or no credential door laid, reads anonymously. (from D198, D241)
-9. The publish lays the doors only with `--git-doors` until D198's owed measurements pass. The deployment rehearsal always
-   lays them. (from D198)
+9. Every publish lays all three doors in `app/bin/`; no flag asks for them. The deployment rehearsal proves their layout.
+   (from D198, D241)
 10. A door finds the repository by the act's own working folder, so `git -C`, a clone or a submodule resolves for itself.
     (from D198)
 11. Under an identity the door removes the person's authentication inputs: helpers, extra headers, cookie files, certificate
@@ -100,9 +100,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **The move and the holds**
 
-16. A home has moved where both doors lie in the install's `app/bin/` (`GitMove.Moved`); no mark is kept. Then a remote
-    nothing serves gets no credential of the person's: SSH is held `no-identity` before it connects; HTTPS reads anonymously.
-    Without the doors laid its git is as it was. Nothing is pre-applied. (from D198, D232, D233)
+16. A home has moved where all three doors lie in the install's `app/bin/` (`GitMove.Moved`, `GitMove.Missing` names the
+    absent); no mark is kept. A moved install reaches a host with its identity's key or token, or with none: a remote nothing
+    serves is held `no-identity` before SSH connects, and HTTPS reads anonymously. A home with no install beside it (a run
+    from source), or an install missing a door (its fetch is not offered, the words naming the door), is not moved and its git
+    is as it was. Nothing is pre-applied. (from D198, D232, D233, D241)
 17. The move is one *What needs you* row per workspace: *Set up identity…* or *Keep using my own sign-ins…*. A held row
     holds work where a session of one of its repositories runs or is parked. (from D198)
 18. `own` is a widening. It is confirmed before it is written, on the page or in the window for a terminal's press. No
@@ -260,7 +262,7 @@ verifying RSA and ECDSA keys, never ed25519), `GitTlsHost` (`GitHttpBackendHost`
 and `PullRequestApiHost` (GitHub's and Azure DevOps' pull-request calls, admitting a test's token). Each counts what it was asked.
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
-`modules`, `service`, `web-unit`, `web-types`, and `deployment` (the rehearsal lays `--git-doors`). Visible words need both
+`modules`, `service`, `web-unit`, `web-types`, and `deployment` (the rehearsal publishes the install with all three doors). Visible words need both
 catalogues (`i18n:check`).
 
 ## Contradictions
@@ -280,8 +282,8 @@ catalogues (`i18n:check`).
 
 - **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
-- **GITAUTH1b:** the doors' classes run with the pinned MinGit beside the runner's git (G1's rest); then `--git-doors` becomes the
-  default (G6).
+- **GITAUTH1b:** the doors' classes run with the pinned MinGit beside the runner's git (G1's rest; the toolchain has no pinned
+  MinGit fetch yet).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sync card's screen door. The browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241).
 - **GITAUTH1h:** the install, seen (the owner).

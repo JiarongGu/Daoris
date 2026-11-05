@@ -173,9 +173,14 @@ public static class CallTable
                             + "your answer to the session you serve.")
                 : null;
 
-    /// <summary>A memory change refused to a work that has no repository of its own (the memory coordinator design §2).</summary>
+    /// <summary>
+    /// A memory change refused to a work that has no repository of its own (the memory coordinator design §2), and a helper's ask, which
+    /// <c>HelperBox</c> refuses to the same works: the table offers a session nothing its box refuses.
+    /// </summary>
     private static CallRefusal? Unowned(string name, string who) =>
-        MemoryChanges.Contains(name)
+        name == "helper_ask"
+            ? Forbidden($"`helper_ask` is refused to {who}: it works in no repository of its own, so there is no helper to ask. Nothing was done.")
+        : MemoryChanges.Contains(name)
             ? Forbidden($"`{name}` is refused to {who}: it works in no repository of its own, so it changes no repository's memory. Ask an "
                         + "entry's owner with memory_propose. Nothing was kept.")
             : null;

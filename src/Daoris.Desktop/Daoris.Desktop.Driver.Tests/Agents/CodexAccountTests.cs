@@ -103,8 +103,12 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(["auth", "login"], roster.AccountToolchain("claude-code-acp")!.LoginArguments!);
         Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Value.Name);
         Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Value.Name);
-        Assert.Null(AdapterSet.Built().Holder("claude-code"));
-        Assert.NotNull(AdapterSet.Built().Holder("codex"));
+        var built = AdapterSet.Built();
+        Assert.Same(CodexAccounts.Toolchain, built.ToolchainOf("codex"));
+        Assert.Null(built.ToolchainOf("nobody"));
+        Assert.Equal(CodexAccounts.Agent, built.OwnerOf("codex-acp"));
+        Assert.Equal("claude-code", built.OwnerOf("claude-code-acp"));
+        Assert.Equal(CodexAccounts.Agent, built.Registry.ProviderOf(new DoorId("codex-acp")).Value);
     }
 
     /// <summary>

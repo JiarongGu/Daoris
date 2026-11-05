@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// How work moves, over the bridge (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): `WORKFLOW_CURRENT` answers a
-/// repository's or a workspace's routes from this machine's driver file, its plugins and its registry as `daoris driver workflow show`
+/// repository's or a workspace's routes from this machine's driver file, its plugins and its registry as `daoris workflow show`
 /// reads them; a repository the registry does not hold read as in no workspace and said so; a workspace's with each of its repositories,
 /// following it or not; and the one refusal.
 /// </summary>

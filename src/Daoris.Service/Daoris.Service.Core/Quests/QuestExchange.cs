@@ -211,6 +211,10 @@ public sealed class QuestExchange
         string id, DateTimeOffset now, CancellationToken ct = default, bool askGoesToo = false) =>
         deletes.DeleteAsync(id, now, ct, askGoesToo);
 
+    /// <summary>Remove a closed quest, tombstoned where it travelled; see <see cref="QuestDeletes.RemoveClosedAsync"/>.</summary>
+    public Task<QuestDeleteOutcome> RemoveClosedAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
+        deletes.RemoveClosedAsync(id, now, ct);
+
     /// <summary>Which of the candidates may be deleted; see <see cref="QuestDeletes.DeletableAsync"/>.</summary>
     public Task<IReadOnlySet<string>> DeletableAsync(IEnumerable<Quest> candidates, CancellationToken ct = default) =>
         deletes.DeletableAsync(candidates, ct);

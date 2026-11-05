@@ -3445,7 +3445,7 @@
       },
       "exit": 0,
       "out": [
-        "the workspace `work`, for kind `feature` (Feature), follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "the workspace `work`, for kind `feature` (Feature), follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Chosen: since nothing names a workflow.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
@@ -3470,7 +3470,7 @@
       },
       "exit": 0,
       "out": [
-        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → `docs-to-pr`, chosen by the workspace `work` for Documentation",
@@ -3508,7 +3508,7 @@
       },
       "exit": 0,
       "out": [
-        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Chosen: since nothing names a workflow.",
         "  `design` is not a kind the workspace `work` declares, so it is read as none.",
         "  Its start node routes the work that comes here:",
@@ -3546,7 +3546,7 @@
       },
       "exit": 0,
       "out": [
-        "`notes-site` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "`notes-site` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
         "    landed work → no verification here"
@@ -3580,7 +3580,7 @@
       },
       "exit": 0,
       "out": [
-        "`stray` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "`stray` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  `stray` is not in the registry, so it is read as in no workspace: the `default` workspace's choices reach it.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
@@ -3693,7 +3693,7 @@
       "before": null,
       "exit": 0,
       "out": [
-        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  The registry was not read (the service did not answer); no choice here is set for a workspace, so none reaches it.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
@@ -3713,7 +3713,7 @@
       "before": null,
       "exit": 0,
       "out": [
-        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "the workspace `work` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
         "    landed work → no verification here"
@@ -4050,7 +4050,7 @@
       },
       "exit": 0,
       "out": [
-        "`web-app` follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.",
+        "`web-app` follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.",
         "  Its start node routes the work that comes here:",
         "    the default → no workflow, since nothing names a workflow",
         "    kind `docs` (Documentation) → no workflow, since nothing names a workflow",

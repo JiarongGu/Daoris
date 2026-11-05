@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris driver workflow</c> says (PUSH1f2b, D194 point 6; D157, the workflow design §4.7): a Current drawn in words, a named
+/// What <c>daoris workflow</c> says (PUSH1f2b, D194 point 6; D157, the workflow design §4.7): a Current drawn in words, a named
 /// step as <c>show</c> draws it, which level chose a workflow and the landed route, the door a version was saved through, a graph
 /// version, and Current copied into a version's steps. The words the CLI's <c>workflowdoor.ts</c> and <c>workflows.ts</c> said, kept
 /// by <c>fixtures/driver-workflows-text.json</c>; the command (<see cref="DriverWorkflowsCommand"/>) says them on both paths.

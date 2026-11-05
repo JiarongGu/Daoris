@@ -435,7 +435,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
 
         // An abandon's press with no reason is the verb's own sentence, exit 1, and nothing is written.
         var reasonless = SaidOf(await AnswerAsync(module, "WORK_ABANDON", new { ask = "a1", said = true }));
-        Assert.Equal(($"daoris-driver: {WorkAbandoning.NeedsReason}", 1), (Assert.Single(reasonless.Out), reasonless.Code));
+        Assert.Equal(($"daoris: {WorkAbandoning.NeedsReason}", 1), (Assert.Single(reasonless.Out), reasonless.Code));
         Assert.False(File.Exists(new AbandonRecord(Home).FilePath));
         Assert.False((await AnswerAsync(module, "WORK_RESUME", new { ask = "a1" })).TryGetProperty("said", out _));
     }
@@ -454,7 +454,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         var (lines, code) = SaidOf(await AnswerAsync(module, "WORK_PAUSE", new { ask = "a1", said = true }));
 
         Assert.Equal(0, code);
-        Assert.StartsWith("daoris-driver: ", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("daoris: ", lines[0], StringComparison.Ordinal);
         Assert.Equal("w0rk1ng0", DriverConfig.Load(DriverConfigPath).PausedAsk("a1")!.Stopped["q2"]);
         log.Dispose();
         var line = Assert.Single(Directory.GetFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),

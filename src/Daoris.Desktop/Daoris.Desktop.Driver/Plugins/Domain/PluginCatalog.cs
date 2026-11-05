@@ -25,7 +25,7 @@ namespace Daoris.Driver;
 /// the home through that helper, which does the I/O, so this file names none itself.</para>
 ///
 /// <para>The CLI's <c>plugins.ts</c> was this class's twin and read the same folder by the same rules, until it left with
-/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f, D194): <c>daoris-driver plugin</c> reads through here. Three fields have readers of
+/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f, D194): <c>daoris plugin</c> reads through here. Three fields have readers of
 /// their own, each held by its table: the icon
 /// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
 /// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>

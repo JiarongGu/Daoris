@@ -65,7 +65,7 @@ public sealed class DriverLoopLockTests : Bridge
         await Task.Delay(500);
         Assert.False(holding.IsCompleted);
         var said = Assert.Single(Said());
-        Assert.Contains("headless `daoris-driver`", said);
+        Assert.Contains("headless Daoris", said);
         Assert.Contains($"pid {Environment.ProcessId}", said);
 
         // The headless loop stops, and lets its home go.

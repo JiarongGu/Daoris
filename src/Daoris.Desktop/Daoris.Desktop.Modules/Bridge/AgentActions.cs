@@ -159,7 +159,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null,
         IReadOnlyList<string?>? joins = null, string? name = null, SignInWay way = SignInWay.Browser, bool switching = false)
     {
-        var owner = toolchain.Owner(harness);
+        var owner = _loop.Harnesses.Adapters.OwnerOf(harness);
         var key = $"{harness}:{action}";
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var signsIn = action is "login" or "login-new";
@@ -397,7 +397,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         }
 
         var signedIn = signingIn ? report?.Profiles.FirstOrDefault(each => each.Name == profile) : null;
-        var owner = _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness;
+        var owner = _loop.Harnesses.Adapters.OwnerOf(harness);
         await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
         {
             Harness = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
@@ -416,7 +416,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
             // Whether a sign-in to another account left one behind: it does only when it finished.
             Kept = action == "login-new" && profile is not null
                 ? Directory.Exists(HarnessSettings.ProfileHome(
-                    _loop.Harnesses.Home, _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile))
+                    _loop.Harnesses.Home, _loop.Harnesses.Adapters.OwnerOf(harness), profile))
                 : (bool?)null,
             // Whether the person's *Cancel* stopped it (SIGNIN1), so its end is no failure to say: the page closes its panel.
             Cancelled = life?.Cancelled ?? false,

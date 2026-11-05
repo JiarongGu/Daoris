@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// FINDDAORIS1 (D171 point 1): the desktop leaves the address of the service it holds or adopted in its home while it runs,
-/// naming its own process, and takes it away at its clean exit, so a terminal's <c>daoris-driver</c> finds the Daoris that runs.
+/// naming its own process, and takes it away at its clean exit, so a terminal's <c>daoris</c> finds the Daoris that runs.
 /// </summary>
 public sealed class DriverLoopAddressTests : Bridge
 {

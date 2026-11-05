@@ -133,6 +133,11 @@ one job each, checked by `verify`.
     The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
 31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
     and the loser is kept as a conflict for a person. A take claims by push, waiting 15 seconds at most. (from D68, D69)
+    A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
+    by one remover, `QuestClosedRemoval`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
+    an open or a closed quest, never a taken one), simply gone where it never left. The home migration's `closed-quests` step
+    clears the closed six-character quests the same way; an open one stays until it closes, and the same words published again
+    make a new quest.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
     transcript or private content. (from D47)
@@ -213,9 +218,8 @@ Knowledge view and session memory; `deployment` for the shared host.
 9. D21 and D47 (people sign in to a shared host with OIDC) vs the service, which has no OIDC code. The code is today's truth.
 10. D30 (the web's primary view is convergence) vs `src/Daoris.Web/src/knowledge/modes.ts:8,18-21` (Search first and default).
     The code reads right.
-11. D212 point 3 (Ask Daoris refused `helper_ask`) and D230's CONTEXTONE1d2 note (a session is listed only what it may call) vs
-    `Mcp/CallTable.cs:68-73,137-139` and `fixtures/call-table.json:43-44`, which serve `helper_ask` to Ask Daoris and an intake
-    that `Core/Sessions/HelperBox.cs:129-140` refuses. The refusal reads right; the listing is a defect.
+11. (Resolved.) `Mcp/CallTable.cs` (`Unowned`) refuses `helper_ask` to Ask Daoris and an intake, as `Core/Sessions/HelperBox.cs`
+    does, and `fixtures/call-table.json` pins both columns without it.
 12. D22 (depend on released siblings, never a working tree) vs `src/Daoris.Service/Directory.Packages.props:19-22` (a local
     Lyntai build until its next release). The code is today's truth.
 13. D21 (`local/` a hard exclusion in shared mode) vs `Core/Knowledge/DisclosurePolicy.cs:17-25` (no path rule): `local/` stays

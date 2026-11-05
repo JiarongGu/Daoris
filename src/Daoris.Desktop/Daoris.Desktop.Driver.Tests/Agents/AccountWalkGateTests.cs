@@ -24,7 +24,7 @@ public sealed class AccountWalkGateTests : IDisposable
     /// <summary>A start's patience for its account's lock here, where the roster's own is thirty seconds.</summary>
     private static readonly TimeSpan Short = TimeSpan.FromMilliseconds(300);
 
-    private static readonly UsageQuestion Question = new("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
+    private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-walk-gate-" + Guid.NewGuid().ToString("N")[..8]);
 

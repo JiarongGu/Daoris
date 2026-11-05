@@ -48,6 +48,27 @@ public sealed partial class HolderKeyStripTests
         Assert.Single(entries, entry => Code(File.ReadAllText(entry)).Contains("HolderKey.Take();", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// EVENTHOOK1g (the event hook design §6.3): every entry removes both messaging variables, by the shared strip or by name, and a start
+    /// a parent's session handed them gets neither.
+    /// </summary>
+    [Fact]
+    public void Each_entry_and_each_start_removes_the_two_messaging_variables()
+    {
+        foreach (var entry in Entries())
+        {
+            var code = File.ReadAllText(entry);
+            var stripped = code.Contains("HolderKey.Strip();", StringComparison.Ordinal) || code.Contains("HolderKey.Take();", StringComparison.Ordinal)
+                || ChildMarks.MessagingVariables.All(name => code.Contains($"SetEnvironmentVariable(\"{name}\", null)", StringComparison.Ordinal));
+            Assert.True(stripped, $"{entry} leaves a messaging variable in its environment");
+        }
+
+        var started = new ProcessStartInfo("git") { UseShellExecute = false, CreateNoWindow = true };
+        foreach (var name in ChildMarks.MessagingVariables) started.Environment[name] = "inherited";
+        GitWiring.Hand(started);
+        Assert.All(ChildMarks.MessagingVariables, name => Assert.False(started.Environment.ContainsKey(name), name));
+    }
+
     /// <summary>Every start's seams drop a key a start inherited or was handed, and the holder's terminal alone adds it back.</summary>
     [Fact]
     public void Every_start_s_hand_drops_the_key()

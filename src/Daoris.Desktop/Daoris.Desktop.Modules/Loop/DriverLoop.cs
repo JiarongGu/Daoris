@@ -493,7 +493,7 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// Leave the service's address in the home, naming this process (FINDDAORIS1, D171 point 1): a terminal outside Daoris's
-    /// own panel is handed no variable, and a <c>daoris-driver</c> the install carries reads where the service is from here.
+    /// own panel is handed no variable, and a <c>daoris</c> the install carries reads where the service is from here.
     /// Once while it runs; <see cref="Stop"/> takes it away. Not written is not a failure: a terminal then says Daoris is not
     /// running, and the window runs on.
     /// </summary>

@@ -31,7 +31,8 @@ public static class QuestLog
         QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
         QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
-        QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open },
+        // An open quest by the person's delete, a closed one by the closed quest's remover (QuestClosedRemoval): a taken one is somebody's work.
+        QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open or QuestStatus.Done or QuestStatus.Declined },
         // A yes only while a departure or its evidence holds the done (DRIFT1d, EVID1a): a second machine's yes is the same yes,
         // never a move. A review's hold is the person's verdict's to lift, never a yes's (REVIEWENV1b, D154 point 9).
         QuestOperationKind.Accepted => quest?.Hold is QuestHold.Departed or QuestHold.EvidenceUnread or QuestHold.EvidenceMissing,

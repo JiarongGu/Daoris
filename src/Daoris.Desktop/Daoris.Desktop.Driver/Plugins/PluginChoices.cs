@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A plugin's operation refusing by one named check (PUSH1f2f, D194 point 4): the check, its sentence, and the facts a page's catalogue
-/// fills it with. <see cref="PluginCodes"/> gives each check the code the route and <c>daoris-driver plugin</c> both say it in.
+/// fills it with. <see cref="PluginCodes"/> gives each check the code the route and <c>daoris plugin</c> both say it in.
 /// </summary>
 public sealed class PluginRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
 {
@@ -49,7 +49,7 @@ public static class PluginCodes
 }
 
 /// <summary>
-/// The routes <c>daoris-driver plugin</c> sends while Daoris runs (PUSH1f2f, D194 point 5): the Plugins place's presses, code that runs
+/// The routes <c>daoris plugin</c> sends while Daoris runs (PUSH1f2f, D194 point 5): the Plugins place's presses, code that runs
 /// in the driver, so each is the person's; and the one verb no route takes, with why it acts alone (D171's PUSH1f note, kept by D194
 /// point 5): the CLI's <c>PLUGIN_VERBS</c>, now this program's. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>

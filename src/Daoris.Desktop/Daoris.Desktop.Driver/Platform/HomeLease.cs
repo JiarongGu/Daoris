@@ -38,7 +38,7 @@ public sealed record LeaseHolder(LeaseKind Kind, int Pid, DateTimeOffset Since, 
         Kind switch
         {
             LeaseKind.Desktop => "the desktop",
-            LeaseKind.Headless => "a headless `daoris-driver`",
+            LeaseKind.Headless => "a headless Daoris",
             LeaseKind.Migration => "the desktop's first-start move of an older home",
             LeaseKind.Swap => "the launcher's update of the application",
             _ => What is { Length: > 0 } words ? $"a terminal's `{words}`" : "a terminal's verb",

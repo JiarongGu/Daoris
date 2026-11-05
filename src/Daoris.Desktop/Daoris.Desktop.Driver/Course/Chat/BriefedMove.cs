@@ -349,7 +349,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
         context.Output?.Append(sessionId, went.Text!);
         context.Events.Keep(sessionId, went, say: null);
-        return new StartedFrom(to, true, null, $"`{sessionId}` goes on in conversation `{to}`, a fresh start of its actor, with your words.");
+        return new StartedFrom(to, true, null, $"`{sessionId}` goes on in conversation `{to}`, a fresh start of its role, with your words.");
     }
 
     /// <summary>

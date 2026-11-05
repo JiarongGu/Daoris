@@ -115,7 +115,7 @@ internal static class AgentLongCommand
         }
 
         // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
-        var owner = toolchain.Owner(name);
+        var owner = roster.Adapters.OwnerOf(name);
         if ((toolchain.AccountOf is null ? toolchain : roster.AccountToolchain(name))?.KeyVariable is not { Length: > 0 })
         {
             throw new AgentWords($"`{name}` takes no API key from Daoris — sign in with its own login instead.");

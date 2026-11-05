@@ -46,7 +46,7 @@ public static class QuestDoneCommand
     public static async Task<int> RunAsync(QuestDoneAsk ask, ServiceClient service, TextWriter output, CancellationToken ct = default)
     {
         var (ok, message) = await service.PersonDoneAsync(ask.Quest, ask.Note, ct).ConfigureAwait(false);
-        output.WriteLine($"daoris-driver: {message}");
+        output.WriteLine($"daoris: {message}");
         // A refusal (a closed quest, no such quest) is an answer, not a tool error.
         return ok ? 0 : 1;
     }

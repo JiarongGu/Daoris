@@ -18,17 +18,17 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
 {
     /// <summary>
     /// The family of <paramref name="name"/> as <paramref name="adapters"/> declares it: its toolchain where the set carries it,
-    /// else the agent a door runs as where the set declares one (<see cref="AdapterSet.Holder"/>), else an owner of its own
+    /// else the agent a door runs as where the set declares one (<see cref="AdapterSet.ToolchainOf"/>), else an owner of its own
     /// name with no maker.
     /// </summary>
     public static AgentFamily Of(AdapterSet adapters, string name)
     {
         var given = name.Trim();
         var carried = adapters.Names.FirstOrDefault(each => string.Equals(each, given, StringComparison.OrdinalIgnoreCase));
-        var toolchain = carried is not null ? adapters.Resolve(carried).Toolchain : adapters.Holder(given);
+        var toolchain = adapters.ToolchainOf(carried ?? given);
         var agent = carried ?? given;
         return new AgentFamily(
-            agent, toolchain?.Owner(agent) ?? agent, Declared(toolchain?.Product), Declared(toolchain?.Maker),
+            agent, adapters.OwnerOf(agent), Declared(toolchain?.Product), Declared(toolchain?.Maker),
             carried is null ? null : adapters.DeclaredBy(carried));
     }
 

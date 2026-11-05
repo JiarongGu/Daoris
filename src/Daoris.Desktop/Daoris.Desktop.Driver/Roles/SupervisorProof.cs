@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Stripped everywhere else</b>: every Daoris executable removes the variable from its own environment at its entry
 /// (<see cref="Strip"/>), before anything else, so no start it builds can copy it; and every start's environment drops it
-/// (<see cref="GitWiring.Removed"/>). The verb is the one reader: <c>daoris-driver</c> takes it into memory first and then removes it
+/// (<see cref="GitWiring.Removed"/>). The verb is the one reader: <c>daoris</c> takes it into memory first and then removes it
 /// (<see cref="Take"/>), and only <c>sessions supervise</c> reads what it took.</para>
 /// </remarks>
 public static class HolderKey
@@ -42,9 +42,14 @@ public static class HolderKey
 
     /// <summary>
     /// A Daoris executable's first act (§2.2): the variable taken out of this process's environment, so no start it builds afterwards
-    /// copies it, whatever that start does with its own block.
+    /// copies it, whatever that start does with its own block. The inbox's two messaging variables leave with it
+    /// (<see cref="ChildMarks.MessagingVariables"/>).
     /// </summary>
-    public static void Strip() => Environment.SetEnvironmentVariable(Variable, null);
+    public static void Strip()
+    {
+        Environment.SetEnvironmentVariable(Variable, null);
+        foreach (var name in ChildMarks.MessagingVariables) Environment.SetEnvironmentVariable(name, null);
+    }
 
     /// <summary>
     /// The verb's first act: the variable read into memory, then removed from the environment as <see cref="Strip"/> removes it. Only

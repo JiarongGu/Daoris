@@ -303,7 +303,7 @@ public sealed class WorkPausingTests : IDisposable
         var resumed = await WorkCommand.RunAsync(new WorkAsk(scope, "resume", id), World(service), output);
 
         Assert.Equal((1, 1), (paused, resumed));
-        Assert.Contains($"daoris-driver: {said}", output.ToString());
+        Assert.Contains($"daoris: {said}", output.ToString());
         Assert.False(File.Exists(ConfigPath));
     }
 
@@ -459,7 +459,7 @@ public sealed class WorkPausingTests : IDisposable
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, exit);
         Assert.StartsWith(
-            "daoris-driver: paused ask #a1: nothing of it starts on this machine until you resume it — daoris ask resume a1\n", said);
+            "daoris: paused ask #a1: nothing of it starts on this machine until you resume it — daoris ask resume a1\n", said);
         Assert.Contains("  stopped w0rk1ng0 on #q2: its tree keeps what it wrote", said);
         Assert.Contains("  left p4rk3d00 on #q3 waiting on you", said);
         Assert.Contains("  its intake 1ntake00 keeps reading", said);

@@ -96,7 +96,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </summary>
     public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
 
-    internal static string? CoolingAgent(ISessionAdapter resolved) => RosterCooling.CoolingAgent(resolved);
+    internal string? CoolingAgent(ISessionAdapter resolved) => Cooling.CoolingAgent(resolved);
 
     /// <inheritdoc cref="RosterCooling.LimitsOf"/>
     public LimitWords? LimitsOf(string adapter) => Cooling.LimitsOf(adapter);

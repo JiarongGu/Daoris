@@ -2826,7 +2826,7 @@ const crossingAfter = readingOf('default');
 check(
   '…and with `--yes` it clears the crossing from machine a: no quest, no copy of b’s record, no kept file, and a reading one quest and one copy lighter',
   crossingCleared.code === 0
-    && crossingCleared.out.includes(`daoris-driver: cleared #${crossingId} from this machine: 1 quest and 1 teammate's copy, `)
+    && crossingCleared.out.includes(`daoris: cleared #${crossingId} from this machine: 1 quest and 1 teammate's copy, `)
     && crossingCleared.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
     && (await questOn(crossingId)) === undefined
     && !(await recordsOn()).some((s) => s.quest === crossingId)
@@ -2897,7 +2897,7 @@ const forgottenCleared = clearVerb(`quest clear ${forgottenId} --yes`);
 check(
   'machine a clears it with `--yes`, forgotten here since the remote numbered it',
   forgottenCleared.code === 0
-    && forgottenCleared.out.includes(`daoris-driver: cleared #${forgottenId} from this machine: 1 quest, `)
+    && forgottenCleared.out.includes(`daoris: cleared #${forgottenId} from this machine: 1 quest, `)
     && forgottenCleared.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
     && (await questOn(forgottenId)) === undefined,
   `${forgottenCleared.out}\n${await clearedWhere(forgottenId)}`,
@@ -2966,7 +2966,7 @@ const auroraListed = clearVerb('history clear --workspace aurora');
 check(
   '`daoris history clear --workspace aurora` lists that quest to take, names no remote, and changes nothing',
   auroraListed.code === 0
-    && auroraListed.out.includes("daoris-driver: clearing aurora's finished history would take 1 quest, ")
+    && auroraListed.out.includes("daoris: clearing aurora's finished history would take 1 quest, ")
     && auroraListed.out.includes(`  takes #${neverLeftId}: 1 quest, `)
     && !auroraListed.out.includes('the remote for aurora')
     && (await questOn(neverLeftId))?.status === 'Declined',
@@ -2978,7 +2978,7 @@ const auroraAfter = readingOf('aurora');
 check(
   '…and with `--yes` it simply goes: the quest gone, nothing forgotten, and the reading keeps no closed quest',
   auroraCleared.code === 0
-    && auroraCleared.out.includes("daoris-driver: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest, ")
+    && auroraCleared.out.includes("daoris: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest, ")
     && !auroraCleared.out.includes('forgotten here')
     && (await questOn(neverLeftId)) === undefined
     && auroraAfter.plan?.reading?.quests === 0 && (auroraAfter.plan?.units ?? ['?']).length === 0,
@@ -4239,7 +4239,7 @@ check(
   '`daoris tree clean --workspace <name>` lists that workspace’s session branches alone, and its press carries the workspace',
   toolsListed.code === 0 && /goes\s+foundry\s+daoris\/s-rehearse-tools\s+nothing beyond/.test(toolsListed.out)
     && !branchRow('newcomer').test(toolsListed.out)
-    && toolsListed.out.includes('`daoris-driver trees clean --workspace tools --yes` removes them')
+    && toolsListed.out.includes('`daoris tree clean --workspace tools --yes` removes them')
     && defaultListed.code === 0 && /goes\s+newcomer\s+daoris\/s-rehearse-default\s+nothing beyond/.test(defaultListed.out)
     && !branchRow('foundry').test(defaultListed.out),
   toolsListed.out + defaultListed.out,
@@ -5719,7 +5719,7 @@ check(
     && declaredLocal.out.includes('Before work here lands, it is shown to you in `local` and waits for you to say it is right.')
     && declaredLocal.out.includes(`shows it in Daoris's browser at \`${REVIEW_LOCAL}\`; your own servers and processes are not touched.`)
     && declaredLocal.out.includes("`docs/reviewing-locally.md` is in `newcomer`'s checkout here.")
-    && declaredLocal.out.includes('`daoris-driver quest review <quest> reviewed`'),
+    && declaredLocal.out.includes('`daoris quest review <quest> reviewed`'),
   `${reviewLanding.out}\n${declaredLocal.out}`,
 );
 
@@ -5806,7 +5806,7 @@ check(
   heldLanding.code === 1
     && heldLanding.out.includes(`trees: Waits for your review in \`dev\`: set-up step \`#${devStep?.id}\` showed it at \`${shownTip.slice(0, 8)}\`, `
       + `at <${REVIEW_DEV}/report>`)
-    && heldLanding.out.includes(`\`daoris-driver quest review ${devStep?.id} reviewed\``)
+    && heldLanding.out.includes(`\`daoris quest review ${devStep?.id} reviewed\``)
     && landedBranches() === '',
   heldLanding.out,
 );
@@ -5819,9 +5819,9 @@ const notYetKept = (await reviewQuests()).find((q) => q.id === devStep?.id)?.ver
 check(
   '`daoris quest review … not-yet` prints what was shown, keeps the words, and holds them for the step’s session',
   notYet.code === 0
-    && notYet.out.includes(`daoris-driver: set-up step \`#${devStep?.id}\` showed it in \`dev\` at \`${shownTip.slice(0, 8)}\`, said by session ${devStepRecord?.id}`)
+    && notYet.out.includes(`daoris: set-up step \`#${devStep?.id}\` showed it in \`dev\` at \`${shownTip.slice(0, 8)}\`, said by session ${devStepRecord?.id}`)
     && /held: the same session goes on with this when a driver next runs on this machine/.test(notYet.out)
-    && notYet.out.includes(`daoris-driver: the gate: it waits for the set-up \`#${devStep?.id}\` shows next, in \`dev\`.`)
+    && notYet.out.includes(`daoris: the gate: it waits for the set-up \`#${devStep?.id}\` shows next, in \`dev\`.`)
     && notYetHeld?.said?.[0]?.text === NOT_YET && notYetKept?.said === 'not-yet' && notYetKept.words === NOT_YET,
   `${notYet.out}\n${JSON.stringify(notYetHeld)}\n${JSON.stringify(notYetKept)}`,
 );
@@ -5863,7 +5863,7 @@ const reviewedSaid = reviewDrive(`quest review ${devStep?.id} reviewed "${REVIEW
 check(
   '`daoris quest review … reviewed` answers the newest set-up, and says the work up to its commit may land',
   reviewedSaid.code === 0 && reviewedSaid.out.includes(`showed it in \`dev\` at \`${correctedTip.slice(0, 8)}\``)
-    && reviewedSaid.out.includes(`daoris-driver: the gate: work up to \`${correctedTip.slice(0, 8)}\` in \`newcomer\` may land`),
+    && reviewedSaid.out.includes(`daoris: the gate: work up to \`${correctedTip.slice(0, 8)}\` in \`newcomer\` may land`),
   reviewedSaid.out,
 );
 
@@ -5925,7 +5925,7 @@ check(
   'work no set-up step shows waits on its repository’s rule at the landing door, and the plan names the skip',
   workspaceRule.code === 0 && noneRun.code === 0 && noneRecord?.state === 'completed' && nonePlan.code === 0
     && nonePlan.out.includes('Waits for your review in `local`: nothing shows it there yet: no set-up step for `newcomer` is in its chain. '
-      + `\`daoris-driver quest review ${noneQuestId} skip "…"\` lets it land without one.`),
+      + `\`daoris quest review ${noneQuestId} skip "…"\` lets it land without one.`),
   `${workspaceRule.out}\n${noneRun.out}\n${nonePlan.out}`,
 );
 

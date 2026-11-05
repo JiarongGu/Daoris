@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of <c>daoris-driver driver</c> read (PUSH1f2a, PUSH1f2b; FOUNDATION1 mod-iii): the operands, the flags and the numbers a
+/// The words of <c>daoris driver</c> read (PUSH1f2a, PUSH1f2b; FOUNDATION1 mod-iii): the operands, the flags and the numbers a
 /// verb takes from its arguments, in the CLI's own reading, which the settings' own verbs and the verbs the subdomains above own
 /// (<see cref="ChoiceVerb"/>) read alike.
 /// </summary>

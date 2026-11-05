@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// One table, this suite's tests' <c>fixtures/workflow-named.json</c>, cell for cell, every sentence and every digest included
 /// (<c>WorkflowNamedTests</c>); the CLI's twin, <c>namedworkflows.ts</c>, left with the driver family's TypeScript (PUSH1f2b), and
-/// <c>daoris driver workflow</c> is <see cref="DriverWorkflowsCommand"/>.
+/// <c>daoris workflow</c> is <see cref="DriverWorkflowsCommand"/>.
 /// </remarks>
 public static class WorkflowNamed
 {

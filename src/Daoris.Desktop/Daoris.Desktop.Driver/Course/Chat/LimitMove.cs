@@ -394,7 +394,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
             return new StartedFrom(to, true, null, elsewhere is null
                 ? $"`{sessionId}` went on in conversation `{to}` on the next account, handed Daoris's brief and your words."
-                : $"`{sessionId}` went on in conversation `{to}` with {onto}, its actor's next choice, handed Daoris's brief and your words.");
+                : $"`{sessionId}` went on in conversation `{to}` with {onto}, its role's next choice, handed Daoris's brief and your words.");
         }
         finally
         {

@@ -153,6 +153,28 @@ public sealed class ProvidersBuiltTests
         }
     }
 
+    /// <summary>
+    /// Codex's limit words and usage question are provider <c>codex</c>'s and its built door reads them through it (row d), on the list
+    /// and on the registry over the built set; a harness naming <c>codex</c> is still lent neither, one naming <c>codex-acp</c> both.
+    /// </summary>
+    [Fact]
+    public void Codex_s_limit_words_and_usage_question_are_the_agent_s_and_its_door_reads_them_through_it()
+    {
+        var door = new DoorId("codex-acp");
+        foreach (var registry in new[] { new ProviderRegistry(Providers.Built(), []), ProviderRegistry.Of(AdapterSet.Built()) })
+        {
+            var codex = registry.Provider("codex");
+            Assert.Same(CodexLimits.Words, codex.Tables.Required.Limits);
+            Assert.Same(CodexUsage.Question, codex.Usage.Required.Question);
+            Assert.Same(CodexLimits.Words, registry.LimitsOf(door));
+            Assert.Same(CodexUsage.Question, registry.UsageOf(door));
+            Assert.Null(codex.Lent.Required.Tables.Limits);
+            Assert.Null(codex.Lent.Required.Usage.Question);
+            Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Lent.Tables.Limits);
+            Assert.Same(CodexUsage.Question, registry.Door("codex-acp").Lent.Usage.Question);
+        }
+    }
+
     /// <summary>Old against new through the shim: every member the readers ask of an adapter answers as the class answered it.</summary>
     [Theory]
     [InlineData("stub")]

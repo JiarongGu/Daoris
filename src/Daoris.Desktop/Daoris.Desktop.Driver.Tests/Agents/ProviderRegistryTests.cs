@@ -184,7 +184,7 @@ public sealed class ProviderRegistryTests : IDisposable
         // HarnessRoster.ReportingDoor (private): the account agent where it is a door of this set, else the door itself.
         var reporting = agent is { } found && set.Names.Contains(found.Name, StringComparer.OrdinalIgnoreCase) ? found.Name : door;
         return new Answer(
-            toolchain.Owner(door), AgentFamily.Of(set, door).Owner, agent!.Value.Name, reporting,
+            AccountKeyOf(toolchain, door), AgentFamily.Of(set, door).Owner, agent!.Value.Name, reporting,
             roster.LimitsOf(door) is not null, roster.SignInOf(door) is not null, roster.WindowsOf(door) is not null,
             roster.UsageOf(door) is not null, agent.Value.Toolchain.LoginCheck is not null, agent.Value.Toolchain.KeyVariable,
             roster.AccountToolchain(door)?.SettingsFile, toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.StartsInOwnHome,
@@ -228,17 +228,20 @@ public sealed class ProviderRegistryTests : IDisposable
             foreach (var name in set.Names)
             {
                 var toolchain = set.Resolve(name).Toolchain;
-                if (toolchain is null || !string.Equals(toolchain.Owner(name), owner, StringComparison.OrdinalIgnoreCase)) continue;
+                if (toolchain is null || !string.Equals(AccountKeyOf(toolchain, name), owner, StringComparison.OrdinalIgnoreCase)) continue;
                 if (string.Equals(name, owner, StringComparison.OrdinalIgnoreCase)) return toolchain;
                 door ??= toolchain;
             }
 
-            return door ?? set.Holder(owner);
+            return door ?? set.ToolchainOf(owner);
         }
 
         return [.. set.Names.Where(name =>
-            set.Resolve(name).Toolchain is { } own && own.StartsInOwnHome != Owners(own.Owner(name))!.StartsInOwnHome)];
+            set.Resolve(name).Toolchain is { } own && own.StartsInOwnHome != Owners(AccountKeyOf(own, name))!.StartsInOwnHome)];
     }
+
+    /// <summary>The account key as the retired <c>HarnessToolchain.Owner</c> spelled it: the declared <c>accountOf</c>, else the name.</summary>
+    private static string AccountKeyOf(HarnessToolchain toolchain, string name) => toolchain.AccountOf is { Length: > 0 } owner ? owner : name;
 
     /// <summary>
     /// Row a's proof (the design §11): over the built set and each plugin case, the registry answers for every door the account key
@@ -293,7 +296,7 @@ public sealed class ProviderRegistryTests : IDisposable
         // `AgentsCommand` reads a door's settings file through its account agent and any other agent's own toolchain.
         string? Settings(string agent) => set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase)
             ? roster.AccountToolchain(agent)?.SettingsFile
-            : set.Holder(agent)?.SettingsFile;
+            : set.ToolchainOf(agent)?.SettingsFile;
         if (table.TryGetProperty("agents", out var agents))
         {
             foreach (var listed in agents.EnumerateObject())

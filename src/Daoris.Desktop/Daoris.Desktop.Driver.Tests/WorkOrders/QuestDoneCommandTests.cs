@@ -65,8 +65,8 @@ public sealed class QuestDoneCommandTests
         var older = await service.PersonDoneAsync("q3", null);
 
         Assert.Equal(
-            "daoris-driver: Quest `#q1` is now Done: you marked it done.\n"
-            + "daoris-driver: Quest `#q2` is Declined — a closed quest does not move; a new ask is a new title.\n",
+            "daoris: Quest `#q1` is now Done: you marked it done.\n"
+            + "daoris: Quest `#q2` is Declined — a closed quest does not move; a new ask is a new title.\n",
             output.ToString().ReplaceLineEndings("\n"));
         using var sent = JsonDocument.Parse(heard[0].Body);
         Assert.Equal("It is in the shared folder.", sent.RootElement.GetProperty("note").GetString());

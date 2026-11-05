@@ -198,7 +198,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         {
             ["talk"] = new Talk(new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new UsageQuestion("talk", ["talk-agent", "usage"], [], UsageKind.Claude))),
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });
         var events = Events;
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now };

@@ -57,7 +57,7 @@ internal static class SessionsVerbs
     }
 
     /// <summary>
-    /// <c>daoris-driver help</c>'s lines and exit code for a route a terminal sent (RPC1e): <see cref="HelpCommand.RunAsync"/> with this
+    /// <c>daoris help</c>'s lines and exit code for a route a terminal sent (RPC1e): <see cref="HelpCommand.RunAsync"/> with this
     /// Daoris's service, home and agents, so a rename, a pin, a delete and a list say what they say alone. A press nudges the loop.
     /// </summary>
     public static async Task<object> HelpSaidAsync(DriverContext context, HelpVerbAsk ask, CancellationToken ct)

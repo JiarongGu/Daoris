@@ -24,9 +24,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </param>
     public void Refuse(string adapter, string? profile, string reason, Noted? note = null)
     {
-        var owner = roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? roster.Toolchain(adapter)?.Owner(roster.Adapters.Resolve(adapter).Name) ?? adapter
-            : adapter;
+        var owner = roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? roster.Adapters.OwnerOf(adapter) : adapter;
         roster._refused[HarnessRoster.AccountKey(owner, profile)] = (reason, note is { } coded && coded.Note == reason ? coded : null);
     }
 
@@ -40,7 +38,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7); null for an adapter
     /// that declares no toolchain, which has no accounts and reads no limit.
     /// </summary>
-    internal static string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain?.Owner(resolved.Name);
+    internal string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain is null ? null : roster.Adapters.OwnerOf(resolved.Name);
 
     /// <summary>
     /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris-driver driver workflow</c> (PUSH1f2b, D194; FOUNDATION1 mod-iii): the workflows' own verb, the settings' port
+/// <c>daoris workflow</c> (PUSH1f2b, D194; FOUNDATION1 mod-iii): the workflows' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the terminal's door to workflows (<see cref="DriverWorkflowsCommand"/>). Its words run whole,
 /// never planned.
 /// </summary>
