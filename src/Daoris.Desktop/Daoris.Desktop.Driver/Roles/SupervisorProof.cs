@@ -42,9 +42,14 @@ public static class HolderKey
 
     /// <summary>
     /// A Daoris executable's first act (§2.2): the variable taken out of this process's environment, so no start it builds afterwards
-    /// copies it, whatever that start does with its own block.
+    /// copies it, whatever that start does with its own block. The inbox's two messaging variables leave with it
+    /// (<see cref="ChildMarks.MessagingVariables"/>).
     /// </summary>
-    public static void Strip() => Environment.SetEnvironmentVariable(Variable, null);
+    public static void Strip()
+    {
+        Environment.SetEnvironmentVariable(Variable, null);
+        foreach (var name in ChildMarks.MessagingVariables) Environment.SetEnvironmentVariable(name, null);
+    }
 
     /// <summary>
     /// The verb's first act: the variable read into memory, then removed from the environment as <see cref="Strip"/> removes it. Only

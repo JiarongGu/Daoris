@@ -87,4 +87,69 @@ public sealed class ServerKeeperProcessTests : IDisposable
             keeper.Kill(entireProcessTree: true);
         }
     }
+
+    private const string Browser = """
+        import { createInterface } from 'node:readline';
+        const kept = [];
+        const say = (message) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...message }) + '\n');
+        const text = (id, value) => say({ id, result: { content: [{ type: 'text', text: value }] } });
+        for await (const line of createInterface({ input: process.stdin })) {
+          const message = JSON.parse(line);
+          if (message.method === 'initialize') say({ id: message.id, result: { protocolVersion: '2024-11-05', capabilities: {}, serverInfo: { name: 'stand-in', version: '1' } } });
+          else if (message.method === 'tools/call') {
+            const { name, arguments: args } = message.params;
+            if (name === 'keep') { kept.push(Buffer.alloc(Number(args.mb) * 1024 * 1024, 1)); text(message.id, 'kept'); }
+            else if (name === 'browser_snapshot') text(message.id, `snapshot from ${process.pid}`);
+            else text(message.id, `clicked ${args.ref}`);
+          }
+        }
+        """;
+
+    /// <summary>
+    /// MCPMEM1: a call that names an element reference from before a restart is answered with a fresh snapshot and a sentence that says the
+    /// reference is out of date, never forwarded to a server that does not know it; once answered, a reference from the new snapshot is
+    /// forwarded as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_call_naming_a_reference_from_before_a_restart_is_answered_with_a_fresh_snapshot()
+    {
+        var script = Path.Combine(_root, "browser.mjs");
+        File.WriteAllText(script, Browser);
+        var node = PackageStarts.Node(null, null) ?? throw new InvalidOperationException("node is not on PATH");
+        var kept = ServerKeeper.Wrap(Path.Combine(_root, "home"), new("browser", node, [script], new Dictionary<string, string>()), CeilingMb, everyMs: 200);
+        var start = new ProcessStartInfo(kept.Command) { RedirectStandardInput = true, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
+        foreach (var argument in kept.Arguments) start.ArgumentList.Add(argument);
+        using var keeper = Process.Start(start)!;
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+            async Task<string> Call(int id, string method, object parameters)
+            {
+                await keeper.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new { jsonrpc = "2.0", id, method, @params = parameters }));
+                var line = await keeper.StandardOutput.ReadLineAsync(timeout.Token) ?? throw new InvalidOperationException("the server closed");
+                var reply = JsonDocument.Parse(line).RootElement;
+                Assert.Equal(id, reply.GetProperty("id").GetInt32());
+                return reply.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            }
+
+            await Call(1, "initialize", new { protocolVersion = "2024-11-05", capabilities = new { }, clientInfo = new { name = "test", version = "1" } });
+            await keeper.StandardInput.WriteLineAsync("""{"jsonrpc":"2.0","method":"notifications/initialized"}""");
+
+            Assert.Equal("clicked e3", await Call(2, "tools/call", new { name = "browser_click", arguments = new { @ref = "e3" } }));
+
+            await Call(3, "tools/call", new { name = "keep", arguments = new { mb = CeilingMb + 20 } });
+            await Task.Delay(1500, timeout.Token);
+
+            var stale = await Call(4, "tools/call", new { name = "browser_click", arguments = new { @ref = "e3" } });
+            Assert.Contains("out of date", stale, StringComparison.Ordinal);
+            Assert.Contains("snapshot from ", stale, StringComparison.Ordinal);
+            Assert.DoesNotContain("clicked", stale, StringComparison.Ordinal);
+
+            Assert.Equal("clicked e7", await Call(5, "tools/call", new { name = "browser_click", arguments = new { @ref = "e7" } }));
+        }
+        finally
+        {
+            keeper.Kill(entireProcessTree: true);
+        }
+    }
 }

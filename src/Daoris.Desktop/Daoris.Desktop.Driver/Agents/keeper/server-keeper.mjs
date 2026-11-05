@@ -9,6 +9,11 @@ import { spawn, execFileSync } from 'node:child_process';
 const [ceilingMb, everyMs, script, ...rest] = process.argv.slice(2);
 const ceiling = Number(ceilingMb) * 1024 * 1024;
 const REPLAY = 'server-keeper-initialize';
+const REFRESH = 'server-keeper-snapshot';
+const SNAPSHOT = 'browser_snapshot';
+const refreshing = new Map();
+let refreshes = 0;
+let stale = false;
 
 let child;
 let starting = false;
@@ -52,6 +57,10 @@ function fromServer(from, chunk) {
     serverBuffer = serverBuffer.slice(end + 1);
     const message = parse(line);
     if (message?.id === REPLAY) continue;
+    if (message && refreshing.has(message.id)) {
+      answerRefreshed(message);
+      continue;
+    }
     if (message && message.method === undefined && message.id !== undefined) inflight.delete(message.id);
     process.stdout.write(line + '\n');
   }
@@ -71,7 +80,38 @@ function fromClient(line) {
   else if (message?.method === 'notifications/initialized') initialized = line;
   if (message && message.method !== undefined && message.id !== undefined) inflight.add(message.id);
   if (starting) waiting.push(line);
-  else child.stdin.write(line + '\n');
+  else toServer(line);
+}
+
+// A snapshot's element references die with the server that handed them out. A call that names one before any snapshot of the new
+// server is answered with a fresh snapshot, in words the agent can act on, and is not sent on.
+function namesElement(message) {
+  const args = message?.params?.arguments;
+  return message?.method === 'tools/call' && args && typeof args === 'object' && ['ref', 'startRef', 'endRef'].some(key => key in args);
+}
+
+function toServer(line) {
+  const message = parse(line);
+  if (message?.method === 'tools/call' && message.params?.name === SNAPSHOT) stale = false;
+  if (stale && namesElement(message)) {
+    const internal = `${REFRESH}-${++refreshes}`;
+    refreshing.set(internal, message.id);
+    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: internal, method: 'tools/call', params: { name: SNAPSHOT, arguments: {} } }) + '\n');
+    return;
+  }
+  child.stdin.write(line + '\n');
+}
+
+function answerRefreshed(message) {
+  const original = refreshing.get(message.id);
+  refreshing.delete(message.id);
+  stale = false;
+  const snapshot = message.result?.content?.filter(part => part.type === 'text').map(part => part.text).join('\n');
+  const text = snapshot
+    ? `Nothing was done: the browser server restarted since that element reference was made, so the reference is out of date. The page now is below; choose the element again from it.\n\n${snapshot}`
+    : 'Nothing was done: the browser server restarted since that element reference was made, so the reference is out of date. Take a snapshot with browser_snapshot and choose the element again.';
+  inflight.delete(original);
+  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: original, result: { content: [{ type: 'text', text }] } }) + '\n');
 }
 
 async function restart() {
@@ -97,7 +137,8 @@ async function restart() {
   }
 
   starting = false;
-  for (const line of waiting.splice(0)) child.stdin.write(line + '\n');
+  stale = true;
+  for (const line of waiting.splice(0)) toServer(line);
 }
 
 setInterval(async () => {
