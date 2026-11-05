@@ -40,8 +40,4 @@ internal static class ConnectorPlans
         };
         return plan.Fault() is { } fault ? throw new DriverException(fault) : plan;
     }
-
-    /// <summary>The plan, or a refusal naming <paramref name="adapter"/> where its door cannot honour what the start requires of it.</summary>
-    public static ConnectorPlan Admit(ISessionAdapter adapter, ConnectorPlan plan) =>
-        plan.Refusal(adapter.Name, adapter.Abilities()) is { } refusal ? throw new DriverException(refusal) : plan;
 }

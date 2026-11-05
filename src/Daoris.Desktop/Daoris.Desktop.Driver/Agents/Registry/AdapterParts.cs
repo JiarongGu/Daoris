@@ -2,14 +2,14 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A door's rule language, skill layout and server handing as today's readers ask them of an adapter (rows o and p): a contract
-/// door's from its provider and its spawn, stated absent where they state none; a plugin's or a test's adapter, which declares none of
+/// door's from its provider and its spawn, stated absent where they state none; a declared door (a plugin's) or a test's adapter, which declares none of
 /// them, takes what every such adapter took before them: Claude Code's language where it takes settings, Claude Code's layout, and its
 /// servers file on a door whose servers do not ride the wire. Row t ends the second reading with the adapters.
 /// </summary>
 public static class AdapterParts
 {
     /// <summary>The language the door's rules are written in, or null where the person's rules reach none of its sessions.</summary>
-    public static IRuleLanguage? RuleLanguage(this ISessionAdapter adapter) => adapter is LegacyDoor legacy
+    public static IRuleLanguage? RuleLanguage(this ISessionAdapter adapter) => adapter is LegacyDoor { Declared: false } legacy
         ? legacy.Provider.Rules.TryGet(out var language) ? language : null
         : adapter.TakesSettings ? ClaudeRules.Language : null;
 
@@ -19,7 +19,7 @@ public static class AdapterParts
         : DoorHome.Of(adapter.Toolchain);
 
     /// <summary>The layout the door's skills are copied in, or null where it is handed none.</summary>
-    public static ISkillLayout? SkillLayout(this ISessionAdapter adapter) => adapter is LegacyDoor legacy
+    public static ISkillLayout? SkillLayout(this ISessionAdapter adapter) => adapter is LegacyDoor { Declared: false } legacy
         ? legacy.Provider.Skills.TryGet(out var layout) ? layout : null
         : ClaudeSkills.Layout;
 

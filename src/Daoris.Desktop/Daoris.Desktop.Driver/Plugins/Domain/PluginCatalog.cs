@@ -37,8 +37,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
 
     IReadOnlyList<IWorkplacePluginEntry> IWorkplacePluginCatalog.Contributing => Contributing;
 
-    IEnumerable<ISessionAdapter> IAgentPlugins.Adapters => Contributing.SelectMany(plugin =>
-        plugin.Manifest.Harnesses.Select(harness => (ISessionAdapter)new DeclaredAcpAdapter(harness, plugin.Manifest.Id)));
+    IEnumerable<DeclaredDoor> IAgentPlugins.Doors => Contributing.SelectMany(plugin =>
+        plugin.Manifest.Harnesses.Select(harness => PluginDoors.Declare(harness, plugin.Manifest.Id)));
 
     IEnumerable<string> IAgentPlugins.DeclaredAgents => Plugins.SelectMany(plugin => plugin.Manifest.Harnesses)
         .SelectMany(harness => new[] { harness.Name, harness.AccountOf })

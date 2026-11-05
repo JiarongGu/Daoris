@@ -32,25 +32,10 @@ public sealed record ConnectorPlan(string SessionId, IReadOnlyList<ServerEntry> 
     /// <summary>The names of the servers this start requires: a plan lacking one is refused rather than handed short.</summary>
     public IReadOnlyList<string> Includes { get; init; } = [];
 
-    /// <summary>The agent's own servers are to be left out: only a door that can leave them out may take this start.</summary>
-    public bool ExcludesOwn { get; init; }
-
     /// <summary>The sources the workspace permits; a server from another is refused. Null permits Daoris's, the plugins' and the browser's.</summary>
     public IReadOnlyList<ConnectorSource>? Permitted { get; init; }
 
-    /// <summary>
-    /// Why a door of these abilities cannot take this plan, said for a person; null where it can. A start that depends on an exclusion its
-    /// door cannot honour is refused, and a required server nothing chose is the plan's own fault.
-    /// </summary>
-    public string? Refusal(string door, DoorAbilities abilities)
-    {
-        if (Fault() is { } fault) return fault;
-        return ExcludesOwn && !abilities.OwnServersLeftOut
-            ? $"this start leaves the agent's own servers out, which `{door}` cannot do, so it does not start there with them in"
-            : null;
-    }
-
-    /// <summary>What is wrong with the plan whatever door takes it: a name given twice, or a required server nothing handed; null where nothing is.</summary>
+    /// <summary>What is wrong with the plan, whichever door takes it: a name given twice, or a required server nothing handed; null where nothing is.</summary>
     public string? Fault()
     {
         if (Servers.FirstOrDefault(server => Servers.Count(other => other.Name == server.Name) > 1) is { } twice)
