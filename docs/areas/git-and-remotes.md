@@ -32,6 +32,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitGrantRef.cs` | One verdict per act; a grant in `run/git/grants` bound to its address and its refs (ref, new commit, old commit where known) |
 | A push's updates | `GitPushUpdates.cs`, `GitPushJudge.cs`, `GitPushDoor.cs`, `GitHelperPush.cs` | Each update read and kinded (plain, force, delete, tag, mirror, prune); the batch judged by grant and Dangerous; the helper's remote refs and objects |
+| A session's record | `GitSessionAccess.cs`, `GitSessionAccessVerb.cs`, `Modules/Bridge/Routes/SessionGitAccessRoutes.cs`, `src/Daoris.Web/src/work/GitAccessFact.tsx` | The access a running session holds, tightened and read; `git access --session`; `TIGHTEN_SESSION_GIT_ACCESS`; the head's *Git access* fact |
+| A session holds nothing | `GitSessionHolds.cs`, `AgentWorkplaceWiring.cs`, `Loop/Session/SessionRules.cs` | Token variables dropped, `gh` and `az` folders empty, the harness's deny on `profiles/git/` |
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
@@ -75,8 +77,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     (from D198)
 11. Under an identity the door removes the person's authentication inputs: helpers, extra headers, cookie files, certificate
     variables, `_netrc` (by an empty home), an address's user-info. An address carrying a password is refused. (from D198)
-12. A session's start drops `GH_TOKEN`, `GITHUB_TOKEN`, `GH_ENTERPRISE_TOKEN` and `AZURE_DEVOPS_EXT_PAT`. Its `gh` and `az`
-    still act as the person's own sign-ins, unjudged. (from D198)
+12. A session holds no credential. Its start drops `GH_TOKEN`, `GITHUB_TOKEN`, `GH_ENTERPRISE_TOKEN` and `AZURE_DEVOPS_EXT_PAT`, is
+    handed no grant and no key path, and points `GH_CONFIG_DIR` and `AZURE_CONFIG_DIR` at empty folders of Daoris's
+    (`run/git/sessions/empty/`), so its `gh` and `az` never reach the person's sign-ins. The Claude doors' rules deny reading
+    `profiles/git/`; Codex holds no rules. The session still runs as the person's account (`GitSessionHolds`). (from D198, D241)
 13. One reader, `GitRemotes`, gives every address Daoris keeps, says or judges, with `daoris::` taken off. A plugin tool
     that reads remotes is named the repository or runs unrouted. (from D198)
 14. Below git 2.31 the doors cannot stand: Daoris's fetches and the landing's push refuse as `old-git`. Below 2.32 a git
@@ -108,6 +112,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     `ask`: no person is waited on for it, and a stale `ask` in the file reads as `deny`. (from D198, D72, D241)
 24. Git access is apart from `access`: full access never touches it. A loosening is a widening and is confirmed. (from
     D198, D184)
+    A running session holds a record, `run/git/sessions/{id}.json`, begun at its start with its repository and workspace: what it
+    holds is its repository's access now, narrowed by the classes the person tightened for it (*Tighten…* in the head's *Git access*
+    fact, `TIGHTEN_SESSION_GIT_ACCESS`, `git access --session <id> write=deny`). A tightening only narrows, needs no confirmation, and is
+    never lifted by a later loosening of the repository. Both doors judge a session's act by it, by the marker `DAORIS_SESSION_ID`
+    (`GitSessionAccess.Held`); `git access --session <id>` reads it, and the driver's state carries every record as `sessionGitAccess`.
+    A record is kept 14 days. (from D241)
 25. The doors judge by the remote command: `push`, `list for-push` and `receive-pack` are Write. Each door hands the judge
     the identity serving the act; one read only on its host refuses every Write through it, a grant's included, in its
     own line. `deny` refuses and no grant lifts it; `allow` passes; `ask` holds the act at the door. Each update of a push is
@@ -210,12 +220,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
 `GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
-`GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
+`GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
 `SessionSyncTests`, `BroughtForwardLookTests`, `RemotesModuleTests`, `DriverModuleGitAccessTests`; on the page
-`Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`.
+`Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAccessFact.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`.
 
 **The remotes they reach** are stand-ins in the test process on free loopback ports, one per test class, with nothing installed
 (D241 point 8): `GitSshHost` (an SSH host from Microsoft's dev-tunnels library serving `git-upload-pack` and `git-receive-pack`,
@@ -249,7 +259,6 @@ catalogues (`i18n:check`).
   default (G6).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
-- **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).
 - **GITAPP2n:** push a lightweight tag (after GITAUTH1g). Stash Drop stays deferred. Ask Daoris's fetch card is not built.

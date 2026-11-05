@@ -1,9 +1,10 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
 /// <summary>The press that tightens a session's git access: its id and the classes to narrow, each to <c>allow</c>, <c>ask</c> or <c>deny</c>.</summary>
-public sealed record TightenSessionGitAccess(string Id, Dictionary<string, string>? Access);
+public sealed record TightenSessionGitAccess(string Id, JsonElement? Access);
 
 /// <summary>
 /// A running session's git access, the page's half of <c>daoris git access --session</c> (D241 point 7): what each session holds is in
@@ -33,7 +34,10 @@ public sealed class SessionGitAccessRoutes(DriverContext context)
     [Publishes("TIGHTEN_SESSION_GIT_ACCESS", StateScopes.Driver, Session = "id")]
     private object? Tighten(TightenSessionGitAccess press)
     {
-        GitSessionAccess.Tighten(_loop.Home, press.Id, press.Access ?? []);
+        var set = press.Access is { ValueKind: JsonValueKind.Object } access
+            ? access.EnumerateObject().ToDictionary(each => each.Name, each => each.Value.ValueKind == JsonValueKind.String ? each.Value.GetString()! : "", StringComparer.Ordinal)
+            : new Dictionary<string, string>();
+        GitSessionAccess.Tighten(_loop.Home, press.Id, set);
         return DriverRoutes.State(_loop);
     }
 }

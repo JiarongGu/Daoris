@@ -34,10 +34,10 @@ const PAIRED = ['read', 'write'] as const;
 const VALUES = ['allow', 'ask', 'deny'] as const;
 /** Dangerous is decided at the door and waits on no one (D241 point 3): it is allowed or refused, never asked. */
 const DANGEROUS_VALUES = ['allow', 'deny'] as const;
-const valuesOf = (cls: string) => (cls === 'dangerous' ? DANGEROUS_VALUES : VALUES);
+export const valuesOf = (cls: string) => (cls === 'dangerous' ? DANGEROUS_VALUES : VALUES);
 
 /** How loose a value is, as the driver's `GitAccessKeys.Looseness`: allow 0, ask 1, Daoris's default 2, deny 3. */
-const looseness = (value: string) => (value === 'allow' ? 0 : value === 'ask' ? 1 : value === 'deny' ? 3 : 2);
+export const looseness = (value: string) => (value === 'allow' ? 0 : value === 'ask' ? 1 : value === 'deny' ? 3 : 2);
 
 /** Each class from the nearest level that sets it, nearest first; else Daoris's default. A repository's own resolution is the driver's answer. */
 export function resolveGitAccess(levels: readonly { classes?: GitAccessLevel | null; source: GitAccessSource }[]): ResolvedGitClass[] {
@@ -60,7 +60,7 @@ export function wideningSays(t: TFunction, name: string, cls: string, now: strin
   return t(key, { name });
 }
 
-const valueName = (t: TFunction, value: string) => (value === 'as-today' ? t('settings.git.access.asToday') : t(`settings.git.access.value.${value}`, { defaultValue: `\`${value}\`` }));
+export const valueName = (t: TFunction, value: string) => (value === 'as-today' ? t('settings.git.access.asToday') : t(`settings.git.access.value.${value}`, { defaultValue: `\`${value}\`` }));
 
 /** A level's git access folded to a line (a Setup section's summary): each class and its value, Daoris's default named once. */
 export function gitAccessSummary(t: TFunction, classes: readonly ResolvedGitClass[]): string {
