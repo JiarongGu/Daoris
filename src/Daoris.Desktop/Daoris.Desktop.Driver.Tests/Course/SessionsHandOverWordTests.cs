@@ -28,7 +28,7 @@ public sealed class SessionsHandOverWordTests : IDisposable
     }
 
     private SessionsWorld World() =>
-        new(new OpinionStandIn().Session("s1", "working", tree: "trees/default/reports/s-1").Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null);
+        new(new OpinionStandIn().Session("s1", "working", tree: "trees/default/reports/s-1").Client(), _home, DriverConfig.Empty, false, null);
 
     /// <summary>The agent's ask on file, as <c>handover_propose</c> writes it, and the state the look left it in.</summary>
     private HandOverAskFiles Held(string? state, string? code = null)

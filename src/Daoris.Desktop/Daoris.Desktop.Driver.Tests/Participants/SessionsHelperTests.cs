@@ -60,7 +60,7 @@ public sealed class SessionsHelperTests : IDisposable
     {
         var host = new OpinionStandIn().Session("s1", "completed", tree: "trees/default/reports/s-1");
         set?.Invoke(host);
-        return (new SessionsWorld(host.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null), host);
+        return (new SessionsWorld(host.Client(), _home, DriverConfig.Empty, false, null), host);
     }
 
     /// <summary>The ask is written as the connector writes it, as the person's, with the question and agent as typed; the driver takes it at its next look.</summary>

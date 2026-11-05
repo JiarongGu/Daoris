@@ -230,7 +230,7 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         return await SessionEntries.LookAsync(
-            service, config, _context.Door(config), _loop.Look.Latest, _loop.Look.Waits, _loop.Home, which, cancellationToken).ConfigureAwait(false);
+            service, config, _context.Unadopted(config), _loop.Look.Latest, _loop.Look.Waits, _loop.Home, which, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

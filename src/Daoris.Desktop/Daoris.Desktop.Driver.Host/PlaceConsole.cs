@@ -28,13 +28,13 @@ internal static class PlaceConsole
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
         var plugins = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        var door = SetupWorld.DoorOf(config, home);
+        var unadopted = SetupWorld.Unadopted(config, home);
         // An apply alone edits the driver's file as the window's press does: read, edited and written under its own lock.
         var apply = new PlaceApplyDoors(
-            new PlaceWorld(service), new SetupWorld(service, home), home, plugins, door, () => DriverConfig.Load(configPath),
+            new PlaceWorld(service), new SetupWorld(service, home), home, plugins, unadopted, () => DriverConfig.Load(configPath),
             change => change(DriverConfig.Load(configPath)).Save(configPath), DateOnly.FromDateTime(DateTime.Now));
         return await PlaceCommand.RunAsync(
-            args, Console.Out, new PlaceWorld(service), config, home, plugins, door, InstanceHost.World(home, "place"), apply).ConfigureAwait(false);
+            args, Console.Out, new PlaceWorld(service), config, home, plugins, unadopted, InstanceHost.World(home, "place"), apply).ConfigureAwait(false);
     }
 
     private static async Task<int> WorkspaceAsync(string[] args, MachineLog log)
@@ -53,7 +53,7 @@ internal static class PlaceConsole
         service.SetupLined += line => SessionLog.WriteSetup(log, line);
 
         return await WorkspaceSetupCommand.RunAsync(
-            args, Console.Out, new WorkspaceSetupWorld(service, home), config, SetupWorld.DoorOf(config, home), home,
+            args, Console.Out, new WorkspaceSetupWorld(service, home), config, SetupWorld.Unadopted(config, home), home,
             DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow).ConfigureAwait(false);
     }
 }

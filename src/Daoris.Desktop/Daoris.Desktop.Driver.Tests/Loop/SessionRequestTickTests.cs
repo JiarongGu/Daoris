@@ -67,7 +67,7 @@ public sealed class SessionRequestTickTests : IDisposable
         using var verbClient = new ServiceClient(service.Url, null);
         var output = new StringWriter();
         var ask = SessionsCommand.Read(["stop", "s1"], out _)!;
-        var exit = await SessionsCommand.RunAsync(ask, new SessionsWorld(verbClient, _home, config, SessionWire.Pipe, Log: null), output);
+        var exit = await SessionsCommand.RunAsync(ask, new SessionsWorld(verbClient, _home, config, false, Log: null), output);
         await running.WaitAsync(Poll.Patience);
 
         Assert.True(exit == 0, output.ToString());

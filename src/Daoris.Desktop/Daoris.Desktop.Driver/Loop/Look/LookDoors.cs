@@ -79,7 +79,7 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     Func<IWorkspaceSetupWorld>? ISetupWiring.SetupPlans => driver.SetupPlans;
 
-    SessionWire ISetupWiring.Door() => StartDoor.Of(Context.Home, Context.Config, Context.Adapters);
+    bool ISetupWiring.Unadopted() => StartDoor.Of(Context.Home, Context.Config, Context.Adapters);
 
     Func<CancellationToken, Task>? IStartsWiring.Wanted => driver.Wanted;
 

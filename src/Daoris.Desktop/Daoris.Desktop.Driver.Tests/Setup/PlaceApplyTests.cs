@@ -29,7 +29,7 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     private static async Task<string> DigestOf(Stand stand, PlaceAsk ask) =>
-        (await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, SessionWire.Acp, ask)).Digest;
+        (await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, true, ask)).Digest;
 
     private static Task<PlaceResult> Apply(Stand stand, PlaceAsk ask, string digest, params PlaceAccept[] accepted) =>
         PlaceApplies.ApplyAsync(stand.Doors(), ask, digest, accepted);
@@ -350,7 +350,7 @@ public sealed class PlaceApplyTests : IDisposable
 
         var code = await PlaceCommand.RunAsync(
             ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
-            SessionWire.Acp, instance: null, apply: stand.Doors());
+            true, instance: null, apply: stand.Doors());
 
         var lines = output.ToString().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
         Assert.Equal(0, code);
@@ -363,7 +363,7 @@ public sealed class PlaceApplyTests : IDisposable
         var none = Make();
         var bare = new StringWriter();
         Assert.Equal(0, await PlaceCommand.RunAsync(
-            ["engine", "--preset", SetupPresets.Integrated, "--apply"], bare, none.Place, none.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: none.Doors()));
+            ["engine", "--preset", SetupPresets.Integrated, "--apply"], bare, none.Place, none.Config, _home, Plugins, true, instance: null, apply: none.Doors()));
         Assert.Null(IntegrationAcceptance.Of(none.Config, "engine"));
     }
 
@@ -374,7 +374,7 @@ public sealed class PlaceApplyTests : IDisposable
         var output = new StringWriter();
 
         var code = await PlaceCommand.RunAsync(
-            ["docs", "--preset", SetupPresets.PullRequest, "--apply"], output, stand.Place, stand.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: stand.Doors());
+            ["docs", "--preset", SetupPresets.PullRequest, "--apply"], output, stand.Place, stand.Config, _home, Plugins, true, instance: null, apply: stand.Doors());
 
         Assert.Equal(1, code);
         Assert.Contains("refused:", output.ToString(), StringComparison.Ordinal);
@@ -395,7 +395,7 @@ public sealed class PlaceApplyTests : IDisposable
 
         var code = await PlaceCommand.RunAsync(
             ["engine", "--preset", SetupPresets.Integrated, "--apply", "--accept", "engine:integration"], output, stand.Place, stand.Config, _home, Plugins,
-            SessionWire.Acp, terminal, apply: stand.Doors());
+            true, terminal, apply: stand.Doors());
 
         Assert.Equal(1, code);
         Assert.Contains("`DAORIS_SESSION_ID`", output.ToString(), StringComparison.Ordinal);
@@ -416,7 +416,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stand = Make();
         var output = new StringWriter();
 
-        var code = await PlaceCommand.RunAsync(words.Split(' '), output, stand.Place, stand.Config, _home, Plugins, SessionWire.Acp, instance: null, apply: stand.Doors());
+        var code = await PlaceCommand.RunAsync(words.Split(' '), output, stand.Place, stand.Config, _home, Plugins, true, instance: null, apply: stand.Doors());
 
         Assert.Equal(2, code);
         Assert.Contains(PlaceCommand.Usage, output.ToString(), StringComparison.Ordinal);
@@ -489,7 +489,7 @@ public sealed class PlaceApplyTests : IDisposable
         var one = await DigestOf(stand, Adopt("atlas"));
         var same = await DigestOf(stand, Adopt("atlas"));
         var other = await DigestOf(stand, new PlaceAsk(["atlas"], SetupPresets.Merge));
-        var moved = (await PlacePlans.PlanAsync(stand.Place, stand.Config.WithTrees("atlas", true), _home, Plugins, SessionWire.Acp, Adopt("atlas"))).Digest;
+        var moved = (await PlacePlans.PlanAsync(stand.Place, stand.Config.WithTrees("atlas", true), _home, Plugins, true, Adopt("atlas"))).Digest;
 
         Assert.Equal(one, same);
         Assert.True(PlaceDigests.Is(one));
@@ -564,7 +564,7 @@ public sealed class PlaceApplyTests : IDisposable
         var stand = Make();
         var ask = Adopt("atlas", "engine") with { AtOnce = atOnce };
 
-        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, SessionWire.Acp, ask);
+        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, true, ask);
 
         Assert.Contains(plan.Refusals, each => each.Code == code);
         Assert.False(plan.Applies);
@@ -577,7 +577,7 @@ public sealed class PlaceApplyTests : IDisposable
         var plain = new PlaceAsk(["atlas"], SetupPresets.Merge);
         var paced = plain with { AtOnce = 1 };
 
-        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, SessionWire.Acp, paced);
+        var plan = await PlacePlans.PlanAsync(stand.Place, stand.Config, stand.Home, Plugins, true, paced);
 
         Assert.Contains(plan.Refusals, each => each.Code == "pacing");
         Assert.NotEqual(await DigestOf(stand, plain), plan.Digest);
@@ -623,7 +623,7 @@ public sealed class PlaceApplyTests : IDisposable
 
         public bool LandThenFail { get; set; }
 
-        public PlaceApplyDoors Doors() => new(Place, Setup, Home, Plugins, SessionWire.Acp, () => Config, Change, new DateOnly(2026, 11, 1));
+        public PlaceApplyDoors Doors() => new(Place, Setup, Home, Plugins, true, () => Config, Change, new DateOnly(2026, 11, 1));
 
         private void Change(Func<DriverConfig, DriverConfig> change)
         {

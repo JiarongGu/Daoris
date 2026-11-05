@@ -171,23 +171,21 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     /// Build's first agent's wire, as the loop plans by it (D70; ONEWAY1b: read from Build's order, never the old key); the pipe, the stricter
     /// door, when it names none this build has or Build's order does not read.
     /// </summary>
-    public SessionWire Door(DriverConfig config) => DoorOf(Loop, config);
+    public bool Unadopted(DriverConfig config) => UnadoptedOf(Loop, config);
 
     /// <summary>
     /// <see cref="Door"/> for an owner with a loop and no context: the groups' pushed slice takes the look <c>SESSION_GROUPS</c> takes
     /// (PUSH1c3a), so both read one door.
     /// </summary>
-    public static SessionWire DoorOf(DriverLoop loop, DriverConfig config)
+    public static bool UnadoptedOf(DriverLoop loop, DriverConfig config)
     {
         try
         {
-            return ActorChoices.FirstAgent("build", config) is { } first && Adoption.Unadopted(first, loop.Harnesses.Adapters.AbilitiesOf)
-                ? SessionWire.Acp
-                : SessionWire.Pipe;
+            return ActorChoices.FirstAgent("build", config) is { } first && Adoption.Unadopted(first, loop.Harnesses.Adapters.AbilitiesOf);
         }
         catch (DriverException)
         {
-            return SessionWire.Pipe;
+            return false;
         }
     }
 }

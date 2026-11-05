@@ -73,7 +73,7 @@ public static class AskAtWorkVerb
         }
 
         // The look the listing reads, and the asks the service holds: the existence the window's asks slice gives.
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
         var asks = await world.Service.EveryAskAsync(ct).ConfigureAwait(false);
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);

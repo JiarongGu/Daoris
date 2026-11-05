@@ -238,7 +238,7 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
         Assert.Equal(StartVerdict.PolicyHeld, verdict.Verdict);
         Assert.Equal(SittingFact.PolicyAsk, verdict.Said!.Code);
         // A plan nobody looked for (the retry door with no loop's look, a terminal) says the same typed hold and approves the same way.
-        var fresh = await SessionGroups.VerdictsAsync(new ServiceClient(service.Url, null), _config!, SessionWire.Acp, lastLook: null, home: _home);
+        var fresh = await SessionGroups.VerdictsAsync(new ServiceClient(service.Url, null), _config!, true, lastLook: null, home: _home);
         Assert.Equal(StartVerdict.PolicyHeld, Assert.Single(fresh, each => each.Quest.Id == "q1").Verdict);
         var decision = QuestRetry.Decide("q1", verdicts);
         Assert.Equal((RetryDecision.Approved, "build"), (decision.Did, decision.Approve));

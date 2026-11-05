@@ -23,7 +23,7 @@ internal static class QuestReviewConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var sessions = new SessionsWorld(service, home, config, SessionsConsole.Wire(config), log);
+        var sessions = new SessionsWorld(service, home, config, SessionsConsole.Unadopted(config), log);
 
         return await QuestReviewCommand.RunAsync(ask, new QuestReviewWorld(service)
         {

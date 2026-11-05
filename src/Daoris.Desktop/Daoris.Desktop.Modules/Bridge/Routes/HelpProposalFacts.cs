@@ -173,7 +173,7 @@ public sealed class HelpProposalFacts(DriverContext context)
         // ledger's own answer: the one look the Sessions screen takes, read only for those.
         if (proposals.Any(SessionKind))
         {
-            var look = await SessionGroups.LookAsync(service, config, context.Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
+            var look = await SessionGroups.LookAsync(service, config, context.Unadopted(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
             look = look with { Waits = _loop.Look.Waits };
             var judged = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
             foreach (var proposal in proposals.Where(each => each.Kind == "delete" && each.Door == "session"))
@@ -270,7 +270,7 @@ public sealed class HelpProposalFacts(DriverContext context)
             var places = new Dictionary<string, PlacePlanned>(StringComparer.Ordinal);
             foreach (var proposal in proposals.Where(each => each.Kind == "setup" && each.Door == "place" && each.Place is not null))
             {
-                places[proposal.Id] = await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, context.Door(config), proposal.Place!, ct).ConfigureAwait(false);
+                places[proposal.Id] = await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, context.Unadopted(config), proposal.Place!, ct).ConfigureAwait(false);
             }
 
             facts = facts with { Places = places };

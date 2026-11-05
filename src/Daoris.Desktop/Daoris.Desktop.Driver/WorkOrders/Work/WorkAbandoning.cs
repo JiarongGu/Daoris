@@ -386,7 +386,7 @@ public static class WorkAbandoning
         try
         {
             var look = await SessionGroups.LookAsync(
-                world.Service, DriverConfig.Load(world.ConfigPath), world.Door, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
+                world.Service, DriverConfig.Load(world.ConfigPath), world.Unadopted, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
             var answer = new SessionArchive(world.Home).Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], world.Clock());
             var archived = new List<string>();
             foreach (var outcome in answer.Outcomes)

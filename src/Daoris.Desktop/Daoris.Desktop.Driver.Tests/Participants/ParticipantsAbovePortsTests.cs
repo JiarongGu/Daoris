@@ -87,7 +87,7 @@ public sealed class ParticipantsAbovePortsTests : IDisposable
         Assert.IsAssignableFrom<IParticipantsAsk>(ask);
         Assert.Equal("partner|s1|Write it|codex-acp|a.cs", Shape(ask.Verb, ask.Ids, ask.Text, ask.Agent, ask.Paths));
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
-        Assert.IsAssignableFrom<IParticipantsWorld>(new SessionsWorld(service, _home, DriverConfig.Empty, SessionWire.Pipe, null));
+        Assert.IsAssignableFrom<IParticipantsWorld>(new SessionsWorld(service, _home, DriverConfig.Empty, false, null));
     }
 
     [Fact]

@@ -34,7 +34,7 @@ public sealed class AtWorkVerbTests : IDisposable
         return ask!;
     }
 
-    private SessionsWorld World() => new(_ledger.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null);
+    private SessionsWorld World() => new(_ledger.Client(), _home, DriverConfig.Empty, false, null);
 
     private void OpenChild(string adapter = "stub")
     {

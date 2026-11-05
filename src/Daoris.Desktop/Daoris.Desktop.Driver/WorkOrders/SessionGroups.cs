@@ -158,9 +158,9 @@ public static class SessionGroups
     /// looked, and the planner over a fresh snapshot where none has (a terminal, or a desktop waiting on another driver's
     /// lock, DRV8a).
     /// </summary>
-    /// <param name="door">The configured adapter's wire, which decides whether a repository that never adopted can be driven (D70).</param>
+    /// <param name="unadopted">Whether the configured adapter may drive a repository that never adopted (D70, <see cref="Adoption"/>).</param>
     public static async Task<IReadOnlyList<Consideration>> VerdictsAsync(
-        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default,
+        ServiceClient service, DriverConfig config, bool unadopted, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default,
         string? home = null)
     {
         if (lastLook is not null) return lastLook;
@@ -168,7 +168,7 @@ public static class SessionGroups
         var snapshot = await PausedWork.LookAsync(service, config, await service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         // And the typed holds a role's policy leaves (STAFFPOLICY1e2), read from the home's store, so a plan with no look says the hold the look says.
         if (home is not null) snapshot = StaffCourse.Held(new StaffLedger(home), snapshot, config, DateTimeOffset.UtcNow);
-        return Planner.Plan(snapshot, config, door);
+        return Planner.Plan(snapshot, config, unadopted);
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public static class SessionGroups
     /// null where it holds none, and none handed where this process runs no conversation, as the terminal's listing.
     /// </param>
     public static async Task<SessionLook> LookAsync(
-        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
+        ServiceClient service, DriverConfig config, bool unadopted, IReadOnlyList<Consideration>? lastLook, string home,
         IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null,
         LookTimes? times = null, Func<string, bool?>? turnEnded = null)
     {
@@ -195,7 +195,7 @@ public static class SessionGroups
         times ??= new LookTimes();
         var records = await times.TimeAsync("records", () => service.SessionRecordsJsonAsync(ct)).ConfigureAwait(false);
         var quests = await times.TimeAsync("quests", () => service.EveryQuestAsync(ct)).ConfigureAwait(false);
-        var considered = await times.TimeAsync("verdicts", () => VerdictsAsync(service, config, door, lastLook, ct, home)).ConfigureAwait(false);
+        var considered = await times.TimeAsync("verdicts", () => VerdictsAsync(service, config, unadopted, lastLook, ct, home)).ConfigureAwait(false);
         var trees = new SessionTrees(home);
         var look = times.Time("marks", () =>
         {

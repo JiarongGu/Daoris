@@ -10,11 +10,11 @@ internal sealed class PlanRound
     private readonly RoundSaying saying;
 
     internal PlanRound(
-        Snapshot snapshot, DriverConfig config, SessionWire door, bool window, IRoleStarts? roles, Action<LineCourse>? decided)
+        Snapshot snapshot, DriverConfig config, bool unadopted, bool window, IRoleStarts? roles, Action<LineCourse>? decided)
     {
         Snapshot = snapshot;
         Config = config;
-        Door = door;
+        Unadopted = unadopted;
         Window = window;
 
         // Grouped, never keyed straight off the list: two active sessions in one repository is a state the tree rule allows (a
@@ -38,7 +38,7 @@ internal sealed class PlanRound
     internal DriverConfig Config { get; }
 
     /// <summary>Which door this machine's starts ride: it decides whether a repository that registered without adopting can be driven.</summary>
-    internal SessionWire Door { get; }
+    internal bool Unadopted { get; }
 
     /// <summary>Whether this loop carries Daoris's browser, the window a local set-up step shows its chain's work in.</summary>
     internal bool Window { get; }

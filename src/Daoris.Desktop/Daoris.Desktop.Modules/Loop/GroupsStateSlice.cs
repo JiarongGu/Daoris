@@ -133,7 +133,7 @@ public static class GroupsStateSlice
         // ACCEPTFOOT1b: an open conversation's turns by the word of the runner that holds it, as the page's foot reads them.
         var chat = loop.Chat;
         var look = await SessionGroups.LookAsync(
-                service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
+                service, config, DriverContext.UnadoptedOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
                 turnEnded: chat is null ? null : chat.TurnEnded)
             .ConfigureAwait(false);
         look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions() };

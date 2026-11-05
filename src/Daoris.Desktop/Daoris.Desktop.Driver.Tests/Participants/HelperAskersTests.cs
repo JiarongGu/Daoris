@@ -48,7 +48,7 @@ public sealed class HelperAskersTests : IDisposable
 
         var output = new StringWriter();
         var ask = SessionsCommand.Read(["helper", "s1", "Why?"], out _)!;
-        var exit = await SessionsCommand.RunAsync(ask, new SessionsWorld(host.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null), output);
+        var exit = await SessionsCommand.RunAsync(ask, new SessionsWorld(host.Client(), _home, DriverConfig.Empty, false, null), output);
 
         Assert.Equal(row.Refused is null ? 0 : 1, exit);
         if (row.Refused is { } refused) Assert.Contains(table.Says[refused], output.ToString());
