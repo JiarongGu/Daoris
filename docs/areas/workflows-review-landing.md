@@ -272,7 +272,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
-- **FABRIC-SQUASHCHAIN1:** whether the plan and the performer's keeper agree on a squash chain's earlier part waits on the owner's choice.
+- **FABRIC-SQUASHCHAIN1:** a chain's completion past its pull request as fabric steps (D245): a `monitor` step until the request is merged or closed, a `tidy` step that ends the chain's parts with a recovery ref, the keeper and the press reading the tidy's record, and the prebuilt set of actions *Set up…* offers.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
