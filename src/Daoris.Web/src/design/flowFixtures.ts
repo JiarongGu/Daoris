@@ -2,7 +2,7 @@ import type { EdgeStyle } from './flowLayout';
 
 /**
  * The hardest graphs a flowchart draws (FLOWCHART1a1; the flowchart design §7, trap 3), as data in both languages: the
- * layout's tests read their shapes, `Flow`'s stories draw them, and the measured-box check runs over those stories in a
+ * layout's tests read their shapes, `LifeFlow`'s stories draw them, and the measured-box check runs over those stories in a
  * rendered browser. Tests and stories only: nothing in the product imports this.
  *
  * @remarks

@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Flow } from '../../design/Flow';
+import { LifeFlow } from '../../design/canvas/LifeFlow';
 import { Icon, SESSION_TONE, type ShownState, shownKey, shownState } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { store, stored } from '../../lib/stored';
@@ -61,7 +61,7 @@ export function SessionLifeFlow({ session, shown }: { session: SessionOfLife; sh
   const nodes = life.nodes.map((node) => (node.id === 'ended'
     ? { ...node, lines: <Outcomes members={life.members} stop={life.stop} never={life.neverGoesOn} /> }
     : node));
-  return <Flow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
+  return <LifeFlow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
 }
 
 /**

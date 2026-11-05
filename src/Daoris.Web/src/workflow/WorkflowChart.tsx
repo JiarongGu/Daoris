@@ -1,7 +1,7 @@
 import { type KeyboardEvent, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import type { PillTone } from '../design/Flow';
+import type { PillTone } from '../design/FlowCanvas';
 import { Button, Icon, Inline, Tip } from '../design/ui';
 import { FlowChart } from './chart/FlowChart';
 import type { ChartNode } from './chart/stepKinds';
@@ -348,7 +348,7 @@ function WorkflowRail({ workflow, page, name, doors, run, end, finished }: {
 
 /**
  * **A workflow drawn as a flowchart** (WORKFLOW1b, FLOWCHART1d; D157 point 12 as D186 amends it, the flowchart design §2.4, §2.5,
- * §5.1): a layered graph laid out by Daoris on `Flow`, top to bottom where the pane holds a step's 19rem, with the rail, today's
+ * §5.1): a layered graph laid out by Daoris on the canvas (`FlowChart`), top to bottom where the pane holds a step's 19rem, with the rail, today's
  * list, as its narrow placement at the side bar's floor and wherever the person chose *Show as list*. No free positioning, no
  * panning and no zoom (D157's rejection stands).
  *

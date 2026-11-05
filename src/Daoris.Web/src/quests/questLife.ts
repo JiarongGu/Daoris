@@ -1,5 +1,5 @@
 import type { Quest, QuestHold, QuestMove } from '../data/api';
-import type { FlowEdge, FlowNode } from '../design/Flow';
+import type { FlowEdge, FlowNode } from '../design/FlowCanvas';
 import { QUEST_TONE } from '../design/ui';
 import { moment } from '../locales/format';
 import { shownStatus } from './records';

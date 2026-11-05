@@ -1,4 +1,4 @@
-import type { FlowNode } from '../../design/Flow';
+import type { FlowNode } from '../../design/FlowCanvas';
 import type { IconName } from '../../design/ui';
 
 // The chart's step kinds (FLOWCHART2a; D223): which variant of node draws a kind, in the graph's words (`claimed`, `land`) and in a
@@ -40,7 +40,7 @@ export type ChartPort = {
   taken?: boolean;
 };
 
-/** What a node of the chart is, beside what `Flow` draws of it: its variant, its ports, and whether it is a terminal or a group. */
+/** What a node of the chart is, beside what the generic box draws of it: its variant, its ports, and whether it is a terminal or a group. */
 export type ChartStep = {
   kind: string;
   variant: StepVariant;
@@ -53,7 +53,7 @@ export type ChartStep = {
   refused?: string[];
 };
 
-/** A node of the chart: `Flow`'s node, and what the workflow's components read of it. A node of the canvas's own (a fold) carries none. */
+/** A node of the chart: the canvas's `FlowNode`, and what the workflow's components read of it. A node of the canvas's own (a fold) carries none. */
 export type ChartNode = FlowNode & { step?: ChartStep };
 
 /** Whether a canvas node is one the chart drew a step for. */
