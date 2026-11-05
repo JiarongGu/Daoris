@@ -1,6 +1,6 @@
 import { type RefObject, useMemo, useRef, useState } from 'react';
 import type { CanvasHandle } from './Canvas';
-import { findMatches, stepMatch } from './findNodes';
+import { type Findable, findMatches, foundBy, stepMatch } from './findNodes';
 import type { View } from './viewMath';
 
 /**
@@ -8,7 +8,7 @@ import type { View } from './viewMath';
  * each match through the feature's `reveal`; clearing puts the view back where stepping began (Escape).
  */
 export function useCanvasFind({ nodes, handle, reveal }: {
-  nodes: readonly { id: string; title: string }[];
+  nodes: readonly Findable[];
   handle: RefObject<CanvasHandle | null>;
   reveal: (id: string) => void;
 }) {
@@ -16,8 +16,13 @@ export function useCanvasFind({ nodes, handle, reveal }: {
   const [at, setAt] = useState(-1);
   const started = useRef<View | null>(null);
   const matches = useMemo(() => {
-    const titles = new Map(nodes.map((node) => [node.id, node.title]));
-    return findMatches(nodes, query).map((id) => ({ id, title: titles.get(id)! }));
+    const items = new Map(nodes.map((node) => [node.id, node]));
+    // A result found by what the item declares says so after its name.
+    return findMatches(nodes, query).map((id) => {
+      const item = items.get(id)!;
+      const by = foundBy(item, query);
+      return { id, title: by?.by === 'also' ? `${item.title} — ${by.said}` : item.title };
+    });
   }, [nodes, query]);
   const matching = useMemo(() => (query.trim() === '' ? null : new Set(matches.map((match) => match.id))), [matches, query]);
   const shown = at >= 0 ? matches[at]?.id ?? null : null;

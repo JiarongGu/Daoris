@@ -1,15 +1,17 @@
-import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../../data/api';
 import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { CanvasList } from '../../design/canvas/CanvasList';
 import { type EdgeContext, type NodeState, SuppliedCanvas } from '../../design/canvas/SuppliedCanvas';
 import { lineDrawn } from '../../design/canvas/suppliedCull';
 import { Button, PathText } from '../../design/ui';
 import { CodeCard } from './CodeCards';
-import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
+import { RING_MAX } from '../layers';
+import { MapTree } from '../MapTree';
+import { buildTree, type CodeLine, defaultOpen, dirOf, layoutCode, openingPath } from './codeClusters';
 import { foldable, foldGroup } from './codeFolds';
+import { codeListGroups } from './codeList';
 
 /** Zoom 10–250%: a repository of thousands is read from far, and a name is the type scale's at 100%. */
 const ZOOM = { min: 0.1, max: 2.5 } as const;
@@ -100,7 +102,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
  * card is cut with an ellipsis and whole in the detail and in the name a reader hears. A view kept under another commit restores no
  * coordinates.
  */
-export function CodeMapWorld({ repository, modules, dependencies, selected, onSelect, version }: {
+export function CodeMapWorld({ repository, modules, dependencies, selected, onSelect, version, detail }: {
   repository: string;
   modules: CodeModule[];
   dependencies: CodeDependency[];
@@ -109,6 +111,8 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   onSelect: (id: string | null) => void;
   /** What the map was read at: the commit it was fed, else any. The viewer's place is kept per version. */
   version?: string;
+  /** The chosen module's detail, where it opens in place under its row in the list (below the 36rem floor). */
+  detail?: ReactNode;
 }) {
   const { t } = useTranslation();
   const tree = useMemo(() => buildTree(modules, dependencies), [modules, dependencies]);
@@ -176,10 +180,14 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     onSelect(null);
   };
 
-  const outgoing = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const each of tree.dependencies) counts.set(each.from, (counts.get(each.from) ?? 0) + 1);
-    return counts;
+  const { outgoing, incoming } = useMemo(() => {
+    const out = new Map<string, number>();
+    const into = new Map<string, number>();
+    for (const each of tree.dependencies) {
+      out.set(each.from, (out.get(each.from) ?? 0) + 1);
+      into.set(each.to, (into.get(each.to) ?? 0) + 1);
+    }
+    return { outgoing: out, incoming: into };
   }, [tree]);
   const nameOf = (id: string) => {
     const group = tree.groups.get(id);
@@ -194,11 +202,20 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       : t('code.cycleLabel', { count: group.modules.length });
   };
   const titleOf = (id: string) => nameOf(id);
+  // Find reaches a module by its id, and by its folder's path, which a result says (MAPUX1d).
   const findItems = useMemo(
-    () => [...tree.modules.keys()].map((id) => ({ id, title: id, stands: scene.standsFor.get(id) ?? id })),
-    [tree, scene],
+    () => [...tree.modules].map(([id, module]) => {
+      const dir = dirOf(module.path);
+      return { id, title: id, stands: scene.standsFor.get(id) ?? id, ...(dir === '' ? {} : { also: [{ text: dir, said: t('code.find.in', { path: dir }) }] }) };
+    }),
+    [tree, scene, t],
   );
-  const lists = useMemo(() => listByFolder(tree), [tree]);
+  const lists = useMemo(() => codeListGroups(tree, {
+    cycle: cycleTitle,
+    module: (id) => (outgoing.get(id) || incoming.get(id)
+      ? t('code.said.module', { id, uses: outgoing.get(id) ?? 0, usedBy: incoming.get(id) ?? 0 })
+      : t('code.said.alone', { id })),
+  }), [tree, cycleTitle, outgoing, incoming, t]);
 
   const renderNode = (id: string, state: NodeState): ReactElement => {
     const group = tree.groups.get(id);
@@ -230,9 +247,10 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     </>
   );
   const list = (
-    <CanvasList
-      label={t('code.canvas', { repository })} groups={lists} selected={selected}
+    <MapTree
+      label={t('code.canvas', { repository })} groups={lists} selected={selected} detail={detail}
       onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
+      onRelease={() => onSelect(null)}
     />
   );
 
@@ -244,7 +262,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         feature="code" storeKey={`${repository}@${version ?? 'local'}`}
         selected={chosen} onSelect={choose}
         zoom={ZOOM} opening={OPENING}
-        nodeLabel={nodeLabel} titleOf={titleOf} findItems={findItems}
+        nodeLabel={nodeLabel} titleOf={titleOf} findItems={findItems} findFrom={RING_MAX + 1}
         frameClass={() => 'rounded-card'}
         renderNode={renderNode}
         renderEdges={(context) => <CodeEdges lines={scene.lines} context={context} focus={context.hovered ?? chosenCard} name={nameOf} />}

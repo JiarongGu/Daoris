@@ -6,7 +6,7 @@ import { isComposing } from '../../lib/composing';
 import { useRootRem, useWidth } from '../useWidth';
 import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './Canvas';
 import { CanvasFind } from './CanvasFind';
-import { FIND_FROM } from './findNodes';
+import { FIND_FROM, type Findable } from './findNodes';
 import { GoneNotice, useSelectionGone } from './GoneNotice';
 import { ListToggle } from './ListToggle';
 import { createWalk, type Stop, type WalkLine } from './suppliedWalk';
@@ -106,7 +106,7 @@ export function SuppliedCanvas({
    * What find searches where the world folds items away: each with the card that stands for it now. A match without a card is revealed
    * once the feature, answering `onSelect`, has drawn one.
    */
-  findItems?: readonly { id: string; title: string; stands?: string }[];
+  findItems?: readonly (Findable & { stands?: string })[];
   /** The world as a list (`CanvasList`), the whole reading: given, *Show as list* is offered at every width. */
   list?: ReactNode;
   /** A card to show once it is drawn, and to give the focus when `focus` (a way back to a map); acted on once per object given. */
@@ -256,10 +256,14 @@ export function SuppliedCanvas({
     </>
   );
 
-  if (listed && list !== undefined) {
+  // Below the floor the list is the reading (MAPUX1e): no viewport is offered there, so no way back to the graph either.
+  const narrow = list !== undefined && width !== undefined && !wide;
+  if ((listed || narrow) && list !== undefined) {
     return (
       <div ref={frameRef} className="min-w-0">
-        <div className="mb-2 flex flex-wrap items-center justify-end gap-x-1"><ListToggle listed onToggle={() => setListed(false)} /></div>
+        <div className="mb-2 flex flex-wrap items-center justify-end gap-x-1">
+          {narrow ? tools : <ListToggle listed onToggle={() => setListed(false)} />}
+        </div>
         {list}
         {gone && <GoneNotice />}
       </div>

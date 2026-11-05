@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Box } from '../../design/canvas/viewMath';
 import {
-  buildTree, CLOSED_PAST, defaultOpen, layoutCode, listByFolder, openingPath,
+  buildTree, CLOSED_PAST, defaultOpen, layoutCode, openingPath,
 } from './codeClusters';
 import { type CodeFixture, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 
@@ -166,13 +166,6 @@ describe('find', () => {
     // Only the path is opened, not the repository.
     expect(scene.world.boxes.size).toBeLessThan(modules.length);
     expect(scene.standsFor.get(target)).toBe(target);
-  });
-
-  it('lists every module under its folder, closed or open', () => {
-    const { modules, dependencies } = syntheticMap(500);
-    const groups = listByFolder(buildTree(modules, dependencies));
-    expect(groups.reduce((sum, group) => sum + group.items.length, 0)).toBe(500);
-    expect(groups.map((group) => group.title)).toEqual([...groups.map((group) => group.title)].sort());
   });
 });
 

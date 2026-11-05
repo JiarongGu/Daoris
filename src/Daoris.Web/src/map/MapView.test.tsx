@@ -70,6 +70,8 @@ describe('the workspace map', () => {
       { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1 },
     ];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    // The fixtures' quests carry no date: these tests draw them all, as a viewer who chose *All of them* does.
+    localStorage.setItem('daoris.mapWhen', 'all');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
