@@ -53,7 +53,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     {
         ["stub"] = new StubAdapter(),
         ["acp-stub"] = new AcpStubAdapter(),
-        ["acp-second"] = new DeclaredAcpAdapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
+        ["acp-second"] = PluginDoors.Adapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
     });
 
     /// <summary>The machine's choices, with <paramref name="actor"/>'s order: the first stand-in, then the second.</summary>

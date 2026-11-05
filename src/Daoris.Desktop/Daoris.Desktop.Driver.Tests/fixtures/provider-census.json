@@ -140,8 +140,6 @@
     ["Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs", "\"codex\"", "l", "behaviour", "the lineage reads which agent a child ran as"],
     ["Daoris.Desktop.Driver/Participants/Domain/HelpersVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
     ["Daoris.Desktop.Driver/Platform/DaorisHome.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: the home's run entry (design §9), no agent's door"],
-    ["Daoris.Desktop.Driver/Plugins/DeclaredAcpAdapter.cs", "SessionWire", "q", "behaviour", "a plugin's declared door, built on the seam"],
-    ["Daoris.Desktop.Driver/Plugins/DeclaredAcpAdapter.cs", "SessionWire.Acp", "q", "behaviour", "a plugin's declared door is a protocol door"],
     ["Daoris.Desktop.Driver/Plugins/PluginKit.cs", "\"claude-code\"", "-", "measurement", "a sample session the kit's trial hands a hook"],
     ["Daoris.Desktop.Driver/Plugins/PluginPage.cs", "\"protocol\"", "q", "behaviour", "the page shows a plugin's harness as a protocol door"],
     ["Daoris.Desktop.Driver/Review/OpinionVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],

@@ -24,7 +24,7 @@ public sealed class StandInReadersTests
             ["claude-code"] = new ClaudeCodeAdapter(),
             ["codex-acp"] = new CodexAcpAdapter(),
         }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain }),
-        "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(new DeclaredAcpAdapter(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
+        "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
         _ => AdapterSet.Built(),
     };
 
@@ -113,7 +113,7 @@ public sealed class StandInReadersTests
     public void A_made_provider_s_id_is_never_reserved()
     {
         var harness = new PluginHarness("acme-agent", ["acme"], AccountOf: "acme");
-        var set = AdapterSet.Built().WithPlugins(new SingleDoor(new DeclaredAcpAdapter(harness, "acme-plugin")));
+        var set = AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(harness, "acme-plugin")));
         var registry = ProviderRegistry.Of(set);
 
         Assert.Contains(registry.Providers, provider => provider.Id.Value == "acme" && provider.Identity.DeclaredBy.Count > 0);
@@ -124,11 +124,11 @@ public sealed class StandInReadersTests
         Assert.Contains("acp-stub", registry.Reserved);
     }
 
-    private sealed class SingleDoor(ISessionAdapter adapter) : IAgentPlugins
+    private sealed class SingleDoor(DeclaredDoor door) : IAgentPlugins
     {
-        public IEnumerable<ISessionAdapter> Adapters { get; } = [adapter];
+        public IEnumerable<DeclaredDoor> Doors { get; } = [door];
 
-        public IEnumerable<string> DeclaredAgents { get; } = [adapter.Name];
+        public IEnumerable<string> DeclaredAgents { get; } = [door.Name];
 
         public IReadOnlyList<SkillSource> Skills(string to) => [];
     }

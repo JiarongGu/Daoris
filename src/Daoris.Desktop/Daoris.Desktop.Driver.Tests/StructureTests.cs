@@ -424,7 +424,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     [Fact]
     public void Agents_consumes_plugin_contracts_below_catalogue_and_copy_operations()
     {
-        string[] higher = ["PluginCatalog", "DeclaredAcpAdapter", "PluginFolders"];
+        string[] higher = ["PluginCatalog", "PluginDoors", "PluginFolders"];
         Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && higher.Contains(edge.Type)));
     }
 
