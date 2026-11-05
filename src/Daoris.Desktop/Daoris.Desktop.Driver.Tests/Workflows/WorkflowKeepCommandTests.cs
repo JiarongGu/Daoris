@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// WORKFLOW1f (the workflow design §4.4, D50): <c>daoris workflow keep &lt;session&gt; ["…"]</c>, the person's <i>Keep</i> where
 /// a kind's paths hold a session's work. Its words, its usage in the host's, and its routing. The press itself, over real git, is
-/// <c>AutoLandingTests</c>' kind's paths row.
+/// <c>EntryLandingTests</c>' kind's paths row.
 /// </summary>
 public sealed class WorkflowKeepCommandTests
 {

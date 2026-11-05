@@ -37,8 +37,7 @@ public sealed class PressQuests(Func<string, CancellationToken, Task<QuestView?>
 
 /// <summary>
 /// The quest result a person's press was made on (FABRIC-CLOSE1h3, D173's note; the fabric design §E5), and the landing's judgement
-/// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c>), once it holds its tree. The automatic landing's judgements are
-/// <see cref="AutoLander"/>'s, of a world read afresh; this reads the one quest.
+/// of it (<see cref="TreeLands.LandAsync"/>'s <c>judged</c>), once it holds its tree. This reads the one quest.
 /// </summary>
 /// <remarks>
 /// <para><b>Only the result moving stops a press</b> (the parent's decisions 1 and 2): a reopen or a done turned down (its quest's result

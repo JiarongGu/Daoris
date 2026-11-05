@@ -220,6 +220,12 @@ public sealed record SessionEvent
     public string? From { get; init; }
 
     /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: true on the watcher's word to a quiet session (SESSWATCH1b, <c>QuietWord</c>), which is
+    /// Daoris's but starts no go-on and resets no answers-alone count (<see cref="AnswersAlone"/>). Null on every other event.
+    /// </summary>
+    public bool? Watcher { get; init; }
+
+    /// <summary>
     /// For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
     /// from. Its <see cref="Origin"/> is <c>target</c>, since the words are Daoris's fixed words around that agent's claims, so a
     /// page that does not read this field shows them as what Daoris handed the session and never as the person's. And for the

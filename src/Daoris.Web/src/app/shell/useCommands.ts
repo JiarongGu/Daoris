@@ -161,8 +161,8 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     add: () => open('projects', null, { drawer: 'add' }),
     // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder and names the workspace.
     import: () => open('projects', null, { drawer: 'import' }),
-    // The workspace in view's page at Setup (UX6g), where its defaults, its remote and its rules are.
-    workspaceSetup: () => open('projects', null, { workspaceTab: 'setup' }),
+    // The workspace in view's setup (UX6g): its place's Workflow defaults, where the opener sends a section.
+    workspaceSetup: () => open('projects', null, { workspaceSection: 'defaults' }),
     sync: () => { if (circle) onSyncNow(circle); },
     wire: () => { if (circle) open('projects', workspaceItem(circle), { workspaceSection: 'remote' }); },
     // At a domain the row names, or at the one Settings' list remembers (D75).

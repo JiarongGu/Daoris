@@ -264,7 +264,7 @@ records (`TogetherWatch`), settles one at *landing* after a restart and drops on
 lands it (`TogetherAccepts`), its record listing the members as `brought`, and a member's own landing of that work is refused as
 *brought into*. A driven turn on the protocol door that ends with its quest done (or submitted) and its tree
 uncommitted is not the session's end either (LANDBACK1 part 2): `AcpSession.CarriesOn`, built by `SessionWaits.CarriesOn` for a start and a resumed
-run, reads the quest and the tree (`TurnCarries`, `AutoLander.ReadTreeAsync`), the run waits for the session's own background work as a park
+run, reads the quest and the tree (`TurnCarries`), the run waits for the session's own background work as a park
 would, and then sends Daoris's own prompt (`TurnCarries.WordsOf`, no key, no say door, no card, and no `CarriedAccepts` entry) to commit by the
 repository's conventions or restore what is not wanted. Two carry-ons a run (`TurnCarry.Bound`, one number with `LandCarry.Bound`), then
 `background.carry-bound` and the session concludes as before, completed with its tree dirty. A stopped session, a parked quest, an
@@ -328,7 +328,7 @@ the landing's record, whether the graph's part asks a pass, and its plan lines a
 implements. `SessionTrees.GateOfAsync` reads it over `IReviewWorld`, the service's quests and asks, which is Workplace's, through the
 Workflows port; Review's `SessionTreeGates` answers the same gate as the `LandingGate` record every other door reads (`trees.GateAsync`,
 with `ReviewAsync` and `OpinionAsync`), the second opinion's part being `Review/TreeGateOpinions.cs`. The look reads its world as
-`IWorkplaceLandingWorld`; Review's `IAutoLandingWorld` adds the opinions (`IOpinionWorld`), and `ServiceAutoLandingWorld` is Review's. A
+`IWorkplaceLandingWorld`; Review's `IReviewLandingWorld` adds the opinions (`IOpinionWorld`), and `ServiceReviewLandingWorld` is Review's. A
 second opinion a held landing is owed goes through `IWorkplaceReview`, which `Review/WorkplaceReviewWiring.cs` installs. The press on a chat
 run's work (`ChatPresses`, `ChatLandCommand`) and an entry's Accept (`EntryAccepts`) are Review's, since they read the gate and press the
 opinion; the entry's lead is Workplace's `EntryLandings.LeadOf`. The words the trees and the review spell alike are Workplace's, and

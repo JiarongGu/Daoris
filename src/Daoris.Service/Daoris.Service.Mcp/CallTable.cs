@@ -99,8 +99,8 @@ public static class CallTable
     private static readonly HashSet<string> AskDaorisOwn = new(
     [
         "checkout_read", "housekeeping_clean_up", "housekeeping_discard_branch", "housekeeping_inspect", "settings_cap", "settings_cooloff",
-        "settings_language", "settings_notify",
-    ], StringComparer.Ordinal);
+        "settings_language", "settings_notify", "settings_quiet",
+    ],StringComparer.Ordinal);
 
     /// <summary>
     /// What a record that serves another is refused, a helper's as a partner's: it publishes, takes and closes no quest, a memory proposal

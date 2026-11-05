@@ -17,7 +17,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 /** Everything at Daoris's default: no line, merged into its line, no language, read; local only, no rules of its own. */
 const at = (over: Partial<WorkspaceSetupProps> = {}) => {
   const acts = {
-    line: vi.fn(), language: vi.fn(), read: vi.fn(), wire: vi.fn(), unwire: vi.fn(), add: vi.fn(), remove: vi.fn(),
+    line: vi.fn(), language: vi.fn(), read: vi.fn(), add: vi.fn(), remove: vi.fn(),
   };
   const props: WorkspaceSetupProps = {
     workspace: 'aurora',
@@ -27,7 +27,6 @@ const at = (over: Partial<WorkspaceSetupProps> = {}) => {
       read: { onSet: acts.read },
     },
     remote: {
-      wiring: { remote: null, fromEnvironment: false, onWire: acts.wire, onUnwire: acts.unwire },
       rules: { lists: { allow: [], ask: [], deny: [] }, onAdd: acts.add, onRemove: acts.remove },
     },
     ...over,
@@ -47,8 +46,8 @@ describe("a workspace's Setup", () => {
     expect(section('Defaults')).toHaveAccessibleDescription(
       "each checkout's own line (Daoris's default) · no session language (Daoris's default) · "
       + "read by agents outside it (Daoris's default)");
-    expect(section('Remote and reach')).toHaveAttribute('aria-expanded', 'false');
-    expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
+    // The remote and the rules are the place's and Details', so no section of them is drawn here.
+    expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
   });
 
   // AGENTSPLACE1f: the workspace place's Sessions hold its session rows; the tab keeps the rest, so no row is on both and none is lost.
@@ -57,12 +56,6 @@ describe("a workspace's Setup", () => {
     expect(section('Defaults')).toHaveAccessibleDescription("no session language (Daoris's default) · read by agents outside it (Daoris's default)");
     expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
     expect(acts.line).not.toHaveBeenCalled();
-  });
-
-  it('keeps the line, the remote and the rules where the session rows have gone', () => {
-    at({ rows: 'rest' });
-    expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
-    expect(section('Remote and reach')).toHaveAccessibleDescription('local only · no rules of its own');
   });
 
   // SETUPUX1v: the workspace place's Workflow takes the line's defaults, its Sessions the rules and the machines its remote counts undeclared,
@@ -83,7 +76,6 @@ describe("a workspace's Setup", () => {
     at({
       rows: 'sessions',
       remote: {
-        wiring: { remote: null, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn() },
         rules: { lists: { allow: ['Bash(make:*)'], ask: [], deny: ['Bash(rm:*)'] }, onAdd: vi.fn(), onRemove },
         machines: { undeclared: ['m-gone'], onRetire },
       },
@@ -188,9 +180,6 @@ describe("a workspace's Setup", () => {
     at({ workspace: 'my team' });
     await userEvent.click(section('Defaults'));
     expect(screen.getByText(code('daoris place line --workspace "my team" <branch>|--clear'))).toBeInTheDocument();
-    await userEvent.click(section('Remote and reach'));
-    expect(screen.getByText(code('daoris remote add "my team" --url <url>'))).toBeInTheDocument();
-    expect(screen.getByText(code('daoris remote remove "my team"'))).toBeInTheDocument();
   });
 
   it('names a workspace no shell can take by a placeholder in each twin', async () => {
@@ -227,98 +216,30 @@ describe("a workspace's Setup", () => {
     expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
   });
 
-  /** D48 §5: wiring is done once per machine per deployment, so the form is one press away, and the key never lingers. */
-  it('wires the workspace from a form one press away, and lets the key go once it has landed', async () => {
-    const { acts } = at({ open: 'remote' });
-    const user = userEvent.setup();
-
-    expect(screen.getByText('Local only: nothing is wired for this workspace on this machine.')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Key')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Wire to a remote…' }));
-    await user.type(screen.getByLabelText('Deployment'), 'https://aurora.example.com');
-    await user.type(screen.getByLabelText('Key'), 'dk_aurorakey0000');
-    await user.click(screen.getByRole('button', { name: 'Wire' }));
-
-    expect(acts.wire).toHaveBeenCalledWith('https://aurora.example.com', 'dk_aurorakey0000', expect.any(Function));
-    // Once the wiring has landed, the form closes and the key goes with it.
-    acts.wire.mock.calls[0]![2]();
-    expect(await screen.findByRole('button', { name: 'Wire to a remote…' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Wire to a remote…' }));
-    expect(screen.getByLabelText('Key')).toHaveValue('');
-  });
-
-  /** A key goes in and never comes out: what is drawn is the prefix the wiring answered. */
-  it('shows where it syncs with only its key\'s audit prefix, and unwires', async () => {
+  /** PERM1 (D72): Claude Code's rules for the workspace, the same file `daoris agent rules … --workspace` edits, under Reach. */
+  it("says the rules' terminal twin under Reach, and removes a rule from it", async () => {
     const { acts } = at({
+      rows: 'sessions',
       remote: {
-        wiring: { remote: { url: 'https://aurora.example.com', key: 'dk_abcd1234…' }, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn(() => acts.unwire()) },
-        rules: null,
+        rules: { lists: { allow: ['Bash(make:*)'], ask: [], deny: [] }, onAdd: vi.fn(), onRemove: (rule) => acts.remove(rule) },
       },
     });
-
-    expect(section('Remote and reach')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('https://aurora.example.com')).toBeInTheDocument();
-    expect(screen.getByText('dk_abcd1234…')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Unwire' }));
-    expect(acts.unwire).toHaveBeenCalled();
-  });
-
-  it('says when the environment, not the file, names the remote', () => {
-    at({
-      open: 'remote',
-      remote: { wiring: { remote: null, fromEnvironment: true, onWire: vi.fn(), onUnwire: vi.fn() }, rules: null },
-    });
-
-    expect(screen.getByText(/environment names this machine's remote/i)).toBeInTheDocument();
-  });
-
-  /** The header's *Wire to a remote…* opens Setup at its remote with the form open. */
-  it('starts with the form open where the header asked to wire it', () => {
-    at({ wiring: true });
-
-    expect(section('Remote and reach')).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByLabelText('Deployment')).toBeInTheDocument();
-  });
-
-  /** PERM1 (D72): Claude Code's rules for the workspace, the same file `daoris agent rules … --workspace` edits. */
-  it("lists, adds and removes Claude Code's rules for the workspace", async () => {
-    const { acts } = at({
-      remote: {
-        wiring: null,
-        rules: { lists: { allow: ['Bash(make:*)'], ask: [], deny: [] }, onAdd: (...args) => acts.add(...args), onRemove: (rule) => acts.remove(rule) },
-      },
-    });
-    const user = userEvent.setup();
 
     // A rule of its own is the person's, so the section opens on it.
-    expect(section('Remote and reach')).toHaveAttribute('aria-expanded', 'true');
+    expect(section('Reach')).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText(code('daoris agent rules allow|ask|deny|remove "<rule>" --workspace aurora'))).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'remove Bash(make:*)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'remove Bash(make:*)' }));
     expect(acts.remove).toHaveBeenLastCalledWith('Bash(make:*)');
-
-    await user.click(screen.getByRole('button', { name: 'Add a rule' }));
-    await user.type(screen.getByRole('textbox', { name: 'the rule' }), 'Bash(npm run test:*){Enter}');
-    expect(acts.add).toHaveBeenLastCalledWith('allow', 'Bash(npm run test:*)', expect.any(Function));
-  });
-
-  it('says what still holds where the workspace adds no rule of its own', () => {
-    at({ open: 'remote' });
-    expect(screen.getByText("None of its own. This machine's still hold.")).toBeInTheDocument();
   });
 });
 
-/**
- * FABRIC-CLOSE1i2: the machines a wired workspace's remote counts undeclared, each with *Retire*, under its remote; every machine
- * declared said as that; nothing drawn where the workspace is not wired or no pass heard the handshake.
- */
+/** FABRIC-CLOSE1i2: the machines a wired workspace's remote counts undeclared, each with *Retire*, under Reach. */
 describe("a workspace's machines its remote counts undeclared", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  const wired = { remote: { url: 'https://aurora.example.com', key: 'dk_abcd1234…' }, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn() };
-
   it('lists each machine with its Retire, and retires the one pressed', async () => {
     const onRetire = vi.fn();
-    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone', 'm-old'], onRetire } } });
+    at({ rows: 'sessions', remote: { rules: null, machines: { undeclared: ['m-gone', 'm-old'], onRetire } } });
 
     expect(screen.getByText('Machines not declared')).toBeInTheDocument();
     const row = screen.getByText('m-gone').closest('li')!;
@@ -328,24 +249,13 @@ describe("a workspace's machines its remote counts undeclared", () => {
   });
 
   it('holds every Retire while one is on its way', () => {
-    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone', 'm-old'], retiring: 'm-gone', onRetire: vi.fn() } } });
+    at({ rows: 'sessions', remote: { rules: null, machines: { undeclared: ['m-gone', 'm-old'], retiring: 'm-gone', onRetire: vi.fn() } } });
     for (const button of screen.getAllByRole('button', { name: 'Retire' })) expect(button).toBeDisabled();
-  });
-
-  it('says every machine declared, with no Retire', () => {
-    at({ remote: { wiring: wired, rules: null, machines: { undeclared: [], onRetire: vi.fn() } } });
-    expect(screen.getByText('Every machine its remote counts has declared.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Retire' })).toBeNull();
-  });
-
-  it('draws nothing where the workspace is not wired', () => {
-    at({ open: 'remote', remote: { wiring: { ...wired, remote: null }, rules: null, machines: { undeclared: ['m-gone'], onRetire: vi.fn() } } });
-    expect(screen.queryByText('Machines not declared')).toBeNull();
   });
 
   it('says it in Chinese', async () => {
     await i18n.changeLanguage('zh');
-    at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone'], onRetire: vi.fn() } } });
+    at({ rows: 'sessions', remote: { rules: null, machines: { undeclared: ['m-gone'], onRetire: vi.fn() } } });
     expect(screen.getByText('未声明的机器')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '注销' })).toBeInTheDocument();
   });

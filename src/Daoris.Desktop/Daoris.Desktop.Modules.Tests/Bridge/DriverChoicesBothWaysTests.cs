@@ -22,7 +22,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
             .WithLine("engine", "main").WithWorkspaceLine("aurora", "main")
             .WithReadAcross("engine", true).WithWorkspaceReadAcross("aurora", false).WithWriteAcross("game", "tools", true)
             .WithStanding("engine", "the old words", Moment).WithLanguage("engine", "en").WithWorkspaceLanguage("aurora", "zh")
-            .WithStrikes(3).WithForgiven("q1", 3);
+            .WithForgiven("q1", 3);
 
     private DriverChoicesWorld World(StringWriter output, StringWriter error, IReadOnlyList<Consideration>? verdicts = null, ChoicesRegistry? registry = null) => new()
     {

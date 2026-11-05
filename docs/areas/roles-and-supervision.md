@@ -144,8 +144,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     answers a question. Each hold is released by its own door. Its act is said on the line (`supervisor.rule`: the
     count, its value, the rule's number, place and act), kept as a final decision file of holder kind `rule` with no
     question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. (from D229)
-39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes`. The cap stays a machine
-    setting outside the rules. (from D229, D232)
+39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes` and no configuration reads it.
+    The planner's park carries its rule's number (`Consideration.ParksAt`), which *Try again*, Ask Daoris's `retry` and the
+    terminal say; a set-up parks at its line's rule; `STATE`'s `strikes` answers the retried quest's rule, else the machine's;
+    `driver list` points to `role supervisor`. The cap stays a machine setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
     `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The page writes
     them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
@@ -198,7 +200,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
 56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
-57. Restricted mode adds the access the person configures: housekeeping, chosen settings and checkouts, each request
+57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
+    and quiet) and checkouts, each request
     judged at the call by the door's own judges. No settings grant reaches a role. (from D183, D205)
 58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
     mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)
@@ -275,9 +278,9 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   frame handing `onChangeRule` (the door to the place's Roles) to the head and the strip.
 - **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `rules` card words.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
-  (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals, `driver list`, the seed) see the default, and about thirty
-  tests set it; the policy record's `moves` and `most` are still parsed only to be refused; the installed proof.
+- **CONTEXTDRIVE1l, m:** the policy record's `moves` and `most` are still parsed only to be refused (`StaffPolicy.Parse`,
+  `StaffCapabilities.Fields`, `role policy --on` and `--most`, `RuledPolicy`'s refusal), and the migration still converts a
+  stored policy's moves (`SupervisorRuleCensus`); the installed proof.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
   (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5

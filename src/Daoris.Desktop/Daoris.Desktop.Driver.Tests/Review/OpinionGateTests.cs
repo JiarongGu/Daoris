@@ -547,7 +547,7 @@ public sealed class OpinionGateTests
     /// <summary>
     /// FABRIC-CLOSE1h18 (D173's note): a due closes as landed on a landing made since it was owed, by its record: the session's own landing,
     /// or the advance its later done made (LAND2c), accepted at or after the due's time. One accepted before it, a session whose words went
-    /// on after its landing (D137), lands only the work it holds, which git reads of the tree (<c>AutoLandingTriesTests</c>, since this
+    /// on after its landing (D137), lands only the work it holds, which git reads of the tree (the landing's tests over real git, since this
     /// class starts no git): its record alone closes nothing, as the last row shows.
     /// </summary>
     [Theory]

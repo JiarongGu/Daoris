@@ -46,6 +46,22 @@ public sealed class AnswersAloneTests
 
     private static SaidWordView Said(string id = "w7") => new(id, "My words.", At, [], true);
 
+    /// <summary>
+    /// SESSWATCH1b (design §2.1, case 10): the watcher's word to a quiet session, a prompt of its own where the door has no turn running,
+    /// is Daoris's but resets nothing, so a line going on by answers alone is held at the bound as before; any other word of Daoris's still resets.
+    /// </summary>
+    [Fact]
+    public void The_watchers_word_to_a_quiet_session_resets_no_count_and_another_word_of_Daoris_still_does()
+    {
+        var watch = Daoris() with { Watcher = true };
+        IEnumerable<SessionEvent> twice = [.. Turn(Started()), .. Turn(Opening(), Helper()), .. Turn(Opening(), Helper("w2"))];
+
+        Assert.Equal(2, AnswersAlone.Count([.. twice, .. Turn(watch)]));
+        Assert.Equal(2, AnswersAlone.Count([.. twice, watch]));
+        Assert.True(AnswersAlone.Holds([Answer()], [.. twice, .. Turn(watch)]));
+        Assert.Equal(0, AnswersAlone.Count([.. twice, .. Turn(Daoris())]));
+    }
+
     [Fact]
     public void Each_turn_prompted_by_answers_alone_counts_one_in_a_row()
     {
@@ -267,7 +283,7 @@ public sealed class AnswersAloneTests
         try
         {
             var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-            SupervisorRuleBook.SeedFresh(home, DriverConfig.Empty, () => StoreSettled.Yes);
+            SupervisorRuleBook.SeedFresh(home,() => StoreSettled.Yes);
             var hold = new AnswersAloneHold(events, new GoOnMarks(home), new ContinuationAdmissions(home, () => StoreSettled.Yes));
             foreach (var e in Turn(Started())) events.Append("s0", e);
             foreach (var e in Turn(Supervisor())) events.Append("s0", e);

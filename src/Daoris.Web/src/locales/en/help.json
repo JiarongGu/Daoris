@@ -280,6 +280,7 @@
   "help.grants.op.settings.language": "A session’s language",
   "help.grants.op.settings.cap": "Sessions at once on this machine",
   "help.grants.op.settings.cooloff": "Cool-off when no time is named",
+  "help.grants.op.settings.quiet": "Look in on a quiet session after",
   "help.grants.never.housekeeping": "Each target by its recorded identity and owner, judged again before it acts; a running or waiting session keeps its own branch, and nothing is forced.",
   "help.grants.never.browser": "Running code in a page is never granted.",
   "help.grants.none.checkouts": "No checkout here lets agents outside it read, so there is none to choose. A repository turns it on under its page → Setup → Reach.",

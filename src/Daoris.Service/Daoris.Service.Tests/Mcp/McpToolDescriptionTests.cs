@@ -470,7 +470,7 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames().Where(name => name.StartsWith("settings_", StringComparison.Ordinal)).Order(StringComparer.Ordinal).ToList();
         string Said(string tool) => string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
 
-        Assert.Equal(["settings_cap", "settings_cooloff", "settings_language", "settings_notify"], tools);
+        Assert.Equal(["settings_cap", "settings_cooloff", "settings_language", "settings_notify", "settings_quiet"], tools);
         Assert.All(tools, tool => Assert.Contains("Ask Daoris only", Said(tool)));
         Assert.All(tools, tool => Assert.Contains("granted", Said(tool)));
         Assert.All(tools, tool => Assert.Contains("no Apply", Said(tool)));

@@ -54,7 +54,6 @@ public sealed class AccountRotationHoldTests : IDisposable
         Trees = ["engine"],
         Actors = StaffedRoles.On("stub"),
         // One failure would park it: a limit must not, and nor must a wait over an order.
-        Strikes = 1,
         PollSeconds = 1,
     };
 

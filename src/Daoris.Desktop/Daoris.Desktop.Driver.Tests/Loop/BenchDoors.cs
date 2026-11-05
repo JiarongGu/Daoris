@@ -14,11 +14,15 @@ internal sealed class BenchDoors(IServiceDoors inner) : IServiceDoors
 
     public string BaseUrl => inner.BaseUrl;
 
+    /// <summary>How many requests each path had at the last <see cref="Take"/>.</summary>
+    public IReadOnlyDictionary<string, int> LastTaken { get; private set; } = new Dictionary<string, int>();
+
     /// <summary>What was asked since the last take, the most costly first, and let go.</summary>
     public string Take()
     {
         lock (_gate)
         {
+            LastTaken = _asked.ToDictionary(each => each.Key, each => each.Value.Count, StringComparer.Ordinal);
             var said = string.Join(", ", _asked.OrderByDescending(each => each.Value.Ms).Select(each => $"{each.Key} x{each.Value.Count} {each.Value.Ms} ms"));
             _asked.Clear();
             return said.Length == 0 ? "nothing asked" : said;

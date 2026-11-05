@@ -3,7 +3,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { LANGUAGES } from '../fixtures';
-import { WorkspaceSetup, type WorkspaceRemote, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
+import { WorkspaceSetup, type WorkspaceSetupProps, type WorkspaceWiring } from '../setup/WorkspaceSetup';
 import { WorkspaceDetails } from './WorkspacePage';
 
 // The homes the workspace's Setup tab's remaining rows moved to (SETUPUX1v, the setup-UX design §4): Remote as a row of Repositories'
@@ -29,7 +29,7 @@ const WIRED = { url: 'https://work.example.com', key: 'dk_abcd1234…' };
 
 function Page({ home, remote = 'local', empty = false, focus = false }: Args) {
   if (home === 'remote') {
-    const wiring: NonNullable<WorkspaceRemote['wiring']> = {
+    const wiring: WorkspaceWiring = {
       remote: remote === 'wired' || remote === 'environment' ? WIRED : null,
       fromEnvironment: remote === 'environment',
       onWire: nothing,

@@ -39,16 +39,20 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
         Assert.True(many.Count(each => each == "worktree list --porcelain") <= 2, report);
         Assert.All(many.Where(each => each.StartsWith("for-each-ref", StringComparison.Ordinal)).GroupBy(each => each), listed => Assert.Single(listed));
         Assert.True(many.Count - few.Count <= 4 * PerBranch, report);
+        Assert.Single(many, each => each.StartsWith("rev-list --branches=daoris/*", StringComparison.Ordinal));
+        Assert.DoesNotContain(many, each => each.StartsWith("log --oneline", StringComparison.Ordinal) || each.StartsWith("merge-base --is-ancestor", StringComparison.Ordinal));
         Assert.True(many.Count <= Ceiling, report);
     }
 
-    // The end's judgement of a branch's own commits: whether the line holds its tip, its tree, where it left the line, the files it
-    // changed, and what no branch of the person's holds.
-    private const int PerBranch = 5;
+    // The end's judgement of a branch's own commits (PERF1g): where it left the line, which is also whether the line holds its tip, its
+    // tree, and the files it changed. What no branch of the person's holds is one walk of every session branch, not a start a branch
+    // (it was 5 a branch: the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds).
+    private const int PerBranch = 3;
 
-    // On six trees, 57 git starts before PERF1c: each tree's branch asked of the tree, the checkout's top and its trees asked by each
-    // stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways per branch.
-    private const int Ceiling = 38;
+    // On six trees, 57 git starts before PERF1c and 38 after it: each tree's branch asked of the tree, the checkout's top and its trees
+    // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
+    // per branch.
+    private const int Ceiling = 27;
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>
     private async Task<List<string>> WarmLookAsync()

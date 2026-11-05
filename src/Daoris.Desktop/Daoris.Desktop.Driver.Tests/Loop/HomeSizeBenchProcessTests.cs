@@ -16,7 +16,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// are held under 500 ms past the service's reads. The nodes' read runs beside every look: under a second past its list, so it is not
 /// still running at the next. A review and the help room's look are a person waiting: a tree's ignored build adds under a second to
 /// either, so a tree of gigabytes of build reads as a tracked tree does. The review and the tidy are each tens of git starts at a third
-/// of a second apiece on a loaded machine; they are said, not yet held.</para>
+/// of a second apiece on a loaded machine; their times are said, not held, and the git starts and the requests for session records of the look,
+/// the tidy, the nodes' read and a tree's walk are held (PERF1g).</para>
 ///
 /// <para>Each read runs once cold and is timed warm, the second time, as a running driver reads it at every look after its first. Its
 /// claims are bounds of under a second, which a neighbour's load would break, so it runs alone.</para>
@@ -38,6 +39,9 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
     private BenchHome Home => _home!;
 
     private long _made;
+
+    // Each read's git starts and the requests it made of the service, by the read's name.
+    private readonly Dictionary<string, (int Starts, IReadOnlyDictionary<string, int> Asked)> _taken = new(StringComparer.Ordinal);
 
     public async Task InitializeAsync()
     {
@@ -93,6 +97,28 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         Within("the large tree's kept read", kept, ReviewBudget);
         Within("the large tree's review past a small tree's", large - small, ReviewBudget);
         output.WriteLine($"not yet held: the tidy {tidy} ms, past its {BesideBudget.TotalMilliseconds} ms beside a look");
+
+        // What each read asks of git and of the service's session records, held at the size it was measured at (PERF1g): the look asks the
+        // service for the session records once (its change count, then the list), and git nothing; the tidy of two dozen trees asks git
+        // six times, not once per tree; the nodes' read one worktree list; a tree's walk, the offer's judgement, the starts it made.
+        StartsWithin("look", 0);
+        SessionReadsWithin("look", 2);
+        StartsWithin("tidy", 8);
+        SessionReadsWithin("tidy", 0);
+        StartsWithin("nodes' read", 2);
+        SessionReadsWithin("nodes' read", 2);
+        StartsWithin("the large tree's walk", 17);
+        StartsWithin("its kept read", 2);
+    }
+
+    private void StartsWithin(string what, int budget) =>
+        Assert.True(_taken[what].Starts <= budget, $"{what} made {_taken[what].Starts} git starts, over its {budget}");
+
+    /// <summary>The requests a read made of the service's session records: the list, one record, the changes since a count.</summary>
+    private void SessionReadsWithin(string what, int budget)
+    {
+        var asked = _taken[what].Asked.Where(each => each.Key.StartsWith("/api/sessions", StringComparison.Ordinal)).Sum(each => each.Value);
+        Assert.True(asked <= budget, $"{what} asked the service for session records {asked} times, over its {budget}");
     }
 
     private static void Within(string what, long ms, TimeSpan budget) =>
@@ -106,9 +132,11 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var watch = Stopwatch.StartNew();
         await read();
         var ms = watch.ElapsedMilliseconds;
+        var requests = Home.Doors.Take();
+        _taken[what] = (starts.Starts.Count, Home.Doors.LastTaken);
         var git = starts.Starts.OrderByDescending(start => start.WholeTicks).Take(3)
             .Select(start => $"git {string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(3))} {(long)GitLaunched.Ms(start.WholeTicks)} ms");
-        output.WriteLine($"{what}: {ms} ms; asked {Home.Doors.Take()}; {starts.Starts.Count} git starts, the longest {string.Join(", ", git)}");
+        output.WriteLine($"{what}: {ms} ms; asked {requests}; {starts.Starts.Count} git starts, the longest {string.Join(", ", git)}");
         // Each command asked more than once, by its first words, so a read's starts say which fact it asked again.
         foreach (var asked in starts.Starts.GroupBy(start => string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(2)))
                      .Where(group => group.Count() > 1).OrderByDescending(group => group.Count()))

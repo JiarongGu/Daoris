@@ -179,8 +179,14 @@ internal sealed class RefSnapshot
     /// <summary>Drop what was read, and what git answered of commits (PROC1d-iv): the next question reads again.</summary>
     internal void Invalidate()
     {
-        lock (_gate) (_refs, _trees, _facts) = (null, null, new(StringComparer.Ordinal));
+        lock (_gate) (_refs, _trees, _facts, Unheld) = (null, null, new(StringComparer.Ordinal), new UnheldTips());
     }
+
+    /// <summary>Which session branches no branch of the person's holds, read once for the judgement (PERF1g); dropped with the refs.</summary>
+    internal UnheldTips Unheld { get; private set; } = new();
+
+    /// <summary>The snapshot's refs as one read, for a fact that is of all of them; null where git could not list them.</summary>
+    internal Task<Refs?> ListedAsync(CancellationToken ct) => RefsAsync(ct);
 
     /// <summary>
     /// Until disposed, this flow holds no snapshot (GITAPP2a: the act journal's reconciler, run inside a writer's judgement): every question

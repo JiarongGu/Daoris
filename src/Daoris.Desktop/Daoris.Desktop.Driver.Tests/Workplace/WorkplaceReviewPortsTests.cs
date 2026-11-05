@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FOUNDATION1 mod-x, the Workplace-names-Review cut: the seams it adds. The landing gate read by the workplace as <see cref="IWorkplaceGate"/>,
-/// the world the look reads as <see cref="IWorkplaceLandingWorld"/> that the review's <see cref="IAutoLandingWorld"/> answers whole, the
+/// the world the look reads as <see cref="IWorkplaceLandingWorld"/> that the review's <see cref="IReviewLandingWorld"/> answers whole, the
 /// operation the review installs for a second opinion owed, the lower words the review's names alias, and the review's parts of the trees'
 /// gate read through the port the workflows install. The behaviour they keep is <see cref="WorkplaceReviewBoundaryTests"/>'.
 /// </summary>
@@ -71,9 +71,9 @@ public sealed class WorkplaceReviewPortsTests : IDisposable
 
     // ——— The look's world
 
-    private sealed class World : IAutoLandingWorld
+    private sealed class World : IReviewLandingWorld
     {
-        public IAutoLandingWorld? Next { get; init; }
+        public IReviewLandingWorld? Next { get; init; }
 
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([]);
 
@@ -87,7 +87,7 @@ public sealed class WorkplaceReviewPortsTests : IDisposable
 
         public Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
-        public IAutoLandingWorld Again() => Next ?? this;
+        public IReviewLandingWorld Again() => Next ?? this;
     }
 
     [Fact]
@@ -96,16 +96,16 @@ public sealed class WorkplaceReviewPortsTests : IDisposable
         var plain = new PlainWorld();
         IWorkplaceLandingWorld asked = plain;
         Assert.Same(plain, asked.Again());
-        Assert.Same(plain, ((IAutoLandingWorld)plain).Again());
+        Assert.Same(plain, ((IReviewLandingWorld)plain).Again());
 
         var fresh = new World();
         var reading = new World { Next = fresh };
         Assert.Same(fresh, ((IWorkplaceLandingWorld)reading).Again());
-        Assert.Same(fresh, ((IAutoLandingWorld)reading).Again());
+        Assert.Same(fresh, ((IReviewLandingWorld)reading).Again());
     }
 
     /// <summary>A world that implements none of the optional members, as a stand-in that keeps nothing would.</summary>
-    private sealed class PlainWorld : IAutoLandingWorld
+    private sealed class PlainWorld : IReviewLandingWorld
     {
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([]);
 

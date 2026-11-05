@@ -89,7 +89,6 @@ public sealed class WalkAgentTickTests : IDisposable
                 Actors = StaffedRoles.On("acp-stub"),
                 TestBound = 1,
                 PollSeconds = 1,
-                Strikes = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>>
                 {
                     ["acp-stub"] = ["node", agent, Log, "stub"],

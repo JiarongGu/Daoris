@@ -49,7 +49,7 @@ export function ProjectsView({
   const [over, setOver] = useState(false);
   // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f); a workspace's apart (UX6g).
   const [tab, setTab] = useState<ProjectTab>(() => (branchAsked ? 'branches' : readProjectTab()));
-  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => opensAt ?? (section ? 'setup' : readWorkspaceTab()));
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => opensAt ?? (section ? 'details' : readWorkspaceTab()));
   useDoor(lists, 'projects', door);
   const layout = useProjectsView({
     active: true,

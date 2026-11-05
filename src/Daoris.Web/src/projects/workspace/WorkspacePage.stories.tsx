@@ -13,21 +13,18 @@ import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../../work/history/historyFixtu
 import { WORKSPACE } from '../../workflow/fixtures';
 import { WorkflowTab } from '../../workflow/WorkflowTab';
 import type { BranchListValue } from '../git/BranchList';
-import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, LANGUAGES } from '../fixtures';
+import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME } from '../fixtures';
 import { KeptHistory } from './KeptHistory';
 import { BranchesTab } from '../git/RepositoryGit';
 import type { WorkspaceTab } from '../tabs';
 import { WorkspaceBranches } from './WorkspaceBranches';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceTidied } from './WorkspaceTidied';
-import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
 
 // A workspace's page (UX6g, D150 §4.3) in Repositories' main area, every tab and the states the design names: Details
 // with its repositories, what a start runs on and its accounts; Branches with each repository's branches (UX6h2b2), the
-// clean-up and bringing up to date; Setup
-// at Daoris's defaults, with the workspace's own values, with its process (DOORS1b: commits, helpers, the landing's ticket key
-// and squash) at Daoris's defaults, set and in 中文, with the wiring form open, and with the environment naming the remote; a
-// browser's page; and the header wired and local. Drawn as `WorkspaceView` draws them, from props.
+// clean-up and bringing up to date; Workflow; a browser's page; and the header wired and local. Drawn as `WorkspaceView` draws
+// them, from props.
 
 const nothing = () => {};
 
@@ -75,54 +72,8 @@ const group = (repository: string, included: boolean) => (
   />
 );
 
-const DEFAULTS_DAORIS: WorkspaceSetupProps = {
-  workspace: 'work',
-  defaults: {
-    line: { onSet: nothing },
-    language: { table: LANGUAGES, onSet: nothing },
-    read: { onSet: nothing },
-  },
-  remote: {
-    wiring: { remote: null, fromEnvironment: false, onWire: nothing, onUnwire: nothing },
-    rules: { lists: { allow: [], ask: [], deny: [] }, onAdd: nothing, onRemove: nothing },
-  },
-};
-
-/** Its process at Daoris's defaults (DOORS1b): commits as the work goes, and each helper waiting for the person's yes. */
-const DEFAULTS_PROCESS: WorkspaceSetupProps = {
-  ...DEFAULTS_DAORIS,
-  defaults: { ...DEFAULTS_DAORIS.defaults, commits: { onChange: nothing }, helpers: { onChange: nothing } },
-};
-
-/**
- * Its process set for its repositories (DOORS1b): branches named by a ticket and squashed, one commit at the end under the
- * person's convention, helpers started at once from two agents in order.
- */
-const DEFAULTS_PROCESS_OWN: WorkspaceSetupProps = {
-  ...DEFAULTS_DAORIS,
-  defaults: {
-    ...DEFAULTS_DAORIS.defaults,
-    commits: { set: { mode: 'at-end', convention: 'One commit per ticket: its key, then an imperative summary.' }, onChange: nothing },
-    helpers: { set: { mode: 'on', agents: ['codex-acp', 'dsh'] }, onChange: nothing },
-  },
-};
-
-const DEFAULTS_OWN: WorkspaceSetupProps = {
-  ...DEFAULTS_DAORIS,
-  defaults: {
-    line: { set: 'develop', onSet: nothing },
-    language: { set: 'zh', table: LANGUAGES, onSet: nothing },
-    read: { set: false, onSet: nothing },
-  },
-  remote: {
-    wiring: { remote: { url: 'https://work.example.com', key: 'dk_abcd1234…' }, fromEnvironment: false, onWire: nothing, onUnwire: nothing },
-    rules: { lists: { allow: ['Bash(npm run test:*)'], ask: ['Bash(az repos pr create:*)'], deny: [] }, onAdd: nothing, onRemove: nothing },
-  },
-};
-
 type Args = {
   tab: WorkspaceTab;
-  setup?: WorkspaceSetupProps;
   /** A browser's page: what it may know, with no tab row. */
   browser?: boolean;
   /** Wired to a deployment, or local only. */
@@ -136,7 +87,7 @@ type Args = {
 };
 
 /** The page as `WorkspaceView` draws it, its tab chosen here so a story can move between them. */
-function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN, held = REPOSITORIES.slice(0, 3), tidied }: Args) {
+function Page({ tab: first, browser = false, wired = true, kept = WORKSPACE_PLAN, held = REPOSITORIES.slice(0, 3), tidied }: Args) {
   const [tab, setTab] = useState<WorkspaceTab>(first);
   const details = (
     <>
@@ -202,8 +153,7 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
           />
         </>
       )
-      : tab === 'workflow'
-        ? (
+      : (
           // Its Current (WORKFLOW1b), two of its repositories setting rules of their own.
           <WorkflowTab
             page="workspace"
@@ -213,10 +163,9 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
               workspace: 'work',
               repositories: REPOSITORIES.map((repository) => ({ repository, own: repository === 'billing' || repository === 'reports' })),
             }}
-            doors={{ setup: () => setTab('setup'), repository: nothing }}
+            doors={{ setup: nothing, repository: nothing }}
           />
-        )
-      : <WorkspaceSetup {...setup} />;
+        );
   return (
     <WorkspacePage
       workspace="work"
@@ -329,44 +278,6 @@ export const WorkflowAt680Dark: Story = { args: { tab: 'workflow' }, decorators:
 
 /** Workflow at the main area's 400 px floor. */
 export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators: [storyWidths.narrow] };
-
-/** Setup at Daoris's defaults: both sections fold, each value marked as Daoris's. */
-export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
-
-// Setup's open sections at the frame's widths (the UI/UX design R1, R6; UIFIT1): each section's rows on one label track,
-// values beside their words at the half width and under them at the floor. `measured/settings.spec.ts` reads them.
-
-/** Setup with its own values, at the half width. */
-export const SetupOwnHalf: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN }, decorators: [storyWidths.half] };
-
-/** Setup with its own values, at the 400 px floor. */
-export const SetupOwnNarrow: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN }, decorators: [storyWidths.narrow] };
-
-/** The process defaults open, in 中文, at the half width. */
-export const SetupProcessChineseHalf: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [storyWidths.half, chinese] };
-
-/** Its process at Daoris's defaults (DOORS1b): *Commits* and *Helpers* among the Defaults, each offering *Set for this workspace*. */
-export const SetupProcess: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_PROCESS, open: 'defaults' } } };
-
-/** Its process set for its repositories: the landing's ticket key and squash, its commit rule and convention, its helpers. */
-export const SetupProcessOwn: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN } };
-
-/** Its process set, in 中文. */
-export const SetupProcessChinese: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [chinese] };
-
-/** Setup with the workspace's own values: a line, a branch rule a plugin pushes and accepts, 中文 sessions, no reading, a remote and two rules. */
-export const SetupOwn: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN } };
-
-/** The header's *Wire to a remote…*: Setup at its remote, the form open. */
-export const Wiring: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_DAORIS, wiring: true } } };
-
-/** The environment names this machine's remote whole, and the file is not read: the row says which source decided. */
-export const FromTheEnvironment: Story = {
-  args: {
-    tab: 'setup',
-    setup: { ...DEFAULTS_OWN, open: 'remote', remote: { ...DEFAULTS_OWN.remote, wiring: { ...DEFAULTS_OWN.remote.wiring!, fromEnvironment: true } } },
-  },
-};
 
 /** Local only: the header offers *Wire to a remote…* where a wired one offers *Sync now*. */
 export const LocalOnly: Story = { args: { wired: false } };

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// landing's holds, on the result the press was made on. Only that result moving stops the press, a reopen, a later submission or
 /// another <c>ready</c> at the same commit; a quest's hold never does, since the press is the person's own word. A press on no quest,
 /// or on a quest whose result is not in, holds to nothing and lands as before. Tables and counted reads, so the suite's fast half; the
-/// presses over real git are <see cref="AutoLandingTests"/> and <see cref="EntryLandingTests"/>.
+/// presses over real git are <see cref="EntryLandingTests"/>.
 /// </summary>
 public sealed class PressedResultTests
 {

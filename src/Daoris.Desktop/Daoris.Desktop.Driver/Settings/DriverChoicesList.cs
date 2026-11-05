@@ -13,9 +13,7 @@ internal static class DriverChoicesList
         Say($"daoris: {world.ConfigPath}");
         Say("  roles      `daoris role` says each role's agents, and `daoris role set` changes them");
         Say($"  cap        {choices.Cap} concurrent session(s)");
-        Say($"  strikes    {(choices.Strikes == 0
-            ? "off — a quest is never parked, and it keeps trying at the cost of a login each time"
-            : $"{choices.Strikes} failed session(s) park a quest")}");
+        Say("  rules      `daoris role supervisor` says the supervisor's rules, the failed sessions that park a quest among them");
         foreach (var (quest, mark) in choices.Forgiven) Say($"  retried    #{quest}  (counting from {mark} failure(s))");
         foreach (var (quest, session) in choices.Released) Say($"  released   #{quest}  (your stop of session {session})");
 

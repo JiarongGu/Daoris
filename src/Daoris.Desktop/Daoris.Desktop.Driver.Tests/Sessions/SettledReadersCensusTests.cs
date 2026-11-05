@@ -47,7 +47,7 @@ public sealed partial class SettledReadersCensusTests
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
         ["WatchNodes.cs"] = "the integration transport's word about a conflict: kept, the conflict told to the session",
         ["IntegrateRoutes.cs"] = "the owner's *rebase it* of a superseded commit (INTEGRATE1h): kept, the disposition answered only then",
-        ["AutoLandingWorld.cs"] = "the landing's word to a session, said through the lander's world: kept",
+        ["ReviewLandingWorld.cs"] = "the landing's word to a session, said through the landing world: kept",
         ["TreesConsole.cs"] = "the terminal's tree word to a session: kept",
         ["TreesLandDesk.cs"] = "the window's Accept carrying a session on (LANDBACK1 part 1): kept, and the person's yes is kept with it",
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",

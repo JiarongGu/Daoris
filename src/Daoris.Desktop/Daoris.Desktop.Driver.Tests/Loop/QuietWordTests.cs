@@ -89,6 +89,48 @@ public sealed class QuietWordTests : IDisposable
         Assert.Equal([said.Said.Single().Id!], said.TakenOff);
     }
 
+    /// <summary>
+    /// Case 10, on a door that takes words at a turn's end: the word is judged where it leaves for the wire, and stands only while its
+    /// episode does; a word taken for the event log is marked the watcher's, which no answers-alone count resets by.
+    /// </summary>
+    [Fact]
+    public async Task SESSWATCH1b_the_word_goes_to_no_turn_once_its_episode_or_run_ended_and_is_marked_the_watchers()
+    {
+        var said = new StandInSaid();
+        var inbox = new DrivenInbox(_ => { });
+        using var run = _watch.Watch("s1", new WatchedRun(SessionWatch.Quest, "q1", "codex"));
+        var word = QuietWord.Tell(_watch, "s1", inbox, said)!;
+
+        Run(SessionWatch.DefaultQuiet + Pace);
+        await Settled(() => said.Said.Count > 0);
+        var held = inbox.TakeAllOrClose()!.Single();
+
+        Assert.True(DaorisKeys.IsWatch(held.Daoris!.Key));
+        Assert.True(await held.Daoris.Stands!(CancellationToken.None));
+        Assert.True(ChatMessage.Words(held).Watcher);
+        Assert.Null(ChatMessage.Words(new ChatMessage("ok", [])).Watcher);
+
+        _watch.Heard("s1");
+        Run(Pace);
+        await Settled(() => said.TakenOff.Count > 0);
+        Assert.False(await held.Daoris.Stands!(CancellationToken.None));
+        word.Dispose();
+    }
+
+    /// <summary>Case 10: a watch word found on an ended record is no word waiting, so no look goes on with it and no carry-on resumes from it.</summary>
+    [Fact]
+    public void SESSWATCH1b_a_watch_word_left_on_an_ended_record_is_no_word_that_waits()
+    {
+        var watch = new SaidWordView("said-1", "Daoris: nothing came.", DateTimeOffset.UnixEpoch, [], false) { Key = DaorisKeys.Watch("s1", 1), From = DaorisWords.From };
+        var person = new SaidWordView("said-2", "Go on.", DateTimeOffset.UnixEpoch, [], false);
+        var ended = new PriorSession("s1", null, "failed");
+
+        Assert.False((ended with { Said = [watch] }).WordsWaiting);
+        Assert.Empty((ended with { Said = [watch] }).Waiting);
+        Assert.Equal(["said-2"], (ended with { Said = [watch, person] }).Waiting.Select(word => word.Id));
+        Assert.True((ended with { Said = [watch, person] }).WordsWaiting);
+    }
+
     [Fact]
     public void SESSWATCH1b_the_words_name_the_call_or_the_work_and_the_key_names_the_episode()
     {

@@ -61,7 +61,6 @@ public sealed class CodexCreditsTickTests : IDisposable
         TestBound = 1,
         PollSeconds = 1,
         // One failure would park it: the limit must hold none.
-        Strikes = 1,
         // The account agent's own reads run the stand-in too, never PATH's codex.
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", Agent(), Log], ["codex"] = ["node", Agent(), Log] },
     };

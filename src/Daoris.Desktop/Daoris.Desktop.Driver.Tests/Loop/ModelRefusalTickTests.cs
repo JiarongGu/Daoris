@@ -63,7 +63,6 @@ public sealed class ModelRefusalTickTests : IDisposable
                 TestBound = 1,
                 PollSeconds = 1,
                 // One failure would park it: a choice its agent did not offer must hold none.
-                Strikes = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, refuses] },
             },
             "build",
@@ -247,7 +246,6 @@ public sealed class ModelRefusalTickTests : IDisposable
                 Actors = StaffedRoles.On(PipeStub.Named),
                 TestBound = 1,
                 PollSeconds = 1,
-                Strikes = 1,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { [PipeStub.Named] = ["node", PipeAgent(), Log, refuses] },
             },
             "build",

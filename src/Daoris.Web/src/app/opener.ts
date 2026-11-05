@@ -169,9 +169,8 @@ const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS
  */
 export function opening(view: View, item?: string | null, part: OpenPart = {}, here: string | null = null): Opening {
   const plan: Opening = { view };
-  // A section is a part of Setup, so a door naming one opens Setup.
-  const workspaceTab = part.workspaceTab ?? (part.workspaceSection ? 'setup' : undefined);
-  const named = item || (view === 'projects' && workspaceTab && here ? workspaceItem(here) : null);
+  const workspaceTab = part.workspaceTab;
+  const named = item || (view === 'projects' && (workspaceTab || part.workspaceSection) && here ? workspaceItem(here) : null);
   if (view === 'knowledge') {
     // Each mode's list keeps its own chosen item, so an item is chosen only in the mode the door names: with none it
     // could be either list's, and is never guessed at.
@@ -252,15 +251,15 @@ export function placeOpening(plan: Opening, workspaceOfRepository: (repository: 
   if (plan.workspaceTab === 'workflow' && plan.placeAt?.edit && 'workspace' in named) {
     return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: plan.placeAt };
   }
-  if (plan.workspaceTab === 'setup' && plan.workspaceSection && 'workspace' in named) {
-    // SETUPUX1v: each section of a workspace's Setup tab has its home. The remote stays Repositories', as a row of its Details.
+  if (plan.workspaceSection && 'workspace' in named) {
+    // SETUPUX1v: each section of a workspace's setup has its home on its place. The remote is Repositories', a row of its Details.
     if (plan.workspaceSection === 'remote') return { ...plan, workspaceTab: 'details' };
     return { view: 'agents', agentsMode: 'setup', place: workspaceId(named.workspace), placeAt: WORKSPACE_HOMES[plan.workspaceSection] };
   }
   return plan;
 }
 
-/** Where each section of a workspace's Setup tab went on the workspace's place: its section and the row of it (SETUPUX1v). */
+/** Where each section of a workspace's setup lives on the workspace's place: its section and the row of it (SETUPUX1v). */
 const WORKSPACE_HOMES: Record<Exclude<WorkspaceSection, 'remote'>, PlaceAt> = {
   defaults: { section: 'workflow', row: 'defaults' },
   access: { section: 'sessions', row: 'access' },

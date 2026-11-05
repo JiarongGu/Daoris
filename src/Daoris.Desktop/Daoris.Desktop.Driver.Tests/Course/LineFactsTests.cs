@@ -17,7 +17,7 @@ public sealed class LineFactsTests : IDisposable
     public LineFactsTests()
     {
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
+        SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes);
     }
 
     public void Dispose() => GitSeed.Remove(_home);

@@ -101,15 +101,19 @@ internal sealed class ContentHolds(TreeContext context)
             if (paths.Count == 0) continue;
             changed ??= paths;
 
-            var (logCode, trees, logErr) = await WorkingTree.GitAsync(cwd, ["log", "--format=%T", $"{mergeBase.Trim()}..{formId}"], ct)
-                .ConfigureAwait(false);
+            // A line still where the branch left it has no commit since, and what the branch changed is what it differs from the line in:
+            // neither is asked of git.
+            var unmoved = string.Equals(mergeBase.Trim(), formId, StringComparison.OrdinalIgnoreCase);
+            var (logCode, trees, logErr) = unmoved
+                ? (0, "", "")
+                : await WorkingTree.GitAsync(cwd, ["log", "--format=%T", $"{mergeBase.Trim()}..{formId}"], ct).ConfigureAwait(false);
             if (logCode != 0) unread ??= $"git could not read `{form}`'s commits: {Said(logErr)}";
             else if (trees.Split('\n', StringSplitOptions.TrimEntries).Contains(tree.Trim(), StringComparer.Ordinal))
             {
                 return ContentProof.Of(new ContentHold(form, Squash: true) { OnLine = true }, formRef, formId);
             }
 
-            var differs = await DifferingAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false);
+            var differs = unmoved ? paths : await DifferingAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false);
             switch (differs?.Count)
             {
                 case 0: return ContentProof.Of(new ContentHold(form, Squash: false) { OnLine = true }, formRef, formId);

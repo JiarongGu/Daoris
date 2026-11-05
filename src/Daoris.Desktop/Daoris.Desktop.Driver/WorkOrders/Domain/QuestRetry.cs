@@ -20,10 +20,13 @@ public static class QuestRetry
         switch (verdict)
         {
             case { Verdict: StartVerdict.Exhausted } exhausted:
-                // Marked where it stands rather than erased, so the records still read true and the next `strikes` failures park it
-                // again. At its failures, not the limit (RETRY1b): a quest parked a second time has more failures than the limit.
+                // Marked where it stands rather than erased, so the records still read true and its failures rule parks it again
+                // after as many more. At its failures, not the rule's number (RETRY1b): a quest parked a second time has more.
                 return new(quest, RetryDecision.Marked, null,
-                    config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
+                    config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + (exhausted.ParksAt ?? 0)))
+                {
+                    ParksAt = exhausted.ParksAt,
+                };
             case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
                 return new(quest, RetryDecision.Released, stop.Session, config => config.WithReleased(quest, stop.Session));
             case { Verdict: StartVerdict.TransientHeld, HeldBy: { Updated: { } ended } exhausted }:

@@ -58,12 +58,15 @@ public sealed record ConfiguredAccess(IReadOnlyList<string> Housekeeping)
     /// <summary>How long an account whose limit names no time cools: <c>daoris settings cooloff</c>.</summary>
     public const string CoolOff = "cooloff";
 
+    /// <summary>How long a session may say nothing and run nothing before Daoris looks in on it: <c>daoris settings quiet</c>.</summary>
+    public const string Quiet = "quiet";
+
     /// <summary>
     /// The settings this build changes under the grant, in the page's order: the five ordinary ones, and never the mode, the grants,
     /// accounts or a safeguard (the design's §4.1 table). The timeout left it with SESSWATCH1a (D200): a grant of it kept in the file
     /// is read as none.
     /// </summary>
-    public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Cap, CoolOff];
+    public static readonly IReadOnlyList<string> SettingsBuilt = [Notify, Language, Cap, CoolOff, Quiet];
 
     /// <summary>The settings chosen, in <see cref="SettingsBuilt"/>'s order, once each; none by default.</summary>
     public IReadOnlyList<string> Settings { get; init; } = [];

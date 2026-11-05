@@ -67,7 +67,7 @@ public sealed class SignedOutWaitTests : IDisposable
 
     private static DriverConfig Config => ActorChoices.With(
         ActorChoices.With(
-            DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Strikes = 1, PollSeconds = 1 },
+            DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], PollSeconds = 1 },
             "build", [new ActorChoice("fake")]),
         "intake", [new ActorChoice("fake")]);
 
