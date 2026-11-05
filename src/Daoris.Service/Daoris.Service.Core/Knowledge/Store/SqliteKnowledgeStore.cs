@@ -82,6 +82,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         var store = new SqliteKnowledgeStore(connection);
         try
         {
+            await StoreJournal.SetAsync(connection, ct).ConfigureAwait(false);
             await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
         }
         catch
