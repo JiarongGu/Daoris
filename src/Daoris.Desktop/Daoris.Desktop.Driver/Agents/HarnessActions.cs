@@ -99,11 +99,7 @@ public static class HarnessActions
         toolchain.Channel is { Length: > 0 } channel
             ? PinFromChannelAsync(toolchain, channel, home, harness, version, write, ct, started, transport)
             : toolchain.Package is { Length: > 0 } package
-            ? RunAsync(
-                // The npm Tools resolves (TOOLS5, §2.7): its prefix is named, so the node it installs for is Tools' node.
-                ThroughTools(home, [.. npm ?? Npm, "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
-                 $"{package}@{version}"]),
-                toolchain, profileHome: null, write, ct, started)
+            ? RunAsync(PinMove.PackageCommand(home, harness, package, version, npm ?? Npm), toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
                 + "of it. Install it with its own tooling and Daoris will find it on PATH.");
@@ -224,19 +220,20 @@ public static class HarnessActions
             : $"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
         var newest = await PinNewest.AskAsync(toolchain, home, pinned, npm, write, ct, started, transport).ConfigureAwait(false);
 
-        if (newest == pinned && HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null)
+        var move = PinMove.Decide(newest, pinned, HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null);
+        if (move == PinMoveKind.Stays)
         {
             write($"{pinned} is already the newest release — nothing was fetched, and the pin stays.");
             return 0;
         }
-        if (CompareReleases(newest, pinned) < 0)
+        if (move == PinMoveKind.Behind)
         {
             write($"the pin, {pinned}, is newer than the newest release ({newest}) — nothing was fetched, and the pin "
                 + "stays. Update never moves a pin backwards.");
             return 0;
         }
 
-        write(newest == pinned
+        write(move == PinMoveKind.Reinstall
             ? $"{pinned} is the newest release and is not installed here — installing it."
             : $"{pinned} → {newest}");
         var code = await PinAsync(toolchain, home, harness, newest, write, ct, started, transport, npm).ConfigureAwait(false);

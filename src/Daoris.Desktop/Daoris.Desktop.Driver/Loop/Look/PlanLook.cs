@@ -20,7 +20,7 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
             // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here.
             plan = Planner.Plan(
                 snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config,
-                StartDoor.Of(wiring.Home, config, wiring.Context.Adapters), window: wiring.Context.Browser is not null, roles: wiring.Context.Roles);
+                BuildDoor.Drives(wiring.Home, config, wiring.Context.Adapters), window: wiring.Context.Browser is not null, roles: wiring.Context.Roles);
         }
 
         state.Snapshot = snapshot;

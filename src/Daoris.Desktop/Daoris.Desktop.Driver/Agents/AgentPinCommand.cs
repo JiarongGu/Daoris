@@ -105,7 +105,7 @@ internal static class AgentPinCommand
             try
             {
                 // The npm the tools resolve (TOOLS5, D121 §2.7): its prefix is named, so what it installs runs on the tools' node.
-                command = HarnessActions.ThroughTools(home, [.. world.Npm, "install", "--prefix", where, $"{toolchain.Package}@{version}"]);
+                command = PinMove.PackageCommand(home, name, toolchain.Package!, version, world.Npm);
             }
             catch (DriverException refused)
             {
@@ -252,20 +252,21 @@ internal static class AgentPinCommand
             return 2;
         }
 
-        if (newest == pin && HarnessSettings.ManagedBinary(home, name, pin, toolchain.Binary) is not null)
+        var move = PinMove.Decide(newest, pin, HarnessSettings.ManagedBinary(home, name, pin, toolchain.Binary) is not null);
+        if (move == PinMoveKind.Stays)
         {
             Say($"{Prefix}: `{name}` {pin} is already the newest release — nothing was fetched, and the pin stays.");
             return 0;
         }
 
-        if (HarnessActions.CompareReleases(newest, pin) < 0)
+        if (move == PinMoveKind.Behind)
         {
             Say($"{Prefix}: `{name}` is pinned at {pin}, newer than the newest release ({newest}) — nothing was");
             Say("  fetched, and the pin stays. Update never moves a pin backwards.");
             return 0;
         }
 
-        Say(newest == pin
+        Say(move == PinMoveKind.Reinstall
             ? $"{Prefix}: `{name}` {pin} is the newest release and is not installed here — installing it."
             : $"{Prefix}: `{name}` {pin} → {newest}");
         return await InstallAndPinAsync(world, path, name, toolchain, newest, named, ct).ConfigureAwait(false);

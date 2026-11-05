@@ -168,7 +168,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     }
 
     /// <summary>
-    /// Build's first agent's wire, as the loop plans by it (D70; ONEWAY1b: read from Build's order, never the old key); the pipe, the stricter
+    /// Whether any entry of Build's order rides the protocol, as the loop plans by it (D70, <see cref="BuildDoor"/>); the pipe, the stricter
     /// door, when it names none this build has or Build's order does not read.
     /// </summary>
     public bool Unadopted(DriverConfig config) => UnadoptedOf(Loop, config);
@@ -181,7 +181,7 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     {
         try
         {
-            return ActorChoices.FirstAgent("build", config) is { } first && Adoption.Unadopted(first, loop.Harnesses.Adapters.AbilitiesOf);
+            return BuildDoor.Drives(loop.Home, config, loop.Harnesses.Adapters);
         }
         catch (DriverException)
         {

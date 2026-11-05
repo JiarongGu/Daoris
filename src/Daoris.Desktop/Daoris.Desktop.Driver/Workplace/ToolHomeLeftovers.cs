@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
@@ -43,16 +42,24 @@ public sealed record ToolMeasure(long Bytes, DateTimeOffset? Newest, bool Partia
 /// </remarks>
 public static class ToolHomeLeftovers
 {
-    /// <summary>The variable naming Claude Code's configuration home: the person's own, where they set one.</summary>
-    public const string Variable = "CLAUDE_CONFIG_DIR";
+    /// <summary>
+    /// The project-folder layout of the one provider that declares a conversation home of that layout (Claude Code's alone): the
+    /// variable naming its configuration home, its place by default, the projects' folder and how a directory is named in it.
+    /// </summary>
+    private static ProjectFolders Layout { get; } = Providers.Built()
+        .Where(provider => provider.Conversations.IsKnown)
+        .Select(provider => provider.Conversations.Required.Projects)
+        .OfType<ProjectFolders>()
+        .First();
 
-    /// <summary>Claude Code names a folder past this many characters with a hash of its own, which is not proven here.</summary>
+    /// <summary>The variable naming the person's own tool home, where they set one.</summary>
+    public static string Variable => Layout.Variable;
+
+    /// <summary>The agent names a folder past this many characters with a hash of its own, which is not proven here.</summary>
     private const int LongestName = 200;
 
-    private static readonly Regex Other = new("[^a-zA-Z0-9]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    /// <summary>A path as Claude Code names its project folder: every character but a letter or a digit becomes <c>-</c>.</summary>
-    public static string Flatten(string path) => Other.Replace(path, "-");
+    /// <summary>A path as the agent names its project folder.</summary>
+    public static string Flatten(string path) => Layout.Flatten(path);
 
     // ---------------------------------------------------------------------------------------------------------------------
     // The person's tool home
@@ -82,7 +89,7 @@ public static class ToolHomeLeftovers
             return (full, from, null);
         }
 
-        return (System.IO.Path.Combine(profile, ".claude"), "default", null);
+        return (System.IO.Path.Combine(profile, Layout.DefaultFolder), "default", null);
     }
 
     /// <summary>The own home as a real program reads it: this process's environment, the account's, the user profile.</summary>
@@ -96,7 +103,7 @@ public static class ToolHomeLeftovers
     public static (string? Path, string From, string? Why) ToolHomeOf(IToolHomeWorld world) => (world.ToolHome, world.ToolHomeFrom, world.ToolHomeWhy);
 
     /// <summary>The folder Claude Code keeps its projects in, in the person's tool home.</summary>
-    public static string? ProjectsOf(IToolHomeWorld world) => world.ToolHome is { } tool ? System.IO.Path.Combine(tool, "projects") : null;
+    public static string? ProjectsOf(IToolHomeWorld world) => world.ToolHome is { } tool ? System.IO.Path.Combine(tool, Layout.Folder) : null;
 
     // ---------------------------------------------------------------------------------------------------------------------
     // Provenance
@@ -174,7 +181,7 @@ public static class ToolHomeLeftovers
     {
         if (world.Home is not { } home) return new ToolListing([], "no-home", false, 0, 0);
         if (world.ToolHome is not { } tool) return new ToolListing([], world.ToolHomeWhy ?? "no-tool-home", false, 0, 0);
-        var projects = System.IO.Path.Combine(tool, "projects");
+        var projects = System.IO.Path.Combine(tool, Layout.Folder);
         if (!Directory.Exists(projects)) return new ToolListing([], null, false, 0, 0);
         if (LinkOnChain(projects) is not null) return new ToolListing([], "linked", false, 0, 0);
         if (world.ToolOrigins is not { } origins) return new ToolListing([], "records-unread", false, 0, 0);
