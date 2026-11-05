@@ -281,6 +281,8 @@
   "agents.setup.failed": "The places could not be read here; try again shortly.",
   "agents.setup.nothing": "No place matches.",
   "agents.setup.drivenCount": "{{count}} driven",
+  "agents.setup.tree.held": "Held",
+  "agents.setup.tree.adoption": "Adoption running",
   "agents.setup.imported": "{{count}} imported, not driven",
   "agents.setup.page": "{{shown}} of {{total}}",
   "agents.setup.first": "First page",

@@ -137,7 +137,7 @@ function rolesLine(row: PlaceRow, kind: PlaceKind, t: TFunction, language: strin
 
 export type HeadFacts = { pill: { tone: 'done' | 'taken' | 'open' | 'neutral'; label: string } | null; facts: string[] };
 
-const landsSaid = (t: TFunction, lands: NonNullable<NonNullable<PlaceRow['values']>['lands']>): string | null => {
+export const landsSaid = (t: TFunction, lands: NonNullable<NonNullable<PlaceRow['values']>['lands']>): string | null => {
   if (!lands.preset) return null;
   const how = deliveryNameOf(t, lands.preset);
   return lands.own.length > 0 ? t('agents.setup.fold.landsOwn', { how, count: lands.own.length }) : how;

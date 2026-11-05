@@ -1,9 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePlaces } from '../../bridge/shell';
-import type { PlaceNeed, PlaceRow, PlacesAsk, PlacesRead, StructurePlaceAsk } from '../../data/wiring';
-import { Button, CheckField, Icon } from '../../design/ui';
-import { cn } from '../../lib/cn';
+import type { PlaceRow, PlacesAsk, PlacesRead, StructurePlaceAsk } from '../../data/wiring';
 import { PageHead, ViewMain } from '../../work/frame/ViewMain';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
 import type { SetUpPlace } from './placePlan';
@@ -12,32 +10,12 @@ import type { SourceDoor } from './PlaceRoles';
 import {
   firstSection, foldedLines, headOf, needOpening, type PlaceAt, type PlaceKind, type PlaceSection, type PlaceShell, sectionsOf,
 } from './placeShell';
+import { placeIdOf, type SetupState } from './setupTreeModel';
 
 /** A page of driven repositories, and the step "Show more" takes. */
 const PAGE = 50;
 
 export { MACHINE, repositoryId, workspaceId };
-
-/** The place a row stands for, as the list's chosen item names it. */
-export const placeIdOf = (row: PlaceRow): string =>
-  row.repository ? repositoryId(row.workspace, row.repository) : row.workspace ? workspaceId(row.workspace) : MACHINE;
-
-export type SetupState = {
-  search: string;
-  onSearch: (search: string) => void;
-  needsLook: boolean;
-  onNeedsLook: (on: boolean) => void;
-  /** The workspace whose not-driven repositories are open, and the page of them. */
-  fold: string | null;
-  onFold: (workspace: string | null) => void;
-  /** The cursor of the open fold's page; none on its first. */
-  foldAfter: string | null;
-  onFoldAfter: (after: string | null) => void;
-  onMore: () => void;
-  read: PlacesRead | null;
-  /** `loading` until the first answer; `failed` where the shell does not offer places or could not read them. */
-  status: 'loading' | 'failed' | 'ok';
-};
 
 /**
  * The Setup mode's places as the view holds them: the search, the filter, the open fold and the page asked, and the driver's answer
@@ -74,136 +52,6 @@ export function useSetupPlaces(enabled: boolean): SetupState {
     read,
     status,
   };
-}
-
-const needsOf = (needs: readonly PlaceNeed[]) => needs.map((need) => need.code);
-
-function PlaceButton({ chosen, onPress, depth = 0, children }: { chosen: boolean; onPress: () => void; depth?: 0 | 1; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-current={chosen || undefined}
-      onClick={onPress}
-      className={cn(
-        'block w-full min-w-0 border-l-[3px] py-1.5 pr-2.5 text-left transition-colors duration-(--speed)',
-        depth ? 'pl-6' : 'pl-2.5',
-        'hover:bg-accent-soft/50',
-        chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-/**
- * **The Setup mode's list** (AGENTSPLACE1e, the Agents-place design §3): *This machine*, then each workspace with its driven
- * repositories, and the rest of a workspace's imported ones folded into one row that opens a paged read. A search and *Needs a look*
- * narrow the driven ones; the driver judges the reasons from its configuration alone.
- *
- * A molecule: the driver's answer arrives, and each press goes out.
- */
-export function SetupList({ state, chosen, onChoose }: { state: SetupState; chosen: string | null; onChoose: (id: string) => void }) {
-  const { t } = useTranslation();
-  const { read } = state;
-  const line = 'm-0 px-3 py-1.5 text-small text-ink-faint';
-  const reasons = (needs: readonly PlaceNeed[]) => needsOf(needs).map((code) => t(`agents.setup.need.${code}`, { defaultValue: code })).join(' · ');
-  return (
-    <div>
-      <div className="sticky top-0 z-10 grid gap-1.5 border-b border-line bg-page px-2 pb-2 pt-1.5">
-        <div className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised py-0.5 pl-2 pr-0.5 text-ink-faint focus-within:border-accent">
-          <Icon name="search" size={12} className="shrink-0" />
-          <input
-            type="search"
-            value={state.search}
-            aria-label={t('agents.setup.search')}
-            placeholder={t('agents.setup.search')}
-            onChange={(event) => state.onSearch(event.target.value)}
-            className="min-h-6 min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
-          />
-        </div>
-        <CheckField checked={state.needsLook} onChange={state.onNeedsLook} label={t('agents.setup.needsLook')} className="px-1 text-small" />
-      </div>
-      {state.status === 'loading' && <p className={line}>{t('agents.setup.loading')}</p>}
-      {state.status === 'failed' && <p className={line}>{t('agents.setup.failed')}</p>}
-      {read && (
-        <ul className="m-0 list-none p-0" aria-label={t('agents.setup.places')}>
-          <li data-list-row="">
-            <PlaceButton chosen={chosen === MACHINE} onPress={() => onChoose(MACHINE)}>
-              <span className="block truncate text-body font-medium text-ink">{t('agents.setup.machine')}</span>
-              {read.machine.needs.length > 0 && <span className="block truncate text-small text-warn">{reasons(read.machine.needs)}</span>}
-            </PlaceButton>
-          </li>
-          {read.workspaces.map(({ place, driven, notDriven }) => {
-            const workspace = place.workspace ?? '';
-            const own = read.repositories.filter((row) => row.workspace === workspace);
-            const open = state.fold === workspace;
-            return (
-              <li key={workspace} role="presentation" className="m-0 p-0">
-                <ul className="m-0 list-none p-0" aria-label={workspace}>
-                  <li data-list-row="">
-                    <PlaceButton chosen={chosen === workspaceId(workspace)} onPress={() => onChoose(workspaceId(workspace))}>
-                      <span className="block truncate text-body font-medium text-ink">{workspace}</span>
-                      <span className="block truncate text-small text-ink-soft">{t('agents.setup.drivenCount', { count: driven })}</span>
-                      {place.needs.length > 0 && <span className="block truncate text-small text-warn">{reasons(place.needs)}</span>}
-                    </PlaceButton>
-                  </li>
-                  {own.map((row) => (
-                    <li key={row.repository} data-list-row="">
-                      <PlaceButton depth={1} chosen={chosen === placeIdOf(row)} onPress={() => onChoose(placeIdOf(row))}>
-                        <span className="block truncate text-body text-ink">{row.repository}</span>
-                        {row.needs.length > 0 && <span className="block truncate text-small text-warn">{reasons(row.needs)}</span>}
-                      </PlaceButton>
-                    </li>
-                  ))}
-                  {notDriven > 0 && (
-                    <li data-list-row="">
-                      <button
-                        type="button"
-                        aria-expanded={open}
-                        onClick={() => state.onFold(open ? null : workspace)}
-                        className="block w-full min-w-0 py-1.5 pl-6 pr-2.5 text-left text-small text-ink-soft hover:bg-accent-soft/50"
-                      >
-                        {t('agents.setup.imported', { count: notDriven })}
-                      </button>
-                    </li>
-                  )}
-                  {open && read.undriven && read.undriven.workspace === workspace && (
-                    <>
-                      {read.undriven.rows.map((row) => (
-                        <li key={row.repository} data-list-row="">
-                          <PlaceButton depth={1} chosen={chosen === repositoryId(row.workspace, row.repository)} onPress={() => onChoose(repositoryId(row.workspace, row.repository))}>
-                            <span className="block truncate text-body text-ink-soft">{row.repository}</span>
-                          </PlaceButton>
-                        </li>
-                      ))}
-                      <li className="flex items-center gap-1.5 py-1 pl-6 pr-2.5">
-                        <span className="min-w-0 flex-1 truncate text-small text-ink-faint">
-                          {t('agents.setup.page', { shown: read.undriven.rows.length, total: read.undriven.total })}
-                        </span>
-                        {state.foldAfter && (
-                          <Button variant="ghost" onClick={() => state.onFoldAfter(null)}>{t('agents.setup.first')}</Button>
-                        )}
-                        {read.undriven.next && (
-                          <Button variant="ghost" onClick={() => state.onFoldAfter(read.undriven!.next ?? null)}>{t('agents.setup.next')}</Button>
-                        )}
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {read && read.repositories.length === 0 && (state.search || state.needsLook) && <p className={line}>{t('agents.setup.nothing')}</p>}
-      {read?.next && (
-        <div className="px-2 py-1.5">
-          <Button variant="ghost" onClick={state.onMore}>{t('agents.setup.more')}</Button>
-        </div>
-      )}
-    </div>
-  );
 }
 
 type Found =

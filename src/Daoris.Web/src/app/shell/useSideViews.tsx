@@ -3,7 +3,7 @@ import { type OpenPart, workspaceItem } from '../opener';
 import { PlaceDrivingScope } from '../../agents/setup/PlaceDriving';
 import { PlaceSessions, PlaceWorkflow } from '../../agents/setup/PlaceSessions';
 import { PlaceSetUpPanel } from '../../agents/setup/PlaceSetUpPanel';
-import { placeIdOf } from '../../agents/setup/SetupPlaces';
+import { placeIdOf } from '../../agents/setup/setupTreeModel';
 import { useSay } from '../../bridge/sessions/conversation';
 import { type View } from '../../menus/commands';
 import { usePluginsView } from '../../plugins/PluginsView';
