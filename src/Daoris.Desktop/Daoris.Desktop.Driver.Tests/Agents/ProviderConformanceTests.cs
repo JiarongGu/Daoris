@@ -63,6 +63,23 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
                 .Select(row => row.Provider.Id.Value).Distinct());
     }
 
+    /// <summary>
+    /// The plugin's provider the suite runs over is made from a declaration by Agents' factory: its door a declared protocol door whose
+    /// identity is the plugin's, and the disabled plugin's name an unavailable descriptor with no door (row q).
+    /// </summary>
+    [Fact]
+    public void The_plugin_provider_the_suite_runs_over_is_made_from_declarations()
+    {
+        var subject = ConformanceSubjects.Of(ConformanceSubject.PluginSource);
+        var provider = subject.Registry.Providers.Single(each => each.Id.Value == ConformanceSubjects.PluginDoor);
+        var door = Assert.Single(provider.Doors);
+
+        Assert.Equal("conformance-plugin", door.Identity.DeclaredBy);
+        Assert.Equal(Transport.Protocol, door.Transport);
+        Assert.True(subject.Adapters.Resolve(door.Id.Value) is LegacyDoor { Declared: true });
+        Assert.Empty(subject.Registry.Providers.Single(each => each.Id.Value == ConformanceSubjects.PluginOff).Doors);
+    }
+
     /// <summary>The cases are §10's whole: each it names is written, run or held pending, and none is left out for lack of a reader.</summary>
     [Fact]
     public void The_cases_are_section_10_s_whole()

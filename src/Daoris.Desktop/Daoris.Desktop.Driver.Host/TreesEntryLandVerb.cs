@@ -28,7 +28,7 @@ internal static class TreesEntryLandVerb
             new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log)),
             new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         var (found, rows) = await SessionEntries.LookAsync(
-            service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
+            service, config, SessionsConsole.Unadopted(config), lastLook: null, waits: null, home,
             ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);
         // An ask's are its own entries, one per repository, with work to land; an entry's is the one named.
         var entries = ask.IsAsk

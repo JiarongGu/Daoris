@@ -388,11 +388,11 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.True(report.Present, report.Problem);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
-        var missing = new DeclaredAcpAdapter(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
+        var missing = PluginDoors.Adapter(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
         Assert.False((await HarnessProbe.ProbeAsync("gone", missing.Toolchain!, null, new HarnessSettings(), _home)).Present);
 
         // One that DOES declare a version question is run, like every built-in harness.
-        var asked = new DeclaredAcpAdapter(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
+        var asked = PluginDoors.Adapter(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
         Assert.False(asked.Toolchain!.ProbeByPresence);
     }
 
@@ -761,7 +761,7 @@ public sealed class PluginCatalogTests : IDisposable
     [Fact]
     public void The_pipe_door_is_handed_a_file_under_the_home_in_the_harness_own_shape_and_the_file_goes_with_the_session()
     {
-        var server = new AcpMcpServer(
+        var server = new ServerEntry(
             "browser", "npx", ["-y", "@playwright/mcp@latest"],
             new Dictionary<string, string> { ["HEADLESS"] = "1" });
 

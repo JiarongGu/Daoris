@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ChatNoteCodeTests
 {
-    private static readonly AcpMcpServer Attached = new(
+    private static readonly ServerEntry Attached = new(
         "browser", "npx", ["--cdp-endpoint", "${browser}"], new Dictionary<string, string>());
 
     private sealed class Browser(Func<string?> answer) : IInAppBrowser
@@ -64,7 +64,7 @@ public sealed class ChatNoteCodeTests
         NoteAssert.Holds(failed.Note, failed.Parts);
     }
 
-    private static readonly AcpMcpServer Elsewhere = new("browser", "node", ["other.js"], new Dictionary<string, string>());
+    private static readonly ServerEntry Elsewhere = new("browser", "node", ["other.js"], new Dictionary<string, string>());
 
     [Fact]
     public async Task A_handed_browser_names_its_server_and_a_left_out_or_unneeded_one_names_none()

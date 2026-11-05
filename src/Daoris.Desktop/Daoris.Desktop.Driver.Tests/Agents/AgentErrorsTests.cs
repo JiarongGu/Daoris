@@ -120,8 +120,8 @@ public sealed class AgentErrorsTests
     public void A_plugin_with_an_owner_reads_its_owner_s_entries_but_never_a_declaration_of_another_door()
     {
         var joined = Built.Names.ToDictionary(name => name, Built.Resolve, StringComparer.OrdinalIgnoreCase);
-        joined["acp-owned"] = new DeclaredAcpAdapter(new PluginHarness("acp-owned", ["node"], AccountOf: "claude-code"), "owned-plugin");
-        joined["acp-alone"] = new DeclaredAcpAdapter(new PluginHarness("acp-alone", ["node"]), "alone-plugin");
+        joined["acp-owned"] = PluginDoors.Adapter(new PluginHarness("acp-owned", ["node"], AccountOf: "claude-code"), "owned-plugin");
+        joined["acp-alone"] = PluginDoors.Adapter(new PluginHarness("acp-alone", ["node"]), "alone-plugin");
         var set = new AdapterSet(joined);
 
         Assert.Equal((AgentErrorKind.Transient, "owner:kind:overloaded"), Pair(Read("acp-owned", -32603, "overloaded", "Internal error", set: set)));

@@ -61,8 +61,8 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         var config = Config.WithDrivable("billing", true).WithTrees("billing", true);
         var ask = new PlaceAsk(["atlas", "billing"], SetupPresets.Keep) { Adoption = true, AtOnce = 1, Pilot = 0 };
         var doors = new PlaceApplyDoors(
-            new Places(), _world, _home, new SetupPresetsTests.Catalog(), SessionWire.Acp, () => config, _ => { }, new DateOnly(2026, 11, 2));
-        var planned = await PlacePlans.PlanAsync(doors.Place, config, _home, doors.Plugins, SessionWire.Acp, ask);
+            new Places(), _world, _home, new SetupPresetsTests.Catalog(), true, () => config, _ => { }, new DateOnly(2026, 11, 2));
+        var planned = await PlacePlans.PlanAsync(doors.Place, config, _home, doors.Plugins, true, ask);
 
         var applied = await PlaceApplies.ApplyAsync(doors, ask, planned.Digest, []);
 

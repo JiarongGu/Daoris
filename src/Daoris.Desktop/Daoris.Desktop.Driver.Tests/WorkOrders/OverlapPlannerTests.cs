@@ -16,7 +16,7 @@ public sealed class OverlapPlannerTests
     private static Consideration Plan(QuestView[] quests, DriverConfig config, Snapshot? with = null)
     {
         var snapshot = (with ?? new Snapshot([], [], [])) with { Quests = quests, Repositories = [new RepoView("Game", true, "D:/fam/Game")] };
-        return Planner.Plan(snapshot, config, SessionWire.Pipe).Single(c => c.Quest.Id == "q2");
+        return Planner.Plan(snapshot, config, false).Single(c => c.Quest.Id == "q2");
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class OverlapPlannerTests
     {
         var plan = Planner.Plan(
             new Snapshot([Quest("q1", "Open", "src/frame/**"), Quest("q2", "Open", "src/frame/cap.cs")], [new RepoView("Game", true, "D:/fam/Game")], []),
-            Rule(LandingIntegrate.Wait) with { Trees = ["Game"] }, SessionWire.Pipe);
+            Rule(LandingIntegrate.Wait) with { Trees = ["Game"] }, false);
 
         Assert.Equal(StartVerdict.Start, plan.Single(c => c.Quest.Id == "q1").Verdict);
         Assert.Equal(SittingFact.Overlaps, plan.Single(c => c.Quest.Id == "q2").Said!.Code);

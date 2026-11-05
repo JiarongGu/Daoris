@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// <param name="Config">The driver's file as it stands now.</param>
 /// <param name="Change">The standing choice's one edit (<c>DriverContext.Change</c>): the file read, edited and written, then the loop nudged.</param>
 public sealed record PlaceApplyDoors(
-    IPlaceWorld Place, ISetupWorld Setup, string Home, IWorkplacePluginCatalog Plugins, SessionWire Door,
+    IPlaceWorld Place, ISetupWorld Setup, string Home, IWorkplacePluginCatalog Plugins, bool Unadopted,
     Func<DriverConfig> Config, Action<Func<DriverConfig, DriverConfig>> Change, DateOnly Day);
 
 /// <summary>What an apply came to: whether every operation is done, a code where it was refused, and each operation as the receipt keeps it.</summary>
@@ -113,7 +113,7 @@ public static class PlaceApplies
     private static async Task<Begun> BeginAsync(
         PlaceApplyDoors doors, PlaceReceipts receipts, PlaceAsk ask, string digest, IReadOnlyList<PlaceAccept> accepted, CancellationToken ct)
     {
-        var plan = await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Door, ask, ct).ConfigureAwait(false);
+        var plan = await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Unadopted, ask, ct).ConfigureAwait(false);
         if (plan.Digest != digest) return Stopped(digest, PlaceApplyRefusals.Moved, Moved(plan));
         if (!plan.Applies)
         {
@@ -310,7 +310,7 @@ public static class PlaceApplies
     {
         PlaceReceipt Failed(string note) => Write(receipts, receipt.With(PlaceOperations.Configuration, each => each with { Outcome = PlaceOutcomes.Failed, Note = note }));
 
-        planned ??= await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Door, receipt.Ask, ct).ConfigureAwait(false);
+        planned ??= await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Unadopted, receipt.Ask, ct).ConfigureAwait(false);
         if (planned.Digest != receipt.Digest) return (Failed(Moved(planned)), PlaceApplyRefusals.Moved);
         var (rows, tips, refusal) = await ReadAsync(doors, planned, receipt.Accepted, receipt.Digest, ct).ConfigureAwait(false);
         if (refusal is not null) return (Failed(refusal.Message), refusal.Refused);
@@ -347,7 +347,7 @@ public static class PlaceApplies
     {
         foreach (var row in plan.Repositories)
         {
-            var applied = PlacePlans.Apply(config, rows[row.Repository], receipt.Ask, tips[row.Repository], doors.Plugins, doors.Door, quests, doors.Home);
+            var applied = PlacePlans.Apply(config, rows[row.Repository], receipt.Ask, tips[row.Repository], doors.Plugins, doors.Unadopted, quests, doors.Home);
             // The copies were saved first (their own operations), so only the choices that follow them are held to the plan's.
             if (applied.Refusals.Any(each => each.Part != PlacePlans.Adoption)
                 || !applied.Changes.Where(Written).SequenceEqual(row.Changes.Where(Written)))
@@ -396,7 +396,7 @@ public static class PlaceApplies
             return Write(receipts, receipt.With(operation.Id, each => each with { Outcome = PlaceOutcomes.Done, Quest = found, Note = null }));
         }
 
-        var plan = await SetupPress.PlanAsync(doors.Setup, doors.Config(), doors.Door, repository, doors.Day, receipt.Ask.Builds, ct).ConfigureAwait(false);
+        var plan = await SetupPress.PlanAsync(doors.Setup, doors.Config(), doors.Unadopted, repository, doors.Day, receipt.Ask.Builds, ct).ConfigureAwait(false);
         if (!plan.Pressable)
         {
             var why = plan.Refusals.Count > 0 ? plan.Refusals[0].Sentence : "there is nothing to ask.";
@@ -518,7 +518,7 @@ public static class PlaceApplies
         {
             if (registry.FirstOrDefault(row => string.Equals(row.Repository, name, StringComparison.OrdinalIgnoreCase)) is not { } row) return false;
             var tip = await doors.Place.TipAsync(row, config, ct).ConfigureAwait(false);
-            var applied = PlacePlans.Apply(config, row, receipt.Ask, tip, doors.Plugins, doors.Door, quests, doors.Home);
+            var applied = PlacePlans.Apply(config, row, receipt.Ask, tip, doors.Plugins, doors.Unadopted, quests, doors.Home);
             if (applied.Changes.Any(Written)) return false;
         }
 

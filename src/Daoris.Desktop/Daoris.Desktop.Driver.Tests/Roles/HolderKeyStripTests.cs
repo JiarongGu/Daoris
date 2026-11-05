@@ -104,7 +104,7 @@ public sealed partial class HolderKeyStripTests
         try
         {
             using var service = new ServiceClient("http://127.0.0.1:9", null);
-            var world = new SessionsWorld(service, home, DriverConfig.Empty, SessionWire.Pipe, null)
+            var world = new SessionsWorld(service, home, DriverConfig.Empty, false, null)
             {
                 Instance = new InstanceWorld { Home = home, Environment = _ => null, Out = TextWriter.Null, Error = TextWriter.Null },
                 HolderKey = () => inherited,

@@ -22,7 +22,7 @@ public sealed class SetupAdmissionTests
         (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 }).WithTrees("atlas", true).WithAdmitted("qs", "atlas");
 
     private static IReadOnlyList<Consideration> Plan(Snapshot snapshot, DriverConfig config) =>
-        Planner.Plan(snapshot, config, SessionWire.Acp);
+        Planner.Plan(snapshot, config, true);
 
     private static StartVerdict VerdictOf(IReadOnlyList<Consideration> plan, string quest) =>
         Assert.Single(plan, each => each.Quest.Id == quest).Verdict;

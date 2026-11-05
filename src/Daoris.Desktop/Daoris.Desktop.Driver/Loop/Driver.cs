@@ -569,7 +569,7 @@ public sealed class Driver(
     /// who the session is, where its rules live, and an intake's ask when it is one.
     /// </summary>
     /// <param name="proc">The lineage token of the process this entry is composed for, on the protocol door alone.</param>
-    internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
+    internal ServerEntry? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc = null) =>
         KnowledgeConnector.Offer(
             Variable, AppContext.BaseDirectory,
             KnowledgeConnector.SessionScope(home, sessionId, scope, proc, KnowledgeConnector.KeptRole(Context.Conversations.RoleOf, sessionId)));

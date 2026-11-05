@@ -118,7 +118,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
             {
                 // No session's tree judged here (`only` none, as a landing's look whose trees are judged after): the parts judge them.
                 sessions = await SessionGroups.LookAsync(
-                    service, config, context.Door(config), _loop.Look.Latest, _loop.Home, [], cancellationToken, times: times).ConfigureAwait(false);
+                    service, config, context.Unadopted(config), _loop.Look.Latest, _loop.Home, [], cancellationToken, times: times).ConfigureAwait(false);
                 _loop.SessionsLooked.Keep(sessions, at);
             }
             catch (DriverException)

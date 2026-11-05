@@ -20,7 +20,7 @@ internal sealed class WorkspacePlansLook(ISetupWiring wiring) : ILookPass
         {
             var world = wiring.SetupPlans?.Invoke() ?? new WorkspaceSetupWorld(wiring.Service, wiring.Home);
             events.AddRange(await WorkspaceSetup.TickAsync(
-                world, wiring.Config, wiring.Door(), wiring.Home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct, wiring.Lines).ConfigureAwait(false));
+                world, wiring.Config, wiring.Unadopted(), wiring.Home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct, wiring.Lines).ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                           or IOException or UnauthorizedAccessException)

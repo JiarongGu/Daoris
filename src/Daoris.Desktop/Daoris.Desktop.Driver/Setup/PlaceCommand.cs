@@ -163,7 +163,7 @@ public static class PlaceCommand
     /// </summary>
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args, TextWriter output, IPlaceWorld world, DriverConfig config, string home, IWorkplacePluginCatalog plugins,
-        SessionWire door, InstanceWorld? instance, PlaceApplyDoors? apply = null, CancellationToken ct = default)
+        bool unadopted, InstanceWorld? instance, PlaceApplyDoors? apply = null, CancellationToken ct = default)
     {
         var (words, problem) = Parse(args);
         if (words is null)
@@ -191,7 +191,7 @@ public static class PlaceCommand
                 InstanceDoor.Said(
                     ("repositories", ask.Repositories), ("preset", ask.Preset), ("opinion", ask.Opinion), ("look", ask.Look), ("adoption", ask.Adoption),
                     ("builds", ask.Builds), ("drive", ask.Drive), ("atOnce", ask.AtOnce), ("pilot", ask.Pilot)),
-                async () => Say(await PlacePlans.PlanAsync(world, config, home, plugins, door, ask, ct).ConfigureAwait(false), output), output, ct)
+                async () => Say(await PlacePlans.PlanAsync(world, config, home, plugins, unadopted, ask, ct).ConfigureAwait(false), output), output, ct)
             .ConfigureAwait(false);
     }
 
@@ -214,7 +214,7 @@ public static class PlaceCommand
             return 2;
         }
 
-        var plan = await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Door, words.Ask, ct).ConfigureAwait(false);
+        var plan = await PlacePlans.PlanAsync(doors.Place, doors.Config(), doors.Home, doors.Plugins, doors.Unadopted, words.Ask, ct).ConfigureAwait(false);
         foreach (var line in Lines(plan, applying: true)) output.WriteLine(line);
         var result = await PlaceApplies.ApplyAsync(doors, words.Ask, plan.Digest, words.Accept, ct).ConfigureAwait(false);
         output.WriteLine($"place: {result.Message}");

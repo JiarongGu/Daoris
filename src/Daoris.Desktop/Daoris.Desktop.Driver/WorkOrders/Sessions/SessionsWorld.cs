@@ -4,9 +4,9 @@ namespace Daoris.Driver;
 /// What <c>sessions</c> reads and touches: the service, the home's choices and files, this machine's process markers and
 /// the machine log.
 /// </summary>
-/// <param name="Door">The configured agent's wire, which the planner's verdicts are read by.</param>
+/// <param name="Unadopted">Whether the configured agent may drive a repository that has not adopted, which the planner's verdicts are read by.</param>
 /// <param name="Log">Where the archive's and the delete's lines go, as the terminal's door; null writes none.</param>
-public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log) : ISupervisorWorld, IParticipantsWorld
+public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, bool Unadopted, MachineLog? Log) : ISupervisorWorld, IParticipantsWorld
 {
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
     public SessionProcesses Processes { get; init; } = new(DaorisHome.Entry(Home, HomeEntry.SessionPids));

@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The set-up press (LAYOUT7; D117 §6.1–§6.3 as D124 §2.1 and §2.4 amend them): what the repository's line and this
-/// machine say, each refusal with its door, one ask to one repository through the ask door with its receiver named,
+/// machine say, each refusal with its unadopted, one ask to one repository through the ask door with its receiver named,
 /// as the person's (no intake session runs), and the rule its session needs to run the doctrine tool.
 /// </summary>
 /// <remarks>
@@ -27,17 +27,17 @@ namespace Daoris.Driver;
 public static class SetupPress
 {
     /// <summary>What a press on <paramref name="repository"/> would do today. Reads, and writes nothing.</summary>
-    /// <param name="door">The door this machine's driven sessions ride: the configured agent's wire.</param>
+    /// <param name="unadopted">Whether this machine's driven sessions may drive a repository that has not adopted (<see cref="Adoption"/>).</param>
     public static Task<SetupPlan> PlanAsync(
-        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default) =>
-        PlanAsync(world, config, door, repository, day, builds: null, ct);
+        ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, CancellationToken ct = default) =>
+        PlanAsync(world, config, unadopted, repository, day, builds: null, ct);
 
     /// <summary>
     /// What a press would do today, its quest's safe work shaped by what the repository builds (AGENTSPLACE1a2, <see cref="SetupBuilds"/>),
     /// one of the four or null for none said. Reads, and writes nothing.
     /// </summary>
     public static async Task<SetupPlan> PlanAsync(
-        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, string? builds, CancellationToken ct = default)
+        ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, string? builds, CancellationToken ct = default)
     {
         var name = repository.Trim();
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
@@ -51,7 +51,7 @@ public static class SetupPress
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
-        var refusals = ConfigurationRefusals(config, door, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -118,7 +118,7 @@ public static class SetupPress
     /// lines are the reconcile's too (D230 point 4): where it is offered is the page's door, by <see cref="DoctrineStatus.Offers"/>.
     /// </remarks>
     public static async Task<SetupPlan> PlanReconcileAsync(
-        ISetupWorld world, DriverConfig config, SessionWire door, string repository, DateOnly day, CancellationToken ct = default)
+        ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, CancellationToken ct = default)
     {
         var name = repository.Trim();
         var registry = await world.RegistryAsync(ct).ConfigureAwait(false);
@@ -132,7 +132,7 @@ public static class SetupPress
             Alone =!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
             Case = SetupCase.Reconcile,
         };
-        var refusals = ConfigurationRefusals(config, door, row).ToList();
+        var refusals = ConfigurationRefusals(config, unadopted, row).ToList();
         if (row.Root is null) return plan with { Refusals = refusals };
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);
@@ -194,7 +194,7 @@ public static class SetupPress
     /// where the repository is not driven is admitted alone (AGENTSPLACE1b, <see cref="SetupPlan.Alone"/>). Read by the press and by a
     /// place's plan (AGENTSPLACE1a2) over the configuration it would leave, so the two refuse alike.
     /// </summary>
-    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, SessionWire door, RepoView row)
+    public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row)
     {
         if (row.Root is null)
         {
@@ -208,7 +208,7 @@ public static class SetupPress
 
         var refusals = new List<SetupRefusal>();
         // Its code stays `not-driven`, a stored shape the machine log's `setup.skipped` keeps.
-        if (!row.Adopted && door != SessionWire.Acp)
+        if (!row.Adopted && !unadopted)
         {
             refusals.Add(new(SetupRefusals.NotDriven,
                 $"`{row.Repository}` is not driven here: it has not adopted, so only a session on the protocol door is "

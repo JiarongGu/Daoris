@@ -25,8 +25,8 @@ public sealed class PlacePlanTests
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private Task<PlacePlanned> PlanAsync(World world, PlaceAsk ask, DriverConfig? config = null, SessionWire door = SessionWire.Acp) =>
-        PlacePlans.PlanAsync(world, config ?? Config, _home, Plugins, door, ask);
+    private Task<PlacePlanned> PlanAsync(World world, PlaceAsk ask, DriverConfig? config = null, bool unadopted = true) =>
+        PlacePlans.PlanAsync(world, config ?? Config, _home, Plugins, unadopted, ask);
 
     private static PlaceAsk Ask(string preset, params string[] repositories) => new(repositories, preset);
 
@@ -103,7 +103,7 @@ public sealed class PlacePlanTests
         var row = world.Registry.Single(each => each.Repository == "engine");
 
         var plan = await PlanAsync(world, ask);
-        var applied = PlacePlans.Apply(Config, row, ask, world.Tips["engine"], Plugins, SessionWire.Acp, [], _home);
+        var applied = PlacePlans.Apply(Config, row, ask, world.Tips["engine"], Plugins, true, [], _home);
         var after = applied.After;
 
         var engine = Assert.Single(plan.Repositories);
@@ -291,7 +291,7 @@ public sealed class PlacePlanTests
     {
         var output = new StringWriter();
 
-        var code = await PlaceCommand.RunAsync(args, output, new World(), Config, _home, Plugins, SessionWire.Acp, instance: null);
+        var code = await PlaceCommand.RunAsync(args, output, new World(), Config, _home, Plugins, true, instance: null);
 
         Assert.True(lines.SequenceEqual(output.ToString().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n')), $"{name}:\n{output}");
         Assert.Equal(exit, code);

@@ -59,7 +59,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 
         var asked = service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var look = await SessionGroups.LookAsync(asked, config, context.Door(config), _loop.Look.Latest, _loop.Home, ids, ct)
+        var look = await SessionGroups.LookAsync(asked, config, context.Unadopted(config), _loop.Look.Latest, _loop.Home, ids, ct)
             .ConfigureAwait(false);
         look = look with { Waits = _loop.Look.Waits };
         var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);

@@ -35,7 +35,7 @@ public static class WorkspaceSetup
     /// not write. Reads, and writes nothing.
     /// </summary>
     public static async Task<WorkspaceSetupPreview> PreviewAsync(
-        IWorkspaceSetupWorld world, DriverConfig config, SessionWire door, string home, string workspace, WorkspaceSetupOptions options,
+        IWorkspaceSetupWorld world, DriverConfig config, bool unadopted, string home, string workspace, WorkspaceSetupOptions options,
         DateOnly day, CancellationToken ct = default)
     {
         var name = RemoteTarget.Workspace(workspace);
@@ -108,7 +108,7 @@ public static class WorkspaceSetup
             var row = new WorkspaceSetupRow(standing.Repository, touches.GetValueOrDefault(standing.Repository) ?? SetupTouches.None, standing);
             if (standing.State == SetupState.ToGo && tools.Count == 0)
             {
-                var judged = await SetupPress.PlanAsync(world, config, door, standing.Repository, day, ct).ConfigureAwait(false);
+                var judged = await SetupPress.PlanAsync(world, config, unadopted, standing.Repository, day, ct).ConfigureAwait(false);
                 row = row with { Refusals = [.. judged.Refusals.Where(refusal => !SetupPressRules.IsToolRefusal(refusal))] };
             }
 
@@ -191,7 +191,7 @@ public static class WorkspaceSetup
     /// </summary>
     /// <param name="look">The look's classing; none classes and keeps nothing.</param>
     public static async Task<IReadOnlyList<string>> TickAsync(
-        IWorkspaceSetupWorld world, DriverConfig config, SessionWire door, string home, DateOnly day, DateTimeOffset now,
+        IWorkspaceSetupWorld world, DriverConfig config, bool unadopted, string home, DateOnly day, DateTimeOffset now,
         CancellationToken ct = default, LookSaid? look = null)
     {
         var plans = WorkspaceSetupFile.All(home).Where(plan => plan is { Live: true, Paused: null }).ToList();
@@ -237,7 +237,7 @@ public static class WorkspaceSetup
             {
                 if (open >= most || WorkspaceSetupRules.PilotHolds(plan, asked)) return;
 
-                var press = await SetupPress.PlanAsync(world, config, door, next.Repository, day, ct).ConfigureAwait(false);
+                var press = await SetupPress.PlanAsync(world, config, unadopted, next.Repository, day, ct).ConfigureAwait(false);
                 var registered = rows.Any(row => row.Registered && Same(row.Repository, next.Repository));
                 if (registered && press.Pressable && press.Case != SetupCase.Index)
                 {

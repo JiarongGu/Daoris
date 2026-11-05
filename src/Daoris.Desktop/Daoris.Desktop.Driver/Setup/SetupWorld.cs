@@ -15,21 +15,19 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// The door this machine's driven sessions ride: the configured agent's wire, read against the plugins' agents as
-    /// a tick reads it. An agent nobody knows is the pipe, the stricter door, as the driver's own answer is.
+    /// Whether this machine's driven sessions may drive a repository that has not adopted Daoris: the configured agent's answer, read
+    /// against the plugins' agents as a tick reads it. An agent nobody knows may not, the stricter answer, as the driver's own is.
     /// </summary>
-    public static SessionWire DoorOf(DriverConfig config, string home)
+    public static bool Unadopted(DriverConfig config, string home)
     {
         var built = AdapterSet.Built();
         try
         {
-            return Adoption.Unadopted(ActorChoices.BuildAgent(config), built.WithPlugins(PluginCatalog.Load(home, built.Names)).AbilitiesOf)
-                ? SessionWire.Acp
-                : SessionWire.Pipe;
+            return Adoption.Unadopted(ActorChoices.BuildAgent(config), built.WithPlugins(PluginCatalog.Load(home, built.Names)).AbilitiesOf);
         }
         catch (DriverException)
         {
-            return SessionWire.Pipe;
+            return false;
         }
     }
 

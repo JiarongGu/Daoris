@@ -131,8 +131,8 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         var loop = Loop();
         var build = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("claude-code-acp")] };
 
-        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Actors = build }));
-        Assert.Equal(SessionWire.Pipe, DriverContext.DoorOf(loop, DriverConfig.Empty with
+        Assert.Equal(true, DriverContext.UnadoptedOf(loop, DriverConfig.Empty with { Actors = build }));
+        Assert.Equal(false, DriverContext.UnadoptedOf(loop, DriverConfig.Empty with
         {
             Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
         }));

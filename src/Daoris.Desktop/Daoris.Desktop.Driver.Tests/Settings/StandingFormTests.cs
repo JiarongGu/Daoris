@@ -34,7 +34,7 @@ public sealed class StandingFormTests
             var ask = SessionsCommand.Read(args[1..], out var problem);
             Assert.True(problem is null, problem);
             var world = new SessionsWorld(
-                    new ServiceClient("http://stand-in", null, new HttpClient(new NoService())), running.Home, DriverConfig.Empty, SessionWire.Pipe, null)
+                    new ServiceClient("http://stand-in", null, new HttpClient(new NoService())), running.Home, DriverConfig.Empty, false, null)
                 { Instance = running.World("sessions") };
             return await SessionsCommand.RunAsync(ask!, world, new StringWriter());
         }

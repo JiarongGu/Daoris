@@ -7,5 +7,5 @@ public static class PluginAdapterSets
     /// <paramref name="set"/> plus every harness the catalogue's contributing plugins declare (D64 §3). The catalogue has already refused any
     /// name the set carries, so a plugin adds and the built-in set is exactly what it was.
     /// </summary>
-    public static AdapterSet WithPlugins(this AdapterSet set, IAgentPlugins catalog) => set.Joined(catalog.Adapters, catalog.DeclaredAgents);
+    public static AdapterSet WithPlugins(this AdapterSet set, IAgentPlugins catalog) => set.Joined(catalog.Doors.Select(DeclaredDoors.Adapter), catalog.DeclaredAgents);
 }

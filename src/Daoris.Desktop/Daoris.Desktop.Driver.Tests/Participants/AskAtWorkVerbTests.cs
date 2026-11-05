@@ -33,7 +33,7 @@ public sealed class AskAtWorkVerbTests : IDisposable
         return ask!;
     }
 
-    private SessionsWorld World() => new(_ledger.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null);
+    private SessionsWorld World() => new(_ledger.Client(), _home, DriverConfig.Empty, false, null);
 
     /// <summary>An ask with one quest to <c>engine</c> served by a session that has started one subagent.</summary>
     private void AskWithOneEntry(string ask = "a1")

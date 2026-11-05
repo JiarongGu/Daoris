@@ -320,7 +320,7 @@ public sealed class WorkRoutes(DriverContext context)
         var service = loop.Service ?? throw NotReady();
         return new WorkWorld(service, loop.Home, loop.ConfigPath, loop.Processes)
         {
-            Door = context.Door(DriverConfig.Load(loop.ConfigPath)),
+            Unadopted = context.Unadopted(DriverConfig.Load(loop.ConfigPath)),
             Log = loop.Log,
             Sync = async (workspace, ct) =>
             {

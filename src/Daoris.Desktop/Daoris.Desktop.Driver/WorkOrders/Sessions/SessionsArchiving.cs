@@ -18,7 +18,7 @@ internal static class SessionsArchiving
 
     private static async Task<int> ArchiveAloneAsync(SessionsWorld world, IReadOnlyList<string> ids, TextWriter output, CancellationToken ct)
     {
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ids, ct).ConfigureAwait(false);
         var answer = new SessionArchive(world.Home).Archive(
             ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var said = SessionArchive.ArchiveSaid(answer.Outcomes);
@@ -30,7 +30,7 @@ internal static class SessionsArchiving
     /// <summary>At a terminal: the list first, what it would take and what stays; <c>--yes</c> archives what it holds, each judged again.</summary>
     internal static async Task<int> ArchiveEndedAsync(SessionsWorld world, bool yes, TextWriter output, CancellationToken ct)
     {
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct).ConfigureAwait(false);
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct).ConfigureAwait(false);
         var rows = SessionGroups.Read(look);
         var ended = rows.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
         if (ended.Count == 0)

@@ -69,7 +69,7 @@ public sealed class PluginLog(MachineLog? log, PluginHealth? health = null)
     /// <paramref name="handed"/>, withheld if not. Read from the catalogue the session's servers came from. A server declared
     /// for the other destination alone is not this session's, so it says nothing here (HELPPLUG1a).
     /// </summary>
-    public void Served(PluginCatalog catalog, string session, IReadOnlyList<AcpMcpServer> handed, string to = PluginServerTo.Sessions)
+    public void Served(PluginCatalog catalog, string session, IReadOnlyList<ServerEntry> handed, string to = PluginServerTo.Sessions)
     {
         if (log is null) return;
         foreach (var plugin in catalog.Contributing)

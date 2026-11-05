@@ -36,6 +36,12 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     public Provider Provider => _provider;
 
+    /// <summary>A door a plugin declared (<see cref="DeclaredDoors"/>): its identity, home and program its own, and none of its provider's.</summary>
+    public bool Declared => _door.Identity.DeclaredBy is not null;
+
+    /// <summary>The variables a start strips: every other registered provider's, but for a declared door, whose process never had them stripped.</summary>
+    private IReadOnlyCollection<string>? Stripped() => Declared ? null : RegisteredVariables.Others(_provider);
+
     public AgentDoor Door => _door;
 
     public string Name => _door.Id.Value;
@@ -69,17 +75,17 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     /// <summary>The door's recipe completed by the transports' shell, stripped of every other provider's registered variable (s-vi).</summary>
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-        Shell.Start(Spawn().Start(target, command), target, RegisteredVariables.Others(_provider));
+        Shell.Start(Spawn().Start(target, command), target, Stripped());
 
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         Interactive
-            ? Shell.Chat(Spawn().Chat(target, command), target, RegisteredVariables.Others(_provider))
+            ? Shell.Chat(Spawn().Chat(target, command), target, Stripped())
             : throw new DriverException(
                 $"the `{Name}` adapter cannot hold a conversation — it spawns an agent that takes its "
                 + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
 
     public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-        Spawn().Resume(target, command, conversation) is { } recipe ? Shell.Start(recipe, target, RegisteredVariables.Others(_provider)) : null;
+        Spawn().Resume(target, command, conversation) is { } recipe ? Shell.Start(recipe, target, Stripped()) : null;
 
     /// <summary>Whether the door's program runs Claude Code's, so its spawn takes Claude Code's seam (<see cref="ISpawn.ClaudeSeam"/>).</summary>
     public bool ClaudeSeam => Spawn().ClaudeSeam;
@@ -107,7 +113,7 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     private HarnessToolchain? Declare()
     {
-        var owning = Ids.Same(_provider.Id.Value, _door.Id.Value);
+        var owning = !Declared && Ids.Same(_provider.Id.Value, _door.Id.Value);
         var keyedItself = owning && _door.AccountOf is null;
         var program = owning ? _provider.Program : _door.Program;
         if (!program.IsKnown) return null;

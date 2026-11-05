@@ -39,7 +39,7 @@ internal static class HelpConsole
         var adapters = AdapterSet.Built();
 
         // RPC1e: the running Daoris's client where one answers, its presses confirmed in its window; `resume` stays this terminal's.
-        var world = new SessionsWorld(service, home, config, SessionsConsole.Wire(config), log) { Instance = InstanceHost.World(home, "help") };
+        var world = new SessionsWorld(service, home, config, SessionsConsole.Unadopted(config), log) { Instance = InstanceHost.World(home, "help") };
         return await HelpCommand.RunAsync(ask, world, adapter => Resumes(adapters, adapter), Console.Out).ConfigureAwait(false);
     }
 
