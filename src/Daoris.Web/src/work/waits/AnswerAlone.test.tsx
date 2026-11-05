@@ -14,7 +14,7 @@ describe('a third answer alone, held for the person', () => {
     const onAnswer = vi.fn();
     render(<AnswerAlone wait={WAIT} nameOf={(agent) => (agent === 'codex-acp' ? 'Codex' : agent)} onAnswer={onAnswer} />);
 
-    expect(screen.getByText('Codex’s answer would take this work on a third time with nobody between.')).toBeInTheDocument();
+    expect(screen.getByText('Codex’s answer would take this work on again with nobody between.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Go on with this answer' }));
     expect(onAnswer).toHaveBeenLastCalledWith(WAIT, true, { done: expect.any(Function), refused: expect.any(Function) });
     onAnswer.mock.calls.at(-1)![2].done();
@@ -30,8 +30,23 @@ describe('a third answer alone, held for the person', () => {
     unmount();
 
     render(<AnswerAlone wait={{ ...WAIT, agent: null }} />);
-    expect(screen.getByText('Another agent’s answer would take this work on a third time with nobody between.')).toBeInTheDocument();
+    expect(screen.getByText('Another agent’s answer would take this work on again with nobody between.')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  // CONTEXTDRIVE1h: the rule that held it said once, where it is held, with the door to change it where one is given.
+  it('says the rule that held it, and offers Change the rule… only where the door is given', async () => {
+    const held: AnswerWait = { ...WAIT, rule: { place: 'machine', at: 2, n: 2, count: 'answers-alone', do: 'hold' } };
+    const onChangeRule = vi.fn();
+    const { unmount } = render(<AnswerAlone wait={held} onChangeRule={onChangeRule} />);
+
+    expect(screen.getByText('It went on by answers alone 2 times in a row; your rule for This Daoris waits for you after 2.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Change the rule…' }));
+    expect(onChangeRule).toHaveBeenCalledWith('machine');
+    unmount();
+
+    render(<AnswerAlone wait={held} />);
+    expect(screen.queryByRole('button', { name: 'Change the rule…' })).toBeNull();
   });
 
   it('finds the session’s own wait, and words a refusal by its code', () => {

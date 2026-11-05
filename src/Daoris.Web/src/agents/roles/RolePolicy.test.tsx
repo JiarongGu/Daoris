@@ -18,8 +18,6 @@ const POLICY: RolePolicyRow = {
   staffPolicy: {
     rule: 'weight',
     choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high', weight: 3 }, { agent: 'claude-code', model: 'opus', effort: 'high', weight: 1, budget: { starts: 6 }, takes: ['design'] }],
-    moves: { limit: 'weighted', transient: { do: 'weighted', after: 2 } },
-    most: 3,
   },
   next: { choice: '1', by: 'weight', said: 'by weight: 3 of the last 4 were choice 1, aim 3 in 4', agent: 'claude-code', model: 'sonnet', effort: 'high' },
 };
@@ -53,7 +51,7 @@ const open = (read: RoleCatalogue = catalogue(), refuse?: string, title = 'Build
 describe('The role editor, its policy', () => {
   afterEach(() => i18n.changeLanguage('en'));
 
-  it('opens on the policy it was set with: the rule, weights with their aim, limits, moves and the next new start', () => {
+  it('opens on the policy it was set with: the rule, weights with their aim, limits and the next new start; its moves are the supervisor\'s rules', () => {
     const { form } = open();
 
     expect(form.getByRole('combobox', { name: 'How it chooses' })).toHaveTextContent('Spread by weight');
@@ -63,7 +61,8 @@ describe('The role editor, its policy', () => {
     expect(form.getByText('1 in 4')).toBeTruthy();
     expect(form.getByText('Limits: design and decisions only · 6 starts a day')).toBeTruthy();
     expect(form.getByText('Limits: none')).toBeTruthy();
-    expect(form.getByRole('combobox', { name: 'It reaches its limit' })).toHaveTextContent('Move to the next by weight');
+    expect(form.queryByRole('combobox', { name: 'It reaches its limit' })).toBeNull();
+    expect(form.getByText(/Its moves to another choice follow the supervisor's rules for every role/)).toBeTruthy();
     expect(form.getByText('Next new start: choice 1 (by weight: 3 of the last 4 were choice 1, aim 3 in 4)')).toBeTruthy();
   });
 
@@ -116,11 +115,10 @@ describe('The role editor, its policy', () => {
     expect(onSet).not.toHaveBeenCalled();
   });
 
-  it('carries the policy and the revision it read in the press, and the record as the door takes it', async () => {
+  it('carries the policy and the revision it read in the press, and the record as the door takes it: no move and no bound', async () => {
     const { form, onSet } = open();
 
     fireEvent.change(form.getByRole('textbox', { name: "choice 2's weight" }), { target: { value: '2' } });
-    await choose('It went quiet and was stopped', 'Try it again');
     fireEvent.click(form.getByRole('button', { name: 'Save' }));
 
     expect(onSet).toHaveBeenCalledWith(expect.objectContaining({
@@ -134,8 +132,6 @@ describe('The role editor, its policy', () => {
           { agent: 'claude-code', model: 'sonnet', effort: 'high', weight: 3 },
           { agent: 'claude-code', model: 'opus', effort: 'high', weight: 2, budget: { starts: 6 }, takes: ['design'] },
         ],
-        moves: { limit: 'weighted', transient: { do: 'weighted', after: 2 }, quiet: 'retry' },
-        most: 3,
       },
     }), expect.anything());
   });
@@ -189,21 +185,21 @@ describe('The role editor, its policy', () => {
     expect(form.queryByText(/store, which this home does not use yet/)).toBeNull();
   });
 
-  it('offers a conversation no wait, ask or bound of moves, as its door refuses them', async () => {
-    const chat: RoleCatalogue = {
-      ...catalogue({ ...POLICY, role: 'chat', staffPolicy: { rule: 'order', choices: [{ agent: 'claude-code', weight: 1 }] } }),
-      roles: [{ id: 'chat', state: 'seed', seeded: true, name: { en: 'Chat', zh: '对话' }, takes: ['chat'], scopeKind: 'machine', revision: 0 }],
+  it('names the supervisor rules that name the role, each with where it is set, and writes none itself', () => {
+    const supervisor = {
+      counts: [],
+      sets: [
+        { place: 'machine', revision: 2, rules: [{ id: 'r-1', count: 'moves', window: '24-hours', at: 3, do: 'ask', roles: ['build'] }, { id: 'r-2', count: 'tries', window: 'episode', at: 5, do: 'hold' }] },
+        { place: 'repository:daoris', revision: 1, rules: [{ id: 'r-1', count: 'tries', window: 'episode', at: 2, do: 'weighted', roles: ['build'] }] },
+      ],
     };
-    render(<RolesCard catalogue={chat} staffing={[{ id: 'chat', state: 'set', choices: [{ agent: 'claude-code', from: '1' }] }]} agents={AGENTS} onSet={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Chat' }));
-    const form = within(screen.getByRole('form', { name: 'Chat' }));
-    fireEvent.click(form.getByText('When a choice cannot go on'));
+    const { form, onSet } = open(catalogue(POLICY, { supervisor }));
 
-    await choose('It reaches its limit', 'Move to the next choice');
-    expect(form.queryByText(/moves to another choice a day for one quest/)).toBeNull();
-    await userEvent.setup().click(screen.getByRole('combobox', { name: 'It reaches its limit' }));
-    expect(screen.queryByRole('option', { name: 'Wait for it' })).toBeNull();
-    expect(screen.queryByRole('option', { name: 'Ask me first' })).toBeNull();
+    expect(form.getByText('Moves to another choice a day: at 3: Ask before the next (This Daoris)')).toBeTruthy();
+    expect(form.getByText('The service did not answer: at 2: Go to the next by weight (daoris)')).toBeTruthy();
+    expect(form.queryByText(/The service did not answer: at 5/)).toBeNull();
+    fireEvent.click(form.getByRole('button', { name: 'Save' }));
+    expect(onSet.mock.calls[0]![0]).not.toHaveProperty('rules');
   });
 
   it('is in Chinese', async () => {
@@ -215,7 +211,7 @@ describe('The role editor, its policy', () => {
     expect(form.getByRole('combobox', { name: '选择方式' })).toHaveTextContent('按权重分配');
     expect(form.getByRole('textbox', { name: '第 1 个选择的权重' })).toHaveValue('3');
     expect(form.getByText('4 份中占 3 份')).toBeTruthy();
-    expect(form.getByText('当某个选择无法继续时')).toBeTruthy();
+    expect(form.getByText(/它换到别的选择，遵循主管对每个角色的规则/)).toBeTruthy();
   });
 });
 
@@ -223,8 +219,8 @@ describe('A role\'s folded line, its policy', () => {
   afterEach(() => i18n.changeLanguage('en'));
   const t = i18n.t.bind(i18n);
 
-  it('says the rule with its proportions, a move other than as today and the bound', () => {
-    expect(policyLine(t, POLICY)).toBe('spread 3:1 · moves on a limit and no answer · at most 3 moves');
+  it('says the rule with its proportions and nothing of its moves, which are the supervisor\'s', () => {
+    expect(policyLine(t, POLICY)).toBe('spread 3:1');
     expect(policyLine(t, { ...POLICY, staffPolicy: { rule: 'order', choices: [] } })).toBe('first that can run');
     expect(policyLine(t, { ...POLICY, staffPolicy: { rule: 'weight', choices: [{ agent: 'a', weight: 1 }, { agent: 'b', weight: 1 }] } })).toBe('spread evenly');
   });

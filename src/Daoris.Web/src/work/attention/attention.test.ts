@@ -1088,10 +1088,22 @@ describe('the groups', () => {
 
     expect(rows[0]).toMatchObject({
       kind: 'answer', title: 'Expose a streaming budget on the chunk API', where: 'engine', session: 'c0nv0001',
-      detail: 'codex-acp’s answer would take this work on a third time with nobody between. It waits for you.',
+      detail: 'codex-acp’s answer would take this work on again with nobody between. It waits for you.',
     });
-    expect(rows[1]).toMatchObject({ title: '#g0n3', detail: 'Another agent’s answer would take this work on a third time with nobody between. It waits for you.' });
+    expect(rows[1]).toMatchObject({ title: '#g0n3', detail: 'Another agent’s answer would take this work on again with nobody between. It waits for you.' });
     expect(rows.map(attentionActs)).toEqual([['go-on-answer', 'keep-answer'], ['go-on-answer', 'keep-answer']]);
+  });
+
+  /** CONTEXTDRIVE1h: a held answer that carries its rule says it in the one sentence the head and the foot say, the place named as the person knows it. */
+  it('words a held answer with the rule that held it, a machine rule as This Daoris', () => {
+    const answer = { session: 'c0nv0001', agent: 'codex-acp', words: ['w3'], since: '2026-09-21T09:30:00Z', rule: { place: 'repository:engine', at: 2, n: 2, count: 'answers-alone', do: 'hold' } };
+    const rows = attentionOf(attentionInOrder([
+      row('answer', 'c0nv0001', answer.since, { where: 'engine', session: 'c0nv0001', answer }),
+      row('answer', 'm1', answer.since, { where: '', session: 'm1', answer: { ...answer, session: 'm1', rule: { ...answer.rule, place: 'machine', at: 3, n: 3 } } }),
+    ]), { sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()] });
+
+    expect(rows[0]!.detail).toBe('codex-acp’s answer would take this work on again with nobody between. It waits for you. It went on by answers alone 2 times in a row; your rule for engine waits for you after 2.');
+    expect(rows[1]!.detail).toContain('your rule for This Daoris waits for you after 3.');
     expect(keyed([row('answer', 'a1', '2026-09-21T09:00:00Z'), row('permission', 'p1', '2026-09-21T09:00:00Z')])).toEqual(['permission:p1', 'answer:a1']);
   });
 

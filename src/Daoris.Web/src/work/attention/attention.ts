@@ -507,10 +507,17 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     // COWORK1e: named as Sessions names the session whose line it would take on, said by the agent that answered.
     case 'answer': {
       const agent = row.answer?.agent;
+      const words = agent ? i18n.t('work.attention.answerWhy', { agent }) : i18n.t('work.attention.answerWhySomeone');
+      // CONTEXTDRIVE1h: the person's rule that held it, said in the one sentence the head and the foot say.
+      const rule = row.answer?.rule;
       return {
         ...base,
         title: named(row.session ?? row.id),
-        detail: agent ? i18n.t('work.attention.answerWhy', { agent }) : i18n.t('work.attention.answerWhySomeone'),
+        detail: rule
+          ? i18n.t('work.attention.answerRuleWhy', {
+            words, n: rule.n, at: rule.at, place: rule.place === 'machine' ? i18n.t('settings.supervisor.machine') : rule.place.slice(rule.place.indexOf(':') + 1),
+          })
+          : words,
         session: row.session ?? row.id,
         ...(row.answer ? { answer: row.answer } : {}),
       };

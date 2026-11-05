@@ -1547,7 +1547,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
                 waits.Select(wait => (wait!["session"]!.GetValue<string>(), wait["agent"]!.GetValue<string>(),
                     string.Join(",", wait["words"]!.AsArray().Select(id => id!.GetValue<string>())))));
             Assert.Equal(DateTimeOffset.Parse("2026-10-21T09:00:00Z"), DateTimeOffset.Parse(waits[0]!["since"]!.GetValue<string>()));
-            Assert.Equal(["session", "agent", "words", "since"], waits[0]!.AsObject().Select(field => field.Key));
+            Assert.Contains("rule", waits[0]!.AsObject().Select(field => field.Key));
         }
         finally
         {

@@ -8,7 +8,7 @@ import type { SessionEvent } from '../../work/conversation/conversation';
 import type { PartSpent } from '../../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../../work/groups';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
-import type { AnswerAloneAnswered, AnswerWait } from '../../work/waits/AnswerAlone';
+import type { AnswerAloneAnswered, AnswerRule, AnswerWait } from '../../work/waits/AnswerAlone';
 import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
@@ -534,7 +534,15 @@ const readAnswerWaits = (rows: unknown): AnswerWait[] => {
       agent: word(row.agent),
       words: Array.isArray(row.words) ? row.words.filter((id): id is string => typeof id === 'string') : [],
       since: typeof row.since === 'string' ? row.since : '',
+      rule: readAnswerRule(row.rule),
     }));
+};
+
+/** The rule that held an answer, field by field: one that does not read is none, and the wait stands without it. */
+const readAnswerRule = (raw: unknown): AnswerRule | null => {
+  const rule = raw as Record<string, unknown> | null;
+  if (!rule || typeof rule !== 'object' || typeof rule.place !== 'string' || typeof rule.at !== 'number' || typeof rule.n !== 'number') return null;
+  return { place: rule.place, at: rule.at, n: rule.n, count: typeof rule.count === 'string' ? rule.count : 'answers-alone', do: typeof rule.do === 'string' ? rule.do : 'hold' };
 };
 
 /**

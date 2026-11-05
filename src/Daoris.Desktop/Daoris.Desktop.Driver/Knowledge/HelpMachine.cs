@@ -69,6 +69,12 @@ public sealed record HelpMachine
     /// </summary>
     public IReadOnlyList<HelpRole> Roles { get; init; } = [];
 
+    /// <summary>
+    /// The supervisor's rules, one line per place holding some, in the terminal's words (CONTEXTDRIVE1k), read as the room is written
+    /// (<see cref="HelpRoom.Prepare"/>); none for a machine described by hand.
+    /// </summary>
+    public IReadOnlyList<string> Rules { get; init; } = [];
+
     // The asks section's.
 
     /// <summary>The asks not closed, newest first (HELP6).</summary>

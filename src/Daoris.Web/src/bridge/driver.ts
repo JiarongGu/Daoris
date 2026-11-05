@@ -412,6 +412,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
     roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true,
     ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
     ...(Array.isArray(answer.policies) ? { policies: answer.policies } : {}),
+    ...(answer.supervisor && Array.isArray(answer.supervisor.sets) && Array.isArray(answer.supervisor.counts) ? { supervisor: answer.supervisor } : {}),
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),
     ...(Array.isArray(answer.policyPresets) ? { policyPresets: answer.policyPresets } : {}),
     ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),
