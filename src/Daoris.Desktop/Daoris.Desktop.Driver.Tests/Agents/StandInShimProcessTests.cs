@@ -157,14 +157,14 @@ public sealed class StandInShimProcessTests : IDisposable
     }
 
     private static AgentDoor ResumingDoor() => new(
-        new DoorId("resuming"), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
+        new DoorId("resuming"), Transport.Native, new DoorIdentity(null, null, null), Known<ToolSpec>.Absent,
         new DoorHome(null, true, null), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
         Known<ISpawn>.Declared(new ResumingSpawn(), "a test door"), Known<IDialect>.Absent,
         new AbilitiesPart(Known<bool>.Declared(true, "t"), Known<bool>.Declared(true, "a native resume"), Known<bool>.Declared(false, "t")),
         new DoorTablesPart(null, null), null, InstructionsPart.None);
 
     private static Provider Provider() => new(
-        new ProviderId("resuming"), new ProviderIdentity(null, null, null, false, []), [ResumingDoor()], Known<ProgramFacts>.Absent,
+        new ProviderId("resuming"), new ProviderIdentity(null, null, null, false, []), [ResumingDoor()], Known<ToolSpec>.Absent,
         Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
         Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
         Known<VocabularyPart>.Absent);

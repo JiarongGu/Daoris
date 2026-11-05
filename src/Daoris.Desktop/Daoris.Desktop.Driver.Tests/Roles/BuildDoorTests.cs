@@ -27,11 +27,12 @@ public sealed class BuildDoorTests : IDisposable
 
     // An id nobody knows is refused, never read as the pipe, wherever it stands in the order, and by the window's and set-up's reads alike.
     [Theory]
-    [InlineData(new[] { "nobody-knows" })]
-    [InlineData(new[] { "acp-stub", "nobody-knows" })]
-    [InlineData(new[] { "nobody-knows", "acp-stub" })]
-    public void A_door_nobody_knows_is_refused_never_read_as_the_pipe(string[] order)
+    [InlineData(new[] { "nobody-knows" }, "nobody-knows")]
+    [InlineData(new[] { "acp-stub", "nobody-knows" }, "nobody-knows")]
+    [InlineData(new[] { "nobody-knows", "acp-stub" }, "nobody-knows")]
+    public void A_door_nobody_knows_is_refused_never_read_as_the_pipe(string[] order, string unknown)
     {
+        Assert.Contains(unknown, order);
         var refused = Assert.Throws<UnknownDoorException>(() => BuildDoor.Drives(_home, Build(order), AdapterSet.Built()));
         Assert.Equal("nobody-knows", refused.Door);
         Assert.Equal(UnknownDoorException.Words("nobody-knows"), refused.Message);

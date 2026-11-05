@@ -73,10 +73,14 @@ public sealed class AccountReadingsTests
 
         // The protocol doors run as their owners' accounts (AGT7), so their readings are their owners' tables'; Codex's
         // door forwards none of Codex's limits (evidence §4), so no table is declared for it.
-        Assert.Equal(["claude-code", "stub"], declaring);
+        Assert.Equal(["alt-stub", "claude-code", "stub"], declaring);
         var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-readings-unused", "harnesses.json"));
         Assert.Same(ClaudeWindows.Words, roster.WindowsOf("claude-code-acp"));
         Assert.Same(ClaudeWindows.Words, roster.WindowsOf("acp-stub"));
+        // The second stand-in's are its own, through its protocol door too (row c): no real agent's words stand in for them.
+        Assert.Same(AltStubWords.Windows, roster.WindowsOf("alt-stub"));
+        Assert.Same(AltStubWords.Windows, roster.WindowsOf("alt-acp-stub"));
+        Assert.NotSame(ClaudeWindows.Words, roster.WindowsOf("alt-acp-stub"));
         Assert.Null(roster.WindowsOf("codex-acp"));
     }
 

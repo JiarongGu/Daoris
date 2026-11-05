@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 public sealed record ResolvedId(IdKind Kind, AgentDoor? Door, Provider? Provider, AccountPool? Pool);
 
 /// <summary>The agent that answers for a door's accounts, one level (AGT7): its name, its program and its account facts.</summary>
-public sealed record AccountAgent(string Name, ProgramFacts? Program, PoolFacts Accounts);
+public sealed record AccountAgent(string Name, ToolSpec? Program, PoolFacts Accounts);
 
 /// <summary>
 /// Every provider and door this build and its enabled plugins carry, and the questions the contract asks of them (AGENTPROVIDER1 row
@@ -252,13 +252,13 @@ public sealed class ProviderRegistry
         return new AccountAgent(entry.Door.Id.Value, program, accounts);
     }
 
-    private (ProgramFacts? Program, PoolFacts Accounts, TablesPart Tables, UsagePart Usage) Own(DoorId door) => Declarations(Entry(door));
+    private (ToolSpec? Program, PoolFacts Accounts, TablesPart Tables, UsagePart Usage) Own(DoorId door) => Declarations(Entry(door));
 
     /// <summary>
     /// What a door declares itself. A door that gives its provider its id and is keyed by it (<c>claude-code</c>) declares through its
     /// provider; any other door through its own record.
     /// </summary>
-    private static (ProgramFacts? Program, PoolFacts Accounts, TablesPart Tables, UsagePart Usage) Declarations((AgentDoor Door, Provider Provider) entry)
+    private static (ToolSpec? Program, PoolFacts Accounts, TablesPart Tables, UsagePart Usage) Declarations((AgentDoor Door, Provider Provider) entry)
     {
         var (door, provider) = entry;
         var owning = Ids.Same(provider.Id.Value, door.Id.Value);

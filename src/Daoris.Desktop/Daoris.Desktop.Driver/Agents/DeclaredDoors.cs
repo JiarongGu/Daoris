@@ -13,8 +13,8 @@ public static class DeclaredDoors
         new DoorId(declared.Name),
         Transport.Protocol,
         new DoorIdentity(declared.DeclaredBy, declared.Product, declared.Maker),
-        Known<ProgramFacts>.Declared(
-            new ProgramFacts(
+        Known<ToolSpec>.Declared(
+            new ToolSpec(
                 [declared.Command[0]], declared.VersionArguments ?? [], declared.Install, null, declared.Package, null, null,
                 // No version question declared: presence is asked of the file or PATH, never by running it.
                 ProbeByPresence: declared.VersionArguments is null),
@@ -48,7 +48,7 @@ public static class DeclaredDoors
         new ProviderId(door.Id.Value),
         new ProviderIdentity(null, door.Identity.Maker, null, false, [door.Identity.DeclaredBy!]),
         [door],
-        Known<ProgramFacts>.Absent,
+        Known<ToolSpec>.Absent,
         Known<AccountsPart>.Declared(new AccountsPart(door.AccountOf ?? new AccountKey(door.Id.Value), null, PoolFacts.None), "a plugin's declaration"),
         Known<TablesPart>.Absent,
         Known<UsagePart>.Absent,

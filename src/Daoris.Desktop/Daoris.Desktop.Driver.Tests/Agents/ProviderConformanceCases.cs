@@ -652,7 +652,7 @@ internal static class ConformanceCases
             .Order(StringComparer.Ordinal),
     ];
 
-    private static IEnumerable<string> Pinned(Known<ProgramFacts> program) =>
+    private static IEnumerable<string> Pinned(Known<ToolSpec> program) =>
         program is { IsKnown: true, Value.PinnedEnvironment: { } pinned } ? pinned.Keys : [];
 
     /// <summary>What the other providers this view registers declare and this one does not.</summary>
@@ -762,7 +762,7 @@ internal static class ConformanceCases
     private static Provider Bare(string id, string? variable)
     {
         var door = new AgentDoor(
-            new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
+            new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ToolSpec>.Absent,
             new DoorHome(variable, true, null), LentPart.None, Known<PortRef>.Absent,
             new PosturesPart(null, null, null, null), Known<ISpawn>.Declared(new BareSpawn(), "a conformance case's provider"), Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -771,7 +771,7 @@ internal static class ConformanceCases
                 Known<bool>.Declared(false, "a conformance case's provider")),
             new DoorTablesPart(null, null), null, InstructionsPart.None);
         return new Provider(
-            new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ProgramFacts>.Absent,
+            new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ToolSpec>.Absent,
             Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
             Known<IChildVocabulary>.Absent, Rules: default, Skills: default, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent);

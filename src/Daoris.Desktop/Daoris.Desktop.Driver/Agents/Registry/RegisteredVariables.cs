@@ -67,6 +67,6 @@ internal static class RegisteredVariables
             .Order(StringComparer.Ordinal),
     ];
 
-    private static IEnumerable<string> Pinned(Known<ProgramFacts> program) =>
+    private static IEnumerable<string> Pinned(Known<ToolSpec> program) =>
         program.IsKnown && program.Required.PinnedEnvironment is { } pinned ? pinned.Keys : [];
 }

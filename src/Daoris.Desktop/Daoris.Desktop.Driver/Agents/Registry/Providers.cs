@@ -14,6 +14,7 @@ internal static class Providers
         CodexProvider.Registration(),
         DshProvider.Registration(),
         StubProvider.Registration(),
+        AltStubProvider.Registration(),
     ]);
 
     /// <summary>Every provider registered, each with its doors; the shim presents their doors to today's readers.</summary>
