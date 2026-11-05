@@ -74,6 +74,10 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (holding && pipe.Holding.RefuseStart(request, connection) is { } refused) return (IpcJson.Serialize(refused), null);
         Task<string> Held(Task<string> answered) => holding ? pipe.Holding.AfterOpenedAsync(answered, connection) : answered;
 
+        // The connection holding a conversation says its words in the verb's form, stops its turn and finishes it as a confirmed press:
+        // no card, so nothing is shaped for one; every other press asks as before.
+        var covered = @class == PipeClass.Person && !holding && pipe.Holding.Covers(connection, request);
+
         // SUPERVISOR1a-ii (D208 §2.2, the supervisor design §11 row 1a-ii): a role's act is judged by the judge's own role method, before
         // the open path and before any card, under the same lock and caller look, then by the holder's proof over this connection's
         // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked.
@@ -92,7 +96,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
         // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
-        if (@class == PipeClass.Person)
+        if (@class == PipeClass.Person && !covered)
         {
             if (PipeCensus.SecretRefusal(request.Type, request.Payload) is { } secret) return (IpcJson.Serialize(pipe.Refuse(request, InstancePipe.Shape, $"{Capitalized(secret)} Nothing was asked.")), null);
             var (shown, unshown) = PipeConfirmations.FieldsOf(request.Payload);
@@ -139,14 +143,6 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (fields is null)
         {
             _ = pipe.RunAsync(request, id, binding, mine, role: role, client: connection.Client);
-            return (null, answer);
-        }
-
-        // RPC1g1 (D238 point 2): the connection holding a conversation says its words in the verb's form, stops its turn and finishes it as
-        // a confirmed press, with no card; every other press asks as before.
-        if (pipe.Holding.Covers(connection, request))
-        {
-            _ = pipe.RunAsync(request, id, binding, mine, client: connection.Client);
             return (null, answer);
         }
 
