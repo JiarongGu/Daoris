@@ -23128,3 +23128,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **ROLEONE1b — the supervisor and the steward drawn in Agents → Setup's Roles** (web): the page's catalogue type carries `hold`; `PlaceRoles` draws their rows and the roles diagram its appointed half. → `docs/areas/roles-and-supervision.md`
 
   **Outcome** 2026-11-04: the two roles drawn and edited through the one role editor; DiagramDetail's appointed section and the stories' hold rows left.
+
+## LAUNCHCHAIN1 (2026-11-05)
+
+- [x] **LAUNCHCHAIN1 — a session's servers start as one process each** (driver, plugins): each `npx` server ran as `cmd /c npx`, an `npx-cli` node, `cmd /c <bin>` and the server's node, with a `conhost` each. → `docs/areas/plugins.md`
+
+  **Outcome** 2026-11-05: `SessionServers` and `PackageStarts.Direct` start a server, and an npm-installed agent, as one node from a package installed once under `cache/toolchain/` (`0588c20b3`); an agent named by an `npx` command still runs through npx, Space lists the cached server packages as agent downloads, and the plugins repository's browser READMEs still say npx.
