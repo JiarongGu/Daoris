@@ -1,5 +1,6 @@
 import type { HelperAskRow } from '../waits/HelperAsks';
 import { helperKey } from '../waits/anchors';
+import { type AnswerHead, answerHeadsOf } from './answerHeads';
 import type { Turn } from './conversation';
 
 /**
@@ -26,13 +27,17 @@ export type ExchangeCard = {
   answer?: { key: string; text: string; at: string };
 };
 
-/** The cards a conversation draws, by the key of the call each is at, and each answer's turn by its ask's key, naming its card's call. */
+/**
+ * The cards a conversation draws, by the key of the call each is at, and each answer's turn by its ask's key, naming its card's call;
+ * and, by the taking turn's ask key, the head of each helper's answer no card folds (MIXAGENT3a-iii).
+ */
 export type Exchanges = {
   cards: Readonly<Record<string, ExchangeCard>>;
   takenAt: Readonly<Record<string, string>>;
+  answers: Readonly<Record<string, AnswerHead>>;
 };
 
-export const NO_EXCHANGES: Exchanges = { cards: {}, takenAt: {} };
+export const NO_EXCHANGES: Exchanges = { cards: {}, takenAt: {}, answers: {} };
 
 /**
  * The exchange cards of `turns` (COMMS1h): each of `asks` whose call the page holds, with its answer where the turn that took it is
@@ -60,5 +65,5 @@ export function exchangesOf(
     }
     cards[call] = card;
   }
-  return { cards, takenAt };
+  return { cards, takenAt, answers: answerHeadsOf(turns, asks, takenAt, nameOf) };
 }
