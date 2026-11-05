@@ -62,7 +62,7 @@ internal static class ActSteps
     /// <summary>The bound a step of <paramref name="kind"/> runs under, by the git it is or starts (<see cref="GitBounds"/>).</summary>
     public static TimeSpan BoundOf(string kind) =>
         kind == ActStepKinds.Bytes ? GitBounds.Question
-        : GitBounds.Of([kind switch { ActStepKinds.Index => "update-index", ActStepKinds.Commit => "commit", ActStepKinds.Switch => "switch", ActStepKinds.Stash => "stash", ActStepKinds.Fetch => "fetch", _ => "update-ref" }]);
+        : GitBounds.Of([kind switch { ActStepKinds.Index => "update-index", ActStepKinds.Commit => "commit", ActStepKinds.Switch => "switch", ActStepKinds.Stash => "stash", ActStepKinds.Fetch => "fetch", ActStepKinds.Push => "push", _ => "update-ref" }]);
 
     /// <summary>A file step: <paramref name="path"/>'s bytes (digest <paramref name="before"/>) replaced by <paramref name="written"/>'s (digest <paramref name="after"/>), <paramref name="replaced"/> holding the old ones.</summary>
     public static ActStepPlan Bytes(string path, string relative, string before, string after, string replaced, string written)
@@ -84,6 +84,7 @@ internal static class ActSteps
         ActStepKinds.Switch => ActWorkSteps.SwitchAsync(held, launch, step),
         ActStepKinds.Stash => ActWorkSteps.StashAsync(held, launch, step),
         ActStepKinds.Fetch => ActFetchSteps.EffectAsync(held, launch, step),
+        ActStepKinds.Push => ActPushSteps.EffectAsync(held, launch, step),
         _ => IndexAsync(held, launch, step),
     };
 
@@ -320,6 +321,9 @@ internal static class ActSteps
 
             case ActStepKinds.Fetch:
                 return await ActFetchSteps.ReadAsync(root, step, plan, ct).ConfigureAwait(false);
+
+            case ActStepKinds.Push:
+                return ActPushSteps.Read(step);
 
             default:
             {
