@@ -329,14 +329,15 @@ Agents page, and `orient-index` and `code-map` once files move.
   shell reads, Platform's launcher starting and containing the completed recipe (D201), the identity names moved down from
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
-  the sink's rest (l: the open's refused model still a re-ask and no reading, the lineage still a writer the run makes rather than
-  Participants' part, the four `stream-json` readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`),
-  m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
-  a start of its own rather than the run's, since the conversation's words go to the process its `NativeChat` holds; the protocol resume
-  once for a driven run and a conversation; the hand-over's accounts once; `IConversationHome`), n's rest (the doors' `Offers` part, the
-  actor run's asked choice read from the door's spawn, the offers store read by the start plan and the walk through `AgentOffers.Offers`
-  rather than `Read` and `Judge`), s-ii (the group's report of a resume against `ResumesOwn`, whose two reads agree on inspection and
-  want a planted disagreement); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
+  the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
+  one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by
+  the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243: words
+  through the run by `DoorInput`, one queue of ids per run, and `GoOnAsync` gone with it; a conversation's native retry still
+  `ChatWatch`'s own, a start of its own rather than the run's, until `NativeChat` writes through `DoorInput` and the run replays the
+  words the ended process never acknowledged; the protocol resume once for a driven run and a conversation; the hand-over's accounts
+  once; `IConversationHome`), n's rest (the doors' `Offers` part, the actor run's asked choice read from the door's spawn, the offers
+  store read by the start plan and the walk through `AgentOffers.Offers` rather than `Read` and `Judge`); a start's words go on in its
+  record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
   home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one
   name, the five places of `Adoption` carry a bool, and a plugin's door is a contract door made from a `DeclaredDoor`, its provider
