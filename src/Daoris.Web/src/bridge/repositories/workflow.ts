@@ -101,7 +101,8 @@ export const useAcceptIntegration = () => {
 
 /**
  * Where a session's, a quest's or an ask's work stands in its workflow (WORKFLOW1c; D157 point 11, the workflow design §5.1, §7):
- * the runs the driver reads from this machine's records, one per chain and repository. Desktop-only, as Current is: the landing
+ * the runs the driver reads from this machine's records, one per chain and repository; or a repository's line, its newest verifications
+ * with their verdicts (FABRIC-PIPELINE1d). Desktop-only, as Current is: the landing
  * record and the sessions' records are this machine's (D47 §4), so a browser asks nothing and draws no run. `enabled: false`
  * asks nothing, so a page asks only while what draws it shows; every tick asks it again, under the driver's key.
  */
@@ -109,7 +110,8 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
   const { isAvailable } = useShenora();
   const [kind, id] = scope === null ? ['session' as const, ''] : 'session' in scope
     ? ['session' as const, scope.session]
-    : 'quest' in scope ? ['quest' as const, scope.quest] : ['ask' as const, scope.ask];
+    : 'quest' in scope ? ['quest' as const, scope.quest]
+      : 'line' in scope ? ['line' as const, scope.line] : ['ask' as const, scope.ask];
   return useQuery({
     queryKey: keys.workflowRun(kind, id),
     queryFn: () => call('WORKFLOW_RUN', { [kind]: id }) as Promise<WorkflowRunAnswer>,
@@ -124,7 +126,8 @@ export type VerifyAnswer = { repository: string; done: boolean; refused: string 
 /**
  * The person's verification of a branch or a commit (FABRIC-PIPELINE1d part 5), the page's half of `daoris gate verify`: bound under the
  * landed route's gates they accepted, for the running driver to verify after any verification ahead of it. A refusal is an answer with the
- * driver's sentence, never thrown. Its verdict shows on the run's view, which the state hub asks again under the driver's key.
+ * driver's sentence, never thrown. Its verdict shows on the repository's line (`useWorkflowRun({ line })`), which the state hub asks again
+ * under the driver's key.
  */
 export const useVerify = () => useMutation({
   mutationFn: ({ repository, branch, commit }: { repository: string; branch?: string; commit?: string }) =>

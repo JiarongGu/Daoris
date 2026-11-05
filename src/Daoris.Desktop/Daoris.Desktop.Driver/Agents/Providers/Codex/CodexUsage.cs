@@ -222,7 +222,7 @@ public static class CodexUsage
     /// <summary>
     /// Start <paramref name="command"/> as a harness's reporting command starts (D49 §4): on the PATH a session would get
     /// (TOOLS5), its account's home in the toolchain's variable, the pin's binary where one is managed, through the one seam
-    /// both doors take (<see cref="HarnessProbe.Apply"/>); its three streams redirected as UTF-8 with no mark, and no window.
+    /// both doors take (<see cref="Shell.Equip"/>); its three streams redirected as UTF-8 with no mark, and no window.
     /// </summary>
     /// <param name="profileHome">The account's configuration home, or null for the tool's own, the variable then unset.</param>
     /// <param name="managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
@@ -246,7 +246,7 @@ public static class CodexUsage
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
         Tools.Hand(info);
-        HarnessProbe.Apply(info, toolchain, profileHome, binary: managed);
+        Shell.Equip(info, toolchain, profileHome, binary: managed);
         return info;
     }
 

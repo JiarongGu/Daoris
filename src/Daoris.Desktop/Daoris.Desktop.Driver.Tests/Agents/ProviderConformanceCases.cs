@@ -268,10 +268,11 @@ internal static class ConformanceCases
 
     private static void RecipeNamesNoDaorisVariable(ConformanceRun run)
     {
-        var info = run.Adapter.Prepare(run.Target(), run.Command());
-        var named = Spawning.Roles.Where(name => info.Environment.TryGetValue(name, out var value) && value is not null).ToList();
+        Assert.True(run.TheDoor.Spawn.IsKnown, $"{run.TheDoor.Id} states no spawn, so no recipe of its own");
+        var recipe = run.TheDoor.Spawn.Required.Start(run.Target(), run.Command());
+        var named = recipe.Variables.Keys.Where(Spawning.Daoris).ToList();
 
-        Assert.True(named.Count == 0, $"the door's own spawn sets Daoris's {string.Join(", ", named)}: the transports' shell sets them after the recipe (§4.6)");
+        Assert.True(named.Count == 0, $"the door's own recipe sets Daoris's {string.Join(", ", named)}: the transports' shell sets them (§4.6)");
     }
 
     private static void RecipeOwnVariablesPass(ConformanceRun run)
@@ -282,7 +283,7 @@ internal static class ConformanceCases
 
         var info = run.Adapter.Prepare(run.Target(), run.Command());
         var profile = Path.Combine(run.Home(), "profile");
-        HarnessProbe.Apply(info, toolchain, profile);
+        Shell.Equip(info, toolchain, profile);
 
         Assert.Equal(profile, info.Environment[variable]);
     }
@@ -307,7 +308,7 @@ internal static class ConformanceCases
             var adapter = run.Subject.Adapters.Resolve(door.Id.Value);
             if (adapter.Toolchain is not { } toolchain) continue;
             var info = adapter.Prepare(run.Target(), run.Command());
-            HarnessProbe.Apply(info, toolchain, profileHome: null, account: new Dictionary<string, string> { [token] = "conformance-key" });
+            Shell.Equip(info, toolchain, profileHome: null, account: new Dictionary<string, string> { [token] = "conformance-key" });
             Assert.Equal("conformance-key", info.Environment[token]);
         }
     }
@@ -779,10 +780,8 @@ internal static class ConformanceCases
 
     private sealed class BareSpawn : ISpawn
     {
-        public ProcessStartInfo Start(SessionTarget target, IReadOnlyList<string>? command) =>
-            Spawning.InRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
 
-        public ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command) =>
-            Spawning.ChatInRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
     }
 }

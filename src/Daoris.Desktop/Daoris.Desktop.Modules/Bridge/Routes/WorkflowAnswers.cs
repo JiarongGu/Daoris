@@ -104,6 +104,14 @@ internal static class WorkflowAnswers
             // a chat run's key and its checks, which a conversation's execution is held to;
             // null for a quest's run, and from a driver before it.
             Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = run.ChatChecks, Enforced = true } : null,
+            // a verification run's commit, branch and verdict, each gate as its check ran it; a log stays named on the terminal.
+            Line = run.Line is { } line
+                ? new
+                {
+                    line.Run, line.Commit, line.Branch, line.Level, line.At, line.Verdict, line.Gate, line.Why,
+                    Gates = line.Gates.Select(gate => new { gate.Name, gate.Verdict, gate.Exit, gate.WallSeconds }).ToArray(),
+                }
+                : null,
             // The workflow's wait, in the shape the Trees domain's landing gate answers it.
             WorkflowGate = TreesRoutes.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,

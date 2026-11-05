@@ -26,8 +26,8 @@ public sealed record WorkflowUsePress(
 /// <summary>A label declares the kind; <c>Drop</c> withdraws it, with no label and no paths.</summary>
 public sealed record WorkflowKind(string? Workspace, string? Kind, string? Label, IReadOnlyList<string>? Paths, bool Drop = false);
 
-/// <summary>Exactly one of the three.</summary>
-public sealed record WorkflowRunRead(string? Session, string? Quest, string? Ask);
+/// <summary>Exactly one of the four: a session, a quest, an ask, or a repository whose line's verification runs are read.</summary>
+public sealed record WorkflowRunRead(string? Session, string? Quest, string? Ask, string? Line = null);
 
 /// <summary>A version saved under <c>Id</c>, from a preset or a saved workflow, or of the <c>Steps</c> or <c>Graph</c> sent, whose nodes the workflow's reader judges.</summary>
 public sealed record WorkflowSavePress(

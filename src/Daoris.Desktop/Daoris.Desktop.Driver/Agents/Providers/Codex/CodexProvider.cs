@@ -34,7 +34,7 @@ internal static class CodexProvider
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
             Known<PortRef>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
-            Known<ISpawn>.Declared(new AdapterSpawn(new CodexAcpAdapter()), Evidence),
+            Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),

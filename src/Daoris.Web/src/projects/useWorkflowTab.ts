@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { acceptGatesPress, useSetLanded, useVerify, useWorkflowCurrent, useWorkflowEditor } from '../bridge/shell';
+import { acceptGatesPress, useResolveHeld, useSetLanded, useVerify, useWorkflowCurrent, useWorkflowEditor, useWorkflowRun } from '../bridge/shell';
 import type { Registration } from '../data/api';
 import { workspaceOf } from '../data/workspaces';
 import type { Notify } from '../design/ui';
@@ -10,7 +10,8 @@ import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 /**
  * **A repository's Workflow as its molecules take it** (WORKFLOW1b; moved out of the Repositories view by AGENTSPLACE1h so the Agents
  * place's Workflow section and the dark Workflow tab hold the one reading): its Current as the driver answers it, read only while
- * `enabled`, a refusal said in its place, the person's *Accept the gates* and *Verify…*, and the step editor's bridge (WORKFLOWEDIT1b).
+ * `enabled`, a refusal said in its place, the person's *Accept the gates* and *Verify…*, the verifications on its line with their verdicts,
+ * and the step editor's bridge (WORKFLOWEDIT1b).
  * Returns the props for a registration, or null while the driver has not answered (`ready` false).
  *
  * @remarks
@@ -33,6 +34,10 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
   const editor = useWorkflowEditor({ repository: repository ?? '', workspace: current.data?.workspace ?? null }, { enabled });
   const setLanded = useSetLanded();
   const verify = useVerify();
+  // FABRIC-PIPELINE1d: the repository's verifications and their verdicts, read only where its landed route names a verification pipeline.
+  const verifying = !!current.data?.start?.landed && current.data.start.landed.workflow !== 'current';
+  const line = useWorkflowRun(repository === null ? null : { line: repository }, { enabled: enabled && verifying });
+  const resolveHeld = useResolveHeld();
 
   return (registration, doors) => {
     if (!ready) return null;
@@ -61,6 +66,9 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
         },
         onError: (error) => answered.refused(sentence(error)),
       }),
+      verifications: verifying
+        ? { answer: line.data, reading: line.isPending, refusal: line.error ? sentence(line.error) : null, onHeld: resolveHeld.mutateAsync }
+        : undefined,
       editor,
     };
   };

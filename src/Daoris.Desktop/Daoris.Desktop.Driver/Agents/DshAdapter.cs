@@ -53,20 +53,8 @@ public sealed class DshAdapter : ISessionAdapter
     /// <summary>The value that expresses D37 here. Never <c>danger-full-access</c>, which is approvals off.</summary>
     public const string Posture = "workspace-write";
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        var info = Spawning.InRoot(
-            target, resolved[0], resolved.Skip(1).Concat(["--profile", Profile]), redirectInput: true);
-
-        // Set HERE rather than in the driver's one line, because this posture is genuinely this
-        // harness's own mechanism — the other two protocol adapters express the same boundary as a
-        // mode on the wire, and a driver that applied one mechanism to all three would set nothing
-        // for two of them and report success.
-        info.Environment[PermissionVariable] = Posture;
-
-        return info;
-    }
+    /// <summary>Its door's spawn (<see cref="DshSpawn"/>), the posture its recipe's own variable, until row t.</summary>
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Shell.Start(new DshSpawn().Start(target, command), target);
 
     /// <summary>
     /// Pinned exact, and <b>vendored nowhere</b>: 561 MB per machine, and a harness's own packaging is
@@ -85,7 +73,4 @@ public sealed class DshAdapter : ISessionAdapter
         Install: ["npm", "install", "-g", "@deepseek-ai/dsh"],
         // No login flow and no login question: there is no account here to be out of.
         Package: "@deepseek-ai/dsh");
-
-    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }

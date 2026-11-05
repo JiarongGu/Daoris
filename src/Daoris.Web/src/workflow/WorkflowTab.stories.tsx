@@ -5,6 +5,7 @@ import { storyWidths } from '../design/storyWidths';
 import {
   FULL, GATES_CHANGED, NO_VERIFICATION, NOTHING_SET, PLUGIN_UNREADY, ROUTED, START, WITH_A_FAILURE_PATH, WORK, WORKSPACE,
 } from './fixtures';
+import { FAILED_GATE, lineOf, UNKNOWN_HELD, VERIFIED } from './lineFixtures';
 import { WorkflowTab } from './WorkflowTab';
 
 // The Workflow tab (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2, §6.4), every state the design names drawn
@@ -120,6 +121,15 @@ export const Routed: Story = { args: { current: ROUTED, onAcceptGates: nothing }
 /** **Verify…** (FABRIC-PIPELINE1d part 5): the gates accepted, so the person may verify a branch or a commit of the repository. */
 export const WithVerify: Story = { args: { current: ROUTED, onAcceptGates: nothing, onVerify: (_ask, answered) => answered.done() } };
 export const WithVerifyChinese: Story = { ...WithVerify, decorators: [chinese] };
+
+/** **Verifications** (FABRIC-PIPELINE1d): under the start node, the repository's verifications and their verdicts, one held for the person. */
+export const WithVerifications: Story = {
+  args: {
+    ...WithVerify.args,
+    verifications: { answer: lineOf(UNKNOWN_HELD, VERIFIED, FAILED_GATE), onHeld: () => Promise.resolve({ done: true }) },
+  },
+};
+export const WithVerificationsChineseDark: Story = { ...WithVerifications, decorators: [chinese, dark] };
 
 /** The declaration at the tip changed since it was accepted: shown whole, nothing runs, and *Accept the gates* is the person's. */
 export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED }, onAcceptGates: nothing } };

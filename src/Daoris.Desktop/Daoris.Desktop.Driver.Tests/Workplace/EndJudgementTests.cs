@@ -35,14 +35,14 @@ public sealed class EndJudgementTests
     public void A_named_workflows_landing_decides_the_cycle()
     {
         var config = DriverConfig.Empty;
-        var process = new WorkflowProcess("engine", new Landing(LandingForm.Branch, "docs/{quest}-{slug}", Plugin: "forge"), null, null)
+        var process = new WorkflowProcess("engine", new Landing(LandingForm.Branch, "docs/{quest}-{slug}"), null, null)
         {
             Binding = new WorkflowRunBinding("q1", "engine", "aurora", "docs-to-pr", "task", DateTimeOffset.UnixEpoch) { Version = 2, Kind = "docs" },
         };
 
         var cycle = EndCycle.Accepts(config, "engine", "aurora", process);
 
-        Assert.Equal(("branch with a plugin", "docs-to-pr"), (cycle.Name, cycle.Workflow?.Workflow));
+        Assert.Equal(("branch", "docs-to-pr"), (cycle.Name, cycle.Workflow?.Workflow));
         Assert.Equal("merge", EndCycle.Accepts(config, "engine", "aurora").Name);
         Assert.Equal(2, cycle.Workflow!.Version);
     }

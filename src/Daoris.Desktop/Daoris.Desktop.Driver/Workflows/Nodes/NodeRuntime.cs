@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Integration, () => Say, () => Landing, () => Pushing))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Integration, () => Say, () => Landing, () => Pushing, () => PullRequests))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Integration, () => Lines, () => Requests, () => _config, () => _quests, () => Integrated))!;
@@ -111,6 +111,9 @@ public sealed class NodeRuntime(
 
     /// <summary>The door a run's <c>push</c> is performed through (G8): none by default, so a runtime nobody wired pushes nothing and its node waits active.</summary>
     public IPushDoor? Pushing { get; set; }
+
+    /// <summary>Where the pull request a plugin's step opened is written on its landing (G8): none by default, so a runtime nobody wired writes none.</summary>
+    public IPullRequestRecords? PullRequests { get; set; }
 
     /// <summary>The door a run's <c>request</c> publishes its quest through: none by default, so a runtime nobody wired starts none and its node waits ready.</summary>
     public IRequestPort? Requests { get; set; }
@@ -336,7 +339,7 @@ public sealed class NodeRuntime(
 
             // The look's git reads for the observed built-ins, each checkout's remote-tracking refs read once a pass, and only where a node
             // waits on them; D157's gates likewise, once a pass for a unit whose opinion or look waits on them.
-            var git = new PassReads(new PassGit(look.Remotes, look.Holds, NodeEvaluations.Pushing(governed.Values)), new PassGates(look.Gates), NodeEvaluations.Once(look.Content));
+            var git = new PassReads(new PassGit(look.Remotes,NodeEvaluations.Pushing(governed.Values)), new PassGates(look.Gates), NodeEvaluations.Once(look.Content));
 
             // One count of calls for the whole pass, reconciliation's first, so four is the pass's bound and not its starts' alone.
             var sends = new WorkSends(SendsPerPass);
@@ -580,6 +583,7 @@ public sealed class NodeRuntime(
             await Keeping.AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.StartLandings(governed, run);
             Keeping.StartPushes(governed, run);
+            Keeping.KeepPullRequests(governed);
             Keeping.End(governed, run, said);
         }
     }

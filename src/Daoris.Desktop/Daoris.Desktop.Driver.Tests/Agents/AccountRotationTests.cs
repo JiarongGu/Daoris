@@ -223,7 +223,7 @@ public sealed class AccountRotationTests : IDisposable
 
         // The spawn is handed that account through the stub's own variable, as a pipe-door start on it would be.
         var spawn = new ProcessStartInfo(Command);
-        HarnessProbe.Apply(spawn, adapters.Resolve("acp-stub").Toolchain!, selection.ProfileHome);
+        Shell.Equip(spawn, adapters.Resolve("acp-stub").Toolchain!, selection.ProfileHome);
         Assert.Equal(HarnessSettings.ProfileHome(_home, "stub", "account-2"), spawn.Environment["DAORIS_STUB_CONFIG_DIR"]);
     }
 

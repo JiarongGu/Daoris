@@ -64,17 +64,12 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     /// </summary>
     public string? ReadingPosture => "read-only";
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
-    }
+    /// <summary>Its door's spawn (<see cref="CodexAcpSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
+    private static readonly CodexAcpSpawn Spawn = new();
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        return Spawning.ChatInRoot(target, resolved[0], resolved.Skip(1));
-    }
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Shell.Start(Spawn.Start(target, command), target);
+
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => Shell.Chat(Spawn.Chat(target, command), target);
 
     public HarnessToolchain? Toolchain => new(
         Product: "Codex",
@@ -105,7 +100,4 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     /// <c>drift.ts</c>), and loads no skills of the tree's (CONTEXTONE1c).
     /// </summary>
     public int? InstructionFileLimit => 32_768;
-
-    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
