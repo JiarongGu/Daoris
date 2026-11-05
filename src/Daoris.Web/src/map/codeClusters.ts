@@ -3,11 +3,12 @@ import type { ListGroup } from '../design/canvas/CanvasList';
 import type { SuppliedWorld } from '../design/canvas/SuppliedCanvas';
 import type { Box } from '../design/canvas/viewMath';
 import { layerModules } from './codeLayout';
+import { createRouter } from './codeRoute';
 
 // The code map as a positioned world (CANVAS1f; D224; the canvas design §3.4). Pure. Folders come from each module's path and are drawn as
 // nested boxes packed by name; the modules of a folder are laid by `layerModules`; a cycle is condensed to one card and whole when
 // opened. A folder is no evidence of an import: the only lines are the supplied dependencies, each kind as written, and those between
-// closed groups are aggregated by pair and direction and counted until one opens.
+// closed groups are aggregated by pair and direction and counted until one opens. Each line is routed around the cards (`codeRoute`).
 
 /** A card, in world units: the 136×36 box the code map always drew. */
 export const CARD_W = 136;
@@ -221,29 +222,6 @@ export function openingPath(tree: CodeTree, open: ReadonlySet<string>, id: strin
 type Part = { id: string; box: Box; inner?: Laid };
 type Laid = { w: number; h: number; parts: Part[] };
 
-/** A line between two boxes, level where they stand side by side and down or up where one is below the other. */
-function route(a: Box, b: Box, lane: number): { d: string; mid: { x: number; y: number } } {
-  const [ax, bx] = [a.x + a.w / 2 + lane, b.x + b.w / 2 + lane];
-  let p: number[];
-  if (b.y > a.y + a.h) {
-    const bend = (b.y - 2 - (a.y + a.h)) / 2;
-    p = [ax, a.y + a.h, ax, a.y + a.h + bend, bx, b.y - 2 - bend, bx, b.y - 2];
-  } else if (b.y + b.h < a.y) {
-    const bend = (a.y - (b.y + b.h + 2)) / 2;
-    p = [ax, a.y, ax, a.y - bend, bx, b.y + b.h + 2 + bend, bx, b.y + b.h + 2];
-  } else {
-    const right = b.x > a.x;
-    const [sx, ex] = right ? [a.x + a.w, b.x - 2] : [a.x, b.x + b.w + 2];
-    const [sy, ey] = [a.y + a.h / 2 + lane, b.y + b.h / 2 + lane];
-    const bend = Math.abs(ex - sx) / 2;
-    p = [sx, sy, sx + (right ? bend : -bend), sy, ex - (right ? bend : -bend), ey, ex, ey];
-  }
-  return {
-    d: `M ${p[0]} ${p[1]} C ${p[2]} ${p[3]} ${p[4]} ${p[5]} ${p[6]} ${p[7]}`,
-    mid: { x: (p[0]! + 3 * p[2]! + 3 * p[4]! + p[6]!) / 8, y: (p[1]! + 3 * p[3]! + 3 * p[5]! + p[7]!) / 8 },
-  };
-}
-
 /**
  * The world for the groups that are `open`: the root's folders packed by name, an open folder a frame holding its modules in
  * `layerModules`' layers (a cycle in it one condensed unit) and its subfolders packed beneath, a closed group one card.
@@ -357,9 +335,10 @@ export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { c
   }
   const drawn = [...singles, ...[...aggregated].map(([id, each]) => ({ id, ...each }))];
   const pairs = new Set(drawn.map((each) => `${each.from}\u0000${each.to}`));
+  const router = createRouter(boxes);
   const lines: CodeLine[] = drawn.map((each) => {
     const both = pairs.has(`${each.to}\u0000${each.from}`);
-    const { d, mid } = route(boxes.get(each.from)!, boxes.get(each.to)!, both ? (each.from < each.to ? -LANE : LANE) : 0);
+    const { d, mid } = router.route(each.from, each.to, both ? (each.from < each.to ? -LANE : LANE) : 0);
     return {
       id: each.id, from: each.from, to: each.to, d, mid, count: each.deps.length, aggregated: each.id.startsWith('agg:'),
       kinds: each.deps.map((dep) => dep.kind), deps: each.deps,

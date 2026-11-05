@@ -90,6 +90,18 @@ export const WITH_A_CYCLE: CodeFixture = {
   ],
 };
 
+/** A stack of layers whose top uses what is several layers down: the lines that skip a layer are routed around the cards between. */
+export const SKIPPING_LAYERS: CodeFixture = {
+  modules: [
+    mod('app', 'src/app/app'), mod('screens', 'src/app/screens'), mod('widgets', 'src/app/widgets'), mod('core', 'src/app/core'),
+    mod('store', 'src/app/store'), mod('log', 'src/app/log'),
+  ],
+  dependencies: [
+    dep('app', 'screens'), dep('screens', 'widgets'), dep('widgets', 'core'), dep('core', 'store'), dep('store', 'log'),
+    dep('app', 'core', 'calls'), dep('app', 'log', 'calls'), dep('screens', 'store', 'reads'),
+  ],
+};
+
 /** Ids longer than a card holds, cut on it and whole in the detail. */
 export const LONG_IDS: CodeFixture = {
   modules: [

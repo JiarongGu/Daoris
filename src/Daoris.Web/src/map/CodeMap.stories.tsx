@@ -4,7 +4,7 @@ import type { Provenance } from '../data/api';
 import { inDark } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
-import { type CodeFixture, LONG_IDS, REPOSITORY, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
+import { type CodeFixture, LONG_IDS, REPOSITORY, SKIPPING_LAYERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 
 // A repository's own code map on the canvas (MAP3a; CANVAS1f; D224, the canvas design §3.4), in the shapes a producer writes: this
@@ -57,6 +57,11 @@ export const WithACycleChinese: Story = { ...WithACycle, decorators: [storyWidth
  */
 export const FromATeammate: Story = { args: { fed: FED } };
 export const FromATeammateNarrow: Story = { ...FromATeammate, decorators: [storyWidths.narrow] };
+
+/** Lines that skip a layer run around the cards between, through the gaps, leaving and entering their cards as every line does. */
+export const LinesAroundCards: Story = { args: { map: SKIPPING_LAYERS, initial: 'app' } };
+export const LinesAroundCardsHalf: Story = { ...LinesAroundCards, decorators: [storyWidths.half] };
+export const LinesAroundCardsChineseDark: Story = { ...LinesAroundCards, decorators: [storyWidths.wide, chinese, inDark] };
 
 /** Ids longer than a card, cut on it and whole in the detail. */
 export const LongIds: Story = { args: { map: LONG_IDS, initial: 'Daoris.Desktop.Driver.Host.Integration' } };
