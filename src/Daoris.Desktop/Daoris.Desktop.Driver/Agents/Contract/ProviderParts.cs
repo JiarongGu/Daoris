@@ -104,20 +104,24 @@ public sealed record LentPart(PoolFacts Accounts, TablesPart Tables, UsagePart U
 
 /// <summary>
 /// What a door's spawn does about an account's home, each the door's own, never its provider's (O2-F2): the variable it hands the
-/// home in, whether a start naming no account runs in the tool's own home, the trust file, and whether the home must already exist.
+/// home in, whether a start naming no account runs in the tool's own home, and the trust file. A managed home is made before every
+/// launch, so no door states that its home must already exist.
 /// </summary>
-public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile, bool MustExist)
+public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 {
     /// <summary>A start that names no account runs in the tool's own home: a test double's, or a tool no account can be handed to.</summary>
     public bool StartsInOwnHome => OwnHome || Variable is not { Length: > 0 };
 
     public static DoorHome Of(HarnessToolchain? toolchain) => toolchain is null
-        ? new DoorHome(null, false, null, false)
-        : new DoorHome(toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.TrustFile, toolchain.ProfileMustExist);
+        ? new DoorHome(null, false, null)
+        : new DoorHome(toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.TrustFile);
 }
 
-/// <summary>The postures a door speaks in its agent's own words: ordinary, asking and full (D183, D184). Null maps none.</summary>
-public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full);
+/// <summary>
+/// The postures a door speaks in its agent's own words: ordinary, asking and full (D183, D184), and the reading posture a door that
+/// takes no rules confines a read-only session with. Null maps none.
+/// </summary>
+public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full, string? Reading);
 
 /// <summary>What a door declares it can do, a <see cref="Known{T}"/> each (the design §2.3).</summary>
 public sealed record AbilitiesPart(Known<bool> Interactive, Known<bool> Resumes, Known<bool> TakesSettings);

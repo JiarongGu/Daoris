@@ -178,7 +178,7 @@ internal static class ProviderRegistration
             DoorHome.Of(toolchain),
             lent,
             Absent(),
-            new PosturesPart(adapter.AcpPosture, adapter.AskingPosture, adapter.FullPosture),
+            new PosturesPart(adapter.AcpPosture, adapter.AskingPosture, adapter.FullPosture, adapter.ReadingPosture),
             Known<ISpawn>.Absent,
             Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -190,6 +190,7 @@ internal static class ProviderRegistration
                     : Known<bool>.Declared(adapter.Resumes, "ISessionAdapter.Resumes"),
                 Known<bool>.Declared(adapter.TakesSettings, "ISessionAdapter.TakesSettings")),
             new DoorTablesPart(keyedItself ? null : toolchain?.ErrorWords, toolchain?.TurnReport),
-            declared);
+            declared,
+            new InstructionsPart(adapter.LoadsTreeSkills, adapter.InstructionFileLimit));
     }
 }

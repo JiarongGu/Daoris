@@ -57,7 +57,7 @@ public sealed record Provider(
 /// <see cref="Lent"/> is the door's own account words, which a harness naming this door's id reads; a door that gives its provider its
 /// id and is keyed by it (<c>claude-code</c>) has none of its own, since the provider holds what it declares. <see cref="AccountOf"/>
 /// is the harness's <c>accountOf</c> verbatim (C3-2.1), null where it declares none; the door's account key is it, else its
-/// provider's id.
+/// provider's id. <see cref="Instructions"/> is what the door's program reads of a tree by itself.
 /// </remarks>
 public sealed record AgentDoor(
     DoorId Id,
@@ -72,4 +72,5 @@ public sealed record AgentDoor(
     Known<IDialect> Dialect,
     AbilitiesPart Abilities,
     DoorTablesPart Tables,
-    AccountKey? AccountOf);
+    AccountKey? AccountOf,
+    InstructionsPart Instructions);

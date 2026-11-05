@@ -130,9 +130,12 @@ public static class DshProfile
     /// person's own configuration home, which SES3 puts out of bounds. So: run, and put the sentence
     /// where the run is read. The person can act on it in one command.
     /// </remarks>
+    /// <summary>Whether a door is dsh's, the one whose Daoris-made home is given this profile.</summary>
+    public static bool IsFor(string adapter) => string.Equals(adapter, "dsh", StringComparison.OrdinalIgnoreCase);
+
     public static string? NoticeFor(string adapter, string? profileHome)
     {
-        if (!string.Equals(adapter, "dsh", StringComparison.OrdinalIgnoreCase)) return null;
+        if (!IsFor(adapter)) return null;
         if (profileHome is { Length: > 0 }) return null;
 
         return "— this dsh session runs in dsh's own configuration home, which daoris does not write "

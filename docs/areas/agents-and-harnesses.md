@@ -19,11 +19,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 |---|---|---|
 | `Provider`, `AgentDoor`, `Known<T>` | `Contract/Provider.cs`, `Contract/Known.cs`, `Contract/ProviderParts.cs` | The provider record: identity, doors, account pool, word tables, usage question, reach; every part known with its source, or stated absent |
 | `AgentRun`, `Transport` | `Contract/AgentRun.cs`, `Contract/Transport.cs` | What an executor holds of a live run; the two transports, `Native` and `Protocol` |
-| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (the stand-ins only, today), the registry made over today's adapters, id resolution by kind |
-| `LegacyDoor` | `Registry/LegacyDoor.cs` | Presents a contract door to today's readers as an adapter and a toolchain |
-| `StubProvider` | `Providers/Stub/` | The stand-ins `stub` (pipe) and `acp-stub` (protocol): run a configured command, no model |
-| `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set; `Resolve` refuses an unknown name |
-| `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | same names | The four real doors: spawn arguments, postures, carriers for settings, servers and plugins, toolchain |
+| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' adapters, id resolution by kind |
+| `LegacyDoor`, `AdapterSpawn`, `AdapterNativeDialect`, `AdapterProtocolDialect` | `Registry/` | Presents a contract door to today's readers as an adapter and a toolchain; a real door's spawn, stream reader and session `_meta` as its adapter class makes them, until rows h, i and k move them into the provider's folder |
+| `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model |
+| `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set, every door of it through `LegacyDoor` from the registration list; `Resolve` refuses an unknown name |
+| `ClaudeCodeAdapter`, `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` | same names | The four real doors' spawn arguments, postures and carriers, which their registrations' spawns run; their toolchains are the old side a test holds equal to the registrations until row t |
 | `StubAdapter`, `AcpStubAdapter`, `Spawning`, `CommitTrailers` | `StubAdapters.cs`, same names | The stand-in adapters; the one assembly of a spawn's process start; the maker's trailer a commit carries |
 | `SessionServers`, `ServerPackages`, `PackageStarts`, `NpxCommand`, `PackageBin` | same names; the last two in `Domain/` | The servers a session is handed, as the harness starts them; a server's package installed once into the toolchain; a package's program started as node and its script; `npx` read as npm reads it; the script a package's manifest names |
 | `SessionTarget`, `ChatTarget`, `EarlierMaker` | same names | What a spawn carries |
@@ -62,11 +62,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AccountRotation`, `RotatedOpening`, `RotationWords`, `RotationUse`, `UsageCurves`, `SwitchDecision` | same names, `Domain/` | The walk's order, the rotated start's opening and the walk's words, the next start's reason, the curves, a running session's switch (pure); its records and enums (`AccountState`, `WalkStep`, `NextStart`, and the rest) each in a file of their own |
 | `AccountLimits`, `AccountCooling`, `RefusedAccounts`, `AccountSignIns` | same names | Limit words and resets, `cooling.json`, refused credentials, sign-in refusals |
 | `AgentErrors`, `TransientRetry`, `TransientRetries` | same names | The four-kind reader of a door's failure, and the retry in the same conversation |
-| `AccountWindows`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend; the capacity estimate |
+| `AccountWindows`, `UsageQuestion`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, the readers in `Providers/ClaudeCode/` and `Providers/Codex/`, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend: the question and its answer, each provider's reader in its folder; the capacity estimate |
 | `UsageHistory`, `UsageHistoryReads` | same names | The readings and turns history: kept, rotated and pruned; read back by month with the gaps and the unread counted; its records (`KeptReading`, `KeptTurn`, `HistoryGap`, and the rest) each in a file |
 | `HarnessProbe`, `HarnessKeys`, `HarnessSelection`, `StartWiring`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | same names | Version and sign-in questions, API-key accounts, a selection and the wiring a start is handed, one question per home at a time, no real sign-in under a scratch home |
 | `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
-| `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs` and same names | Rules in scopes and defaults, an agent's proposals, folder trust, reach into other checkouts |
+| `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs`, `Providers/ClaudeCode/ClaudeTrust.cs` and same names | Rules in scopes and defaults, an agent's proposals, Claude Code's folder trust, reach into other checkouts |
 | `SpawnServers`, `SpawnSkills`, `DshProfile` | same names | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
@@ -284,7 +284,11 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Open
 
-- **AGENTPROVIDER1** host rows (d, e, f, g, h, l, m-ii, n, o, p, q, r, s, u): the readings' one sink per run (l), words through
+- **AGENTPROVIDER1d**'s rest: `ProviderRegistry.OwnerOf` and `ProviderOf` as the one reader of whose accounts a door runs as,
+  `HarnessToolchain.Owner` and `AdapterSet.Holder` retired; Codex's limit words and usage question on provider `codex`;
+  `tools/live-logins.mjs` reading the driver's answer; s-ix on. **1e**'s rest: the usage question each provider's own, with no
+  `UsageKind` switch; the window, limit and sign-in tables split between provider and door; then s-iii.
+- **AGENTPROVIDER1** host rows (f, g, h, l, m-ii, n, o, p, q, r, s, u): the readings' one sink per run (l), words through
   the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice (n), one connector plan (p, with **CONNECTORS1**),
   the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`

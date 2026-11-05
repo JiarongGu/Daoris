@@ -149,13 +149,6 @@ public sealed record HarnessCommand(string Harness, IReadOnlyList<string> Run, s
 /// has accepted — for a harness that has such a notion (DEPLOY1). Null is "no notion of trust", and
 /// that is most of them. It is READ and never written: the flag is the person's grant.
 /// </param>
-/// <param name="ProfileMustExist">
-/// Whether this harness demands its profile directory already be there (ACP3). 🔴 Observed, not
-/// assumed, and the two adapters disagree: <c>codex-acp</c> exits 1 before <c>initialize</c>
-/// completes when <c>CODEX_HOME</c> names a path that is not there, while the Claude adapter
-/// <b>creates</b> <c>CLAUDE_CONFIG_DIR</c> and populates it. Default false, so a harness that says
-/// nothing behaves as every harness did before the field existed.
-/// </param>
 public sealed record HarnessToolchain(
     IReadOnlyList<string> Binary,
     IReadOnlyList<string> VersionArguments,
@@ -166,7 +159,6 @@ public sealed record HarnessToolchain(
     LoginQuestion? LoginCheck = null,
     string? Package = null,
     string? AccountOf = null,
-    bool ProfileMustExist = false,
     string? TrustFile = null,
     // A harness with no version question (a plugin-declared one, D64) is asked whether it is THERE
     // rather than run: an ACP agent started with no arguments waits on its stdin, and twenty seconds

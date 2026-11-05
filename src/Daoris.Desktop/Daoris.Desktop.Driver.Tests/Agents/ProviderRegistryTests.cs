@@ -449,8 +449,8 @@ public sealed class ProviderRegistryTests : IDisposable
 
         // The pool's own door states its home as the door's own, never the provider's (O2-F2): the protocol door repeats both.
         var acp = registry.Door("claude-code-acp");
-        Assert.Equal(new DoorHome("CLAUDE_CONFIG_DIR", false, ".claude.json", false), acp.Home);
-        Assert.Equal(new DoorHome("CODEX_HOME", false, null, true), registry.Door("codex-acp").Home);
+        Assert.Equal(new DoorHome("CLAUDE_CONFIG_DIR", false, ".claude.json"), acp.Home);
+        Assert.Equal(new DoorHome("CODEX_HOME", false, null), registry.Door("codex-acp").Home);
         Assert.Equal("claude-agent-acp", acp.Program.Required.Binary.Single());
         Assert.False(registry.Door("claude-code").Program.IsKnown);
         Assert.NotNull(acp.Tables.ErrorWords);
@@ -521,7 +521,7 @@ public sealed class ProviderRegistryTests : IDisposable
         var joined = registry.Door("p-claude");
         Assert.Equal(new ProviderId("claude-code"), registry.ProviderOf(joined.Id));
         Assert.Equal("p.claude", joined.Identity.DeclaredBy);
-        Assert.Equal(new DoorHome("P_HOME", false, null, false), joined.Home);
+        Assert.Equal(new DoorHome("P_HOME", false, null), joined.Home);
         Assert.Equal(Transport.Protocol, joined.Transport);
         Assert.True(joined.Abilities.Interactive.Required);
         Assert.Equal(new AccountKey("claude-code"), joined.AccountOf);
@@ -560,9 +560,10 @@ public sealed class ProviderRegistryTests : IDisposable
 
     private static AgentDoor FakeDoor(string id) => new(
         new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
-        new DoorHome(null, false, null, false), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null),
+        new DoorHome(null, false, null), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
         Known<ISpawn>.Absent, Known<IDialect>.Absent,
-        new AbilitiesPart(Known<bool>.Absent, Known<bool>.Absent, Known<bool>.Absent), new DoorTablesPart(null, null), null);
+        new AbilitiesPart(Known<bool>.Absent, Known<bool>.Absent, Known<bool>.Absent), new DoorTablesPart(null, null), null,
+        InstructionsPart.None);
 
     private static Provider FakeProvider(string id, bool unavailable = false, params string[] doors) => new(
         new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [.. doors.Select(FakeDoor)], Known<ProgramFacts>.Absent,

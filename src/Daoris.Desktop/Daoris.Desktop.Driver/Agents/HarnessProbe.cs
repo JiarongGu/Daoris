@@ -385,8 +385,8 @@ public static class HarnessProbe
         }
 
         // 🔴 Created, not assumed to exist: `codex-acp` exits 1 before `initialize` completes when
-        // `CODEX_HOME` names a path that is not there, while the Claude adapter creates its own. The
-        // toolchain's `ProfileMustExist` names which harnesses depend on this line (ACP3).
+        // `CODEX_HOME` names a path that is not there, while the Claude adapter creates its own, so every
+        // managed home is made here, for every door (ACP3).
         Directory.CreateDirectory(profileHome);
         info.Environment[variable] = profileHome;
     }

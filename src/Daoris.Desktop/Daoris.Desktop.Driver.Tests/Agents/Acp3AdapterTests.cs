@@ -159,20 +159,6 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>`CODEX_HOME` must ALREADY EXIST</b>, where the Claude adapter creates
-    /// `CLAUDE_CONFIG_DIR` for itself. Pointed at a path that is not there, codex-acp exits 1 before
-    /// `initialize` completes, naming the directory. Observed at 1.12.0; the probe evidence note has
-    /// the verbatim error.
-    /// </summary>
-    [Fact]
-    public void Codex_declares_that_its_profile_directory_must_exist()
-    {
-        Assert.True(Adapter("codex-acp").Toolchain!.ProfileMustExist);
-        // The other door's seam is created by the harness, so it makes no such demand.
-        Assert.False(Adapter("claude-code-acp").Toolchain!.ProfileMustExist);
-    }
-
-    /// <summary>
     /// The account belongs to `codex`, exactly as the Claude ACP adapter's belongs to `claude-code`:
     /// the adapter runs the harness and reads the home the harness logged into, so it has no login
     /// flow of its own to offer.
@@ -185,19 +171,21 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>The declaration is bound to the behaviour, or it is decoration.</b> The driver creates
-    /// every profile home before spawning, which is what makes `ProfileMustExist` true today — but
-    /// nothing said WHY that line must stay, so removing it would have broken exactly one harness in
-    /// a way that reads as an unrelated crash. This asserts the contract for every harness that
-    /// declares the requirement, rather than for the one that happens to have it.
+    /// 🔴 <b>`CODEX_HOME` must ALREADY EXIST</b>, where the Claude adapter creates `CLAUDE_CONFIG_DIR` for
+    /// itself: pointed at a path that is not there, codex-acp exits 1 before `initialize` completes,
+    /// naming the directory (observed at 1.12.0; the probe evidence note has the verbatim error). The
+    /// driver makes every managed home before spawning, for every door that names a program and a home
+    /// variable, so no door has to declare that it needs one.
     /// </summary>
     [Fact]
-    public void A_harness_that_demands_its_profile_exist_is_given_one_before_it_spawns()
+    public void Every_door_with_a_home_variable_is_given_its_home_before_it_spawns()
     {
         var demanding = AdapterSet.Built().Names
             .Select(AdapterSet.Built().Resolve)
-            .Where(a => a.Toolchain is { ProfileMustExist: true })
+            .Where(a => a.Toolchain is { ProfileVariable.Length: > 0, Binary.Count: > 0 })
             .ToList();
+
+        Assert.Contains(demanding, adapter => adapter.Name == "codex-acp");
 
         Assert.NotEmpty(demanding);
 

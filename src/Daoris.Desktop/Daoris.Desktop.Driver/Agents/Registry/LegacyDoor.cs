@@ -48,6 +48,16 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     public string? AskingPosture => _door.Postures.Asking;
 
+    public string? ReadingPosture => _door.Postures.Reading;
+
+    public bool LoadsTreeSkills => _door.Instructions.LoadsTreeSkills;
+
+    public int? InstructionFileLimit => _door.Instructions.FileLimit;
+
+    public object? AcpSessionMeta(string settingsFile) => Protocol?.SessionMeta(settingsFile, []);
+
+    public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string> plugins) => Protocol?.SessionMeta(settingsFile, plugins);
+
     public bool Interactive => _door.Abilities.Interactive.IsKnown && _door.Abilities.Interactive.Required;
 
     public bool TakesSettings => _door.Abilities.TakesSettings.IsKnown && _door.Abilities.TakesSettings.Required;
@@ -85,6 +95,8 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     private INativeDialect? Native => _door.Dialect.IsKnown ? _door.Dialect.Required as INativeDialect : null;
 
+    private IProtocolDialect? Protocol => _door.Dialect.IsKnown ? _door.Dialect.Required as IProtocolDialect : null;
+
     private ISpawn Spawn() =>
         _door.Spawn.IsKnown ? _door.Spawn.Required : throw new DriverException($"the `{Name}` door declares no spawn.");
 
@@ -100,7 +112,10 @@ internal sealed class LegacyDoor : ISessionAdapter
         var tables = keyedItself ? (_provider.Tables.IsKnown ? _provider.Tables.Required : TablesPart.None) : _door.Lent.Tables;
         var usage = keyedItself ? (_provider.Usage.IsKnown ? _provider.Usage.Required : UsagePart.None) : _door.Lent.Usage;
         var errors = keyedItself ? tables.ErrorWords : _door.Tables.ErrorWords;
-        var identity = owning ? (_provider.Identity.Product, _provider.Identity.Maker, _provider.Identity.Mark) : (_door.Identity.Product, _door.Identity.Maker, (string?)null);
+        // A built-in door states no identity of its own: its provider's is its (claude-code-acp's is Claude Code's).
+        var identity = owning || _door.Identity.DeclaredBy is null
+            ? (_provider.Identity.Product, _provider.Identity.Maker, _provider.Identity.Mark)
+            : (_door.Identity.Product, _door.Identity.Maker, (string?)null);
 
         return new HarnessToolchain(
             Binary: facts.Binary,
@@ -112,7 +127,6 @@ internal sealed class LegacyDoor : ISessionAdapter
             LoginCheck: pool.Login,
             Package: facts.Package,
             AccountOf: _door.AccountOf?.Value,
-            ProfileMustExist: _door.Home.MustExist,
             TrustFile: _door.Home.TrustFile,
             ProbeByPresence: facts.ProbeByPresence,
             PinnedEnvironment: facts.PinnedEnvironment,
