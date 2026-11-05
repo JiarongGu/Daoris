@@ -76,7 +76,8 @@ function respond(url: string): Response {
   if (url.startsWith('/api/asks')) return Response.json([]);
   if (url.startsWith('/api/sync')) return Response.json({ workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] });
   if (url.startsWith('/api/sessions')) {
-    return Response.json(url.includes('daoris%3Ahelp') && (conversing || sent().length > 0) ? [HELP] : []);
+    // Ask Daoris's conversation is among the sessions the slice holds, every one's, whatever the list's own filter.
+    return Response.json((conversing || sent().length > 0) ? [HELP] : []);
   }
   return Response.json([]);
 }
@@ -161,7 +162,7 @@ describe('the setup guide, at start', () => {
     machine(DONE);
     start();
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LINES', {}));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'lines' } }));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull();
     expect(screen.queryByText(/setup:/)).toBeNull();

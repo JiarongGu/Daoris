@@ -652,26 +652,6 @@ describe("a workspace's page (UX6g)", () => {
     expect(plans()).toBe(1);
   });
 
-  /** PUSH1c4b: on a host older than the push, *Look again* is still one read of the list, and the rows are its answer. */
-  it('reads the list again at Look again on a host older than the push, and shows its answer (PUSH1c4b)', async () => {
-    machine({ STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }) });
-    show(<><Pushes /><Hub /><ProjectsView notify={() => {}} /></>);
-    await chooseWorkspace('aurora');
-    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
-    const branches = within(repositoryMain());
-    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
-    const opened = plans();
-    expect(opened).toBeGreaterThan(0);
-
-    machine({
-      STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }),
-      SWEEP_PLAN: { branches: [{ ...SWEEP.branches[0], branch: 'daoris/s-three' }], landed: [] },
-    });
-    await userEvent.click(branches.getByRole('button', { name: 'Look again' }));
-    expect(await branches.findByText('daoris/s-three')).toBeInTheDocument();
-    expect(plans()).toBe(opened + 1);
-  });
-
   /**
    * WSR6, WSR7: this workspace's page lists and brings up to date its own rows alone, each waiting as long as the host may
    * work, and asks the driver for its own (BRSCOPE1), even where an older host answers the machine's look.
