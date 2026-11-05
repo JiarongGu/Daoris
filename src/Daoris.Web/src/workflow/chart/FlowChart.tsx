@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { CanvasOptions, CanvasSelection } from '../../design/canvas/Canvas';
 import type { Connect } from '../../design/canvas/useConnection';
 import { type FlowCanvasProps, type FlowEdge, type FlowPick, FlowCanvas, type LabelContext, type NodeContext } from '../../design/FlowCanvas';
-import { FlowNodeBox } from '../../design/Flow';
+import { FlowNodeBox } from '../../design/FlowNodeBox';
 import { EdgeChip } from './EdgeChip';
 import { GapInsert, type InsertOffer } from './GapInsert';
 import { HoldsGroup } from './HoldsGroup';
@@ -15,7 +15,7 @@ import { type ChartNode, isChartNode } from './stepKinds';
 
 // The workflow's flowchart (FLOWCHART2a; D223): the canvas drawing `graphFlow`'s nodes through the chart's components, a node for each
 // kind of step, a decision's outcomes as ports, a terminal for each end, the holds as one group, and a chip for each way. A node the
-// canvas drew of its own (a fold of a large run's settled stretch) is `Flow`'s box. In the editor (FLOWCHART2b) the same chart is edited
+// canvas drew of its own (a fold of a large run's settled stretch) is the generic `FlowNodeBox`. In the editor (FLOWCHART2b) the same chart is edited
 // on: a step pressed is selected, a port pressed or dragged from starts its way, and each way and each ◎ wears a ＋.
 
 /**

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { PillTone } from '../design/Flow';
+import type { PillTone } from '../design/FlowCanvas';
 import type { IconName } from '../design/ui';
 import { textOf, type CurrentWorkflow, type WorkflowStep } from './current';
 import { type DrawnNode, type DrawnWire, type DrawOptions, FINISHED, type GraphFlow, graphFlow, WORKFLOW_TRACK } from './graphFlow';

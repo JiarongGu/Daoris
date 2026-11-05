@@ -411,21 +411,6 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="GitAccessRules.PushesHere"/> reads <c>permissions.json</c> while its move still holds it.</summary>
-    [Fact]
-    public void Pushing_here_is_read_while_the_move_into_place_still_holds_the_permissions()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var path = Folded(DaorisHome.Entry(_home, HomeEntry.Permissions));
-        AtomicFile.WriteText(path, """{ "defaultsOff": ["no-push"] }""");
-
-        using (MoveHold.Take(path))
-        {
-            Refused(path);
-            Assert.True(GitAccessRules.PushesHere(_home));
-        }
-    }
-
     /// <summary>READSHARE1: <see cref="GitGrants.Take"/> reads a grant its move still holds, and takes it once.</summary>
     [Fact]
     public void A_git_grant_is_taken_while_its_move_into_place_still_holds_it()

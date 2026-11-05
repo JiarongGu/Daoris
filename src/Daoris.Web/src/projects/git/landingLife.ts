@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { EdgeStyle } from '../../design/flowLayout';
-import type { FlowEdge, FlowNode } from '../../design/Flow';
+import type { FlowEdge, FlowNode } from '../../design/FlowCanvas';
 import { moment } from '../../locales/format';
 import { runTone } from '../../workflow/run';
 import { entryDetail, entryName, type MilestoneEntry, type MilestoneUnit } from '../../work/head/milestone';

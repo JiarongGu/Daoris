@@ -1,5 +1,5 @@
 import type { i18n as I18n, TFunction } from 'i18next';
-import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/Flow';
+import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/FlowCanvas';
 import type { IconName } from '../design/ui';
 import { type ChartNode, type ChartPort, type ChartStep, variantOf } from './chart/stepKinds';
 

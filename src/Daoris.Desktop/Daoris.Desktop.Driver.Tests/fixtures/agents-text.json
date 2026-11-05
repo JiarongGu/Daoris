@@ -17,6 +17,7 @@
         "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose",
         "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
         "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish on   deny  a sentence to auto mode's classifier",
         "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
       ],
       "err": [],
@@ -39,6 +40,7 @@
         "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose",
         "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
         "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish on   deny  a sentence to auto mode's classifier",
         "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
       ],
       "err": [],
@@ -62,7 +64,8 @@
         "Defaults",
         "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose",
         "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
-        "  no-push    off  deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish on   deny  a sentence to auto mode's classifier",
         "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
         "",
         "This machine",
@@ -100,6 +103,7 @@
         "  connector  on   allow  mcp__daoris-knowledge__registry, mcp__daoris-knowledge__knowledge_search, mcp__daoris-knowledge__knowledge_get, mcp__daoris-knowledge__knowledge_repositories, mcp__daoris-knowledge__knowledge_convergence, mcp__daoris-knowledge__quest_list, mcp__daoris-knowledge__quest_respond, mcp__daoris-knowledge__quest_publish, mcp__daoris-knowledge__permission_propose, mcp__daoris-knowledge__go_ahead_ask, mcp__daoris-knowledge__review_serve, mcp__daoris-knowledge__review_ready, mcp__daoris-knowledge__opinion_give, mcp__daoris-knowledge__opinion_answer, mcp__daoris-knowledge__helper_ask, mcp__daoris-knowledge__helper_answer, mcp__daoris-knowledge__partner_answer, mcp__daoris-knowledge__channel_post, mcp__daoris-knowledge__channel_read, mcp__daoris-knowledge__handover_propose, mcp__daoris-knowledge__line_read, mcp__daoris-knowledge__handback_read, mcp__daoris-knowledge__question_ask, mcp__daoris-knowledge__memory_search, mcp__daoris-knowledge__memory_get, mcp__daoris-knowledge__memory_write, mcp__daoris-knowledge__memory_end, mcp__daoris-knowledge__memory_propose",
         "  commit     on   allow  Bash(cd:*), Bash(git add:*), Bash(git commit:*), Bash(git mv:*)",
         "  no-push    on   deny  Bash(git push), Bash(git push:*), Bash(git -* push), Bash(git -* push *)",
+        "  no-publish on   deny  a sentence to auto mode's classifier",
         "  tree-guard on   deny  a hook on Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
       ],
       "err": [],
@@ -274,35 +278,52 @@
       "argv": [
         "rules",
         "default",
-        "no-push",
+        "no-publish",
         "off"
       ],
       "folders": [],
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: the default `no-push` is off on this machine."
+        "daoris: the default `no-publish` is off on this machine."
       ],
       "err": [],
       "after": {
-        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"no-push\"\n  ]\n}\n"
+        "daoris/data/permissions.json": "{\n  \"defaultsOff\": [\n    \"no-publish\"\n  ]\n}\n"
       }
+    },
+    {
+      "name": "rules default, no-push follows git access",
+      "argv": [
+        "rules",
+        "default",
+        "no-push",
+        "off"
+      ],
+      "folders": [],
+      "before": {},
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `no-push` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris-driver git access`."
+      ],
+      "after": {}
     },
     {
       "name": "rules default, switched on again",
       "argv": [
         "rules",
         "default",
-        "no-push",
+        "no-publish",
         "on"
       ],
       "folders": [],
       "before": {
-        "daoris/data/permissions.json": "{\"defaultsOff\":[\"no-push\"]}"
+        "daoris/data/permissions.json": "{\"defaultsOff\":[\"no-publish\"]}"
       },
       "exit": 0,
       "out": [
-        "daoris: the default `no-push` is on on this machine."
+        "daoris: the default `no-publish` is on on this machine."
       ],
       "err": [],
       "after": {
@@ -341,7 +362,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: no default `frobnicate` — Daoris ships `connector`, `commit`, `no-push`, `tree-guard`."
+        "daoris: no default `frobnicate` — Daoris ships `connector`, `commit`, `no-push`, `no-publish`, `tree-guard`."
       ],
       "after": {}
     },

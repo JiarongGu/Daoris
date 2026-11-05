@@ -1,4 +1,4 @@
-import type { FlowEdge, FlowNode } from '../../design/Flow';
+import type { FlowEdge, FlowNode } from '../../design/FlowCanvas';
 import { SESSION_TONE, type ShownState, shownKey } from '../../design/ui';
 import { ago, compact, sessionTool } from '../../locales/format';
 import type { EntryPart, PartSpent, SessionEntry } from '../entries';

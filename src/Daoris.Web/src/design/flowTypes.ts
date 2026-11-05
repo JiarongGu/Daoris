@@ -149,7 +149,7 @@ export type FlowPick = { key: string; can: (id: string) => boolean; onPick: (id:
 export type LabelContext = { id: string; style: EdgeStyle; text: string; count: number; edge: FlowEdge | undefined };
 
 export type FlowCanvasProps = FlowProps & {
-  /** Draws a node where `Flow`'s own box is not wanted: it must set `data-flow-node` on its element and take the stop's `tabIndex`. */
+  /** Draws a node where `FlowNodeBox` (the generic box) is not wanted: it must set `data-flow-node` on its element and take the stop's `tabIndex`. */
   renderNode: (context: NodeContext) => ReactNode;
   /** Draws the chip on a path, or none (null): the default is the path's text. */
   renderLabel?: (context: LabelContext) => ReactNode;

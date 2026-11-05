@@ -32,7 +32,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitPushUpdates.cs` | One verdict per act; a push's force and delete read and judged; the landing's grant in `run/git/grants` |
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
-| Go-aheads | `GitAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant |
+| Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
+| `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
 | The person's acts | `GitFetchActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
@@ -105,28 +106,33 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     not), Dangerous `deny`. The `dangerous` key is read and never written. (from D198, D72)
 24. Git access is apart from `access`: full access never touches it. A loosening is a widening and is confirmed. (from
     D198, D184)
-25. The doors judge by the remote command: `push`, `list for-push` and `receive-pack` are Write. `deny` refuses and no
-    grant lifts it; `allow` passes; `ask` holds the act at the door. A push's force or branch delete is Dangerous, judged
+25. The doors judge by the remote command: `push`, `list for-push` and `receive-pack` are Write. Each door hands the judge
+    the identity serving the act; one read only on its host refuses every Write through it, a grant's included, in its
+    own line. `deny` refuses and no grant lifts it; `allow` passes; `ask` holds the act at the door. A push's force or branch delete is Dangerous, judged
     at the doors for every agent whatever its harness: the helper reads git's `push` lines (`+src:dst`, `:dst`), the ssh
     door reads receive-pack's commands before it forwards them (`GitPushUpdates`) and asks git whether each keeps its ref's
     history. It is refused unless Dangerous allows it; the landing's grant carries it as it carries the landing's push.
     (from D198, D233)
 26. A held `ask` is a git go-ahead, `run/git/asks/{id}.json`, answered *Allow* or *Refuse* in *What needs you*, the
-    session's head or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once. (from D198, D135)
-27. Under `as-today`, a machine whose person switched `no-push` off lets its sessions push. The judge reads that switch at
-    each act. (from D198)
+    session's head or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once.
+    Where no instance of Daoris (the desktop or a headless driver) holds the home's lease, the door takes a kept grant or
+    refuses at once, saying Daoris is not running to ask (`not-running`). (from D198, D135)
+27. The judge reads git access alone. `no-push` is a fixed default: its rules are on for every session and only git access's
+    Write opens them; it has no switch on the page, in `agent rules` or in a proposal. `no-publish` carries the publishing
+    and release sentence and is switched alone. The home's migration converted a switched-off `no-push`: the machine's Write
+    became `allow` where it was unset, and `no-publish` went off. (from D198)
 28. A session's harness rules follow its Write. `deny` or the default keeps every push form denied; `ask` or `allow` opens
-    the plain push and still denies force, delete, tag, mirror and prune. Publishing and releases stay the person's. Codex
-    takes no rules file and holds none of the person's denies; its block and the access setup say so. (from D198, D72, D233)
-29. Identity is who, access is what. A read-only identity refuses writes; today only the landing's check reads it.
-    (from D198)
+    the plain push and still denies force, delete, tag, mirror and prune. Codex takes no rules file and holds none of the
+    person's denies; its block and the access setup say so. (from D198, D72, D233)
+29. Identity is who, access is what. A read-only identity refuses writes at both doors and at the landing. (from D198)
 
 **Landing and pull requests**
 
 30. Daoris pushes nothing and opens no pull request. A landing rule names a plugin that declares `work/land`; it pushes
     and opens the pull request after Daoris made the branch. With no plugin named, nothing pushes. (from D87, D100)
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
-    yes, so only `deny` or a read-only origin identity refuses. (from D198, D145)
+    yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
+    because the plugin's start and its pull-request call pass no door. (from D198, D145)
 32. The plugin's push carries a grant bound to its process and origin's push address, used once within the bound. The
     frame names origin's address; the plugin has two minutes and answers `{pushed, pullRequest, message}`. (from D100, D198)
 33. A pull request's state is asked only of the plugin that pushed it, at occasions that may remove, never on a timer. A
@@ -197,7 +203,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
 `GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
-`GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitRemotesTests` (the address reader's
+`GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
@@ -225,10 +231,6 @@ catalogues (`i18n:check`).
   reads right; the push is GITAPP2g, open.
 - D204's head ("proposed, not yet read; nothing built") vs its 2026-10-31 acceptance note and the built acts
   (`ActRuns.cs:67`): the note and the code read right.
-- D198 point 9 (a read-only identity denies writes) vs `GitDoors.cs:511-513` (the doors never pass it; only
-  `LandingPlugins.cs:107` does): the code is today's truth, so a session's push under a read-only identity reaches the host.
-- D198 point 14 (a switched-off `no-push` read once as the machine's Write *allow*) vs `GitAccessRules.cs:41-47,79` and
-  `GitDoors.cs:513` (read live at each act): the code reads right.
 - D87 and D100's plugin push "with whatever that platform's tools are signed in as" (still said at `LandingPlugins.cs:8-10`)
   vs D198 point 13 and `LandingPlugins.cs:122-131` (its git push passes the door under origin's identity and a grant): D198 reads right.
 
@@ -240,8 +242,7 @@ catalogues (`i18n:check`).
   default (G6).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
-- **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts;
-  the doors passing a read-only identity; a running-Daoris check before a door waits on an ask; proofs against the stand-in hosts.
+- **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts.
 - **GITAUTH1g:** the rest of the transport judge: Dangerous settable on the page, tag, mirror and prune judged, a grant bound to its ref.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).

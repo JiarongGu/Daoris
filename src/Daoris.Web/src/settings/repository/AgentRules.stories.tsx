@@ -17,9 +17,13 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     why: 'A session commits its own work in its own tree, because committing is part of finishing a task — the push is still refused.',
   },
   {
-    id: 'no-push', list: 'deny', on: true,
+    id: 'no-push', list: 'deny', on: true, fixed: true,
     rules: ['Bash(git push)', 'Bash(git push:*)'],
-    why: "A push leaves this machine, and that stays the person's call.",
+    why: "A push leaves this machine: git access's Write, set in Settings → Git, says whether a session may.",
+  },
+  {
+    id: 'no-publish', list: 'deny', on: true, rules: [],
+    why: "Publishing a package or creating a release leaves this machine, and that stays the person's call.",
   },
   // A hook, not a rule (PERM3): the driver answers the tools it judges, and no rules.
   {
