@@ -97,7 +97,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
                     Said(() => retry.Began?.Invoke(first, retry.Clock.GetUtcNow() + TransientRetry.Delays[0]));
                 }
 
-                if (episode.Tries >= retry.Limit)
+                if (retry.PastBound(episode))
                 {
                     episode.Exhausted = true;
                     throw new AcpTransientExhausted(episode);
@@ -181,7 +181,7 @@ internal sealed class AcpEpisodes(ITurnRetryWiring wiring)
             wiring.EpisodeWords?.Settling();
             if (await SettleAsync(Spent, ct).ConfigureAwait(false) is { } settled) atOnce = settled;
 
-            if (episode.Tries >= retry.Limit)
+            if (retry.PastBound(episode))
             {
                 episode.Exhausted = true;
                 throw new AcpTransientExhausted(episode);

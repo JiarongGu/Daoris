@@ -9,8 +9,8 @@ namespace Daoris.Driver;
 /// <para><b>Where.</b> Inside <see cref="AcpSession.RunAsync"/>, around its prompt sites: only there is a live session left to prompt.
 /// The capture's catch is too late, since by then the reader has ended and stdin is closing.</para>
 ///
-/// <para><b>Row 1a hands one to driven quest sessions alone</b> (§5.1, round 3, R2-O6): a start's and a continuation's. Intakes,
-/// helpers, opinions, partners and voices get theirs in row 1d, conversations theirs in row 1b.</para>
+/// <para><b>Every run on the protocol door takes one</b> (D210 point 8): a driven session, an intake, a helper, an opinion, a partner and a
+/// brainstorm voice through the hold, each with its owner's check, and a conversation through its runner (<see cref="ChatRetry"/>).</para>
 ///
 /// <para><b>What it keeps</b> once the run is over, for the conclusion: whether an episode opened, the words a failed prompt left
 /// unacknowledged, the last error read, and the end past the bound. One instance serves one run.</para>
@@ -36,6 +36,21 @@ public sealed class TransientRetry
         get;
         init => field = Math.Clamp(value, 1, Bound);
     } = Bound;
+
+    /// <summary>
+    /// The end of the pass's own minutes, where it has them (D210 point 8; the agent-errors design §7): a helper's, an opinion's, a partner's
+    /// or a brainstorm voice's. The waits are spent from them and none is waited past it, so an episode whose next wait would end after it
+    /// ends there, past its bound, with the transient reason rather than <i>timed out</i>. Null for a run with no minutes of its own.
+    /// </summary>
+    public DateTimeOffset? Deadline { get; init; }
+
+    /// <summary>
+    /// Whether <paramref name="episode"/> ends now, past its bound: its tries are spent, or its next wait would end past the pass's
+    /// <see cref="Deadline"/>.
+    /// </summary>
+    public bool PastBound(TransientEpisode episode) =>
+        episode.Tries >= Limit
+        || (Deadline is { } deadline && Clock.GetUtcNow() + Delays[Math.Min(episode.Tries, Bound - 1)] > deadline);
 
     /// <summary>The one reader (<see cref="AgentErrors.Read"/>), closed over the adapter set and the adapter: a prompt's refusal as its kind.</summary>
     public required Func<AcpRefusal, AgentError> Read { get; init; }
