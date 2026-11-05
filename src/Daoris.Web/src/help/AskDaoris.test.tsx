@@ -57,10 +57,13 @@ let QUESTS: unknown[] = [];
 let ASKS: unknown[] = [];
 const APPLIED_SETTING = { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
 let APPLIED: unknown = APPLIED_SETTING;
-const asked: string[] = [];
+/** What the page asked the service, from the window's `fetch`: the shell's own reads of the lists are its owner's and are not here. */
+const asked = {
+  urls: () => vi.mocked(globalThis.fetch).mock.calls.map(([input]) => String(input)),
+  clear: () => { vi.mocked(globalThis.fetch).mockClear(); },
+};
 
 function respond(url: string): Response {
-  asked.push(url);
   // As the ledger answers: an ended session only to a caller that asks for closed ones.
   if (url.startsWith('/api/sessions')) {
     return Response.json(url.includes('includeClosed=true') ? SESSIONS
@@ -117,7 +120,6 @@ describe('Ask Daoris, with an agent named', () => {
   beforeEach(() => {
     SESSIONS = [];
     HELPER = 'claude-code-acp';
-    asked.length = 0;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
   afterEach(() => {
@@ -390,7 +392,6 @@ describe('Ask Daoris, with an agent named', () => {
       if (type === 'START_HELP') SESSIONS = [HELP];
       return answered(module, type, ...rest);
     });
-    const listings = () => asked.filter((url) => url.includes('repository=daoris%3Ahelp')).length;
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     // Known before the first render, as on a page that has read them already: the panel is idle as it
     // mounts, which is when the double-mount runs the effect twice.
@@ -407,8 +408,8 @@ describe('Ask Daoris, with an agent named', () => {
     );
 
     await waitFor(() => expect(starts()).toBe(1));
-    // The list, asked again once it opened, holds it; the panel still shows its starters.
-    await waitFor(() => expect(listings()).toBeGreaterThanOrEqual(2));
+    // The list, pushed once it opened, holds it; the panel still shows its starters.
+    await waitFor(() => expect((client.getQueryData(keys.sessions(null, true, null)) as { id: string }[] | undefined)?.map((row) => row.id)).toContain(HELP.id));
     await act(async () => {});
     expect(screen.getByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New conversation' })).toBeNull();
@@ -502,10 +503,9 @@ describe('Ask Daoris, with an agent named', () => {
     }));
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'New conversation' })).toHaveLength(2));
 
-    // Settled all the way, its answer invalidating the list included, before the panels are read again.
-    const listings = asked.length;
+    // Settled all the way, the list its answer moved pushed included, before the panels are read again.
     await act(async () => { late({ sessionId: HELP.id, message: 'opened' }); });
-    await waitFor(() => expect(asked.length).toBeGreaterThan(listings));
+    await act(() => moved());
     await act(() => new Promise((settled) => { setTimeout(settled, 50); }));
     expect(screen.getAllByRole('button', { name: 'New conversation' })).toHaveLength(2);
   });
@@ -878,9 +878,9 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(starts()).toBe(1));
     expect(await screen.findByText('opening Ask Daoris…')).toBeInTheDocument();
 
-    // The finished one ends, and the list says so.
+    // The finished one ends, and the shell pushes the list that says so.
     SESSIONS = [{ ...HELP, state: 'completed' }];
-    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions'] }));
+    await act(() => moved());
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: next.id, text: words } }));
     expect(invoke.mock.calls.filter(([, type, body]) => type === 'SESSION_INPUT'
@@ -1035,7 +1035,7 @@ describe('Ask Daoris, with an agent named', () => {
     });
 
     await waitFor(() => expect(drawn()).toBeGreaterThan(before));
-    expect(asked.some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
+    expect(asked.urls().some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
     PROPOSALS = [];
   });
 
@@ -1154,7 +1154,7 @@ describe('Ask Daoris, with an agent named', () => {
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
     expect(within(cards).getByText(/, taken\.$/)).toBeInTheDocument();
     invoke.mockClear();
-    asked.length = 0;
+    asked.clear();
     await userEvent.click(within(cards).getByRole('button', { name: 'Dismiss' }));
 
     await waitFor(() => expect(screen.queryByRole('list', { name: 'what Ask Daoris proposes' })).not.toBeInTheDocument());
@@ -1162,7 +1162,7 @@ describe('Ask Daoris, with an agent named', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'g6t7k8n9' } });
     expect(sent.filter((type) => type === 'HELP_DISMISS')).toHaveLength(1);
     expect(sent.filter((type) => type !== 'HELP_DISMISS' && /APPLY|INPUT|QUEST|ASK|WORK|DELETE|DECLINE|PAUSE|CLEAR/.test(type))).toEqual([]);
-    expect(asked.filter((url) => /\/api\/(quests|asks)/.test(url))).toEqual([]);
+    expect(asked.urls().filter((url) => /\/api\/(quests|asks)/.test(url))).toEqual([]);
     PROPOSALS = [];
   });
 
@@ -1353,7 +1353,6 @@ describe('Ask Daoris’s history', () => {
   beforeEach(() => {
     SESSIONS = [EARLIER];
     HELPER = 'claude-code-acp';
-    asked.length = 0;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
   afterEach(() => {
@@ -1633,7 +1632,6 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await i18n.changeLanguage(language);
     SESSIONS = [A, B];
     HELPER = 'claude-code-acp';
-    asked.length = 0;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
   afterEach(async () => {
@@ -1933,7 +1931,6 @@ describe('Ask Daoris’s access and what it has', () => {
     PLUGINS = { folder: 'plugins', plugins: [] };
     SESSIONS = [];
     HELPER = 'claude-code-acp';
-    asked.length = 0;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
   afterEach(() => {
