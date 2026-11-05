@@ -183,7 +183,7 @@ internal sealed class DiscardLedger : HttpMessageHandler
         get { lock (_asked) return [.. _asked]; }
     }
 
-    public ServiceClient Client() => new("http://stand-in", null, new HttpClient(this, disposeHandler: false));
+    public ServiceClient Client() => new("http://stand-in", null, new HttpClient(new SessionChanges(this), disposeHandler: false));
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {

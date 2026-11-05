@@ -24,7 +24,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
     private async Task<DriverModule> ModuleAsync()
     {
         File.WriteAllText(DriverConfigPath, Config);
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn()));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandIn())));
         var loop = Loop();
         await loop.ComeUpAsync(client);
         return new DriverModule(Bus, loop);
@@ -121,7 +121,7 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
         var written = File.ReadAllBytes(DriverConfigPath);
         var loop = Loop();
 
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandIn())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandIn()))));
         await loop.Settling;
 
         // Atlas still has no tree of its own, so the edit did not land: pending again, and nothing was written but the receipt.
@@ -130,9 +130,9 @@ public sealed class DriverModulePlaceApplyTests : DriverModuleBridge
     }
 
     /// <summary>The registry holds atlas, its checkout elsewhere: no line is read, so no git runs.</summary>
-    private sealed class StandIn : SessionChangesHandler
+    private sealed class StandIn : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {

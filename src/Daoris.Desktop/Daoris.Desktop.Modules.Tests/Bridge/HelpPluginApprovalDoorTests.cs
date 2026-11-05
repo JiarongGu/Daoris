@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -78,7 +79,7 @@ public sealed class HelpPluginApprovalDoorTests : DriverModuleBridge
             """);
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SetupStandIn.EmptyHost())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new SetupStandIn.EmptyHost()))));
         return module;
     }
 }

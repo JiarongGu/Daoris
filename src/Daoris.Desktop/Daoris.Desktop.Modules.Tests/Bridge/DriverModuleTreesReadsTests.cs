@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -14,7 +15,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
         return module;
     }
 
@@ -85,7 +86,7 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
             """;
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(sessions))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService(sessions)))));
         var refused = TreesWords.PartnerLands(
             [new SessionRecord("pt1a2b3c", "engine", "completed") { Serves = "s1a2b3c4", Piece = "pc000001" }], "pt1a2b3c")!;
 

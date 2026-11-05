@@ -68,7 +68,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         CommitRules.Apply(config, new CommitEdit { Repository = "game", Set = new CommitSet { Mode = "at-end", ModeGiven = true } }).Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var commits = (await AnswerAsync(module, "LINES")).GetProperty("commits").EnumerateArray().ToList();
 
@@ -102,7 +102,7 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         });
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(sessions))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService(sessions)))));
 
         var own = (await AnswerAsync(module, "SESSION_PROCESS", new { id = "s1a2b3c4" })).GetProperty("process");
         var defaults = (await AnswerAsync(module, "SESSION_PROCESS", new { id = "s2b3c4d5" })).GetProperty("process");
@@ -135,9 +135,9 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and the sessions it is given.</summary>
-    private sealed class StandInService(string sessions = "[]") : SessionChangesHandler
+    private sealed class StandInService(string sessions = "[]") : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {

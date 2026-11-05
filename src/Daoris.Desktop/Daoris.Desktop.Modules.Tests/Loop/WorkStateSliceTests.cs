@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -66,7 +67,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(_service));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(_service)));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
             _ => Task.FromResult<IKnowledgeSessionLook?>(null),

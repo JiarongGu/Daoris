@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -111,7 +112,7 @@ public sealed class HelpScopeDoorTests : DriverModuleBridge
 
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Host(answers))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new Host(answers)))));
         return module;
     }
 }

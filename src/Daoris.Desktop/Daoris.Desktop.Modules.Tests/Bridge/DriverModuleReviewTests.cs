@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -111,7 +112,7 @@ public sealed class DriverModuleReviewTests : DriverModuleBridge
         File.WriteAllText(Path.Combine(Checkouts, "engine", "README.md"), "# Run it against dev\n");
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(Checkouts))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService(Checkouts)))));
         return module;
     }
 

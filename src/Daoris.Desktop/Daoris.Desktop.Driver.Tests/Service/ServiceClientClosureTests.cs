@@ -301,7 +301,7 @@ public sealed class ServiceClientClosureTests
         const string Records = """
             [ { "id": "ses-a", "took": true, "tookBind": "expired" }, { "id": "ses-b", "took": true }, { "id": "ses-c", "took": true, "tookBind": "" } ]
             """;
-        using var client = new ServiceClient(new Doors((_, _, _) => new ServiceReply(200, Records)));
+        using var client = new ServiceClient(new SessionChangesDoors(new Doors((_, _, _) => new ServiceReply(200, Records))));
 
         Assert.Equal("expired", await client.TookBindAsync("ses-a"));
         Assert.Null(await client.TookBindAsync("ses-b"));

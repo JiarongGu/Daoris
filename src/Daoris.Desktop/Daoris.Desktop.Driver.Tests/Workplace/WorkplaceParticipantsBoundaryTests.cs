@@ -203,7 +203,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
     public async Task The_tidy_keeps_the_trees_of_records_waiting_on_helpers_whose_quest_is_taken_and_a_terminal_record_still_holds_its_lock()
     {
         using var ledger = new Ledger();
-        using var service = new ServiceClient("http://ledger.test", null, new HttpClient(ledger, disposeHandler: false));
+        using var service = new ServiceClient("http://ledger.test", null, new HttpClient(new SessionChanges(ledger), disposeHandler: false));
 
         var held = (await BranchTidying.WaitingOnHelpersAsync(service, default)).ToList();
 

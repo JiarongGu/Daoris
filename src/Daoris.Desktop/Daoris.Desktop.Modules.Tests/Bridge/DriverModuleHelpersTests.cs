@@ -61,7 +61,7 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
         HelperRules.Apply(config, new HelperEdit { Repository = "game", Set = new HelperSet { Mode = "off" } }).Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var helpers = (await AnswerAsync(module, "LINES")).GetProperty("helpers").EnumerateArray().ToList();
 
@@ -75,9 +75,9 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and no session.</summary>
-    private sealed class StandInService : SessionChangesHandler
+    private sealed class StandInService : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {

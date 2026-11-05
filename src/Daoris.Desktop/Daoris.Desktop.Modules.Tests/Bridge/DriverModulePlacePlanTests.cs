@@ -35,7 +35,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
     {
         File.WriteAllText(DriverConfigPath, Config);
         var service = new StandIn();
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service)));
         var loop = Loop();
         await loop.ComeUpAsync(client);
         lock (service.Asked) service.Asked.Clear();
@@ -110,11 +110,11 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
     }
 
     /// <summary>The registry: aurora's engine, driven, and atlas and tools, not, their checkouts elsewhere; one queued quest to atlas.</summary>
-    private sealed class StandIn : SessionChangesHandler
+    private sealed class StandIn : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
 
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
             lock (Asked) Asked.Add($"{request.Method} {path}");

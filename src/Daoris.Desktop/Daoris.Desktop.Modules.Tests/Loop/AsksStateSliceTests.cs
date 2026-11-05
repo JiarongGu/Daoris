@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -32,7 +33,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
     private async Task<(DriverLoop Loop, StateSlice Slice)> UpAsync()
     {
         var loop = Loop();
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(_service)));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(_service))));
         return (loop, loop.Slices.Find(AsksStateSlice.Name)!);
     }
 

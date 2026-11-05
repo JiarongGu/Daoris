@@ -173,7 +173,7 @@ public sealed class WorkflowPortsTests
     [Fact]
     public async Task A_runs_records_are_read_through_their_port_once_per_read()
     {
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService())));
         var sources = new WorkflowRunSources(service, Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]),
             DriverConfig.Empty, [], _ => "aurora");
         var records = new MemoryRecords();
@@ -204,7 +204,7 @@ public sealed class WorkflowPortsTests
                  "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"land","version":1,"reach":"performed"}],
                  "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}
                 """), At);
-            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService())));
             var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora");
             var unit = RunUnits.IdOf("q1");
             var records = new MemoryRecords();
@@ -256,7 +256,7 @@ public sealed class WorkflowPortsTests
                           {"id":"integrate","kind":"integrate","version":1,"reach":"waited"}],
                  "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>i","kind":"after","from":"handed","to":"integrate"}]}
                 """), At);
-            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService())));
             var door = new PromotingDoor(promoted, At);
             var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora") { Integration = door };
             var unit = RunUnits.IdOf("q1");
@@ -520,9 +520,9 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>A stand-in service: quest <c>q1</c> done in <c>engine</c> by session <c>s1</c>, whose tree is gone. Every other door answers an empty list.</summary>
-    private sealed class StandInService : SessionChangesHandler
+    private sealed class StandInService : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.PathAndQuery switch
             {
