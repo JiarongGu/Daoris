@@ -7,10 +7,10 @@ import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
 const WORDED: ReadonlySet<string> = new Set([
-  'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review',
+  'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'ask-again', 'go-on', 'changes'];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes'];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -86,6 +86,12 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.stop')}
             </Button>
           )}
+          {/* INTEGRATE1p: a ready request under `start: you` waits for the person's send. */}
+          {acts.includes('send') && (
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('send')}>
+              {t('workflow.run.node.send')}
+            </Button>
+          )}
           {/* INTEGRATE1p (C33): a declined request is asked again or gone on without. */}
           {acts.includes('ask-again') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('ask-again')}>
@@ -98,6 +104,17 @@ export function NodeWord({ run, step, onWord }: {
             </Button>
           )}
         </div>
+      )}
+      {asking === 'send' && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('workflow.run.node.sendTitle', { node })}
+          says={t('workflow.run.node.sendSays', { node })}
+          meanIt={t('workflow.run.node.sendMeanIt')}
+          onConfirm={(answered) => send('send', answered)}
+          onClose={close}
+        />
       )}
       {asking === 'ask-again' && (
         <InlineConfirm

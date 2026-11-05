@@ -283,8 +283,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// the push went on or was never asked about; a page before it reads the answer as before.
     /// </remarks>
     public static object Pressed(
-        string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null,
-        CarryAnswer? carried = null) => new
+        string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null) => new
     {
         Session = id, Done = landed.Landed, landed.Message, landed.Branch,
         Plugin = landed.Plugin is { } plugin
@@ -302,9 +301,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         Followed = followed,
         // what refused a chat run's press, which the page words in the reader's language; null for every other.
         Press = press,
-        // LANDBACK1 part 1: the press carried the session on to clear its tree or its conflict (`why`: uncommitted or conflict), and its
-        // yes is kept (`told`) until its tree is clean; null for a press that was not carried on. A page before it reads the answer as before.
-        Carried = carried is null ? null : new { carried.Why, carried.Told },
     };
 
     /// <summary>

@@ -213,7 +213,13 @@ public static class NodeWordActs
     /// </summary>
     public const string Changes = "changes";
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes];
+    /// <summary>
+    /// The person's <i>Send</i> of a ready request under <c>start: you</c> (INTEGRATE1p): kept on the run's record as a mark of that attempt, which
+    /// the next pass reads as the start's say-so. It moves no state itself, so the table has no row for it.
+    /// </summary>
+    public const string Send = "send";
+
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send];
 }
 
 /// <summary>

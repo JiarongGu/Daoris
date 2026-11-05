@@ -251,11 +251,11 @@ Roles retains the proof, decision memory and persistence operations.
 
 Workplace names no Course type. The rebase words' key is Workplace's pure `RebaseKeys`, and the carry-on's (`carry/<session>/<basis>/<n>`) its
 pure `CarryKeys`, which `DaorisKeys` delegates to, and `PressHold` is declared beside the `IChatPressing` port that answers it. An Accept on a
-session whose tree holds uncommitted work, or whose replay conflicts, does not refuse (LANDBACK1 part 1, D87's note): `LandCarry` tells the
-session in Daoris's own words through the say door, never the person's and no card, and keeps the person's yes on it (`CarriedAccepts`,
-`sessions/carried-accepts.json`); the auto lander's look lands it by the rule's form once the carry-on's turn ends with the tree clean, carries
-it on once more where it is still not clean, and at the next such end says so (`landing.carry-bound`) and takes the yes back. `trees land
---entry` and `--ask` do not carry on. A tree bound into an operation bringing sessions together (LINESTOGETHER1d, the review-flow design
+session whose tree holds uncommitted work, or whose replay conflicts, does not refuse (LANDBACK1 part 1, D87's note): the run's `land`
+performer (`LandPerformer.CarryOnAsync`) tells the session in Daoris's own words through the say door, never the person's and no card, with
+`LandCarry`'s words, and keeps the person's yes on it (`CarriedAccepts`, `sessions/carried-accepts.json`); the performer lands it by the rule's
+form once the carry-on's turn ends with the tree clean, carries it on once more where it is still not clean, and at the next such end says so
+(`landing.carry-bound`) and takes the yes back. No Accept door carries on in place. `trees land --entry` and `--ask` do not carry on. A tree bound into an operation bringing sessions together (LINESTOGETHER1d, the review-flow design
 §4; `TogetherOperations`, `sessions/together.json`) lands only by that operation's combined Accept: `TreeLands.LandAsync` reads the
 bindings under the record's lock while it holds the tree, a discard takes the tree's landing hold before it reads them, and the sync press
 and a tree's update leave a bound tree as it stands, each naming the operation (`TogetherGuard`). The look steps each operation by the

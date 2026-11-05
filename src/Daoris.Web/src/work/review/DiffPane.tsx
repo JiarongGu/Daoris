@@ -23,15 +23,16 @@ import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from '../gates/opinion';
 import { reviewHolds, reviewState } from '../gates/review';
+import { PassNote } from './PassNote';
 import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
 
-/** The words the review's Accept says for the steps its landing reports (PRESSSTEP1, LANDHOLD2); any other step says the plain one. */
+/** The words the review's Accept says for the steps its landing reports (PRESSSTEP1, LANDHOLD2b); any other step says the plain one. */
 const LANDING_WORDS: Record<string, string> = {
   gate: 'work.review.acceptingGate',
-  waiting: 'work.review.acceptingWaiting',
+  pass: 'work.review.acceptingPass',
 };
 
 /**
@@ -198,10 +199,9 @@ export function DiffPane({
     hand: useUnderWay('HANDOFF', session),
     // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
     landStep: useUnderWayStep('LAND_SESSION_TREE', session),
-    // LANDHOLD2: a hand-off says it waits behind another push of its branch.
+    // LANDHOLD2: a hand-off says it waits behind another push of its branch; an Accept says it waits for the pass that lands it.
     handStep: useUnderWayStep('HANDOFF', session),
-    // LANDHOLD3: and either names the session it waits behind, where the holder said who it is.
-    landBehind: useUnderWayBehind('LAND_SESSION_TREE', session),
+    // LANDHOLD3: and it names the session it waits behind, where the holder said who it is.
     handBehind: useUnderWayBehind('HANDOFF', session),
     // Its line of work's one Accept, or its ask's, lands this part too (ACCEPTALL1h): a press carries its entry or ask, not its parts.
     entry: useUnderWaySubject('LAND_ENTRY', entry),
@@ -459,6 +459,9 @@ export function DiffPane({
         </p>
       )}
 
+      {/* LANDHOLD2b: the Accept waits for the pass that lands it, never behind a tree's hold, and says for how long. */}
+      {landsNow && underWay.landStep === 'pass' && <PassNote />}
+
       <div className="flex flex-wrap items-center gap-2">
         {leftOutOf && discardTree}
         {entryPress && <EntryAccept {...entryPress} draw="press" />}
@@ -470,19 +473,12 @@ export function DiffPane({
             onClick={() => {
               const at = landing.dataUpdatedAt;
               act(land.mutateAsync(session).then((result) => {
-                // LANDBACK1 part 1: carried on, the session has Daoris's words and the yes is kept: no card is asked of the person.
-                if (!result.done && result.conflict && !result.carried?.told) setPressed({ session, conflict: result.conflict, at });
+                if (!result.done && result.conflict) setPressed({ session, conflict: result.conflict, at });
                 return result;
               }));
             }}
           >
-            {!landsNow
-              ? t('work.review.accept')
-              : underWay.landStep === 'waiting'
-                ? underWay.landBehind
-                  ? t('work.review.acceptingWaitingBehind', { session: underWay.landBehind })
-                  : t('work.review.acceptingWaiting')
-                : t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting')}
+            {!landsNow ? t('work.review.accept') : t(LANDING_WORDS[underWay.landStep ?? ''] ?? 'work.review.accepting')}
           </Button>
         )}
 

@@ -104,6 +104,17 @@ public sealed class StatePublisherTests : DriverModuleBridge
         }
     }
 
+    /// <summary>
+    /// LANDHOLD2b: an Accept waiting for the pass that lands it says the <c>pass</c> step, and the page words the wait's bound beside the
+    /// button as twenty seconds, which is the pass's bound.
+    /// </summary>
+    [Fact]
+    public void The_pass_step_is_the_accepts_wait_and_its_bound_is_the_twenty_seconds_the_page_says()
+    {
+        Assert.Equal("pass", PressSteps.Pass);
+        Assert.Equal(20, GraphPasses.Bound.TotalSeconds);
+    }
+
     private IMessageDispatcher Compose(IIpcModule module, Func<IpcRequest, StateChange?>? declared = null)
     {
         var services = new ServiceCollection();

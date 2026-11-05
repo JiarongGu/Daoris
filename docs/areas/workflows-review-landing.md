@@ -100,8 +100,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (from D190, D227, D232)
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests; the gates, the landing's
     nodes and a plugin's nodes the run's branch at its tip; a `go-ahead` the run's ask. (from D190)
-18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, ask again, go on, accept, changes) on the
-    record, and the next pass applies it. A quest bound to a closure graph is closed by that graph. (from D190)
+18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes) on the
+    record, and the next pass applies it. An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
+    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold, which only a hand-off does. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
 20. A conversation's run binds its graph. Its subject is the candidate the person submits; a newer submission lapses it. A graph
     holding `quest.close` holds a conversation's press. (from D227)
@@ -252,17 +253,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   other rows have a page; `AutoLandingWorld`, whose name still says the auto lander. The service holds no bind door: only its
   exchange's `BindAsync` writes a quest's closure bind, which service tests seed and the take reads, until a bound run's close no
   longer reads a bind recorded at the take.
-- **CHATFLOW1 (the rest):** the installed window. The in-place carry-on the doors made (`LandCarry.CarryAsync`, `CarryAnswer`,
-  `TreesWords.Carried`, the press answer's `carried`) is reached by no door now and goes with its tests; the performer's carry-on stays.
-- **PROCESS1d-iii:** a conversation told its process once before its first words, proven over a stand-in harness.
-- **INTEGRATE1 k, i, m, p:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
-  installed proof; a `request` node under `start: you` waits for the person's *Send* (an act on the run's node door), which nothing offers yet.
-- **LANDHOLD2b:** the Accept press no longer waits behind a tree's hold (the performer does), so the cause and bound beside the button are
-  the pass's: *Daoris lands it at its pass*, within `GraphPasses.Bound`.
+- **CHATFLOW1 (the rest):** the installed window.
+- **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
+  installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris-driver
+  workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
 - **FABRIC-SQUASHCHAIN1:** whether the plan and the performer's keeper agree on a squash chain's earlier part waits on the owner's choice.
 - **FABRIC-PIPELINE1d:** the verification run on a line has no view of its own yet.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
-- **LANDNODE1j:** the installed window's proof; the performer's combined-head landing has no test of its own.
+- **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
 - **GITAPP1 part two:** keeping or reusing review answers across opens, proposed and not designed.
 - **WORKSETUP1:** the work workspace set to a pull request after the owner's Accept, on the install.

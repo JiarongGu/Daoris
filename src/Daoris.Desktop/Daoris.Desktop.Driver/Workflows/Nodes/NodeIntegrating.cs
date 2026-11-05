@@ -114,7 +114,8 @@ internal sealed class NodeIntegrating(
         string? why = RequestOptions.Problem(node) is { } option ? $"its `{option}` option is not one a request takes"
             : string.Equals(RequestOptions.Repository(NodeOptions.Text(node, "to") ?? ""), governed.Watched.Repository, StringComparison.OrdinalIgnoreCase)
                 ? "a request never goes to the run's own repository: a quest to itself is the chain's"
-            : NodeOptions.Text(node, "start") != RequestOptions.Automatic ? "it waits for your send" : null;
+            : NodeOptions.Text(node, "start") != RequestOptions.Automatic
+                && records.Read(unit)?.Fired.Contains(RunNodeWords.SendKey(node.Id, status.Attempt), StringComparer.Ordinal) != true ? "it waits for your send" : null;
         if (why is not null)
         {
             var line = $"work  {unit}: its request `{node.Id}` was not sent: {why}.";
