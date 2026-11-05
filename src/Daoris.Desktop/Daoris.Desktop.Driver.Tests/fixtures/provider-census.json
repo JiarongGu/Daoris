@@ -208,13 +208,17 @@
     "roots": ["src/Daoris.Service/Daoris.Service.Core", "src/Daoris.Service/Daoris.Service.Http", "src/Daoris.Service/Daoris.Service.Mcp", "src/Daoris.Service/Daoris.Service.Shared"],
     "exceptions": [
       ["src/Daoris.Service/Daoris.Service.Core/Registry/RepositoryLayout.cs", "\"claude-code\"", "-", "permanent", "the doctrine layout's name for the layout every lock before D117 was written under: a twin of the CLI's layouts, no agent's id (design §6, §9)"],
-      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "\"claude-code\"", "r", "behaviour", "the service's ordered call readers: the key set Claude Code's lineage is read under, first in the list (design §3.3, O1-F17); row r moves each reader into its provider's one file"],
-      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "\"codex\"", "r", "behaviour", "the service's ordered call readers: the key set Codex's lineage is read under, second in the list (design §3.3, O1-F17); row r moves each reader into its provider's one file"],
-      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallLineage.cs", "x-codex-turn-metadata", "r", "behaviour", "the service's ordered call readers: Codex's turn header, the key its reader takes the lineage from (design §3.3); row r moves it into Codex's file"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/ClaudeCallKeys.cs", "\"claude-code\"", "-", "permanent", "the service's call keys, one file per agent read by its one ordered list, first in it (design §3.3, §6, O1-F17), held by `callKeys` below"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "\"codex\"", "-", "permanent", "the service's call keys, one file per agent read by its one ordered list, second in it (design §3.3, §6, O1-F17), held by `callKeys` below"],
+      ["src/Daoris.Service/Daoris.Service.Core/Sessions/CallKeys/CodexCallKeys.cs", "x-codex-turn-metadata", "-", "permanent", "Codex's turn header, the key its lineage is read from, in Codex's own file (design §3.3, O1-F17)"],
       ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionKeepRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
       ["src/Daoris.Service/Daoris.Service.Http/Routes/SessionRoutes.cs", "\"claude-code\"", "-", "permanent", "D23's supported default where an open names no adapter, kept for as long as an older driver may open such a record (design §6, O1-F18, O2-F4)"],
       ["src/Daoris.Service/Daoris.Service.Mcp/HelpAgentTool.cs", "id in a sentence", "-", "words", "the tool's description names the agents as `daoris agent` spells them"],
       ["src/Daoris.Service/Daoris.Service.Mcp/HelpRoleTool.cs", "id in a sentence", "-", "words", "the tool's description gives a staffing policy's example record, whose choice names an agent as `daoris agent` spells it"]
+    ],
+    "callKeys": [
+      ["claude-code", "claudecode/toolUseId"],
+      ["codex", "x-codex-turn-metadata"]
     ]
   },
 

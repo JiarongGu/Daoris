@@ -102,4 +102,19 @@ public sealed class AgentCapabilitiesTests
             Assert.True(File.Exists(Path.Combine(GitSeed.RepoRoot(), row.Evidence)), $"{row.Evidence} is not in the repository");
         }
     }
+
+    /// <summary>
+    /// The service's call keys' twin (the design §6, O1-F17): each agent the service reads a call's lineage for, in the fixture its
+    /// <c>CallLineageTests</c> holds its one ordered list to, is an agent this registry answers.
+    /// </summary>
+    [Fact]
+    public void The_service_s_call_keys_name_registered_agents()
+    {
+        var fixture = Path.Combine(GitSeed.RepoRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "provider-census.json");
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(fixture));
+        var agents = document.RootElement.GetProperty("service").GetProperty("callKeys").EnumerateArray().Select(row => row[0].GetString()!).ToList();
+
+        Assert.NotEmpty(agents);
+        Assert.All(agents, agent => Assert.Equal(agent, Registry.Facts.Of(agent)?.Id));
+    }
 }
