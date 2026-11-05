@@ -305,6 +305,36 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.Empty(Column(read, "SELECT quest FROM quest_forwards"));
     }
 
+    /// <summary>ONEWAY1ac: a finished record whose note has no parts loses the note; one with parts, and one still in use, keep it.</summary>
+    [Fact]
+    public void A_finished_record_s_note_with_no_parts_is_cleared()
+    {
+        var path = DaorisHome.Entry(_home, HomeEntry.Knowledge);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using (var connection = new SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE sessions (id TEXT PRIMARY KEY, state TEXT NOT NULL, note TEXT NULL, note_parts TEXT NULL, updated TEXT NOT NULL);
+                INSERT INTO sessions VALUES
+                  ('old-done', 'Completed', 'The quest reached done.', NULL, '2026-01-01T00:00:00Z'),
+                  ('old-failed', 'Failed', 'It exited.', '[]', '2026-01-01T00:00:00Z'),
+                  ('coded', 'Failed', 'It exited.', '[{"code":"ended.exit","values":{}}]', '2026-01-01T00:00:00Z'),
+                  ('parked', 'AwaitingPerson', 'It stopped to ask you.', NULL, '2026-01-01T00:00:00Z');
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        var migrated = HomeMigration.Run(_home);
+
+        Assert.Null(migrated.Failed);
+        Assert.Contains("note-records", migrated.Ran);
+        using var read = new SqliteConnection($"Data Source={path};Pooling=False");
+        read.Open();
+        Assert.Equal(["coded:It exited.", "old-done:", "old-failed:", "parked:It stopped to ask you."], Column(read, "SELECT id || ':' || COALESCE(note, '') FROM sessions ORDER BY id"));
+    }
+
     private static List<string> Column(SqliteConnection connection, string sql)
     {
         using var command = connection.CreateCommand();

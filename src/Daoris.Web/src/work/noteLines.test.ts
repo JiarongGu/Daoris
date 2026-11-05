@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { NotePart } from '../data/api';
 import { moment } from '../locales/format';
-import { linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
+import { hasNote, linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
 // A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from
 // the catalogue in the reader's language with its values, someone's words as written, and what the page cannot word as
@@ -62,13 +62,13 @@ describe('noteLines', () => {
     expect(noteLines(t, { parts: [{ code: 'ended.brand-new', values: {} }] }, 'en')).toEqual([]);
   });
 
-  /** §6: a record from before parts shows its note as kept, marked; no pattern table re-reads its English. */
-  it('shows a record from before parts as it was kept', () => {
+  /** §6: a record with no parts has no line, however its English reads; no table re-reads it. */
+  it('draws a record with no parts as nothing, and a sentence the driver wrote with no code as recorded', () => {
     const note = 'the quest reached done.';
-    expect(noteLines(zh, { note, parts: null }, 'zh')).toEqual([{ kind: 'recorded', text: note }]);
-    expect(noteLines(zh, { note, parts: [] }, 'zh')).toEqual([{ kind: 'recorded', text: note }]);
-    expect(noteLines(zh, { note: null, parts: null }, 'zh')).toEqual([]);
-    // Carried whole into a newer note as one part, it is the same English, and shown the same way.
+    expect(noteLines(zh, { note, parts: null }, 'zh')).toEqual([]);
+    expect(noteLines(zh, { note, parts: [] }, 'zh')).toEqual([]);
+    expect(hasNote({ note, parts: null })).toBe(false);
+    // Carried whole into a note as one part, it is the same English, and shown marked.
     expect(noteLines(zh, {
       parts: [words(note, 'before'), coded('working.goes-on', 'It goes on with your words in its own conversation.')],
     }, 'zh')).toEqual([

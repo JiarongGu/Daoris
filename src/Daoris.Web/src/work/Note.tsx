@@ -19,15 +19,15 @@ const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as con
  * marked, since they are theirs in whatever language they wrote.
  *
  * **What the page cannot word is shown as its record keeps it, and says so**: a code this page does not know (a newer
- * driver's), a value its sentence needs that is absent, and a record from before parts, whose English is every record on an
- * install before LANG1a. The mark, *shown as recorded*, leads the line, so a clamped note still says it.
+ * driver's), a value its sentence needs that is absent, and a sentence the driver wrote with no code. The mark, *shown as
+ * recorded*, leads the line, so a clamped note still says it. A record with no parts draws nothing.
  *
  * A molecule: handed the record's note and parts, it reads the catalogue and nothing else.
  */
-export function Note({ note, parts, className, clamp, compact = false, names }: {
+export function Note({ parts, className, clamp, compact = false, names }: {
   /** What the person calls each account, by id, for a note that names one (NOTENAME1); absent, an id is said as written. */
   names?: AccountNames;
-  /** The record's English, shown as kept where it has no parts. */
+  /** The record's English, which rides beside its parts and is never read. */
   note?: string | null;
   /** The note's lines, as the record answers them (LANG1a). */
   parts?: readonly NotePart[] | null;
@@ -39,7 +39,7 @@ export function Note({ note, parts, className, clamp, compact = false, names }: 
   compact?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const lines = noteLines(t, { note, parts }, i18n.language, names);
+  const lines = noteLines(t, { parts }, i18n.language, names);
   if (lines.length === 0) return null;
 
   if (compact) {

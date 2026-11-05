@@ -319,7 +319,7 @@ export type NoteLine =
   | { kind: 'recorded'; text: string }
   | { kind: 'words'; text: string; by: string };
 
-/** A record's note: its English, and its parts where its writer wrote them. */
+/** A record's note: its parts, which are all the page draws; its English rides beside them and is never read. */
 export type NoteRecord = { note?: string | null; parts?: readonly NotePart[] | null };
 
 const text = (value: unknown): string | null =>
@@ -456,14 +456,14 @@ function worded(
 }
 
 /**
- * A note's lines as the page shows them (D142 points 1, 4, 5): each part in its writer's order, or, for a record with no
- * parts, its note as kept. Nothing is read out of the English: a record from before is shown, not re-read (§6).
+ * A note's lines as the page shows them (D142 points 1, 4, 5): each part in its writer's order. A record with no parts has
+ * no line: nothing is read out of its English (§6).
  *
  * @param language The reader's language, which a list and a moment are written in.
  * @param names What the person calls each account, by id (NOTENAME1); an id it lacks is said as the record wrote it.
  */
-export function noteLines(t: Translate, { note, parts }: NoteRecord, language: string, names?: AccountNames): NoteLine[] {
-  if (!parts || parts.length === 0) return note ? [{ kind: 'recorded', text: note }] : [];
+export function noteLines(t: Translate, { parts }: NoteRecord, language: string, names?: AccountNames): NoteLine[] {
+  if (!parts || parts.length === 0) return [];
   const lines: NoteLine[] = [];
   for (const part of parts) {
     if (typeof part.code === 'string') {
@@ -471,8 +471,7 @@ export function noteLines(t: Translate, { note, parts }: NoteRecord, language: s
       if (line !== null) lines.push({ kind: 'said', text: line });
       else if (part.text) lines.push({ kind: 'recorded', text: part.text });
     } else if (typeof part.words === 'string' && part.words.length > 0) {
-      // A note from before parts, carried whole, is Daoris's English as an older driver wrote it: shown as a record from
-      // before is, marked, since the page could not word it either.
+      // A sentence the driver wrote with no code, carried whole, is Daoris's English: shown marked, since the page cannot word it.
       lines.push(part.by === 'before' || !part.by ? { kind: 'recorded', text: part.words } : { kind: 'words', text: part.words, by: part.by });
     }
   }
@@ -514,8 +513,8 @@ export function noteText(t: Translate, record: NoteRecord, language: string, nam
 }
 
 /** Whether a record has a note to show at all. */
-export function hasNote({ note, parts }: NoteRecord): boolean {
-  return Boolean(note) || (parts?.length ?? 0) > 0;
+export function hasNote({ parts }: NoteRecord): boolean {
+  return (parts?.length ?? 0) > 0;
 }
 
 /** An ideograph, a kana or a full-width form, which sets about twice as wide as a letter of the same size. */
