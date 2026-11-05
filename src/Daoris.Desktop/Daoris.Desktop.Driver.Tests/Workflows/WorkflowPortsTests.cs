@@ -95,7 +95,7 @@ public sealed class WorkflowPortsTests
 
         // With no run bound no rule is read: the line's landing, a merge naming no pattern.
         var none = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
-        Assert.Equal(("q1", (WorkflowRunBinding?)null, (string?)null), (none.Run, none.Binding, none.Landing.Rule.Pattern));
+        Assert.Equal(("q1", (WorkflowRunBinding?)null, (string?)null), (none.Run, none.Binding, none.Landing.Pattern));
 
         WorkflowStore.Add(store, runs, Added("automatic"));
         Assert.True(runs.Bind(WorkflowRunBindings.Plan(Declared, store, "q1", "web-app", "work", null, null, [], At)));
@@ -103,7 +103,7 @@ public sealed class WorkflowPortsTests
 
         var named = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
         Assert.True(named.Named);
-        Assert.Equal((1, (string?)null, true), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept));
+        Assert.Equal((1, (string?)null, true), (named.Binding!.Version, named.Landing.Pattern, named.Landing.AutoAccept));
 
         runs.Damage("q2");
         var damaged = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q2");

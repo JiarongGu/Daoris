@@ -60,30 +60,30 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         var broken = Assert.Single(catalog.Plugins, entry => entry.Manifest.Id == "acme.broken");
         Assert.NotNull(broken.Problem);
 
-        Assert.Null(LandingRules.PluginProblem("acme.ready", catalog));
-        Assert.Null(LandingRules.PluginProblem("ACME.Ready", catalog));
-        Assert.Null(LandingRules.PluginProblem("acme.lands", catalog));
+        Assert.Null(LandingPlugins.ProblemOf("acme.ready", catalog));
+        Assert.Null(LandingPlugins.ProblemOf("ACME.Ready", catalog));
+        Assert.Null(LandingPlugins.ProblemOf("acme.lands", catalog));
         Assert.Equal(
             "the landing rule names plugin `acme.absent`, which is not installed on this machine — "
             + "`daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is.",
-            LandingRules.PluginProblem("acme.absent", catalog));
+            LandingPlugins.ProblemOf("acme.absent", catalog));
         Assert.Equal(
             "plugin `acme.off` is switched off on this machine — `daoris plugin enable acme.off` switches it on.",
-            LandingRules.PluginProblem("acme.off", catalog));
-        Assert.Equal("plugin `acme.broken` contributes nothing: " + broken.Problem, LandingRules.PluginProblem("acme.broken", catalog));
+            LandingPlugins.ProblemOf("acme.off", catalog));
+        Assert.Equal("plugin `acme.broken` contributes nothing: " + broken.Problem, LandingPlugins.ProblemOf("acme.broken", catalog));
         Assert.Equal(
             "plugin `acme.mute` does not land work — its manifest speaks on no `work/land` point.",
-            LandingRules.PluginProblem("acme.mute", catalog));
+            LandingPlugins.ProblemOf("acme.mute", catalog));
         Assert.Equal(
             "plugin `acme.gate` does not land work — its manifest speaks on no `work/land` point.",
-            LandingRules.PluginProblem("acme.gate", catalog));
+            LandingPlugins.ProblemOf("acme.gate", catalog));
         Assert.Equal(
             "plugin `acme.states` does not land work — its manifest speaks on no `work/land` point.",
-            LandingRules.PluginProblem("acme.states", catalog));
+            LandingPlugins.ProblemOf("acme.states", catalog));
         // The sentence names the id as the rule wrote it, and the switch the id the catalogue holds.
         Assert.Equal(
             "plugin `ACME.OFF` is switched off on this machine — `daoris plugin enable acme.off` switches it on.",
-            LandingRules.PluginProblem("ACME.OFF", catalog));
+            LandingPlugins.ProblemOf("ACME.OFF", catalog));
     }
 
     [Fact]

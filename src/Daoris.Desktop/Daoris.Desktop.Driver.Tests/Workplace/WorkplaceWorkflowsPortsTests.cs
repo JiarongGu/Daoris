@@ -89,7 +89,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
     [Fact]
     public async Task The_trees_and_the_end_read_a_process_through_the_facet_alone()
     {
-        var landing = new Landing(new LandingRule(LandingForm.Branch, "feature/{quest}", Plugin: "acme.lands"), LandingSource.Repository);
+        var landing = new Landing(LandingForm.Branch, "feature/{quest}", Plugin: "acme.lands");
         var record = new LandingWorkflow("docs-to-pr", 3, WorkflowLevels.Repository);
         var named = new Facet { Named = true, Landing = landing, Record = record };
 
@@ -294,7 +294,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
         public string Name { get; init; } = "Current";
 
-        public Landing Landing { get; init; } = new(new LandingRule(LandingForm.Merge), LandingSource.Repository);
+        public Landing Landing { get; init; } = Landing.Merge;
 
         public string? Problem { get; init; }
 

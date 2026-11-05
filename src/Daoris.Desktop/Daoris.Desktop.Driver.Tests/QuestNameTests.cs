@@ -52,12 +52,12 @@ public sealed class QuestNameTests
         var quest = new QuestView("q1", "ask #a1", "portal-ui", Refiled, "b", "Done") { Short = "TK-2203 continue the prod half" };
         Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id == "q1" ? quest : null);
 
-        var subject = await LandingRules.SubjectAsync("s1", "q1", Find, opening: null);
+        var subject = await BranchPatterns.SubjectAsync("s1", "q1", Find, opening: null);
 
         Assert.Equal(Refiled, subject.Title);
         Assert.Equal("tk-2203-continue-the-prod-half", subject.Slug);
         Assert.Equal("feature/tk-2203-continue-the-prod-half-q1",
-            LandingRules.Expand("feature/{slug}-{quest}", new LandingNames(subject.Quest!, subject.Slug, "portal-ui", "s1")));
+            BranchPatterns.Expand("feature/{slug}-{quest}", new LandingNames(subject.Quest!, subject.Slug, "portal-ui", "s1")));
     }
 
     /// <summary>A start's landing is told the same name, and a quest whose name is its title is named as it always was.</summary>
@@ -79,7 +79,7 @@ public sealed class QuestNameTests
     // ——— PROCESS1b-i (D164's amendment point 2): the branch named as the repository names its own
 
     /// <summary>
-    /// <c>{ticket}</c> is the first match of the rule's key (else <see cref="LandingRules.DefaultKey"/>) in the title, then the
+    /// <c>{ticket}</c> is the first match of the rule's key (else <see cref="BranchPatterns.DefaultKey"/>) in the title, then the
     /// request's body, then its links, as written; none found, the session's id stands in. The slug leaves out the ticket the
     /// pattern already says, and every web address (LANDNAME2: <c>feature/https-…-browse-a267d192</c>), and an empty one takes its
     /// separator with it. A pattern without <c>{ticket}</c> names the branch as it always did.
@@ -103,7 +103,7 @@ public sealed class QuestNameTests
     {
         var subject = new LandingSubject("fd12f1bc", "q1", title) { Body = body, Links = link is null ? null : [link] };
 
-        Assert.Equal(branch, LandingRules.Branch(subject, new LandingRule(LandingForm.Branch, pattern, Key: key), "portal-ui"));
+        Assert.Equal(branch, BranchPatterns.Branch(subject, new Landing(LandingForm.Branch, pattern, Key: key), "portal-ui"));
     }
 
     // ——— ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's branch is named for its work, never for its opening
@@ -127,7 +127,7 @@ public sealed class QuestNameTests
 
         var named = subject.ForWork(oldest);
 
-        Assert.Equal(branch, LandingRules.Branch(named, new LandingRule(LandingForm.Branch, pattern), "engine"));
+        Assert.Equal(branch, BranchPatterns.Branch(named, new Landing(LandingForm.Branch, pattern), "engine"));
         Assert.Equal(opening, named.Title);
     }
 
@@ -141,7 +141,7 @@ public sealed class QuestNameTests
     [InlineData("\u001f  Cap it  \r\n", "Cap it")]
     [InlineData("", null)]
     public void The_oldest_subject_is_the_first_commits_even_where_it_is_empty(string log, string? oldest) =>
-        Assert.Equal(oldest, LandingRules.OldestSubject(log));
+        Assert.Equal(oldest, BranchPatterns.OldestSubject(log));
 
     /// <summary>Only a pattern that reads the subject's words (`{slug}`, `{ticket}`) is worth a git read for them.</summary>
     [Theory]
@@ -150,7 +150,7 @@ public sealed class QuestNameTests
     [InlineData("feature/{session}", false)]
     [InlineData("review/{quest}", false)]
     public void Only_a_pattern_that_says_the_words_reads_them(string pattern, bool reads) =>
-        Assert.Equal(reads, LandingRules.ReadsWords(new LandingRule(LandingForm.Branch, pattern)));
+        Assert.Equal(reads, BranchPatterns.ReadsWords(new Landing(LandingForm.Branch, pattern)));
 
     /// <summary>A quest's subject, one already named, and one with no opening are named as they always were.</summary>
     [Fact]
@@ -174,15 +174,15 @@ public sealed class QuestNameTests
         var step = new QuestView("q2", "ask #a1", "portal-ui", "Verify TK-9999 in the browser", "", "Open") { Parent = "q1" };
         Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id switch { "q1" => first, "q2" => step, _ => null });
 
-        var subject = await LandingRules.SubjectAsync("s2", "q2", Find, opening: null);
+        var subject = await BranchPatterns.SubjectAsync("s2", "q2", Find, opening: null);
 
         Assert.Equal("Reported in TK-2203.", subject.Body);
         Assert.Equal(new[] { "https://tickets.test/TK-2203" }, subject.Links!);
         Assert.Equal("feature/TK-2203-the-common-report",
-            LandingRules.Branch(subject, new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
+            BranchPatterns.Branch(subject, new Landing(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
         // A conversation has its opening words, and they are searched.
-        Assert.Equal("feature/TK-5-tidy-the-docs", LandingRules.Branch(
-            await LandingRules.SubjectAsync("c1", null, Find, "TK-5 tidy the docs"), new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
+        Assert.Equal("feature/TK-5-tidy-the-docs", BranchPatterns.Branch(
+            await BranchPatterns.SubjectAsync("c1", null, Find, "TK-5 tidy the docs"), new Landing(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
     }
 
     /// <summary>An empty slug takes the separator it would leave doubled, leading or trailing with it; the ticket stands in for nothing.</summary>
@@ -194,7 +194,7 @@ public sealed class QuestNameTests
     [InlineData("feature/{ticket}-{slug}", "fix-the-gap", null, "feature/s1a2b3c4-fix-the-gap")]
     [InlineData("feature/{quest}-{slug}", "fix-the-gap", "ABC-1", "feature/0fda18-fix-the-gap")]
     public void A_pattern_is_expanded_with_its_ticket_and_an_empty_slug_takes_its_separator(string pattern, string slug, string? ticket, string branch) =>
-        Assert.Equal(branch, LandingRules.Expand(pattern, new LandingNames("0fda18", slug, "engine", "s1a2b3c4", ticket)));
+        Assert.Equal(branch, BranchPatterns.Expand(pattern, new LandingNames("0fda18", slug, "engine", "s1a2b3c4", ticket)));
 
     /// <summary>The slug is the title's words with every web address left out: a title that was only one leaves nothing.</summary>
     [Theory]
@@ -204,7 +204,7 @@ public sealed class QuestNameTests
     [InlineData("修复 登录", "work")]
     [InlineData(null, "work")]
     public void A_slug_is_never_made_from_a_web_address(string? title, string slug) =>
-        Assert.Equal(slug, LandingRules.Slug(title));
+        Assert.Equal(slug, BranchPatterns.Slug(title));
 
     /// <summary>
     /// The key's shape (PROCESS1b-i): a regular expression both readers of a rule take the same way, at most 64 characters, no
@@ -224,8 +224,6 @@ public sealed class QuestNameTests
     [InlineData("branch", "feature/{ticket}-{slug}", "[]", "empty class")]
     [InlineData("branch", "feature/{ticket}-{slug}", @"[a-z-[aeiou]]+-\d+", "subtract a class")]
     [InlineData("branch", "feature/{ticket}-{slug}", @"[a-z\-[]+-\d+", null)]
-    [InlineData("branch", "feature/{quest}-{slug}", @"[A-Z]+-\d+", "only for `{ticket}`")]
-    [InlineData("merge", null, @"[A-Z]+-\d+", "only a branch rule reads a ticket's key")]
     [InlineData("branch", "feature/{ticket}-{slug}", "  ", "needs a shape")]
     [InlineData("branch", "feature/{ticket}-{slug}", "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDE", "at most 64 characters")]
     [InlineData("branch", "feature/{ticket}-{slug}", @"(?<key>[A-Z]+-\d+)", "may not use `(?`")]
@@ -237,25 +235,7 @@ public sealed class QuestNameTests
     [InlineData("branch", "feature/{ticket}-{slug}", "[A-Z+", "is not a regular expression")]
     public void A_tickets_key_is_a_shape_both_readers_take_and_only_for_ticket(string form, string? pattern, string? key, string? problem)
     {
-        var said = LandingRules.Problem(new LandingRule(form, pattern, Key: key));
-
-        if (problem is null) Assert.Null(said);
-        else Assert.Contains(problem, said);
-    }
-
-    /// <summary>
-    /// <c>squash</c> on a landing rule (PROCESS1b-ii, D164's amendment point 2): Accept makes the pull request's branch one commit.
-    /// Only a branch rule takes it, as only a branch rule accepts automatically (the CLI's twin, <c>driverconfig.ts</c>, left in
-    /// PUSH1f2b).
-    /// </summary>
-    [Theory]
-    [InlineData("branch", "feature/{ticket}-{slug}", true, null)]
-    [InlineData("branch", "feature/{quest}-{slug}", false, null)]
-    [InlineData("merge", null, true, "only a branch rule squashes")]
-    [InlineData("merge", null, false, null)]
-    public void Only_a_branch_rule_squashes(string form, string? pattern, bool squash, string? problem)
-    {
-        var said = LandingRules.Problem(new LandingRule(form, pattern, Squash: squash));
+        var said = key is null ? null : BranchPatterns.KeyProblem(key);
 
         if (problem is null) Assert.Null(said);
         else Assert.Contains(problem, said);

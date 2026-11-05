@@ -209,7 +209,7 @@ public sealed class HandOffTests : LandedFixture
     [Fact]
     public void A_hand_off_is_kept_as_a_note_in_the_conversation()
     {
-        var note = LandingRules.HandNote(new TreeHand(true, "handed `feature/x` to plugin `example.lands`. Plugin `example.lands`: pushed it.", "feature/x"));
+        var note = LandingNotes.HandNote(new TreeHand(true, "handed `feature/x` to plugin `example.lands`. Plugin `example.lands`: pushed it.", "feature/x"));
 
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.StartsWith("the person handed this work on:", note.Text);

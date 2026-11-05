@@ -220,7 +220,6 @@ public sealed class IntegrationRequestsGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         Save(new LandingIntegrate(Gates: LandingIntegrate.Declared), LandingIntegrate.Done);
         var gate = Integrating("q2", LandingIntegrate.Steward);
-        Assert.Null(gate.Workflow!.Process.Landing.Rule.Integrate);
 
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
