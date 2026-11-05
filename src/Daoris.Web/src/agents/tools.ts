@@ -175,6 +175,42 @@ export interface Account {
   read?: string | null;
 }
 
+/** How a sheet's row is known (COAGENT1 §3.1): absent is a statement, and its fallback applies. */
+export type SheetSource = 'declared' | 'negotiated' | 'measured' | 'absent';
+
+/** One capability of a door's sheet, as the driver's `SheetRow` answers it. */
+export type SheetRow = {
+  capability: string;
+  /** `yes`, `no`, or the agent's own words; null where absent. */
+  value: string | null;
+  source: SheetSource;
+  /** The declaration, the opening or the measurement's evidence document; null where absent. */
+  evidence: string | null;
+  /** The configuration it applies to; `any` for a declaration. */
+  applies: string;
+  /** What happens where it is absent or no, in the driver's words. */
+  fallback: string;
+};
+
+/** One door's sheet (COAGENT1 §3): its word and each capability. */
+export type DoorSheet = { door: string; wire: 'acp' | 'pipe'; rows: SheetRow[] };
+
+/** What a person can do with an agent's accounts, by its own flows (AGT7, CODEXACCT1, AGENTMARK1). */
+export type AgentActs = { signsIn: boolean; takesKey: boolean; deviceCode: boolean; installs: boolean };
+
+/** One agent as the roster's sheet half answers it (COAGENT1e, the agent-provider design §6). */
+export type AgentSheet = {
+  id: string;
+  product: string | null;
+  maker: string | null;
+  mark: string | null;
+  standIn: boolean;
+  acts: AgentActs;
+  /** The door named for the agent first, then the rest. */
+  doors: DoorSheet[];
+  lead: string | null;
+};
+
 /** One tool, with every door onto it and the one account list they share. */
 export interface Tool {
   /** The tool's id — `claude-code`, `codex`, `dsh` — which is what a terminal types. */
@@ -205,6 +241,15 @@ export interface Tool {
   ownRead: string | null;
   /** Whether any door onto it is handed Daoris's rules file (UX6e, D150 §5.1). */
   takesRules: boolean;
+  /**
+   * What a person can do with its accounts, as the roster's sheet answers it for the agent (COAGENT1e): never a door standing for
+   * its agent. Null where the roster's sheet does not name it, and a control is then offered as before it said.
+   */
+  acts?: AgentActs | null;
+  /** The door its account acts run through: the sheet's lead, the door named for the agent first; its own name where none says. */
+  lead?: string;
+  /** Each door's sheet (COAGENT1 §3): what a session on it can do and how that is known; empty where the roster's sheet is absent. */
+  sheet?: DoorSheet[];
   /**
    * What the tool offers for an account's model and effort (AGT6), from the first door that says; null
    * where the doors say none, and a surface then offers nothing and says so; undefined from an older
@@ -261,7 +306,7 @@ export function doorLabel(t: (key: string, options?: Record<string, unknown>) =>
  * with exactly one door whose name is not its own. Naming the group after the ACCOUNT rather than
  * after any door is what makes that case ordinary instead of special.
  */
-export function byTool(doors: readonly ToolDoor[]): Tool[] {
+export function byTool(doors: readonly ToolDoor[], agents: readonly AgentSheet[] = []): Tool[] {
   const order: string[] = [];
   const grouped = new Map<string, ToolDoor[]>();
 
@@ -295,8 +340,15 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       }
     }
 
+    // The agent the roster's sheet answers for this tool: by its id, else by any of its doors (COAGENT1e).
+    const agent = agents.find((each) => each.id === name)
+      ?? agents.find((each) => each.doors.some((sheet) => doorsInOrder.some((door) => door.harness === sheet.door)));
+
     return {
       name,
+      acts: agent?.acts ?? null,
+      lead: agent?.lead ?? name,
+      sheet: agent?.doors ?? [],
       product: doorsInOrder.map((door) => door.product).find(Boolean) ?? null,
       maker: doorsInOrder.map((door) => door.maker).find(Boolean) ?? null,
       doors: doorsInOrder,
