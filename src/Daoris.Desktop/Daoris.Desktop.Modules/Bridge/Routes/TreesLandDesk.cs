@@ -302,7 +302,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
 
     /// <summary>
     /// Where the person left this part out of its entry's Accept: the branch its conversation's newest note names, while
-    /// nothing accepted it since (<see cref="LandingRules.LeftOutOf"/>). A record that does not read says nothing left out, and the
+    /// nothing accepted it since (<see cref="LandingNotes.LeftOutOf"/>). A record that does not read says nothing left out, and the
     /// review offers Accept as before.
     /// </summary>
     private string? LeftOutOfEntry(string id)

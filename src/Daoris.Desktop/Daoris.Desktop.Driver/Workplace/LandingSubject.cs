@@ -71,7 +71,7 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string Slug => BranchPatterns.Slug(Name ?? Title);
 
     /// <summary>
-    /// Whether this is a conversation's subject, its title its opening (<see cref="LandingRules.SubjectAsync"/>): no quest, no name, and
+    /// Whether this is a conversation's subject, its title its opening (<see cref="BranchPatterns.SubjectAsync"/>): no quest, no name, and
     /// the person's first words as its title (ACCEPTFOOT2, D164's 2026-10-16 note).
     /// </summary>
     public bool NamedByOpening => Quest is null && Name is null && Title is not null;
