@@ -62,14 +62,20 @@ internal static class TidyHolders
     private static async Task<IReadOnlyList<TreeHolder>> ReadHoldersAsync(
         ServiceClient service, bool writing, CancellationToken ct, (string Home, DateTimeOffset Now)? spoken = null)
     {
-        var held = (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
+        // Asked at once, as the snapshot asks its reads: each is the whole list on a home of thousands of records, so one after another
+        // the three cost their sum where together they cost the slowest.
+        var activeRead = service.ActiveSessionsAsync(ct);
+        var recordsRead = service.RecordsAsync(ct);
+        var questsRead = service.EveryQuestAsync(ct);
+        await Task.WhenAll(activeRead, recordsRead, questsRead).ConfigureAwait(false);
+        var held = (await activeRead.ConfigureAwait(false))
             .Where(session => session.Tree is { Length: > 0 }).Select(session => new TreeHolder(session.Tree!, session.Id)).ToList();
-        var records = await service.RecordsAsync(ct).ConfigureAwait(false);
+        var records = await recordsRead.ConfigureAwait(false);
         held.AddRange(records.Where(record => !record.Teammate && record.WordsWaiting && record.Tree is { Length: > 0 })
             .Select(record => new TreeHolder(record.Tree!, record.Session)));
         if (spoken is { } asked) held.AddRange(SpokenTo(asked.Home, records, asked.Now));
         var waiting = records.Where(record => HelperWaitTrees.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 }).ToList();
-        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
+        var quests = await questsRead.ConfigureAwait(false);
         var taken = quests.Where(quest => quest.Status == "Taken").Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         held.AddRange(waiting.Where(record => taken.Contains(record.Quest!)).Select(record => new TreeHolder(record.Tree!, record.Session)));
         held.AddRange(LineHolders(records, quests, goingOn: writing));
