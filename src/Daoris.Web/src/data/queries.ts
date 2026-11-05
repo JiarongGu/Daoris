@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import {
   keepPreviousData, type QueryClient, type QueryKey, useMutation, useQueries, useQuery, useQueryClient, type UseQueryOptions,
 } from '@tanstack/react-query';
+import { useShenora } from '@shenora/react';
 import { notPushed, readPushed, usePushedLive } from '../bridge/state/slices';
 import {
   api, type Ask, type AskAction, HELP_REPOSITORY, type Quest, type QuestAction, type Session, SESSION_ACTIVE, type SetUpRef, type SubmissionRef,
@@ -51,28 +52,22 @@ export function standingOf(all: unknown, workspace: string): SyncStanding {
  * Over HTTP from this machine's own host, so a browser on this machine reads it too — only *Sync now*
  * needs the shell. Null asks nothing: "every circle" has no single standing to show.
  *
- * Where the shell pushes the standings (PUSH1a2), the circle's is read from every wired circle's entry with a stable `select`, from
- * memory: never stale and never asked on a focus, and no tick or pass reaches it. Elsewhere (a plain browser, an older shell) it is the
- * pull it always was, waiting for the window's first snapshot where one is on its way and read from it.
+ * In the shell (PUSH1a2) the circle's is read from every wired circle's entry with a stable `select`, from memory: never stale and
+ * never asked on a focus, and no tick or pass reaches it. A plain browser, the stories' and e2e's harness, pulls it from the service.
  */
 export const useSyncStanding = (workspace: string | null) => {
   const client = useQueryClient();
-  const pushed = usePushedLive(SYNC_SLICE);
+  const { isAvailable } = useShenora();
   const select = useCallback((all: unknown) => standingOf(all, workspace ?? ''), [workspace]);
-  const read: UseQueryOptions<unknown, Error, SyncStanding, readonly unknown[]> = pushed && workspace !== null
+  const read: UseQueryOptions<unknown, Error, SyncStanding, readonly unknown[]> = isAvailable
     ? {
       queryKey: keys.syncEvery,
-      // No route answers every circle at once: until the shell has judged them, the standing is not answered yet, as a pull to a
-      // service still coming up is not, and the first push writes it.
-      queryFn: () => readPushed<unknown>(client, SYNC_SLICE, () => Promise.reject(new Error('where each circle stands is not judged yet'))),
-      select, staleTime: Infinity, refetchOnWindowFocus: false,
+      queryFn: () => readPushed<unknown>(client, SYNC_SLICE),
+      select, enabled: workspace !== null, staleTime: Infinity, refetchOnWindowFocus: false,
     }
     : {
       queryKey: keys.sync(workspace ?? '*'),
-      queryFn: async ({ signal }) => {
-        const all = await readPushed<unknown>(client, SYNC_SLICE, async () => null);
-        return all === null ? api.syncStanding(workspace!, signal) : standingOf(all, workspace!);
-      },
+      queryFn: ({ signal }) => api.syncStanding(workspace!, signal),
       enabled: workspace !== null,
     };
   return useQuery(read);
@@ -149,25 +144,18 @@ export const ASKS_SLICE = 'asks';
 export const QUESTS_SLICE = 'quests';
 
 /**
- * A list the shell pushes (PUSH1d2, PUSH1d3) as one view reads it. Live, the widest entry its pushes write, from memory: never stale,
- * never asked on a focus, the view's list derived by `select`. Elsewhere (a plain browser, an older shell) the view's own pull under its
- * own key, which, while a window's first snapshot is on its way, waits for it and is read from it, never pulled beside it.
+ * A list the shell pushes (PUSH1d2, PUSH1d3) as one view reads it. In the shell, the widest entry its pushes write, from memory: never
+ * stale, never asked on a focus, the view's list derived by `select`. A plain browser, the stories' and e2e's harness, pulls the view's
+ * own list from the service under its own key.
  */
 function pushedList<T>(
-  client: QueryClient, live: boolean, slice: string,
-  widest: { key: QueryKey; pull: () => Promise<T[]> },
+  client: QueryClient, shell: boolean, slice: string, widest: QueryKey,
   own: { key: QueryKey; pull: (signal: AbortSignal) => Promise<T[]> },
   select: (all: T[]) => T[],
 ): UseQueryOptions<T[], Error, T[]> {
-  return live
-    ? { queryKey: widest.key, queryFn: () => readPushed(client, slice, widest.pull), select, staleTime: Infinity, refetchOnWindowFocus: false }
-    : {
-      queryKey: own.key,
-      queryFn: async ({ signal }) => {
-        const all = await readPushed<T[] | null>(client, slice, async () => null);
-        return all === null ? own.pull(signal) : select(all);
-      },
-    };
+  return shell
+    ? { queryKey: widest, queryFn: () => readPushed<T[]>(client, slice), select, staleTime: Infinity, refetchOnWindowFocus: false }
+    : { queryKey: own.key, queryFn: ({ signal }) => own.pull(signal) };
 }
 
 /**
@@ -202,12 +190,11 @@ export function questsIn(all: Quest[], repository: string | null, includeClosed:
 export const useAsks = (includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
   const client = useQueryClient();
-  const live = usePushedLive(ASKS_SLICE);
+  const { isAvailable } = useShenora();
   const select = useCallback((all: Ask[]) => asksIn(all, includeClosed, workspace), [includeClosed, workspace]);
   return useQuery({
     ...pushedList(
-      client, live, ASKS_SLICE,
-      { key: keys.asks(true, null), pull: () => api.asks(true, null) },
+      client, isAvailable, ASKS_SLICE, keys.asks(true, null),
       { key: keys.asks(includeClosed, workspace), pull: (signal) => api.asks(includeClosed, workspace, signal) },
       select,
     ),
@@ -275,13 +262,12 @@ export const useAnswerGoAhead = () =>
 export const useQuests = (repository: string | null, includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
   const client = useQueryClient();
-  const live = usePushedLive(QUESTS_SLICE);
+  const { isAvailable } = useShenora();
   const select = useCallback(
     (all: Quest[]) => questsIn(all, repository, includeClosed, workspace), [repository, includeClosed, workspace]);
   return useQuery({
     ...pushedList(
-      client, live, QUESTS_SLICE,
-      { key: keys.quests(null, true, null), pull: () => api.quests(null, true, null) },
+      client, isAvailable, QUESTS_SLICE, keys.quests(null, true, null),
       { key: keys.quests(repository, includeClosed, workspace), pull: (signal) => api.quests(repository, includeClosed, workspace, signal) },
       select,
     ),
@@ -295,14 +281,14 @@ const everyRow = <T,>(rows: T[]) => rows;
 /**
  * Every quest this machine's lists hold, closed included, whatever the window's workspace (ASKQUESTS1): what an Ask Daoris
  * conversation published is followed wherever it was asked. Where the shell pushes the quests (PUSH1d3), the one entry its pushes
- * write, from memory, never asked again; elsewhere that widest list's own pull. `enabled` false asks nothing.
+ * write, from memory, never asked again; in the harness that widest list's own pull. `enabled` false asks nothing.
  */
 export const useEveryQuest = (enabled: boolean) => {
   const client = useQueryClient();
-  const live = usePushedLive(QUESTS_SLICE);
-  const widest = { key: keys.quests(null, true, null), pull: () => api.quests(null, true, null) };
+  const { isAvailable } = useShenora();
+  const widest = keys.quests(null, true, null);
   return useQuery({
-    ...pushedList(client, live, QUESTS_SLICE, widest, { key: widest.key, pull: (signal) => api.quests(null, true, null, signal) }, everyRow),
+    ...pushedList(client, isAvailable, QUESTS_SLICE, widest, { key: widest, pull: (signal) => api.quests(null, true, null, signal) }, everyRow),
     enabled,
   });
 };
@@ -310,10 +296,10 @@ export const useEveryQuest = (enabled: boolean) => {
 /** Every ask, closed and done included, whatever the window's workspace (ASKQUESTS1), as `useEveryQuest` reads the quests. */
 export const useEveryAsk = (enabled: boolean) => {
   const client = useQueryClient();
-  const live = usePushedLive(ASKS_SLICE);
-  const widest = { key: keys.asks(true, null), pull: () => api.asks(true, null) };
+  const { isAvailable } = useShenora();
+  const widest = keys.asks(true, null);
   return useQuery({
-    ...pushedList(client, live, ASKS_SLICE, widest, { key: widest.key, pull: (signal) => api.asks(true, null, signal) }, everyRow),
+    ...pushedList(client, isAvailable, ASKS_SLICE, widest, { key: widest, pull: (signal) => api.asks(true, null, signal) }, everyRow),
     enabled,
   });
 };
@@ -387,34 +373,28 @@ export function sessionsIn(all: Session[], repository: string | null, includeClo
 }
 
 /**
- * Where the shell pushes the sessions (PUSH1d2), every list is read from the one entry its pushes write, from memory: never stale and
- * never asked on a focus. Elsewhere (a plain browser, an older shell) each list is the pull it always was, under its own key; and while
- * a window's first snapshot is on its way, a list asked then waits for it and is read from it, never pulled beside it.
+ * In the shell (PUSH1d2) every list is read from the one entry its pushes write, from memory: never stale and never asked on a focus.
+ * A plain browser, the stories' and e2e's harness, pulls each list from the service under its own key.
  */
 function useSessionsRead(
   repository: string | null, includeClosed: boolean, workspace: string | null,
-): { pushed: boolean; read: UseQueryOptions<Session[], Error, Session[]> } {
+): { read: UseQueryOptions<Session[], Error, Session[]> } {
   const client = useQueryClient();
-  const pushed = usePushedLive(SESSIONS_SLICE);
+  const { isAvailable } = useShenora();
   const select = useCallback(
     (all: Session[]) => sessionsIn(all, repository, includeClosed, workspace), [repository, includeClosed, workspace]);
-  return pushed
+  return isAvailable
     ? {
-      pushed,
       read: {
         queryKey: keys.sessions(null, true, null),
-        queryFn: () => readPushed(client, SESSIONS_SLICE, () => api.sessions(null, true, null)),
+        queryFn: () => readPushed<Session[]>(client, SESSIONS_SLICE),
         select, staleTime: Infinity, refetchOnWindowFocus: false,
       },
     }
     : {
-      pushed,
       read: {
         queryKey: keys.sessions(repository, includeClosed, workspace),
-        queryFn: async ({ signal }) => {
-          const all = await readPushed<Session[] | null>(client, SESSIONS_SLICE, async () => null);
-          return all === null ? api.sessions(repository, includeClosed, workspace, signal) : sessionsIn(all, repository, includeClosed, workspace);
-        },
+        queryFn: ({ signal }) => api.sessions(repository, includeClosed, workspace, signal),
       },
     };
 }
@@ -479,9 +459,10 @@ export const useHelpSessions = (
   /** False asks nothing: a reader that needs a conversation's record only once there is one to read (FLOWCHART2f's proposal bar). */
   enabled = true,
 ) => {
-  // Pushed (PUSH1d2): its record's every move is pushed, so it is never asked again on a clock.
-  const { pushed, read } = useSessionsRead(HELP_REPOSITORY, true, null);
-  return useQuery({ ...read, refetchInterval: pushed ? false : refetchInterval, enabled });
+  // Pushed in the shell (PUSH1d2): its record's every move is pushed, so it is never asked again on a clock.
+  const { isAvailable } = useShenora();
+  const { read } = useSessionsRead(HELP_REPOSITORY, true, null);
+  return useQuery({ ...read, refetchInterval: isAvailable ? false : refetchInterval, enabled });
 };
 
 /**

@@ -161,38 +161,52 @@ describe('a pushed slice (PUSH1a)', () => {
     expect(held()).toEqual({ a: 4, b: 1 });
   });
 
-  it('keeps the pull where the host answers no slice of this name, or knows no such route', async () => {
-    const older = await window(new Error('NO_ROUTE'));
-    const none = await window(null);
-
-    for (const { client, store } of [older, none]) {
+  it('keeps a slice whose snapshot failed waiting, with no pull beside it, and reads it again at the next manifest (ONEWAY1ab-ii)', async () => {
+    for (const failed of [new Error('NOT_READY'), null]) {
+      invoke.mockReset();
+      const { client, store } = await window(failed, snapshot(1, 1));
       expect(store.live('test')).toBe(false);
       expect(notPushed(client)({ queryKey: KEY } as never)).toBe(true);
-      await expect(readPushed(client, 'test', async () => 'pulled')).resolves.toBe('pulled');
-      // A push heard afterwards is no slice this window reads pushed.
-      store.heard(push('a', 9, { a: 9 }));
-      expect(client.getQueryData(KEY)).toBeUndefined();
+      let read: unknown = 'waiting';
+      void readPushed(client, 'test').then((data) => { read = data; });
+      await settle();
+      expect(read).toBe('waiting');
+
+      store.manifest({ slice: 'test', epoch: 'e1', partitions: [] });
+      await vi.waitFor(() => expect(store.live('test')).toBe(true));
+
+      expect(reads()).toBe(2);
+      await vi.waitFor(() => expect(read).toEqual({ a: 1, b: 1 }));
     }
   });
 
   it('reads the pushed entry from memory once live, and its key is the one a broad invalidation passes over', async () => {
     const { client } = await window(snapshot(1, 1));
-    const pull = vi.fn(async () => 'pulled');
 
-    await expect(readPushed(client, 'test', pull)).resolves.toEqual({ a: 1, b: 1 });
-    expect(pull).not.toHaveBeenCalled();
+    await expect(readPushed(client, 'test')).resolves.toEqual({ a: 1, b: 1 });
     expect(notPushed(client)({ queryKey: KEY } as never)).toBe(false);
     expect(notPushed(client)({ queryKey: [...KEY, 'beneath'] } as never)).toBe(true);
   });
 
-  it('pulls while the owner has not judged yet, and takes its first push', async () => {
+  it('waits while the owner has not judged yet, and answers with its first push', async () => {
     const { client, store } = await window({ slice: 'test', epoch: 'e1', status: 'notJudged', partitions: [] });
 
-    await expect(readPushed(client, 'test', async () => 'pulled')).resolves.toBe('pulled');
+    const reading = readPushed(client, 'test');
     store.heard(push('a', 1, { a: 1 }));
     store.heard(push('b', 1, { b: 1 }));
 
+    await expect(reading).resolves.toEqual({ a: 1, b: 1 });
     expect(client.getQueryData(KEY)).toEqual({ a: 1, b: 1 });
+  });
+
+  it('answers a read made before the slice is registered, once its snapshot lands', async () => {
+    const client = new QueryClient();
+    const reading = readPushed(client, 'test');
+    invoke.mockImplementationOnce(async () => snapshot(2, 3));
+    pushedOf(client).register(spec);
+    await pushedOf(client).resync('test');
+
+    await expect(reading).resolves.toEqual({ a: 2, b: 3 });
   });
 
   it('merges a keyed delta: its keys over the held, the keys removed taken away, the held left as it was (PUSH1d2)', () => {
@@ -206,7 +220,7 @@ describe('a pushed slice (PUSH1a)', () => {
     expect(mergeKeyed(held, null, ['s1'])).toEqual({ s2: { state: 'working' } });
   });
 
-  it('tells its compose whether the owner judged: a judged slice of no partition composes, a slice not judged pulls (PUSH1d2)', async () => {
+  it('tells its compose whether the owner judged: a judged slice of no partition composes, a slice not judged waits (PUSH1d2)', async () => {
     /** A list of every partition's rows, which is empty and true once the owner judged none. */
     const listed: SliceSpec = {
       name: 'listed', key: ['listed'], read: () => readSlice('listed'),
@@ -221,11 +235,12 @@ describe('a pushed slice (PUSH1a)', () => {
     };
 
     const none = await open({ slice: 'listed', epoch: 'e1', status: 'ready', partitions: [] });
-    await expect(readPushed(none, 'listed', async () => 'pulled')).resolves.toEqual([]);
+    await expect(readPushed(none, 'listed')).resolves.toEqual([]);
     expect(none.getQueryData(['listed'])).toEqual([]);
 
     const notYet = await open({ slice: 'listed', epoch: 'e1', status: 'notJudged', partitions: [] });
-    await expect(readPushed(notYet, 'listed', async () => 'pulled')).resolves.toBe('pulled');
+    expect(pushedOf(notYet).data('listed')).toBeUndefined();
+    expect(notYet.getQueryData(['listed'])).toBeUndefined();
 
     // Its only partition gone: judged, and empty, never the last rows held.
     const one = await open({ slice: 'listed', epoch: 'e1', status: 'ready', partitions: [{ partition: 'w', seq: 1, status: 'ready', data: ['s1'] }] });
@@ -234,20 +249,19 @@ describe('a pushed slice (PUSH1a)', () => {
     expect(one.getQueryData(['listed'])).toEqual([]);
   });
 
-  it('waits for the first snapshot under way rather than pulling beside it', async () => {
+  it('waits for the first snapshot under way', async () => {
     let answer: (value: unknown) => void = () => {};
     invoke.mockImplementationOnce(() => new Promise((resolve) => { answer = resolve; }));
     const client = new QueryClient();
     const store = pushedOf(client);
     store.register(spec);
     void store.resync('test');
-    const pull = vi.fn(async () => 'pulled');
 
-    const reading = readPushed(client, 'test', pull);
+    const reading = readPushed(client, 'test');
     answer(snapshot(1, 1));
 
     await expect(reading).resolves.toEqual({ a: 1, b: 1 });
-    expect(pull).not.toHaveBeenCalled();
+    expect(invoke.mock.calls.map(([, type]) => type)).toEqual(['STATE_SLICE']);
   });
 
   it('says a live slice read again is resyncing, holding what it held, and a first read is not (PUSHUX1)', async () => {

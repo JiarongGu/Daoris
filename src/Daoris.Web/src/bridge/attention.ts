@@ -81,8 +81,8 @@ export const useAttention = (): AttentionRead => {
   const resyncing = usePushedResyncing(ATTENTION_SLICE);
   const read = useQuery({
     queryKey: keys.attention,
-    // Read from the pushes once they are judged; until then nothing, which the pushes replace as they come.
-    queryFn: () => readPushed<AttentionPushed | null>(client, ATTENTION_SLICE, async () => null),
+    // Read from the pushes once they are judged, and waited for until then.
+    queryFn: () => readPushed<AttentionPushed>(client, ATTENTION_SLICE),
     enabled: isAvailable,
     staleTime: Infinity,
     refetchOnWindowFocus: false,

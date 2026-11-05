@@ -4,7 +4,7 @@ import { ACCOUNTS_SLICE, keys } from '../../data/queries';
 import type { AccountsAnswer, AccountUseChange, AgentAccounts } from '../../settings/accounts/accounts';
 import { call } from '../call';
 import { readSlice } from '../driver';
-import { readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { readPushed, type SliceSpec } from '../state/slices';
 
 // How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; D197): the set's order and how it is used,
 // each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it, and what the fold into one
@@ -18,7 +18,7 @@ const isAgent = (value: unknown): value is AgentAccounts =>
  * How each agent's accounts are used, as the shell pushes it (PUSH1e, D182): a partition per agent, named by its accounts' owner,
  * each its answer of `ACCOUNTS` whole with the verdicts .NET judges beside each reading (`AccountsStateSlice`), composed into the
  * route's answer, agents by name as C#'s ordinal compares them, as the route orders them. Nothing judged yet composes nothing, which
- * keeps the pull; judged with no agent, none.
+ * is waited for; judged with no agent, none.
  */
 export const accountsSlice: SliceSpec = {
   name: ACCOUNTS_SLICE,
@@ -32,19 +32,19 @@ export const accountsSlice: SliceSpec = {
 };
 
 /**
- * How each agent's accounts are used, read from the files and never probed (TOOL4g). Where the shell pushes it (PUSH1e), read from
- * memory, never stale and asked on no focus, a probe's result arriving by one push; elsewhere asked with the roster and again at each
- * tick. Shell-only, like the roster: a profile name rides this bridge and no HTTP route (D47 §4).
+ * How each agent's accounts are used, read from the files and never probed (TOOL4g), as the shell pushes it (PUSH1e): from memory,
+ * never stale and asked on no focus, a probe's result arriving by one push. Shell-only, like the roster: a profile name rides this
+ * bridge and no HTTP route (D47 §4).
  */
 export const useAccounts = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  const pushed = usePushedLive(ACCOUNTS_SLICE);
   return useQuery({
     queryKey: keys.accounts,
-    queryFn: () => readPushed(client, ACCOUNTS_SLICE, () => call<AccountsAnswer>('ACCOUNTS')),
+    queryFn: () => readPushed<AccountsAnswer>(client, ACCOUNTS_SLICE),
     enabled: isAvailable,
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 
