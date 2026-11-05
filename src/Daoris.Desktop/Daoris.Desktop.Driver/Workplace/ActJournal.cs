@@ -70,8 +70,11 @@ public static class ActStepKinds
     /// <summary>One <c>git fetch</c> of origin's branches into <c>refs/remotes/origin/*</c> alone, in the act's job (GITAPP2f).</summary>
     public const string Fetch = "fetch";
 
+    /// <summary>One <c>git push</c> of one ref to origin under a grant bound to its address, ref and commits, in the act's job (GITAPP2g, n).</summary>
+    public const string Push = "push";
+
     /// <summary>Every kind this build runs and reads.</summary>
-    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash, Fetch];
+    public static IReadOnlyList<string> All { get; } = [Ref, Config, Index, Commit, Bytes, Switch, Stash, Fetch, Push];
 }
 
 /// <summary>One step of an act's plan, as the journal keeps it: its kind, and its arguments, postconditions and rollback as JSON.</summary>

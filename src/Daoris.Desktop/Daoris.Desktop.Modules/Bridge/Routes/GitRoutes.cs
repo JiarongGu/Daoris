@@ -395,6 +395,21 @@ public sealed class GitRoutes(DriverContext context)
     [Publishes("GIT_FETCH", StateScopes.Driver)]
     private Task<object?> GitFetchAsync(GitFetchAct act, CancellationToken cancellationToken) => _refs.GitFetchAsync(act, cancellationToken);
 
+    // Whether *Push* and *Push tag* are offered on a repository's Branches, the place's Dangerous value that decides a tag, and the command
+    // a person types. Told by event: it starts git, no network.
+    [DriverRoute("GIT_PUSH_PLAN", PipeClass.Open)]
+    [ByEvent("GIT_PUSH_PLAN", Untold = "the checkout's origin settings and the install's doors, which no scope tells")]
+    private Task<object?> GitPushPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) => _refs.GitPushPlanAsync(read, cancellationToken);
+
+    // *Push* on a branch or *Push tag* on a lightweight tag at `at`, the commit the page showed: one `push` step under a grant bound to origin's
+    // push address, the ref, its old commit and its new one. A refusal is data; a push has no Undo.
+    [DriverRoute("GIT_PUSH", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("GIT_PUSH", Repository = "repository", Workspace = "workspace")]
+    [GroundRepository("GIT_PUSH", "repository", "workspace")]
+    [Says("GIT_PUSH", "repository:repository", "name:words")]
+    [Publishes("GIT_PUSH", StateScopes.Driver)]
+    private Task<object?> GitPushAsync(GitRefAct act, CancellationToken cancellationToken) => _refs.GitPushAsync(act, cancellationToken);
+
     // A branch's history edited from objects, through the journal. `plan: true` answers what the edit would take and changes nothing;
     // the press carries the ids its plan pinned (`pins`) and is refused as data where any moved.
     [DriverRoute("GIT_HISTORY_EDIT", PipeClass.Person, Drain = PipeDrain.Waits)]

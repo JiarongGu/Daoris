@@ -38,7 +38,7 @@ public sealed class ChatAgentTests : IDisposable
         var agent = new ChatAgent(adapter);
 
         Assert.Equal(adapter.Name, agent.Name);
-        Assert.Equal(adapter.Wire, agent.Wire);
+        Assert.Equal(adapter.Abilities(), agent.Abilities);
         Assert.Equal(adapter.TakesSettings, agent.TakesSettings);
         Assert.Equal(adapter.AcpPosture, agent.Posture);
         Assert.Equal(adapter.FullPosture, agent.FullPosture);

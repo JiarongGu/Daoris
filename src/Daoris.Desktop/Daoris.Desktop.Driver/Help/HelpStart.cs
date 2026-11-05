@@ -229,7 +229,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             pending.Entry = chosen!;
             context.Pending.Link(pending, sessionId);
         }
-        else if (chosen is not null && resolved.Wire == SessionWire.Acp && carries is null)
+        else if (chosen is not null && resolved.Abilities().SetAtOpen && carries is null)
         {
             pending = context.Pending.Add(new ChatPending(
                 sessionId, "ask-daoris", order is { Count: > 0 } ? order : [chosen], chosen, null, workspace, (_, _) => Task.FromResult(new ChatStart(null, "Ask Daoris's replacement opens only from its run."))));

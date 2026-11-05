@@ -112,7 +112,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 28. Every child the driver and the modules start gets the tools' environment: `app/bin/` first, then each managed or named
     tool's folders, and `GIT_CONFIG_GLOBAL` when git carries a setting. The application's environment and the account's `PATH`
     are never rewritten. (from D121, D124)
-29. Agents stay on their makers' channels. A pinned agent lives in `cache/toolchain/<agent>/<version>/` and runs with its own
+29. Agents stay on their makers' channels, each Install's own `IReleaseSource` (`ClaudeReleaseSource`, `CodexReleaseSource`) found
+    by the channel a program names in `ReleaseChannels.Sources`, never by a switch on ids. A pinned agent lives in `cache/toolchain/<agent>/<version>/` and runs with its own
     updates switched off. A session's server's package lives beside them, under its name with a scope's slash made `+`
     (`cache/toolchain/@playwright+mcp/0.0.82/`). The binary is the explicit command, else the pin, else `PATH`; a pin with nothing installed refuses.
     (from D57, D121)

@@ -271,7 +271,7 @@ internal sealed class TreeSweeps(
 
             // Only while it is still the commit judged (SQUASHTIDY1c), and in one transaction with what its proof rested on (FABRIC-END4a,
             // second and third reviews): exactly what the judgement returned.
-            var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, rests, done).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, now.Repository, now.Branch, judged, rests, done).ConfigureAwait(false);
             // KEEPSIZE1b (§3.5 step 5): the manifest says the delete's outcome; a refused one is never armed.
             if (movedTo is not null) TreeSetAside.Mark(SlimManifest.PathFor(movedTo), stays is null ? SlimStates.Deleted : SlimStates.Refused, DateTimeOffset.UtcNow);
             // §3.5's resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.

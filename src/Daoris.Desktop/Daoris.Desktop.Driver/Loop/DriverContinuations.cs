@@ -358,7 +358,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the
             // conversation it kept.
-            var prepared = adapter.Wire == SessionWire.Acp
+            var prepared = !adapter.Abilities().ResumesByRestart
                 ? null
                 : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation);
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);

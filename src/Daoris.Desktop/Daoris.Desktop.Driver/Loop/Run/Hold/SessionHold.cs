@@ -159,7 +159,8 @@ internal sealed class SessionHold(IRunWiring wiring)
         // What the person tells a quest's session while it works, held for the protocol door to hand over between turns; on the native
         // door, held until it ends and gone on with in its own conversation. Never a one-turn run's, framed as one prompt.
         var held = run.GoesOn && !target.OneTurn ? context.Processes.OpenInbox(sessionId) : null;
-        var inbox = adapter.Wire == SessionWire.Acp && !target.OneTurn ? context.Processes.OpenInbox(sessionId) : held;
+        var abilities = adapter.Abilities();
+        var inbox = abilities.WordsAtNextStep && !target.OneTurn ? context.Processes.OpenInbox(sessionId) : held;
         using var unheld = new Disposer(() => inbox?.Close());
         if (held is not null)
         {
@@ -193,7 +194,7 @@ internal sealed class SessionHold(IRunWiring wiring)
 
         // The timeout is said to the protocol door before the process is killed, so the stream's end it causes is said as the timeout's,
         // never as the agent having exited.
-        var ending = adapter.Wire == SessionWire.Acp ? new AcpEnding() : null;
+        var ending = abilities.HeldOnWire ? new AcpEnding() : null;
 
         // What the open lists is kept as its agent's offer reading on its account, and a choice it refuses is kept refused there before
         // the start's re-ask answers: a later choice set on this same session, its record's choice and asked moving with it, or the open
@@ -248,14 +249,14 @@ internal sealed class SessionHold(IRunWiring wiring)
         // Every run on the protocol door handed its owner's check takes the one transient retry (D210 point 8), its waits on the driver's
         // clock: a driven session, an intake, a helper, an opinion, a partner and a brainstorm voice. Its bound is its line's tries rule, and a
         // pass with minutes of its own waits none past them.
-        var retry = adapter.Wire == SessionWire.Acp && transientWanted is not null
+        var retry = abilities.HeldOnWire && transientWanted is not null
             ? TransientRetries.For(
                 context.Adapters, adapter, context.Harnesses, service, context.Events, output, wiring.Watch, log, sessionId, target.QuestId ?? sessionId,
                 prior?.Profile, wiring.RetryClock, transientWanted,
                 tries: StaffCourse.Tries(context.Harnesses.StaffFor(home), context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, target.QuestId ?? sessionId)),
                 deadline: minutes is { } bound ? wiring.RetryClock.GetUtcNow().AddMinutes(bound) : null)
             : null;
-        var protocol = adapter.Wire == SessionWire.Acp;
+        var protocol = abilities.HeldOnWire;
 
         // What the native door's harness says in its own words, apart from its agent's, for its ending.
         var own = new HarnessWords();

@@ -34,7 +34,7 @@ internal sealed class ContinuationLimits(LoopContext context)
     {
         ISessionAdapter adapter;
         try { adapter = _context.Adapters.Resolve(agent); } catch (DriverException) { return false; }
-        if (adapter.Wire != SessionWire.Acp) return false;
+        if (!adapter.Abilities().HeldOnWire) return false;
 
         var asIfWords = limited with { Said = [new SaidWordView(null, LimitResume.Words, DateTimeOffset.UnixEpoch, [], true) { From = DaorisWords.From }] };
         return Continuations.Judge(

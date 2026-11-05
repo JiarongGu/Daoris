@@ -145,7 +145,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
         // The ACP adapter's own seam (ACP2): it runs the Agent SDK, which needs to be told which
         // `claude` to use. Read from the PIPE door's pin, because that is where the CLI lives.
-        var claude = resolved.Wire == SessionWire.Acp
+        var claude = resolved.Abilities().Transport == Transport.Protocol
             ? HarnessSettings.ManagedBinary(
                 roster.Home, "claude-code", settings.ResolveVersion("claude-code", workspace, null), ["claude"])
             : null;

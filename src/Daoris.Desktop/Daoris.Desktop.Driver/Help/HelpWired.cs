@@ -111,7 +111,7 @@ public sealed record HelpWiredLack(string Kind, string Name, string Door, string
 /// (HELPWIRED1): what <see cref="HelpWired.Compose"/> makes a receipt of. Each "handed" is read from the spawn itself, whether its
 /// command line or its protocol door's <c>_meta</c> names the file, so a door that takes no rules, no skills or no servers is said so.
 /// </summary>
-public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, SessionWire Wire, string Folder)
+public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transport Transport, string Folder)
 {
     public string? Version { get; init; }
 
@@ -336,7 +336,7 @@ public sealed class HelpWired(string home)
 
         var skills = handed.SkillPlugins.SelectMany(folder => SkillsIn(folder).Select(name => new HelpWiredSkill(
             name,
-            !handed.SkillsHanded ? Withheld : handed.Wire == SessionWire.Pipe ? Handed : Unverified,
+            !handed.SkillsHanded ? Withheld : handed.Transport == Transport.Native ? Handed : Unverified,
             handed.SkillsHanded ? null : NoDoor))).ToList();
 
         return new HelpReceipt
@@ -347,7 +347,7 @@ public sealed class HelpWired(string home)
             Harness = handed.Harness,
             Version = handed.Version,
             Account = handed.Account,
-            Door = handed.Wire == SessionWire.Pipe ? Pipe : Acp,
+            Door = handed.Transport == Transport.Native ? Pipe : Acp,
             Posture = handed.Posture?.TrimStart(HelpModes.Required),
             PermissionMode = handed.PermissionMode,
             Folder = handed.Folder,

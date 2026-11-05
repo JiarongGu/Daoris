@@ -149,7 +149,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
                 kept = reference;
             }
 
-            var stays = await content.DeleteJudgedAsync(root, branch, judged, rests, ct).ConfigureAwait(false);
+            var stays = await content.DeleteJudgedAsync(root, repository, branch, judged, rests, ct).ConfigureAwait(false);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
@@ -159,8 +159,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
         }
         else
         {
-            var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-            if (deleteCode != 0) return new(false, $"git would not delete `{branch}`: {FirstLine(deleteErr)}");
+            if (await JournaledDeletes.ForcedAsync(content, root, repository, branch, ct).ConfigureAwait(false) is { } stays) return new(false, $"`{branch}` stays: {stays}.");
         }
 
         removals.Forget(repository, branch);

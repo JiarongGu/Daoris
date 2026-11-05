@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Prose, Segmented } from '../../design/ui';
+import { PushRef } from './PushRef';
 
 /** What the driver answers a ref act with (`GIT_REF_CREATE`, `GIT_REF_UNDO`): the journal's act and its outcome, or a refusal in words. */
 export type RefOutcome = { act?: string | null; outcome?: string | null; refused: boolean; said: string; code?: string | null };
@@ -17,6 +18,21 @@ export type RefActs = {
   undo: (act: string) => Promise<RefOutcome>;
   /** *Fetch origin* (GITAPP2f); absent, the tab offers none. */
   fetch?: FetchActs;
+  /** *Push* and *Push tag* (GITAPP2g, n); absent, the tab offers neither. */
+  push?: PushActs;
+};
+
+/**
+ * The push the holder hands: whether the driver offers it, why not, origin's push address as the driver redacts it, the place's Dangerous
+ * value (which decides a tag at the door), and the press, carrying the commit the page showed.
+ */
+export type PushActs = {
+  offered: boolean;
+  reason?: string | null;
+  why?: string | null;
+  address?: string | null;
+  dangerous: string;
+  press: (ask: { kind: RefKind; name: string; at: string }) => Promise<FetchOutcome>;
 };
 
 /** What a fetch answers: the ref act's outcome, and in `notes` the refs it made, moved and removed. */
@@ -154,6 +170,7 @@ export function NewRef({ at, acts, initial }: {
       {(stage.is === 'made' || stage.is === 'undoing') && (
         <>
           <p role="status" className="m-0 text-small text-ink [overflow-wrap:anywhere]">{t(`projects.git.ref.made.${stage.kind}`, { name: stage.name })}</p>
+          {stage.kind === 'tag' && acts.push && stage.is === 'made' && <PushRef kind="tag" name={stage.name} commit={at.commit} push={acts.push} />}
           <div className="flex flex-wrap gap-2">
             <Button variant="ghost" disabled={stage.is === 'undoing'} onClick={() => { void undo(stage); }}>{t('projects.git.ref.undo')}</Button>
             <Button variant="ghost" onClick={close}>{t('projects.git.ref.done')}</Button>

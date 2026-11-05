@@ -9,9 +9,3 @@ public enum Transport
     /// <summary>The Agent Client Protocol on stdio: today's protocol door.</summary>
     Protocol,
 }
-
-/// <summary>Today's <see cref="SessionWire"/> in the contract's word.</summary>
-public static class TransportOf
-{
-    public static Transport Wire(SessionWire wire) => wire == SessionWire.Acp ? Transport.Protocol : Transport.Native;
-}

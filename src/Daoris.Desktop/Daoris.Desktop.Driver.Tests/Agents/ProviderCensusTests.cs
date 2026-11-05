@@ -30,9 +30,12 @@ public sealed class ProviderCensusTests
 {
     private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules"];
 
-    /// <summary>The design's rows (§11) that can remove a site; <c>-</c> is a site no row removes.</summary>
+    /// <summary>
+    /// The design's rows (§11) that can remove a site; <c>-</c> is a site no row removes. <c>s-i</c> is the correction that removes the
+    /// machine's door, whose holders row g left reading <see cref="Adoption"/>.
+    /// </summary>
     private static readonly string[] Rows =
-        ["-", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"];
+        ["-", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "s-i", "t"];
 
     /// <summary>What kind of site an exception is (design §9): behaviour a row moves, a permanent one with its decision, an id as words, a measurement.</summary>
     private static readonly string[] Classes = ["behaviour", "permanent", "words", "measurement"];

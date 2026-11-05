@@ -84,7 +84,7 @@ public sealed record HelpAccess(string Mode, string Said)
         {
             return new(
                 HelpModes.Restricted,
-                adapter.Wire == SessionWire.Pipe
+                !adapter.Abilities.SetAtOpen
                     ? $"Ask Daoris runs restricted on `{adapter.Name}`: the `acceptEdits` permission mode with its allow-list, so it "
                       + "reads and proposes, and the person applies."
                     : $"Ask Daoris runs restricted on `{adapter.Name}`: it asks for the agent's `{HelpRoom.Posture}` mode where the agent "
@@ -105,7 +105,7 @@ public sealed record HelpAccess(string Mode, string Said)
         var denies = adapter.TakesSettings
             ? "and the person's own denies still hold"
             : "and this agent takes no rules, so the person's own denies do not reach it";
-        return adapter.Wire == SessionWire.Pipe
+        return !adapter.Abilities.SetAtOpen
             ? new(HelpModes.Full, $"Ask Daoris runs with full access on `{adapter.Name}`, as the person chose: the `{full}` permission "
                 + $"mode, which asks nothing, with every plugin server here; {denies}.")
             {

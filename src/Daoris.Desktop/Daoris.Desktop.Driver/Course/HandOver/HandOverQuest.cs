@@ -80,7 +80,7 @@ public static class QuestHandOver
             IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
                 ? [.. HarnessSettings.Profiles(home, adapters.OwnerOf(resolved.Name))]
                 : [];
-            return new HandOverAgent(accounts, resolved.Wire);
+            return new HandOverAgent(accounts, Adoption.Unadopted(resolved.Abilities()));
         }
         catch (DriverException)
         {
@@ -213,7 +213,7 @@ public static class QuestHandOver
 
         var repository = (await service.RegistryAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Repository, record.Repository, StringComparison.OrdinalIgnoreCase));
-        if (repository is null || (!repository.Adopted && (repository.Root is null || roster.Wire != SessionWire.Acp)))
+        if (repository is null || (!repository.Adopted && (repository.Root is null || !roster.Unadopted)))
         {
             return (HandOver.Refused(HandOver.NoDoor, repository is null
                 ? $"`{record.Repository}` is not registered on this machine, so there is nowhere to go on."

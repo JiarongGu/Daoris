@@ -23,21 +23,6 @@ internal static class StartDoor
             order = [];
         }
 
-        SessionWire? first = null;
-        foreach (var entry in order)
-        {
-            try
-            {
-                var wire = adapters.Resolve(entry.Agent).Wire;
-                if (wire == SessionWire.Acp) return wire;
-                first ??= wire;
-            }
-            catch (DriverException)
-            {
-                first ??= SessionWire.Pipe;
-            }
-        }
-
-        return first ?? SessionWire.Pipe;
+        return Adoption.Drives(order.Select(entry => entry.Agent), adapters.AbilitiesOf) ? SessionWire.Acp : SessionWire.Pipe;
     }
 }
