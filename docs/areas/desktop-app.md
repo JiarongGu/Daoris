@@ -274,7 +274,9 @@ web paths are under `src/Daoris.Web/src/`.
 - **AGENTSPLACE1**: the place pages carry the Roles, Workflow and Sessions sections, which `setupLit` waits on.
 - **FLOWCHART2h**: the workflow editor seen in the installed window.
 - **COMPANYVIEW1**: the agents' structure configured and seen, as a list and as a diagram (remaining rows).
-- **MAPUX1**: the Map's own UI and UX design.
+- **MAPUX1**: the Map's UI and UX. The design (`docs/2026-11-06-map-ux-design.md`) is proposed: what each zoom shows, one
+  choice read in one line and one detail, find on the level shown, the list as one tree, *Back to the map* returning with the
+  repository chosen. Today a card draws the same at the full and chip tiers, and *Which quests* opens on all of them.
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.
