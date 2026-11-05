@@ -173,7 +173,18 @@ test('the publish lays the git doors out under the names GitWiring hands, and th
   assert.equal(readText(join(install, ...CLI_BIN, GIT_DOORS[1])), 'daoris-git-ssh.exe', 'the remote helper is the ssh door\'s executable');
   assert.equal(readText(join(install, ...CLI_BIN, 'daoris-git-ssh.runtimeconfig.json')), 'daoris-git-ssh.runtimeconfig.json');
   assert.throws(() => layGitDoors(join(fx.root, 'nothing'), install), /made no daoris-git-ssh\.exe/);
+  assert.equal(readText(join(install, ...CLI_BIN, GIT_DOORS[2])), 'daoris-git-ssh.exe', 'the credential door is the ssh door\'s executable');
   fx.cleanup();
+});
+
+// D241 point 1: every publish lays all three doors, so no flag asks for them and no skip line says they were left out.
+test('no publish flag asks for the git doors, and the move needs all three', () => {
+  for (const file of ['tools/desktop-publish.mjs', 'tools/deployment-rehearsal.mjs', 'tools/family-rehearsal.mjs']) {
+    assert.ok(!readText(join(repoRoot, file)).includes('--git-doors'), `${file} still names --git-doors`);
+  }
+  const move = readText(driverFile('GitMove.cs'));
+  assert.ok(move.includes('GitCredentialDoor.Exe'), 'GitMove does not need the credential door');
+  assert.ok(readText(driverFile('GitCredentialDoor.cs')).includes(`Exe ="${GIT_DOORS[2]}"`) || readText(driverFile('GitCredentialDoor.cs')).includes(`Exe = "${GIT_DOORS[2]}"`));
 });
 
 test('the publish lays the partner\'s launcher out under the name PieceLauncher starts, and names what is missing (COAGENT1b)', () => {

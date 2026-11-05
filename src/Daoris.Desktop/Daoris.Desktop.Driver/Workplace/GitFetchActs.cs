@@ -43,9 +43,9 @@ public static class GitFetchActs
     /// </summary>
     public static async Task<FetchOffer> OfferedAsync(string home, string checkout, CancellationToken ct)
     {
-        if (GitWiring.DoorPath(home, GitWiring.SshDoor) is null || GitWiring.DoorPath(home, GitWiring.RemoteHelper) is null)
+        if (GitMove.Missing(home) is { Length: > 0 } missing)
         {
-            return new(false, "doors", "Daoris's git doors are not installed in this Daoris, and every remote act passes them");
+            return new(false, "doors", $"Daoris's git doors are not all installed in this Daoris ({string.Join(", ", missing)} missing), and every remote act passes them");
         }
 
         if (await GitRemotes.AddressOf(checkout, "origin", ct: ct).ConfigureAwait(false) is null) return new(false, "no-origin", "there is no `origin` remote here");

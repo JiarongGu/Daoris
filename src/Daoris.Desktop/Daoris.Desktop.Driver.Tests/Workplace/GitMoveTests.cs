@@ -30,6 +30,7 @@ public sealed class GitMoveTests : IDisposable
         Directory.CreateDirectory(Bin);
         File.WriteAllText(Path.Combine(Bin, GitWiring.SshDoor), "");
         File.WriteAllText(Path.Combine(Bin, GitWiring.RemoteHelper), "");
+        File.WriteAllText(Path.Combine(Bin, GitCredentialDoor.Exe), "");
         var empty = Path.Combine(_root, "global");
         File.WriteAllText(empty, "");
         foreach (var (name, value) in new[] { ("GIT_CONFIG_NOSYSTEM", "1"), ("GIT_CONFIG_GLOBAL", empty) })
@@ -56,6 +57,28 @@ public sealed class GitMoveTests : IDisposable
 
         Assert.Equal(("no-identity", "all", "github.com"), (held.Class, held.Holds, held.Host));
         Assert.Contains("has no git identity on this machine", GitHolds.Said(held));
+    }
+
+    [Fact]
+    public async Task A_home_laid_with_all_three_doors_has_moved_and_misses_none()
+    {
+        Assert.True(GitMove.Moved(Home));
+        Assert.Empty(GitMove.Missing(Home));
+        Assert.Equal(["daoris-git-ssh.exe", "git-remote-daoris.exe", "git-credential-daoris.exe"], GitMove.Doors);
+        Assert.NotNull(await HeldAsync());
+    }
+
+    [Fact]
+    public async Task A_home_missing_the_credential_door_has_not_moved_and_the_fetch_is_refused_naming_it()
+    {
+        File.Delete(Path.Combine(Bin, GitCredentialDoor.Exe));
+
+        Assert.False(GitMove.Moved(Home));
+        Assert.Equal([GitCredentialDoor.Exe], GitMove.Missing(Home));
+        Assert.Null(await HeldAsync());
+        var offer = await GitFetchActs.OfferedAsync(Home, Repo, CancellationToken.None);
+        Assert.False(offer.Offered);
+        Assert.Contains("git-credential-daoris.exe missing", offer.Why);
     }
 
     [Fact]

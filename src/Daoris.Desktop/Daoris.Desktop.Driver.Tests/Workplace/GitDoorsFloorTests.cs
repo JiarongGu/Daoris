@@ -56,6 +56,7 @@ public sealed class GitDoorsFloorTests : IDisposable
         Directory.CreateDirectory(bin);
         File.WriteAllText(Path.Combine(bin, GitWiring.SshDoor), "");
         File.WriteAllText(Path.Combine(bin, GitWiring.RemoteHelper), "");
+        File.WriteAllText(Path.Combine(bin, GitCredentialDoor.Exe), "");
     }
 
     private async Task Git(params string[] arguments)
