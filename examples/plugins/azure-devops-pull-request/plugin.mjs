@@ -180,7 +180,7 @@ function reached(attempt, repo, pr, message) {
   return {
     state: 'reached',
     evidence: { ref: `${RECEIPT}:${attempt.invocation}`, url: addressOf(repo, pr), message },
-    outputs: { pullRequest: { ref: `${PULL_REQUEST}:${pr.pullRequestId}` } },
+    outputs: { 'pull-request': { ref: `${PULL_REQUEST}:${pr.pullRequestId}` } },
   };
 }
 

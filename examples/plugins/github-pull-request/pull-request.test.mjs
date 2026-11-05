@@ -110,7 +110,7 @@ test('it opens the pull request through the REST API with the handed token, from
 
   assert.equal(step.params.state, 'reached');
   assert.equal(step.params.evidence.url, 'https://github.com/acme/app/pull/1');
-  assert.equal(step.params.outputs.pullRequest.ref, 'github-pull-request/pull-request@1:1');
+  assert.equal(step.params.outputs['pull-request'].ref, 'github-pull-request/pull-request@1:1');
   const post = api.calls.find((call) => call.method === 'POST');
   assert.deepEqual([post.body.head, post.body.base, post.bearer], ['daoris/work', 'main', true]);
   assert.equal(JSON.stringify(step).includes(TOKEN), false);

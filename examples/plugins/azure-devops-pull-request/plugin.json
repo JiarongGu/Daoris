@@ -15,7 +15,7 @@
       "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
       "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one already open for it. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
       "reach": "performed",
-      "outputs": { "pullRequest": "azure-devops-pull-request/pull-request@1" },
+      "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
       "evidence": { "schema": "azure-devops-pull-request/receipt@1" },
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },

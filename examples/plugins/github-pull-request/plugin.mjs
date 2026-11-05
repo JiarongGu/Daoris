@@ -156,7 +156,7 @@ function reached(attempt, pr, message) {
   return {
     state: 'reached',
     evidence: { ref: `${RECEIPT}:${attempt.invocation}`, url: pr.html_url, message },
-    outputs: { pullRequest: { ref: `${PULL_REQUEST}:${pr.number}` } },
+    outputs: { 'pull-request': { ref: `${PULL_REQUEST}:${pr.number}` } },
   };
 }
 
