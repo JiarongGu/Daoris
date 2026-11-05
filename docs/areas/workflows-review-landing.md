@@ -45,7 +45,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
-| Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press, a hand-off and a part left out; whether a named plugin can land work (`LandingPlugins.ProblemOf`) |
+| Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs` | The merge, the branch and the squash; the plan and its refusals, each read from the run's bound `land`. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
@@ -104,7 +104,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     nodes and a plugin's nodes the run's branch at its tip; a `go-ahead` the run's ask. (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes) on the
     record, and the next pass applies it. An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
-    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold, which only a hand-off does. A quest bound to a closure graph is closed by that graph. (from D190)
+    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
 20. A conversation's run binds its graph. Its subject is the candidate the person submits; a newer submission lapses it. A graph
     holding `quest.close` holds a conversation's press. (from D227)
@@ -193,7 +193,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 45. There is no landing rule: no type, reader or writer of `landings` or `workspaceLandings` outside the migration, which reads them raw
     (`MigratedPlaces`) and takes them out of `driver.json` once. Every door that lands, plans, names a branch or says how work lands reads
     the run's bound `land`; work no version governs lands as the declared merge and is held by its gate. A line's integration reads
-    the line's policy. A hand-off pushes to the plugin its card names, and a pull request is asked of the plugin that pushed it. `LINES`
+    the line's policy. A pull request is asked of the plugin whose step opened it. `LINES`
     answers no `landings` and `SESSION_PROCESS` no landing. (from D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
     no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. What a landing try

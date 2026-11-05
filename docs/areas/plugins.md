@@ -5,7 +5,7 @@
 A plugin is a folder with a `plugin.json` manifest. It extends Daoris without loading code into any Daoris process.
 It may declare harnesses (agents on the ACP door), MCP servers, skills, tools, workflow steps and an icon. It may also
 speak: its own process answers JSON-RPC frames on stdio at named points. The points are a decision (`quest/consider`),
-observations (`session/ended`, `state/changed`), an act (`work/land`), a query (`work/state`, a pull request's state)
+observations (`session/ended`, `state/changed`), a query (`work/state`, a pull request's state)
 and the work wire (`work/watch`, `work/step`, `work/perform`). Plugins live in `<home>/plugins/<id>/`, with
 `.data/<id>` beside them. A person installs one from a folder, from the install's offers (*Daoris's own plugins*) or
 from a `.nupkg` file, and updates it from its recorded source. The kit writes a new plugin folder and tries it as the
@@ -19,7 +19,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Manifest | `Plugins/Domain/PluginManifest.cs` | The manifest's records: harnesses, hooks, servers, skills, steps, resources, icon, tools |
 | Points and frames | `Knowledge/Domain/PluginVocabulary.cs` (`HookPoints`), `Plugins/Domain/HookPoints.cs` (`HookFrames`) | The point names, and the one builder of each point's frame |
 | Wire | `Plugins/IHookChannel.cs` (the port), `HookPeer.cs`, `HookChannels.cs`, `HookSet.cs`, `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
-| Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | `work/land` for the hand-off alone, which a later chunk deletes; `work/state` at its occasions; a pull request's address is written from its `pull-request` step's evidence (`PullRequestRecords`) |
+| Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | Whether a plugin performs pull-request steps; `work/state` at its occasions; a pull request's address is written from its `pull-request` step's evidence (`PullRequestRecords`) |
 | Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
 | Harness | `Plugins/DeclaredAcpAdapter.cs`, `Plugins/PluginAgentSkills.cs` | A declared harness on the ACP door; a plugin's skills handed at spawn |
 | Install | `Plugins/PluginInstall.cs` | Add, add an offer, plan and apply an update, replace, remove; every swap staged beside |
@@ -55,8 +55,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
    missing answer is a hold naming the plugin. (from D64)
 8. `session/ended` and `state/changed` are contained. `state/changed` is queued off the press's path and cannot hold
    it. (from D64, D169)
-9. A landing plugin is started for one landing and stopped after. Daoris pushes and opens nothing itself; the plugin
-   does, as the person. A decision waits 10 s, a landing 2 min. (from D100, D101)
+9. Daoris pushes through its own push act and opens no pull request; a plugin's `pull-request` step on `work/perform` does, as the
+   person. No plugin is started for a landing, and a `work/land` point is no longer spoken. A decision waits 10 s. (from D100, D101, D241)
 10. `work/state` asks one plugin: the one that pushed the branch, else the landing rule's, and only if installed, on,
     sound and listening. A frame waits 30 s, no frame starts after 60 s, an entry is asked once a minute at most. (from D148)
 11. It is asked at LAND3's tidy, the clean-up's look, bringing up to date's look, *Ask again*, origin's line moving,
