@@ -113,7 +113,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     tool's folders, and `GIT_CONFIG_GLOBAL` when git carries a setting. The application's environment and the account's `PATH`
     are never rewritten. (from D121, D124)
 29. Agents stay on their makers' channels. A pinned agent lives in `cache/toolchain/<agent>/<version>/` and runs with its own
-    updates switched off. The binary is the explicit command, else the pin, else `PATH`; a pin with nothing installed refuses.
+    updates switched off. A session's server's package lives beside them, under its name with a scope's slash made `+`
+    (`cache/toolchain/@playwright+mcp/0.0.82/`). The binary is the explicit command, else the pin, else `PATH`; a pin with nothing installed refuses.
     (from D57, D121)
 30. The devkit is pinned by version (`devkit` in `daoris.gates.json`) and refuses a mismatch before any gate runs. Its binary
     is a release asset with a `.sha256` beside it. Whoever installs it verifies the digest; nothing downloads it implicitly.
