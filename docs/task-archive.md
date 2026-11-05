@@ -23129,6 +23129,18 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
   **Outcome** 2026-11-04: the two roles drawn and edited through the one role editor; DiagramDetail's appointed section and the stories' hold rows left.
 
+## BUSYPRESS1 (2026-11-05)
+
+- [x] **BUSYPRESS1 — a press the service is too busy to answer says so** (modules, driver): while the machine was out of memory the service missed its 30 seconds and every press came back `UNKNOWN_ERROR`, a landing among them. → `docs/areas/desktop-app.md`
+
+  **Outcome** 2026-11-05: a read that timed out is refused as `SERVICE_BUSY` in both catalogues, and a faulted flight is observed (`e9c0be73d`); the stalling-service test passed before the observation change too, so it does not prove that half.
+
+## WEBDEAD1 (2026-11-05)
+
+- [x] **WEBDEAD1 — no section the page cannot reach, no press twice** (web; D228): with the Roles mode gone, the roles' Work, Accounts and By-repository sections were mounted nowhere, and a workspace page drew "Wire to a remote…" twice. → `docs/areas/desktop-app.md`
+
+  **Outcome** 2026-11-05: the sections, the diagram's workflow read, the integration and setting doors, their tests, stories and keys deleted (no area places them), and the press drawn once off the Details tab (`061fce02e`, `19ce8567c`); `ruleText` and the `agents.roles.rule.*` keys look unused.
+
 ## TREEWALK1 (2026-11-05)
 
 - [x] **TREEWALK1 — a session tree's reads skip what git ignores** (driver): a session tree holding a 5.6 GB ignored engine build made each review read take 16 to 58 s and the help room's look 29 s. → `docs/areas/git-and-remotes.md`
