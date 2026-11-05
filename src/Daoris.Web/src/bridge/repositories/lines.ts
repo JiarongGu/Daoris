@@ -16,7 +16,7 @@ import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } fr
 import { type HeldResolution, readWorkState, type RecoveryDropGroup, type RecoveryDropResult, type WorkState, workOf } from '../../work/head/milestone';
 import { call, lookBound, pressBound } from '../call';
 import { type DriverState, readSlice, useDriverChange } from '../driver';
-import { pushedOf, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { pushedOf, readPushed, type SliceSpec } from '../state/slices';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from '../call';
@@ -30,22 +30,22 @@ export { stoppedWaiting } from '../call';
  */
 export type LinesAnswer = {
   lines: RepositoryLine[]; languages?: RepositoryLanguage[];
-  // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
+  // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a).
   reviews?: RepositoryReview[];
-  // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
+  // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a).
   opinions?: RepositoryOpinion[];
   // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them (DOORS1b): each
-  // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
+  // never null, `default` where nothing is set.
   commits?: RepositoryCommits[];
   helpers?: RepositoryHelpers[];
   // What an agent's ask to hand its session over does, as the driver resolves it (MIXAGENT1c): never null, `default` where
-  // nothing is set; absent on an older shell, which offers no hand-over row.
+  // nothing is set.
   handOver?: RepositoryHandOver[];
   // The access setup each one's sessions start under, every pause with its value and where it was set (AUTONOMY1a, D184 point 1):
-  // never null, `default` where nothing is set; absent on an older shell, which offers no access section.
+  // never null, `default` where nothing is set.
   access?: RepositoryAccess[];
   // What each one's sessions may do on a git remote, each class with its value and where it was set (GITAUTH1f, the git-auth design
-  // §6.2); never null, `default` where nothing is set (Write then `as-today`); absent on an older shell.
+  // §6.2); never null, `default` where nothing is set (Write then `as-today`).
   gitAccess?: RepositoryGitAccess[];
 };
 
@@ -56,7 +56,7 @@ const LINES_FIELDS = ['lines', 'languages', 'reviews', 'opinions', 'helpers', 'h
  * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
  * of what `LINES` answers, composed into the one entry the pull answers, repositories in name order. A repository not judged yet
  * is a partition whose line row says `notReadYet`; one the registry dropped is gone and leaves with its rows. Nothing judged yet
- * composes nothing, which keeps the pull until the first push.
+ * composes nothing, which is waited for until the first push.
  */
 export const linesSlice: SliceSpec = {
   name: 'lines',
@@ -84,7 +84,7 @@ const HELD = '<held>';
  * The work as the shell pushes it (PUSH1c2b, D182): a partition per repository with a checkout here, then `<no checkout>`, each
  * `{units, recovery, unread}`, and `<held>`, `{held, ends}`, apart. Composed into the one entry `WORK_STATE` answers, repositories in name
  * order with `<no checkout>` last (a name sorts after `<`, so it is placed, not sorted). Not composed until the owner has judged every
- * part, which keeps the pull; a part of another shape keeps it too.
+ * part, which is waited for; a part of another shape is too.
  */
 export const workSlice: SliceSpec = {
   name: 'work',
@@ -99,7 +99,7 @@ export const workSlice: SliceSpec = {
     const held = partitions.get(HELD);
     if (!parts.every(object) || (held !== undefined && !object(held))) return undefined;
     const rows = (field: string) => parts.flatMap((part) => (Array.isArray(part[field]) ? part[field] as unknown[] : []));
-    // FABRIC-CLOSE1j: the closure graphs' ends ride in `<held>` too, absent from a shell before them.
+    // FABRIC-CLOSE1j: the closure graphs' ends ride in `<held>` too.
     return readWorkState({
       units: rows('units'), recovery: rows('recovery'), unread: rows('unread'),
       held: held && Array.isArray(held.held) ? held.held : [], ends: held && Array.isArray(held.ends) ? held.ends : [],
@@ -113,12 +113,12 @@ export const useLines = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   // Pushed (PUSH1b2): read from memory, written by the pushes, so neither a tick nor a focus asks the shell again.
-  const pushed = usePushedLive(linesSlice.name);
   return useQuery({
     queryKey: keys.lines,
-    queryFn: () => readPushed(client, linesSlice.name, () => call<LinesAnswer>('LINES')),
+    queryFn: () => readPushed<LinesAnswer>(client, linesSlice.name),
     enabled: isAvailable,
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -128,8 +128,8 @@ export type SweepAnswer = { branches: SweepBranch[]; landed?: LandedBranch[] };
 /**
  * The clean-up's list as the shell pushes it (PUSH1c4b, D182's PUSH1c4a note): a partition per repository with a checkout here, each
  * `{branches, landed}` as `SWEEP_PLAN`'s own builder writes it, composed into the one entry the pull answers, repositories in name order
- * by UTF-16 unit, as the door orders its checkouts (`Ordinal`). Nothing composed until the owner judged the list whole, which keeps the
- * pull; a part of another shape keeps it too. A list judged with no repository is empty.
+ * by UTF-16 unit, as the door orders its checkouts (`Ordinal`). Nothing composed until the owner judged the list whole, which is
+ * waited for; a part of another shape is too. A list judged with no repository is empty.
  */
 export const sweepSlice: SliceSpec = {
   name: 'sweep',
@@ -148,30 +148,27 @@ export const sweepSlice: SliceSpec = {
 /**
  * Every session branch here with what it holds (WSR3, D88) — the clean-up's list — and every branch a
  * landing made, judged against the line (WSR5). Desktop-only: it is read off this machine's checkouts.
- * A shell older than WSR5 answers no `landed`.
  *
- * Pushed where the shell pushes it (PUSH1c4b): read from memory, written by the pushes, so neither a tick, a focus nor a declared
- * change reads `SWEEP_PLAN`, each of whose reads asks the pull-request plugin (D148 point 2); the person's *Look* does (`useSweepLook`).
- * Elsewhere (a plain browser, an older shell) it is the pull it always was, after the first snapshot where one is on its way.
+ * As the shell pushes it (PUSH1c4b): read from memory, written by the pushes, so neither a tick, a focus nor a declared change reads
+ * `SWEEP_PLAN`, each of whose reads asks the pull-request plugin (D148 point 2); the person's *Look* does (`useSweepLook`).
  */
 export const useSweepPlan = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  const pushed = usePushedLive(sweepSlice.name);
   return useQuery({
     queryKey: keys.sweep,
-    queryFn: () => readPushed(client, sweepSlice.name, () => call('SWEEP_PLAN', {}) as Promise<SweepAnswer>),
+    queryFn: () => readPushed<SweepAnswer>(client, sweepSlice.name),
     enabled: isAvailable,
-    // Pulled, it asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : { staleTime: 60_000 }),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 
 /**
  * The clean-up's *Look* (PUSH1c4b): the person's press of `SWEEP_PLAN`, the occasion its pull-request asks are made at (D148 point 2),
  * and never a read the page makes on its own. Where the pushes compose the list, its answer is not written: the shell judges again
- * each repository whose kept answers the look moved (`SweepStateSlice.Asked`), and its push brings them. Where the list is pulled, or
- * the owner has not judged it yet, the answer is the list, written where it is read, as the read again was.
+ * each repository whose kept answers the look moved (`SweepStateSlice.Asked`), and its push brings them. Where the owner has not
+ * judged the list yet, the answer is the list, written where it is read.
  */
 export const useSweepLook = () => {
   const client = useQueryClient();
@@ -186,34 +183,19 @@ export const useSweepLook = () => {
 /**
  * Each unit of work's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result kept, its
  * cleanup pending or completed and the recovery retained, as `daoris work state` says it. With `unit`, the units that name
- * picks (its id, its session or its branch). A read of this machine's records and git: shell-only, and stored nowhere. A shell older
- * than the route answers nothing of the kind, which reads as no unit. The state hub asks it again with the landings, the sweep and
- * the sessions (`landing`, `sweep`, `sessions`), which are what move it.
+ * picks (its id, its session or its branch). A read of this machine's records and git: shell-only, and stored nowhere.
  */
 export const useWorkState = (unit: string | null = null, enabled = true) => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  // Pushed (PUSH1c2b): the widest entry is read live from memory and a unit's variant selected from it, so neither a tick nor a focus
-  // asks the shell again. Elsewhere each variant keeps its own pull, after the first snapshot where one is on its way.
-  const pushed = usePushedLive(workSlice.name);
+  // Pushed (PUSH1c2b): the widest entry is read from memory and a unit's variant selected from it, so neither a tick nor a focus
+  // asks the shell again.
   const select = useCallback((all: WorkState) => workOf(all, unit), [unit]);
-  const pull = async () => readWorkState(await call('WORK_STATE', unit ? { unit } : {}));
-  return useQuery(pushed
-    ? {
-      queryKey: keys.workState(null),
-      queryFn: () => readPushed(client, workSlice.name, async () => readWorkState(await call('WORK_STATE', {}))),
-      select, enabled: isAvailable && enabled, staleTime: Infinity, refetchOnWindowFocus: false,
-    }
-    : {
-      queryKey: keys.workState(unit),
-      queryFn: async () => {
-        const all = await readPushed<WorkState | null>(client, workSlice.name, async () => null);
-        return all === null ? pull() : workOf(all, unit);
-      },
-      enabled: isAvailable && enabled,
-      // It asks git in each repository with a checkout here: a minute is fresh enough to say where work stands by.
-      staleTime: 60_000,
-    });
+  return useQuery({
+    queryKey: keys.workState(null),
+    queryFn: () => readPushed<WorkState>(client, workSlice.name),
+    select, enabled: isAvailable && enabled, staleTime: Infinity, refetchOnWindowFocus: false,
+  });
 };
 
 /**

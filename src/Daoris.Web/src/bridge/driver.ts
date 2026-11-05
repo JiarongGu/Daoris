@@ -18,7 +18,7 @@ import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
 import type { ReviewShown } from '../work/gates/ReviewChip';
 import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
 import { call, type Payload, refusedNotReady, type TypedRoute } from './call';
-import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
+import { notPushed, readPushed, type SliceSpec } from './state/slices';
 import { askHeld } from './state/held';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
@@ -221,7 +221,7 @@ const DRIVER_PARTITIONS = ['shell', 'choices', 'running'] as const;
 /**
  * The driver's state as the shell pushes it (PUSH1a, D182): its standing choices and holds (`choices`), what runs and waits for
  * review (`running`) and the shell's own standing (`shell`), each pushed whole when it moves, composed into the one entry the
- * pull answers (`STATE`), whose fields the shell's allow-list picks. A shell older than the push keeps the pull.
+ * route answers (`STATE`), whose fields the shell's allow-list picks.
  */
 export const driverSlice: SliceSpec = {
   name: 'driver',
@@ -260,12 +260,12 @@ export const useDriver = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   // Pushed (PUSH1a): read from memory, written by the pushes, so neither a focus nor going stale asks the shell again.
-  const pushed = usePushedLive(driverSlice.name);
   return useQuery({
     queryKey: keys.driver,
-    queryFn: () => readPushed(client, driverSlice.name, () => call<DriverState>('STATE')),
+    queryFn: () => readPushed<DriverState>(client, driverSlice.name),
     enabled: isAvailable,
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -278,14 +278,6 @@ export const useAttached = (): boolean => {
   const { isAvailable } = useShenora();
   const driver = useDriver();
   return driver.data !== undefined || (isAvailable && !driver.isError);
-};
-
-/**
- * The driver's state a press answered (MOD3), written into this window's cache where the state is pulled. Where it is pushed
- * (PUSH1a), the push is the one writer, so an answer arriving after a newer push can never set it back.
- */
-export const writeAnswered = (client: QueryClient, state: DriverState) => {
-  if (!pushedOf(client).live(driverSlice.name)) client.setQueryData(keys.driver, state);
 };
 
 /**
@@ -323,14 +315,12 @@ export type { Considerations, TrustGranted } from './driverConsiderations';
 
 /**
  * One mutation shape for the standing choices, these and the rules' (`bridge/repositories/lines.ts`): edit the file, and the loop
- * looks now. The window that pressed writes the state it was answered; every window's state hub asks again on the route's change.
+ * looks now. The state it moved reaches every window by its push, the one writer of the driver's entry (PUSH1a).
  */
 export function useDriverChange<R extends TypedRoute>(type: R): UseMutationResult<DriverState, Error, Payload<R>> {
-  const client = useQueryClient();
   return useMutation({
     // A standing choice answers the driver's state.
     mutationFn: (variables: Payload<R>) => call(type, variables) as Promise<DriverState>,
-    onSuccess: (state) => writeAnswered(client, state),
   });
 }
 
