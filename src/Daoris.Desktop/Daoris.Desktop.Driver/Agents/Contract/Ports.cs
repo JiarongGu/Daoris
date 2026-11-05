@@ -8,26 +8,32 @@ namespace Daoris.Driver;
 // the stand-ins use the ones they need; the rows that move a port's readers (e, h, i, k, m) fill the rest.
 
 /// <summary>
-/// A door's spawn (the design §2.3, §4.6): a start's, a conversation's and a native resume's process, and the carriers it hands its
-/// own process. Row h turns the answers into Platform's <c>ProcessRecipe</c> completed by the transports' one shell; until then a door
-/// answers today's <see cref="ProcessStartInfo"/>, prepared by <see cref="Spawning"/>, so no spawn changes.
+/// A door's spawn (the design §2.3, §4.6): a start's, a conversation's and a native resume's <see cref="ProcessRecipe"/>, which the
+/// transports' one shell (<see cref="Shell"/>) completes, and the carriers it hands its own process once the shell has.
 /// </summary>
 public interface ISpawn
 {
-    /// <summary>The process that would be a driven session: preparation only, the driver owns its lifetime (D46 §5).</summary>
-    ProcessStartInfo Start(SessionTarget target, IReadOnlyList<string>? command);
+    /// <summary>The recipe of a driven session: preparation only, the driver owns its lifetime (D46 §5).</summary>
+    ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command);
 
-    /// <summary>The process that would be a conversation: the same spawn with stdin open.</summary>
-    ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command);
+    /// <summary>The recipe of a conversation; the shell opens its stdin.</summary>
+    ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command);
 
     /// <summary>
     /// The native door's resume of a conversation the agent kept, its next turn written on the input by the driver (AGENTLYNTAI1s-i); null
     /// where the door knows none.
     /// </summary>
-    ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
+    ProcessRecipe? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
 
     /// <summary>The variables that load a session's tools with its first request; empty where there is no such switch.</summary>
     IReadOnlyDictionary<string, string> ToolsUpFront => ReadOnlyDictionary<string, string>.Empty;
+
+    /// <summary>
+    /// Whether its program runs Claude Code's, so its spawn is pointed at the <c>claude</c> Claude Code's pin chose and takes that pin's
+    /// switch (ACP2, <see cref="ClaudeAcp"/>). False by default: Codex's and dsh's doors read neither variable (the agent-provider design §7
+    /// row 7).
+    /// </summary>
+    bool ClaudeSeam => false;
 
     /// <summary>Hands a pipe-door spawn the servers Daoris offers, as the agent's own flag; nothing by default.</summary>
     void HandServers(ProcessStartInfo info, string configFile) { }

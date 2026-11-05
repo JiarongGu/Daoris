@@ -212,7 +212,7 @@ public sealed class SessionServersTests : IDisposable
 
         var info = new ProcessStartInfo("claude-agent-acp") { UseShellExecute = false, CreateNoWindow = true };
         info.ArgumentList.Add("a \"quoted\" & piped word");
-        HarnessProbe.Apply(info, toolchain, profileHome: null, binary: shim);
+        Shell.Equip(info, toolchain, profileHome: null, binary: shim);
 
         Assert.Equal("node", Path.GetFileNameWithoutExtension(info.FileName), ignoreCase: true);
         Assert.True(Path.IsPathFullyQualified(info.FileName));

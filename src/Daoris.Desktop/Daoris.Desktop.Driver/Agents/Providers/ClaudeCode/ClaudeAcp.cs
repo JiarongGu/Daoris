@@ -23,6 +23,6 @@ public static class ClaudeAcp
         info.Environment[ExecutableVariable] = managedClaude;
         // 🔴 The SDK runs that `claude` with this process's environment, so the pin's own switch
         // travels here (AGT2) — the same one the pipe door's spawn of the same binary carries.
-        foreach (var (name, value) in ClaudeCodeAdapter.StayPinned) info.Environment[name] = value;
+        foreach (var (name, value) in ClaudeCodeSpawn.StayPinned) info.Environment[name] = value;
     }
 }

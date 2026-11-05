@@ -296,7 +296,7 @@ public static class HarnessProbe
         // A probe is a child like a session (TOOLS5): asked on the PATH a session would be started on.
         Tools.Hand(info);
         // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
-        Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
+        Shell.Equip(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
 
         var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);
         if (!run.Started)
@@ -318,79 +318,6 @@ public static class HarnessProbe
 
         // Both streams: a harness that reports its version on stderr is not an absent harness.
         return (true, $"{run.Stdout}\n{run.Stderr}", null);
-    }
-
-    /// <summary>
-    /// Put a spawn's account and its binary onto a process, through the seams the harness itself
-    /// provides. <b>Creating the profile directory is part of selecting it</b>: at least one
-    /// supported harness refuses to start when its home variable names a path that does not exist,
-    /// and Daoris owns that location by design.
-    /// </summary>
-    /// <param name="binary">
-    /// The managed executable to run instead of whatever the adapter resolved (TOOL2/D57), or null
-    /// for <c>PATH</c> — which is the unpinned case and therefore the usual one.
-    /// </param>
-    /// <remarks>
-    /// 🔴 <b>Both doors go through here</b>, which is why the pin is applied in this one place rather
-    /// than inside each adapter's <c>Prepare</c>: an adapter that forgot it would spawn the wrong
-    /// binary and record the pinned version beside it.
-    /// </remarks>
-    internal static void Apply(
-        ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null,
-        string? claudeExecutable = null, IReadOnlyDictionary<string, string>? account = null)
-    {
-        // What the account itself carries — an API key in the tool's own variable (AGT3). Set here,
-        // the one line both doors take, so no spawn of a key account can go out without its key.
-        foreach (var (name, value) in account ?? new Dictionary<string, string>())
-        {
-            info.Environment[name] = value;
-        }
-
-        // The arguments the adapter built stay exactly as they are: same tool, different location.
-        if (binary is { Length: > 0 })
-        {
-            info.FileName = binary;
-
-            // 🔴 And the version it was pinned at (AGT2): a pinned Claude Code reported its own
-            // auto-updates enabled, and would have moved itself under the pin.
-            foreach (var (name, value) in toolchain.PinnedEnvironment ?? new Dictionary<string, string>())
-            {
-                info.Environment[name] = value;
-            }
-        }
-
-        // An agent npm installed starts as the node and script its `.cmd` shim would run, so no `cmd` stands before it and its
-        // arguments are never read again by one (LAUNCHCHAIN1).
-        PackageStarts.Direct(info, toolchain.Package);
-
-        // 🔴 USE1f: what Windows can START, by the resolver installers already use. A bare name from
-        // PATH starts only as an `.exe`, so an agent npm installed globally (a `.cmd` shim, with a
-        // POSIX script beside it) probed absent and every start on it was held, though the CLI found
-        // it. Here because the probe and both doors' spawns all come through here, as the pin does;
-        // and a shim is held to the same rule about its arguments that a pinned `.cmd` now is.
-        info.FileName = HarnessActions.WindowsShim(
-            info.FileName, info.ArgumentList,
-            info.Environment.TryGetValue("PATH", out var path) ? path : null);
-
-        // The ACP adapter runs the Agent SDK, which finds its CLI through its own seam (ACP2, §1a).
-        // Applied here for the reason everything else here is: one line, both doors, no adapter that
-        // can forget it. Null leaves it unset, so the SDK looks where it always did.
-        ClaudeAcp.PointAtClaude(info, claudeExecutable);
-
-        if (profileHome is null) return;
-
-        if (toolchain.ProfileVariable is not { Length: > 0 } variable)
-        {
-            throw new DriverException(
-                "that agent has no configuration-home variable, so Daoris cannot run it as a named "
-                + "account. Its accounts are managed with its own tooling.");
-        }
-
-        // 🔴 Created, not assumed to exist: `codex-acp` exits 1 before `initialize` completes when
-        // `CODEX_HOME` names a path that is not there, while the Claude adapter creates its own, so every
-        // managed home is made here, for every door (ACP3).
-        Directory.CreateDirectory(profileHome);
-        info.Environment[variable] = profileHome;
     }
 
     private static string? FirstLine(string output)
