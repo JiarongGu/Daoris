@@ -69,6 +69,30 @@ public sealed class ProcessWordsTests
         Assert.EndsWith($"\n- Do not create, switch or push branches.\n- {Stash}", conversation);
     }
 
+    private const string Squashed = "When the work lands, Daoris squashes this tree's commits into one commit on its branch: commit as the work "
+        + "needs, and the line keeps that one commit.";
+
+    /// <summary>
+    /// PROCESS1d-iii (D164's amendment point 2): the landing words read the run's <c>land</c> options, so a session and a conversation in a
+    /// tree of their own are told once, after the branch line, that the landing squashes their commits; a landing that squashes nothing,
+    /// and a merge, say nothing of it.
+    /// </summary>
+    [Fact]
+    public void A_landing_that_squashes_is_told_once_after_the_branch_line_and_one_that_does_not_says_nothing()
+    {
+        var squashing = Review with { Squash = true };
+        var said = Said(Rule(CommitRules.AsYouGo), squashing);
+        Assert.Equal(1, said.Split(Squashed).Length - 1);
+        Assert.Contains($"when the person accepts the work.\n- {Squashed}\n- {Stash}\n", said);
+        Assert.Contains($"\n- {Squashed}\n- {Stash}", ProcessWords.Conversation(Rule(CommitRules.AsYouGo), squashing));
+
+        foreach (var plan in new[] { Review, Auto, Merge, Merge with { Squash = true } })
+        {
+            Assert.DoesNotContain(Squashed, Said(Rule(CommitRules.AsYouGo), plan));
+            Assert.DoesNotContain(Squashed, ProcessWords.Conversation(Rule(CommitRules.AsYouGo), plan));
+        }
+    }
+
     /// <summary>Each mode in its own words, and in every mode no branch is made, moved or pushed.</summary>
     [Theory]
     [InlineData(CommitRules.AsYouGo, "Commit on this tree's branch as you go, each piece once it passes its checks.")]

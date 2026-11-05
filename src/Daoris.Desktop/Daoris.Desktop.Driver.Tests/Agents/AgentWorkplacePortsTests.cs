@@ -160,6 +160,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         public bool AutoAccept => false;
         public bool Own => false;
         public bool Stands => false;
+        public bool Squash => false;
         public object? LeftOut => null;
         public object? Lands => null;
         public object? Conflict => null;
