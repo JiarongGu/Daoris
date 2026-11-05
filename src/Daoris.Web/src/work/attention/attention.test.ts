@@ -1019,16 +1019,16 @@ describe('the groups', () => {
     expect(entryDetail(i18n.t, { detail: 'as recorded' })).toBe('as recorded');
   });
 
-  /** FABRIC-UNKNOWN1 (design §D3): an unrecorded daoris/* branch from a shell before the codes says its owner, then the driver's reason. */
-  it('words an unrecorded daoris branch as an unknown owner, with the reason and the press', () => {
-    const why = 'its owner is unknown: Daoris did not record `daoris/orphan`, so nothing here is cleaned; only your Discard branch press removes it';
+  /** FABRIC-UNKNOWN1 (design §D3): an unrecorded daoris/* branch says its owner first, then its entry worded by its code; the one rule for any such record. */
+  it('words an unrecorded daoris branch as an unknown owner, then its entry', () => {
     const item = words(row('work', 'unknown-branch:engine/daoris/orphan', null, {
-      where: 'engine', session: null, title: 'daoris/orphan', blocked: { unknown: true, entries: [{ kind: 'session-branch', resource: 'daoris/orphan', detail: why }] },
+      where: 'engine', session: null, title: 'daoris/orphan',
+      blocked: { unknown: true, entries: [{ kind: 'session-branch', resource: 'daoris/orphan', code: 'unrecorded', facts: { branch: 'daoris/orphan' }, detail: 'as recorded' }] },
     }));
 
     expect(item).toMatchObject({ title: 'daoris/orphan', where: 'engine', session: null });
     expect(item.detail).toContain('Nothing records whose work this is');
-    expect(item.detail).toContain(why);
+    expect(item.detail).not.toContain('as recorded');
   });
 
   /** MIXAGENT2c (D168): an agent's ask for a helper, the session that asked named as Sessions names it, with its presses. */

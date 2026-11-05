@@ -528,15 +528,14 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       if (row.ended) return endedWorded(row, row.ended);
       const entries = row.blocked?.entries ?? [];
       // OVERVIEWNOISE1b: named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
-      // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first only where an entry
-      // carries no code (a shell before them), whose own sentence then follows as recorded (FABRIC-UNKNOWN1).
+      // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first (FABRIC-UNKNOWN1).
       const recorder = sessionOf(row.session);
       const cut = workCutFor(row, names.sessions);
       return {
         ...base,
         title: recorder ? named(row.session) : row.title ?? row.id,
         detail: [
-          ...(row.blocked?.unknown && !entries.some((entry) => entry.code) ? [i18n.t('work.milestone.wait.owner')] : []),
+          ...(row.blocked?.unknown ?[i18n.t('work.milestone.wait.owner')] : []),
           ...entries.map((entry) => i18n.t('work.milestone.cleanup.blocked', { what: entryName(i18n.t, entry), detail: entryDetail(i18n.t, entry) })),
         ].join(' '),
         session: row.session ?? null,
