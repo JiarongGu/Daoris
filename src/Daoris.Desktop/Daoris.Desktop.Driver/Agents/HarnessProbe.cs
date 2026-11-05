@@ -357,6 +357,10 @@ public static class HarnessProbe
             }
         }
 
+        // An agent npm installed starts as the node and script its `.cmd` shim would run, so no `cmd` stands before it and its
+        // arguments are never read again by one (LAUNCHCHAIN1).
+        PackageStarts.Direct(info, toolchain.Package);
+
         // 🔴 USE1f: what Windows can START, by the resolver installers already use. A bare name from
         // PATH starts only as an `.exe`, so an agent npm installed globally (a `.cmd` shim, with a
         // POSIX script beside it) probed absent and every start on it was held, though the CLI found

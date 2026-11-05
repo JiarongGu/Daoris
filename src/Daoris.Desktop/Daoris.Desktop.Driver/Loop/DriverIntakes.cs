@@ -249,7 +249,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             // that drives it (D78), or that server left out and the transcript told why. Handed before the instruction is
             // composed, which tells the intake the browser it was handed (BRWHINT1b).
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(_context.Servers, _context.Browser, ct).ConfigureAwait(false);
+                await SessionServers.HandNotedAsync(_context.Home, _context.Servers, _context.Browser, _context.Log, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             var target = new SessionTarget(
                 QuestId: "", ask.Sentence.Split('\n', 2)[0].Trim(), ask.Sentence, ask.Asker ?? "the person",

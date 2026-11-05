@@ -369,7 +369,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                             && await desk.OpenForStepAsync(quest, shownIn, ct).ConfigureAwait(false) is { } unopened
                 ? $"— {unopened}"
                 : null;
-            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_context.Servers, _context.Browser, ct).ConfigureAwait(false);
+            var (servers, browserNotice, drivesBrowser) = await SessionServers.HandAsync(_context.Home, _context.Servers, _context.Browser, _context.Log, ct).ConfigureAwait(false);
             browserNotice = Driver.JoinNotices(browserNotice, tabNotice);
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
