@@ -22,6 +22,8 @@
     <!-- The FTS5 match-expression builder is tested directly: it is the piece that turns arbitrary
          human text into query syntax, so it is where a malformed input would surface. -->
     <InternalsVisibleTo Include="Daoris.Service.Tests" />
+    <!-- The benchmark home writes its records unsynced on the store's own connection: three thousand of them, each synced, took minutes. -->
+    <InternalsVisibleTo Include="Daoris.Service.Http.Tests" />
     <!-- The stdio host cuts commit ids with the core's Clipped.ShortCommit rather than a guarded twin (DEDUP7c). -->
     <InternalsVisibleTo Include="daoris-knowledge" />
   </ItemGroup>
