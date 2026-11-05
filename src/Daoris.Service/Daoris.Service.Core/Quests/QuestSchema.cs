@@ -268,6 +268,13 @@ internal static class QuestSchema
             await SchemaColumns.EnsureAsync(db, table, column, definition, ct).ConfigureAwait(false);
         }
 
+        // A chain is walked by its steps' parent, once for each session record a list answers, so the parent is indexed.
+        await using (var steps = db.Command())
+        {
+            steps.CommandText = "CREATE INDEX IF NOT EXISTS quests_parent ON quests (parent)";
+            await steps.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // FABRIC-CLOSE1o: a pending bind whose owner cannot be shown is discarded, since no take can show it is the one it was named
         // for. FABRIC-CLOSE1w: that is every row of quest_take_binds, since this build names its own in quest_owned_take_binds, and a
         // row there, whatever owner it names, may be an older build's upsert over another's graph. The quest and its history are
