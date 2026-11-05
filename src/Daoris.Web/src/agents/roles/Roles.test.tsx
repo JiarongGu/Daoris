@@ -356,6 +356,17 @@ describe('The roles', () => {
     expect(screen.getAllByText(/^Last 7 days/)).toHaveLength(2);
   });
 
+  it('says the moves between choices by the condition that moved them, in both languages', async () => {
+    const moved = { days: 7, roles: [{ ...USE.roles[0]!, moved: [{ condition: 'limit', moves: 2 }, { condition: 'transient', moves: 1 }] }] };
+    const { unmount } = render(<RolesCard catalogue={{ ...CATALOGUE, use: moved }} staffing={STAFFING} agents={AGENTS} onSet={vi.fn()} />);
+    expect(screen.getByText(/3 moves to another choice \(It reaches its limit ×2, Its service does not answer ×1\)$/)).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    card({ catalogue: { ...CATALOGUE, use: moved } });
+    expect(screen.getByText(/3 次移到另一个选择 \(/)).toBeTruthy();
+  });
+
   it('says the span a young log holds, and says nothing of a role without a start or of no history', () => {
     const { unmount } = render(
       <RolesCard catalogue={{ ...CATALOGUE, use: { days: 3, roles: [USE.roles[1]!] } }} staffing={STAFFING} agents={AGENTS} onSet={vi.fn()} />,

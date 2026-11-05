@@ -134,6 +134,8 @@
   "settings.ai.roles.use.choiceRuleDefault": "the rule's default",
   "settings.ai.roles.use.fell": "{{count}} fell to a later choice",
   "settings.ai.roles.use.fell_other": "{{count}} fell to a later choice",
+  "settings.ai.roles.use.moved": "{{count}} move to another choice",
+  "settings.ai.roles.use.moved_other": "{{count}} moves to another choice",
   "settings.ai.roles.use.why.unavailable": "agent unavailable",
   "settings.ai.roles.use.why.no-posture": "no permission mode",
   "settings.ai.roles.use.why.no-connector": "no connector",

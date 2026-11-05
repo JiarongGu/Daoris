@@ -267,6 +267,8 @@ export type SuggestedRole = { id: string; name: Authored; takes: string[]; scope
  */
 export type RoleUse = {
   role: string; starts: number; choices: { choice: string; starts: number }[]; fell: number; why: { code: string; starts: number }[];
+  /** The lines the course moved to another choice, by the condition that moved them (STAFFPOLICY1f); a driver before it leaves it out. */
+  moved?: { condition: string; moves: number }[];
 };
 
 /** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */

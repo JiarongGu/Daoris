@@ -191,6 +191,11 @@ export function useLine(t: TFunction, use: RoleUse, days: number): string {
     parts.push(`${t('settings.ai.roles.use.fell', { count: use.fell })}${why ? ` (${why})` : ''}`);
   }
 
+  if (use.moved && use.moved.length > 0) {
+    const by = use.moved.map((each) => `${t(`settings.ai.policy.when.${each.condition}`, { defaultValue: each.condition })} ×${each.moves}`).join(', ');
+    parts.push(`${t('settings.ai.roles.use.moved', { count: use.moved.reduce((sum, each) => sum + each.moves, 0) })} (${by})`);
+  }
+
   return `${span}: ${parts.join(' · ')}`;
 }
 

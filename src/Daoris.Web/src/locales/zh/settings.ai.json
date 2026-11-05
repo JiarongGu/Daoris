@@ -134,6 +134,8 @@
   "settings.ai.roles.use.choiceRuleDefault": "规则的默认",
   "settings.ai.roles.use.fell": "{{count}} 次落到后面的选择",
   "settings.ai.roles.use.fell_other": "{{count}} 次落到后面的选择",
+  "settings.ai.roles.use.moved": "{{count}} 次移到另一个选择",
+  "settings.ai.roles.use.moved_other": "{{count}} 次移到另一个选择",
   "settings.ai.roles.use.why.unavailable": "智能体不可用",
   "settings.ai.roles.use.why.no-posture": "没有权限模式",
   "settings.ai.roles.use.why.no-connector": "没有连接器",
