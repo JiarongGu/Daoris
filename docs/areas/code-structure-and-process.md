@@ -61,7 +61,8 @@ finishes first and the whole set runs once.
    first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
    pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. The generator builds into
    `_fixtures/contracts-build/` (`--artifacts-path`), never the contracts' or the modules' own `obj/`, so a web gate's pre-script
-   builds beside the service's and the desktop's gates. `api.ts` sends a declared
+   builds beside the service's and the desktop's gates. Its runs take turns under `_fixtures/contracts-build.lock`
+   (`tools/run-lock.mjs`, stale once its process is gone), and one that waited reads the files again and builds nothing fresh. `api.ts` sends a declared
    route as `send(name, request)`. The quest doors are `QuestRoutes` (the reads, the publish and the respond, on both hosts) and
    `QuestPersonRoutes` (a local host's person and driver doors: the close, the set-up and review doors, the workflow choice, a
    conflict's dismissal and a delete); the ask doors, a local host's alone, are `AskRoutes`, which answer through `AskAnswers` and
