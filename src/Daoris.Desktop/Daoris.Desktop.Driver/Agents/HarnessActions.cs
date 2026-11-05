@@ -96,41 +96,38 @@ public static class HarnessActions
         HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
         CancellationToken ct = default, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null,
         IReadOnlyList<string>? npm = null) =>
-        toolchain.Channel is { Length: > 0 } channel
-            ? PinFromChannelAsync(toolchain, channel, home, harness, version, write, ct, started, transport)
-            : toolchain.Package is { Length: > 0 } package
-            ? RunAsync(PinMove.PackageCommand(home, harness, package, version, npm ?? Npm), toolchain, profileHome: null, write, ct, started)
-            : throw new DriverException(
-                "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
-                + "of it. Install it with its own tooling and Daoris will find it on PATH.");
+        // The plan is asked synchronously: a refused version or an npm the tools cannot run is the caller's to catch at the call.
+        RunPinAsync(PinInstall.Plan(toolchain, home, harness, version, npm ?? Npm), toolchain, harness, version, write, ct, started, transport);
 
     /// <summary>
-    /// A pin from the maker's channel (AGT2b). 🔴 A version it cannot verify is refused before a byte
-    /// is fetched — and never handed to npm instead, which would be the same trust by another road.
-    /// An install already in place is the proof it verified, so re-pinning it fetches nothing.
+    /// Runs the window's way of a <see cref="PinPlan"/> (AGT2b): an install already in place is the proof it verified, so re-pinning it
+    /// fetches nothing; a channel's download is staged and, the window's loop holding its home already, published at once (the alone-path
+    /// design §1.4); a package is installed redirected.
     /// </summary>
-    private static async Task<int> PinFromChannelAsync(
-        HarnessToolchain toolchain, string channel, string home, string harness, string version,
-        Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport)
+    private static async Task<int> RunPinAsync(
+        PinPlan plan, HarnessToolchain toolchain, string harness, string version, Action<string> write, CancellationToken ct,
+        Action<HarnessRun>? started, HttpMessageHandler? transport)
     {
-        ReleaseChannels.RefuseVersion(channel, version);
-
-        if (HarnessSettings.ManagedBinary(home, harness, version, toolchain.Binary) is { } present)
+        switch (plan.Way)
         {
-            write($"{toolchain.Product ?? harness} {version} is already installed where Daoris keeps it — nothing was downloaded.");
-            write(present);
-            return 0;
-        }
+            case PinWay.Present:
+                write($"{toolchain.Product ?? harness} {version} is already installed where Daoris keeps it — nothing was downloaded.");
+                write(plan.Present!);
+                return 0;
+            case PinWay.Channel:
+                using (var download = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    started?.Invoke(new HarnessRun(download));
+                    write($"installing {toolchain.Product ?? harness} {version} from {toolchain.Maker ?? "its maker"}'s own release "
+                        + "channel, into a directory Daoris owns.");
+                    var staged = await ReleaseChannels.StageAsync(plan.Channel!, plan.Where, version, write, download.Token, transport).ConfigureAwait(false);
+                    ReleaseChannels.Publish(staged, write);
+                    return 0;
+                }
 
-        using var download = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        started?.Invoke(new HarnessRun(download));
-        write($"installing {toolchain.Product ?? harness} {version} from {toolchain.Maker ?? "its maker"}'s own release "
-            + "channel, into a directory Daoris owns.");
-        // The window's loop holds its home already, so the staging is published at once (the alone-path design §1.4).
-        var staged = await ReleaseChannels.StageAsync(
-            channel, HarnessSettings.ManagedHome(home, harness, version), version, write, download.Token, transport).ConfigureAwait(false);
-        ReleaseChannels.Publish(staged, write);
-        return 0;
+            default:
+                return await RunAsync(plan.Command!, toolchain, profileHome: null, write, ct, started).ConfigureAwait(false);
+        }
     }
 
     private static readonly string[] Npm = ["npm"];
