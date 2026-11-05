@@ -1,24 +1,35 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 1 (D213's row b note; the agent-provider design §11 row b): the one registration list holds the two
-/// stand-ins written on the contract, and what they state is held against the classes they stand beside until row t, field by field
-/// (old against new, X). The ports a provider written on the contract alone needs are declared; the stand-ins state the ones they use.
+/// AGENTPROVIDER1 rows b and d (the agent-provider design §11): the one registration list holds the stand-ins, Claude Code, Codex and
+/// dsh written on the contract, and what each states is held against the classes it stands beside until row t, field by field (old
+/// against new, X). The ports a provider written on the contract alone needs are declared; each provider states the ones it uses.
 /// </summary>
 public sealed class ProvidersBuiltTests
 {
-    /// <summary>Today's two stand-in classes as a set, the old side of the comparison.</summary>
+    /// <summary>Today's adapter classes and Codex's holder as a set, the old side of the comparison.</summary>
     internal static AdapterSet Old() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = new StubAdapter(),
         ["acp-stub"] = new AcpStubAdapter(),
-    });
+        ["claude-code"] = new ClaudeCodeAdapter(),
+        ["claude-code-acp"] = new ClaudeAcpAdapter(),
+        ["codex-acp"] = new CodexAcpAdapter(),
+        ["dsh"] = new DshAdapter(),
+    }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
+
+    private static Provider Listed(string id) => Providers.Built().Single(provider => provider.Id.Value == id);
+
+    public static TheoryData<string> Ids => ["claude-code", "codex", "dsh", "stub"];
+
+    public static TheoryData<string> RealDoors => ["claude-code", "claude-code-acp", "codex-acp", "dsh"];
 
     private static readonly Type[] Ports = [typeof(ISpawn), typeof(IDialect), typeof(IChildVocabulary), typeof(IConversationHome)];
 
@@ -102,37 +113,38 @@ public sealed class ProvidersBuiltTests
     }
 
     [Fact]
-    public void The_registration_list_holds_the_stand_ins_as_one_provider_with_a_door_on_each_transport()
+    public void The_registration_list_holds_each_provider_with_its_doors_on_their_transports()
     {
-        var provider = Assert.Single(Providers.Built());
+        Assert.Equal(["claude-code", "codex", "dsh", "stub"], Providers.Built().Select(provider => provider.Id.Value));
+        string Doors(string id) => string.Join(' ', Listed(id).Doors.Select(door => $"{door.Id}:{door.Transport}"));
 
-        Assert.Equal(new ProviderId("stub"), provider.Id);
-        Assert.True(provider.Identity.StandIn);
-        Assert.Equal([new DoorId("acp-stub"), new DoorId("stub")], provider.Doors.Select(door => door.Id));
-        Assert.Equal(Transport.Native, provider.Doors.Single(door => door.Id.Value == "stub").Transport);
-        Assert.Equal(Transport.Protocol, provider.Doors.Single(door => door.Id.Value == "acp-stub").Transport);
-        Assert.Equal(Reach.Everywhere, provider.Reach);
-        Assert.False(provider.Unavailable);
+        Assert.Equal("claude-code:Native claude-code-acp:Protocol", Doors("claude-code"));
+        Assert.Equal("codex-acp:Protocol", Doors("codex"));
+        Assert.Equal("dsh:Protocol", Doors("dsh"));
+        Assert.Equal("acp-stub:Protocol stub:Native", Doors("stub"));
+        Assert.Equal(["stub"], Providers.Built().Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
+        Assert.All(Providers.Built(), provider => Assert.Equal(Reach.Everywhere, provider.Reach));
+        Assert.All(Providers.Built(), provider => Assert.False(provider.Unavailable));
     }
 
-    /// <summary>Old against new: what the registry reads from the two classes is what the contract's stand-in states, every part.</summary>
-    [Fact]
-    public void The_stand_ins_on_the_contract_state_what_the_classes_state()
+    /// <summary>Old against new: what the registry reads from the classes is what each provider on the contract states, every part.</summary>
+    [Theory]
+    [MemberData(nameof(Ids))]
+    public void Each_provider_on_the_contract_states_what_the_classes_state(string id)
     {
-        var old = ProviderRegistry.Of(Old()).Provider("stub");
-        var contract = Providers.Built().Single();
+        var old = ProviderRegistry.Of(Old()).Provider(id);
 
-        Assert.Empty(Compared(old, contract));
+        Assert.Empty(Compared(old, Listed(id)));
     }
 
-    /// <summary>The registry over the built set, whose stand-ins arrive through the shim, equals the one over the registration list.</summary>
+    /// <summary>The registry over the built set, whose doors all arrive through the shim, equals the one over the registration list.</summary>
     [Fact]
-    public void The_registry_over_the_built_set_equals_the_one_over_the_registration_list_for_the_stand_ins()
+    public void The_registry_over_the_built_set_equals_the_one_over_the_registration_list()
     {
         var built = ProviderRegistry.Of(AdapterSet.Built());
         var listed = new ProviderRegistry(Providers.Built(), []);
 
-        Assert.Empty(Compared(built.Provider("stub"), listed.Provider("stub")));
+        foreach (var provider in listed.Providers) Assert.Empty(Compared(built.Provider(provider.Id), provider));
         foreach (var door in listed.Doors)
         {
             Assert.Empty(Compared(built.Door(door), listed.Door(door)));
@@ -170,6 +182,83 @@ public sealed class ProvidersBuiltTests
         Assert.Empty(door.ToolsUpFront);
     }
 
+    /// <summary>
+    /// Old against new through the shim, for every real door: each member the readers ask of an adapter, the spawn with its binary and
+    /// with a configured command, the resume, the carriers, the stream reader, the frames, the session's <c>_meta</c> and what the
+    /// program reads of a tree, answers as the class answered it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RealDoors))]
+    public void The_shim_presents_a_real_door_as_its_class_does(string name)
+    {
+        ISessionAdapter old = Old().Resolve(name);
+        var door = AdapterSet.Built().Resolve(name);
+        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
+        var chat = new ChatTarget("repo", Path.GetTempPath(), "http://svc");
+        IReadOnlyList<string> command = ["agent", "--flag"];
+        IReadOnlyList<string> plugins = ["plugins/one"];
+
+        Assert.IsType<LegacyDoor>(door);
+        Assert.Equal(old.Name, door.Name);
+        Assert.Equal(old.Wire, door.Wire);
+        Assert.Equal(old.Interactive, door.Interactive);
+        Assert.Equal(old.Resumes, door.Resumes);
+        Assert.Equal(old.TakesSettings, door.TakesSettings);
+        Assert.Equal(
+            (old.AcpPosture, old.AskingPosture, old.FullPosture, old.ReadingPosture),
+            (door.AcpPosture, door.AskingPosture, door.FullPosture, door.ReadingPosture));
+        Assert.Equal((old.LoadsTreeSkills, old.InstructionFileLimit), (door.LoadsTreeSkills, door.InstructionFileLimit));
+        Assert.Empty(Compared(old.Toolchain, door.Toolchain));
+        Assert.Equal(Shape(old.Prepare(target, null)), Shape(door.Prepare(target, null)));
+        Assert.Equal(Shape(old.Prepare(target, command)), Shape(door.Prepare(target, command)));
+        Assert.Equal(old.PrepareResume(target, command, "c-1") is { } resumed ? Shape(resumed) : null,
+            door.PrepareResume(target, command, "c-1") is { } shimmed ? Shape(shimmed) : null);
+        if (old.Interactive) Assert.Equal(Shape(old.PrepareChat(chat, command)), Shape(door.PrepareChat(chat, command)));
+        else Assert.Equal(Assert.Throws<DriverException>(() => old.PrepareChat(chat, command)).Message, Assert.Throws<DriverException>(() => door.PrepareChat(chat, command)).Message);
+        Assert.Equal(old.ToolsUpFront, door.ToolsUpFront);
+        Assert.Equal(Carried(old, plugins), Carried(door, plugins));
+        Assert.Equal(old.StructuredOutput()?.GetType(), door.StructuredOutput()?.GetType());
+        Assert.Equal(old.FrameMessage("a message"), door.FrameMessage("a message"));
+        Assert.Equal(old.FrameInterrupt() is null, door.FrameInterrupt() is null);
+        Assert.Equal(JsonSerializer.Serialize(old.AcpSessionMeta("settings.json")), JsonSerializer.Serialize(door.AcpSessionMeta("settings.json")));
+        Assert.Equal(
+            JsonSerializer.Serialize(old.AcpSessionMeta("settings.json", plugins)), JsonSerializer.Serialize(door.AcpSessionMeta("settings.json", plugins)));
+    }
+
+    /// <summary>What a door's carriers add to a spawn: its servers, its rules file and its plugins, in order.</summary>
+    private static string Carried(ISessionAdapter adapter, IReadOnlyList<string> plugins)
+    {
+        var info = new ProcessStartInfo("agent");
+        adapter.HandServers(info, "servers.json");
+        adapter.HandSettings(info, "settings.json");
+        adapter.HandPlugins(info, plugins);
+        return string.Join('|', info.ArgumentList);
+    }
+
+    [Fact]
+    public void Each_real_door_states_its_spawn_and_Claude_Code_s_doors_their_dialects()
+    {
+        var doors = Providers.Built().Where(provider => !provider.Identity.StandIn).SelectMany(provider => provider.Doors).ToList();
+
+        Assert.All(doors, door => Assert.True(door.Spawn.IsKnown));
+        Assert.Equal(
+            ["claude-code:INativeDialect", "claude-code-acp:IProtocolDialect"],
+            doors.Where(door => door.Dialect.IsKnown)
+                .Select(door => $"{door.Id}:{(door.Dialect.Required is INativeDialect ? nameof(INativeDialect) : nameof(IProtocolDialect))}"));
+    }
+
+    /// <summary>A built-in door states no identity of its own: through the shim it reads its provider's, the protocol door's too.</summary>
+    [Fact]
+    public void A_built_in_door_reads_its_provider_s_identity()
+    {
+        var set = AdapterSet.Built();
+
+        Assert.Equal(("Claude Code", "Anthropic", "CC"), Identity(set.Resolve("claude-code-acp").Toolchain!));
+        Assert.Equal(("Codex", "OpenAI", "Cx"), Identity(set.Resolve("codex-acp").Toolchain!));
+        Assert.Equal(("DeepSeek Harness", "DeepSeek", "DH"), Identity(set.Resolve("dsh").Toolchain!));
+        static (string?, string?, string?) Identity(HarnessToolchain toolchain) => (toolchain.Product, toolchain.Maker, toolchain.Mark);
+    }
+
     [Fact]
     public void The_pipe_stand_in_is_read_by_the_plain_capture_and_the_protocol_one_keeps_its_stdin_open()
     {
@@ -183,7 +272,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void The_stand_ins_state_their_spawn_and_stub_states_no_native_dialect()
     {
-        var provider = Providers.Built().Single();
+        var provider = Listed("stub");
 
         Assert.All(provider.Doors, door => Assert.True(door.Spawn.IsKnown));
         // stub maps no stream-json and is read by the plain capture; acp-stub's protocol dialects are row i's.
@@ -197,7 +286,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void A_protocol_door_s_resume_is_eligibility_and_the_pipe_stand_in_resumes_nothing()
     {
-        var provider = Providers.Built().Single();
+        var provider = Listed("stub");
         var protocol = provider.Doors.Single(door => door.Transport == Transport.Protocol).Abilities.Resumes;
         var native = provider.Doors.Single(door => door.Transport == Transport.Native).Abilities.Resumes;
 

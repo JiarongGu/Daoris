@@ -22,7 +22,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
         // Only a dsh home Daoris made is written to; anywhere else the notice says what happens, and a home holding somebody
         // else's patch layer is reported rather than overwritten.
         var harnessNotice = DshProfile.NoticeFor(adapter.Name, selection.ProfileHome);
-        if (harnessNotice is null && adapter is DshAdapter && selection.ProfileHome is { Length: > 0 } dshHome)
+        if (harnessNotice is null && DshProfile.IsFor(adapter.Name) && selection.ProfileHome is { Length: > 0 } dshHome)
         {
             try
             {

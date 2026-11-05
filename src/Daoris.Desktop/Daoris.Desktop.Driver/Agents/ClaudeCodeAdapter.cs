@@ -237,15 +237,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         Install: ["npm", "install", "-g", "@anthropic-ai/claude-code"],
         UpdateArguments: ["update"],
         LoginArguments: ["auth", "login"],
-        LoginCheck: new LoginQuestion(
-            ["auth", "status"],
-            LoggedIn: @"""loggedIn""\s*:\s*true",
-            LoggedOut: @"""loggedIn""\s*:\s*false",
-            Account: @"""email""\s*:\s*""([^""]+)""",
-            // ACCOUNTID1: one email may sign in to two organisations; these tell the two accounts apart. The CLI's twin is
-            // `toolchain.ts`' `claude-code` entry.
-            Org: @"""orgName""\s*:\s*""([^""]+)""",
-            Plan: @"""subscriptionType""\s*:\s*""([^""]+)"""),
+        LoginCheck: ClaudeCodeProvider.Login,
         // A pin comes from the release bucket, against its SIGNED manifest (AGT2b) — the npm package
         // installs the same native binary, with nothing but npm's own integrity check behind it.
         Channel: ClaudeReleases.Channel,

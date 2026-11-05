@@ -75,7 +75,7 @@ public sealed class CodexUsageProcessTests : IDisposable
 
     private HarnessToolchain Toolchain => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "CODEX_HOME", ProbeByPresence: true,
-        ProfileMustExist: true, Usage: Question);
+        Usage: Question);
 
     private HarnessRoster Roster() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)

@@ -21,7 +21,7 @@ namespace Daoris.Driver;
 ///
 /// <para>🔴 <b>`CODEX_HOME` must already exist</b>, where the Claude adapter creates its own config
 /// directory. Pointed at a path that is not there, this adapter exits 1 before <c>initialize</c>
-/// completes, naming the directory — which is why the toolchain carries <c>ProfileMustExist</c>.</para>
+/// completes, naming the directory — which is why a managed home is made before every launch.</para>
 ///
 /// <para><b>No model is named</b> (D24), and the account belongs to `codex`: this adapter runs the
 /// harness and reads the home the harness logged into, so it has no login flow of its own.</para>
@@ -91,7 +91,6 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         // No login of its own: it runs `codex` and reads the home `codex` logged into, whose sign-in and status question
         // are declared for `codex` itself (`CodexAccounts`, CODEXACCT1), since no `codex` door exists to carry them.
         AccountOf: CodexAccounts.Agent,
-        ProfileMustExist: true,
         // What Codex says when an account's limit refuses a turn (TOOL4k), read in its source: declared here, since
         // no `codex` adapter exists to own it, and reaching this door only as the error's data (ACPDATA1).
         Limits: CodexLimits.Words,

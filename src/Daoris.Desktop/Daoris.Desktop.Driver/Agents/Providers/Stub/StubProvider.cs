@@ -52,8 +52,8 @@ internal static class StubProvider
             new DoorId("stub"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ProgramFacts>.Absent,
             // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a).
-            new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null, MustExist: false),
-            LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null),
+            new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
+            LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("stub", "agent.mjs", protocol: false), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -61,15 +61,15 @@ internal static class StubProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(false, Evidence),
                 Known<bool>.Declared(false, Evidence)),
-            new DoorTablesPart(null, null), null);
+            new DoorTablesPart(null, null), null, InstructionsPart.None);
         var acp = new AgentDoor(
             new DoorId("acp-stub"), Transport.Protocol, new DoorIdentity(null, null, null),
             // Present by a file look: the agent a rehearsal names waits on its stdin for frames, so asking it a version would stall.
             Known<ProgramFacts>.Declared(new ProgramFacts([], [], null, null, null, null, null, ProbeByPresence: true), Evidence),
-            new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null, MustExist: false),
+            new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             // A door onto the stand-in's accounts (TOOL4j): the sign-in, the login question and the limit words are the stub's.
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
-            Known<PortRef>.Absent, new PosturesPart(null, null, null),
+            Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("acp-stub", "acp-agent.mjs", protocol: true), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -77,7 +77,7 @@ internal static class StubProvider
                 // The transport's default, eligibility to negotiate at the open and no resume known (X).
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(false, Evidence)),
-            new DoorTablesPart(null, null), new AccountKey("stub"));
+            new DoorTablesPart(null, null), new AccountKey("stub"), InstructionsPart.None);
 
         return new Provider(
             new ProviderId("stub"),

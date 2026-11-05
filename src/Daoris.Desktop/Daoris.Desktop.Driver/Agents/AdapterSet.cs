@@ -95,22 +95,11 @@ public sealed class AdapterSet(
     }
 
     public static AdapterSet Built() => new(new Dictionary<string, ISessionAdapter>(
-        // The stand-ins gate-verify the mechanism with no model in it (D46 §8), the pipe door's and the protocol door's (D53/ACP1);
-        // `claude-code` is the supported harness on top of that proven loop. They are written on the contract and arrive through
-        // the shim, once, from the registration list (AGENTPROVIDER1 row b), so a provider added there touches no adapter file.
-        LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase)
-    {
-        ["claude-code"] = new ClaudeCodeAdapter(),
-        // The supported harness over the protocol door (ACP2/D53). It arrives BESIDE the pipe door
-        // rather than replacing it: D23's "on proof" means a real driven run over ACP, and until
-        // that has happened `claude-code` remains what a machine drives with unless it says otherwise.
-        ["claude-code-acp"] = new ClaudeAcpAdapter(),
-        // Two more CONFIGURATIONS of the same door (ACP3/D53) — not two more seams, which is the
-        // whole argument for adopting a protocol rather than a product. Each states its own posture
-        // in its own vocabulary, and each arrives beside what was already here.
-        ["dsh"] = new DshAdapter(),
-        ["codex-acp"] = new CodexAcpAdapter(),
-    }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase)
+        // Every door this build carries is written on the contract and arrives through the shim, once, from the registration list
+        // (AGENTPROVIDER1 rows b and d), so a provider added there touches no adapter file: the stand-ins, which gate-verify the
+        // mechanism with no model in it (D46 §8), Claude Code's two doors, Codex's and dsh's.
+        LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase),
+        new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase)
     {
         // The agent `codex-acp` runs as, with no door of its own here (CODEXACCT1): its sign-in and status question.
         [CodexAccounts.Agent] = CodexAccounts.Toolchain,
