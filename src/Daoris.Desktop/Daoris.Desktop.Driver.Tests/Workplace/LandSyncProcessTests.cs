@@ -87,7 +87,7 @@ public sealed class LandSyncProcessTests : LandedFixture
         Assert.Equal(picked, Assert.Single(plan.LeftOut!).Sha);
         Assert.NotNull(plan.Conflict);
         Assert.False(refused.Landed, refused.Message);
-        Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
+        Assert.Equal(LandingCode.Refused, refused.Refusal);
         Assert.StartsWith("Nothing was landed: the line already holds some of this work, and `feature/own` is on its remote, and Daoris does not rewrite "
             + "a pushed branch.", refused.Message);
         Assert.Contains($"`{picked[..8]}` “the part picked”", refused.Conflict!.Words);

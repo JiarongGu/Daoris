@@ -79,7 +79,6 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests/{id}/evidence", Driver),
         ("POST", "/api/quests/{id}/set-up", Driver),
         // FABRIC-CLOSE1a: a closure graph's bind and close, the driver's under the unit's lock; a local host's alone.
-        ("POST", "/api/quests/{id}/bind", Driver),
         ("POST", "/api/quests/{id}/close", Driver),
         // FABRIC-CLOSE1u: what became of a close's key, the driver's question before it ever sends that close again.
         ("POST", "/api/quests/{id}/close/outcome", Driver),

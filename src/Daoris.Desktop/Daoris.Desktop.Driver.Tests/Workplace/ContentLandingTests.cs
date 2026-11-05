@@ -35,7 +35,7 @@ public sealed class ContentLandingTests : LandedFixture
         var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
+        Assert.Equal(LandingCode.Carried, landed.Refusal);
         Assert.Equal(
             "Its work is on `main` by content (a squash merge), so it is not landed again: that would make a second copy of it. "
             + "Discard its tree instead.",
@@ -60,7 +60,7 @@ public sealed class ContentLandingTests : LandedFixture
         var landed = await trees.LandAsync(tree.Path, Subject);
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
+        Assert.Equal(LandingCode.Carried, landed.Refusal);
         Assert.StartsWith("Its work is on `main` by content (a squash merge), so it is not landed again", landed.Message);
         Assert.Equal(before, await StateAsync(root, tree));
     }
@@ -79,7 +79,7 @@ public sealed class ContentLandingTests : LandedFixture
         // The head judges the work held by content where no graph's land governs: a land graph leaves it to its content.holds step.
         var landed = await trees.LandAsync(tree.Path, Subject);
 
-        Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
+        Assert.Equal(LandingCode.Carried, landed.Refusal);
         Assert.StartsWith(
             "Its work is on `feature/x` by content (each file it changed reads the same there), so it is not landed again", landed.Message);
         Assert.Equal(before, await StateAsync(root, tree));
@@ -102,7 +102,7 @@ public sealed class ContentLandingTests : LandedFixture
 
         var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
-        Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
+        Assert.Equal(LandingCode.Carried, landed.Refusal);
         Assert.Contains("so it is not landed again: that would make a second copy of it. Its tree stays: ", landed.Message);
         Assert.Contains("local.db", landed.Message);
         Assert.DoesNotContain("Discard its tree instead", landed.Message);

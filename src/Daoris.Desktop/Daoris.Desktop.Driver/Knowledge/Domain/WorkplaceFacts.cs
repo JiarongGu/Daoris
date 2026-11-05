@@ -379,7 +379,7 @@ public sealed record LandedIntegrate(string Request, string Source)
 
 
 /// <summary>One try to land a due session, and the facts it was made at (design §8): never a sentence, a path or a word of anyone's.</summary>
-/// <param name="Code">One of <see cref="AutoLandingCode"/>.</param>
+/// <param name="Code">One of <see cref="LandingCode"/>.</param>
 public sealed record AutoTry(DateTimeOffset At, string Code)
 {
     /// <summary>The tree's HEAD when it was tried, or null where none was read.</summary>

@@ -79,7 +79,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
                 var why = part.Gate?.Refusal?.Message ?? "no saved workflow's `land` node performs its landing, so it is held.";
                 outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, new TreeLanding(false, $"Nothing was landed: {why}")
                 {
-                    Refusal = AutoLandingCode.Refused,
+                    Refusal = LandingCode.Refused,
                 }));
             }
         }

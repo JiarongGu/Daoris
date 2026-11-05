@@ -131,14 +131,14 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
             return (null, made.Conflict
                 ? joining is not null ? EntryLandWords.Conflicted(joining, made.Words) : Conflicted(sync, made.Words)
                 : new TreeLanding(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` failed: {made.Words} Nothing was made, "
-                    + "and the tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut });
+                    + "and the tree and its branch are as they were.") { Refusal = LandingCode.Refused, LeftOut = sync.Held.LeftOut });
         }
 
         if (await BeyondAsync(sync, now, onto, [.. made.Written.Paths, .. made.LineWritten.Paths], ct).ConfigureAwait(false) is { } beyond)
         {
             return (null, new TreeLanding(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` changed what the line did not bring "
                 + $"({beyond}), so the replay was not kept. Nothing was made, and the tree and its branch are as they were.")
-            { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut });
+            { Refusal = LandingCode.Refused, LeftOut = sync.Held.LeftOut });
         }
 
         var landed = await LineHolds.CommitsAsync(sync.Root, $"{onto}..{now}", ct).ConfigureAwait(false) ?? [];
@@ -171,7 +171,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
             + "Nothing was made, and the tree and its branch are as they were." + LandingSyncWords.LeftOutSentence(sync.Held.LeftOut)
             + " Ask its session to replay its own commits onto the line, then accept again.")
         {
-            Refusal = AutoLandingCode.Refused,
+            Refusal = LandingCode.Refused,
             LeftOut = sync.Held.LeftOut,
             Conflict = new LandingConflict(conflicts, LandingSyncWords.Rebase(sync.OntoName, sync.Held.LeftOut, conflicts)),
         };
@@ -186,7 +186,7 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         return new(false, $"Nothing was landed: the line already holds some of this work, and {says}"
             + LandingSyncWords.LeftOutSentence(sync.Held.LeftOut) + " Ask its session to replay its own commits onto the line, then accept again.")
         {
-            Refusal = AutoLandingCode.Refused,
+            Refusal = LandingCode.Refused,
             LeftOut = sync.Held.LeftOut,
             Conflict = new LandingConflict(says, LandingSyncWords.Rebase(sync.OntoName, sync.Held.LeftOut, null)),
         };

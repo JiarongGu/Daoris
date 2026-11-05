@@ -374,7 +374,7 @@ public static class EntryLandWords
             + $"work there: {conflicts} Nothing was made, and the tree and its branch are as they were. Ask its session to replay its own "
             + $"commits onto `{branch}`, then accept again.")
         {
-            Refusal = AutoLandingCode.Refused,
+            Refusal = LandingCode.Refused,
             Conflict = new LandingConflict(conflicts, Rebase(branch, conflicts)),
         };
 

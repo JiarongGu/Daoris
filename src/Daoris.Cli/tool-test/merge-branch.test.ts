@@ -1460,7 +1460,7 @@ const INTEGRATION_DECLARATIONS = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
  */
-const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs', 'TraceChains.cs', 'LandedKind.cs'];
+const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'LandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs', 'TraceChains.cs', 'LandedKind.cs'];
 const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const PAGE_PARSED = PAGE_PARSED_NAMES
   .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);

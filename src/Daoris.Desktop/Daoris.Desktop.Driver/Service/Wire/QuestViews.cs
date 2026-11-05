@@ -87,14 +87,6 @@ public static class QuestViews
         service.MovedAsync(new ForwardConflict(id.TrimStart('#'), machine, sequence), "conflicts/forward", ct);
 
     /// <summary>
-    /// The driver binds a quest it took to the graph that closes it, named for the take as the first session opens and for that session,
-    /// whose take alone binds it.
-    /// </summary>
-    public static Task<(bool Ok, string Message)> BindQuestAsync(
-        this ServiceClient service, string id, string graph, string session, CancellationToken ct = default) =>
-        service.MovedAsync(new BindQuest(id.TrimStart('#'), graph, AtTake: true, Session: session), "bind", ct);
-
-    /// <summary>
     /// A workflow request's quest: the same key sent again answers the quest it made, so a lost answer is sent once more without a
     /// second quest. The service's refusal comes back as an answer; an unanswered host throws.
     /// </summary>

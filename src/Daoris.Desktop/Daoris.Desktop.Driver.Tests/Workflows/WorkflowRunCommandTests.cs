@@ -355,9 +355,9 @@ public sealed class WorkflowRunCommandTests : IDisposable
     /// A stand-in service: <c>engine</c> in the <c>aurora</c> workspace, ask <c>a1</c>'s one quest done there by session <c>s1</c>,
     /// and a chat. Every other door answers an empty list.
     /// </summary>
-    private sealed class StandInService(bool requests = false) : HttpMessageHandler
+    private sealed class StandInService(bool requests = false) : SessionChangesHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.PathAndQuery switch
             {

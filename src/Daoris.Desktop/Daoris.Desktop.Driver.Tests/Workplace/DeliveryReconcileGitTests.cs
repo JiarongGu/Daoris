@@ -53,7 +53,7 @@ public sealed class DeliveryReconcileGitTests : IDisposable
 
         Assert.Single(both, each => each.Landed);
         var other = Assert.Single(both, each => !each.Landed);
-        Assert.Equal(AutoLandingCode.Already, other.Refusal);
+        Assert.Equal(LandingCode.Already, other.Refusal);
         Assert.Contains("delivered", other.Message);
         Assert.Equal([Named], await BranchesAsync(root));
         Assert.Equal(tip, await RevAsync(root, $"refs/heads/{Named}"));

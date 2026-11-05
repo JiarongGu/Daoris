@@ -97,7 +97,7 @@ internal sealed class TreeMerges(TreeContext context)
             return new(false,
                 $"the session's tree has uncommitted work — {count} path(s) — which a merge would "
                 + "leave behind. Commit it in the tree first, or decide it is not wanted.")
-            { Refusal = AutoLandingCode.Uncommitted };
+            { Refusal = LandingCode.Uncommitted };
         }
 
         var (workspace, repository) = context.OwnerOf(full);

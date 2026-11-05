@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -74,14 +75,13 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and no session.</summary>
-    private sealed class StandInService : HttpMessageHandler
+    private sealed class StandInService : SessionChangesHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {
                 "/api/registry" => """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]""",
-                "/api/sessions/changes" => """{"mark":"m1","order":[],"changed":[],"whole":true}""",
                 _ => "[]",
             };
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)

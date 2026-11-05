@@ -520,13 +520,10 @@ public sealed class WorkflowPortsTests
     }
 
     /// <summary>A stand-in service: quest <c>q1</c> done in <c>engine</c> by session <c>s1</c>, whose tree is gone. Every other door answers an empty list.</summary>
-    private sealed class StandInService : HttpMessageHandler
+    private sealed class StandInService : SessionChangesHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
-            // A service with no change door has only the whole list, which the kept list then reads.
-            if (request.RequestUri!.AbsolutePath == "/api/sessions/changes")
-                return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/quests?includeClosed=true" =>

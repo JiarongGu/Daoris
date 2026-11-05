@@ -192,7 +192,7 @@ public sealed class PressedResult
         return new TreeLanding(false, $"Nothing was landed: {why} while this press waited to land, so what it was made on stands no more. "
             + "Look at the quest as it stands, then accept it again.")
         {
-            Refusal = QuestResults.Judged(now) ? AutoLandingCode.Refused : AutoLandingCode.Undone,
+            Refusal = QuestResults.Judged(now) ? LandingCode.Refused : LandingCode.Undone,
         };
     }
 

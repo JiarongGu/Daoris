@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// The first eight are the design's; the rest name why an entry closed without a landing, so nothing closes unsaid (D143
 /// point 1).
 /// </summary>
-public static class AutoLandingCode
+public static class LandingCode
 {
     /// <summary>The branch was made and recorded, and the rule's plugin pushed it where it names one.</summary>
     public const string Landed = "landed";

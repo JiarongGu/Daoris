@@ -96,15 +96,6 @@ public sealed record PostQuestEvidence(
     public static string Path => "/api/quests/{id}/evidence";
 }
 
-/// <summary>The driver's bind of a taken quest to the graph that closes it, at the take.</summary>
-/// <param name="AtTake">An open quest binds at its take; a host before it refuses the open quest's bind as not taken.</param>
-/// <param name="Session">The session the graph is named for, whose take alone binds it.</param>
-public sealed record BindQuest(string Id, string? Graph, bool? AtTake = null, string? Session = null) : IRoute<QuestActionResponse>
-{
-    public static string Method => "POST";
-    public static string Path => "/api/quests/{id}/bind";
-}
-
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ListQuests))]
 [JsonSerializable(typeof(QuestResponse))]
@@ -119,7 +110,6 @@ public sealed record BindQuest(string Id, string? Graph, bool? AtTake = null, st
 [JsonSerializable(typeof(ContinueQuest))]
 [JsonSerializable(typeof(ForwardConflict))]
 [JsonSerializable(typeof(PostQuestEvidence))]
-[JsonSerializable(typeof(BindQuest))]
 [JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(QuestEvidenceVerdictResponse))]
 internal sealed partial class QuestJson : JsonSerializerContext;

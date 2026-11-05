@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -109,11 +110,11 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
     }
 
     /// <summary>The registry: aurora's engine, driven, and atlas and tools, not, their checkouts elsewhere; one queued quest to atlas.</summary>
-    private sealed class StandIn : HttpMessageHandler
+    private sealed class StandIn : SessionChangesHandler
     {
         public List<string> Asked { get; } = [];
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
             lock (Asked) Asked.Add($"{request.Method} {path}");

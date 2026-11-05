@@ -34,10 +34,6 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
             await StateAsync(http, await Service.Exchange.ContinueAsync(request.Id, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<ForwardConflict, QuestActionResponse>(ForwardAsync);
         routes.Map<PostQuestEvidence, QuestActionResponse>(EvidenceAsync);
-        routes.Map<BindQuest, QuestActionResponse>(async (request, http, ct) => await StateAsync(
-            http,
-            await Service.Exchange.BindAsync(request.Id, request.Graph, DateTimeOffset.UtcNow, ct, atTake: request.AtTake == true, session: request.Session),
-            ct));
     }
 
     private async Task<Answer<QuestResponse[]>> ListAsync(ListQuests request, HttpContext http, CancellationToken ct)

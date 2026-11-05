@@ -1325,7 +1325,7 @@ export const REACH = Object.freeze([
   // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
-      'NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs',
+      'NoteCodes.cs', 'EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'TraceCodes.cs', 'LandingCode.cs', 'WorkplaceFacts.cs', 'SweepKind.cs', 'BackgroundState.cs',
       // The trace page's twin reads which stores the chains leave unread; the landing page's twin reads the landed kinds' constants.
       'TraceChains.cs', 'LandedKind.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.

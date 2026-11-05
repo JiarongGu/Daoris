@@ -45,7 +45,7 @@ public sealed class SquashSeenTests : LandedFixture
 
             Assert.False(landed.Landed, landed.Message);
             Assert.Null(landed.Conflict);
-            Assert.Equal(AutoLandingCode.Carried, landed.Refusal);
+            Assert.Equal(LandingCode.Carried, landed.Refusal);
             Assert.Equal(
                 "Its work is on `main` by content (a squash carried it: merging it there adds nothing), so it is not landed again: that "
                 + "would make a second copy of it. Discard its tree instead.",
@@ -91,7 +91,7 @@ public sealed class SquashSeenTests : LandedFixture
         var told = await RebaseTelling.TellTreeAsync(SayAsync, "s9a8b7c6", other.Path, refused.Conflict!);
 
         Assert.False(refused.Landed, refused.Message);
-        Assert.NotEqual(AutoLandingCode.Carried, refused.Refusal);
+        Assert.NotEqual(LandingCode.Carried, refused.Refusal);
         Assert.Contains("shared.txt", refused.Conflict!.Words);
         Assert.StartsWith("Its session `s9a8b7c6` was asked to rebase", told);
         Assert.Single(_said);
@@ -109,7 +109,7 @@ public sealed class SquashSeenTests : LandedFixture
         await CommitAsync(root, "a.txt", "the a work, changed again\n", "the line changes it again");
 
         Assert.Null(await trees.DiscardOfferAsync(a.Path));
-        Assert.NotEqual(AutoLandingCode.Carried, (await trees.LandAsync(a.Path, First, gate: Lands)).Refusal);
+        Assert.NotEqual(LandingCode.Carried, (await trees.LandAsync(a.Path, First, gate: Lands)).Refusal);
     }
 
     /// <summary>

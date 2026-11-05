@@ -64,7 +64,4 @@ public interface IClosureBindPort
     /// where a machine of it has not declared it knows a bound quest; false from a host before it, which is asked no such bind.
     /// </summary>
     Task<bool> KnowsRemoteClosureAsync(CancellationToken ct) => Task.FromResult(false);
-
-    /// <summary>Names <paramref name="graph"/> for the take of <paramref name="id"/> by <paramref name="session"/>, whose take alone binds it (FABRIC-CLOSE1o).</summary>
-    Task<(bool Ok, string Message)> BindQuestAsync(string id, string graph, string session, CancellationToken ct);
 }

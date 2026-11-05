@@ -294,34 +294,6 @@ public sealed class ServiceClientClosureTests
         await Assert.ThrowsAsync<HttpRequestException>(() => client.CloseQuestsAsync("q7", "k-1", "ctk-1", [new("q7", "desk", 41)]));
     }
 
-    [Fact]
-    public async Task The_bind_names_the_graph_and_says_a_refusal_and_an_older_host()
-    {
-        var replies = new Queue<ServiceReply>(
-        [
-            new(200, """{ "quest": { "id": "q7" }, "message": "Quest `#q7` closes through graph `gph-1`." }"""),
-            new(409, """{ "error": "Quest `#q7` closes through graph `gph-0`, bound at its start." }"""),
-            new(404, "Not Found"),
-        ]);
-        var doors = new Doors((_, _, _) => replies.Dequeue());
-        using var client = new ServiceClient(doors);
-
-        var bound = await client.BindQuestAsync("#q7", "gph-1", "ses-q7");
-        var refused = await client.BindQuestAsync("q7", "gph-1", "ses-q7");
-        var older = await client.BindQuestAsync("q7", "gph-1", "ses-q7");
-
-        Assert.Equal((true, "Quest `#q7` closes through graph `gph-1`."), bound);
-        Assert.Equal((false, "Quest `#q7` closes through graph `gph-0`, bound at its start."), refused);
-        Assert.False(older.Ok);
-        Assert.Contains("no bind door", older.Message, StringComparison.Ordinal);
-        Assert.Equal("/api/quests/q7/bind", doors.Asked[0].Path);
-        Assert.Equal("gph-1", JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("graph").GetString());
-        // FABRIC-CLOSE1l: the driver binds only at the take, naming the graph for it as the first session opens.
-        Assert.True(JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("atTake").GetBoolean());
-        // FABRIC-CLOSE1o: for the session opening, whose take alone binds it.
-        Assert.Equal("ses-q7", JsonDocument.Parse(doors.Asked[0].Body!).RootElement.GetProperty("session").GetString());
-    }
-
     /// <summary>CLOSETAKE1 (FABRIC-CLOSE1o-ii): why a session's take went unbound is read off its record; nothing for a bound take or a host before it.</summary>
     [Fact]
     public async Task A_sessions_take_says_why_its_graph_did_not_bind_it()

@@ -619,7 +619,7 @@ public sealed class TraceTests : IDisposable
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 40) });
         var landed = new TreeLanding(true, "put the work on `feature/q1-fix-the-dashboard-figure` — 2 commit(s) from `main`.",
             "feature/q1-fix-the-dashboard-figure");
-        events.Append("s2", LandTryNotes.Of(AutoLandingCode.Landed, landed) with { At = At(10, 5) });
+        events.Append("s2", LandTryNotes.Of(LandingCode.Landed, landed) with { At = At(10, 5) });
         new LandedBranches(_home).Record(new LandedBranch(
             "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
             "Fix the dashboard figure", At(10, 5))

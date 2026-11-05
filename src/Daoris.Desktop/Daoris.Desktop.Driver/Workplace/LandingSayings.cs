@@ -32,7 +32,7 @@ internal static class LandingSayings
         new(false, $"`{branch}` moved after its landing was judged: it stands at {TextBounds.ShortCommit(stands, 8)}, "
             + $"not {TextBounds.ShortCommit(pinned, 8)}. Nothing was landed; it is judged again at its new tip.")
         {
-            Refusal = AutoLandingCode.Refused,
+            Refusal = LandingCode.Refused,
         };
 
     /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>

@@ -241,7 +241,6 @@ public static class PersonDoors
         new("POST", "/api/quests/{id}/evidence", DoorClass.Driver, "a done's evidence"),
         SetUp,
         // FABRIC-CLOSE1a (§E5): the graph is the workspace's and its close runs under the unit's lock, which only the driver holds.
-        new("POST", "/api/quests/{id}/bind", DoorClass.Driver, "a quest's bind to the graph that closes it"),
         new("POST", "/api/quests/{id}/close", DoorClass.Driver, "a graph's close of its quests"),
         new("POST", "/api/quests/{id}/close/outcome", DoorClass.Driver, "what became of a graph's close, by its key"),
         new("POST", "/api/sessions", DoorClass.Driver, "a driven session's record"),

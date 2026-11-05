@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -227,7 +228,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
 /// The service's doors the quests' and the asks' slices read, standing in: every quest and every ask as a test sets them, each read
 /// whole with the closed.
 /// </summary>
-internal sealed class ServiceStandIn : HttpMessageHandler
+internal sealed class ServiceStandIn : SessionChangesHandler
 {
     private string _quests = "[]";
     private string _asks = "[]";
@@ -244,7 +245,7 @@ internal sealed class ServiceStandIn : HttpMessageHandler
         set => Volatile.Write(ref _asks, value);
     }
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
     {
         var answer = request.RequestUri!.PathAndQuery switch
         {
