@@ -137,6 +137,11 @@ const rehearsalKit = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../tools/rehearsal-kit.mjs') as { OWN_BUILD_SERVERS: Readonly<Record<string, string>> };
 
+/** The page's types' generator, which every web gate's pre-script runs: built into an output of its own. */
+const contracts = await import(
+  // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
+  '../../../tools/contracts.mjs') as { OWN_OUTPUT: string; generatorBuild: (output: string) => { build: string[]; built: string } };
+
 const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
   '../../../tools/merge-branch.mjs') as {
@@ -3272,7 +3277,7 @@ const processRun = (project: string) => `dotnet test ${project} --settings src/D
 
 test("this repository's Process lane is the real-process halves and the rehearsals; every other gate is light, the web gate too", () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isProcessLane(gate)).map((gate) => gate.name),
-    ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
+    ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   assert.deepEqual(repoPlan.filter((gate) => !tool.isProcessLane(gate)).map((gate) => gate.name),
     ['universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'driver', 'modules', 'censuses', 'web', 'web-unit', 'web-measured']);
   // By what each runs, as the long gates are: a renamed gate, a new Process half or a new rehearsal is still one.
@@ -3562,12 +3567,29 @@ test("this repository's light gates run three at once, never two that build one 
   assert.deepEqual(schedule.components['web-unit'], []);
   // FLOWCHART1e: nor does the measured-box check, which serves the page's source with Vite.
   assert.deepEqual(schedule.components['web-measured'], []);
-  // GATELANES1's light order and GATEORDER1's waits hold.
+  // GATELANES1's light order and GATEORDER1's waits hold: the gates that build a Process half's component run first, the service's
+  // and the desktop's alike.
   assert.deepEqual(schedule.light.map((gate) => gate.name),
-    ['driver', 'modules', 'censuses', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
-  assert.deepEqual(schedule.waits['driver-process']!.after, ['driver', 'modules', 'censuses', 'cli', 'service', 'devkit', 'web', 'web-unit', 'web-measured']);
+    ['service', 'driver', 'modules', 'censuses', 'web', 'universal', 'code-map', 'test-map', 'web-types', 'web-rules', 'cli', 'tool-tests', 'devkit', 'web-unit', 'web-measured']);
+  assert.deepEqual(schedule.waits['driver-process']!.after, ['service', 'driver', 'modules', 'censuses', 'web', 'cli', 'devkit', 'web-unit', 'web-measured']);
   // GATEBUILD1: each Process half reuses the build of its own test project's fast half.
-  assert.deepEqual(schedule.reuses, { 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
+  assert.deepEqual(schedule.reuses, { 'service-process': 'service', 'driver-process': 'driver', 'driver-process-git': 'driver', 'modules-process': 'modules' });
+});
+
+test("this repository's web gates write the page's types with a generator built into an output of its own, so they build no component beside the .NET gates", () => {
+  // Each web gate's pre-script runs the generator, which references the contracts and the desktop modules: built in their own
+  // folders it wrote the contracts' obj/ while the service's or the desktop's gate built them there (CS2012).
+  const webScripts = (JSON.parse(readFileSync(join(repoRoot, 'src', 'Daoris.Web', 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
+  for (const pre of ['pretypecheck', 'pretest', 'prebuild']) assert.match(webScripts[pre]!, /^node \.\.\/\.\.\/tools\/contracts\.mjs --if-stale$/, pre);
+  const { build, built } = contracts.generatorBuild(join(repoRoot, contracts.OWN_OUTPUT));
+  assert.deepEqual(build.slice(0, 4), ['build', 'tools/contracts', '--artifacts-path', join(repoRoot, '_fixtures', 'contracts-build')]);
+  assert.ok(built.startsWith(join(repoRoot, '_fixtures', 'contracts-build')), built);
+  const text = readFileSync(join(repoRoot, 'tools', 'contracts.mjs'), 'utf8');
+  assert.doesNotMatch(text, /'run',\s*'--project'/, 'the generator is run from its own build, never by `dotnet run` in its project');
+  // So the scheduler counts no component for the web gates' types and rules, and they run beside any .NET gate.
+  const schedule = tool.laneSchedule(repoPlan, { scripts: rootScripts() });
+  assert.deepEqual(schedule.components['web-types'], []);
+  assert.deepEqual(schedule.components['web-rules'], []);
 });
 
 test("light gates of different components run at once, up to the width, two of one component never; the summary keeps the plan's order", async () => {
@@ -3725,7 +3747,7 @@ test('the git half is the Process half run with the git settings, and the rehear
 test("this repository's Process lane runs the release, family and deployment rehearsals beside the git half, one after the other, and every other Process-lane gate alone", () => {
   const schedule = tool.laneSchedule(repoPlan, { scripts: rootScripts() });
   assert.deepEqual(schedule.process.map((gate) => gate.name),
-    ['driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
+    ['service-process', 'driver-process', 'driver-process-git', 'rehearse', 'rehearse-family', 'deployment', 'modules-process']);
   // Never beside each other (REHLANE2): the family runs the CLI's bin, which prefers the dist/ the release rehearsal's pack
   // stages in the CLI's folder and removes again; the deployment rehearsal packs that folder too, and runs the bin
   // (REHLANE2b); and two Process-lane gates at once is the measured ceiling.
@@ -4145,7 +4167,7 @@ test('MEMGATE1: the memory a gate needs is its class\'s, or what daoris.gates.js
   assert.deepEqual(needs, {
     universal: 0, 'code-map': 0, 'test-map': 0, 'web-types': 0, 'web-rules': 0, 'tool-tests': 0,
     cli: suite, service: suite, devkit: suite, driver: suite, modules: suite, censuses: suite, web: suite, 'web-unit': suite, 'web-measured': suite,
-    'driver-process': half, 'driver-process-git': half, 'modules-process': half,
+    'service-process': half, 'driver-process': half, 'driver-process-git': half, 'modules-process': half,
     rehearse: rehearsal, 'rehearse-family': rehearsal, deployment: rehearsal,
   });
   assert.ok(suite! > 0 && half! >= suite! && rehearsal! >= half!, 'a heavier class needs no less');

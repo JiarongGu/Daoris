@@ -2922,9 +2922,11 @@ check(
 
 const passedOver = syncA('--workspace default');
 // Each host still holds its store open; a read it refuses is said, and fails the positive half rather than the gate.
+// A store writes ahead into a log beside its file (D236): what it holds is in the file and its log together.
 const storeBytes = (file) => {
   try {
-    return readFileSync(join(scratch, file), 'latin1');
+    const log = join(scratch, `${file}-wal`);
+    return readFileSync(join(scratch, file), 'latin1') + (existsSync(log) ? readFileSync(log, 'latin1') : '');
   } catch (error) {
     return `unreadable: ${error.message}`;
   }

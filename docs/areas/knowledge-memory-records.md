@@ -91,9 +91,11 @@ one job each, checked by `verify`.
 
 **The connector**
 
-16. Each session spawns its own connector over stdio; all of them share one `knowledge.db` under the Daoris home. Serving never
+16. Each session spawns its own connector over stdio; all of them share one `knowledge.db` under the Daoris home. The store writes
+    ahead into a `-wal` log beside the file, each commit synced in full (`StoreJournal`, set at every open), so a copy of the
+    store is the file and its log together. Serving never
     builds. A workspace's own server is built by `node tools/knowledge-server.mjs build` into `local/`, and a running session
-    moves onto a new build at its next request. (from D63, D151)
+    moves onto a new build at its next request. (from D63, D151, D236)
 17. Every registered tool has a class: read, restricted or publish. A tool with no class is refused to every named session.
     (from D173)
 18. The call table serves by work. A session in a repository gets the 18 core tools (knowledge, memory, quests, its line, the

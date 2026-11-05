@@ -311,7 +311,7 @@ internal sealed class RefSnapshot
     }
 
     /// <summary>A full ref name it read: under <c>refs/heads/</c> or <c>refs/remotes/origin/</c>, and nothing git would read as more than a name.</summary>
-    private static bool Covers(string reference)
+    internal static bool Covers(string reference)
     {
         var under = reference.StartsWith(Heads, StringComparison.Ordinal) ? Heads
             : reference.StartsWith(Origin, StringComparison.Ordinal) ? Origin
