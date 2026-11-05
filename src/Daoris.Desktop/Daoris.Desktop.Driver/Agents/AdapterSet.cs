@@ -78,8 +78,8 @@ public sealed class AdapterSet(
 
     /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
     public string? DeclaredBy(string name) =>
-        adapters.TryGetValue(name, out var adapter) && adapter is IPluginAdapter declared
-            ? declared.Plugin
+        adapters.TryGetValue(name, out var adapter) && adapter is LegacyDoor { Declared: true } declared
+            ? declared.Door.Identity.DeclaredBy
             : null;
 
     /// <summary>

@@ -76,4 +76,10 @@ public abstract record WireReading
     /// (<c>AgentErrors.Read</c>).
     /// </summary>
     public sealed record Failed(DoorFailure Failure) : WireReading;
+
+    /// <summary>
+    /// The agent refused the model its actor asked at the open, before any prompt: the account's refusal of that model, which the offers
+    /// store keeps before the open's re-ask walks on (D205 §3.3).
+    /// </summary>
+    public sealed record ModelRefused(ModelRefusal Refusal) : WireReading;
 }

@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// invented: a scratch run overrides these, and a session writing to the machine's real store because
 /// the overrides did not travel is the failure that would be hardest to see.
 /// </param>
-public sealed record AcpMcpServer(
+public sealed record ServerEntry(
     string Name,
     string Command,
     IReadOnlyList<string> Arguments,

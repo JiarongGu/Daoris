@@ -63,7 +63,7 @@ public sealed class SessionsCommandTests : IDisposable
     };
 
     private SessionsWorld World(Ledger ledger, ServiceClient service, MachineLog? log = null) =>
-        new(service, _home, DriverConfig.Empty, SessionWire.Pipe, log)
+        new(service, _home, DriverConfig.Empty, false, log)
         {
             Wait = TimeSpan.FromSeconds(5),
             Poll = TimeSpan.FromMilliseconds(20),

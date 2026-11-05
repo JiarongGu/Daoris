@@ -518,7 +518,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var name = pipe.Serve()!;
         var output = new StringWriter();
         var error = new StringWriter();
-        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), SessionWire.Pipe, null)
+        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), false, null)
         {
             // The pipe the dev loop names, as a rehearsal names it (the terminal RPC design §7.4): a workspace build reads no address file.
             Instance = new InstanceWorld
@@ -575,7 +575,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var name = pipe.Serve()!;
         var output = new StringWriter();
         var error = new StringWriter();
-        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), SessionWire.Pipe, null)
+        var world = new SessionsWorld(new ServiceClient(ledger.Address, null), Home, DriverConfig.Load(DriverConfigPath), false, null)
         {
             Instance = new InstanceWorld
             {

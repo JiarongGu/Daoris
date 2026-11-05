@@ -65,11 +65,11 @@ public static class SessionEntries
     /// <param name="lastLook">The loop's last verdicts, which a surface with a loop hands so the look need not ask them again.</param>
     /// <param name="waits">What the loop's look holds waiting on an account, where the surface has a loop.</param>
     public static async Task<(IReadOnlyList<SessionEntry> Entries, IReadOnlyList<SessionGrouping> Rows)> LookAsync(
-        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook,
+        ServiceClient service, DriverConfig config, bool unadopted, IReadOnlyList<Consideration>? lastLook,
         IReadOnlyList<AccountWait>? waits, string home, Func<SessionEntry, bool> which, CancellationToken cancellationToken)
     {
         // No tree is walked to find the entries (they are the records'); then only their parts' trees are.
-        var look = await SessionGroups.LookAsync(service, config, door, lastLook, home, [], cancellationToken).ConfigureAwait(false);
+        var look = await SessionGroups.LookAsync(service, config, unadopted, lastLook, home, [], cancellationToken).ConfigureAwait(false);
         if (waits is not null) look = look with { Waits = waits };
         var entries = SessionGroups.ReadEntries(look).Where(which).ToList();
         var ids = entries.SelectMany(entry => entry.Parts.Select(part => part.Session)).ToList();

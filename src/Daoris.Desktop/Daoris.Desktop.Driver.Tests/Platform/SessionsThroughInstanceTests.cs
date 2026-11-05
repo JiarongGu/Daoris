@@ -25,7 +25,7 @@ public sealed class SessionsThroughInstanceTests
     }
 
     private static SessionsWorld World(EmptyService service, string home, InstanceWorld? instance) =>
-        new(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))), home, DriverConfig.Empty, SessionWire.Pipe, null) { Instance = instance };
+        new(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))), home, DriverConfig.Empty, false, null) { Instance = instance };
 
     [Fact]
     public async Task Through_the_instance_the_list_is_the_lines_it_answers_and_this_process_reads_nothing()

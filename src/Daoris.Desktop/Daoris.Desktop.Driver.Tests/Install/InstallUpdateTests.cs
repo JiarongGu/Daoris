@@ -116,7 +116,7 @@ public sealed class InstallUpdateTests : IDisposable
         Assert.Equal(["engine", "atlas"], drained.Holds);
         Assert.Equal(StartVerdict.Held, Assert.Single(Planner.Plan(
             new Snapshot([new QuestView("q1", "ask #a1", "atlas", "Set up", "", "Open")], [new RepoView("atlas", false, "D:/fam/atlas")], []),
-            drained, SessionWire.Acp)).Verdict);
+            drained, true)).Verdict);
     }
 
     /// <summary>DRAINHOLD1 (the driver follow-up): the drained config says it drains, so each start the look makes on its own reads one view.</summary>

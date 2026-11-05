@@ -83,7 +83,7 @@ public static class KnowledgeConnector
     /// which is how a publish from a room that is no repository is asked by the ask. Null for a
     /// quest's session, whose repository already says everything.
     /// </param>
-    public static AcpMcpServer Server(
+    public static ServerEntry Server(
         string located, Func<string, string?> variable, string? home, IReadOnlyDictionary<string, string>? scope)
     {
         var carried = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -108,7 +108,7 @@ public static class KnowledgeConnector
             if (chosen is { Length: > 0 }) carried[DaorisHome.Variable] = chosen;
         }
 
-        return new AcpMcpServer(ServerName, located, [], carried);
+        return new ServerEntry(ServerName, located, [], carried);
     }
 
     /// <summary>The role a session's start took, as its binding keeps it, for its connector to name; none where the store does not read.</summary>
@@ -209,7 +209,7 @@ public static class KnowledgeConnector
     /// </remarks>
     /// <param name="environment">The surroundings to pass through; null reads this process's.</param>
     /// <param name="scope">What this session's connector carries beyond the store (<see cref="Server"/>).</param>
-    public static AcpMcpServer? Offer(
+    public static ServerEntry? Offer(
         string? explicitPath, string? home, string baseDirectory,
         IReadOnlyDictionary<string, string?>? environment = null,
         IReadOnlyDictionary<string, string>? scope = null)
@@ -227,7 +227,7 @@ public static class KnowledgeConnector
     /// The same, every input read from the surroundings <paramref name="variable"/> answers (ENVSEAM1): the host it names, the home it
     /// names, and what it passes through. The driver's own environment, which is this process's unless a test hands in its own.
     /// </summary>
-    public static AcpMcpServer? Offer(Func<string, string?> variable, string baseDirectory, IReadOnlyDictionary<string, string>? scope)
+    public static ServerEntry? Offer(Func<string, string?> variable, string baseDirectory, IReadOnlyDictionary<string, string>? scope)
     {
         var home = DaorisHome.Resolve(variable);
         return Locate(variable(PathVariable), home, baseDirectory) is { } located ? Server(located, variable, home, scope) : null;

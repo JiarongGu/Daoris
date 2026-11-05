@@ -18,7 +18,7 @@ public sealed class ServerHandingTests : IDisposable
     public void Dispose() => GitSeed.Discard(_home);
 
     private static ConnectorPlan Plan(string session) => new(
-        session, [new AcpMcpServer("browser", "npx", ["-y", "@playwright/mcp@latest"], new Dictionary<string, string> { ["HEADLESS"] = "1" })]);
+        session, [new ServerEntry("browser", "npx", ["-y", "@playwright/mcp@latest"], new Dictionary<string, string> { ["HEADLESS"] = "1" })]);
 
     [Fact]
     public void Claude_codes_native_door_hands_the_plan_as_its_own_file_and_every_other_built_door_has_no_carrier()
@@ -48,7 +48,7 @@ public sealed class ServerHandingTests : IDisposable
         Assert.Null(new Adapter(SessionWire.Acp).ServerHanding());
     }
 
-    private static AcpMcpServer Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
+    private static ServerEntry Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
 
     [Fact]
     public void One_plan_per_workspace_carries_its_workspace_its_permitted_sources_and_the_connector_it_requires()
@@ -75,15 +75,10 @@ public sealed class ServerHandingTests : IDisposable
     }
 
     [Fact]
-    public void A_start_that_leaves_the_agents_own_servers_out_is_refused_by_every_door_but_claude_codes_native_one()
+    public void A_plan_names_no_exclusion_of_the_agents_own_servers_since_no_start_asks_for_one()
     {
-        var plan = ConnectorPlans.For("s1", "shop", [Server("docs")]) with { ExcludesOwn = true };
-        Assert.Equal(plan, ConnectorPlans.Admit(AdapterSet.Built().Resolve("claude-code"), plan));
-        foreach (var door in new[] { "claude-code-acp", "codex-acp", "dsh" })
-        {
-            var refused = Assert.Throws<DriverException>(() => ConnectorPlans.Admit(AdapterSet.Built().Resolve(door), plan));
-            Assert.Contains($"`{door}`", refused.Message, StringComparison.Ordinal);
-        }
+        Assert.DoesNotContain(typeof(ConnectorPlan).GetProperties(), property => property.Name == "ExcludesOwn");
+        Assert.DoesNotContain(typeof(DoorAbilities).GetProperties(), property => property.Name == "OwnServersLeftOut");
     }
 
     [Fact]
@@ -118,6 +113,19 @@ public sealed class ServerHandingTests : IDisposable
     {
         Assert.Equal(".mcp.json", ClaudeServers.FileSuffix);
         Assert.Contains(ClaudeServers.FileSuffix, SessionHomeFiles.SpawnSuffixes);
+        Assert.Equal(".settings.json", ClaudeRules.FileSuffix);
+        Assert.Contains(ClaudeRules.FileSuffix, SessionHomeFiles.SpawnSuffixes);
+    }
+
+    [Fact]
+    public void A_server_is_a_ServerEntry_of_Knowledges_type_with_its_own_environment_in_every_door_it_is_handed_to()
+    {
+        var entry = Server("docs") with { Environment = new Dictionary<string, string> { ["DAORIS_SESSION"] = "s7" } };
+        Assert.Equal("Daoris.Driver", typeof(ServerEntry).Namespace);
+        Assert.Equal("ServerEntry", typeof(ServerEntry).Name);
+        var file = AdapterSet.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s7", [entry]));
+        Assert.Contains("DAORIS_SESSION", File.ReadAllText(file!), StringComparison.Ordinal);
+        SpawnFiles.Remove(file);
     }
 
     private sealed class Adapter(SessionWire wire) : ISessionAdapter

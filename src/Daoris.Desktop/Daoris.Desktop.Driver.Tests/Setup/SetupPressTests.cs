@@ -114,7 +114,7 @@ public sealed class SetupPressTests : IDisposable
         var world = new World { Facts = Clean(declares: true, index: "docs/index/README.md") };
         var config = Driven.WithStanding("billing", "Run the whole test suite before every commit.\nTest in staging.", DateTimeOffset.UnixEpoch);
 
-        var plan = await SetupPress.PlanReconcileAsync(world, config, SessionWire.Acp, "billing", Day);
+        var plan = await SetupPress.PlanReconcileAsync(world, config, true, "billing", Day);
 
         Assert.Empty(plan.Refusals);
         Assert.Equal(SetupCase.Reconcile, plan.Case);
@@ -145,9 +145,9 @@ public sealed class SetupPressTests : IDisposable
         var world = new World { Facts = Clean(declares: true, index: "docs/index/README.md") };
         world.Quests.Add(new QuestView("q7", "ask #a7", "billing", "Reconcile this repository with the shared doctrine (2026-09-30)", "", "Taken"));
 
-        Refused(await SetupPress.PlanReconcileAsync(world, Driven, SessionWire.Acp, "billing", Day), SetupRefusals.Open, "`#q7`");
+        Refused(await SetupPress.PlanReconcileAsync(world, Driven, true, "billing", Day), SetupRefusals.Open, "`#q7`");
 
-        var unadopted = await SetupPress.PlanReconcileAsync(new World(), Driven, SessionWire.Acp, "reports", Day);
+        var unadopted = await SetupPress.PlanReconcileAsync(new World(), Driven, true, "reports", Day);
         Refused(unadopted, SetupRefusals.NotAdopted, "has not taken up the shared doctrine");
         Assert.Null(unadopted.Title);
     }
@@ -164,13 +164,13 @@ public sealed class SetupPressTests : IDisposable
         var unread = new World { Facts = adopted, Doctrine = new(null, "`daoris status --json` said: daoris.json is not valid JSON") };
         var toolless = new World { Facts = adopted, Tools = new("node", "v22.11.0", null, null, null, null) };
 
-        var refused = await SetupPress.PlanReconcileAsync(newer, Driven, SessionWire.Acp, "billing", Day);
+        var refused = await SetupPress.PlanReconcileAsync(newer, Driven, true, "billing", Day);
         Refused(refused, SetupRefusals.NewerLock, "9.9.9");
         Assert.Null(refused.Title);
         Assert.Equal("9.9.9", refused.Doctrine?.NewerLock);
-        Refused(await SetupPress.PlanReconcileAsync(unread, Driven, SessionWire.Acp, "billing", Day), SetupRefusals.StatusUnread, "daoris.json is not valid JSON");
+        Refused(await SetupPress.PlanReconcileAsync(unread, Driven, true, "billing", Day), SetupRefusals.StatusUnread, "daoris.json is not valid JSON");
 
-        var none = await SetupPress.PlanReconcileAsync(toolless, Driven, SessionWire.Acp, "billing", Day);
+        var none = await SetupPress.PlanReconcileAsync(toolless, Driven, true, "billing", Day);
         Refused(none, SetupRefusals.NoTool, "no `daoris`");
         Assert.Empty(toolless.Statused);
         Assert.Null(none.Doctrine);
@@ -320,9 +320,9 @@ public sealed class SetupPressTests : IDisposable
     [Fact]
     public async Task An_unadopted_repository_on_the_pipe_door_is_refused_and_an_adopter_is_not()
     {
-        var unadopted = await PlanAsync(new World(), door: SessionWire.Pipe);
-        var alone = await PlanAsync(new World(), config: Driven.WithDrivable("reports", false), door: SessionWire.Pipe);
-        var adopted = await PlanAsync(new World { Facts = Adopter("{}", """{"entries":[]}""") }, "billing", door: SessionWire.Pipe);
+        var unadopted = await PlanAsync(new World(), unadopted: false);
+        var alone = await PlanAsync(new World(), config: Driven.WithDrivable("reports", false), unadopted: false);
+        var adopted = await PlanAsync(new World { Facts = Adopter("{}", """{"entries":[]}""") }, "billing", unadopted: false);
 
         Refused(unadopted, SetupRefusals.NotDriven, "protocol door");
         Refused(alone, SetupRefusals.NotDriven, "protocol door");
@@ -481,7 +481,7 @@ public sealed class SetupPressTests : IDisposable
     [Fact]
     public async Task What_it_builds_shapes_the_quests_safe_work()
     {
-        var plan = await SetupPress.PlanAsync(new World(), Driven, SessionWire.Acp, "reports", Day, SetupBuilds.Service);
+        var plan = await SetupPress.PlanAsync(new World(), Driven, true, "reports", Day, SetupBuilds.Service);
 
         Assert.Equal(SetupBuilds.Service, plan.Builds);
         Assert.Contains(SetupBuilds.Checks(SetupBuilds.Service), plan.Body);
@@ -506,8 +506,8 @@ public sealed class SetupPressTests : IDisposable
     }
 
     private Task<SetupPlan> PlanAsync(
-        World world, string repository = "reports", DriverConfig? config = null, SessionWire door = SessionWire.Acp) =>
-        SetupPress.PlanAsync(world, config ?? Driven, door, repository, Day);
+        World world, string repository = "reports", DriverConfig? config = null, bool unadopted = true) =>
+        SetupPress.PlanAsync(world, config ?? Driven, unadopted, repository, Day);
 
     private static void Refused(SetupPlan plan, string code, string said)
     {

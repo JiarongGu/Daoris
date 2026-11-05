@@ -14,7 +14,7 @@ internal static class SessionsListing
         }
 
         // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account.
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
         foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow)) output.WriteLine(line);
         return 0;

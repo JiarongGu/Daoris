@@ -18,9 +18,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | Unit | File | Its job |
 |---|---|---|
 | `Provider`, `AgentDoor`, `Known<T>` | `Contract/Provider.cs`, `Contract/Known.cs`, `Contract/ProviderParts.cs` | The provider record: identity, doors, account pool, word tables, usage question, reach; every part known with its source, or stated absent |
-| `DoorAbilities`, `Adoption` | `Contract/DoorAbilities.cs`, `Domain/Adoption.cs` | What a door can do as its callers read it: interactive, resumes and takes settings as the door declares them, and the rest its transport's (servers and rules on the wire, set at the open, words at the next step, held on the wire, resumed by a restart), so no caller tests a door's wire. `Adoption` judges driving an unadopted repository over door ids: a door whose servers ride its wire may; `Drives` asks it of Build's candidates for the machine's door, an unknown id the pipe until s-i |
+| `DoorAbilities`, `Adoption` | `Contract/DoorAbilities.cs`, `Domain/Adoption.cs` | What a door can do as its callers read it: interactive, resumes and takes settings as the door declares them, and the rest its transport's (servers and rules on the wire, set at the open, words at the next step, held on the wire, resumed by a restart), so no caller tests a door's wire. `Adoption` judges driving an unadopted repository over door ids: a door whose servers ride its wire may; `Drives` asks it of Build's candidates, and the five places that plan by it (the loop's `StartDoor`, set-up, the terminal's two consoles, the window's `DriverContext`) carry the answer as a bool (`unadopted`), never a `SessionWire`; an unknown id may not |
 | `AgentRun`, `Transport` | `Contract/AgentRun.cs`, `Contract/Transport.cs` | What an executor holds of a live run; the two transports, `Native` and `Protocol` |
-| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' adapters, id resolution by kind. `AdapterSet.OwnerOf` (the registry's `OwnerOfAgent`) is the one reader of whose accounts a door runs as and `AdapterSet.ToolchainOf` of a door's or a holder's toolchain; the roster, the terminal's verbs, the window's routes and the hand-over read nothing else. Codex's limit words and usage question are provider `codex`'s: its built door reads them through it, a plugin's door naming `codex-acp` by its `Lent` part, one joined to `codex` neither |
+| `AgentCapabilities`, `IAgentFacts`, `Sheet`, `Measurement`, `ProviderFacts` | `Knowledge/AgentCapabilities.cs`, `Knowledge/IAgentFacts.cs`, `Domain/Sheet.cs`, `Domain/Measurement.cs`, `Registry/ProviderFacts.cs` | The provider sheet (COAGENT1 §3): `Sheet.Of` reads each door's capabilities from its registration, an opening's answers or the measurements table (each row's evidence document held to exist), else absent with its fallback; `ProviderRegistry.Facts` answers each agent once with its account acts and its doors' sheets, the door named for it first. The port and its values sit in Knowledge, below Agents, so the room may read them. The roster's `HARNESSES` answer carries them as `agents`, and each door's `wire` is its sheet's word (`acp`, `pipe`), as the help receipt's is |
+| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' doors, id resolution by kind. `AdapterSet.OwnerOf` (the registry's `OwnerOfAgent`) is the one reader of whose accounts a door runs as and `AdapterSet.ToolchainOf` of a door's or a holder's toolchain; the roster, the terminal's verbs, the window's routes and the hand-over read nothing else. Codex's limit words and usage question are provider `codex`'s: its built door reads them through it, a plugin's door naming `codex-acp` by its `Lent` part, one joined to `codex` neither |
 | `LegacyDoor`, `AdapterNativeDialect`, `AdapterProtocolDialect`, `AdapterAbilities`, `AdapterClaudeSeam`, `RegisteredVariables` | `Registry/` | Presents a contract door to today's readers as an adapter and a toolchain, its spawn the door's recipe completed by the shell; a real door's stream reader and session `_meta` as its adapter class makes them, until rows i and k move them into the provider's folder; `adapter.Abilities()`, a contract door's from its record and a plugin's or a test's adapter from its declarations and wire; whether a start takes Claude Code's seam (a contract door's spawn says, any other protocol adapter does); what every registration declared of a spawn's environment, and the refusal of a declared name of Daoris's list |
 | `ProcessRecipe`, `ISpawn`, `Shell`, `ISessionGit` | `Contract/ProcessRecipe.cs`, `Contract/Ports.cs`, `Transports/` | A door's spawn answers a recipe (program, arguments, input, its own variables); the transports' one shell completes it into every kind of session's process and holds the account half every probe and usage question takes too; the session's git a port the shell declares and Workplace installs, unset throwing |
 | `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model; each door's spawn its own there (`ClaudeCodeSpawn`, `ClaudeAcpSpawn` with `ClaudeAcp`'s seam, `CodexAcpSpawn`, `DshSpawn` with `DshProfile`, `StandInSpawn`) |
@@ -74,6 +75,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs`, `Providers/ClaudeCode/ClaudeTrust.cs` and same names | Rules in scopes and defaults, an agent's proposals, Claude Code's folder trust, reach into other checkouts |
 | `IRuleLanguage`, `ISkillLayout`, `IServerHanding`; `HandedRules`, `SkillSource`, `ConnectorPlan`, `ConnectorSource`, `PostureAsked` | `Contract/Ports.cs`; `Contract/`, same names | How a provider takes the product's rules, lays out a start's skills, and how a door takes a start's servers at its spawn, each handed plain values; a provider or door stating one absent is handed none of it; the posture a start asks of a protocol door (modes, required, the person answers) as one value with its one wire string and reader |
 | `ConnectorPlans`, `PluginAdapterSets` | `Agents/ConnectorPlans.cs`, `Plugins/PluginAdapterSets.cs` | The one composer of a start's plan per workspace, and where the plugins' doors join the adapter set (`WithPlugins`, over `AdapterSet.Joined`) |
+| `DeclaredDoor`, `DeclaredDoors`, `DeclaredSpawn` | `Contract/DeclaredDoor.cs`, `DeclaredDoors.cs`, `DeclaredSpawn.cs` | A plugin's door: Plugins (`PluginDoors`) converts a manifest's named fields into the `DeclaredDoor`, which has no field for steering, resume, rules, words, lineage or confinement (a manifest naming one reaches nothing); the factory makes it a protocol-transport contract door with its own `Identity` (plugin, product, maker) and own `Home` (variable, own home) and interactive stated here, and `LegacyDoor` presents it as an adapter (`Declared`) until row t; its provider is the registry's, grouped by the door's `accountOf` |
 | `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands |
 | `SpawnSkills`, `SpawnFiles`, `AdapterParts`, `DshProfile` | same names; `Registry/AdapterParts.cs`; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider and handed by its spawn; what a spawn wrote, removed with the session; a door's rule language, layout and server carrier as today's readers ask an adapter (a plugin's or a test's adapter, which declares none, takes Claude Code's, as before); the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
@@ -122,8 +124,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     server missing is refused naming it). The protocol door's open (`session/new`, `session/resume`) reads that plan's servers; the
     door's own carrier (`IServerHanding`) is asked the same plan once: Claude Code's native door writes its `.mcp.json` layout under the
     home (`--mcp-config`, the name `ClaudeServers.FileSuffix`), removed with the session; a door with no carrier at its spawn (dsh, the
-    stand-ins) is written nothing. A start that leaves the agent's own servers out is refused on a door that cannot (`OwnServersLeftOut`,
-    stated only by Claude Code's native door; no start requires it yet). A native door drives an adopted repository by its own
+    stand-ins) is written nothing. No start leaves the agent's own servers out, so the plan has no exclusion and no door states an ability for one. A native door drives an adopted repository by its own
     `.mcp.json` only where its servers inherit its environment (`ServersInherit`, Claude Code's native door and every undeclared native
     door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
@@ -259,7 +260,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - What a session is handed at spawn: `Driver.Prepare`, `Equip` and `HandRules` in Loop; a door's arguments, own variables and
   carriers on its spawn in its provider's folder; Daoris's own variables in `Shell`, never in a door's recipe.
 - A branch on what a door can do: ask its ability (`adapter.Abilities()`, `DoorAbilities`), never its wire; whether it may drive an
-  unadopted repository is `Adoption`'s. Only the transports, the providers and the machine door's holders s-i removes name
+  unadopted repository is `Adoption`'s. Only the transports, the providers and the shim name
   `SessionWire`, each a named exception of the provider census.
 
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
@@ -329,19 +330,23 @@ Agents page, and `orient-index` and `code-map` once files move.
   shell reads, Platform's launcher starting and containing the completed recipe (D201), the identity names moved down from
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
-  the sink's rest (l: the open's refused model still a re-ask and no reading, the lineage still a writer the run makes rather than
-  Participants' part, the four `stream-json` readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`),
-  m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
-  a start of its own rather than the run's, since the conversation's words go to the process its `NativeChat` holds; the protocol resume
-  once for a driven run and a conversation; the hand-over's accounts once; `IConversationHome`), n's rest (the doors' `Offers` part, the
-  actor run's asked choice read from the door's spawn, the offers store read by the start plan and the walk through `AgentOffers.Offers`
-  rather than `Read` and `Judge`), s-ii (the group's report of a resume against `ResumesOwn`, whose two reads agree on inspection and
-  want a planted disagreement); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
+  the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
+  one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by
+  the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243: words
+  through the run by `DoorInput`, one queue of ids per run, and `GoOnAsync` gone with it; a conversation's native retry still
+  `ChatWatch`'s own, a start of its own rather than the run's, until `NativeChat` writes through `DoorInput` and the run replays the
+  words the ended process never acknowledged; the protocol resume once for a driven run and a conversation; the hand-over's accounts
+  once; `IConversationHome`), n's rest (the doors' `Offers` part, the actor run's asked choice read from the door's spawn, the offers
+  store read by the start plan and the walk through `AgentOffers.Offers` rather than `Read` and `Judge`); a start's words go on in its
+  record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
-  home's servers file named by its provider); p's rest: `AcpMcpServer` renamed `ServerEntry` (a mechanical rename over some thirty files),
-  the five places of `Adoption` carrying a bool where they still carry `SessionWire`, and the page's twin; q is built in part
-  (`WithPlugins` out of Agents into Plugins); q's rest: the factory of `DeclaredDoor`s, a plugin's door a contract door in place of
-  `DeclaredAcpAdapter`, each door's own `Identity` and `Home` from its declaration, a provider made from declarations; the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
+  home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one
+  name, the five places of `Adoption` carry a bool, and a plugin's door is a contract door made from a `DeclaredDoor`, its provider
+  made from declarations by the registry; r is built in part (the sheet, `IAgentFacts`, the roster's `agents` half, the service's call
+  keys); r's rest: the page reading every agent fact from the sheet (its five `doors[0]` reads in `agents.ts`, `AgentPage.tsx` and
+  `AgentsView.tsx`, with the page's tests' rosters given `agents`), the sheet drawn on the agent's page in both languages, `agent
+  list`'s sheet lines with its text table's row, the room reading `IAgentFacts`, the manifest's two postures and the rehearsal's Stub
+  Two phase (**COAGENT1e**); then s-vii, and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling
@@ -352,11 +357,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
   kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes. The channel and the reader are built: a failed native `result` is one
+  Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
-  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and cools the account on a limit, saying it on the account's line.
-  What is not built: the conclusion still reads no native limit (the record ends as a failed or completed run, with no limit note and no
-  park), and a native conversation moves to no next account; those and the recorded limit are what remain of D210's row 1c.
+  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
+  as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so
+  `AccountEndings.Limited` cools the account once, notes it and the record says `limit`, then parks or waits by its line's rules; a native
+  conversation's cooling line is recorded before its turn's end, which `LimitHeld` reads limited (a failed result's subtype, never
+  `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.

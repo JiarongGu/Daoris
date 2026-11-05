@@ -15,7 +15,8 @@ internal sealed class ChatReplacement(IExecutorWiring wiring) : IExecutor
     public event Action<string, string>? Replaced;
 
     /// <summary>
-    /// The re-ask where the agent refused the entry's model at the open: the refusal kept as the account's reading first, then the pending
+    /// The re-ask where the agent refused the entry's model at the open: the refusal kept as the account's reading first, by the offers store's
+    /// part of the run's sink as the run says it (<see cref="OfferRefusals"/>), then the pending
     /// start's order walked again as if it had been known before the spawn, the refusing account passed and no count taken. A later entry of
     /// the same agent on the same account is set on this session; anything else is kept as what the replacement opens on
     /// (<see cref="ChatPending.Next"/>), and null ends the open.
@@ -25,11 +26,6 @@ internal sealed class ChatReplacement(IExecutorWiring wiring) : IExecutor
     {
         var context = wiring.Context;
         using var log = new MachineLog(context.Home, "driver");
-        if (AgentOffers.Refused(context.Home, resolved.Name, selection.Version, selection.Profile, refusal.Value, DateTimeOffset.UtcNow) is { } unkept)
-        {
-            log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-        }
-
         log.Write("info", "actor.refused", [("actor", pending.Actor), ("session", sessionId), ("agent", resolved.Name), ("model", refusal.Value),
             ("code", refusal.Code)]);
         var refused = pending.Entry;

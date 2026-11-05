@@ -216,11 +216,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             ? null
             : async refusal =>
             {
-                if (AgentOffers.Refused(home, adapter.Name, offers.Version, offers.Account, refusal.Value, DateTimeOffset.UtcNow) is { } unkept)
-                {
-                    log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-                }
-
+                // The refusal is a reading the run said before this re-ask, which the offers store's part of its sink kept (below).
                 log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Name), ("model", refusal.Value),
                     ("code", refusal.Code)]);
                 if (await reask(refusal).ConfigureAwait(false) is not { } later) return null;
@@ -314,7 +310,9 @@ internal sealed class SessionHold(IRunWiring wiring)
             new RecordReadings(sessionId, output, context.Events),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
-            limits));
+            limits,
+            offers is null ? null
+                : new OfferRefusals(home, adapter.Name, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
 
         // The rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
@@ -342,7 +340,6 @@ internal sealed class SessionHold(IRunWiring wiring)
         // The exit, the capture bounded past it, the process's lineage end at its drain, and what it consumed where the door reported
         // it: a pipe with only text reports nothing, and a surface then says "not measured" rather than zero.
         var end = await run.EndAsync(ct).ConfigureAwait(false);
-        var turnFailed = protocol ? end.Ending.Failure : null;
         List<ChatMessage> left = [.. acpLeft];
 
         // 🔴 A session never concludes while words are held: on the native door its process has exited, so its own conversation is
@@ -351,6 +348,10 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             end = await wiring.GoOns.GoOnAsync(run, held, adapter, sessionId, end, resume, left, ct, own, setupChanged, carriesOn).ConfigureAwait(false);
         }
+
+        // The turn's failure the conclusion reads: the protocol door's refused turn, or the native door's last turn ended on its account's
+        // limit (D210 row 1c), so a native limit cools its account there, once, and its record says `limit`, as the protocol door's does.
+        var turnFailed = NativeLimits.TurnFailed(protocol, end.Ending, limits);
 
         // The run Daoris ended for a changed setup says so on its console as it ends; its record's note says it once concluded.
         if (swapped is not null && left.Count > 0)

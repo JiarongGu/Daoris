@@ -28,9 +28,9 @@ public static class Planner
     /// that release's operation at <c>released</c>. Null honours none, as a build before the key reads it.
     /// </param>
     public static IReadOnlyList<Consideration> Plan(
-        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false, IRoleStarts? roles = null,
+        Snapshot snapshot, DriverConfig config, bool unadopted = false, bool window = false, IRoleStarts? roles = null,
         Action<LineCourse>? decided = null) =>
-        new PlanRound(snapshot, config, door, window, roles, decided).Run();
+        new PlanRound(snapshot, config, unadopted, window, roles, decided).Run();
 
     /// <summary>
     /// Whether a taken quest whose last session here ended so is carried on from it: what the planner plans a carry-on for, and what

@@ -162,7 +162,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 piece: PieceJobs.NameOf(piece),
                 preamble: Driver.JoinNotices(preamble, opening),
                 handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly),
-                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 minutes: bound,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 noConnector: PartnerPass.NoConnector,

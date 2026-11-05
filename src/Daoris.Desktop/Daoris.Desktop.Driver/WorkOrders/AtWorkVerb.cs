@@ -43,7 +43,7 @@ public static class AtWorkVerb
         }
 
         // The look the listing reads, so the entry's parts stand in the strip's order as the window's groups slice holds them.
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
             .ConfigureAwait(false);
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         var held = Compose(look, session, record => ChildLineage.Reading(world.Home, record.Id, record.Kind, tokens), world.Home);

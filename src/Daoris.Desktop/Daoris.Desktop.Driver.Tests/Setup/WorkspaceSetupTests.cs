@@ -335,7 +335,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var world = new WorkspaceSetupStandIn().With(
             WorkspaceSetupStandIn.Row("atlas", "my team"), WorkspaceSetupStandIn.Row("billing", "my team"));
         var config = Driven(3);
-        var preview = await WorkspaceSetup.PreviewAsync(world, config, SessionWire.Acp, _home, "my team", new(Pilot: 1), Day);
+        var preview = await WorkspaceSetup.PreviewAsync(world, config, true, _home, "my team", new(Pilot: 1), Day);
         Assert.True((await WorkspaceSetup.PressAsync(preview, world, _home, Now)).Written);
 
         await TickAsync(world, config);
@@ -827,7 +827,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         new WorkspaceSetupStandIn().With([.. repositories.Select(repository => WorkspaceSetupStandIn.Row(repository))]);
 
     private Task<WorkspaceSetupPreview> PreviewAsync(WorkspaceSetupStandIn world, DriverConfig config, WorkspaceSetupOptions? options = null) =>
-        WorkspaceSetup.PreviewAsync(world, config, SessionWire.Acp, _home, "work", options ?? new(), Day);
+        WorkspaceSetup.PreviewAsync(world, config, true, _home, "work", options ?? new(), Day);
 
     private async Task<WorkspaceSetupPlan> PressAsync(WorkspaceSetupStandIn world, DriverConfig config, WorkspaceSetupOptions? options = null)
     {
@@ -837,7 +837,7 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     private Task<IReadOnlyList<string>> TickAsync(WorkspaceSetupStandIn world, DriverConfig config) =>
-        WorkspaceSetup.TickAsync(world, config, SessionWire.Acp, _home, Day, Now);
+        WorkspaceSetup.TickAsync(world, config, true, _home, Day, Now);
 
     private Task<IReadOnlyList<SetupStanding>> StandAsync(WorkspaceSetupStandIn world, DriverConfig config) =>
         WorkspaceSetup.StandAsync(world, config, Plan());

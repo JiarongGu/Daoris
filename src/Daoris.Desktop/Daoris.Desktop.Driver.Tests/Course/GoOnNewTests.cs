@@ -256,7 +256,7 @@ public sealed class GoOnNewTests : IDisposable
     public async Task The_terminal_says_what_comes_of_it_in_one_line()
     {
         var room = new Room([Record("s1", said: ["w1"]), Record("cl0sed00", quest: "q4", said: ["w1"])], [Quest("q1", "Taken"), Quest("q4", "Done")]);
-        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { CoolingOf = (_, _) => Cooling };
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null) { CoolingOf = (_, _) => Cooling };
 
         var output = new StringWriter();
         Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "s1"], out _)!, world, output));

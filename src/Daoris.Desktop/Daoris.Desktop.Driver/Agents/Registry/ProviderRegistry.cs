@@ -85,6 +85,11 @@ public sealed class ProviderRegistry
     /// <summary>The agents whose accounts Daoris keeps (POOLSTRAY1): every provider, door and account key, a disabled plugin's names too.</summary>
     public IReadOnlyList<string> Known { get; }
 
+    /// <summary>Each agent's facts and its doors' sheets, read from the registrations and the measurements table (COAGENT1e).</summary>
+    public IAgentFacts Facts => LazyInitializer.EnsureInitialized(ref _facts, () => new ProviderFacts(this, Measurement.Table))!;
+
+    private IAgentFacts? _facts;
+
     /// <summary>Every door, in id order.</summary>
     public IReadOnlyList<DoorId> Doors => [.. _doors.Values.Select(entry => entry.Door.Id).OrderBy(id => id.Value, StringComparer.Ordinal)];
 

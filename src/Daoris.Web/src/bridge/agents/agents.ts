@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys, USAGE_SLICE } from '../../data/queries';
-import type { AccountSettings, AccountSettingsChange, ToolDoor } from '../../agents/tools';
+import type { AccountSettings, AccountSettingsChange, AgentSheet, ToolDoor } from '../../agents/tools';
 import type { WiringAnswer } from '../../map/wiring';
 import { call } from '../call';
 import { readSlice } from '../driver';
@@ -34,6 +34,11 @@ export type HarnessRoster = {
    * five readers cast one to the other).
    */
   harnesses: ToolDoor[];
+  /**
+   * The sheet's half (COAGENT1e): each agent once with its account acts and its doors' sheets, which the page reads every agent
+   * fact from. Absent from a story's or a test's roster that names none.
+   */
+  agents?: AgentSheet[];
 };
 
 /**

@@ -49,6 +49,20 @@ function show(onOpenConvergence = () => {}, scope: string | null = null, onOpenQ
   );
 }
 
+/** The Map as the shell draws it: on a code map a repository's page named, and with the door to a repository's page. */
+function showAt(code: string | null, onOpenRepository = (_repository: string) => {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <Tooltip.Provider>
+        <WorkspaceScopeProvider initial={null}>
+          <MapView notify={() => {}} code={code} onOpenRepository={onOpenRepository} />
+        </WorkspaceScopeProvider>
+      </Tooltip.Provider>
+    </QueryClientProvider>,
+  );
+}
+
 describe('the workspace map', () => {
   beforeEach(() => {
     REGISTRY = [
@@ -301,13 +315,13 @@ describe('the workspace map', () => {
     expect(node.getAttribute('aria-pressed')).toBe('true');
     await userEvent.click(node);
     expect(node.getAttribute('aria-pressed')).toBe('false');
-    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
+    expect(screen.getAllByText('Choose a repository or a line to see what it carries.')).toHaveLength(2);
 
     await userEvent.click(screen.getByRole('button', { name: '2 quests from game to engine' }));
     expect(screen.getByText('game → engine')).toBeTruthy();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByText('game → engine')).toBeNull();
-    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
+    expect(screen.getAllByText('Choose a repository or a line to see what it carries.')).toHaveLength(2);
   });
 
   /** U47: a keyboard moving through the nodes lights their lines as a pointer over them does. */
@@ -460,7 +474,7 @@ describe('the workspace map', () => {
     expect(screen.getByText('streams the world')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'renderer' })).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Back to the workspace' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Back to the map' }));
     expect(await screen.findByRole('heading', { name: 'Map' })).toBeTruthy();
   });
 
@@ -471,8 +485,53 @@ describe('the workspace map', () => {
     };
     show();
     await openCode('engine');
-    await userEvent.click(await screen.findByRole('button', { name: 'Back to the workspace' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to the map' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Open code map' })).toHaveFocus());
+  });
+
+  // MAPUX1c: the way back chooses and reveals the repository, whichever door opened its code map.
+  it('goes back from the detail\'s door with the repository chosen and its line said', async () => {
+    CODE_MAPS = { engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] } };
+    show();
+    await openCode('engine');
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to the map' }));
+    expect(await screen.findByRole('button', { name: /^engine, 1 open/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('status')).toHaveTextContent('engine — 1 open quest; a session is working there');
+  });
+
+  it('goes back from a repository page\'s door with the repository chosen and its card focused', async () => {
+    CODE_MAPS = { engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] } };
+    showAt('engine');
+    expect(await screen.findByRole('heading', { name: 'engine: code map' })).toBeTruthy();
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to the map' }));
+    const card = await screen.findByRole('button', { name: /^engine, 1 open/ });
+    expect(card).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(card).toHaveFocus());
+  });
+
+  // MAPUX1b: the choice's line is the one live region; the detail has a door to the repository's page.
+  it('says the choice in one polite line, the hint when nothing is chosen', async () => {
+    show();
+    await screen.findByRole('button', { name: /^engine, 1 open/ });
+    expect(screen.getByRole('status')).toHaveTextContent('Choose a repository or a line to see what it carries.');
+    await userEvent.click(screen.getByRole('button', { name: /^engine, 1 open/ }));
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status')).toHaveTextContent('engine — 1 open quest; a session is working there');
+  });
+
+  it('keeps a choice made by a double press', async () => {
+    show();
+    const card = await screen.findByRole('button', { name: /^engine, 1 open/ });
+    await userEvent.dblClick(card);
+    expect(card).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('opens a repository\'s page from the detail\'s door', async () => {
+    const onOpenRepository = vi.fn();
+    showAt(null, onOpenRepository);
+    await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open repository page' }));
+    expect(onOpenRepository).toHaveBeenCalledWith('engine');
   });
 
   /** D118 §3b: one level in, the module's detail goes beside the code map by the main area's width too. */

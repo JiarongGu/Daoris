@@ -164,8 +164,8 @@ public sealed class PlannerTests
 
     private static IReadOnlyList<Consideration> Plan(
         QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null,
-        SessionWire door = SessionWire.Pipe) =>
-        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), door);
+        bool unadopted = false) =>
+        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), unadopted);
 
     /// <summary>
     /// 🔴 Two active sessions in ONE repository is a state D51 allows — a conversation in the checkout
@@ -245,7 +245,7 @@ public sealed class PlannerTests
     [Fact]
     public void Over_the_protocol_door_a_registered_receiver_that_has_not_adopted_starts()
     {
-        var plan = Plan([Quest()], repos: [Repo(adopted: false)], door: SessionWire.Acp);
+        var plan = Plan([Quest()], repos: [Repo(adopted: false)], unadopted: true);
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.Start, only.Verdict);
@@ -256,7 +256,7 @@ public sealed class PlannerTests
     [Fact]
     public void Over_the_protocol_door_an_unadopted_receiver_still_needs_opting_in()
     {
-        var plan = Plan([Quest()], repos: [Repo(adopted: false)], config: Config(drivable: []), door: SessionWire.Acp);
+        var plan = Plan([Quest()], repos: [Repo(adopted: false)], config: Config(drivable: []), unadopted: true);
 
         Assert.Equal(StartVerdict.NotDrivable, Assert.Single(plan).Verdict);
     }
@@ -268,7 +268,7 @@ public sealed class PlannerTests
     [Fact]
     public void An_unadopted_receiver_with_no_root_here_is_not_told_to_connect()
     {
-        var plan = Plan([Quest()], repos: [Repo(adopted: false, root: null)], door: SessionWire.Acp);
+        var plan = Plan([Quest()], repos: [Repo(adopted: false, root: null)], unadopted: true);
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
@@ -281,7 +281,7 @@ public sealed class PlannerTests
     [Fact]
     public void A_receiver_the_registry_does_not_hold_says_so()
     {
-        var plan = Plan([Quest(to: "Elsewhere")], door: SessionWire.Acp);
+        var plan = Plan([Quest(to: "Elsewhere")], unadopted: true);
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.NotAdopted, only.Verdict);

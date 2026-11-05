@@ -53,7 +53,7 @@ public sealed class SessionsCommandRoleTerminalTests : IDisposable
         var output = new StringWriter();
         var ask = SessionsCommand.Read(args[1..], out var problem);
         Assert.True(problem is null, problem);
-        var world = new SessionsWorld(service, _home, DriverConfig.Empty, SessionWire.Pipe, null)
+        var world = new SessionsWorld(service, _home, DriverConfig.Empty, false, null)
         {
             Wait = TimeSpan.FromSeconds(5),
             Poll = TimeSpan.FromMilliseconds(20),

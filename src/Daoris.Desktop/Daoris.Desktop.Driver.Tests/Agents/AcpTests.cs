@@ -2098,7 +2098,7 @@ public sealed class AcpTests
     // written anywhere. The env shape is an ARRAY of {name,value} pairs — read from the adapter's own
     // source, where it does `Object.fromEntries(server.env.map(e => [e.name, e.value]))`.
 
-    private static readonly AcpMcpServer Knowledge = new(
+    private static readonly ServerEntry Knowledge = new(
         "daoris-knowledge",
         "daoris-knowledge",
         ["--stdio"],

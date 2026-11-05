@@ -54,7 +54,7 @@ function SessionMark({ parked }: { parked: boolean }) {
  * What the chosen part of the map holds (MAP2). It adds no action of its own: acting on a quest or a
  * session stays where it already lives, and this only says what is there.
  */
-export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, onOpenQuest }: {
+export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, onOpenQuest, onOpenRepository }: {
   topology: Topology;
   selected: MapSelection | null;
   onOpenConvergence?: () => void;
@@ -62,6 +62,8 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   onOpenQuest?: (id: string) => void;
   /** Open this repository's own code map (MAP3a) — the same map, one level in. */
   onOpenCode?: (repository: string) => void;
+  /** Open this repository's page on Repositories, where acting on it lives (MAPUX1b). */
+  onOpenRepository?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
   // A choice the map no longer holds (the scope moved, or the data did) is no choice: it left an
@@ -93,9 +95,10 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
           <p className="m-0 -mt-2 text-meta text-ink-faint">{t('map.detail.circle', { workspace: node.workspace })}</p>
         )}
         {node.summary && <p className="m-0 text-small text-ink-soft">{node.summary}</p>}
-        {onOpenCode && (
-          <div>
-            <Button variant="ghost" onClick={() => onOpenCode(node.id)}>{t('map.detail.openCode')}</Button>
+        {(onOpenRepository || onOpenCode) && (
+          <div className="flex flex-wrap gap-1">
+            {onOpenRepository && <Button variant="ghost" onClick={() => onOpenRepository(node.id)}>{t('map.detail.openRepository')}</Button>}
+            {onOpenCode && <Button variant="ghost" onClick={() => onOpenCode(node.id)}>{t('map.detail.openCode')}</Button>}
           </div>
         )}
         {node.owns.length > 0 && (

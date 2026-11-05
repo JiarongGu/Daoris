@@ -233,7 +233,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 preamble: Driver.JoinNotices(preamble, opening),
                 handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
-                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 minutes: bound,
                 noConnector: OpinionPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,

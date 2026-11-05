@@ -31,7 +31,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
 
     private static async Task<(HelpProposal Proposal, HelpMachineFacts Facts)> PlacedAsync(PlaceAsk ask)
     {
-        var planned = await PlacePlans.PlanAsync(new PlacePlanTests.World(), DriverConfig.Empty, "no-home", new SetupPresetsTests.Catalog(), SessionWire.Acp, ask);
+        var planned = await PlacePlans.PlanAsync(new PlacePlanTests.World(), DriverConfig.Empty, "no-home", new SetupPresetsTests.Catalog(), true, ask);
         var proposal = Of("setup", "place", ask.Repositories[0]) with { Place = ask };
         return (proposal, Facts with { Places = new Dictionary<string, PlacePlanned> { [proposal.Id] = planned } });
     }

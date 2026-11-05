@@ -10,10 +10,10 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class InAppBrowserServersTests
 {
-    private static readonly AcpMcpServer Knowledge =
+    private static readonly ServerEntry Knowledge =
         new("daoris-knowledge", "daoris-knowledge.exe", [], new Dictionary<string, string>());
 
-    private static readonly AcpMcpServer Attached = new(
+    private static readonly ServerEntry Attached = new(
         "browser", "npx", ["-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"],
         new Dictionary<string, string> { ["BROWSER"] = "${browser}" });
 

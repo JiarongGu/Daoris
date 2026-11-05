@@ -18,6 +18,9 @@ public sealed class ClaudeRules : IRuleLanguage
     /// <summary>The one language Claude Code's doors take.</summary>
     public static ClaudeRules Language { get; } = new();
 
+    /// <summary>The end of the file a session's rules are handed in, in the spawn folder.</summary>
+    public const string FileSuffix = ".settings.json";
+
     /// <summary>The harness's own hard denials, kept by naming them in the list (UNBLOCK4).</summary>
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
@@ -58,7 +61,7 @@ public sealed class ClaudeRules : IRuleLanguage
 
         var folder = DaorisHome.Entry(home, HomeEntry.Spawn);
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, $"{sessionId}.settings.json");
+        var path = Path.Combine(folder, $"{sessionId}{FileSuffix}");
 
         var document = new JsonObject
         {

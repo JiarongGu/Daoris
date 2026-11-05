@@ -28,7 +28,7 @@ public sealed class HelpThroughInstanceTests
     }
 
     private static SessionsWorld World(EmptyService service, string home, InstanceWorld? instance) =>
-        new(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))), home, DriverConfig.Empty, SessionWire.Pipe, null) { Instance = instance };
+        new(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))), home, DriverConfig.Empty, false, null) { Instance = instance };
 
     private static Task<int> RunAsync(HelpVerbAsk ask, EmptyService service, string home, InstanceWorld? instance, TextWriter output) =>
         HelpCommand.RunAsync(ask, World(service, home, instance), _ => true, output);

@@ -36,7 +36,7 @@ public static class WorkspaceSetupCommand
     public static string? Problem(IReadOnlyList<string> args) => Read(args, out _);
 
     public static async Task<int> RunAsync(
-        IReadOnlyList<string> args, TextWriter output, IWorkspaceSetupWorld world, DriverConfig config, SessionWire door, string home,
+        IReadOnlyList<string> args, TextWriter output, IWorkspaceSetupWorld world, DriverConfig config, bool unadopted, string home,
         DateOnly day, DateTimeOffset now, CancellationToken ct = default)
     {
         if (Read(args, out var words) is { } problem)
@@ -65,7 +65,7 @@ public static class WorkspaceSetupCommand
             return 0;
         }
 
-        var preview = await WorkspaceSetup.PreviewAsync(world, config, door, home, workspace, words.Options, day, ct).ConfigureAwait(false);
+        var preview = await WorkspaceSetup.PreviewAsync(world, config, unadopted, home, workspace, words.Options, day, ct).ConfigureAwait(false);
         Describe(preview, output);
         if (!preview.Pressable)
         {

@@ -52,7 +52,7 @@ public sealed class HelpCommandTests : IDisposable
         Assert.True(problem is null, problem);
         using var service = ledger.Client();
         var output = new StringWriter();
-        var world = new SessionsWorld(service, _home, DriverConfig.Empty, SessionWire.Acp, null) { LoopRuns = () => false };
+        var world = new SessionsWorld(service, _home, DriverConfig.Empty, true, null) { LoopRuns = () => false };
         var exit = await HelpCommand.RunAsync(ask!, world, adapter => adapter == "claude-code-acp", output);
         return (exit, output.ToString().ReplaceLineEndings("\n"));
     }

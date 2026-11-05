@@ -34,10 +34,10 @@ public sealed class SetupRoutes(DriverContext context)
         if (read.Said)
         {
             return await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
-                PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Door(config), instance: null, ct: cancellationToken)).ConfigureAwait(false);
+                PlaceCommand.ArgsOf(ask), output, world, config, _loop.Home, plugins, _context.Unadopted(config), instance: null, ct: cancellationToken)).ConfigureAwait(false);
         }
 
-        return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Door(config), ask, cancellationToken).ConfigureAwait(false);
+        return await PlacePlans.PlanAsync(world, config, _loop.Home, plugins, _context.Unadopted(config), ask, cancellationToken).ConfigureAwait(false);
     }
 
     // A place's apply (AGENTSPLACE1b2, the Agents-place design §4), the plan's press: the plan's payload and its `digest`, and `accept`, the
@@ -64,14 +64,14 @@ public sealed class SetupRoutes(DriverContext context)
         IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
         var doors = new PlaceApplyDoors(
-            new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Door(config),
+            new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Unadopted(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
         // AGENTSPLACE1b3: `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).
         if (press.Said)
         {
             var said = await TerminalSaid.RunAsync(output => PlaceCommand.RunAsync(
-                PlaceCommand.ApplyArgsOf(ask, accepted), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Door,
+                PlaceCommand.ApplyArgsOf(ask, accepted), output, doors.Place, config, _loop.Home, doors.Plugins, doors.Unadopted,
                 instance: null, apply: doors, ct: cancellationToken)).ConfigureAwait(false);
             _loop.Nudge();
             return said;
@@ -142,7 +142,7 @@ public sealed class SetupRoutes(DriverContext context)
         var world = _context.SetupWorldOf(_loop.Service ?? throw NotReady());
         var config = DriverConfig.Load(_loop.ConfigPath);
         var plan = await SetupPress.PlanReconcileAsync(
-            world, config, _context.Door(config), repository, DateOnly.FromDateTime(DateTime.Now), cancellationToken).ConfigureAwait(false);
+            world, config, _context.Unadopted(config), repository, DateOnly.FromDateTime(DateTime.Now), cancellationToken).ConfigureAwait(false);
         return (plan, world);
     }
 
