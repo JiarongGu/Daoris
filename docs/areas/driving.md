@@ -183,9 +183,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     session's end). A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on
     beside the look, reserved. The whole lists a pass or the work beside it reads together (the snapshot's, the tidy's
     holders, the nodes' units) are asked at once. The tidy reads a repository's refs, top and working trees once a look,
-    each tree's branch from that list, until one of its stages writes. A reader of one record asks for it alone, a reader of the
-    running ones the open ones, and the window's sessions slice and the parks a look says read the list kept by its change since
-    their last mark (`SessionListKept`). (from D68, D181)
+    each tree's branch from that list, until one of its stages writes. A reader of the running ones asks the open ones, and every
+    other reader of the session list (the window's sessions slice, the parks a look says, the readers that need a line's other
+    parts and the per-session doors) reads the list kept by its change since the last mark (`SessionListKept`): its text and its
+    typed records are made once for each state of the list, one record is typed alone, and a host from before the change door is
+    read whole each time. The page merges a pushed change into the list it holds (`sessionsComposer`) where it sorted the whole
+    list at every change. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is kept in the file and read by nothing. (from D200)

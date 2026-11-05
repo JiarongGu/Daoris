@@ -71,13 +71,8 @@ public sealed class SessionListDoors
     public async Task<SessionView?> FindAsync(string id, CancellationToken ct = default) =>
         await OneAsync(id, ct).ConfigureAwait(false) is { } one ? SessionReads.Views([one]).FirstOrDefault() : null;
 
-    // One record by its id (GET /api/sessions/{id}), open or closed; null where the service has none.
-    private async Task<SessionResponse?> OneAsync(string id, CancellationToken ct)
-    {
-        var sent = await _service.SendAsync(new ReadSession(id), ct).ConfigureAwait(false);
-        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
-        return sent.Answered();
-    }
+    // One record by its id, open or closed, read from the kept list (which asks only what moved) and typed alone; null where there is none.
+    private Task<SessionResponse?> OneAsync(string id, CancellationToken ct) => Kept.OneAsync(id, ct);
 
     /// <summary>
     /// The asking session and every other session of its repository with a tree and a base here, chats included (LINESTOGETHER1c); an active

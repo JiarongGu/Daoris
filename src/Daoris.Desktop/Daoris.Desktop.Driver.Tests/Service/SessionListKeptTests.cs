@@ -59,4 +59,50 @@ public sealed class SessionListKeptTests
             host.Asked);
         Assert.Equal("""[{"id":"d","state":"d@m4"},{"id":"c","state":"c@m4"}]""", await kept.JsonAsync());
     }
+
+    [Fact]
+    public async Task One_record_is_found_by_its_id_from_the_held_list_and_the_text_is_written_once_for_each_state()
+    {
+        using var host = new Host(
+            Change("m1", true, ["A1", "b"], "A1", "b"), Change("m1", false, ["A1", "b"]), Change("m1", false, ["A1", "b"]),
+            Change("m1", false, ["A1", "b"]), Change("m2", false, ["b"]));
+        using var client = new ServiceClient(host);
+        var kept = client.SessionList.Kept;
+
+        Assert.Equal("b@m1", (await kept.OneAsync("b"))!.State);
+        Assert.Equal("A1@m1", (await kept.OneAsync("a1"))!.State);
+        Assert.Same(await kept.JsonAsync(), await kept.JsonAsync());
+        Assert.Null(await kept.OneAsync("A1"));
+    }
+
+    [Fact]
+    public async Task A_host_from_before_the_change_door_is_read_as_the_whole_list_each_time()
+    {
+        using var host = new OlderHost("""[{"id":"x","state":"working"},{"id":"y","state":"completed"}]""", """[{"id":"y","state":"completed"}]""");
+        using var client = new ServiceClient(host);
+        var kept = client.SessionList.Kept;
+
+        Assert.Equal(["x", "y"], Ids(await kept.ReadAsync()));
+        Assert.Equal(["y"], Ids(await kept.ReadAsync()));
+        Assert.Equal(
+            ["/api/sessions/changes", "/api/sessions?includeClosed=true", "/api/sessions/changes", "/api/sessions?includeClosed=true"],
+            host.Asked);
+    }
+
+    private sealed class OlderHost(params string[] lists) : IServiceDoors
+    {
+        private int _at;
+        public List<string> Asked { get; } = [];
+        public string BaseUrl => "http://stand-in";
+        public Task<string> GetAsync(string path, CancellationToken ct) => throw new NotSupportedException();
+        public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
+        public Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
+        {
+            Asked.Add(path);
+            return Task.FromResult(path.StartsWith("/api/sessions/changes", StringComparison.Ordinal)
+                ? new ServiceReply(404, """{"error":"no such door"}""")
+                : new ServiceReply(200, lists[_at++]));
+        }
+        public void Dispose() { }
+    }
 }

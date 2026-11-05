@@ -46,6 +46,15 @@ public sealed class SessionListKept
         () => _typed ??= [.. _list.Select(record => record.Deserialize(ContractJson.Options.GetTypeInfo(typeof(SessionResponse))) as SessionResponse
             ?? throw new JsonException("a session record did not read as the list declares it"))], ct);
 
+    /// <summary>One record as the declaration types it, found by its id (letters of either case); null where the list holds none.</summary>
+    /// <exception cref="DriverException">A refused read.</exception>
+    public Task<SessionResponse?> OneAsync(string id, CancellationToken ct = default) => CurrentAsync(
+        () => (_held.TryGetValue(id, out var found) ? found
+            : _list.FirstOrDefault(record => string.Equals(Id(record), id, StringComparison.OrdinalIgnoreCase)))
+            ?.Deserialize(ContractJson.Options.GetTypeInfo(typeof(SessionResponse))) as SessionResponse, ct);
+
+    private static string? Id(JsonObject record) => record["id"] is JsonValue id && id.TryGetValue<string>(out var named) ? named : null;
+
     private async Task<T> CurrentAsync<T>(Func<T> read, CancellationToken ct)
     {
         await _turn.WaitAsync(ct).ConfigureAwait(false);
@@ -123,6 +132,8 @@ public sealed class SessionListKept
 
         _mark = change["mark"]?.GetValue<string>();
         _held = kept;
+        // A change that moved nothing keeps the list, its text and its typed records as they are.
+        if (list.Count == _list.Count && list.Zip(_list).All(pair => ReferenceEquals(pair.First, pair.Second))) return true;
         _list = list;
         _json = null;
         _typed = null;
