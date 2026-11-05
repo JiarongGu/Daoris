@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "2ec0332e9237721f6ce792ac4342b386d9d949870a1bc905c1b56c235d211d79",
+  "canonDigest": "26ecc08b14d57f557fb3c47605c88f7c511a8f36595825330babea0d8a624b11",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -65,7 +65,7 @@
       "source": "core/knowledge/persist-working-state.md",
       "target": "knowledge/persist-working-state.md",
       "canonVersion": "0.0.1",
-      "sha256": "d144df24705cb708f8a5aedee7508314ab8fa20aa2c6528d91c418c72e19caf9"
+      "sha256": "c691dbab33973ec04fd1a0b20bee60feeeec1ad9542bf65dd5902980cd95959a"
     },
     {
       "pack": "core",

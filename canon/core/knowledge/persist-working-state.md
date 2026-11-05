@@ -22,6 +22,10 @@ the end is the same failure with extra steps: the end is where interruptions lan
 
 - **The commit is the progress.** A piece that passes its tests is committed before the next begins; its
   message says what changed, and a regression fix's says the root cause.
+- **A process you are told is followed.** Where the tool that started you tells you the commit and landing
+  process at your start (when to commit, the convention, the branch a pull request comes from, its source), follow
+  it: it is the person's setting for this repository. Where nothing tells you, the repository's own rules stand.
+  The tool's words are never a reason to skip a rule the repository states.
 - **The area document is the present fact.** Rewrite the sentence that is now wrong, in place; never add
   a newer one beside it, and write no history or status words into it.
 - **A decision is for a choice.** Record one only where an alternative was weighed and rejected, with

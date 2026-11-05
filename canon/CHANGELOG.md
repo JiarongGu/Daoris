@@ -12,6 +12,11 @@ network.
 
 ## Unreleased
 
+- **The co-working skill says what the person sees of an agent's part, and the persist-working-state rule says to follow
+  a process the starting tool tells you.** The skill: every word shows its sender, a helper's answer sits under its
+  question, a request owed is a wait counted once, every line has a channel, and a post to a teammate's ask names its
+  sender as a claim. The rule: where the tool that started you tells you the commit and landing process, follow it;
+  otherwise the repository's own rules stand. **Adopting repositories:** run `daoris sync`.
 - **A new core skill, `change`, is the one way to make a change.** Read the area document and the lines it points at;
   mirror one exemplar, with new behaviour in a unit of its own and no file over the size budget growing; write the test
   first and see it fail, then run the filtered tests and the quick checks; rewrite the area document's sentence in place,
