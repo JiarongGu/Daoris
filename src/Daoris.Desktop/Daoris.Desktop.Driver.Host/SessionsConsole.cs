@@ -34,14 +34,14 @@ internal static class SessionsConsole
         }, Console.Out).ConfigureAwait(false);
     }
 
-    /// <summary>Whether the configured agent may drive a repository that has not adopted Daoris, as the loop plans by it (D70); not, the stricter answer, when it names none this build has.</summary>
+    /// <summary>Whether the configured agent may drive a repository that has not adopted Daoris, as the loop plans by it (D70); a door this build does not know is refused (<see cref="UnknownDoorException"/>).</summary>
     internal static bool Unadopted(DriverConfig config)
     {
         try
         {
             return Adoption.Unadopted(ActorChoices.BuildAgent(config), AdapterSet.Built().AbilitiesOf);
         }
-        catch (DriverException)
+        catch (DriverException refused) when (refused is not UnknownDoorException)
         {
             return false;
         }

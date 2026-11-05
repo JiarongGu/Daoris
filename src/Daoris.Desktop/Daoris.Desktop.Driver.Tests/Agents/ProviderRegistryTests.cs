@@ -133,15 +133,24 @@ public sealed class ProviderRegistryTests : IDisposable
     [InlineData(new[] { "codex-acp" }, true)]
     [InlineData(new[] { "dsh" }, true)]
     [InlineData(new[] { "stub" }, false)]
-    [InlineData(new[] { "nobody-knows" }, false)]
-    [InlineData(new[] { "nobody-knows", "acp-stub" }, true)]
     [InlineData(new string[0], false)]
     public void Adoption_drives_where_the_loop_planned_the_protocol_door(string[] build, bool drives)
     {
-        // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe; an unknown id the pipe.
+        // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe.
         var adapters = AdapterSet.Built();
         Assert.Equal(drives, Adoption.Drives(build, adapters.AbilitiesOf));
         Assert.Equal(drives, build.Any(door => Adoption.Unadopted(door, adapters.AbilitiesOf)));
+    }
+
+    [Theory]
+    [InlineData(new[] { "nobody-knows" })]
+    [InlineData(new[] { "nobody-knows", "acp-stub" })]
+    [InlineData(new[] { "acp-stub", "nobody-knows" })]
+    public void Adoption_refuses_a_door_nobody_knows_wherever_it_stands(string[] build)
+    {
+        var adapters = AdapterSet.Built();
+        Assert.Equal("nobody-knows", Assert.Throws<UnknownDoorException>(() => Adoption.Drives(build, adapters.AbilitiesOf)).Door);
+        Assert.Throws<UnknownDoorException>(() => Adoption.Unadopted("nobody-knows", adapters.AbilitiesOf));
     }
 
     [Fact]

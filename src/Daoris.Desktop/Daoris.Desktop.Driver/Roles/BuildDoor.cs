@@ -8,9 +8,9 @@ namespace Daoris.Driver;
 public static class BuildDoor
 {
     /// <summary>
-    /// An adapter nobody knows may not: the stricter answer plans nothing more than it should, and the spawn names the unknown
-    /// adapter itself. An order that does not read may not either, as the start that reads it holds.
+    /// A door nobody knows is refused, never read as the pipe. An order that does not read may not drive, as the start that reads it holds.
     /// </summary>
+    /// <exception cref="UnknownDoorException">An entry of Build's order names a door this build does not know.</exception>
     public static bool Drives(string home, DriverConfig config, AdapterSet adapters)
     {
         IReadOnlyList<ActorEffective> order;

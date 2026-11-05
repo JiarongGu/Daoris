@@ -6,13 +6,14 @@ namespace Daoris.Driver;
 /// door that inherits its servers to find. Pure: the doors' abilities are handed in.
 /// </summary>
 /// <remarks>
-/// An id nobody knows reads as a door that may not, the stricter answer, until s-i refuses it: the plan then plans nothing more than
-/// it should and the spawn names the unknown id itself.
+/// An id nobody knows is refused (<see cref="UnknownDoorException"/>), never read as the pipe.
 /// </remarks>
 public static class Adoption
 {
     /// <summary>Whether <paramref name="door"/> may drive a repository that has not adopted Daoris.</summary>
-    public static bool Unadopted(string door, Func<string, DoorAbilities?> abilities) => Unadopted(abilities(door));
+    /// <exception cref="UnknownDoorException">No door of that id is known.</exception>
+    public static bool Unadopted(string door, Func<string, DoorAbilities?> abilities) =>
+        Unadopted(abilities(door) ?? throw new UnknownDoorException(door));
 
     /// <summary>Whether a door of these abilities may drive a repository that has not adopted Daoris; none known may not.</summary>
     public static bool Unadopted(DoorAbilities? door) => door is { ServersOnWire: true };
@@ -28,6 +29,7 @@ public static class Adoption
     /// Whether any of <paramref name="doors"/>, Build's candidates in their order, may drive a repository that has not adopted Daoris:
     /// the plan's answer for the machine, which the start then holds each candidate to.
     /// </summary>
+    /// <exception cref="UnknownDoorException">A door of the order is unknown: every one is asked, so none hides behind an earlier answer.</exception>
     public static bool Drives(IEnumerable<string> doors, Func<string, DoorAbilities?> abilities) =>
-        doors.Any(door => Unadopted(door, abilities));
+        doors.Select(door => Unadopted(door, abilities)).ToList().Contains(true);
 }

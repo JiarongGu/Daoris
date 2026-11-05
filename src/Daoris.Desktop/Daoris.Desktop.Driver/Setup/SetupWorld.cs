@@ -25,7 +25,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         {
             return BuildDoor.Drives(home, config, built.WithPlugins(PluginCatalog.Load(home, built.Names)));
         }
-        catch (DriverException)
+        catch (DriverException refused) when (refused is not UnknownDoorException)
         {
             return false;
         }
