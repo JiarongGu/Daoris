@@ -15,11 +15,13 @@ const { invoke, notifyReady } = vi.hoisted(() => ({
 
 vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
+  const { answeringSlices, holdingSlices } = await import('../../test/sliceShell');
+  const shell = answeringSlices(invoke);
   return {
     ...actual,
     isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
+    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
     useShenoraEvent: () => {},
     useWindowMaximized: () => false,
   };

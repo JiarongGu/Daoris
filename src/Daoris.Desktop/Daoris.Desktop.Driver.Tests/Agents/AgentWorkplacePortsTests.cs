@@ -41,6 +41,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
     public void Actual_git_preparation_keeps_token_removal_scope_and_the_no_identity_no_git_bound()
     {
         Assert.IsType<WorkingAgentWorkplace>(AgentWorkplace.Current);
+        Assert.IsType<WorkingSessionGit>(SessionGit.Current);
         var actual = new Dictionary<string, string?> { ["GH_TOKEN"] = "stand-token", ["GIT_CONFIG_COUNT"] = "1", ["GIT_CONFIG_KEY_0"] = "user.name", ["GIT_CONFIG_VALUE_0"] = "kept" };
         var expected = new Dictionary<string, string?>(actual);
         GitWiring.Untoken(expected);
@@ -49,18 +50,22 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         GitLongPaths.Hand(expected, true);
         var gits = 0;
         WorkingTree.Started.Value = _ => Interlocked.Increment(ref gits);
-        try { AgentWorkplace.Current.HandGit(actual, _home, _home); }
+        try { SessionGit.Current.Hand(actual, _home, _home); }
         finally { WorkingTree.Started.Value = null; }
         Assert.Equal(0, gits);
         Assert.Equal(expected.OrderBy(pair => pair.Key), actual.OrderBy(pair => pair.Key));
         Assert.Equal("user.name", actual["GIT_CONFIG_KEY_0"]);
         Assert.Equal("core.longpaths", actual["GIT_CONFIG_KEY_1"]);
+        // What it sets is Daoris's own, as names and as the numbered family; what it only clears is not (the design §4.6).
+        Assert.All(actual.Keys.Where(key => key != "GH_TOKEN"), key => Assert.True(Spawning.Daoris(key), key));
+        Assert.All(GitWiring.SessionTokens, token => Assert.False(Spawning.Daoris(token), token));
     }
 
     [Fact]
     public void An_independent_workplace_observes_tools_first_and_receives_the_original_facts()
     {
         var actual = AgentWorkplace.Current;
+        var session = SessionGit.Current;
         var git = ChildGit.Current;
         var calls = new List<string>();
         var stand = new Stand(calls);
@@ -70,8 +75,9 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         {
             ChildGit.Current = new ToolsFirst(calls);
             AgentWorkplace.Current = stand;
+            SessionGit.Current = stand;
             var target = Target() with { LandsOn = plan, Commits = commits };
-            var info = Spawning.InRoot(target, "stand-command", []);
+            var info = Shell.Start(new ProcessRecipe("stand-command", []), target);
             Assert.Equal(["tools", "git", "words"], calls);
             Assert.Equal("present", info.Environment["stand-workplace"]);
             Assert.Equal((_home, _home), stand.Git);
@@ -81,26 +87,36 @@ public sealed class AgentWorkplacePortsTests : IDisposable
             // The actual composer also reads an unrelated fact implementation, without a concrete-plan cast.
             Assert.Contains("review/stand", actual.ProcessWords(commits, plan));
         }
-        finally { AgentWorkplace.Current = actual; ChildGit.Current = git; }
+        finally { AgentWorkplace.Current = actual; SessionGit.Current = session; ChildGit.Current = git; }
     }
 
     [Fact]
     public void Missing_installation_and_refused_or_cancelled_operations_are_never_silenced()
     {
         var actual = AgentWorkplace.Current;
+        var session = SessionGit.Current;
+        var stand = new ProcessRecipe("stand", []);
         try
         {
             AgentWorkplace.Current = null!;
-            Assert.Throws<InvalidOperationException>(() => Spawning.InRoot(Target(), "stand", []));
+            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, Target()));
             Assert.Throws<InvalidOperationException>(() => TargetPrompt.Compose(Target()));
+            AgentWorkplace.Current = actual;
+            // D212's bound: an unset session git throws before any spawn completes or any registration check passes a git name.
+            SessionGit.Current = null!;
+            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, Target()));
+            Assert.Throws<InvalidOperationException>(() => Spawning.Daoris("GIT_CONFIG_COUNT"));
+            Assert.Throws<InvalidOperationException>(() => new ProviderRegistry(Providers.Built(), []));
             foreach (var failure in new Exception[] { new IOException("refused"), new OperationCanceledException(new CancellationToken(true)) })
             {
-                AgentWorkplace.Current = new Stand([]) { Failure = failure };
-                Assert.Same(failure, Assert.Throws(failure.GetType(), () => Spawning.InRoot(Target(), "stand", [])));
+                var failing = new Stand([]) { Failure = failure };
+                AgentWorkplace.Current = failing;
+                SessionGit.Current = failing;
+                Assert.Same(failure, Assert.Throws(failure.GetType(), () => Shell.Start(stand, Target())));
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => TargetPrompt.Compose(Target())));
             }
         }
-        finally { AgentWorkplace.Current = actual; }
+        finally { AgentWorkplace.Current = actual; SessionGit.Current = session; }
     }
 
     [Fact]
@@ -133,13 +149,16 @@ public sealed class AgentWorkplacePortsTests : IDisposable
     {
         public void Hand(ProcessStartInfo info, string? home) { calls.Add("tools"); info.Environment["stand-tools"] = "present"; }
     }
-    private sealed class Stand(List<string> calls) : IAgentWorkplace
+    private sealed class Stand(List<string> calls) : IAgentWorkplace, ISessionGit
     {
         public Exception? Failure { get; init; }
         public (string?, string)? Git { get; private set; }
         public IStartLanding? Plan { get; private set; }
         public IStartCommits? Commits { get; private set; }
-        public void HandGit(IDictionary<string, string?> environment, string? home, string root)
+        public IReadOnlyList<string> Names => ["STAND_GIT"];
+        public IReadOnlyList<string> Families => ["STAND_FAMILY_"];
+        public IReadOnlyList<string> Tokens => ["STAND_TOKEN"];
+        public void Hand(IDictionary<string, string?> environment, string? home, string root)
         {
             if (Failure is { } failure) throw failure;
             Assert.Equal("present", environment["stand-tools"]);

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// Nothing here starts a process: the agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>), as
 /// <c>SignedOutWaitTests</c>' is, and declares no login question, so an account never read runs (SES3). Each start kind is asked
-/// through the roster's door its own site asks, and its answer is applied as the spawn applies it (<see cref="HarnessProbe.Apply"/>).
+/// through the roster's door its own site asks, and its answer is applied as the spawn applies it (<see cref="Shell.Equip"/>).
 /// </remarks>
 public sealed class OwnSpaceTests : IDisposable
 {
@@ -95,7 +95,7 @@ public sealed class OwnSpaceTests : IDisposable
 
         var selection = await StartAsync(Roster(), kind);
         var info = new ProcessStartInfo();
-        HarnessProbe.Apply(info, Real, selection.ProfileHome);
+        Shell.Equip(info, Real, selection.ProfileHome);
 
         Assert.True(selection.Allowed, selection.Refusal);
         Assert.Equal(("daoris-1", home), (selection.Profile, selection.ProfileHome));
@@ -175,7 +175,7 @@ public sealed class OwnSpaceTests : IDisposable
 
         var resume = await Roster().ResumeAsync("fake", Config, "aurora", account: null, kind, line: walks ? LineKind.DrivenClosed(carries: false) : LineKind.AskDaoris);
         var info = new ProcessStartInfo();
-        HarnessProbe.Apply(info, Real, resume.Selection.ProfileHome);
+        Shell.Equip(info, Real, resume.Selection.ProfileHome);
 
         Assert.True(resume.Selection.Allowed, resume.Selection.Refusal);
         Assert.Equal(NextHold.Ready, resume.Own);

@@ -27,12 +27,12 @@ internal static class CurrentDeliveries
     /// <param name="standing">Whether the standing automatic authority still stands, asked just before the first effect.</param>
     /// <param name="bound">The bound graph version's <c>land</c> it is written from (LANDNODE1m); null writes the landing's own form, with no graph.</param>
     public static async Task<(TreeDelivery? Delivery, TreeLanding? Refusal)> StartAsync(
-        string home, IWorkplacePluginWire wire, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
+        string home, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
         string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct, BoundLand? bound = null)
     {
         var rule = landing;
         var (method, graph) = bound is null
-            ? (rule.Form == LandingForm.Merge ? "merge" : rule.Plugin is not null ? "pull-request" : "branch", "none")
+            ? (rule.Form == LandingForm.Merge ? "merge" : "branch", "none")
             : (bound.Method, bound.Graph);
         TreeLanding Refused(string why) => new(false, $"Nothing was landed: {why}.") { Refusal = LandingCode.Refused };
         // The landing goes into the tree's line whatever the record would say, and the repository declares one line: a target is that line or
@@ -49,12 +49,12 @@ internal static class CurrentDeliveries
             return (null, Refused(LandingSayings.Untaken(branch ?? "", subject.EnteredName is not null).TrimEnd('.')));
         }
 
-        var squash = bound?.Squash ?? (rule.Squash && method is DeliveryMethods.Branch or DeliveryMethods.PullRequest);
+        var squash = bound?.Squash ?? (rule.Squash && method == DeliveryMethods.Branch);
         // Today's words where no land names a message: a merge's `Merge branch`, a branch's title.
         var words = method == DeliveryMethods.Merge ? $"Merge branch '{tree}'" : TextBounds.OneLine(subject.Title is { Length: > 0 } title ? title : subject.Session);
         var intent = new DeliveryIntent(
             subject.Session, repository, tip, method, bound?.Target ?? line, line, method == DeliveryMethods.Merge ? null : branch, bound?.Ticket,
-            bound?.Message ?? words, method is DeliveryMethods.PullRequest or DeliveryMethods.Push ? rule.Plugin : null,
+            bound?.Message ?? words, null,
             IntegrationEpoch.Of(new LandingIntegrate().Resolved(), null));
         var options = bound?.Options ?? JsonSerializer.Serialize(new Dictionary<string, object> { ["method"] = method, ["squash"] = squash });
         var authorization = acceptedBy == AcceptedBy.Auto
@@ -62,7 +62,7 @@ internal static class CurrentDeliveries
             : DeliveryAuthorization.Person($"{AcceptedBy.Person}:{subject.Session}", tip, graph, options, "[]");
 
         var store = new DeliveryStore(home);
-        var reconciler = DeliveryReconciler.Of(store, home, wire, record =>
+        var reconciler = new DeliveryReconciler(store, home, record =>
             string.Equals(record.Intent.Repository, repository, StringComparison.OrdinalIgnoreCase) ? root : DeliveryReconciler.Checkouts(home)(record));
         TreeDelivery Live(DeliveryClaim claim) => new(store, claim) { Live = bound is null, Land = bound, Standing = _ => standing() };
         // Its key settled already: one delivered while this landing waited is said so; else it lands as before, read by observation.

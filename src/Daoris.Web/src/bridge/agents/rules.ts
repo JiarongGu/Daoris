@@ -4,7 +4,7 @@ import { keys } from '../../data/queries';
 import type { AgentRulesState, RuleListName, RuleScopeName } from '../../settings/repository/AgentRules';
 import { call } from '../call';
 import { readSlice } from '../driver';
-import { readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { readPushed, type SliceSpec } from '../state/slices';
 
 // What an agent Daoris starts may do (MOD3): the machine's `permissions.json`, and an agent's proposals (D72, D74).
 
@@ -13,7 +13,7 @@ export const RULES_SLICE = 'rules';
 
 /**
  * The rules as the shell pushes them (FOUNDATION1s part B, D182): one partition, `RULES`'s answer whole, pushed when the rules move.
- * Nothing judged yet composes nothing, which keeps the pull.
+ * Nothing judged yet composes nothing, which is waited for.
  */
 export const rulesSlice: SliceSpec = {
   name: RULES_SLICE,
@@ -24,18 +24,18 @@ export const rulesSlice: SliceSpec = {
 
 /**
  * What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes, from the
- * one file under the home the driver composes each spawn from. Desktop only — the file is machine-local. Where the shell pushes them,
+ * one file under the home the driver composes each spawn from. Desktop only — the file is machine-local. As the shell pushes them,
  * read from memory, never stale and asked on no focus.
  */
 export const useRules = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  const pushed = usePushedLive(RULES_SLICE);
   return useQuery({
     queryKey: keys.rules,
-    queryFn: () => readPushed(client, RULES_SLICE, () => call<AgentRulesState>('RULES')),
+    queryFn: () => readPushed<AgentRulesState>(client, RULES_SLICE),
     enabled: isAvailable,
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 

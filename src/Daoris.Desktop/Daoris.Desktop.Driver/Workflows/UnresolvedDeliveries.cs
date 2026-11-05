@@ -19,10 +19,7 @@ internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
         if (!HomeLease.HeldHere(wiring.Home) || wiring.Config.Draining) return;
         try
         {
-            // A plugin says its lines on the console under its name, as at a press, and what it did is logged where the loop's hooks are.
-            var plugins = new LandingPlugins(
-                wiring.Home, say: (plugin, line) => wiring.Output?.Append($"plugin:{plugin}", line), pluginLog: wiring.Hooks?.Log);
-            await SettleDeliveriesAsync(plugins, events, ct).ConfigureAwait(false);
+            await SettleDeliveriesAsync(events, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                           or UnauthorizedAccessException)
@@ -33,16 +30,15 @@ internal sealed class UnresolvedDeliveries(ILandingWiring wiring) : ILookPass
     }
 
     /// <summary>
-    /// A restart settles by phase, before any new start: every delivery left unresolved, once per driver, its plugin phases through
-    /// the landing's plugins. What is held for the person, or could not be read, is said; a delivery settled or going on says nothing,
-    /// since its unit's next landing goes on from it.
+    /// A restart settles by phase, before any new start: every delivery left unresolved, once per driver. What is held for the person, or
+    /// could not be read, is said; a delivery settled or going on says nothing, since its unit's next landing goes on from it.
     /// </summary>
-    private async Task SettleDeliveriesAsync(IWorkplacePluginWire plugins, List<string> events, CancellationToken ct)
+    private async Task SettleDeliveriesAsync(List<string> events, CancellationToken ct)
     {
         if (_settled) return;
         _settled = true;
         var store = new DeliveryStore(wiring.Home);
-        foreach (var settled in await DeliveryReconciler.Of(store, wiring.Home, plugins, DeliveryReconciler.Checkouts(wiring.Home)).StartAsync(ct).ConfigureAwait(false))
+        foreach (var settled in await new DeliveryReconciler(store, wiring.Home, DeliveryReconciler.Checkouts(wiring.Home)).StartAsync(ct).ConfigureAwait(false))
         {
             if (settled.Standing is DeliveryStandings.Unknown or DeliveryStandings.Held) events.Add(wiring.Lines.Retry("landing", $"landing  {settled.Said}"));
         }

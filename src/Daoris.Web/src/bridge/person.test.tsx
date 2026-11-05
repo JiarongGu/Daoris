@@ -111,7 +111,8 @@ describe("the person's door over the bridge", () => {
     const read = renderHook(() => useTerminalConfirmations(), { wrapper: wrapper() });
 
     await waitFor(() => expect(read.result.current).toHaveLength(1));
-    expect(read.result.current[0]).toMatchObject({ expires: null, waitedOn: false, checking: true, checkWithin: 30_000 });
+    expect(read.result.current[0]).toMatchObject({ waitedOn: false, checking: true, checkWithin: 30_000 });
+    expect(read.result.current[0]).not.toHaveProperty('expires');
   });
 
   // CONFIRMSEEN1: the window's word that a card is in front of the person, by the confirmation's id; the service's counts its own.

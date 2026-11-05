@@ -9,7 +9,6 @@ import { AdoptionNotice as Notice, Confirmations, type Confirmation, type Confir
 // service's by its door's act, a press of many values and one of long words in their bounded region, a refusal said under its
 // card. At the side bar's 300 px floor and at 45% of the install's window (R6), in English and 中文, light and dark.
 
-const IN_TWO_MINUTES = new Date(Date.now() + 100_000).toISOString();
 const A_MINUTE_AGO = new Date(Date.now() - 60_000).toISOString();
 
 const SAY: Confirmation = {
@@ -24,19 +23,19 @@ const SAY: Confirmation = {
     { role: 'level', name: '/level', value: 'urgent' }, { role: 'files', name: '/paths/0', value: 'src/feed/export.ts' },
     { role: 'form', name: '/said', value: 'true' },
   ],
-  asker: { process: 'bash', pid: 4120 }, asked: A_MINUTE_AGO, expires: IN_TWO_MINUTES, shown: true,
+  asker: { process: 'bash', pid: 4120 }, asked: A_MINUTE_AGO, shown: true,
 };
 
 const STOP: Confirmation = {
   source: 'pipe', id: 'c2', module: 'DAORIS.DRIVER', route: 'STOP_SESSION',
   fields: [{ name: '/id', type: 'string', value: '9b1e0d2a' }, { name: '/said', type: 'boolean', value: 'true' }],
   named: [{ role: 'session', name: '/id', value: '9b1e0d2a' }],
-  asker: { process: 'daoris-driver', pid: 4242 }, asked: A_MINUTE_AGO, expires: IN_TWO_MINUTES,
+  asker: { process: 'daoris-driver', pid: 4242 }, asked: A_MINUTE_AGO,
 };
 
 const UNWORDED: Confirmation = {
   source: 'pipe', id: 'c3', module: 'DAORIS.DRIVER', route: 'SET_MYSTERY', fields: [{ name: '/keep', type: 'number', value: '3' }],
-  asker: { process: null, pid: 77 }, expires: IN_TWO_MINUTES,
+  asker: { process: null, pid: 77 },
 };
 
 const SERVICE: Confirmation = {
@@ -45,7 +44,7 @@ const SERVICE: Confirmation = {
     { name: 'id', type: 'string', value: 'q12' }, { name: '/verdict', type: 'string', value: 'reviewed' },
     { name: '/setUp/machine', type: 'string', value: 'desk' }, { name: '/setUp/sequence', type: 'number', value: '3' },
   ],
-  asker: null, asked: A_MINUTE_AGO, expires: IN_TWO_MINUTES,
+  asker: null, asked: A_MINUTE_AGO,
 };
 
 const MANY: Confirmation = {
@@ -101,7 +100,7 @@ const LAND: Confirmation = {
   source: 'pipe', id: 'c6', module: 'DAORIS.DRIVER', route: 'LAND_SESSION_TREE',
   fields: [{ name: '/id', type: 'string', value: '3f2a91c4' }, { name: '/branch', type: 'string', value: 'main' }],
   named: [{ role: 'session', name: '/id', value: '3f2a91c4' }],
-  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 3 * 3_600_000).toISOString(), expires: null, waitedOn: false,
+  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 3 * 3_600_000).toISOString(), waitedOn: false,
 };
 
 export const PlanDoor: Story = { args: { waiting: [LAND], onOpenPlan: () => {} } };

@@ -13,12 +13,16 @@ const { invoke, notifyReady, bridge } = vi.hoisted(() => ({
   bridge: { available: true },
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => bridge.available,
-  getBridge: () => ({ isAvailable: bridge.available, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => {
+  const { answeringSlices, holdingSlices } = await import('../../test/sliceShell');
+  const shell = answeringSlices(invoke);
+  return {
+    isShenoraAvailable: () => bridge.available,
+    getBridge: () => ({ isAvailable: bridge.available, invoke: shell, notifyReady }),
+    useShenora: () => holdingSlices(shell, { isAvailable: bridge.available, bridge: { notifyReady } }),
+    useShenoraEvent: () => {},
+  };
+});
 
 import { EVIDENCE_ASK_RECORDS, EVIDENCE_ENTRIES, EVIDENCE_GROUPINGS, EVIDENCE_QUESTS, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import { SessionRail } from './SessionRail';

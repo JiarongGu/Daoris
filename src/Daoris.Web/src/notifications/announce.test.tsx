@@ -8,8 +8,8 @@ import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from 
 // once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
 // the view opens or the press ends; never in a window not focused, and never while the view is open.
 
-const PIPE: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], expires: null };
-const SERVICE: Confirmation = { source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [], expires: '2026-10-21T09:04:00Z' };
+const PIPE: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [] };
+const SERVICE: Confirmation = { source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [] };
 
 describe('announcing a press', () => {
   let focused: ReturnType<typeof vi.spyOn>;

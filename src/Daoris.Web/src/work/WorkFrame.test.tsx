@@ -12,10 +12,11 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import { watchScreen } from '../test/onScreen';
-import { eventHandlers, invoke } from '../test/workFrameBridge';
+import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, QUESTS, REGISTRY, carried, focus, going, show, userEvent,
 } from '../test/workFrameKit';
+import { pushedOf } from '../bridge/state/slices';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
@@ -81,33 +82,22 @@ describe('the Work frame', () => {
   });
 
   /**
-   * SESSONE1c, D167 point 5: *Ask* joins the ⋯'s *Group by* only where the reader answers entries, which it groups by; chosen,
-   * it is remembered beside the arrangement, and what no ask began is listed under *Not on an ask*.
+   * SESSONE1c, D167 point 5: *Ask* joins the ⋯'s *Group by*, by the reader's entries, which the shell always pushes; chosen, it is
+   * remembered beside the arrangement, and what no ask began is listed under *Not on an ask*.
    */
-  it('offers Group by ask only where the reader answers entries, and remembers the choice', async () => {
+  it('offers Group by ask by the reader\'s entries, and remembers the choice', async () => {
     SESSIONS = [DRIVEN, PARKED];
     const entry = (leading: string) => ({
       entry: `quest:${leading}/engine`, origin: `quest:${leading}`, repository: 'engine', group: 'working', leading,
       parts: [{ session: leading, quest: null, shown: 'working', group: 'working', began: 'opened', after: null, askedBy: null }],
     });
-    const answerEntries = (withEntries: boolean) => invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
-      ? { sessions: [], ...(withEntries ? { entries: [entry(DRIVEN.id), entry(PARKED.id)] } : {}) }
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
+      ? { sessions: [], entries: [entry(DRIVEN.id), entry(PARKED.id)] }
       : DRIVER_STATE));
-    answerEntries(false);
-    const first = show();
-    const user = userEvent.setup();
-    let list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
-    focus(within(list).getByRole('button', { name: 'More actions' }));
-    await user.keyboard('{Enter}');
-    expect(screen.queryByRole('menuitemradio', { name: 'Ask' })).toBeNull();
-    await user.keyboard('{Escape}');
-    first.unmount();
-
-    answerEntries(true);
     show();
-    list = await screen.findByRole('complementary', { name: 'Sessions' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
+    const user = userEvent.setup();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitemradio', { name: 'Ask' }));
@@ -845,11 +835,11 @@ describe('the Work frame', () => {
   });
 
   it('lets go of a session whose record it saw and that is gone', async () => {
-    const { onSelect, client } = show(DRIVEN.id);
+    const { onSelect } = show(DRIVEN.id);
     await screen.findAllByText(/Expose a streaming budget/);
 
     SESSIONS = [];
-    await act(() => client.invalidateQueries());
+    await act(() => moved());
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   });
@@ -1153,7 +1143,6 @@ describe('a park\'s go-aheads', () => {
     window.localStorage.removeItem('daoris.drafts');
   });
 
-  const asksRead = () => vi.mocked(fetch).mock.calls.filter(([input]) => String(input).startsWith('/api/asks')).length;
 
   /** The box's go-ahead lines, where the box answers the park (PARKVIEW1): each with its own *Approve* and *Refuse*. */
   const boxLines = async () => within(await screen.findByRole('region', { name: 'It asks you' })).getAllByRole('listitem');
@@ -1188,9 +1177,11 @@ describe('a park\'s go-aheads', () => {
 
   it('approves one with the box\'s words through one door, the words leaving the box, and says the session goes on', async () => {
     const notify = vi.fn();
-    show('g0ah3ad0', notify);
+    const { client } = show('g0ah3ad0', notify);
     const second = (await boxLines())[1]!;
-    const before = asksRead();
+    // What the press makes of the go-ahead, as the service holds it once the driver answered it.
+    const [one, two, three] = ASK_WITH_GO_AHEADS.goAheads;
+    ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [one, { ...two, state: 'approved' }, three] }];
 
     await userEvent.type(screen.getByLabelText('Message'), 'dev first, then production');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
@@ -1203,8 +1194,10 @@ describe('a park\'s go-aheads', () => {
     // One press: neither the ask's own door nor the box's was asked as well.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/asks/a5k001/go-aheads/2', expect.anything());
-    // The ask is read again, so the go-ahead shows what became of it.
-    await waitFor(() => expect(asksRead()).toBeGreaterThan(before));
+    // The shell pushes the ask the press moved, so the go-ahead shows what became of it.
+    await waitFor(() => expect(pushedOf(client).data('asks')).toEqual([
+      expect.objectContaining({ goAheads: expect.arrayContaining([expect.objectContaining({ number: 2, state: 'approved' })]) }),
+    ]));
   });
 
   it('refuses one with no words, sending none, and says the same session goes on with the refusal', async () => {
@@ -1276,11 +1269,11 @@ describe('a park\'s go-aheads', () => {
     expect(within((await boxLines())[1]!).getByRole('button', { name: 'Approve' })).toBeEnabled();
   });
 
-  it('shows nothing new for a park whose ask holds none of its own, and asks for no asks where no ask asked its quest', async () => {
+  it('shows nothing new for a park whose ask holds none of its own, and none where no ask asked its quest', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[2]] }];
-    const { unmount } = show('g0ah3ad0');
+    const { unmount, client } = show('g0ah3ad0');
     expect(await screen.findByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
-    await waitFor(() => expect(asksRead()).toBeGreaterThan(0));
+    await waitFor(() => expect(pushedOf(client).data('asks')).toEqual([expect.objectContaining({ id: 'a5k001' })]));
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
     unmount();
 
@@ -1290,7 +1283,6 @@ describe('a park\'s go-aheads', () => {
     expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(asksRead()).toBe(0);
   });
 
   /**

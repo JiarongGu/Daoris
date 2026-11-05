@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1b over real git (NODE1's choice 8; D88's PROC1d-ii): the runtime's own reads for a branch unit's <c>pushed</c> and an ahead
-/// <c>pull-request</c>, <see cref="NodeTips.RemotesAsync"/> and <see cref="NodeTips.HoldsAsync"/>. The remote-tracking ref is one
-/// <c>for-each-ref</c> of the checkout a pass, and the ancestry one <c>merge-base --is-ancestor</c>.
+/// FABRIC-RUN1b over real git (NODE1's choice 8; D88's PROC1d-ii): the runtime's own read for a branch unit's <c>pushed</c>,
+/// <see cref="NodeTips.RemotesAsync"/>. The remote-tracking ref is one <c>for-each-ref</c> of the checkout a pass.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -60,7 +59,6 @@ public sealed class NodeGitReadsGitTests : LandedFixture
             Bound = NodeRuntime.BoundIn(Home),
             Tips = NodeTips.ReadAsync,
             Remotes = NodeTips.RemotesAsync,
-            Holds = NodeTips.HoldsAsync,
         };
 
         var started = new List<string>();

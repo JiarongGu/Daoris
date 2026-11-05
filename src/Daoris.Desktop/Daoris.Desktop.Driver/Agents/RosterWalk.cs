@@ -143,9 +143,9 @@ internal sealed class RosterWalk(HarnessRoster roster)
             };
         }
 
-        // The ACP adapter's own seam (ACP2): it runs the Agent SDK, which needs to be told which
-        // `claude` to use. Read from the PIPE door's pin, because that is where the CLI lives.
-        var claude = resolved.Abilities().Transport == Transport.Protocol
+        // Claude Code's seam (ACP2), on a door whose program runs Claude Code's: the Agent SDK needs to be told which `claude` to use.
+        // Read from the PIPE door's pin, because that is where the CLI lives.
+        var claude = resolved.TakesClaudeSeam()
             ? HarnessSettings.ManagedBinary(
                 roster.Home, "claude-code", settings.ResolveVersion("claude-code", workspace, null), ["claude"])
             : null;

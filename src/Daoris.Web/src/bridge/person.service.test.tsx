@@ -39,6 +39,7 @@ describe("the service's confirmations with no clock", () => {
     const { result } = renderHook(() => useServiceConfirmations(true), { wrapper: wrapper() });
 
     await waitFor(() => expect(result.current.waiting.map((each) => each.id)).toEqual(['h1']));
-    expect(result.current.waiting[0]).toMatchObject({ source: 'service', route: 'POST /api/asks', act: 'an ask', expires: null });
+    expect(result.current.waiting[0]).toMatchObject({ source: 'service', route: 'POST /api/asks', act: 'an ask' });
+    expect(result.current.waiting[0]).not.toHaveProperty('expires');
   });
 });

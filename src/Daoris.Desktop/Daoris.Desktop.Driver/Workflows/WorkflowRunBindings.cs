@@ -127,6 +127,12 @@ public static class WorkflowRunBindings
             return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem ?? "it is no graph"}" };
         }
 
+        // G8: a plugin's pull-request step nothing performs here is refused now, never run to.
+        if (PullRequestSteps.Unserved(newest.Graph, plugins, $"`{selected.Workflow}` v{newest.Version}") is { } unserved)
+        {
+            return binding with { Version = newest.Version, Digest = newest.Digest, Problem = unserved };
+        }
+
         // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved now, once, and kept, from derived defaults (the
         // default pattern, the default key).
         var resolved = newest.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land

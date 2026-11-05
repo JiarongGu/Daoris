@@ -68,6 +68,7 @@ internal sealed class WatchNodes
             said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
         // G8: the door a run's `push` is performed through, the push act of the act journal, under the same lease and drain rules.
+        nodes.PullRequests = new PullRequestRecords(home);
         nodes.Pushing = new PushDoor(home, said => Log?.Info("push.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
@@ -196,7 +197,6 @@ internal sealed class WatchNodes
                 Tips = NodeTips.ReadAsync,
                 // FABRIC-RUN1b: the look's git reads for `pushed` and an ahead `pull-request`, asked only where one waits on them.
                 Remotes = NodeTips.RemotesAsync,
-                Holds = NodeTips.HoldsAsync,
                 // FABRIC-RUN1c: D157's gates for a unit whose opinion or look waits, read as a landing door reads them; and a quest whose run
                 // is bound to a named version left to that version.
                 Gates = gates.ReadAsync,

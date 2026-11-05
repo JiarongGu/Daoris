@@ -273,7 +273,7 @@ public sealed class ModelRefusalTickTests : IDisposable
             RunsInOwnHome: true);
 
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            Spawning.InRoot(target, command![0], command.Skip(1).Concat(target.Asked?.NativeArguments(command) ?? []));
+            Shell.Start(ProcessRecipe.Of(command!, target.Asked?.NativeArguments(command!)), target);
     }
 
     /// <summary>

@@ -148,7 +148,7 @@ public sealed class ClaudeAcpTests : IDisposable
         var info = adapter.Prepare(Target(_home), null);
 
         // Exactly what the driver does at spawn, with what the roster resolved.
-        HarnessProbe.Apply(
+        Shell.Equip(
             info, adapter.Toolchain!,
             profileHome: Path.Combine(_home, "profile"),
             binary: null,
@@ -172,7 +172,7 @@ public sealed class ClaudeAcpTests : IDisposable
     {
         var pipe = AdapterSet.Built().Resolve("claude-code");
         var info = pipe.Prepare(Target(_home), null);
-        HarnessProbe.Apply(info, pipe.Toolchain!, profileHome: null, binary: null, claudeExecutable: null);
+        Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, claudeExecutable: null);
 
         Assert.False(info.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }

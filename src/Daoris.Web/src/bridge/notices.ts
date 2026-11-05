@@ -184,7 +184,7 @@ function useNoticesRead(): NoticesRead | null {
   const client = useQueryClient();
   const read = useQuery({
     queryKey: keys.notices,
-    queryFn: () => readPushed<NoticesRead | null>(client, NOTICES_SLICE, async () => null),
+    queryFn: () => readPushed<NoticesRead>(client, NOTICES_SLICE),
     enabled: isAvailable,
     staleTime: Infinity,
     refetchOnWindowFocus: false,

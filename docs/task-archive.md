@@ -23261,3 +23261,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **WIRING1d — every setting in one list, one key per setting** (ONEWAY1ad, wave 2). → `docs/2026-11-02-oneway-design.md` §10
 
   **Outcome** 2026-11-05: BL25: `Settings/List/MachineSettings.cs` is the one list (notify, cooloff, quiet, cap, keep), written into the page as `SETTINGS` by `tools/contracts`; `MachineSettingsCensusTests` and `everySetting.test.tsx` fail a setting listed twice, two keys on one field, a second verb for one route, or a door spelled another way. Settings outside `driver.json` are not yet in the list.
+
+## FABRIC-PIPELINE1d (2026-11-06)
+
+- [x] **FABRIC-PIPELINE1d — the `check` performed and a person's verification of a commit or branch, its verdict recorded and shown** (driver, modules, web; D192).
+
+  **Outcome** 2026-11-06: BL22: `LineRunReader` reads a line's verification runs back with their verdicts (`WorkflowRunLine`); `workflow run --line` and `WORKFLOW_RUN {line}`; the Workflow tab's *Verifications* with *Run again* and *Not now* on a held check, en and zh.

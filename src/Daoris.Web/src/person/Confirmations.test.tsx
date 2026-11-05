@@ -30,21 +30,21 @@ const SAY: Confirmation = {
     { role: 'level', name: '/level', value: 'urgent' }, { role: 'files', name: '/paths/0', value: 'src/feed/export.ts' },
     { role: 'files', name: '/paths/1', value: 'test/feed/export.ts' }, { role: 'form', name: '/said', value: 'true' },
   ],
-  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(), expires: null, waitedOn: true,
+  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(), waitedOn: true,
 };
 const STOP: Confirmation = {
   source: 'pipe', id: 'c2', module: 'DAORIS.DRIVER', route: 'STOP_SESSION',
   fields: [{ name: '/id', type: 'string', value: '9b1e0d2a' }, { name: '/said', type: 'boolean', value: 'true' }],
   named: [{ role: 'session', name: '/id', value: '9b1e0d2a' }],
-  asker: { process: null, pid: 77 }, expires: null,
+  asker: { process: null, pid: 77 },
 };
 const UNKNOWN: Confirmation = {
   source: 'pipe', id: 'c3', module: 'DAORIS.DRIVER', route: 'SET_MYSTERY', fields: [{ name: '/keep', type: 'number', value: '3' }],
-  asker: { process: null, pid: 77 }, expires: null,
+  asker: { process: null, pid: 77 },
 };
 const SERVICE: Confirmation = {
   source: 'service', id: 'h1', route: 'POST /api/quests/{id}/review', act: "a review's verdict",
-  fields: [{ name: '/verdict', type: 'string', value: 'reviewed' }], asker: null, expires: '2026-10-20T09:04:00Z',
+  fields: [{ name: '/verdict', type: 'string', value: 'reviewed' }], asker: null,
 };
 
 const SESSIONS: Record<string, { title: string; repository: string; workspace?: string }> = {
@@ -220,22 +220,16 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
-  it("says a service's time left, stepping, and a terminal's press that it waits until the person answers", () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-    try {
-      vi.setSystemTime(new Date('2026-10-21T09:00:00Z'));
-      draw([{ ...SERVICE, expires: '2026-10-21T09:01:40Z' }, { ...STOP, id: 'u', shown: true, waitedOn: true }, { ...STOP, id: 'w', waitedOn: false }]);
-      const [service, waited, left] = screen.getAllByRole('group');
-      expect(service).toHaveTextContent('refused by itself in 1m 40s');
-      act(() => { vi.advanceTimersByTime(10_000); });
-      expect(service).toHaveTextContent('refused by itself in 1m 30s');
-      // CONFIRMWAIT1a-i: no time is drawn for a terminal's press, shown or not; whether a terminal waits on it is.
-      expect(waited).toHaveTextContent('It waits until you answer. A terminal waits on this.');
-      expect(waited).not.toHaveTextContent('refused by itself');
-      expect(left).toHaveTextContent('It waits until you answer. No terminal waits on this now; it can read how it ended later.');
-    } finally {
-      vi.useRealTimers();
-    }
+  it("says a service's request and a terminal's press alike, that each waits until the person answers", () => {
+    draw([SERVICE, { ...STOP, id: 'u', shown: true, waitedOn: true }, { ...STOP, id: 'w', waitedOn: false }]);
+    const [service, waited, left] = screen.getAllByRole('group');
+    // ONEWAY1n-ii: no request has a clock, so no time is drawn for either source.
+    expect(service).toHaveTextContent('It waits until you answer.');
+    expect(service).not.toHaveTextContent('refused by itself');
+    // CONFIRMWAIT1a-i: whether a terminal waits on a terminal's press is said, shown or not.
+    expect(waited).toHaveTextContent('It waits until you answer. A terminal waits on this.');
+    expect(waited).not.toHaveTextContent('refused by itself');
+    expect(left).toHaveTextContent('It waits until you answer. No terminal waits on this now; it can read how it ended later.');
   });
 
   it('says the age of a press that has waited over an hour first, in weight', () => {
@@ -420,7 +414,7 @@ describe("the door to a press's plan", () => {
   const press = (route: string, fields: Record<string, string>): Confirmation => ({
     source: 'pipe', id: `p-${route}`, module: 'DAORIS.DRIVER', route,
     fields: Object.entries(fields).map(([name, value]) => ({ name: `/${name}`, type: 'string', value })),
-    asker: { process: 'bash', pid: 4120 }, expires: null,
+    asker: { process: 'bash', pid: 4120 },
   });
 
   it.each<[string, Confirmation, PlanDoor]>([

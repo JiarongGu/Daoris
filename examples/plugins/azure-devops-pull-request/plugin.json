@@ -2,33 +2,27 @@
   "id": "azure-devops-pull-request",
   "apiVersion": 1,
   "name": "Azure DevOps pull request",
-  "version": "1.5.0",
-  "changes": "Says how to get az on each platform, and marks its sign-in, so the plugin's page can offer Set up and Sign in on the person's press.",
-  "description": "Once a branch rule's landing has made its branch, pushes it to origin and opens a pull request with the az CLI's devops extension; and, where a look may remove a landed branch, says whether its pull request completed and with which commit.",
+  "version": "2.0.0",
+  "changes": "Opens and reads the pull request through Azure DevOps' REST API with the token of the git identity serving origin. It runs no git and no az: Daoris's push node pushes the branch first.",
+  "description": "A performed step, pull-request: opens an Azure DevOps pull request from the branch Daoris pushed, through Azure DevOps' REST API with the API token of the identity serving origin, and reads its state and merge commit.",
   "hooks": {
-    "command": ["node", "${plugin}/land.mjs"],
-    "points": ["work/land", "work/state"],
-    "key": true,
-    "modes": ["push"]
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["work/watch", "work/step", "work/perform", "work/state"]
   },
-  "tools": [
-    { "id": "node", "versions": ">=16.6.0", "for": "Runs the plugin's land.mjs." },
-    { "id": "git", "versions": ">=1.7.0", "for": "Pushes the commit the landing judged to the branch on origin." },
+  "steps": [
     {
-      "id": "az",
-      "versions": ">=2.0.79",
-      "for": "Opens the pull request, and reads its status before pushing to it again and when a look asks whether it completed.",
-      "install": {
-        "windows": "winget install -e --id Microsoft.AzureCLI",
-        "macos": "brew install azure-cli",
-        "linux": "https://learn.microsoft.com/cli/azure/install-azure-cli-linux"
-      },
-      "ready": [
-        { "run": ["az", "extension", "show", "--name", "azure-devops", "--output", "none"],
-          "says": "Its devops extension is added", "fix": "az extension add --name azure-devops" },
-        { "run": ["az", "account", "show", "--output", "none"],
-          "says": "Signed in", "fix": "az login", "signin": true }
-      ]
+      "id": "pull-request",
+      "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
+      "about": { "en": "Opens an Azure DevOps pull request from the branch Daoris pushed to origin, or finds the active one already open for it. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 Azure DevOps 拉取请求，已有进行中的则直接沿用。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
+      "reach": "performed",
+      "outputs": { "pull-request": "azure-devops-pull-request/pull-request@1" },
+      "evidence": { "schema": "azure-devops-pull-request/receipt@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
+      "timeoutSeconds": 300
     }
+  ],
+  "tools": [
+    { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's plugin.mjs, and its calls to Azure DevOps' REST API (fetch)." }
   ]
 }

@@ -9,10 +9,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke),
   useShenoraEvent: () => undefined,
 }));
 
@@ -33,7 +31,7 @@ const OFF: StandingConfirmationNow = { ...ON, on: false, presses: [], since: nul
 
 const PRESS: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'SESSION_DELETE', fields: [{ name: '/id', type: 'string', value: 's1' }],
-  named: [], asker: null, expires: '2026-10-23T09:40:00Z',
+  named: [], asker: null,
 };
 
 describe("Notifications' standing confirmation line", () => {

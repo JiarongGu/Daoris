@@ -21,7 +21,7 @@ const ROWS: PushedAttention[] = [
   { kind: 'review', id: 'r1', since: null, where: '' },
 ];
 const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
-const PRESS: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: new Date(Date.now() + 100_000).toISOString() };
+const PRESS: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true };
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 

@@ -13,12 +13,16 @@ const { invoke, notifyReady } = vi.hoisted(() => ({
   notifyReady: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => {
+  const { answeringSlices, holdingSlices } = await import('../../test/sliceShell');
+  const shell = answeringSlices(invoke);
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
+    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: () => {},
+  };
+});
 
 import { MonitorWindow } from './MonitorWindow';
 import { WorkspaceScopeProvider } from '../../data/scope';
