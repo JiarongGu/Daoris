@@ -16,7 +16,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
         target = TargetPrompt.ForStart(target, adapter);
         // A standing block past what the first prompt carries goes through its file, written before the spawn reads it.
         if (prepared is null) StandingBlocks.Hand(target);
-        var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(variable) }, config.Commands.GetValueOrDefault(adapter.Name));
+        var info = prepared ?? adapter.Prepare(Request(adapter, target with { Home = target.Home ?? DaorisHome.Resolve(variable) }));
         SpawnEquipment.Equip(adapter, info, selection);
 
         // Only a dsh home Daoris made is written to; anywhere else the notice says what happens, and a home holding somebody
@@ -36,6 +36,10 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
 
         return (info, harnessNotice);
     }
+
+    /// <summary>What a start of <paramref name="target"/> asks of <paramref name="adapter"/>'s spawn, under the machine's command for it.</summary>
+    public SpawnRequest Request(ISessionAdapter adapter, SessionTarget target) =>
+        SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Name));
 
     /// <summary>
     /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/> unasked (D73): the same

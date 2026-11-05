@@ -41,15 +41,14 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// <summary>Its door's spawn (<see cref="ClaudeCodeSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
     private static readonly ClaudeCodeSpawn Spawn = new();
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => SpawnRequests.Started(Spawn, target, command);
+    public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(Spawn, request);
 
     public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
 
     /// <summary>The harness's own resume (ANSWER1a, D131 §1): <c>--resume &lt;id&gt;</c>, the id its <c>init</c> line named.</summary>
     public bool Resumes => true;
 
-    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-        SpawnRequests.Resumed(Spawn, target, command, conversation)!;
+    public ProcessStartInfo PrepareResume(SpawnRequest request) => DoorStarts.Resumed(Spawn, request)!;
 
     /// <summary>
     /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
@@ -87,10 +86,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     ///
     /// <para>🔴 <b>Ask Daoris ran here in <c>acceptEdits</c> with its allow-list</b>, not the asking mode HELP1a meant, which reached
     /// the protocol door alone (HELPMODE1a1's finding). Over <c>-p</c> an unlisted tool is never allowed, so it read and proposed
-    /// all the same. In full access it names <see cref="FullPosture"/> (<see cref="ChatTarget.PermissionMode"/>), in place of
+    /// all the same. In full access it names <see cref="FullPosture"/> (<see cref="SpawnRequest.Mode"/>), in place of
     /// <c>acceptEdits</c>.</para>
     /// </remarks>
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => SpawnRequests.Chatted(Spawn, target, command);
+    public ProcessStartInfo PrepareChat(SpawnRequest request) => DoorStarts.Chatted(Spawn, request);
 
     /// <summary>
     /// <c>--permission-mode bypassPermissions</c>, Claude Code's mode that asks nothing, measured on 2.1.281 (the stream-json

@@ -229,7 +229,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         if (!GoesOn) throw Unsupported("a go-on");
 
         var (target, selection) = (_start.Target!, _start.Selection!);
-        var next = adapter.PrepareResume(target, host.Command(adapter.Name), conversation) ?? throw Unsupported("a resume");
+        var next = adapter.PrepareResume(_start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
         if (_carriers.Settings is not null) adapter.HandSettings(next, _carriers.Settings);
         if (_carriers.Servers is not null) adapter.HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);

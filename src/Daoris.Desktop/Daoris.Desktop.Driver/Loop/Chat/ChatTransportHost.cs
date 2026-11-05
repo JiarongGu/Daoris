@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// no watch hears it, so its exit is waited for and its capture read to their ends, and its streams are read as they are.
 /// </summary>
 internal sealed class ChatTransportHost(
-    string home, SessionProcesses processes, ServiceClient service, HarnessConversations conversations, DriverConfig config, SessionOutput? output)
+    string home, SessionProcesses processes, ServiceClient service, HarnessConversations conversations, SessionOutput? output)
     : ITransportHost
 {
     public string Home => home;
@@ -57,8 +57,6 @@ internal sealed class ChatTransportHost(
 
     public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
         DownloadKeeping.KeepHandedAsync(service, home, sessionId, info, ct);
-
-    public IReadOnlyList<string>? Command(string adapter) => config.Commands.GetValueOrDefault(adapter);
 
     public TimeSpan LingerBound => SessionWaits.LingerBound;
 

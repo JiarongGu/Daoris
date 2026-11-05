@@ -49,19 +49,45 @@ public sealed class ActorChoicesTests
     [Fact]
     public void The_asked_choice_reads_the_environment_by_the_variables_the_doors_spawn_names()
     {
-        var info = new System.Diagnostics.ProcessStartInfo("agent");
-        info.Environment["ANTHROPIC_MODEL"] = "opus";
-        info.Environment["CLAUDE_CODE_EFFORT_LEVEL"] = "high";
+        var environment = new Dictionary<string, string?> { ["ANTHROPIC_MODEL"] = "opus", ["CLAUDE_CODE_EFFORT_LEVEL"] = "high" };
 
-        var claude = ActorAsked.ForSpawn("claude-code", info, new ClaudeCodeSpawn().ChoiceVariables);
+        var claude = ActorAsked.ForSpawn("claude-code", Request, environment, new ClaudeCodeSpawn().ChoiceVariables);
         Assert.Equal(("environment", "opus"), (claude.Model.Source, claude.Model.Value));
         Assert.Equal(("environment", "high"), (claude.Effort.Source, claude.Effort.Value));
 
-        var other = ActorAsked.ForSpawn("codex-acp", info, SpawnChoiceVariables.None);
+        var other = ActorAsked.ForSpawn("codex-acp", Request, environment, SpawnChoiceVariables.None);
         Assert.Equal("account-default", other.Model.Source);
         Assert.Equal("account-default", other.Effort.Source);
         Assert.Equal(new ClaudeCodeSpawn().ChoiceVariables, new ClaudeAcpSpawn().ChoiceVariables);
     }
+
+    /// <summary>
+    /// Row n: the asked choice is the start's request's (its asked choice, else the record's, else the opening's default), a flag of the
+    /// machine's command the command's own, and never what the door's recipe carries it by: asked and carried are kept apart.
+    /// </summary>
+    [Fact]
+    public void The_asked_choice_is_read_from_the_whole_request_never_from_what_the_door_carries()
+    {
+        var asked = new ActorAsked("claude-code", new("entry", "opus", true), new("entry", "high", true));
+        var request = Request with { Asked = asked, Command = ["claude"] };
+        Dictionary<string, string?> none = [];
+
+        // The native door carries the asked model and effort on its command line; that carrying is not read back as what was asked.
+        Assert.Contains("--model", new ClaudeCodeSpawn().Start(request).Arguments);
+        Assert.Equal(asked, ActorAsked.ForSpawn("claude-code", request, none, new ClaudeCodeSpawn().ChoiceVariables));
+
+        // A model the machine's command names is the command's, not carried; the effort stays as asked.
+        var commanded = ActorAsked.ForSpawn("claude-code", request with { Command = ["claude", "--model=sonnet"] }, none, SpawnChoiceVariables.None);
+        Assert.Equal(new ActorValue("command", "sonnet", false), commanded.Model);
+        Assert.Equal(asked.Effort, commanded.Effort);
+
+        // A request that asks none reads the record's kept choice, else the opening's default.
+        var kept = asked with { Model = new("override", "sonnet", true) };
+        Assert.Equal(kept, ActorAsked.ForSpawn("claude-code", request with { Asked = null }, none, SpawnChoiceVariables.None, kept));
+        Assert.Equal(ActorAsked.Before("claude-code"), ActorAsked.ForSpawn("claude-code", request with { Asked = null }, none, SpawnChoiceVariables.None));
+    }
+
+    private static SpawnRequest Request => new("Game", "D:/fam/Game", "http://localhost:5177");
 
     [Fact]
     public void A_set_order_is_read_in_its_order_each_entry_carrying_what_it_names()

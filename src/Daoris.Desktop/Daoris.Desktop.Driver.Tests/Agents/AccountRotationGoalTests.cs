@@ -50,7 +50,7 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     private HarnessToolchain Toolchain(bool weekFixed = true, string? accountOf = null) => new(

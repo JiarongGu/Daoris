@@ -67,9 +67,9 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     /// <summary>Its door's spawn (<see cref="CodexAcpSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
     private static readonly CodexAcpSpawn Spawn = new();
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => SpawnRequests.Started(Spawn, target, command);
+    public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(Spawn, request);
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => SpawnRequests.Chatted(Spawn, target, command);
+    public ProcessStartInfo PrepareChat(SpawnRequest request) => DoorStarts.Chatted(Spawn, request);
 
     public HarnessToolchain? Toolchain => new(
         Product: "Codex",

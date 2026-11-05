@@ -120,9 +120,9 @@ public sealed class MovedWordsTests : IDisposable
 
         public bool Interactive => true;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
     }
 
     private (ChatContext Context, Opening Runner, ChatHandOver HandOver, ChatLedger Ledger, ServiceClient Client) World(int opens)

@@ -37,7 +37,7 @@ public sealed class OpinionRecheckTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     /// <summary>The build's own agents by name, present by a file look, or absent where <paramref name="absent"/> names them.</summary>

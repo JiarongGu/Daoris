@@ -62,7 +62,7 @@ public sealed class PipeModelRefusalTests : IDisposable
 
         public IStreamMapper? StructuredOutput() => new ClaudeStreamJson();
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     private Daoris.Driver.Driver Driver(ServiceClient service)

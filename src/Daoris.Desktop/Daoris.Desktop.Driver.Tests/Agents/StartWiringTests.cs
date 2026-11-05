@@ -33,7 +33,7 @@ public sealed class StartWiringTests : IDisposable
 
         public SessionWire Wire => wire;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new();
+        public ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }

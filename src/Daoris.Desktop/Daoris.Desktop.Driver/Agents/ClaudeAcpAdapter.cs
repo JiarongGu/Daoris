@@ -67,9 +67,9 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// <summary>Its door's spawn (<see cref="ClaudeAcpSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
     private static readonly ClaudeAcpSpawn Spawn = new();
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => SpawnRequests.Started(Spawn, target, command);
+    public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(Spawn, request);
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => SpawnRequests.Chatted(Spawn, target, command);
+    public ProcessStartInfo PrepareChat(SpawnRequest request) => DoorStarts.Chatted(Spawn, request);
 
     /// <summary>The rules Daoris composed (PERM1, D72), taken on the wire rather than as an argument.</summary>
     public bool TakesSettings => true;

@@ -112,10 +112,10 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
 
         public bool Interactive => true;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("this test spawns nothing");
 
-        public System.Diagnostics.ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        public System.Diagnostics.ProcessStartInfo PrepareChat(SpawnRequest request) =>
             throw new InvalidOperationException("this test spawns nothing");
     }
 }

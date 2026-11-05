@@ -132,7 +132,7 @@ public sealed class ServerHandingTests : IDisposable
     {
         public string Name => "stand-agent";
         public SessionWire Wire => wire;
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("stand-command");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
         public void HandServers(ProcessStartInfo info, string configFile) => info.ArgumentList.Add("servers:" + configFile);
     }
 }

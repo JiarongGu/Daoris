@@ -55,11 +55,11 @@ public sealed class ChatAgentTests : IDisposable
     public void Its_process_is_its_doors_own_equipped_as_every_sessions_is()
     {
         var adapter = AdapterSet.Built().Resolve("claude-code");
-        var target = new ChatTarget("engine", Path.GetTempPath(), "http://localhost:5177") { Session = "c1" };
+        var request = SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", "c1");
         var selection = new HarnessSelection(null);
 
-        var info = new ChatAgent(adapter).Prepare(target, command: null, selection);
-        var expected = adapter.PrepareChat(target, command: null);
+        var info = new ChatAgent(adapter).Prepare(request, selection);
+        var expected = adapter.PrepareChat(request);
         SpawnEquipment.Equip(adapter, expected, selection);
 
         Assert.Equal(expected.FileName, info.FileName);
@@ -87,7 +87,7 @@ public sealed class ChatAgentTests : IDisposable
         Assert.False(run.GoesOn);
         Assert.False(run.Started);
         using var service = new ServiceClient("http://127.0.0.1:9", null);
-        ITransportHost bare = new ChatTransportHost(_home, _processes, service, new HarnessConversations(_home), DriverConfig.Empty, null);
+        ITransportHost bare = new ChatTransportHost(_home, _processes, service, new HarnessConversations(_home), null);
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
         Assert.Throws<NotSupportedException>(() => bare.Prepared(adapters.Resolve(door), target, new HarnessSelection(null), start.Info));
     }

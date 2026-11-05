@@ -46,7 +46,7 @@ public sealed class ReviewerPlanTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns here");
+        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
     }
 
     private static readonly string[] Agents = ["claude-code", "claude-code-acp", "codex-acp", "dsh"];

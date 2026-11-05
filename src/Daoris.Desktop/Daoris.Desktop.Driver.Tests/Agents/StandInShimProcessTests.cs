@@ -24,7 +24,7 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "repo", _home, "http://svc");
 
-    private ChatTarget Chat() => new("repo", _home, "http://svc");
+    private SpawnRequest Chat() => SpawnRequests.Chat("repo", _home, "http://svc", null);
 
     private string Script(string name, string text)
     {

@@ -68,7 +68,7 @@ internal sealed record ConformanceRun(ConformanceSubject Subject, Provider Provi
 
     public SessionTarget Target() => new("q-1", "title", "body", "asker", "engine", Root(), "http://127.0.0.1:9") { Home = Home() };
 
-    public ChatTarget Chat() => new("engine", Root(), "http://127.0.0.1:9");
+    public SpawnRequest Chat() => SpawnRequests.Chat("engine", Root(), "http://127.0.0.1:9", null);
 
     /// <summary>A command naming a program in the scratch, as a home's <c>commands</c> would.</summary>
     public IReadOnlyList<string> Command(string script = "agent.mjs") => ["node", Path.Combine(Scratch, script)];

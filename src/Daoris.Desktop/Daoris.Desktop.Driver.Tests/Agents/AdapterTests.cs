@@ -371,7 +371,7 @@ public sealed class AdapterTests
     // ——— The interactive capability (D49 §3). Declared honestly and opted into: an adapter that has
     // not been wired for a conversation says so, and asking errors naming what the harness is.
 
-    private static ChatTarget Chat() => new("Game", "D:/fam/Game", "http://localhost:5177");
+    private static SpawnRequest Chat(string? session = null) => SpawnRequests.Chat("Game", "D:/fam/Game", "http://localhost:5177", session);
 
     [Fact]
     public void The_built_adapters_declare_whether_they_can_hold_a_conversation()
@@ -424,7 +424,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_chat_s_spawn_names_its_session_on_every_door()
     {
-        var chat = Chat() with { Session = "c1a2b3c4" };
+        var chat = Chat("c1a2b3c4");
         var adapters = AdapterSet.Built();
         var talking = adapters.Names.Where(name => adapters.Resolve(name).Interactive).ToList();
         Assert.Contains("acp-stub", talking);
@@ -516,7 +516,7 @@ public sealed class AdapterTests
 
         foreach (var target in new[] { Chat(), Chat() with { Resume = "0b5e7c1a" } })
         {
-            var full = adapter.PrepareChat(target with { PermissionMode = adapter.FullPosture }, null).ArgumentList.ToList();
+            var full = adapter.PrepareChat(target with { Mode = adapter.FullPosture }, null).ArgumentList.ToList();
             Assert.Equal("bypassPermissions", full[full.IndexOf("--permission-mode") + 1]);
             Assert.Single(full, argument => argument == "--permission-mode");
             Assert.DoesNotContain("acceptEdits", full);
@@ -580,7 +580,6 @@ public sealed class AdapterTests
     {
         public string Name => "one-shot";
 
-        public System.Diagnostics.ProcessStartInfo Prepare(
-            SessionTarget target, IReadOnlyList<string>? command) => new();
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
     }
 }

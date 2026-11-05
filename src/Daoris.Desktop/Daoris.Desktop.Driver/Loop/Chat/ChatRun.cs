@@ -91,19 +91,17 @@ internal sealed class ChatRun(
             }
 
             // Its process as its door makes it, with its toolchain's environment and its tools at the start, as every driven session's.
-            var info = agent.Prepare(
+            // Its own record on the request, so a take through the connector its harness starts marks it.
+            var request = SpawnRequests.Chat(place.Name, workTree, service.BaseUrl, sessionId) with
+            {
+                Command = config.Commands.GetValueOrDefault(agent.Name),
+                Asked = carrying,
                 // The native door resumes its own conversation by the id kept for it; the protocol door on its wire.
-                new ChatTarget(place.Name, workTree, service.BaseUrl)
-                {
-                    Asked = carrying,
-                    Resume = agent.Abilities.ResumesByRestart ? goOn?.Ask.Conversation : null,
-                    // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door.
-                    PermissionMode = place.PermissionMode,
-                    // Its own record, so a take through the connector its harness starts marks it.
-                    Session = sessionId,
-                },
-                config.Commands.GetValueOrDefault(agent.Name),
-                selection);
+                Resume = agent.Abilities.ResumesByRestart ? goOn?.Ask.Conversation : null,
+                // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door.
+                Mode = place.PermissionMode,
+            };
+            var info = agent.Prepare(request, selection);
 
             // Its standing block, on its harness, told with a new conversation's first message and never at a go-on, which resumes the same
             // conversation; a hand-over's adds the memory its brief hands on.
@@ -112,7 +110,7 @@ internal sealed class ChatRun(
             // The run's bracket, before what names its process is composed: what this start is handed of the downloads kept on its record, a
             // go-on as a first start, and its process's lineage token issued, a go-on's the one issued at its move, its retry's its own.
             start = new TransportStart(info, StartClass.Person) { Moved = goOn?.Proc };
-            run = agent.Run(new ChatTransportHost(home, processes, service, Context.Conversations, config, Context.Output), start);
+            run = agent.Run(new ChatTransportHost(home, processes, service, Context.Conversations, Context.Output), start);
             var proc = await run.BracketAsync(sessionId, ct).ConfigureAwait(false);
 
             // The skills plugins hand this conversation's destination, composed under the home and handed by the harness's own session-only
@@ -204,7 +202,7 @@ internal sealed class ChatRun(
             if (overriding is null)
             {
                 using var startLog = new MachineLog(home, "driver");
-                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, info, agent.ChoiceVariables, actorAsked), ct: ct)
+                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, request, info.Environment, agent.ChoiceVariables), ct: ct)
                     .ConfigureAwait(false);
             }
             // Never once the driver is closing. The run's spawn passes the start gate, which a conversation's press may reach before its first
