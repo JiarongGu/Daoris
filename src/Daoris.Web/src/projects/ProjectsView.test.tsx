@@ -448,8 +448,10 @@ describe("a workspace's page (UX6g)", () => {
     show(<ProjectsView notify={notify} />);
     const page = await chooseWorkspace('forge');
 
-    // The header's act is the first; Details' Remote row offers the same press beside the remote it would wire.
-    await userEvent.click((await within(page).findAllByRole('button', { name: 'Wire to a remote…' }))[0]!);
+    // Details draws the press once, in its Remote row; from another tab the header's act reaches that row.
+    expect(await within(page).findAllByRole('button', { name: 'Wire to a remote…' })).toHaveLength(1);
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    await userEvent.click(await within(page).findByRole('button', { name: 'Wire to a remote…' }));
     // The press opens the wiring in Details' Remote row.
     const remote = within(repositoryMain()).getByRole('region', { name: 'Remote' });
     await userEvent.type(within(remote).getByLabelText('Deployment'), 'https://forge.example.com');
