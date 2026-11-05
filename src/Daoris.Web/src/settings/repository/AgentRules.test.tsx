@@ -20,7 +20,8 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
     why: 'A session commits its own work in its own tree.',
   },
-  { id: 'no-push', list: 'deny', on: false, rules: ['Bash(git push:*)'], why: "A push stays the person's (D37)." },
+  { id: 'no-push', list: 'deny', on: true, fixed: true, rules: ['Bash(git push:*)'], why: "A push leaves this machine: git access's Write says whether a session may." },
+  { id: 'no-publish', list: 'deny', on: false, rules: [], why: 'Publishing a package or creating a release stays the person’s call.' },
   // A hook, not a rule (PERM3): no rules, and the tools it judges named instead.
   {
     id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
@@ -64,8 +65,16 @@ describe('What agents may do', () => {
     await userEvent.click(within(connector).getByRole('checkbox'));
     expect(props.onSwitchDefault).toHaveBeenCalledWith('connector', false);
 
+    const publish = screen.getByRole('listitem', { name: 'no-publish' });
+    expect(within(publish).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+  });
+
+  /** ONEWAY1q: a push is git access's Write alone, so `no-push` is shown with no switch, saying what sets it. */
+  it('shows the fixed no-push with no switch, saying git access sets it', () => {
+    show();
     const push = screen.getByRole('listitem', { name: 'no-push' });
-    expect(within(push).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+    expect(within(push).queryByRole('checkbox')).toBeNull();
+    expect(within(push).getByText("Set by git access's Write")).toBeTruthy();
   });
 
   // Three defects the installed window showed on this card, 2026-09-24, none of which a story could.
@@ -86,7 +95,7 @@ describe('What agents may do', () => {
    */
   it('divides one default from the next, as every other list of settings is', () => {
     show();
-    const items = ['connector', 'commit', 'no-push', 'tree-guard']
+    const items = ['connector', 'commit', 'no-push', 'no-publish', 'tree-guard']
       .map((id) => screen.getByRole('listitem', { name: id }));
     // The item carries the rule and the padding, because it is the item that has siblings.
     for (const item of items) expect(item.className).toMatch(/\bborder-t\b.*\bpy-/);

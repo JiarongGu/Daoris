@@ -215,16 +215,28 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void A_default_switched_off_is_not_handed_and_the_other_still_is()
     {
-        var file = PermissionRules.SwitchDefault(PermissionRules.Load(_home), "no-push", on: false);
+        var file = PermissionRules.SwitchDefault(PermissionRules.Load(_home), "commit", on: false);
 
         var rules = PermissionRules.Compose(file, "default", "engine");
 
-        Assert.Empty(rules.Deny);
-        Assert.Equal(Allowed, rules.Allow);
-        Assert.Equal(["no-push"], file.DefaultsOff);
+        Assert.DoesNotContain("Bash(git commit:*)", rules.Allow);
+        Assert.Equal(NoPush, rules.Deny);
+        Assert.Equal(["commit"], file.DefaultsOff);
 
-        var back = PermissionRules.Compose(PermissionRules.SwitchDefault(file, "no-push", on: true), "default", "engine");
-        Assert.Contains("Bash(git push:*)", back.Deny);
+        var back = PermissionRules.Compose(PermissionRules.SwitchDefault(file, "commit", on: true), "default", "engine");
+        Assert.Contains("Bash(git commit:*)", back.Allow);
+    }
+
+    /// <summary>ONEWAY1q: a push is git access's Write alone, so <c>no-push</c> has no switch, and a file that lists it off still hands it.</summary>
+    [Fact]
+    public void No_push_is_not_switched_here_since_git_access_says_whether_a_session_pushes()
+    {
+        var refused = Assert.Throws<DriverException>(() => PermissionRules.SwitchDefault(PermissionRules.Load(_home), "no-push", on: false));
+
+        Assert.Contains("git access", refused.Message);
+        var listed = PermissionRules.Load(_home) with { DefaultsOff = ["no-push"] };
+        Assert.Equal(NoPush, PermissionRules.Compose(listed, "default", "engine").Deny);
+        Assert.Contains(PermissionRules.HardDeny(listed), sentence => sentence.StartsWith("Pushing to any remote", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -493,9 +505,7 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void Nothing_to_hand_still_hands_the_sessions_own_context()
     {
-        var file = Off(PermissionRules.Load(_home), "connector", "commit", "no-push");
-
-        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
+        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, []);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         Assert.Equal(
@@ -624,19 +634,17 @@ public sealed class PermissionRulesTests : IDisposable
     }
 
     /// <summary>
-    /// The classifier is told only while `no-push` is on: switched off, the person has taken the push
-    /// back, and nothing about it is handed — no `autoMode` key at all, so the harness's own lists stand.
+    /// The classifier is told a push's sentence always, and publishing's while `no-publish` is on (ONEWAY1q): switched off, the person
+    /// has taken publishing back, and its sentence alone goes.
     /// </summary>
     [Fact]
-    public void With_no_push_switched_off_the_classifier_is_told_nothing()
+    public void With_no_publish_switched_off_the_classifier_is_told_the_push_sentence_alone()
     {
-        var file = Off(PermissionRules.Load(_home), "no-push");
+        var file = Off(PermissionRules.Load(_home), "no-publish");
 
-        Assert.Empty(PermissionRules.HardDeny(file));
-        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
-        using var document = JsonDocument.Parse(File.ReadAllText(path!));
-        Assert.False(document.RootElement.TryGetProperty("autoMode", out _));
-        Assert.NotEmpty(PermissionRules.HardDeny(PermissionRules.Load(_home)));
+        var told = Assert.Single(PermissionRules.HardDeny(file));
+        Assert.StartsWith("Pushing to any remote", told, StringComparison.Ordinal);
+        Assert.Equal(2, PermissionRules.HardDeny(PermissionRules.Load(_home)).Count);
     }
 
     // ——— PERM3: the tree guard, a hook rather than a rule.
@@ -704,7 +712,7 @@ public sealed class PermissionRulesTests : IDisposable
             Assert.False(plain.RootElement.TryGetProperty("hooks", out _));
         }
 
-        var nothing = PermissionRules.Compose(Off(PermissionRules.Load(_home), "connector", "commit", "no-push"), "default", "engine");
+        var nothing = PermissionRules.Compose(Off(PermissionRules.Load(_home), "connector", "commit"), "default", "engine");
         var alone = SpawnSettings.Write(_home, "s2", nothing, [], TreeGuard.For(_home, _home));
         Assert.NotNull(alone);
         using var guarded = JsonDocument.Parse(File.ReadAllText(alone!));

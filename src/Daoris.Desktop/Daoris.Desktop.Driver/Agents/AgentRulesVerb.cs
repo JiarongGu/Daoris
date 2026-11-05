@@ -141,8 +141,10 @@ internal static class AgentRulesVerb
         Say("Defaults");
         foreach (var shipped in PermissionRules.Defaults)
         {
-            var on = !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
-            var what = shipped.Hook is { } hook ? $"a hook on {hook}" : string.Join(", ", shipped.Rules);
+            var on = PermissionRules.IsOn(file, shipped);
+            var what = shipped.Hook is { } hook ? $"a hook on {hook}"
+                : shipped.Rules.Count == 0 ? "a sentence to auto mode's classifier"
+                : string.Join(", ", shipped.Rules);
             Say($"  {shipped.Id,-10} {(on ? "on " : "off")}  {shipped.List.ToString().ToLowerInvariant()}  {what}");
         }
 

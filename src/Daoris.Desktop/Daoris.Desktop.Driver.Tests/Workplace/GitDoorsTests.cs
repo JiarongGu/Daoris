@@ -230,6 +230,69 @@ public sealed class GitDoorsTests : IDisposable
         Assert.Equal(GitAccessRules.DeniedLine, error.ToString().Trim());
     }
 
+    private string Put(HomeEntry entry, string json)
+    {
+        var path = DaorisHome.Entry(Home, entry);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, json);
+        return path;
+    }
+
+    /// <summary>GITREADONLY1: a push through an identity read only on its host is refused at the ssh door in its words, a grant's included.</summary>
+    [Fact]
+    public void A_push_through_a_read_only_identity_is_refused_at_the_ssh_door_in_its_words()
+    {
+        Put(HomeEntry.GitIdentities, """{"identities":[{"id":"gi-00000000000a","label":"Deploy","host":"host","way":"ssh","readOnly":true,"default":true}]}""");
+        Put(HomeEntry.DriverConfig, """{"machineGitAccess":{"write":"allow"}}""");
+        var error = new StringWriter();
+        var variables = new Dictionary<string, string?>
+        {
+            [GitRouting.HomeVariable] = Home, ["PATH"] = "",
+            [GitRouting.GrantVariable] = GitGrants.Write(Home, "git@host:org/engine.git", DateTimeOffset.UtcNow),
+        };
+
+        var code = GitDoors.Ssh(["git@host", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
+
+        Assert.Equal(GitDoors.Refused, code);
+        Assert.Equal(GitAccessRules.ReadOnlyLine("Deploy"), error.ToString().Trim());
+        Assert.Contains(Lines("git.refused"), line => Field(line, "code") == "read-only");
+    }
+
+    /// <summary>GITAUTH1f: where Write says ask and no instance of Daoris holds the home, the door refuses at once and leaves no go-ahead.</summary>
+    [Fact]
+    public void Where_Daoris_is_not_running_a_door_that_would_ask_refuses_at_once()
+    {
+        Put(HomeEntry.DriverConfig, """{"machineGitAccess":{"write":"ask"}}""");
+        var error = new StringWriter();
+        var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "" };
+        var clock = Stopwatch.StartNew();
+
+        var code = GitDoors.Ssh(["git@host", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
+
+        Assert.Equal(GitDoors.Refused, code);
+        Assert.Equal(GitDoorAsks.NotRunningLine, error.ToString().Trim());
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the door took {clock.Elapsed}");
+        Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
+        Assert.Contains(Lines("git.refused"), line => Field(line, "code") == "not-running");
+    }
+
+    [Fact]
+    public void Daoris_runs_for_a_door_while_an_instance_holds_the_home_and_not_while_a_verb_does()
+    {
+        Assert.False(GitDoorAsks.Running(Home));
+        using (HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "git"))
+        {
+            Assert.False(GitDoorAsks.Running(Home));
+        }
+
+        using (HomeLease.TryAcquire(Home, LeaseKind.Headless, out _))
+        {
+            Assert.True(GitDoorAsks.Running(Home));
+        }
+
+        Assert.False(GitDoorAsks.Running(Home));
+    }
+
     // ── The coded lines (§11) ──────────────────────────────────────────────────────────────────────
 
     private System.Text.Json.JsonElement[] Lines(string @event)
@@ -346,29 +409,16 @@ public sealed class GitDoorsTests : IDisposable
     // ── The judge, Daoris's default door by door (§6.1, §6.2) ─────────────────────────────────────
 
     [Theory]
-    [InlineData(GitAct.Read, false, false, true, "read")]
-    [InlineData(GitAct.Write, false, false, false, "denied")]
-    [InlineData(GitAct.Write, false, true, true, "granted")]
-    [InlineData(GitAct.Write, true, false, true, "no-push-off")]
-    public void The_default_reads_and_lets_only_the_landing_push(GitAct act, bool pushesHere, bool granted, bool allowed, string code)
+    [InlineData(GitAct.Read, false, true, "read")]
+    [InlineData(GitAct.Write, false, false, "denied")]
+    [InlineData(GitAct.Write, true, true, "granted")]
+    public void The_default_reads_and_lets_only_the_landing_push(GitAct act, bool granted, bool allowed, string code)
     {
-        var verdict = GitAccessRules.Judge(act, pushesHere, granted);
+        var verdict = GitAccessRules.Judge(act, granted);
 
         Assert.Equal(allowed, verdict.Allowed);
         Assert.Equal(code, verdict.Code);
         Assert.Equal(allowed ? null : GitAccessRules.DeniedLine, verdict.Line);
-    }
-
-    [Theory]
-    [InlineData(null, false)]
-    [InlineData("""{"defaultsOff":["tree-guard"]}""", false)]
-    [InlineData("""{"defaultsOff":["no-push"]}""", true)]
-    [InlineData("not json", false)]
-    public void A_machine_whose_person_switched_no_push_off_keeps_its_pushes(string? file, bool pushes)
-    {
-        if (file is not null) File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Permissions), file);
-
-        Assert.Equal(pushes, GitAccessRules.PushesHere(Home));
     }
 
     // ── The address's key and the landing's grant (§6.7) ──────────────────────────────────────────

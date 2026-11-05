@@ -109,7 +109,8 @@ public static class RuleProposals
                     ?? throw new DriverException(
                         $"no default `{change.Default}` — Daoris ships {string.Join(", ", PermissionRules.Defaults.Select(d => $"`{d.Id}`"))}.");
                 if (change.On is not { } on) throw new DriverException($"say whether the default `{shipped.Id}` goes on or off.");
-                var isOn = !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
+                if (shipped.Fixed) throw new DriverException($"`{shipped.Id}` is not switched: git access's Write says whether a session pushes.");
+                var isOn = PermissionRules.IsOn(file, shipped);
                 if (isOn == on) return ChangeEffect.Nothing;
                 var allows = shipped.List == RuleList.Allow && shipped.Hook is null;
                 return on == allows ? ChangeEffect.Widens : ChangeEffect.Narrows;

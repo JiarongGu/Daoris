@@ -72,29 +72,45 @@ public sealed class GitAccessTests : IDisposable
     // ── The judge, by value (§6.5) ──────────────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData(GitAct.Read, "allow", false, false, true, "access")]
-    [InlineData(GitAct.Read, "deny", false, false, false, "access-denied")]
-    [InlineData(GitAct.Read, "ask", false, false, false, "ask")]
-    [InlineData(GitAct.Write, "allow", false, false, true, "access")]
-    [InlineData(GitAct.Write, "deny", false, true, false, "access-denied")]
-    [InlineData(GitAct.Write, "ask", false, false, false, "ask")]
-    [InlineData(GitAct.Write, "ask", false, true, true, "granted")]
-    [InlineData(GitAct.Write, "as-today", false, false, false, "denied")]
-    [InlineData(GitAct.Write, "as-today", false, true, true, "granted")]
-    [InlineData(GitAct.Write, "as-today", true, false, true, "no-push-off")]
-    public void The_judge_answers_the_value_a_class_resolved_to(GitAct act, string value, bool pushesHere, bool granted, bool allowed, string code)
+    [InlineData(GitAct.Read, "allow", false, true, "access")]
+    [InlineData(GitAct.Read, "deny", false, false, "access-denied")]
+    [InlineData(GitAct.Read, "ask", false, false, "ask")]
+    [InlineData(GitAct.Write, "allow", false, true, "access")]
+    [InlineData(GitAct.Write, "deny", true, false, "access-denied")]
+    [InlineData(GitAct.Write, "ask", false, false, "ask")]
+    [InlineData(GitAct.Write, "ask", true, true, "granted")]
+    [InlineData(GitAct.Write, "as-today", false, false, "denied")]
+    [InlineData(GitAct.Write, "as-today", true, true, "granted")]
+    public void The_judge_answers_the_value_a_class_resolved_to(GitAct act, string value, bool granted, bool allowed, string code)
     {
-        var verdict = GitAccessRules.Judge(act, value, pushesHere, granted);
+        var verdict = GitAccessRules.Judge(act, value, granted);
 
         Assert.Equal((allowed, code), (verdict.Allowed, verdict.Code));
         Assert.Equal(code == "ask", verdict.Ask);
     }
 
     [Fact]
-    public void A_read_only_identity_denies_a_write_whatever_the_access_says()
+    public void A_read_only_identity_denies_a_write_whatever_the_access_and_the_grant_say_in_its_words()
     {
-        Assert.Equal("read-only", GitAccessRules.Judge(GitAct.Write, "allow", pushesHere: true, granted: true, readOnlyIdentity: true).Code);
-        Assert.True(GitAccessRules.Judge(GitAct.Read, "allow", false, false, readOnlyIdentity: true).Allowed);
+        var refused = GitAccessRules.Judge(GitAct.Write, "allow", granted: true, readOnlyIdentity: "Deploy");
+
+        Assert.Equal(("read-only", false), (refused.Code, refused.Allowed));
+        Assert.Equal(GitAccessRules.ReadOnlyLine("Deploy"), refused.Line);
+        Assert.Contains("Deploy is read only on its host", refused.Line, StringComparison.Ordinal);
+        Assert.True(GitAccessRules.Judge(GitAct.Read, "allow", granted: false, readOnlyIdentity: "Deploy").Allowed);
+    }
+
+    /// <summary>ONEWAY1q: the judge reads git access alone; a permissions file that lists <c>no-push</c> off moves nothing.</summary>
+    [Fact]
+    public void The_judge_reads_git_access_alone_and_no_push_off_in_the_rules_file_lets_no_push_through()
+    {
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Permissions), """{"defaultsOff":["no-push"]}""");
+
+        var value = GitAccessKeys.Resolve(Home, null, null).Of(GitAccessKeys.Write).Value;
+        var verdict = GitAccessRules.Judge(GitAct.Write, value, granted: false);
+
+        Assert.Equal(GitAccessKeys.AsToday, value);
+        Assert.Equal(("denied", false), (verdict.Code, verdict.Allowed));
     }
 
     // ── An edit (§6.2, §8) ──────────────────────────────────────────────────────────────────────────
@@ -302,23 +318,15 @@ public sealed class GitAccessTests : IDisposable
     }
 
     [Fact]
-    public void Where_no_push_is_off_the_rules_are_not_made_stricter()
+    public void The_classifier_says_a_push_as_git_access_does_and_publishing_keeps_its_own_sentence()
     {
-        var off = new RuleLists([], [], []);
-
-        Assert.Equal(off, GitAccessPolicy.Compose(off, "allow"));
-    }
-
-    [Fact]
-    public void The_classifier_keeps_publishing_and_releases_and_says_a_push_as_git_access_does()
-    {
-        var told = new[] { "Pushing to any remote in any form (for example git -C <dir> push), publishing a package, or creating a release: these stay the person's.", "Other." };
+        var told = PermissionRules.HardDeny(PermissionFile.Empty);
 
         Assert.Equal(told, GitAccessPolicy.HardDeny(told, "deny"));
         var judged = GitAccessPolicy.HardDeny(told, "ask");
-        Assert.Equal("Other.", judged[1]);
-        Assert.Contains("publishing a package or creating a release", judged[0], StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("git access", judged[0]);
+        Assert.Contains(GitAccessPolicy.Judged, judged);
+        Assert.Contains("Publishing a package or creating a release: these stay the person's.", judged);
+        Assert.DoesNotContain(judged, sentence => sentence.StartsWith("Pushing to any remote", StringComparison.Ordinal));
     }
 
     // ── The terminal (§8) ───────────────────────────────────────────────────────────────────────────
