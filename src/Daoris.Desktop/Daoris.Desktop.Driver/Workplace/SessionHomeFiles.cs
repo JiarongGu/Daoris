@@ -164,7 +164,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         // FOUNDATION1f-v part a: a conversation's hand-over box once the come-up imports it, set aside beside it the same way.
         new(HandOver, Place.Sessions, HandOverBoxSuffix + HarnessSetAsideSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeServers.FileSuffix, false, Beside),
-        new(Spawn, Place.Spawn, ".settings.json", false, Beside),
+        new(Spawn, Place.Spawn, ClaudeRules.FileSuffix, false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
         new(Spawn, Place.Spawn, ChecksSuffix, false, Beside),
         // CONTEXTONE1c: the folder a standing block past what its first prompt carries went through, which its session read.

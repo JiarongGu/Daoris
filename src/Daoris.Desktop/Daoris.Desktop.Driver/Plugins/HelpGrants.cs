@@ -274,8 +274,8 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
     private IEnumerable<HelpGrant> Granted => All.Where(grant => grant.State == HelpGrants.Approved);
 
     /// <summary>The approved servers, as the protocol door carries one; no other reaches Ask Daoris.</summary>
-    public IReadOnlyList<AcpMcpServer> Servers => [.. Granted.Select(grant =>
-        new AcpMcpServer(grant.Server.Name, grant.Server.Command[0], grant.Server.Command.Skip(1).ToList(), grant.Server.Environment))];
+    public IReadOnlyList<ServerEntry> Servers => [.. Granted.Select(grant =>
+        new ServerEntry(grant.Server.Name, grant.Server.Command[0], grant.Server.Command.Skip(1).ToList(), grant.Server.Environment))];
 
     /// <summary>Each approved read and accepted write, as the harness spells a server's tool, <c>mcp__&lt;server&gt;__&lt;tool&gt;</c>.</summary>
     public IReadOnlyList<string> Allow => [.. Granted.SelectMany(grant =>

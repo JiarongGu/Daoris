@@ -45,9 +45,7 @@ const asked = (type: string) => invoke.mock.calls.filter(([module, route]) => mo
 
 function answer() {
   invoke.mockImplementation(async (_module: string, type: string) => {
-    if (type === 'SESSION_DIFF') return DIFF;
-    if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-    if (type === 'LANDING') return PLAN;
+    if (type === 'SESSION_DIFF') return DIFF;    if (type === 'LANDING') return PLAN;
     return {};
   });
 }
@@ -130,9 +128,7 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
   it('offers the discard, not the review’s gate, where the review would also hold the work', async () => {
     await i18n.changeLanguage(language);
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      if (type === 'LANDING') return { ...PLAN, review: { state: 'shown', environment: 'staging-preview', level: 'set-up-step', quest: 'q2' } };
+      if (type === 'SESSION_DIFF') return DIFF;      if (type === 'LANDING') return { ...PLAN, review: { state: 'shown', environment: 'staging-preview', level: 'set-up-step', quest: 'q2' } };
       return {};
     });
     const { container } = pane(HELD, vi.fn());

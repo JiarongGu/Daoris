@@ -25,9 +25,7 @@ const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-
 
 function answer(plan: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
-    if (type === 'SESSION_DIFF') return DIFF;
-    if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-    if (type === 'LANDING') return plan;
+    if (type === 'SESSION_DIFF') return DIFF;    if (type === 'LANDING') return plan;
     return {};
   });
 }

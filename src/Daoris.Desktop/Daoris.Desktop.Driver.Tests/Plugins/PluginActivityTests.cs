@@ -139,13 +139,15 @@ public sealed class PluginActivityTests : IDisposable
     {
         var record = new LandedBranches(_home);
         record.Record(Landed("engine", "feature/a", Now.AddDays(-1)));
-        record.Pushed("engine", "feature/a", new PluginLanding(Id, true, "https://example.test/pull/1", "pushed"), "abc");
+        record.Pushed("engine", "feature/a", "abc");
+        record.PullRequested("engine", "feature/a", Id, "https://example.test/pull/1");
         record.Record(Landed("game", "feature/b", Now.AddDays(-2)));
-        record.Pushed("game", "feature/b", new PluginLanding("acme.other", true, "https://example.test/pull/2", "pushed"), "abc");
+        record.Pushed("game", "feature/b", "abc");
+        record.PullRequested("game", "feature/b", "acme.other", "https://example.test/pull/2");
         record.Record(Landed("engine", "feature/c", Now.AddDays(-3)));
-        record.Pushed("engine", "feature/c", new PluginLanding(Id, false, null, "gh is not signed in"), "abc");
         record.Record(Landed("engine", "feature/old", Now.AddDays(-20)));
-        record.Pushed("engine", "feature/old", new PluginLanding(Id, true, "https://example.test/pull/0", "pushed"), "abc");
+        record.Pushed("engine", "feature/old", "abc");
+        record.PullRequested("engine", "feature/old", Id, "https://example.test/pull/0");
 
         var read = PluginActivity.Read(_home, Id, Now.AddDays(-7));
 

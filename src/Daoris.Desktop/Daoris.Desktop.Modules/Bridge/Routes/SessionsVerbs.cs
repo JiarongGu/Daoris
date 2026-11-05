@@ -23,7 +23,7 @@ internal static class SessionsVerbs
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var config = DriverConfig.Load(loop.ConfigPath);
         var output = new StringWriter { NewLine = "\n" };
-        var world = new SessionsWorld(service, loop.Home, config, DriverContext.DoorOf(loop, config), loop.Log)
+        var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
             CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
             StartFrom = async (id, token) =>
@@ -65,7 +65,7 @@ internal static class SessionsVerbs
         var loop = context.Loop;
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var config = DriverConfig.Load(loop.ConfigPath);
-        var world = new SessionsWorld(service, loop.Home, config, DriverContext.DoorOf(loop, config), loop.Log)
+        var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
             CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
         };

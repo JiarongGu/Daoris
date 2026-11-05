@@ -23,7 +23,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// trees, every plan judged against a line, the reviews, the landed branches a plugin could take, the clean-up's list,
     /// and which repositories hold Daoris's branches. About no one session, so every one's is read again.
     /// </summary>
-    private const StateScopes Moves = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+    private const StateScopes Moves = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
     /// <summary>

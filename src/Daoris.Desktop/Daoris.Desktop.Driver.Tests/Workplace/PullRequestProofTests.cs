@@ -105,8 +105,8 @@ public sealed class PullRequestProofTests
         var home = Path.Combine(Path.GetTempPath(), "daoris-pr-asking-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            Install(home, "acme.asks", [HookPoints.Land, HookPoints.State]);
-            Install(home, "acme.lands", [HookPoints.Land]);
+            Install(home, "acme.asks", [HookPoints.State]);
+            Install(home, "acme.lands", [HookPoints.SessionEnded]);
             Install(home, "acme.off", [HookPoints.State]);
             Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins,"acme.broken"));
             File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,"acme.broken", "plugin.json"), "not json");

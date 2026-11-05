@@ -396,28 +396,26 @@ public sealed class StatePublisherTests : DriverModuleBridge
     /// where the change is one session's; the plans, gates and lists beside them declare nothing.
     /// </summary>
     [Theory]
-    [InlineData("LAND_SESSION_TREE", "sessions,landing,diff,handOff,sweep,treesSync", "id")]
-    [InlineData("LAND_ENTRY", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("LAND_ASK", "sessions,landing,diff,handOff,sweep,treesSync", null)]
+    [InlineData("LAND_SESSION_TREE", "sessions,landing,diff,sweep,treesSync", "id")]
+    [InlineData("LAND_ENTRY", "sessions,landing,diff,sweep,treesSync", null)]
+    [InlineData("LAND_ASK", "sessions,landing,diff,sweep,treesSync", null)]
     [InlineData("ENTRY_LANDING", "", null)]
     [InlineData("ASK_LANDING", "", null)]
     [InlineData("DISCARD_SESSION_TREE", "sessions,landing,diff,sweep,treesSync", "id")]
-    [InlineData("HANDOFF", "handOff,sweep", "id")]
     [InlineData("ASK_OPINION", "sessions,landing", "id")]
     [InlineData("OPINION_ANYWAY", "sessions,landing", "id")]
     [InlineData("OPINION_MYSELF", "sessions,landing", "id")]
     [InlineData("STOP_OPINION", "sessions,landing", null)]
-    [InlineData("SWEEP", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("DISCARD_SESSION_BRANCH", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("WITHDRAW_LANDING_BRANCH", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("RECOVERY_DROP", "sessions,landing,diff,handOff,sweep,treesSync", null)]
-    [InlineData("TREES_SYNC", "sessions,landing,diff,handOff,sweep,treesSync", null)]
+    [InlineData("SWEEP", "sessions,landing,diff,sweep,treesSync", null)]
+    [InlineData("DISCARD_SESSION_BRANCH", "sessions,landing,diff,sweep,treesSync", null)]
+    [InlineData("WITHDRAW_LANDING_BRANCH", "sessions,landing,diff,sweep,treesSync", null)]
+    [InlineData("RECOVERY_DROP", "sessions,landing,diff,sweep,treesSync", null)]
+    [InlineData("TREES_SYNC", "sessions,landing,diff,sweep,treesSync", null)]
     [InlineData("LANDING", "", null)]
     [InlineData("SESSION_PROCESS", "", null)]
     [InlineData("READ_LEAVE", "", null)]
     [InlineData("OPINION_GATE", "", null)]
     [InlineData("OPINION_WAITS", "", null)]
-    [InlineData("HANDOFF_PLAN", "", null)]
     [InlineData("SWEEP_PLAN", "", null)]
     [InlineData("TREES_SYNC_PLAN", "", null)]
     [InlineData("TREES_SYNC_SCOPE", "", null)]
@@ -716,7 +714,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [Fact]
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
-            "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
+            "sessions,landing,diff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
             + "tools,help,browser,wiring,notices,repositories,integration,atWork,checkouts",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 

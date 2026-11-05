@@ -51,23 +51,23 @@ internal static class DriverChoicesConsole
 
     /// <summary>
     /// The planner's verdicts over a fresh snapshot (<see cref="SessionGroups.VerdictsAsync"/>), as a window with no look of its own
-    /// plans: the configured adapter's wire, this machine's plugins among the adapters, else the pipe.
+    /// plans: the configured adapter's answer, this machine's plugins among the adapters, else may not.
     /// </summary>
     private static async Task<IReadOnlyList<Consideration>> VerdictsAsync(DriverConfig config, CancellationToken ct)
     {
         using var service = ServiceClient.FromEnvironment();
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
-        SessionWire wire;
+        bool unadopted;
         try
         {
             var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names));
-            wire = Adoption.Unadopted(ActorChoices.BuildAgent(config), adapters.AbilitiesOf) ? SessionWire.Acp : SessionWire.Pipe;
+            unadopted = Adoption.Unadopted(ActorChoices.BuildAgent(config), adapters.AbilitiesOf);
         }
         catch (DriverException)
         {
-            wire = SessionWire.Pipe;
+            unadopted = false;
         }
 
-        return await SessionGroups.VerdictsAsync(service, config, wire, lastLook: null, ct, home).ConfigureAwait(false);
+        return await SessionGroups.VerdictsAsync(service, config, unadopted, lastLook: null, ct, home).ConfigureAwait(false);
     }
 }

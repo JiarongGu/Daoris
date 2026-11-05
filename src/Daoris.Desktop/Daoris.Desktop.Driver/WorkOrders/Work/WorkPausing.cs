@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 public sealed record WorkWorld(ServiceClient Service, string Home, string ConfigPath, SessionProcesses Processes)
 {
     /// <summary>The configured agent's wire, which a resume's plan is read by (D70).</summary>
-    public SessionWire Door { get; init; } = SessionWire.Pipe;
+    public bool Unadopted { get; init; }
 
     /// <summary>Where <c>work.paused</c> and <c>work.resumed</c> go; null writes none.</summary>
     public MachineLog? Log { get; init; }
@@ -390,7 +390,7 @@ public static class WorkPausing
             var snapshot = await PausedWork.LookAsync(
                 world.Service, config, await world.Service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
             snapshot = snapshot with { FailuresAt = StaffCourse.FailuresAt(new StaffLedger(world.Home), snapshot) };
-            var plan = Planner.Plan(snapshot, config, world.Door);
+            var plan = Planner.Plan(snapshot, config, world.Unadopted);
             var work = AskWork.Read(
                 new AskWorkLook(await world.Service.EveryQuestAsync(ct).ConfigureAwait(false),
                     await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false)),

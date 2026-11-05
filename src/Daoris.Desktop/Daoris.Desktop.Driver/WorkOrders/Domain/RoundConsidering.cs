@@ -45,7 +45,7 @@ internal sealed class RoundConsidering(PlanRound round)
                 };
             }
 
-            if (round.Door != SessionWire.Acp)
+            if (!round.Unadopted)
             {
                 return new(quest, StartVerdict.NotAdopted,
                     $"`{quest.To}` has not adopted Daoris, so a session there would have no connector to "

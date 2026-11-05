@@ -128,8 +128,7 @@ public sealed record AbilitiesPart(
     Known<bool> Interactive,
     Known<bool> Resumes,
     Known<bool> TakesSettings,
-    Known<bool> ServersInherit = default,
-    Known<bool> OwnServersLeftOut = default);
+    Known<bool> ServersInherit = default);
 
 /// <summary>A door's own words: its error words and its turn report's meaning (D179 point 8).</summary>
 public sealed record DoorTablesPart(ErrorWords? ErrorWords, string? TurnReport);

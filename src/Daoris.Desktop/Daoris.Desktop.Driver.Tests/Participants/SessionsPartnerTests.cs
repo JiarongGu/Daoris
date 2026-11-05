@@ -75,7 +75,7 @@ public sealed class SessionsPartnerTests : IDisposable
         var host = new OpinionStandIn().Session("s1", "working", tree: "trees/default/reports/s-1");
         set?.Invoke(host);
         var read = new List<string>();
-        var world = new SessionsWorld(host.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null)
+        var world = new SessionsWorld(host.Client(), _home, DriverConfig.Empty, false, null)
         {
             PieceBase = (tree, _) =>
             {

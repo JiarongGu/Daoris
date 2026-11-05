@@ -77,8 +77,6 @@ public sealed class WorkSupervisionTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => throw new DriverException("the loop never asks a plugin to land work");
-
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
         /// <summary>Where set and true for a frame, its send fails, as a broken pipe does (FABRIC-PERFORM1i).</summary>
@@ -461,7 +459,7 @@ public sealed class WorkSupervisionTests : IDisposable
     [Fact]
     public void A_plugin_is_read_under_the_work_wire_s_bound_only_where_it_speaks_a_work_point()
     {
-        var catalog = Catalog(("acme.lands", [HookPoints.Land, HookPoints.State]), (Deploy, [HookPoints.Land, HookPoints.Watch, HookPoints.Step]));
+        var catalog = Catalog(("acme.lands", [HookPoints.State]), (Deploy, [HookPoints.Watch, HookPoints.Step]));
 
         Assert.Equal(HookPeer.AnswerBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == "acme.lands")));
         Assert.Equal(WorkBounds.FrameBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == Deploy)));

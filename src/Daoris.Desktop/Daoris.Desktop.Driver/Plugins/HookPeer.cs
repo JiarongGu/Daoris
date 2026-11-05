@@ -171,50 +171,6 @@ public sealed class HookPeer(
         await RequestAsync($"hook/{HookPoints.StateChanged}", payload, ct).ConfigureAwait(false);
 
     /// <summary>
-    /// The landing's frame (D100), and its answer read by shape: <c>pushed</c> is required, a pull request
-    /// is an absolute web address or absent, and the plugin's sentence is words or absent. Anything else
-    /// is not an answer, and the landing says the plugin's step failed — never that the branch went.
-    /// </summary>
-    public async Task<PluginLanding> LandAsync(object payload, CancellationToken ct)
-    {
-        var answer = await RequestAsync($"hook/{HookPoints.Land}", payload, ct).ConfigureAwait(false);
-
-        DriverException NotAnAnswer() => Unreadable(
-            $"plugin `{plugin}` answered {Raw(answer)}, which is not a landing's answer — "
-            + "`{ \"pushed\": true, \"pullRequest\": \"https://…\", \"message\": \"…\" }`, the last two optional.");
-
-        if (answer.ValueKind != JsonValueKind.Object
-            || !answer.TryGetProperty("pushed", out var pushed)
-            || pushed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
-        {
-            throw NotAnAnswer();
-        }
-
-        string? pullRequest = null;
-        if (answer.TryGetProperty("pullRequest", out var opened) && opened.ValueKind != JsonValueKind.Null)
-        {
-            // Only a web page is said as a link: a pull request is somewhere a person goes to read.
-            if (opened.ValueKind != JsonValueKind.String
-                || !Uri.TryCreate(opened.GetString(), UriKind.Absolute, out var address)
-                || address.Scheme is not ("https" or "http"))
-            {
-                throw NotAnAnswer();
-            }
-
-            pullRequest = opened.GetString();
-        }
-
-        var message = "no sentence given";
-        if (answer.TryGetProperty("message", out var said) && said.ValueKind != JsonValueKind.Null)
-        {
-            if (said.ValueKind != JsonValueKind.String) throw NotAnAnswer();
-            if (said.GetString() is { Length: > 0 } words) message = words.Trim();
-        }
-
-        return new PluginLanding(plugin, pushed.GetBoolean(), pullRequest, message);
-    }
-
-    /// <summary>
     /// The query's frame (PLUGHOOK1a, design §2.2), and its answer read by shape (<see cref="PullRequestAnswers.Read"/>): a
     /// state of the four, the full ids of both commits for a completed one, and the rest each its own shape or absent.
     /// Anything else is not an answer (<c>unreadable</c>), and never a state.

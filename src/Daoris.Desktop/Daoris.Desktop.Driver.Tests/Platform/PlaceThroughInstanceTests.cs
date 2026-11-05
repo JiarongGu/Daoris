@@ -12,7 +12,7 @@ public sealed class PlaceThroughInstanceTests
     private static readonly SetupPresetsTests.Catalog Plugins = new();
 
     private static Task<int> RunAsync(string[] args, string home, InstanceWorld? instance, TextWriter output) =>
-        PlaceCommand.RunAsync(args, output, new PlacePlanTests.World(), DriverConfig.Empty, home, Plugins, SessionWire.Pipe, instance);
+        PlaceCommand.RunAsync(args, output, new PlacePlanTests.World(), DriverConfig.Empty, home, Plugins, false, instance);
 
     [Fact]
     public async Task The_apply_through_the_instance_is_one_press_waiting_for_the_window_and_prints_the_lines_it_answers()

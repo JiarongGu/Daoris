@@ -199,7 +199,7 @@ public static class PlacePlans
     /// effective value differs; every refusal said, none thrown. The copy is the plan's after, and is never written here.
     /// </summary>
     public static PlaceApplied Apply(
-        DriverConfig config, RepoView row, PlaceAsk ask, PlaceTip tip, IWorkplacePluginCatalog plugins, SessionWire door, IReadOnlyList<QuestView> quests,
+        DriverConfig config, RepoView row, PlaceAsk ask, PlaceTip tip, IWorkplacePluginCatalog plugins, bool unadopted, IReadOnlyList<QuestView> quests,
         string? home = null)
     {
         var name = row.Repository;
@@ -254,7 +254,7 @@ public static class PlacePlans
         if (ask.Adoption)
         {
             // The press's own rules over the configuration the plan would leave, so the two refuse alike.
-            foreach (var refusal in SetupPress.ConfigurationRefusals(after, door, row)) Refuse(Adoption, refusal.Code, refusal.Sentence);
+            foreach (var refusal in SetupPress.ConfigurationRefusals(after, unadopted, row)) Refuse(Adoption, refusal.Code, refusal.Sentence);
             if (SetupPress.OpenRefusal(quests, name) is { } open) Refuse(Adoption, open.Code, open.Sentence);
             changes.Add(new(SetupPressKey, Adoption, "a set-up asked of its own session", "not asked",
                 ask.Builds is { } builds && SetupBuilds.Is(builds) ? $"asked, for {SetupBuilds.Named(builds)}" : "asked"));
@@ -359,7 +359,7 @@ public static class PlacePlans
     /// quests where driving or adoption asks them, and each line's tip; writes nothing.
     /// </summary>
     public static async Task<PlacePlanned> PlanAsync(
-        IPlaceWorld world, DriverConfig config, string home, IWorkplacePluginCatalog plugins, SessionWire door, PlaceAsk ask, CancellationToken ct = default)
+        IPlaceWorld world, DriverConfig config, string home, IWorkplacePluginCatalog plugins, bool unadopted, PlaceAsk ask, CancellationToken ct = default)
     {
         var names = ask.Repositories.Select(each => each.Trim()).Where(each => each.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         ask = ask with { Repositories = names };
@@ -386,7 +386,7 @@ public static class PlacePlans
 
             var workspace = RemoteTarget.Workspace(row.Workspace);
             var tip = await world.TipAsync(row, config, ct).ConfigureAwait(false);
-            var applied = planned ? Apply(config, row, ask, tip, plugins, door, quests, home) : new PlaceApplied(config, [], []);
+            var applied = planned ? Apply(config, row, ask, tip, plugins, unadopted, quests, home) : new PlaceApplied(config, [], []);
             refusals.AddRange(applied.Refusals);
             saves.AddRange(applied.Saves.Where(save => !saves.Contains(save)));
             var before = SideOf(config, row.Repository, workspace, store);

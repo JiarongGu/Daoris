@@ -12,11 +12,7 @@ public sealed class LandingHoldsTests : IDisposable
     // TESTCLOCK1: the waits are on the hold's own count, so the bound elapses only on a real failure.
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
-    private static readonly LandingAttempt Landed = new("feature/own", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", AcceptedBy.Auto)
-    {
-        Plugin = "example.lands",
-        Said = new PluginLanding("example.lands", Pushed: false, PullRequest: null, "gh is not signed in.", Failed: true),
-    };
+    private static readonly LandingAttempt Landed = new("feature/own", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", AcceptedBy.Auto);
 
     private readonly string _scratch;
     private readonly string _home;

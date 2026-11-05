@@ -478,7 +478,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.False(keyed.Land.ContainsKey("pattern"));
     }
 
-    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("acme.github", [HookPoints.Land])];
+    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("acme.github", [HookPoints.Perform])];
 
     /// <summary>A pull request whose plugin neither the version nor the rule names is held at the bind with why.</summary>
     /// <summary>A graph whose work and opinion steps name the role that takes each (ROLESTEP1b).</summary>

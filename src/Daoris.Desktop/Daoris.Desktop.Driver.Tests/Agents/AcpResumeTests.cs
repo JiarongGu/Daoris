@@ -108,7 +108,7 @@ public sealed class AcpResumeTests
         }
     });
 
-    private static readonly IReadOnlyList<AcpMcpServer> Servers =
+    private static readonly IReadOnlyList<ServerEntry> Servers =
         [new("daoris", "D:/bin/daoris-mcp.exe", ["--stdio"], new Dictionary<string, string> { ["DAORIS_HOME"] = "D:/daoris-data" })];
 
     /// <summary>

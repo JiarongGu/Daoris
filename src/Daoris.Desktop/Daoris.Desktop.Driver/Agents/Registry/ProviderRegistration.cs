@@ -186,9 +186,12 @@ internal static class ProviderRegistration
         return new AgentDoor(
             new DoorId(name),
             transport,
-            plugin is null ? new DoorIdentity(null, null, null) : new DoorIdentity(plugin, toolchain?.Product, toolchain?.Maker),
+            // A declared door's identity and home are its own, from its declaration (row q).
+            adapter is LegacyDoor { Declared: true } declaredDoor
+                ? declaredDoor.Door.Identity
+                : plugin is null ? new DoorIdentity(null, null, null) : new DoorIdentity(plugin, toolchain?.Product, toolchain?.Maker),
             toolchain is null || owning ? Known<ProgramFacts>.Absent : Known<ProgramFacts>.Declared(ProgramFacts.Of(toolchain), $"the toolchain of {name}"),
-            DoorHome.Of(toolchain),
+            adapter is LegacyDoor { Declared: true } homed ? homed.Door.Home : DoorHome.Of(toolchain),
             lent,
             Absent(),
             new PosturesPart(adapter.AcpPosture, adapter.AskingPosture, adapter.FullPosture, adapter.ReadingPosture),

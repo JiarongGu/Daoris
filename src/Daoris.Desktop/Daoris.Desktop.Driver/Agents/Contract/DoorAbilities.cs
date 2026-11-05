@@ -39,9 +39,6 @@ public sealed record DoorAbilities(
     /// </summary>
     public bool ServersInherit { get; init; }
 
-    /// <summary>It can leave its agent's own servers out of a session, so a start that requires that may use it (CONNECTORS1).</summary>
-    public bool OwnServersLeftOut { get; init; }
-
     /// <summary>A contract door's abilities: its declared ones, the rest its transport's.</summary>
     public static DoorAbilities Of(AgentDoor door) => Of(
         door.Transport,
@@ -52,7 +49,6 @@ public sealed record DoorAbilities(
     {
         // A native door's servers inherit its environment as every one did before the ability was stated; a provider says otherwise.
         ServersInherit = Declared(door.Abilities.ServersInherit, door.Transport == Transport.Native),
-        OwnServersLeftOut = Declared(door.Abilities.OwnServersLeftOut, false),
     };
 
     /// <summary>

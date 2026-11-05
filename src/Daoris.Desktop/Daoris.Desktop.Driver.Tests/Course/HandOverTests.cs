@@ -610,7 +610,7 @@ public sealed class HandOverTests : IDisposable
     {
         var room = new Room([Chat("c0nv0001")]);
         (string, string, string?)? seen = null;
-        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null)
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null)
         {
             HandOver = (id, agent, account, _) =>
             {
@@ -637,7 +637,7 @@ public sealed class HandOverTests : IDisposable
     {
         var room = QuestRoom();
         var asked = false;
-        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null)
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null)
         {
             HandOver = (_, _, _, _) =>
             {
@@ -668,7 +668,7 @@ public sealed class HandOverTests : IDisposable
     [Fact]
     public async Task The_terminal_s_ask_of_a_quest_s_session_is_named_on_its_record_as_the_person_s_at_a_terminal()
     {
-        var world = new SessionsWorld(QuestRoom().Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { Drives = Drives, LoopRuns = () => true };
+        var world = new SessionsWorld(QuestRoom().Client(), _home, DriverConfig.Empty, false, null) { Drives = Drives, LoopRuns = () => true };
 
         Assert.Equal(1, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "gemini"], out _)!, world, new StringWriter()));
         Assert.Empty(Events.After("qu3st000", 0).Events);
@@ -683,7 +683,7 @@ public sealed class HandOverTests : IDisposable
     public async Task The_terminal_says_where_no_loop_holds_the_home_and_refuses_with_the_judge_s_sentence()
     {
         var room = QuestRoom();
-        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { Drives = Drives, LoopRuns = () => false };
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null) { Drives = Drives, LoopRuns = () => false };
         var output = new StringWriter();
 
         Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "codex-acp"], out _)!, world, output));

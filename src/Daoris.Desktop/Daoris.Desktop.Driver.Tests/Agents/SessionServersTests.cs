@@ -17,10 +17,10 @@ public sealed class SessionServersTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(Path.GetDirectoryName(_home)!);
 
-    private static readonly AcpMcpServer Knowledge =
+    private static readonly ServerEntry Knowledge =
         new("daoris-knowledge", "daoris-knowledge.exe", [], new Dictionary<string, string>());
 
-    private static AcpMcpServer Npx(params string[] arguments) => new("browser", "npx", arguments, new Dictionary<string, string>());
+    private static ServerEntry Npx(params string[] arguments) => new("browser", "npx", arguments, new Dictionary<string, string>());
 
     /// <summary>
     /// A package laid in the toolchain as an install leaves it: its manifest naming <paramref name="bin"/> as <paramref name="script"/>,

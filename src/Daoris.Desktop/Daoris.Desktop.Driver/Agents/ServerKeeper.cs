@@ -41,7 +41,7 @@ public static class ServerKeeper
     /// <summary>
     /// <paramref name="server"/>, started by node as <c>node &lt;script&gt; …</c>, made the keeper's with that start after its limits.
     /// </summary>
-    public static AcpMcpServer Wrap(string home, AcpMcpServer server, int ceilingMb = CeilingMb, int everyMs = EveryMs) =>
+    public static ServerEntry Wrap(string home, ServerEntry server, int ceilingMb = CeilingMb, int everyMs = EveryMs) =>
         server with { Arguments = [Install(home), ceilingMb.ToString(), everyMs.ToString(), .. server.Arguments] };
 
     private static string ReadSource()

@@ -10,9 +10,9 @@ internal sealed class ChatServers(ChatContext context)
     /// </summary>
     /// <param name="circle">The workspace its tools are bound to (<see cref="ChatPlace.Circle"/>); null for none.</param>
     /// <param name="proc">The lineage token of the process it is composed for, on the protocol door alone.</param>
-    public IReadOnlyList<AcpMcpServer> For(string sessionId, string? circle, IReadOnlyList<AcpMcpServer> plugins, string? proc = null)
+    public IReadOnlyList<ServerEntry> For(string sessionId, string? circle, IReadOnlyList<ServerEntry> plugins, string? proc = null)
     {
-        var offered = new List<AcpMcpServer>();
+        var offered = new List<ServerEntry>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
                 AppContext.BaseDirectory, scope: ConnectorScope(context.Home, sessionId, circle, proc, KnowledgeConnector.KeptRole(context.Conversations.RoleOf, sessionId))) is { } connector)
@@ -47,7 +47,7 @@ internal sealed class ChatServers(ChatContext context)
     /// Every server the plugins here declare, for whomever and approved or not, each said once in the log (Ask Daoris in full access); false
     /// takes those <paramref name="to"/> takes.
     /// </param>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandAsync(
+    public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandAsync(
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions,
         bool every = false)
     {
@@ -63,7 +63,7 @@ internal sealed class ChatServers(ChatContext context)
     }
 
     /// <summary>A <c>plugin.served</c> line for every server the plugins here declare, once each, handed or withheld.</summary>
-    private static void ServedEvery(PluginLog plugins, PluginCatalog catalog, string sessionId, IReadOnlyList<AcpMcpServer> handed)
+    private static void ServedEvery(PluginLog plugins, PluginCatalog catalog, string sessionId, IReadOnlyList<ServerEntry> handed)
     {
         var said = new HashSet<string>(StringComparer.Ordinal);
         foreach (var plugin in catalog.Contributing)

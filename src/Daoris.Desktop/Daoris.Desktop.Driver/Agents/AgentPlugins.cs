@@ -1,19 +1,13 @@
 namespace Daoris.Driver;
 
-/// <summary>The contributing adapters, all declared account owners, and the skills the plugins hand a destination.</summary>
+/// <summary>The doors the contributing plugins declare, all declared account owners, and the skills the plugins hand a destination.</summary>
 public interface IAgentPlugins
 {
-    IEnumerable<ISessionAdapter> Adapters { get; }
+    IEnumerable<DeclaredDoor> Doors { get; }
     IEnumerable<string> DeclaredAgents { get; }
 
     /// <summary>The skills the contributing plugins hand <paramref name="to"/>, each judged sound, in catalogue order.</summary>
     IReadOnlyList<SkillSource> Skills(string to);
-}
-
-/// <summary>A declared adapter's provenance, independent of its implementation.</summary>
-public interface IPluginAdapter : ISessionAdapter
-{
-    string Plugin { get; }
 }
 
 /// <summary>The catalogue load operation Agents needs at both account discovery and terminal construction.</summary>

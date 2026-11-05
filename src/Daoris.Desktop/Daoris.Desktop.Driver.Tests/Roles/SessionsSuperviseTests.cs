@@ -77,7 +77,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     };
 
     private SessionsWorld World(ServiceClient service, InstanceWorld? instance, string? key = Key) =>
-        new(service, _home, DriverConfig.Empty, SessionWire.Pipe, null) { Instance = instance, HolderKey = () => key };
+        new(service, _home, DriverConfig.Empty, false, null) { Instance = instance, HolderKey = () => key };
 
     private async Task<(int Exit, string Said)> RunAsync(string[] args, InstanceWorld? instance, string? key = Key)
     {

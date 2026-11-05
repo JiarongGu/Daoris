@@ -172,27 +172,27 @@ public sealed class WorkProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: the 64 KB bound is the work wire's. A landing plugin, speaking no work point, that answers with a 70 KB
-    /// diagnostic is heard as it was before the bound — it had been dropped, and the landing waited out its patience.
+    /// FABRIC-PERFORM1a, round 2: the 64 KB bound is the work wire's. A query plugin, speaking no work point, that answers with a 70 KB
+    /// diagnostic is heard as it was before the bound — it had been dropped, and the ask waited out its patience.
     /// </summary>
     [Fact]
-    public async Task A_landing_answer_over_64_KB_from_a_plugin_that_speaks_no_work_point_is_delivered()
+    public async Task A_state_answer_over_64_KB_from_a_plugin_that_speaks_no_work_point_is_delivered()
     {
-        var plugin = Install("acme.lands", [HookPoints.Land], """
+        var plugin = Install("acme.asks", [HookPoints.State], """
             import { createInterface } from 'node:readline';
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             for await (const line of createInterface({ input: process.stdin })) {
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
-              else if (frame.method === 'hook/work/land') send({ jsonrpc: '2.0', id: frame.id, result: { pushed: false, message: 'pushed nothing', diagnostic: 'd'.repeat(70000) } });
+              else if (frame.method === 'hook/work/state') send({ jsonrpc: '2.0', id: frame.id, result: { state: 'unknown', message: 'asked nothing', diagnostic: 'd'.repeat(70000) } });
               else if (frame.method === 'shutdown') process.exit(0);
             }
             """);
 
         await using var channel = await HookChannels.StartAsync(plugin, _home, _ => { }, CancellationToken.None, TimeSpan.FromSeconds(10));
-        var landed = await channel.LandAsync(new { }, CancellationToken.None);
+        var asked = await channel.StateAsync(new { }, CancellationToken.None);
 
-        Assert.Equal((false, "pushed nothing"), (landed.Pushed, landed.Message));
+        Assert.Equal(("unknown", "asked nothing"), (asked.State, asked.Message));
     }
 
     /// <summary>

@@ -129,7 +129,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     {
         var world = World();
         await RunAsync(["--workspace", "work", "--adoption", "--pilot", "0"], new StringWriter(), world);
-        await WorkspaceSetup.TickAsync(world, Config, SessionWire.Acp, _home, Day, Now);
+        await WorkspaceSetup.TickAsync(world, Config, true, _home, Day, Now);
         world.Close(world.SetupOf("atlas").Id, "Done");
         var output = new StringWriter();
 
@@ -149,7 +149,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     {
         var world = World();
         await RunAsync(["--workspace", "work", "--adoption"], new StringWriter(), world);
-        await WorkspaceSetup.TickAsync(world, Config, SessionWire.Acp, _home, Day, Now);
+        await WorkspaceSetup.TickAsync(world, Config, true, _home, Day, Now);
         var paused = new StringWriter();
         var resumed = new StringWriter();
         var stopped = new StringWriter();
@@ -217,5 +217,5 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
     }
 
     private Task<int> RunAsync(string[] args, TextWriter output, WorkspaceSetupStandIn? world = null, DriverConfig? config = null) =>
-        WorkspaceSetupCommand.RunAsync(args, output, world ?? World(), config ?? Config, SessionWire.Acp, _home, Day, Now);
+        WorkspaceSetupCommand.RunAsync(args, output, world ?? World(), config ?? Config, true, _home, Day, Now);
 }

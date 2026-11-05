@@ -20,7 +20,7 @@ public static class InAppBrowserServers
     public const string Placeholder = "${browser}";
 
     /// <summary>Whether this server attaches to the in-app browser.</summary>
-    public static bool Needs(AcpMcpServer server) =>
+    public static bool Needs(ServerEntry server) =>
         server.Command.Contains(Placeholder, StringComparison.Ordinal)
         || server.Arguments.Any(argument => argument.Contains(Placeholder, StringComparison.Ordinal))
         || server.Environment.Values.Any(value => value.Contains(Placeholder, StringComparison.Ordinal));
@@ -29,10 +29,10 @@ public static class InAppBrowserServers
     /// The servers as a session is handed them: every one that needs the browser with the endpoint in
     /// place, or — where there is none — left out, by name.
     /// </summary>
-    public static (IReadOnlyList<AcpMcpServer> Handed, IReadOnlyList<string> Withheld) Resolve(
-        IReadOnlyList<AcpMcpServer> servers, string? endpoint)
+    public static (IReadOnlyList<ServerEntry> Handed, IReadOnlyList<string> Withheld) Resolve(
+        IReadOnlyList<ServerEntry> servers, string? endpoint)
     {
-        var handed = new List<AcpMcpServer>();
+        var handed = new List<ServerEntry>();
         var withheld = new List<string>();
         foreach (var server in servers)
         {
@@ -70,8 +70,8 @@ public static class InAppBrowserServers
     /// and the page says who is driving from it — what was handed, since whether the agent has touched a
     /// page yet is its own and never reaches the driver.
     /// </returns>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandAsync(
-        IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
+    public static async Task<(IReadOnlyList<ServerEntry> Handed, string? Notice, bool Drives)> HandAsync(
+        IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, CancellationToken ct)
     {
         var (handed, notice, drives, _) = await HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
         return (handed, notice?.Note, drives);
@@ -86,8 +86,8 @@ public static class InAppBrowserServers
     /// endpoint was filled in (BRWHINT1a), for the line a chat's agent is told — never a literal name, which another plugin's
     /// server may also carry.
     /// </returns>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
-        IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
+    public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
+        IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, CancellationToken ct)
     {
         if (!servers.Any(Needs)) return (servers, null, false, []);
 

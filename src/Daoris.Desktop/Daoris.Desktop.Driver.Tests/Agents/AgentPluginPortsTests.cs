@@ -23,7 +23,7 @@ public sealed class AgentPluginPortsTests : IDisposable
         PluginState.Disable(_home, "acme.off");
         var built = AdapterSet.Built();
         var catalog = AgentPluginReads.Current.Load(_home, built.Names);
-        Assert.Equal(["a-agent", "z-agent"], catalog.Adapters.Select(adapter => adapter.Name));
+        Assert.Equal(["a-agent", "z-agent"], catalog.Doors.Select(door => door.Name));
         Assert.Equal(["a-agent", "a-owner", "off-agent", "off-owner", "z-agent", "z-owner"], catalog.DeclaredAgents);
         foreach (var set in new[] { built.WithPlugins(catalog), World().Adapters(_home) })
         {
@@ -122,10 +122,9 @@ public sealed class AgentPluginPortsTests : IDisposable
 
     private SessionTarget Target() => new("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
 
-    private sealed class Adapter(string name) : IPluginAdapter
+    private sealed class Adapter(string name) : ISessionAdapter
     {
         public string Name => name;
-        public string Plugin => "stand.plugin";
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("stand-command");
         public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins)
         {
@@ -135,7 +134,8 @@ public sealed class AgentPluginPortsTests : IDisposable
 
     private sealed class Catalog : IAgentPlugins
     {
-        public IEnumerable<ISessionAdapter> Adapters => [new Adapter("stand-agent"), new Adapter("stub")];
+        public IEnumerable<DeclaredDoor> Doors =>
+            [new DeclaredDoor("stand-agent", "stand.plugin", ["stand-command"]), new DeclaredDoor("stub", "stand.plugin", ["stand-command"])];
         public IEnumerable<string> DeclaredAgents => ["stand-agent", "kept-off-owner"];
         public List<string> Asked { get; } = [];
         public IReadOnlyList<SkillSource> Sources { get; set; } = [];

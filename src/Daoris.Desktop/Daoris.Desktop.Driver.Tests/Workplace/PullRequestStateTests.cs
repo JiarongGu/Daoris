@@ -35,7 +35,7 @@ public sealed class PullRequestStateTests : LandedFixture
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {
             id = Plugin,
-            hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.Land, HookPoints.State } },
+            hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.State } },
         }));
         Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Plugin));
     }
@@ -371,7 +371,8 @@ public sealed class PullRequestStateTests : LandedFixture
         var trees = Trees();
         var gone = await LandAsync(trees, root, "gone.txt", "gone\n", new LandingSubject("s1", "q1", "Gone"));
         // The plugin that pushed it is no longer on this machine.
-        trees.Recorded.Pushed("engine", gone.Branch!, new PluginLanding("acme.gone", Pushed: true, null, "pushed"), trees.Recorded.Of("engine", gone.Branch!)!.Tip);
+        trees.Recorded.Pushed("engine", gone.Branch!, trees.Recorded.Of("engine", gone.Branch!)!.Tip);
+        trees.Recorded.PullRequested("engine", gone.Branch!, "acme.gone", "https://example.test/pull/7");
         Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"));
         var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
 
@@ -499,18 +500,10 @@ public sealed class PullRequestStateTests : LandedFixture
     /// <summary>The fake platform: a landing's push is a real one into the bare origin; a state is what the test says for the branch.</summary>
     private sealed class Platform(PullRequestStateTests test) : IHookChannel
     {
-        public IReadOnlyList<string> Points => [HookPoints.Land, HookPoints.State];
+        public IReadOnlyList<string> Points => [HookPoints.State];
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-
-        public async Task<PluginLanding> LandAsync(object payload, CancellationToken ct)
-        {
-            var frame = JsonSerializer.SerializeToElement(payload);
-            var branch = frame.GetProperty("branch").GetString()!;
-            await GitAsync(frame.GetProperty("root").GetString()!, "push", "--quiet", "origin", branch);
-            return new PluginLanding(Plugin, Pushed: true, $"https://example.test/org/project/_git/engine/pullrequest/{branch.Length}", "pushed");
-        }
 
         public async Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {

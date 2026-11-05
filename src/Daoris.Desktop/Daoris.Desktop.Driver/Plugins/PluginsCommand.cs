@@ -192,12 +192,9 @@ public static class PluginsCommand
                 : "not a point this build has";
             if (point.Listening is { } listening) about += listening ? ", listening" : ", not listening: the driver asks it nothing there";
             Field(text, index == 0 ? "points" : "", $"{point.Name,-15} {about}{taken}");
-            if (point.Name == HookPoints.Land && page.Landing is { } landing)
+            if (point.Name == HookPoints.Perform && page.Landing is { } landing)
             {
-                Field(text, "", "  " + (landing.Rules.Count > 0
-                    ? "named by " + string.Join("; ", landing.Rules.Select(rule => $"{rule.Scope} `{rule.Name}` ({rule.Pattern})"))
-                    : "no landing rule names it — `daoris place landing` names one"));
-                Field(text, "", "  " + (landing.Problem ?? "it can land work here"));
+                Field(text, "", "  " + (landing.Problem ?? "it can open pull requests here"));
             }
         }
 
@@ -320,11 +317,9 @@ public static class PluginsCommand
                 // FABRIC-PERFORM1a: the work wire's process is the lease's loop's, kept while its steps are awaited.
                 : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal))
                     ? "ready: the loop that holds this home starts it while a unit awaits one of its steps"
-                : points.Contains(HookPoints.Land, StringComparer.Ordinal)
-                    ? "ready: a landing starts it for each branch it lands"
-                    : points.Contains(HookPoints.State, StringComparer.Ordinal)
-                        ? "ready: a look that may remove a landed branch starts it to ask about its pull request"
-                        : "ready: it declares agents and servers, and runs nothing itself",
+                : points.Contains(HookPoints.State, StringComparer.Ordinal)
+                    ? "ready: a look that may remove a landed branch starts it to ask about its pull request"
+                    : "ready: it declares agents and servers, and runs nothing itself",
         };
     }
 
@@ -337,13 +332,11 @@ public static class PluginsCommand
               // STATEHUB1g: an observation too, so a plugin that only watches the state costs nothing when it fails.
               : points.Contains(HookPoints.StateChanged, StringComparer.Ordinal) ? HookPoints.StateChanged
               : points.Any(point => HookPoints.Work.Contains(point, StringComparer.Ordinal)) ? HookPoints.Watch
-              : points.Contains(HookPoints.Land, StringComparer.Ordinal) ? HookPoints.Land
               : HookPoints.State
             : where;
         return at switch
         {
             HookPoints.QuestConsider => "Every quest it is asked about sits until it answers, or until you turn it off.",
-            HookPoints.Land => "A landing keeps its branch; push it by hand.",
             // PLUGHOOK1a (design §2.4): a query fails toward keeping.
             HookPoints.State => "Nothing is removed on its word until it answers.",
             // FABRIC-PERFORM1a: a step is reached only on its word, so its steps wait; nothing else does.

@@ -44,7 +44,7 @@ public sealed class StateToldTests : DriverModuleBridge
         await UntilAsync(() => Changed().Count == 1);
         var changed = Assert.Single(Changed());
         Assert.Equal(StatePublisher.Module, changed.Module);
-        Assert.Equal("""{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""", Shape(changed.Payload));
+        Assert.Equal("""{"scopes":["sessions","landing","diff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""", Shape(changed.Payload));
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class StateToldTests : DriverModuleBridge
         Assert.Single(watch.Hear());
 
         await UntilAsync(() => Changed().Count == 1);
-        Assert.Equal("""{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"]}""", Shape(Assert.Single(Changed()).Payload));
+        Assert.Equal("""{"scopes":["sessions","landing","diff","sweep","treesSync"]}""", Shape(Assert.Single(Changed()).Payload));
     }
 
     [Fact]

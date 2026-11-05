@@ -1037,8 +1037,8 @@ public sealed class SessionGroupsTests
         var config = DriverConfig.Empty;
         var looked = new List<Consideration> { Verdict(Quest("q1", "Open"), StartVerdict.Exhausted) };
 
-        var last = await SessionGroups.VerdictsAsync(service, config, SessionWire.Pipe, looked);
-        var fresh = await SessionGroups.VerdictsAsync(service, config, SessionWire.Pipe, lastLook: null);
+        var last = await SessionGroups.VerdictsAsync(service, config, false, looked);
+        var fresh = await SessionGroups.VerdictsAsync(service, config, false, lastLook: null);
 
         Assert.Same(looked, last);
         var planned = Assert.Single(fresh);

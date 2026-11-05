@@ -21,9 +21,9 @@ internal static class SessionsConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var door = Wire(config);
+        var unadopted = Unadopted(config);
 
-        return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)
+        return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, unadopted, log)
         {
             // RPCOPEN1: the list is the running Daoris's own look (SESSION_GROUPS) where one answers, in the same words.
             Instance = InstanceHost.World(home, "sessions"),
@@ -34,16 +34,16 @@ internal static class SessionsConsole
         }, Console.Out).ConfigureAwait(false);
     }
 
-    /// <summary>The configured agent's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
-    internal static SessionWire Wire(DriverConfig config)
+    /// <summary>Whether the configured agent may drive a repository that has not adopted Daoris, as the loop plans by it (D70); not, the stricter answer, when it names none this build has.</summary>
+    internal static bool Unadopted(DriverConfig config)
     {
         try
         {
-            return Adoption.Unadopted(ActorChoices.BuildAgent(config), AdapterSet.Built().AbilitiesOf) ? SessionWire.Acp : SessionWire.Pipe;
+            return Adoption.Unadopted(ActorChoices.BuildAgent(config), AdapterSet.Built().AbilitiesOf);
         }
         catch (DriverException)
         {
-            return SessionWire.Pipe;
+            return false;
         }
     }
 }

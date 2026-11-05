@@ -1218,7 +1218,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     {
         ["stub"] = new StubAdapter(),
         ["acp-stub"] = new AcpStubAdapter(),
-        ["acp-second"] = new DeclaredAcpAdapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
+        ["acp-second"] = PluginDoors.Adapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
     });
 
     /// <summary>The machine's choices with Chat's order the first stand-in, then the second, which runs in its own home and answers every prompt.</summary>

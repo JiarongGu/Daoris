@@ -24,7 +24,7 @@ public sealed class EntriesRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>What an entry's landing changes: what each of its parts' landings does (STATEHUB1b, D169), for every session it names.</summary>
-    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
     /// <summary>
@@ -219,7 +219,6 @@ public sealed class EntriesRoutes(DriverContext context)
         Done = part.Landing?.Landed,
         part.Landing?.Message,
         part.Landing?.Branch,
-        Plugin = part.Landing?.Plugin is { } said ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed } : null,
         LeftOut = TreesRoutes.LeftOut(part.Landing?.LeftOut),
         Conflict = TreesRoutes.Conflict(part.Landing?.Conflict),
     }).ToArray();
@@ -230,7 +229,7 @@ public sealed class EntriesRoutes(DriverContext context)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         return await SessionEntries.LookAsync(
-            service, config, _context.Door(config), _loop.Look.Latest, _loop.Look.Waits, _loop.Home, which, cancellationToken).ConfigureAwait(false);
+            service, config, _context.Unadopted(config), _loop.Look.Latest, _loop.Look.Waits, _loop.Home, which, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

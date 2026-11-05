@@ -103,8 +103,6 @@ export const keys = {
   /** Where a line of work's one Accept, or an ask's, would land its parts (ACCEPTALL1): under the landings' key, asked again with them. */
   entryLanding: (entry: string) => ['driver', 'landing', 'entry', entry] as const,
   askLanding: (ask: string) => ['driver', 'landing', 'ask', ask] as const,
-  /** Whether a session's landed branch can be handed to a landing plugin now (WSR5b). */
-  handOff: (session: string) => ['driver', 'hand', session] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,
   // Under the roster's key, so everything that invalidates the roster asks the wiring again: an
