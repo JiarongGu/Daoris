@@ -355,7 +355,6 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         await door.IdleAsync();
 
         Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
-        Assert.Empty(_frames);
     }
 
     /// <summary>

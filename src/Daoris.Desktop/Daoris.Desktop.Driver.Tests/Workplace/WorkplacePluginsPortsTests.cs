@@ -125,21 +125,18 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
     }
 
     [Fact]
-    public async Task The_trees_speak_the_wire_they_hold_through_its_five_operations_alone()
+    public async Task The_trees_speak_the_wire_they_hold_through_its_three_operations_alone()
     {
         var wire = new Wire();
         var trees = new SessionTrees(_home, wire);
-        var frame = new LandingFrame("engine", "default", "D:/fam/engine", "feature/q1-fix", "main", "Fix", "q1", "s1", []);
 
         Assert.Equal(At, trees.Context.Plugins.Now);
         Assert.Equal("said:acme.lands", trees.Context.Plugins.Problem("acme.lands"));
-        Assert.Equal("land:acme.lands:feature/q1-fix", (await trees.Context.Plugins.LandAsync("acme.lands", frame)).Message);
-        Assert.Equal("hand:acme.lands:feature/q1-fix", (await trees.Context.Plugins.HandAsync("acme.lands", frame)).Message);
         // An occasion that has nothing due reads the moment once and asks the wire for no entry, as it always did.
         Assert.Empty(await new PullRequestAsks(trees.Context).AskStatesAsync([], landedMayGo: false, CancellationToken.None));
 
         Assert.Equal(
-            ["now", "problem:acme.lands", "land:acme.lands", "hand:acme.lands", "now", "ask:0"],
+            ["now", "problem:acme.lands", "now", "ask:0"],
             wire.Calls);
     }
 
@@ -227,18 +224,6 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         {
             Calls.Add($"problem:{plugin}");
             return $"said:{plugin}";
-        }
-
-        public Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default)
-        {
-            Calls.Add($"land:{plugin}");
-            return Task.FromResult(new PluginLanding(plugin, true, null, $"land:{plugin}:{frame.Branch}"));
-        }
-
-        public Task<PluginLanding> HandAsync(string plugin, LandingFrame frame, CancellationToken ct = default)
-        {
-            Calls.Add($"hand:{plugin}");
-            return Task.FromResult(new PluginLanding(plugin, true, null, $"hand:{plugin}:{frame.Branch}"));
         }
 
         public Task<IReadOnlyList<StateAnswer>> AskStatesAsync(IReadOnlyList<StateAsk> asks, CancellationToken ct = default)

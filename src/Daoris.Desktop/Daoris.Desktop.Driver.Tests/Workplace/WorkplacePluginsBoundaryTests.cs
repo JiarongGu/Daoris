@@ -34,7 +34,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest
-            ?? JsonSerializer.Serialize(new { id, version = "1.0.0", hooks = new { command = new[] { "node", "hooks.mjs" }, points = points ?? [HookPoints.Land, HookPoints.State] } }));
+            ?? JsonSerializer.Serialize(new { id, version = "1.0.0", hooks = new { command = new[] { "node", "hooks.mjs" }, points = points ?? [HookPoints.Perform, HookPoints.State] } }));
     }
 
     /// <summary>One of each way a plugin stands: ready at both points, off, unsound, with no hooks and speaking on neither point.</summary>
@@ -46,7 +46,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         Install("acme.broken", manifest: "{ not json");
         Install("acme.mute", manifest: """{ "id": "acme.mute", "version": "1.0.0" }""");
         Install("acme.gate", points: [HookPoints.QuestConsider]);
-        Install("acme.lands", points: [HookPoints.Land]);
+        Install("acme.lands", points: [HookPoints.Perform]);
         Install("acme.states", points: [HookPoints.State]);
         return PluginCatalog.Load(_home, AdapterSet.Built().Names);
     }
@@ -64,7 +64,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         Assert.Null(LandingPlugins.ProblemOf("ACME.Ready", catalog));
         Assert.Null(LandingPlugins.ProblemOf("acme.lands", catalog));
         Assert.Equal(
-            "the landing rule names plugin `acme.absent`, which is not installed on this machine — "
+            "the landing names plugin `acme.absent`, which is not installed on this machine — "
             + "`daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is.",
             LandingPlugins.ProblemOf("acme.absent", catalog));
         Assert.Equal(
@@ -72,13 +72,13 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
             LandingPlugins.ProblemOf("acme.off", catalog));
         Assert.Equal("plugin `acme.broken` contributes nothing: " + broken.Problem, LandingPlugins.ProblemOf("acme.broken", catalog));
         Assert.Equal(
-            "plugin `acme.mute` does not land work — its manifest speaks on no `work/land` point.",
+            "plugin `acme.mute` does not open pull requests — its manifest speaks on no `work/perform` point.",
             LandingPlugins.ProblemOf("acme.mute", catalog));
         Assert.Equal(
-            "plugin `acme.gate` does not land work — its manifest speaks on no `work/land` point.",
+            "plugin `acme.gate` does not open pull requests — its manifest speaks on no `work/perform` point.",
             LandingPlugins.ProblemOf("acme.gate", catalog));
         Assert.Equal(
-            "plugin `acme.states` does not land work — its manifest speaks on no `work/land` point.",
+            "plugin `acme.states` does not open pull requests — its manifest speaks on no `work/perform` point.",
             LandingPlugins.ProblemOf("acme.states", catalog));
         // The sentence names the id as the rule wrote it, and the switch the id the catalogue holds.
         Assert.Equal(
@@ -115,86 +115,18 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         var started = 0;
         var plugins = new LandingPlugins(_home, start: (_, _, _) => { started++; throw new InvalidOperationException("never started"); }, log: _log);
 
-        Assert.StartsWith("the landing rule names plugin `acme.ready`, which is not installed", plugins.Problem("acme.ready"));
+        Assert.StartsWith("the landing names plugin `acme.ready`, which is not installed", plugins.Problem("acme.ready"));
         Install("acme.ready");
         Assert.Null(plugins.Problem("acme.ready"));
         PluginState.Disable(_home, "acme.ready");
         Assert.Equal("plugin `acme.ready` is switched off on this machine — `daoris plugin enable acme.ready` switches it on.", plugins.Problem("acme.ready"));
 
-        var landed = plugins.LandAsync("acme.ready", Frame()).GetAwaiter().GetResult();
-        var handed = plugins.HandAsync("acme.absent", Frame()).GetAwaiter().GetResult();
-
-        Assert.Equal(new PluginLanding("acme.ready", false, null, plugins.Problem("acme.ready")!, true), landed);
-        Assert.Equal(new PluginLanding("acme.absent", false, null, plugins.Problem("acme.absent")!, true), handed);
         Assert.Equal(0, started);
         // Refused before it is started, a plugin was never spoken to and nothing was written about it.
         Assert.Empty(Lines());
     }
 
     // ——— The wire, through the trees' context
-
-    [Fact]
-    public async Task A_land_and_a_hand_through_the_trees_speak_one_frame_say_it_and_log_the_door_each_came_by()
-    {
-        Install("acme.ready");
-        var said = new List<(string Plugin, string Line)>();
-        var told = new List<string>();
-        var trees = new SessionTrees(_home, new LandingPlugins(_home,
-            start: (_, say, _) =>
-            {
-                say("stderr line");
-                return Task.FromResult<IHookChannel>(new Stand(land: payload =>
-                {
-                    told.Add(JsonSerializer.SerializeToElement(payload).GetProperty("branch").GetString()!);
-                    return new PluginLanding("ignored", true, "https://example.test/pull/7", "pushed it.");
-                }));
-            },
-            say: (plugin, line) => said.Add((plugin, line)),
-            log: _log));
-
-        var landed = await trees.Context.Plugins.LandAsync("acme.ready", Frame());
-        var handed = await trees.Context.Plugins.HandAsync("ACME.READY", Frame());
-
-        Assert.Equal(new PluginLanding("acme.ready", true, "https://example.test/pull/7", "pushed it."), landed);
-        Assert.Equal(new PluginLanding("acme.ready", true, "https://example.test/pull/7", "pushed it."), handed);
-        Assert.Equal(["feature/q1-fix", "feature/q1-fix"], told);
-        Assert.Equal(
-            [
-                ("acme.ready", "stderr line"),
-                ("acme.ready", "landed `feature/q1-fix`: pushed, https://example.test/pull/7 — pushed it."),
-                ("acme.ready", "stderr line"),
-                ("acme.ready", "landed `feature/q1-fix`: pushed, https://example.test/pull/7 — pushed it."),
-            ],
-            said);
-        var lines = Lines();
-        Assert.Equal(
-            ["plugin.started", "plugin.called", "plugin.stopped", "plugin.started", "plugin.called", "plugin.stopped"],
-            lines.Select(line => line.Event));
-        // The call's line names the point and its answer, and no door: the frame's start and stop carry it.
-        Assert.Equal(["landing", null, "landing", "hand", null, "hand"], lines.Select(line => By(line)));
-        Assert.Equal(("work/land", "pushed"), (Text(lines[1], "point"), Text(lines[1], "answer")));
-        Assert.Equal(["plugin", "point", "answer", "ms"], lines[1].Data.EnumerateObject().Select(each => each.Name));
-        Assert.Equal(("ended", "landing"), (Text(lines[2], "why"), Text(lines[2], "by")));
-    }
-
-    [Fact]
-    public async Task A_plugin_that_fails_a_land_comes_back_failed_with_its_sentence_and_is_stopped_through_the_trees()
-    {
-        Install("acme.ready");
-        var disposed = 0;
-        var trees = new SessionTrees(_home, new LandingPlugins(_home,
-            start: (_, _, _) => Task.FromResult<IHookChannel>(new Stand(
-                land: _ => throw PluginFailures.Mark(new DriverException("the platform said no"), PluginEvents.Errored), disposed: () => disposed++)),
-            log: _log));
-
-        var landed = await trees.Context.Plugins.LandAsync("acme.ready", Frame());
-
-        Assert.Equal(new PluginLanding("acme.ready", false, null, "the platform said no", true), landed);
-        Assert.Equal(1, disposed);
-        var failed = Assert.Single(Lines(), line => line.Event == "plugin.failed");
-        Assert.Equal(("work/land", "errored", "landing"), (Text(failed, "where"), Text(failed, "kind"), Text(failed, "by")));
-        Assert.Equal("plugin.stopped", Lines()[^1].Event);
-    }
 
     [Fact]
     public async Task A_state_ask_through_the_trees_answers_in_the_order_asked_stamps_the_clock_and_logs_the_state_door()
@@ -238,7 +170,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     {
         var made = new SessionTrees(_home);
         var plugins = Assert.IsType<LandingPlugins>(made.Context.Plugins);
-        Assert.StartsWith("the landing rule names plugin `acme.ready`, which is not installed", plugins.Problem("acme.ready"));
+        Assert.StartsWith("the landing names plugin `acme.ready`, which is not installed", plugins.Problem("acme.ready"));
         // It reads the home it was made over, at each call.
         Install("acme.ready");
         Assert.Null(made.Context.Plugins.Problem("acme.ready"));
@@ -282,22 +214,11 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     }
 
     [Fact]
-    public void The_landing_line_keeps_a_plugin_only_where_it_is_an_id_within_its_bound()
+    public void The_landing_line_carries_codes_and_counts_alone()
     {
-        static object? Plugin(string? id) =>
-            LandingLine.Auto("s1", "engine", "aurora", "landed", 1, 0, id, true).Data.Single(each => each.Key == "plugin").Value;
-
-        Assert.Equal("acme.lands", Plugin("acme.lands"));
-        Assert.Equal(new string('a', 120), Plugin(new string('a', 120)));
-        Assert.Null(Plugin(new string('a', 121)));
-        Assert.Null(Plugin("Acme.Lands"));
-        Assert.Null(Plugin(".lands"));
-        Assert.Null(Plugin("lands\n"));
-        Assert.Null(Plugin(""));
-        Assert.Null(Plugin(null));
         Assert.Equal(
-            ["session", "repository", "workspace", "code", "commits", "uncommitted", "plugin", "pushed"],
-            LandingLine.Auto("s1", "engine", "aurora", "landed", 1, 0, "acme.lands", true).Data.Select(each => each.Key));
+            ["session", "repository", "workspace", "code", "commits", "uncommitted"],
+            LandingLine.Auto("s1", "engine", "aurora", "landed", 1, 0).Data.Select(each => each.Key));
     }
 
     [Fact]
@@ -307,7 +228,6 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(30), LandingPlugins.StatePatience);
         Assert.Equal(TimeSpan.FromSeconds(60), LandingPlugins.StateBound);
         Assert.Equal(TimeSpan.FromMinutes(5), LandingHolds.Wait);
-        Assert.Equal(LandingPlugins.DefaultPatience, PluginKit.Find(HookPoints.Land)!.Patience);
         Assert.Equal(LandingPlugins.StatePatience, PluginKit.Find(HookPoints.State)!.Patience);
     }
 
@@ -319,7 +239,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         var plugins = WorkflowSteps.PluginsOf(Standing());
 
         Assert.Equal(
-            [("acme.gate", [HookPoints.QuestConsider]), ("acme.lands", [HookPoints.Land]), ("acme.mute", []), ("acme.ready", [HookPoints.Land, HookPoints.State]), ("acme.states", [HookPoints.State])],
+            [("acme.gate", [HookPoints.QuestConsider]), ("acme.lands", [HookPoints.Perform]), ("acme.mute", []), ("acme.ready", [HookPoints.Perform, HookPoints.State]), ("acme.states", [HookPoints.State])],
             plugins.Select(plugin => (plugin.Id, (IReadOnlyList<string>)plugin.Points)));
         Assert.Empty(WorkflowSteps.PluginsOf(PluginCatalog.None));
     }
@@ -327,8 +247,6 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
     // ——— Helpers
 
     private PluginCatalog Catalog() => PluginCatalog.Load(_home, AdapterSet.Built().Names);
-
-    private static LandingFrame Frame() => new("engine", "default", Path.Combine(GitSeed.RepoRoot(), "_fixtures", "workplace-plugins", "absent"), "feature/q1-fix", "main", "Fix", "q1", "s1", []);
 
     private static LandedBranch Entry(string branch) =>
         new("engine", "aurora", branch, "main", new string('b', 40), "s1", "q1", "Fix", At.AddDays(-1));
@@ -344,14 +262,13 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
 
     private static string? By(LogLine line) => Text(line, "by");
 
-    /// <summary>A plugin's channel, faked: it answers a land and a state ask as handed, and says it was let go.</summary>
-    private sealed class Stand(Func<object, PluginLanding>? land = null, Func<object, PullRequestState>? state = null, Action? disposed = null) : IHookChannel
+    /// <summary>A plugin's channel, faked: it answers a state ask as handed, and says it was let go.</summary>
+    private sealed class Stand(Func<object, PullRequestState>? state = null, Action? disposed = null) : IHookChannel
     {
-        public IReadOnlyList<string> Points => [HookPoints.Land, HookPoints.State];
+        public IReadOnlyList<string> Points => [HookPoints.State];
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(land!(payload));
         public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => Task.FromResult(state!(payload));
 
         public ValueTask DisposeAsync()

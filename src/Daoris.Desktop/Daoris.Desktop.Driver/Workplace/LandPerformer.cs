@@ -242,7 +242,7 @@ public sealed class LandPerformer(
         var landed = operation is not null
             ? await trees.LandTogetherAsync(
                 operation.Id, subject, await MemberGatesAsync(operation, fresh, ct).ConfigureAwait(false), ct, fresh.InUseAsync, choice.Gate,
-                JudgedAsync, beforePush: null, fresh.BesideAsync).ConfigureAwait(false)
+                JudgedAsync, fresh.BesideAsync).ConfigureAwait(false)
             : await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, carried is null ? AcceptedBy.Auto : AcceptedBy.Person, choice.Gate, subject.Joins,
                 judged: JudgedAsync, uncommitted: choice.Uncommitted, beside: fresh.BesideAsync).ConfigureAwait(false);
         LandOutcomes.Kept(choice.Run.Unit, choice.Run.Tip, landed);
@@ -374,8 +374,7 @@ public sealed class LandPerformer(
             line = note.Text!;
         }
 
-        log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted,
-            plugin: null, pushed: null));
+        log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted));
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
     }
 

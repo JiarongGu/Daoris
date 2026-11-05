@@ -76,7 +76,6 @@ internal sealed class LandingPress(
 
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
-    /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
     /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
     /// <param name="fence">
     /// The delivery it performs, its preparation written ahead (LANDNODE1b2); empty under Current, whose door writes one into it here once the
@@ -85,7 +84,7 @@ internal sealed class LandingPress(
     internal async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null,
+        int? uncommitted = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, DeliveryEntry? fence = null)
     {
         var delivering = fence?.Delivering;

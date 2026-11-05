@@ -129,21 +129,15 @@ public static class LandTryNotes
 /// <summary>The catalogue of <see cref="LandingLine"/> lines, which the owner of what they say keeps: each builder writes the fields its line gives it and nothing else.</summary>
 public static class LandingLines
 {
-    /// <summary>The longest plugin id a line carries: an id of the catalogue's own shape, never a phrase, and never a long one.</summary>
-    private const int PluginIdLimit = 120;
-
     extension(LandingLine)
     {
-        /// <summary>One try: whose, where, its code, what it carried or what held it, and whether the plugin pushed.</summary>
+        /// <summary>One try: whose, where, its code, and what it carried or what held it.</summary>
         public static LandingLine Auto(
-            string session, string repository, string workspace, string code, int? commits, int? uncommitted, string? plugin, bool? pushed) =>
+            string session, string repository, string workspace, string code, int? commits, int? uncommitted) =>
             new("landing.auto",
             [
                 ("session", session), ("repository", repository), ("workspace", workspace), ("code", code), ("commits", commits),
                 ("uncommitted", uncommitted),
-                // The shape is asked of its one owner (REFAC1); the line adds only its bound.
-                ("plugin", plugin is { Length: <= PluginIdLimit } && PluginIds.IsId(plugin) ? plugin : null),
-                ("pushed", pushed),
             ]);
     }
 }
