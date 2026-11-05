@@ -204,7 +204,16 @@ public sealed class DriverModule : ModuleBase
         {
             throw Refusals.Because(Refusals.DriverRefused, error.Message, ("message", error.Message));
         }
+        catch (Exception error) when (!cancellationToken.IsCancellationRequested && Stalled(error))
+        {
+            // The client's own bound ran out while the person's token stood: the service was too busy to answer, which is no fault of the press.
+            throw Refusals.Because(Refusals.ServiceBusy, "the service did not answer in time; try again in a moment");
+        }
     }
+
+    private static bool Stalled(Exception error) =>
+        error is TimeoutException or TaskCanceledException { InnerException: TimeoutException }
+        || (error is HttpRequestException && error.InnerException is { } inner && Stalled(inner));
 
     /// <summary>
     /// The route's handler from the table, or the framework's own answer for a route nobody declared.

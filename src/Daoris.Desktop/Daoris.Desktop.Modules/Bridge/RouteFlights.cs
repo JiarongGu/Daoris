@@ -81,6 +81,8 @@ public sealed class RouteFlights
         {
             Land(key, flight);
             flight.Done.TrySetException(error);
+            // A flight whose every caller left before it failed has no one to await it; reading the fault is what observes it.
+            _ = flight.Done.Task.Exception;
         }
     }
 
