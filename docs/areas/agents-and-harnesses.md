@@ -72,7 +72,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AgentSettings`, `AgentOffers`, `DoorOffers`, `SessionChoices`, `ISettingsFile` | same names; `Providers/ClaudeCode/ClaudeSettingsFile.cs` | An account's model and effort in the tool's own file (the provider's `Models` part states its aliases and efforts); what an agent offered per version and account, read by `AgentOffers.Offers` in two scopes (a session's, an account default's); `SessionChoices` is the session scope the page's actors offer per door, `max` only on Claude Code's native door |
 | `IChoiceReask` | `Contract/IChoiceReask.cs`; Loop's `ChoiceReask` | The open's answer to a refused choice, implemented in Loop where the executor is built, the refusal kept in the offers store before the walk: a later choice carried on the same session, or none |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs`, `Providers/ClaudeCode/ClaudeTrust.cs` and same names | Rules in scopes and defaults, an agent's proposals, Claude Code's folder trust, reach into other checkouts |
-| `IRuleLanguage`, `ISkillLayout`, `IServerHanding`; `HandedRules`, `SkillSource`, `ConnectorPlan` | `Contract/Ports.cs`; `Contract/`, same names | How a provider takes the product's rules, lays out a start's skills, and how a door takes a start's servers at its spawn, each handed plain values; a provider or door stating one absent is handed none of it |
+| `IRuleLanguage`, `ISkillLayout`, `IServerHanding`; `HandedRules`, `SkillSource`, `ConnectorPlan`, `ConnectorSource`, `PostureAsked` | `Contract/Ports.cs`; `Contract/`, same names | How a provider takes the product's rules, lays out a start's skills, and how a door takes a start's servers at its spawn, each handed plain values; a provider or door stating one absent is handed none of it; the posture a start asks of a protocol door (modes, required, the person answers) as one value with its one wire string and reader |
+| `ConnectorPlans`, `PluginAdapterSets` | `Agents/ConnectorPlans.cs`, `Plugins/PluginAdapterSets.cs` | The one composer of a start's plan per workspace, and where the plugins' doors join the adapter set (`WithPlugins`, over `AdapterSet.Joined`) |
 | `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands |
 | `SpawnSkills`, `SpawnFiles`, `AdapterParts`, `DshProfile` | same names; `Registry/AdapterParts.cs`; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider and handed by its spawn; what a spawn wrote, removed with the session; a door's rule language, layout and server carrier as today's readers ask an adapter (a plugin's or a test's adapter, which declares none, takes Claude Code's, as before); the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
@@ -115,10 +116,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     (Claude Code's protocol door, `acp-stub`, a plugin's protocol door; never Codex's or dsh's), the home last; then the
     tools-at-the-start switch (`ENABLE_TOOL_SEARCH=false` for Claude Code); the carriers after all of it. A provider declaring
     a name of Daoris's list is refused at registration, but for the session's tokens. (from D49, D230, D172 point 3)
-13. Servers go on `session/new` on the protocol door. A start hands the rest as one `ConnectorPlan` to the door's own carrier
-    (`IServerHanding`), asked once: Claude Code's native door writes its `.mcp.json` layout under the home (`--mcp-config`),
-    removed with the session; a door with no carrier at its spawn (dsh, the stand-ins) is written nothing. Daoris's connector is
-    always offered. A server declared through `npx` is
+13. A start's connectors are one `ConnectorPlan`, composed once per workspace by `ConnectorPlans.For` (the workspace, the servers, the
+    sources it permits: Daoris's connector, the plugins' and the browser's for a session, Daoris's alone for a reviewer, helper,
+    partner or brainstorm pass, and the servers it requires; a server from a source not permitted, a name given twice or a required
+    server missing is refused naming it). The protocol door's open (`session/new`, `session/resume`) reads that plan's servers; the
+    door's own carrier (`IServerHanding`) is asked the same plan once: Claude Code's native door writes its `.mcp.json` layout under the
+    home (`--mcp-config`, the name `ClaudeServers.FileSuffix`), removed with the session; a door with no carrier at its spawn (dsh, the
+    stand-ins) is written nothing. A start that leaves the agent's own servers out is refused on a door that cannot (`OwnServersLeftOut`,
+    stated only by Claude Code's native door; no start requires it yet). A native door drives an adopted repository by its own
+    `.mcp.json` only where its servers inherit its environment (`ServersInherit`, Claude Code's native door and every undeclared native
+    door), and `Adoption.Drives(abilities, adopted)` is the judge. Daoris's connector is always offered. A server declared through `npx` is
     handed as the whole path of node and its package's own script, so the harness starts one node: the package is installed
     once by npm `--prefix` into `cache/toolchain/<package>/<version>`, npm's cache first, and the log says so
     (`server.installed`). A tag or a range is read at that first install; later starts take the newest version installed. A
@@ -329,12 +336,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   once for a driven run and a conversation; the hand-over's accounts once; `IConversationHome`), n's rest (the doors' `Offers` part, the
   actor run's asked choice read from the door's spawn, the offers store read by the start plan and the walk through `AgentOffers.Offers`
   rather than `Read` and `Judge`), s-ii (the group's report of a resume against `ResumesOwn`, whose two reads agree on inspection and
-  want a planted disagreement); o's rest: `PostureAsked` in place of the posture string's marks (Help's and Participants' builders), the trust preflight
-  through the door's own `Home`, a full or asking start on a provider with none mapped refused naming it, `AccessKey`'s
-  `claude-code`; p's rest (**CONNECTORS1**): the protocol door's open reading the same `ConnectorPlan`, one plan per workspace with
-  its inclusions, exclusions and permitted sources, `ServerEntry` after FOUNDATION1's *Knowledge names Agents* cut,
-  `Adoption.Unadopted` read by the five places, and the session home's `.mcp.json`; q (the factory of `DeclaredDoor`s, a plugin's door
-  a contract door, `WithPlugins` out of Agents); the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
+  want a planted disagreement); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
+  naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
+  home's servers file named by its provider); p's rest: `AcpMcpServer` renamed `ServerEntry` (a mechanical rename over some thirty files),
+  the five places of `Adoption` carrying a bool where they still carry `SessionWire`, and the page's twin; q is built in part
+  (`WithPlugins` out of Agents into Plugins); q's rest: the factory of `DeclaredDoor`s, a plugin's door a contract door in place of
+  `DeclaredAcpAdapter`, each door's own `Identity` and `Home` from its declaration, a provider made from declarations; the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling

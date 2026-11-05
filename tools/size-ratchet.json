@@ -10,7 +10,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountRotationWalkTests.cs": 43464,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpBackgroundTests.cs": 144833,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs": 61007,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs": 183079,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs": 183078,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTransientTests.cs": 59070,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AgentsCommandTests.cs": 44004,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ClaudeStreamJsonTests.cs": 40966,

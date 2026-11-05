@@ -29,9 +29,11 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         (string Code, string Why)? Gate(ActorEffective entry, ISessionAdapter adapter)
         {
             if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) return (StartPasses.NoPosture, unposed);
-            return !adopted && !Adoption.Unadopted(adapter.Abilities())
-                ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris")
-                : null;
+            return Adoption.Drives(adapter.Abilities(), adopted)
+                ? null
+                : (StartPasses.NoConnector, adopted
+                    ? $"`{entry.Agent}` cannot take a quest here: its servers do not inherit its environment, so `{quest.To}`'s own `.mcp.json` would not reach it"
+                    : $"`{entry.Agent}` cannot take a quest here: `{quest.To}` has not adopted Daoris");
         }
 
         return new StartPlan(

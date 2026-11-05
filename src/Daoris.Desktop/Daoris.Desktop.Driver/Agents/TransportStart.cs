@@ -114,8 +114,8 @@ internal sealed record TransportProtocol(string Cwd)
     /// <summary>What <c>session/new</c> carries for the rules composed for this session (PERM1).</summary>
     public object? Meta { get; init; }
 
-    /// <summary>The servers the session is offered (ACP4, D65 §1f).</summary>
-    public IReadOnlyList<AcpMcpServer>? Servers { get; init; }
+    /// <summary>The connectors the session is offered, the plan its open reads (ACP4, D65 §1f, CONNECTORS1).</summary>
+    public ConnectorPlan? Connectors { get; init; }
 
     /// <summary>Where the run's wait says the timeout before its kill, handed the session once it is made (BGWAIT2, DONEEND1).</summary>
     public AcpEnding? Ending { get; init; }
@@ -151,11 +151,11 @@ internal sealed record TransportProtocol(string Cwd)
     public Action<Exception>? Unopened { get; init; }
 
     /// <summary>The driven shape: the session opened, prompted with <paramref name="prompt"/> and closed, as <c>AcpSession.RunAsync</c> does.</summary>
-    public static TransportProtocol Driven(string cwd, string prompt, IReadOnlyList<AcpMcpServer>? servers = null) =>
+    public static TransportProtocol Driven(string cwd, string prompt, ConnectorPlan? plan = null) =>
         new(cwd)
         {
-            Servers = servers,
-            Run = (session, conversation, ct) => session.RunAsync(cwd, prompt, ct, servers, resume: conversation),
+            Connectors = plan,
+            Run = (session, conversation, ct) => session.RunAsync(cwd, prompt, ct, plan, resume: conversation),
         };
 }
 

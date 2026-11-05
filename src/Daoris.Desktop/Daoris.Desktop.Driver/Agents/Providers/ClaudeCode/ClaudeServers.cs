@@ -11,12 +11,15 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class ClaudeServers
 {
+    /// <summary>What the file is named by after its session's id under the home's <c>spawn/</c>, which the session home's inventory reads it by.</summary>
+    public const string FileSuffix = ".mcp.json";
+
     /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
     public static string? Write(string home, ConnectorPlan plan)
     {
         if (plan.Servers.Count == 0) return null;
 
-        var path = DaorisHome.Entry(home, HomeEntry.Spawn, $"{plan.SessionId}.mcp.json");
+        var path = DaorisHome.Entry(home, HomeEntry.Spawn, $"{plan.SessionId}{FileSuffix}");
 
         // By name, so a name given twice is refused as it always was (the writer is reflection-free: JsonFile).
         var byName = plan.Servers.ToDictionary(server => server.Name, StringComparer.Ordinal);

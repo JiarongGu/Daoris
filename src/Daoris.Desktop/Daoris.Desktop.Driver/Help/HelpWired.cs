@@ -348,7 +348,7 @@ public sealed class HelpWired(string home)
             Version = handed.Version,
             Account = handed.Account,
             Door = handed.Transport == Transport.Native ? Pipe : Acp,
-            Posture = handed.Posture?.TrimStart(HelpModes.Required),
+            Posture = handed.Posture is { } posture ? PostureAsked.Parse(posture).Modes : null,
             PermissionMode = handed.PermissionMode,
             Folder = handed.Folder,
             Tools = tools,

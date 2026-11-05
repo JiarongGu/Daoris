@@ -109,8 +109,9 @@ internal static class AcpProtocol
     }
 
     /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
-    internal static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
+    internal static object[] Offer(ConnectorPlan? plan)
     {
+        var servers = plan?.Servers;
         // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
         // close its quest over its own connector, and the pipe door only manages that because the
         // repository's own `.mcp.json` wires it — which an adopted repository may not have, and

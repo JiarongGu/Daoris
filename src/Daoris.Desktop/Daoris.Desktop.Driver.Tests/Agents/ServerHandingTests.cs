@@ -48,6 +48,78 @@ public sealed class ServerHandingTests : IDisposable
         Assert.Null(new Adapter(SessionWire.Acp).ServerHanding());
     }
 
+    private static AcpMcpServer Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
+
+    [Fact]
+    public void One_plan_per_workspace_carries_its_workspace_its_permitted_sources_and_the_connector_it_requires()
+    {
+        var plan = ConnectorPlans.For("s1", "shop", [Server(KnowledgeConnector.ServerName), Server("docs")]);
+        Assert.Equal("shop", plan.Workspace);
+        Assert.Equal(ConnectorPlans.Sessions, plan.Permitted);
+        Assert.Equal([KnowledgeConnector.ServerName], plan.Includes);
+        Assert.True(plan.Allows(ConnectorSource.Plugin));
+        Assert.False(plan.Allows(ConnectorSource.Own));
+
+        var only = ConnectorPlans.For("s2", null, [Server(KnowledgeConnector.ServerName)], ConnectorPlans.ConnectorOnly);
+        Assert.False(only.Allows(ConnectorSource.Plugin));
+        Assert.Empty(ConnectorPlans.For("s3", "shop", []).Includes);
+    }
+
+    [Fact]
+    public void A_server_from_a_source_the_workspace_does_not_permit_and_a_name_given_twice_are_refused_naming_it()
+    {
+        var barred = Assert.Throws<DriverException>(() => ConnectorPlans.For("s1", "shop", [Server("docs")], ConnectorPlans.ConnectorOnly));
+        Assert.Contains("`docs`", barred.Message, StringComparison.Ordinal);
+        var twice = Assert.Throws<DriverException>(() => ConnectorPlans.For("s1", "shop", [Server("docs"), Server("docs")]));
+        Assert.Contains("`docs`", twice.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_start_that_leaves_the_agents_own_servers_out_is_refused_by_every_door_but_claude_codes_native_one()
+    {
+        var plan = ConnectorPlans.For("s1", "shop", [Server("docs")]) with { ExcludesOwn = true };
+        Assert.Equal(plan, ConnectorPlans.Admit(AdapterSet.Built().Resolve("claude-code"), plan));
+        foreach (var door in new[] { "claude-code-acp", "codex-acp", "dsh" })
+        {
+            var refused = Assert.Throws<DriverException>(() => ConnectorPlans.Admit(AdapterSet.Built().Resolve(door), plan));
+            Assert.Contains($"`{door}`", refused.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void The_protocol_doors_open_offers_the_same_servers_the_file_doors_carrier_writes_from_one_plan()
+    {
+        var plan = ConnectorPlans.For("s9", "shop", [Server("docs"), Server("wiki")]);
+        var wire = AcpProtocol.Offer(plan);
+        Assert.Equal(2, wire.Length);
+        Assert.Empty(AcpProtocol.Offer(null));
+        var file = AdapterSet.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, plan);
+        var written = File.ReadAllText(file!);
+        Assert.Contains("\"docs\"", written, StringComparison.Ordinal);
+        Assert.Contains("\"wiki\"", written, StringComparison.Ordinal);
+        SpawnFiles.Remove(file);
+    }
+
+    [Fact]
+    public void A_native_door_drives_an_adopted_repository_only_where_its_servers_inherit_its_environment()
+    {
+        var built = AdapterSet.Built();
+        Assert.True(built.Resolve("claude-code").Abilities().ServersInherit);
+        Assert.False(built.Resolve("claude-code-acp").Abilities().ServersInherit);
+        Assert.True(Adoption.Drives(built.Resolve("claude-code").Abilities(), adopted: true));
+        Assert.False(Adoption.Drives(built.Resolve("claude-code").Abilities(), adopted: false));
+        Assert.True(Adoption.Drives(built.Resolve("codex-acp").Abilities(), adopted: false));
+        Assert.True(Adoption.Drives(built.Resolve("codex-acp").Abilities(), adopted: true));
+        Assert.False(Adoption.Drives(built.Resolve("claude-code").Abilities() with { ServersInherit = false }, adopted: true));
+    }
+
+    [Fact]
+    public void The_session_homes_servers_file_is_named_by_the_provider_that_writes_it()
+    {
+        Assert.Equal(".mcp.json", ClaudeServers.FileSuffix);
+        Assert.Contains(ClaudeServers.FileSuffix, SessionHomeFiles.SpawnSuffixes);
+    }
+
     private sealed class Adapter(SessionWire wire) : ISessionAdapter
     {
         public string Name => "stand-agent";

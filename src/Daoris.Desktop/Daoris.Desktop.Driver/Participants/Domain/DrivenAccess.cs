@@ -95,7 +95,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
         if (permissions is not (AccessRules.Asking or AccessRules.Unrestricted))
         {
             var own = !adapter.Abilities().SetAtOpen ? "the permission mode driven sessions always ran in there"
-                : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {Spelled(posture)} mode, the first it offers"
+                : adapter.AcpPosture is { Length: > 0 } posture ? $"it asks for the agent's {new PostureAsked(posture).Spelled()} mode, the first it offers"
                 : "the agent's own mode, which Daoris does not set";
             return new(AccessRules.Auto, $"Permission prompts: auto on `{adapter.Name}`, {own} (D81); {keeps}.") { Repository = repository };
         }
@@ -132,7 +132,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             ? new(permissions, said) { PermissionMode = mode, Repository = repository }
             : new(permissions, said)
             {
-                Posture = unrestricted ? $"{AgentPostures.Required}{mode}" : $"{AgentPostures.Required}{AcpSession.PersonAnswers}{mode}",
+                Posture = new PostureAsked(mode, Required: true, PersonAnswers: !unrestricted).Wire(),
                 Repository = repository,
             };
     }
@@ -151,11 +151,6 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     /// <summary>The person's two ways on from a value the harness cannot run: auto for the repository, or another agent.</summary>
     private static string WayOn(string repository) =>
         $"Set its permission prompts to `auto` (`daoris place access {repository} permissions=auto`), or choose another agent for it.";
-
-    /// <summary>A posture list as a sentence says it: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
-    private static string Spelled(string posture) => string.Join(
-        " or ",
-        posture.TrimStart(AgentPostures.Required).Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(mode => $"`{mode}`"));
 
     /// <summary>
     /// The permission prompts a record says it started under (AUTONOMY1a's <c>access</c>), read as a stored shape: a record from before

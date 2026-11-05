@@ -372,7 +372,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var (servers, browserNotice, drivesBrowser) = await SessionServers.HandAsync(_context.Home, _context.Servers, _context.Browser, _context.Log, ct).ConfigureAwait(false);
             browserNotice = Driver.JoinNotices(browserNotice, tabNotice);
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
-            var handed = adapter.ServerHanding()?.Hand(info, home, new ConnectorPlan(sessionId, servers));
+            var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
+            var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
@@ -406,7 +407,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
                 preamble: browserNotice,
-                handedServers: servers,
+                handedPlan: connectors,
                 drivesBrowser: drivesBrowser,
                 // A resumed run is on the account it parked on, so what it says about that account's windows is kept
                 // as any run's is (TOOL6c with ANSWER1a).

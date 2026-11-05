@@ -70,8 +70,8 @@ public static class AccessKey
     /// <summary>Go-aheads: never asked, save what the ask itself demands (D184 point 5).</summary>
     public const string Never = "never";
 
-    /// <summary>Questions: as Claude Code's console asks them (D184 point 4), today's behaviour until AUTONOMY1e.</summary>
-    public const string ClaudeCode = "claude-code";
+    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e; its value is the provider's, read from it.</summary>
+    public static string ConsoleAsks => ClaudeCodeProvider.Id;
 
     /// <summary>The pauses, in the order every door and the record say them.</summary>
     public static IReadOnlyList<AccessPause> Pauses { get; } =
@@ -80,7 +80,7 @@ public static class AccessKey
         new(Routing, [Person, Intake], Person, Intake),
         new(Landing, [Person, Rule], Person, Rule),
         new(GoAheads, [Named, Never], Named, Never),
-        new(Questions, [ClaudeCode], ClaudeCode, ClaudeCode),
+        new(Questions, [ConsoleAsks], ConsoleAsks, ConsoleAsks),
     ];
 
     /// <summary>The pause a spelling names, trimmed and in any case, or null for none.</summary>

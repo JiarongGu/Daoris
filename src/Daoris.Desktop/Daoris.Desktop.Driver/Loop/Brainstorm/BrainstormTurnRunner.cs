@@ -177,7 +177,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         var transcript = files.PathOf(turn.Id, "passes", $"{turn.Turn}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
         // The protocol door carries the connector on the wire, with the same scope; the pipe door takes a file under the home.
-        var handed = adapter.ServerHanding()?.Hand(info, _context.Home, new ConnectorPlan(sessionId, [connector]));
+        var handed = adapter.ServerHanding()?.Hand(info, _context.Home, ConnectorPlans.For(sessionId, null, [connector], ConnectorPlans.ConnectorOnly));
         var rules = _driver.HandRules(
             adapter, info, sessionId, null, null, tree: turn.Room, kept: null, brainstorm: BrainstormPermissions.ToolOf(turn.Turn));
         try
@@ -210,7 +210,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                         : exitCode != 0 ? "exited" : null;
                     return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, code, $"{code ?? "completed"}  brainstorm turn {turn.Turn}"));
                 },
-                ct, scope: scope, handedServers: [], minutes: turn.Minutes,
+                ct, scope: scope, handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly), minutes: turn.Minutes,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
                 // D205 §4.4: its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with

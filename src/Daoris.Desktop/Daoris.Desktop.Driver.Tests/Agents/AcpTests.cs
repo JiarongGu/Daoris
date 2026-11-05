@@ -1621,8 +1621,7 @@ public sealed class AcpTests
     [InlineData("?!")]
     public async Task A_required_posture_is_set_where_the_agent_offers_it(string marks)
     {
-        Assert.Equal('!', AgentPostures.Required);
-        Assert.Equal(AgentPostures.Required, HelpModes.Required);
+        Assert.True(PostureAsked.Parse($"{marks}auto").Required);
         var agent = PostureAgent("""
             {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
@@ -1655,7 +1654,7 @@ public sealed class AcpTests
                 _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
             };
         });
-        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}bypassPermissions");
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, new PostureAsked("bypassPermissions", Required: true).Wire());
         try
         {
             var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("D:/fam/Game", CancellationToken.None));
@@ -2111,7 +2110,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var servers = agent.Frame(1).GetProperty("params").GetProperty("mcpServers");
         var server = Assert.Single(servers.EnumerateArray());
@@ -2152,7 +2151,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, meta: new { claudeCode = new { options = new { settings = "s.json" } } })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal((int)AcpProtocol.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
@@ -2165,7 +2164,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal(15000, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
