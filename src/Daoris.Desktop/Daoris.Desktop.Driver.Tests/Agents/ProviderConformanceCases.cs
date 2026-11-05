@@ -758,7 +758,7 @@ internal static class ConformanceCases
     private static ProcessStartInfo Prepared(ConformanceRun run, Provider provider) =>
         new LegacyDoor(provider, provider.Doors[0]).Prepare(run.Target(), run.Command());
 
-    /// <summary>A provider of one native door, declaring at most a home variable: the cases' second and third providers.</summary>
+    /// <summary>A provider of one native door, at most a home variable: the cases' other providers.</summary>
     private static Provider Bare(string id, string? variable)
     {
         var door = new AgentDoor(
