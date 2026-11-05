@@ -21,7 +21,7 @@ public sealed class PlacePlanTests
         .WithDrivable("web", true).WithTrees("web", true)
         .WithDrivable("docs", true).WithTrees("docs", true);
 
-    private static readonly SetupPresetsTests.Catalog Plugins = new(new SetupPresetsTests.Entry(Plugin, [HookPoints.Land]));
+    private static readonly SetupPresetsTests.Catalog Plugins = new(new SetupPresetsTests.Entry(Plugin, [HookPoints.Perform]));
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]);
 

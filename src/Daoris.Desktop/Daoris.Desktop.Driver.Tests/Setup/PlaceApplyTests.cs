@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class PlaceApplyTests : IDisposable
 {
-    private static readonly SetupPresetsTests.Catalog Plugins = new(new SetupPresetsTests.Entry("example.github-pull-request", [HookPoints.Land]));
+    private static readonly SetupPresetsTests.Catalog Plugins = new(new SetupPresetsTests.Entry("example.github-pull-request", [HookPoints.Perform]));
 
     private readonly string _home = Path.Combine(AppContext.BaseDirectory, "place-apply-" + Guid.NewGuid().ToString("N")[..8]);
 

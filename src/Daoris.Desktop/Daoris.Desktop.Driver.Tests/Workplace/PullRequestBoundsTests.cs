@@ -178,7 +178,7 @@ public sealed class PullRequestBoundsTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"), System.Text.Json.JsonSerializer.Serialize(new
         {
             id = "acme.asks",
-            hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.Land, HookPoints.State } },
+            hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.State } },
         }));
         var clock = At;
         var plugins = new LandingPlugins(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Slow(() => clock = clock.AddSeconds(25))), clock: () => clock);
@@ -248,7 +248,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     /// <summary>A plugin that answers <c>open</c>, its clock moved on by each request it answers.</summary>
     private sealed class Slow(Action took) : IHookChannel
     {
-        public IReadOnlyList<string> Points => [HookPoints.Land, HookPoints.State];
+        public IReadOnlyList<string> Points => [HookPoints.State];
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;

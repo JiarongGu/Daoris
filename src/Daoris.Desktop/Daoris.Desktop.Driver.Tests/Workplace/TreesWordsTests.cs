@@ -86,28 +86,15 @@ public sealed class TreesWordsTests : IAsyncLifetime
         AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed on `main`."), []));
 
     [Fact]
-    public async Task A_landing_through_a_plugin_says_the_plugins_lines_first_and_a_failed_push_is_exit_1()
+    public async Task A_landing_says_the_plugins_lines_first()
     {
         var lines = new[] { TreesWords.PluginLine("example.lands", "pushing"), TreesWords.PluginLine("example.lands", "opened a pull request") };
-        var pushed = new PluginLanding("example.lands", true, "#4", "pushed");
-        var failed = new PluginLanding("example.lands", false, null, "no", Failed: true);
 
-        var ok = TreesWords.Land(new TreeLanding(true, "Landed `feature/x`.", "feature/x", pushed), lines);
+        var ok = TreesWords.Land(new TreeLanding(true, "Landed `feature/x`.", "feature/x"), lines);
         Assert.Equal(["  plugin:example.lands  pushing", "  plugin:example.lands  opened a pull request", "trees: Landed `feature/x`."], ok.Out);
         Assert.Equal(0, ok.Code);
         await AssertSameAsync(ok);
-        var bad = TreesWords.Land(new TreeLanding(true, "Landed `feature/x`.", "feature/x", failed), lines);
-        Assert.Equal(1, bad.Code);
-        await AssertSameAsync(bad);
     }
-
-    /// <summary>
-    /// FABRIC-CLOSE1h3: a press whose quest moved just before its push made its branch and told no plugin; the step the rule asked for did
-    /// not happen, so the verb exits 1, as a failed push does.
-    /// </summary>
-    [Fact]
-    public void A_landing_whose_push_was_held_back_is_exit_1() =>
-        Assert.Equal(1, TreesWords.Land(new TreeLanding(true, "Landed `feature/x`.", "feature/x") { Withheld = "its quest was taken back" }, []).Code);
 
     [Fact]
     public Task A_landing_refused_is_its_sentence_and_exit_1() =>
@@ -186,24 +173,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [Fact]
     public Task A_sync_that_took_no_checkout_is_a_sentence_on_the_error() =>
         AssertSameAsync(TreesWords.Refused(TreesCommand.NothingToSync(new TreesAsk(TreesLook.Sync) { Repository = "game" })));
-
-    // trees hand: HANDOFF, named by a branch and a repository.
-    [Fact]
-    public async Task A_hand_off_says_the_plugins_lines_then_its_sentence()
-    {
-        var handed = new TreeHand(true, "Handed `feature/x` to `example.lands`.", "feature/x", new PluginLanding("example.lands", true, "#4", "ok"));
-        await AssertSameAsync(TreesWords.Hand(handed, [TreesWords.PluginLine("example.lands", "pushing")]));
-        await AssertSameAsync(TreesWords.Hand(new TreeHand(false, "Not handed: no plugin is named."), []));
-    }
-
-    [Fact]
-    public async Task A_hand_off_refused_before_any_plugin_is_spoken_to_is_a_sentence_on_the_error()
-    {
-        await AssertSameAsync(TreesWords.HandRefused(TreeHand.NotLanded("feature/none")));
-        await AssertSameAsync(TreesWords.HandRefused(TreesWords.NamesSeveral("feature/x", ["engine", "game"])));
-        await AssertSameAsync(TreesWords.HandRefused(TreesWords.HandNoCheckout("engine", "feature/x")));
-        Assert.Contains("say which with `--repository <name>`", TreesWords.HandRefused(TreesWords.NamesSeveral("feature/x", ["engine", "game"])).Error[0]);
-    }
 
     // trees land --entry / --ask (RPC1b4): LAND_ENTRY and LAND_ASK.
     private static EntryLanding Entered(bool landed) => new(

@@ -77,12 +77,12 @@ public sealed class HookStateTests
     public async Task A_point_this_build_lacks_is_said_once_and_never_asked_and_one_beyond_the_manifest_is_still_refused()
     {
         var said = new List<string>();
-        var grown = new FakePlugin(frame => Ok(frame, """{"protocolVersion":1,"points":["work/land","work/review"]}"""));
+        var grown = new FakePlugin(frame => Ok(frame, """{"protocolVersion":1,"points":["work/perform","work/review"]}"""));
         var peer = new HookPeer(grown.Incoming, grown.Outgoing, "acme.grown", said.Add, Poll.Patience);
 
-        await peer.InitializeAsync("h", "d", ["work/land", "work/review"], CancellationToken.None);
+        await peer.InitializeAsync("h", "d", ["work/perform", "work/review"], CancellationToken.None);
 
-        Assert.Equal([HookPoints.Land], peer.Points);
+        Assert.Equal([HookPoints.Perform], peer.Points);
         var line = Assert.Single(said);
         Assert.Contains("`work/review`", line);
         Assert.Contains("not a point this build has", line);
@@ -209,7 +209,7 @@ public sealed class HookStateTests
 
     private sealed class Silent : IHookChannel
     {
-        public IReadOnlyList<string> Points => [HookPoints.Land];
+        public IReadOnlyList<string> Points => [HookPoints.SessionEnded];
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;

@@ -116,7 +116,7 @@ public sealed class SetupPresetsTests
     [Fact]
     public void A_pull_request_is_opened_by_the_plugin_named_for_the_remote_s_platform_that_performs_steps()
     {
-        var catalog = new Catalog(new Entry(Plugin, [HookPoints.Perform]), new Entry("example.notes", ["quest/consider"]), new Entry("other.lands", [HookPoints.Land]));
+        var catalog = new Catalog(new Entry(Plugin, [HookPoints.Perform]), new Entry("example.notes", ["quest/consider"]), new Entry("other.lands", [HookPoints.State]));
 
         Assert.Equal(Plugin, SetupPresets.PluginFor("github.com", catalog));
         Assert.Null(SetupPresets.PluginFor("gitlab.com", catalog));

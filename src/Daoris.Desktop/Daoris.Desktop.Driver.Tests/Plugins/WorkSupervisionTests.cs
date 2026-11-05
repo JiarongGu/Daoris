@@ -459,7 +459,7 @@ public sealed class WorkSupervisionTests : IDisposable
     [Fact]
     public void A_plugin_is_read_under_the_work_wire_s_bound_only_where_it_speaks_a_work_point()
     {
-        var catalog = Catalog(("acme.lands", [HookPoints.Land, HookPoints.State]), (Deploy, [HookPoints.Land, HookPoints.Watch, HookPoints.Step]));
+        var catalog = Catalog(("acme.lands", [HookPoints.State]), (Deploy, [HookPoints.Watch, HookPoints.Step]));
 
         Assert.Equal(HookPeer.AnswerBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == "acme.lands")));
         Assert.Equal(WorkBounds.FrameBytes, HookProcess.FrameLimit(catalog.Contributing.Single(p => p.Manifest.Id == Deploy)));

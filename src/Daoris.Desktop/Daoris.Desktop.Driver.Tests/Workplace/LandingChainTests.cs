@@ -254,11 +254,6 @@ public sealed class LandingChainTests : IDisposable
     {
         var advanced = new TreeLanding(true, "moved `feature/x` on.", "feature/x") { AdvancedFrom = Tip };
         Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
-        // The push is still the plugin's: an advance it did not push is kept as that, as a landing's is.
-        Assert.Equal(LandingCode.PluginFailed, LandTries.CodeOf(advanced with
-        {
-            Plugin = new PluginLanding("acme.lands", Pushed: false, "https://example.test/pull/7", "its pull request is completed"),
-        }));
         Assert.Equal(LandingCode.Completed, LandTries.CodeOf(new TreeLanding(false, "merged") { Refusal = LandingCode.Completed }));
 
         Assert.True(LandingCode.Closes(LandingCode.Advanced));
@@ -299,7 +294,7 @@ public sealed class LandingChainTests : IDisposable
         landings.Record(Entry() with { AcceptedBy = AcceptedBy.Person, Pushed = true, Plugin = "acme.lands", PullRequest = "https://example.test/pull/7" });
 
         landings.Advanced("ENGINE", "feature/q1-fix-the-gap", new LandedAdvance(Tip, Next, At.AddHours(1), "s2") { AcceptedBy = AcceptedBy.Auto });
-        landings.Pushed("engine", "feature/q1-fix-the-gap", new PluginLanding("acme.lands", Pushed: true, PullRequest: null, "pushed it."), Next);
+        landings.Pushed("engine", "feature/q1-fix-the-gap", Next);
 
         var entry = new LandedBranches(_home).Landing("s2")!;
         Assert.Equal("s1", entry.Session);

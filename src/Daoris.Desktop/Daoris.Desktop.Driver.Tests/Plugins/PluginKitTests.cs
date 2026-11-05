@@ -50,7 +50,7 @@ public sealed class PluginKitTests : IDisposable
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "act", "query", "observation", "observation", "event", "act"], PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]
@@ -58,7 +58,6 @@ public sealed class PluginKitTests : IDisposable
     {
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.QuestConsider)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.SessionEnded)!.Patience);
-        Assert.Equal(LandingPlugins.DefaultPatience, PluginKit.Find(HookPoints.Land)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(30), PluginKit.Find(HookPoints.State)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.StateChanged)!.Patience);
         // The work wire's peer waits its default for the awaited set's answer and an attempt's receipt (FABRIC-PERFORM1a).
@@ -116,9 +115,6 @@ public sealed class PluginKitTests : IDisposable
             await set.EndedAsync(PluginKit.SampleEnding, CancellationToken.None);
         }
 
-        await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
-            .LandAsync("acme.every", PluginKit.SampleLanding);
-
         // The query's frame, through an occasion's asks (PLUGHOOK1a).
         var landed = new LandedBranch("engine", "default", PluginKit.SampleState.Branch, "main", PluginKit.SampleState.PushedTip!, "s1a2b3c4",
             "0fda18", "Expose a streaming budget", DateTimeOffset.UnixEpoch);
@@ -132,8 +128,8 @@ public sealed class PluginKitTests : IDisposable
             await set.ChangedAsync(PluginKit.SampleChange, CancellationToken.None);
         }
 
-        Assert.Equal(5, told.Count);
-        for (var i = 0; i < 5; i++)
+        Assert.Equal(4, told.Count);
+        for (var i = 0; i < 4; i++)
         {
             Assert.Equal(
                 JsonSerializer.SerializeToNode(told[i])!.ToJsonString(),
@@ -143,7 +139,6 @@ public sealed class PluginKitTests : IDisposable
         // The repository's checkout in a sample is the kit's marker, which try and the wire test replace
         // with an empty scratch folder — never a path on anybody's machine.
         Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.QuestConsider)!.Frame["root"]!.GetValue<string>());
-        Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.Land)!.Frame["root"]!.GetValue<string>());
         Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.State)!.Frame["root"]!.GetValue<string>());
     }
 
@@ -204,20 +199,15 @@ public sealed class PluginKitTests : IDisposable
     }
 
     [Fact]
-    public void A_landing_plugin_carries_the_helper_that_runs_a_platform_s_tool_and_its_quoting()
+    public void A_query_plugin_carries_the_helper_that_runs_a_platform_s_tool_and_its_quoting()
     {
-        var plan = PluginKit.Plan("acme.lands", [HookPoints.Land], _scratch);
-        var script = plan.Files.Single(f => f.Name == "plugin.mjs").Content;
-
-        Assert.Contains("'work/land'", script);
-        Assert.Contains("function run(", script);
-        // cmd reads a `.cmd` tool's line a second time, so what it would act on inside quotes is refused.
-        Assert.Contains("[\"%\\r\\n]", script);
         Assert.DoesNotContain("function run(", PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content);
-        // A query asks its platform's tool too (PLUGHOOK1a), so it carries the same helper.
+        // A query asks its platform's tool (PLUGHOOK1a), so it carries the helper.
         var asks = PluginKit.Plan("acme.asks", [HookPoints.State], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content;
         Assert.Contains("'work/state'", asks);
         Assert.Contains("function run(", asks);
+        // cmd reads a `.cmd` tool's line a second time, so what it would act on inside quotes is refused.
+        Assert.Contains("[\"%\\r\\n]", asks);
     }
 
     [Theory]
@@ -239,7 +229,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", ["quest/started"], _scratch));
         Assert.Contains("`quest/started` is not a point", unknown.Message);
-        Assert.Contains("quest/consider, session/ended, work/land, work/state, state/changed, work/watch, work/step, work/perform", unknown.Message);
+        Assert.Contains("quest/consider, session/ended, work/state, state/changed, work/watch, work/step, work/perform", unknown.Message);
 
         var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [], _scratch));
         Assert.Contains("at least one point", none.Message);
@@ -287,10 +277,9 @@ public sealed class PluginKitTests : IDisposable
     {
         { new[] { HookPoints.QuestConsider } },
         { new[] { HookPoints.SessionEnded } },
-        { new[] { HookPoints.Land } },
         { new[] { HookPoints.State } },
         { new[] { HookPoints.StateChanged } },
-        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State, HookPoints.StateChanged } },
+        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.State, HookPoints.StateChanged } },
     };
 
     /// <summary>
@@ -350,7 +339,7 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: try reads a plugin's stdout under the bound the driver reads it under. A landing's answer over 64 KB from a
+    /// FABRIC-PERFORM1a, round 2: try reads a plugin's stdout under the bound the driver reads it under. A query's answer over 64 KB from a
     /// plugin that speaks no work point passes, as the driver takes it; one past the answers' bound fails at once with the reason, as the
     /// driver fails it — where try had read it whole and passed a plugin the driver then never heard.
     /// </summary>
@@ -359,8 +348,8 @@ public sealed class PluginKitTests : IDisposable
     [InlineData(HookPeer.AnswerBytes + 1, false)]
     public async Task Try_reads_a_long_answer_as_the_driver_does(int length, bool passes)
     {
-        var folder = New("acme.long", [HookPoints.Land]);
-        Replace(folder, "pushed: false,", $"pushed: false, diagnostic: 'd'.repeat({length}),");
+        var folder = New("acme.long", [HookPoints.State]);
+        Replace(folder, "state: 'unknown',", $"state: 'unknown', diagnostic: 'd'.repeat({length}),");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
@@ -370,7 +359,7 @@ public sealed class PluginKitTests : IDisposable
             return;
         }
 
-        var step = Failed(trial, HookPoints.Land);
+        var step = Failed(trial, HookPoints.State);
         Assert.Contains("4 MB", step.Sentence);
         Assert.DoesNotContain("did not answer", step.Sentence);
     }
@@ -396,13 +385,13 @@ public sealed class PluginKitTests : IDisposable
 
     /// <remarks>
     /// 🔴 PLUGKIT2: the one second was the whole trial's, so node's start and the handshake outlasted it under load and
-    /// `work/land` was never asked. The second is the point's call's now, the handshake waits the point's own patience, and
+    /// `work/state` was never asked. The second is the point's call's now, the handshake waits the point's own patience, and
     /// this plugin's handshake comes later than the second, as a loaded machine's did.
     /// </remarks>
     [Fact]
     public async Task A_silent_plugin_is_still_running_and_said_nothing_within_the_patience()
     {
-        var folder = New("acme.silent", [HookPoints.Land]);
+        var folder = New("acme.silent", [HookPoints.State]);
         // It takes the frame and never answers it.
         Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
         Replace(folder, "    const declared = frame.params?.points ?? [];",
@@ -411,9 +400,9 @@ public sealed class PluginKitTests : IDisposable
         var trial = await PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Patience: TimeSpan.FromSeconds(1)));
 
         Assert.True(trial.Steps.Single(s => s.Name == "handshake").Ok, trial.Steps.Single(s => s.Name == "handshake").Sentence);
-        var step = Failed(trial, HookPoints.Land);
-        Assert.Contains("is running and did not answer `hook/work/land` within 1s", step.Sentence);
-        Assert.Contains("the landing would say the plugin's step failed", step.Sentence);
+        var step = Failed(trial, HookPoints.State);
+        Assert.Contains("is running and did not answer `hook/work/state` within 1s", step.Sentence);
+        Assert.Contains("nothing is removed on its word", step.Sentence);
         Assert.Equal(1, trial.ExitCode);
     }
 
@@ -523,7 +512,7 @@ public sealed class PluginKitTests : IDisposable
 
     /// <summary>
     /// 🔴 The sample frame's repository is no repository. git walks UP, so an empty folder under a checkout
-    /// would answer for the checkout above it — and a landing plugin that pushes first would push that.
+    /// would answer for the checkout above it — and a plugin that reads a repository first would read that.
     /// </summary>
     /// <remarks>
     /// Proven where it matters: the scratch folder of both doors sits inside a real repository, and the
@@ -539,20 +528,20 @@ public sealed class PluginKitTests : IDisposable
         var temp = Path.Combine(repository, "temp");
         Directory.CreateDirectory(temp);
 
-        var folder = New("acme.lands", [HookPoints.Land]);
+        var folder = New("acme.reads", [HookPoints.State]);
         Replace(folder, """
-              'work/land': (frame) => ({
-                pushed: false,
+              'work/state': (frame) => ({
+                state: 'unknown',
             """, """
-              'work/land': (frame) => ({
-                pushed: run('git', ['rev-parse', '--show-toplevel'], frame.root).ok ? 'git found a repository' : false,
+              'work/state': (frame) => ({
+                state: run('git', ['rev-parse', '--show-toplevel'], frame.root).ok ? 'git found a repository' : 'unknown',
             """);
-        Replace(folder, "    message: `${id} does not push yet", "    message: `git: ${run('git', ['rev-parse', '--show-toplevel'], frame.root).why} — ${id} does not push yet");
+        Replace(folder, "    message: `${id} does not read pull requests yet", "    message: `git: ${run('git', ['rev-parse', '--show-toplevel'], frame.root).why} — ${id} does not read pull requests yet");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder, null, CancellationToken.None, scratchParent: temp);
         var (exit, output) = await NodeTestAsync(folder, new() { ["TEMP"] = temp, ["TMP"] = temp, ["TMPDIR"] = temp });
 
-        var step = trial.Steps.Single(s => s.Name == HookPoints.Land);
+        var step = trial.Steps.Single(s => s.Name == HookPoints.State);
         Assert.True(step.Ok, step.Sentence);
         Assert.Contains("not a git repository", step.Sentence);
         Assert.True(exit == 0, output);
@@ -568,16 +557,16 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task A_folder_s_plugin_is_told_the_trial_s_data_folder_and_nothing_lands_beside_it()
     {
-        var folder = New("acme.keeps", [HookPoints.Land]);
+        var folder = New("acme.keeps", [HookPoints.State]);
         var manifest = Path.Combine(folder, "plugin.json");
         var text = File.ReadAllText(manifest);
         Assert.Contains("\"${plugin}/plugin.mjs\"]", text);
         File.WriteAllText(manifest, text.Replace("\"${plugin}/plugin.mjs\"]", "\"${plugin}/plugin.mjs\", \"${data}\"]", StringComparison.Ordinal));
-        Replace(folder, "    message: `${id} does not push yet", "    message: `data told: ${process.argv[2] === data} — ${id} does not push yet");
+        Replace(folder, "    message: `${id} does not read pull requests yet", "    message: `data told: ${process.argv[2] === data} — ${id} does not read pull requests yet");
 
         var trial = await PluginTrials.TryFolderAsync(Home, folder);
 
-        var step = trial.Steps.Single(s => s.Name == HookPoints.Land);
+        var step = trial.Steps.Single(s => s.Name == HookPoints.State);
         Assert.True(step.Ok, step.Sentence);
         Assert.Contains("data told: true", step.Sentence);
         Assert.False(Directory.Exists(Path.Combine(Path.GetDirectoryName(folder)!, ".data")));
@@ -637,8 +626,8 @@ public sealed class PluginKitTests : IDisposable
 
         Assert.Contains("no `plugin.json`",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, _scratch))).Message);
-        Assert.Contains("`work/land` is not a point `acme.gate` declares",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.Land)))).Message);
+        Assert.Contains("`work/state` is not a point `acme.gate` declares",
+            (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.State)))).Message);
         Assert.Contains("a frame needs its point",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryFolderAsync(Home, folder, new TrialOptions(Frame: new JsonObject())))).Message);
 
@@ -765,14 +754,6 @@ public sealed class PluginKitTests : IDisposable
         { HookPoints.QuestConsider, "null", false },
         { HookPoints.SessionEnded, "{}", true },
         { HookPoints.SessionEnded, "null", true },
-        { HookPoints.Land, """{"pushed":true,"pullRequest":"https://example.test/pull/7","message":"opened"}""", true },
-        { HookPoints.Land, """{"pushed":false}""", true },
-        { HookPoints.Land, """{"pushed":false,"pullRequest":null,"message":null}""", true },
-        { HookPoints.Land, """{"pushed":"yes"}""", false },
-        { HookPoints.Land, """{"message":"did not push"}""", false },
-        { HookPoints.Land, """{"pushed":true,"pullRequest":"ftp://example.test/7"}""", false },
-        { HookPoints.Land, """{"pushed":true,"pullRequest":"pull/7"}""", false },
-        { HookPoints.Land, """{"pushed":true,"message":7}""", false },
         // PLUGHOOK1a: the query's answer, as HookStateTests holds the driver's reader to the same rows.
         { HookPoints.State, """{"state":"open"}""", true },
         { HookPoints.State, """{"state":"abandoned","pullRequest":null,"at":"2026-10-04T14:02:11Z","message":"abandoned"}""", true },
