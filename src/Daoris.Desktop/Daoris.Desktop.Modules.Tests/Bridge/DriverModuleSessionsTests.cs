@@ -1089,10 +1089,9 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, kept.GetProperty("why").ValueKind);
         Assert.Equal(["w1"], new NewSessionChoices(loop.Home).Read("s1")!.Said);
 
-        var closed = await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "s2" });
-        Assert.False(closed.GetProperty("kept").GetBoolean());
-        Assert.Equal(GoOnNew.Closed, closed.GetProperty("why").GetString());
-        Assert.StartsWith("#q2 has closed, so nothing carries its session's words on by itself", closed.GetProperty("message").GetString());
+        // A closed quest's session is one nothing carries on by itself: the press goes on with Daoris's brief, which this loop has no
+        // conversations to open, and keeps no choice.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_HAND_OVER", new { id = "s2" }));
         Assert.Null(new NewSessionChoices(loop.Home).Read("s2"));
     }
 

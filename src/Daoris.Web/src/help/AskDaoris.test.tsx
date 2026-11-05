@@ -1458,14 +1458,14 @@ describe('Ask Daoris’s history', () => {
           ],
         };
       }
-      if (type === 'SESSION_GO_ON_BRIEF') return { sessionId: 'br1ef000', sent: true, why: null, message: 'went on' };
+      if (type === 'SESSION_HAND_OVER') return { sessionId: 'br1ef000', kept: true, message: 'went on' };
       return answered(module, type, ...rest);
     });
     show();
 
     await userEvent.click(await screen.findByRole('button', { name: "Go on with Daoris's brief" }));
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_BRIEF', { payload: { id: EARLIER.id } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: EARLIER.id, why: 'press' } }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', expect.anything());
   });
 

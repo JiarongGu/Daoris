@@ -381,11 +381,11 @@ describe('the box on every session that takes words', () => {
 
   /**
    * SESSCTX1c part B (D189 point 3): beside the fresh start, *Go on with Daoris's brief* asks the driver for a new part of the same
-   * session, handed the brief and the words, and attends it once it opens. The page sends the session alone.
+   * session, handed the brief and the words, and attends it once it opens.
    */
   it('goes on with Daoris’s brief in a new part of the session, and attends it', async () => {
     driver({ reaches: 'resume' }, { sent: true }, {
-      SESSION_GO_ON_BRIEF: { sessionId: 'c5b8c5b8', sent: true, message: 'went on' },
+      SESSION_HAND_OVER: { sessionId: 'c5b8c5b8', kept: true, message: 'went on' },
       SESSION_HISTORY: CANNOT,
     });
     const { onSelect } = show('s1a2b3c4');
@@ -393,7 +393,7 @@ describe('the box on every session that takes words', () => {
     await userEvent.click(await screen.findByRole('button', { name: "Go on with Daoris's brief" }));
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c5b8c5b8'));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_BRIEF', { payload: { id: 's1a2b3c4' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 's1a2b3c4', why: 'press' } });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_START_FROM', expect.anything());
   });
 
@@ -404,7 +404,7 @@ describe('the box on every session that takes words', () => {
     ['no-words', 'No words wait on this session now, so there is nothing to start a conversation with.'],
   ])('says a refused brief press by its code %s', async (why, said) => {
     driver({ reaches: 'resume' }, { sent: true }, {
-      SESSION_GO_ON_BRIEF: { sent: false, why, message: 'the driver’s sentence' },
+      SESSION_HAND_OVER: { kept: false, why, message: 'the driver’s sentence' },
       SESSION_HISTORY: CANNOT,
     });
     const notify = vi.fn();

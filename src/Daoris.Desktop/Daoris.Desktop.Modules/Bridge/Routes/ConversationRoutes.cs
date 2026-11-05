@@ -182,25 +182,6 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { started.SessionId, started.Sent, started.Why, started.Message };
     }
 
-    // *Go on with Daoris's brief*: a session whose words wait goes on in a new part, in its tree on its agent and account, handed
-    // Daoris's brief and then their words; what cannot go on is refused by its code before anything opens.
-    [DriverRoute("SESSION_GO_ON_BRIEF", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("SESSION_GO_ON_BRIEF", Session = "id")]
-    [GroundSession("SESSION_GO_ON_BRIEF", "id")]
-    [Says("SESSION_GO_ON_BRIEF", "id:session")]
-    [Publishes("SESSION_GO_ON_BRIEF", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private async Task<object?> SessionGoOnBriefAsync(SessionIdPress press, CancellationToken cancellationToken)
-    {
-        var id = press.Id;
-        var chat = _loop.Chat ?? throw NotReady();
-        var config = DriverConfig.Load(_loop.ConfigPath);
-        var moved = await chat.GoOnBriefedAsync(
-                id, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
-            .ConfigureAwait(false);
-        _loop.Nudge();
-        return new { moved.SessionId, moved.Sent, moved.Why, moved.Message };
-    }
-
     // *Stop waiting*: an ended conversation held by its account's limit waits no more, so nothing goes on by itself; a refusal is
     // data in the runner's sentence.
     [DriverRoute("SESSION_STOP_WAITING", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -239,8 +220,14 @@ public sealed class ConversationRoutes(DriverContext context)
                 .ConfigureAwait(false);
         }
 
-        // No agent named: *Go on in a new session*, the walk's pick for the words a cooling account holds.
-        if (named is null) return await GoOnNewPress.AskAsync(_loop, id, cancellationToken).ConfigureAwait(false);
+        // No agent named: the walk's pick takes the words, *Go on in a new session* or, for a conversation, *Go on with Daoris's brief*.
+        if (named is null)
+        {
+            return await GoOnPress.AskAsync(
+                    _loop, id, DriverConfig.Load(_loop.ConfigPath), (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var agent = named;
 
         var why = press.Why ?? HandOverWhy.Press;

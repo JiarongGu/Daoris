@@ -156,7 +156,10 @@ of everything it handed, section by section.
     *Go on in a new session*, the words a cooling account holds on a driven record, is the same press naming no agent:
     `SESSION_HAND_OVER` without `agent` (and `daoris session hand-over <id>`) keeps the choice for the next look, and
     answers `{sessionId: null, kept, why, message}` with `GoOnNew`'s codes. `SESSION_GO_ON_NEW` and `go-on-new` are gone.
-    *Go on with Daoris's brief* is still its own route, `SESSION_GO_ON_BRIEF` (ONEWAY1j, open).
+    *Go on with Daoris's brief* is the same press for a conversation, a closed quest's session or Ask Daoris's: where `GoOnNew`
+    says the session is one of those, `SESSION_HAND_OVER` without `agent` opens the new part through `GoOnBriefedAsync`, and
+    answers the same `{sessionId, kept, why, message}` (`kept` that the part opened, `sessionId` the part). `SESSION_GO_ON_BRIEF`
+    and `useGoOnBrief` are gone; the work page and Ask Daoris press `useHandOver` with no agent.
 
 **The brief**
 
@@ -268,9 +271,6 @@ of everything it handed, section by section.
   account's home. Proposed, waiting on Codex's owed read; nothing is built. `Course/MoveRecords.cs` reserves the `carry`
   kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
-- **ONEWAY1j:** *Go on with Daoris's brief* (`SESSION_GO_ON_BRIEF`, the work page's and Ask Daoris's presses) still has its own
-  route, driver act and hooks; it folds into `SESSION_HAND_OVER` naming no agent for a conversation, so one press stands per
-  go-on case.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same
   agent and account, after SESSCTX1a is measured.
 - **LIMITGOON1 (row i):** the limit move seen on the installed window.

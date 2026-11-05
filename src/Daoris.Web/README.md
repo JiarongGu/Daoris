@@ -44,7 +44,7 @@ another session's channel message is told by its event's `channel` mark before t
 with a door to that session, or its id where the list holds none; the row says *continues* or *helps* and the title, from
 the record's own `from` and `serves` joined in the rail; and a helper is titled *Helper* and, as a reviewer is, offered
 no box. Where a session's words wait for the person on a reason that leaves its tree to go on in (SESSCTX1c part B), or on a driven
-session's tree that is gone, whose new part grows a fresh one (TREEGONE2; both `briefOffered`), the line saying they cannot go on offers *Go on with Daoris's brief* (`SESSION_GO_ON_BRIEF`) beside *Start a conversation with these
+session's tree that is gone, whose new part grows a fresh one (TREEGONE2; both `briefOffered`), the line saying they cannot go on offers *Go on with Daoris's brief* (`SESSION_HAND_OVER` naming no agent) beside *Start a conversation with these
 words*, on a session's page and in Ask Daoris's dock; the new part is attended once it opens, and a refusal is said by its code
 (`GO_ON_BRIEF`, twinned with the driver's `GoOnBrief`). Words that went with a quest's resume to its new session say so on the
 session they were said to, by the went line's `resumed` reason (`work.say.why.resumed`, SAYHELD1). Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
