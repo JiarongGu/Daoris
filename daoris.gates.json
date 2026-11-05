@@ -6,7 +6,7 @@
     { "name": "cli", "run": "npm run verify", "clock": true },
     { "name": "tool-tests", "run": "npm run tooltests", "clock": true },
     { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process" },
-    { "name": "service-process", "run": "dotnet test src/Daoris.Service/Daoris.Service.Http.Tests --settings src/Daoris.Desktop/process.runsettings" },
+    { "name": "service-process", "run": "dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings" },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },

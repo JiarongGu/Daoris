@@ -276,9 +276,13 @@ jobs:
       #
       # `src/Daoris.Service` is a folder holding one solution, so this runs every suite the solution
       # lists — the HTTP host's in-process suite included (HTTP1). A dogfood test holds that every test
-      # project is in a solution a declared gate runs, or named by one.
+      # project is in a solution a declared gate runs, or named by one. Its `Process` category, the
+      # route budgets over a benchmark home of three thousand sessions, runs after it, alone.
       - name: Service gate
-        run: dotnet test src/Daoris.Service --nologo
+        run: dotnet test src/Daoris.Service --filter Category!=Process --nologo
+
+      - name: Service process gate
+        run: dotnet test src/Daoris.Service --settings src/Daoris.Desktop/process.runsettings --nologo
 
       # Each desktop suite runs as two gates (MOD8): the tests that start real processes or run real
       # ticks carry the `Process` category and run one class at a time after the rest
