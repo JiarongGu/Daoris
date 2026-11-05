@@ -24,21 +24,19 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         text.Append("A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and\n");
         text.Append("`{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,\n");
         text.Append("and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern that works.\n\n");
-        // HELP8: a branch rule may name a plugin (D100), and the helper can only name one it can see.
-        text.Append("A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and\n");
-        text.Append("opens the pull request, as the person's own platform tools are signed in.\n");
-        // LAND2a (D145 point 5): the switch is the person's standing say-so for a push with no press, so the helper
+        // LAND2a (D145 point 5): the switch is the person's standing say-so for a landing with no press, so the helper
         // proposes it only when they ask for it.
-        text.Append("A branch rule may also add `--auto-accept`: a quest's done then lands its work with no press, and the\n");
-        text.Append("rule's plugin pushes it and opens a pull request without asking each time. A merge rule may add it too: a\n");
-        text.Append("done quest's work is then merged into its line with no press. It is the person's standing\n");
-        text.Append("say-so, so propose it only when they ask for it.\n");
+        text.Append("A landing rule may add `--auto-accept`: a quest's done then lands its work with no press, onto a\n");
+        text.Append("branch or into its line. It is the person's standing say-so, so propose it only when they ask for it.\n");
+        // G8: a pull request is a plugin's performed step in the workflow, never a landing method.
+        text.Append("A pull request is a step of a workflow, performed by a plugin after Daoris pushes the branch; a landing\n");
+        text.Append("rule never names one.\n");
         var offeredLanders = machine.Offers.Where(offer => offer.Points.Contains(HookPoints.Perform, StringComparer.Ordinal)).Select(offer => $"`{offer.Id}`").ToList();
         text.Append(machine.LandingPlugins.Count > 0
-            ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
+            ? $"Plugins that perform pull-request steps here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
             // UX6i2a: Settings → Plugins retired into the Plugins place with UX6j (D150 §2).
-            : "No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,\n"
-              + "or the Plugins place), so never propose a rule naming one"
+            : "No plugin that performs pull-request steps is installed here: the person installs one (`daoris plugin add <folder>`,\n"
+              + "or the Plugins place), so never propose a workflow naming one"
               + (offeredLanders.Count > 0
                   ? $" until it is installed; this install offers {string.Join(" and ", offeredLanders)}, which you may propose installing first.\n\n"
                   : ".\n\n"));

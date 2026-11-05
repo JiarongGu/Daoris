@@ -87,6 +87,11 @@
   "workflow.place.chart.reading": "Reading the chart…",
   "workflow.place.chart.older": "This driver does not draw a route's graph yet, so the chart waits for it.",
   "workflow.place.chart.landedNone": "Landed work follows no verification here, so there is no chart to draw.",
+  "workflow.place.chart.problem.notSaved": "No workflow `{{workflow}}` is saved here.",
+  "workflow.place.chart.problem.unread": "`{{workflow}}` cannot be read: {{why}}",
+  "workflow.place.chart.problem.noVersion": "`{{workflow}}` keeps no version that reads here.",
+  "workflow.place.chart.problem.versionUnread": "`{{workflow}}` v{{version}} cannot be read here: {{why}}",
+  "workflow.place.chart.problem.pullRequestUnserved": "`{{workflow}}` v{{version}}'s step `{{step}}` is a pull request of the plugin `{{plugin}}`, which is not installed here, is switched off, contributes nothing or performs no steps, so no run starts on it. The Plugins place says what there is.",
   "workflow.place.cell.show": "Its settings",
   "workflow.place.cell.hide": "Hide its settings",
   "workflow.place.cell.region": "{{step}}: its settings"

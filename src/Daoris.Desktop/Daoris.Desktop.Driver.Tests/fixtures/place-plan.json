@@ -22,7 +22,7 @@
       "exit": 1,
       "lines": [
         "place: `web`, `docs` — A pull request",
-        "  `web`: now 1 change of your own (no workflow is chosen) · after A pull request · suggested A pull request",
+        "  `web`: now 1 change of your own (no workflow is chosen) · after A pull request · suggested Merge after you accept",
         "  `docs`: now 1 change of your own (no workflow is chosen) · after 1 change of your own (no workflow is chosen) · suggested Merge after you accept",
         "changes, each said once:",
         "  `web`: a saved copy of the workflow Daoris ships, none → `pull-request`",

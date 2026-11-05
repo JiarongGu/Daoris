@@ -37,8 +37,12 @@ public sealed class PullRequestStateTests : LandedFixture
             id = Plugin,
             hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.State } },
         }));
-        Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Plugin));
+        Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"), pullRequest: Plugin);
     }
+
+    private string? _opens = Plugin;
+
+    protected override string? PullRequestPlugin => _opens;
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(
         Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => _now));
@@ -154,9 +158,11 @@ public sealed class PullRequestStateTests : LandedFixture
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
         var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
+        await OpenedPullRequestAsync(root, landing, Plugin);
         var unknown = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(unknown.Path, "unknown.txt", "unknown\n", "unknown");
         var other = await trees.LandAsync(unknown.Path, new LandingSubject("s2", "q2", "Unconfirmed"), gate: Lands);
+        await OpenedPullRequestAsync(root, other, Plugin);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         // The line changes its file again after the squash, so its work is not on the line by content either (SQUASHTIDY1):
@@ -198,6 +204,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
         var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
+        await OpenedPullRequestAsync(root, landing, Plugin);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -238,6 +245,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var carried = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
         var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"), gate: Lands);
+        await OpenedPullRequestAsync(root, landing, Plugin);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -267,6 +275,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "merged.txt", "merged\n", "merged");
         var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"), gate: Lands);
+        await OpenedPullRequestAsync(root, landing, Plugin);
         Assert.True(landing.Landed, landing.Message);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!, then: ("merged.txt", "changed on the line since\n"));
@@ -331,6 +340,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "merged.txt", "merged\n", "Merged");
         var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"), gate: Lands);
+        await OpenedPullRequestAsync(root, landed, Plugin);
         Assert.True(landed.Landed, landed.Message);
         // Its session branch is gone, as a tidy leaves it, so no session branch leans on the landed one.
         await GitAsync(root, "worktree", "remove", "--force", tree.Path);
@@ -374,6 +384,7 @@ public sealed class PullRequestStateTests : LandedFixture
         trees.Recorded.Pushed("engine", gone.Branch!, trees.Recorded.Of("engine", gone.Branch!)!.Tip);
         trees.Recorded.PullRequested("engine", gone.Branch!, "acme.gone", "https://example.test/pull/7");
         Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"));
+        _opens = null;
         var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
 
         var plan = await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());

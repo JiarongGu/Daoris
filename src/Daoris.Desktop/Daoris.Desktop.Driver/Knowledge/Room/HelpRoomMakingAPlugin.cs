@@ -19,7 +19,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         // FABRIC-PERFORM1e: the work wire's points, which the kit scaffolds with its performer's contract and contract test.
         [HookPoints.Watch] = "to be told which units await its steps",
         [HookPoints.Step] = "to report what became of a step it performs or observes",
-        [HookPoints.Perform] = "to perform a step of the work, once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step pushes nothing and opens the pull request",
+        [HookPoints.Perform] = "to perform a step of the work, once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step opens the pull request of the branch Daoris pushed",
     };
 
     public string Render(HelpMachine machine)
@@ -28,7 +28,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         // PLUG9: a plugin runs as the person, so its making is a repository's work, tested and reviewed,
         // and only its installing is a card here. The points come from the wire's own list.
         text.Append("## Making a plugin\n\n");
-        text.Append("A plugin runs on this machine as the person (one that lands work pushes with their sign-in), so making\n");
+        text.Append("A plugin runs on this machine as the person (one that opens a pull request does so with their sign-in), so making\n");
         text.Append("one is work, not a setting: never write one yourself. Propose it\n");
         text.Append("as an ask (`ask_propose`) at the workspace of the repository that holds plugins, naming it as the receiver:\n");
         text.Append("what the plugin should do, and the point it speaks on ("

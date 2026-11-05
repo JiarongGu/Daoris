@@ -132,8 +132,6 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             {
                 "merge" => "merged into the line",
                 "branch" => $"on a branch `{pattern}`",
-                "push" => $"pushed to a branch `{pattern}`",
-                "pull-request" => $"as a pull request from a branch `{pattern}`",
                 "integrate" => "integrated into the line",
                 _ => "as its `land` step says",
             };

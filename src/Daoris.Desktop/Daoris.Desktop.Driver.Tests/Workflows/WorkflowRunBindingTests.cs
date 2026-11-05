@@ -33,12 +33,12 @@ public sealed class WorkflowRunBindingTests : IDisposable
         ? """
           {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
             {"id":"review","kind":"review","version":1,"reach":"pressed"},
-            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}","plugin":"none"}}],
+            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}"}}],
            "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"b","kind":"after","from":"review","to":"landing"}]}
           """
         : """
           {"schemaVersion":2,"entries":["work"],"end":"landing","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
-            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}","plugin":"none"}}],
+            {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"docs/{quest}"}}],
            "wires":[{"id":"a","kind":"after","from":"work","to":"landing"}]}
           """)!;
 

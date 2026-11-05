@@ -31,7 +31,7 @@ public sealed class PluginOfferTests : IDisposable
 
     private const string Offered = """
         { "id": "github-pull-request", "name": "GitHub pull request", "version": "1.0.0",
-          "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }
+          "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/perform"] } }
         """;
 
     private const string Readme = """

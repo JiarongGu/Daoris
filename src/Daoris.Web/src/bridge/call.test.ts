@@ -4,7 +4,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async () => ({})) }));
 
 vi.mock('@shenora/react', () => ({ getBridge: () => ({ invoke }) }));
 
-import { call, lookBound, pluginBound, pressBound, stoppedWaiting } from './call';
+import { call, lookBound, pressBound, stoppedWaiting } from './call';
 
 /**
  * WSR7: a long route waits as long as the host may work. The bridge gives up after its default 30 seconds, and a
@@ -38,9 +38,8 @@ describe("the host's bounds, as the page waits for them", () => {
     expect(minutes(lookBound(0))).toBe(4);
   });
 
-  it('waits for a press one replay after another, and for a plugin its start and its answer', () => {
+  it('waits for a press one replay after another', () => {
     expect(minutes(pressBound(3))).toBe(17);
-    expect(minutes(pluginBound)).toBe(6);
   });
 
   it("tells the page's own giving up from the host's refusal", () => {

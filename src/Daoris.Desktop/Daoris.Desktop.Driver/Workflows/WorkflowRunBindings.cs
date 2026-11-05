@@ -114,23 +114,23 @@ public static class WorkflowRunBindings
         if (selected.Workflow == WorkflowSelection.Current) return binding with { Problem = WorkflowProcess.NoWorkflow(repository) };
         if (!WorkflowNamed.IsId(selected.Workflow) || store.Load(selected.Workflow) is not { } found)
         {
-            return binding with { Problem = $"no workflow `{selected.Workflow}` is saved here." };
+            return binding.Held(BindingProblem.ForNotSaved(selected.Workflow));
         }
 
-        if (found.Read.Problem is { } unread) return binding with { Problem = $"`{selected.Workflow}` cannot be read: {unread}" };
+        if (found.Read.Problem is { } unread) return binding.Held(BindingProblem.ForUnread(selected.Workflow, unread));
         var newest = found.Read.Versions[^1];
         // FABRIC-PIPELINE1a (the pipeline design §2.1): a route naming a verification pipeline is judged at its bind, kept with why.
         if (found.Read.Verifies) return binding with { Version = newest.Version, Problem = WorkflowSelection.VerificationElsewhere(selected.Workflow) };
         // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b).
         if (newest.Graph is null)
         {
-            return binding with { Version = newest.Version, Problem = $"`{selected.Workflow}` v{newest.Version} cannot be read here: {newest.Problem ?? "it is no graph"}" };
+            return (binding with { Version = newest.Version }).Held(BindingProblem.ForVersionUnread(selected.Workflow, newest.Version, newest.Problem ?? "it is no graph"));
         }
 
         // G8: a plugin's pull-request step nothing performs here is refused now, never run to.
-        if (PullRequestSteps.Unserved(newest.Graph, plugins, $"`{selected.Workflow}` v{newest.Version}") is { } unserved)
+        if (PullRequestSteps.Unserved(newest.Graph, plugins, selected.Workflow, newest.Version) is { } unserved)
         {
-            return binding with { Version = newest.Version, Digest = newest.Digest, Problem = unserved };
+            return (binding with { Version = newest.Version, Digest = newest.Digest }).Held(unserved);
         }
 
         // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved now, once, and kept, from derived defaults (the

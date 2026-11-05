@@ -35,6 +35,12 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     /// <summary>Why the workflow chosen could not be read here when the run started, or that none was chosen: the run is held.</summary>
     public string? Problem { get; init; }
 
+    /// <summary>The same problem as a code and its values, for the page to word where the bind could say it that way; null where it did not, or on a binding read from its file.</summary>
+    public BindingProblem? Coded { get; init; }
+
+    /// <summary>This binding held on <paramref name="problem"/>: its words and its code.</summary>
+    public WorkflowRunBinding Held(BindingProblem problem) => this with { Problem = problem.Said, Coded = problem };
+
     /// <summary>
     /// The open options of the version's <c>land</c> node (<c>pattern</c>, <c>plugin</c> and the ticket <c>key</c>) as the bind resolved them
     /// (LANDNODE1h; the land node design §4). Empty for a version with no <c>land</c> or none left open.

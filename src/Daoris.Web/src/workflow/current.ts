@@ -153,6 +153,11 @@ export interface WorkflowEffective {
   limits: Record<string, string>;
   problem: string | null;
   /**
+   * The problem as a code and the values it names, which the page words from its catalogue (`not-saved`, `unread`, `no-version`,
+   * `version-unread`, `pull-request-unserved`); absent or null where the driver has none, and `problem` is said as it is.
+   */
+  problemCoded?: { code: string; values: Record<string, string> } | null;
+  /**
    * A copy of a shipped default that this build ships changed since (WORKFLOWCLEAN1h-b): the default's id and English name, and the graph the
    * copy's next version would be, with the gates the copy has. Absent or null where the copy is up to date.
    */

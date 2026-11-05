@@ -34,7 +34,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
             id = Plugin,
             hooks = new { command = new[] { "node", "plugin.mjs" }, points = new[] { HookPoints.Perform, HookPoints.State } },
         }));
-        Lands = GraphLand.Gate(Home, GraphLand.PullRequest("feature/{quest}-{slug}", Plugin));
+        Lands = GraphLand.Gate(Home, GraphLand.Branch("feature/{quest}-{slug}"), pullRequest: Plugin);
     }
 
     private SessionTrees Trees() => new(Home, new LandingPlugins(

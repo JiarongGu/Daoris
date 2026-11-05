@@ -18,18 +18,14 @@ public static class PullRequestSteps
     /// Why a run of <paramref name="graph"/> is refused at its bind, or null: it holds a plugin's pull-request step, and no plugin by that id is
     /// installed, switched on, sound and performing steps here, so the run would reach a step nothing performs.
     /// </summary>
-    public static string? Unserved(NodeGraph graph, IReadOnlyList<WorkflowPlugin> plugins, string version)
+    public static BindingProblem? Unserved(NodeGraph graph, IReadOnlyList<WorkflowPlugin> plugins, string workflow, int version)
     {
         foreach (var node in graph.Nodes)
         {
             if (PluginOf(node.Kind) is not { } plugin) continue;
             var serves = plugins.Any(each => string.Equals(each.Id, plugin, StringComparison.OrdinalIgnoreCase)
                 && each.Points.Contains(HookPoints.Perform, StringComparer.Ordinal));
-            if (!serves)
-            {
-                return $"{version}'s step `{node.Id}` is a pull request of plugin `{plugin}`, which is not installed here, is switched off, contributes "
-                    + $"nothing or performs no `{HookPoints.Perform}` steps, so no run starts on it — `daoris plugin list` says what there is.";
-            }
+            if (!serves) return BindingProblem.ForUnserved(workflow, version, node.Id, plugin);
         }
 
         return null;

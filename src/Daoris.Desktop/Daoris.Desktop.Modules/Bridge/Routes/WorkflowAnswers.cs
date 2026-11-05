@@ -75,6 +75,8 @@ internal static class WorkflowAnswers
             Cells = effective.Cells.Select(cell => new { cell.Node, Step = JsonDocument.Parse(WorkflowSteps.ToJson(cell.Step)).RootElement.Clone() }).ToArray(),
             Limits = limits,
             effective.Problem,
+            // The problem as a code and its values, which the page words from its catalogue; null where the driver has no code for it.
+            ProblemCoded = effective.Coded is { } coded ? new { coded.Code, coded.Values } : null,
             // A copy of a shipped default this build ships changed since: left out, as null, where it is up to date.
             Newer = effective.Newer is null ? null : new { effective.Newer.Default, effective.Newer.Name, effective.Newer.Graph },
         };

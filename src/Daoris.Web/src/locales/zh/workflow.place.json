@@ -87,6 +87,11 @@
   "workflow.place.chart.reading": "正在读取流程图…",
   "workflow.place.chart.older": "这个驱动还不会画出路线的图，流程图要等它支持。",
   "workflow.place.chart.landedNone": "落地的工作在这里不做验证，所以没有流程图可画。",
+  "workflow.place.chart.problem.notSaved": "这里没有保存工作流 `{{workflow}}`。",
+  "workflow.place.chart.problem.unread": "无法读取 `{{workflow}}`：{{why}}",
+  "workflow.place.chart.problem.noVersion": "`{{workflow}}` 在这里没有可读取的版本。",
+  "workflow.place.chart.problem.versionUnread": "`{{workflow}}` 的 v{{version}} 在这里无法读取：{{why}}",
+  "workflow.place.chart.problem.pullRequestUnserved": "`{{workflow}}` v{{version}} 的步骤 `{{step}}` 是插件 `{{plugin}}` 的拉取请求，而该插件未安装、已关闭、没有提供任何内容或不执行步骤，所以没有运行能在它上面开始。到“插件”页可以看到现有的插件。",
   "workflow.place.cell.show": "它的设置",
   "workflow.place.cell.hide": "收起它的设置",
   "workflow.place.cell.region": "{{step}}：它的设置"

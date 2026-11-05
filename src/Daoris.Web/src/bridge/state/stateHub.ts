@@ -107,10 +107,10 @@ export function stateChanged(client: QueryClient, change: StateChanged | null | 
 
 /**
  * One press the driver has not answered yet (STATEHUB1c, D169 point 7): its route, and the session its payload named; the entry
- * or ask it is for where it names one (ACCEPTALL1e), the step its handler says it has reached (PRESSSTEP1), and the session whose
- * landing its waiting step waits behind (LANDHOLD3), each added beside the first two and absent where there is none.
+ * or ask it is for where it names one (ACCEPTALL1e), and the step its handler says it has reached (PRESSSTEP1), each added beside
+ * the first two and absent where there is none.
  */
-export type PressUnderWay = { route: string; session?: string; subject?: string; step?: string; behind?: string };
+export type PressUnderWay = { route: string; session?: string; subject?: string; step?: string };
 
 /** What the driver last told under way, whole, and its number, so a telling the bus delivered late changes nothing. */
 type UnderWay = { seq: number | null; presses: PressUnderWay[] };
@@ -120,14 +120,13 @@ const NOTHING: UnderWay = { seq: null, presses: [] };
 /** The presses a telling names; a press of any other shape is none, and a telling with no list is no telling. */
 const pressesOf = (value: unknown): PressUnderWay[] | null => (Array.isArray(value)
   ? value.flatMap((each: unknown) => {
-    const press = each as { route?: unknown; session?: unknown; subject?: unknown; step?: unknown; behind?: unknown } | null;
+    const press = each as { route?: unknown; session?: unknown; subject?: unknown; step?: unknown } | null;
     if (typeof press?.route !== 'string') return [];
     return [{
       route: press.route,
       ...(typeof press.session === 'string' ? { session: press.session } : {}),
       ...(typeof press.subject === 'string' ? { subject: press.subject } : {}),
       ...(typeof press.step === 'string' ? { step: press.step } : {}),
-      ...(typeof press.behind === 'string' && press.behind.length > 0 ? { behind: press.behind } : {}),
     }];
   })
   : null);
