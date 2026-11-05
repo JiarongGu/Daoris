@@ -122,6 +122,8 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   // HELPERDEFAULT1: under the default, only the agents Daoris set up and signed in on this machine are asked.
   'not-set-up': { key: 'note.helper.why.not-set-up', values: [] },
   'none-set-up': { key: 'note.helper.why.none-set-up', values: [] },
+  // AGENTERRORS1d: its provider kept failing through its tries or its minutes.
+  transient: { key: 'note.helper.why.transient', values: [] },
 };
 
 /**
@@ -265,6 +267,8 @@ export const NOTE_VALUES: Readonly<
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   // The model an actor's choice named, in the tool's own word, the actor by its name, and which of its choices ran (MODELROLE1c2).
   model: 'text', actor: 'actor', n: 'number', entry: 'text', passed: 'text',
+  // CONTEXTDRIVE1e: a supervisor rule's act, the count it reads by name, its bound, its place and its act as the rule says them.
+  counted: 'text', bound: 'number', place: 'text', do: 'text',
   // The dependency folders a tree's open copied from its checkout, each as code, and one it did not copy (TREEDEPS1).
   copied: 'names', modules: 'text',
   // The machine-local files a tree's open copied from its checkout, each as code, and one it did not copy (TREELOCAL1).

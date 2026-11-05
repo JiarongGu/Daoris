@@ -373,7 +373,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'answers.passed': { values: [] },
   'answers.kept': { values: [] },
   // A rule of the person's acted on the line: the count and what it stood at, the rule's number, its place and its act.
-  'supervisor.rule': { values: ['count', 'n', 'at', 'place', 'do'] },
+  'supervisor.rule': { values: ['counted', 'n', 'bound', 'place', 'do'] },
   // An agent's ask to hand its session over: waiting on the person with the agent it would go on with, going with it at
   // the turn's end, or refused and why.
   'handover.asked': { values: ['agent'] },

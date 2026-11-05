@@ -32,11 +32,11 @@ internal static class TransientEnded
         var tries = episode.Tries;
         var line = kind switch
         {
-            Helper => Noted.Of(TransientNoteCodes.HelperTransient, $"Helper {agent} could not answer: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
-            Opinion => Noted.Of(TransientNoteCodes.OpinionTransient, $"The opinion of {agent} is unavailable: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
-            Intake => Noted.Of(TransientNoteCodes.IntakeTransient, $"The intake on {agent} ended: its provider kept failing through {tries} tries, so the ask is picked again{colon}", ("agent", agent), ("count", tries)),
-            Partner => Noted.Of(TransientNoteCodes.PartnerTransient, $"Partner {agent}'s provider kept failing; the work it left is kept{colon}", ("agent", agent)),
-            _ => Noted.Of(TransientNoteCodes.VoiceTransient, $"Voice {agent} dropped: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
+            Helper => Noted.Of(PeerNoteCodes.HelperTransient, $"Helper {agent} could not answer: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
+            Opinion => Noted.Of(PeerNoteCodes.OpinionTransient, $"The opinion of {agent} is unavailable: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
+            Intake => Noted.Of(PeerNoteCodes.IntakeTransient, $"The intake on {agent} ended: its provider kept failing through {tries} tries, so the ask is picked again{colon}", ("agent", agent), ("count", tries)),
+            Partner => Noted.Of(PeerNoteCodes.PartnerTransient, $"Partner {agent}'s provider kept failing; the work it left is kept{colon}", ("agent", agent)),
+            _ => Noted.Of(PeerNoteCodes.VoiceTransient, $"Voice {agent} dropped: its provider kept failing through {tries} tries{colon}", ("agent", agent), ("count", tries)),
         };
         return episode.Words is { Length: > 0 } words ? line.Then(" ", Noted.Said(words, NoteBy.Program)) : line;
     }

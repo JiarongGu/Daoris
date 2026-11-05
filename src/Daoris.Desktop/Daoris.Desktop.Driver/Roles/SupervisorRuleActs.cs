@@ -66,7 +66,7 @@ public sealed class SupervisorRuleActs(string home, SessionEvents? events = null
         var noted = Noted.Of(
             HeldNoteCodes.SupervisorRule,
             $"Your rule for {act.Rule.Place} acted on this line: {act.Rule.Count} stood at {act.N}, and the rule says {act.Rule.Do} at {act.Rule.At}.",
-            ("count", act.Rule.Count), ("n", act.N.ToString(CultureInfo.InvariantCulture)), ("at", act.Rule.At.ToString(CultureInfo.InvariantCulture)),
+            ("counted", act.Rule.Count), ("n", act.N.ToString(CultureInfo.InvariantCulture)), ("bound", act.Rule.At.ToString(CultureInfo.InvariantCulture)),
             ("place", act.Rule.Place), ("do", act.Rule.Do));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts };
     }

@@ -32,7 +32,7 @@ public static class PartnerNotes
         PartnerEnds.Stopped => Noted.Of(PeerNoteCodes.PartnerStopped, $"Partner {agent} was stopped; the work it left is kept.", ("agent", agent)),
         PartnerEnds.OutOfTime => Noted.Of(PeerNoteCodes.PartnerOutOfTime, $"Partner {agent} ran past its minutes; the work it left is kept.", ("agent", agent)),
         PartnerEnds.Limited => Noted.Of(PeerNoteCodes.PartnerLimited, $"Partner {agent}'s account met a limit; the work it left is kept.", ("agent", agent)),
-        PartnerEnds.Transient => Noted.Of(TransientNoteCodes.PartnerTransient, $"Partner {agent}'s provider kept failing; the work it left is kept.", ("agent", agent)),
+        PartnerEnds.Transient => Noted.Of(PeerNoteCodes.PartnerTransient, $"Partner {agent}'s provider kept failing; the work it left is kept.", ("agent", agent)),
         _ => null,
     };
 

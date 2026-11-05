@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The codes of a session's dealings with another: a partner, a helper, a hand-over, a second opinion, an intake. Part of the catalogue <see cref="NoteCodes"/> introduces.</summary>
+/// <summary>The codes of a session's dealings with another: a partner, a helper, a hand-over, a second opinion, an intake, a brainstorm voice. Part of the catalogue <see cref="NoteCodes"/> introduces.</summary>
 public static class PeerNoteCodes
 {
     // ——— An agent's ask to hand its session over: on its session, waiting for the person's word with the agent it would go on with,
@@ -81,4 +81,22 @@ public static class PeerNoteCodes
     public static readonly NoteCode OpinionReviewerFailed = new("opinion.reviewer-failed", ["opinion"]);
     public static readonly NoteCode OpinionReviewerRead = new("opinion.reviewer-read", ["opinion"]);
     public static readonly NoteCode OpinionReviewerExited = new("opinion.reviewer-exited", ["opinion", "exit"]);
+
+    // ——— A pass that is no driven session or conversation, ended past its transient bound (AGENTERRORS1d, D210 point 8; the agent-errors
+    // design §7): its provider kept failing through the tries it made, or until its own minutes ran out, never as timed out. Each is
+    // followed by the provider's words.
+    /// <summary>A helper settled refused for its provider (<see cref="HelperWhy.Transient"/>), said on the asker.</summary>
+    public static readonly NoteCode HelperTransient = new("helper.transient", ["agent", "count"]);
+
+    /// <summary>A second opinion's pass failed for its provider: its gate is unavailable, and the person's <i>Try again</i> asks it again.</summary>
+    public static readonly NoteCode OpinionTransient = new("opinion.transient", ["agent", "count"]);
+
+    /// <summary>An intake ended for its provider: its ask is unbound once, so the next look picks it again with a fresh intake.</summary>
+    public static readonly NoteCode IntakeTransient = new("intake.transient", ["agent", "count"]);
+
+    /// <summary>A partner's piece ended for its provider, its work kept; its lead is told.</summary>
+    public static readonly NoteCode PartnerTransient = new("partner.transient", ["agent"]);
+
+    /// <summary>A brainstorm voice dropped for its provider within its minutes.</summary>
+    public static readonly NoteCode VoiceTransient = new("voice.transient", ["agent", "count"]);
 }
