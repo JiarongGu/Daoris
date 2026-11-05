@@ -9,9 +9,6 @@ internal static class StaffingProjection
     /// <summary>The store's staffing as the five fields of a loaded record hold it.</summary>
     public static DriverConfig Config(StaffingRead read) => DriverConfig.Empty with
     {
-        Adapter = read.Adapter ?? DriverConfig.Empty.Adapter,
-        IntakeAdapter = read.IntakeAdapter,
-        HelperAdapter = read.HelperAdapter,
         Actors = read.Actors,
         ActorErrors = read.Errors,
     };
@@ -23,22 +20,14 @@ internal static class StaffingProjection
         write.Execute($"DELETE FROM role_staffing WHERE role IN ({string.Join(", ", ActorChoices.Ids.Select(id => $"'{id}'"))})");
         foreach (var id in ActorChoices.Ids)
         {
-            var first = id switch
-            {
-                "build" => staffing.Adapter,
-                "intake" => staffing.IntakeAdapter,
-                "ask-daoris" => staffing.HelperAdapter,
-                _ => null,
-            };
             (string State, string? Choices, string? Why)? row =
                 staffing.ActorErrors.TryGetValue(id, out var why) ? ("unreadable", asFound.GetValueOrDefault(id) ?? "null", why)
                 : staffing.Actors.TryGetValue(id, out var choices) ? ("set", RoleStaffing.Write(choices), null)
-                : first is not null ? ("before", null, null)
                 : null;
             if (row is not { } each) continue;
             write.Execute(
-                "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, $state, $choices, $why, $first, $at)",
-                ("$role", id), ("$state", each.State), ("$choices", each.Choices), ("$why", each.Why), ("$first", first), ("$at", at));
+                "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, $state, $choices, $why, NULL, $at)",
+                ("$role", id), ("$state", each.State), ("$choices", each.Choices), ("$why", each.Why), ("$at", at));
         }
     }
 }

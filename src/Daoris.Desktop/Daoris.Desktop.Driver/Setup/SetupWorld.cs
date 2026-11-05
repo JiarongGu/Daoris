@@ -23,7 +23,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         var built = AdapterSet.Built();
         try
         {
-            return built.WithPlugins(PluginCatalog.Load(home, built.Names)).Resolve(config.Adapter).Wire;
+            return built.WithPlugins(PluginCatalog.Load(home, built.Names)).Resolve(ActorChoices.BuildAgent(config)).Wire;
         }
         catch (DriverException)
         {

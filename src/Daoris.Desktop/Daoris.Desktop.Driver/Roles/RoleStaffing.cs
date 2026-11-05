@@ -16,22 +16,16 @@ namespace Daoris.Driver;
 public sealed record StaffingPaths(string? Actors, string? Adapter, string? IntakeAdapter, string? HelperAdapter);
 
 /// <summary>
-/// The staffing the store holds (§19.15): the five fields of today's loaded record, each as <c>driver.json</c> holds them.
+/// The staffing the store holds (§19.15): the actors of today's loaded record, each as <c>driver.json</c> holds them.
 /// </summary>
 /// <param name="Actors">Each readable entry, its choices (<c>[]</c>, off, for Intake and Ask Daoris alone).</param>
 /// <param name="Errors">Each entry that does not read, with why: it holds the starts that read it (<see cref="ActorUnreadableException"/>).</param>
 /// <param name="AsFound">Each entry that does not read as the file showed it, compact JSON, which the store keeps whole.</param>
-/// <param name="Adapter">Build's first-agent key, Chat's and Brainstorm's too where they are <i>as before</i>; none where the file showed none.</param>
-/// <param name="IntakeAdapter">Intake's first-agent key; none where the file showed none.</param>
-/// <param name="HelperAdapter">Ask Daoris's first-agent key; none where the file showed none.</param>
 /// <param name="Written">The four paths as the projection last wrote them, or found them at the import.</param>
 public sealed record StaffingRead(
     IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors,
     IReadOnlyDictionary<string, string> Errors,
     IReadOnlyDictionary<string, string> AsFound,
-    string? Adapter,
-    string? IntakeAdapter,
-    string? HelperAdapter,
     StaffingPaths Written);
 
 /// <summary>One role's row of <c>role_staffing</c> as the store keeps it: <c>set</c>, <c>before</c> or <c>unreadable</c>, its choices and first-agent key.</summary>
@@ -113,7 +107,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>The port's read: the store's staffing as a loaded record holds it, or null before the import.</summary>
-    StaffingHeld? IRoleStaffing.Held() => Read() is { } read ? new StaffingHeld(read.Adapter, read.IntakeAdapter, read.HelperAdapter, read.Actors, read.Errors) : null;
+    StaffingHeld? IRoleStaffing.Held() => Read() is { } read ? new StaffingHeld(read.Actors, read.Errors) : null;
 
     /// <summary>The family's name in <c>imports</c> and <c>store_revisions</c>.</summary>
     public const string Family = "role_staffing";
@@ -169,20 +163,10 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
         var actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal);
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
         var found = new Dictionary<string, string>(StringComparer.Ordinal);
-        string? adapter = null;
-        string? intake = null;
-        string? helper = null;
-        foreach (var (role, state, choices, why, first) in store.Query(
-                     "SELECT role, state, choices, why, first_agent FROM role_staffing ORDER BY role",
-                     row => (row.GetString(0), row.GetString(1), Text(row, 2), Text(row, 3), Text(row, 4))))
+        foreach (var (role, state, choices, why) in store.Query(
+                     "SELECT role, state, choices, why FROM role_staffing ORDER BY role",
+                     row => (row.GetString(0), row.GetString(1), Text(row, 2), Text(row, 3))))
         {
-            switch (role)
-            {
-                case "build": adapter = first; break;
-                case "intake": intake = first; break;
-                case "ask-daoris": helper = first; break;
-            }
-
             if (state == "set")
             {
                 if (Choices(choices) is { } list) actors[role] = list;
@@ -199,7 +183,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             "SELECT actors, adapter, intake_adapter, helper_adapter FROM role_staffing_projection",
             row => new StaffingPaths(Text(row, 0), Text(row, 1), Text(row, 2), Text(row, 3))).FirstOrDefault()
             ?? new StaffingPaths(null, null, null, null);
-        return new StaffingRead(actors, errors, found, adapter, intake, helper, written);
+        return new StaffingRead(actors, errors, found, written);
     }
 
     /// <summary>The seeded roles' rows as the store keeps them, by role; none before the import. The staffing part's before and after.</summary>
@@ -331,22 +315,20 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// The staffing's writers' one door (§19.15, every writer of the census): <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> where
-    /// <paramref name="file"/> is wired, else the file's own write as today. The actors a change of Build's agent made explicit.
+    /// <paramref name="file"/> is wired, else the file's own write as today.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal, a lock held past its wait, or a write not done; said.</exception>
-    public static IReadOnlyList<string> SetAt(string file, IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes)
+    public static void SetAt(string file, IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes)
     {
-        if (Of(file) is { } staffing) return staffing.Set(changes);
-        var kept = new List<string>();
-        StandingChoices.Write(file, config => Changed(config, changes, kept));
-        return kept;
+        if (Of(file) is { } staffing) staffing.Set(changes);
+        else StandingChoices.Write(file, config => Changed(config, changes));
     }
 
     /// <summary><see cref="SetAt(string, IReadOnlyList{ValueTuple{string, IReadOnlyList{ActorChoice}}})"/> for one actor.</summary>
-    public static IReadOnlyList<string> SetAt(string file, string actor, IReadOnlyList<ActorChoice>? choices) => SetAt(file, [(actor, choices)]);
+    public static void SetAt(string file, string actor, IReadOnlyList<ActorChoice>? choices) => SetAt(file, [(actor, choices)]);
 
     /// <summary><see cref="Set(IReadOnlyList{ValueTuple{string, IReadOnlyList{ActorChoice}}})"/> for one actor.</summary>
-    public IReadOnlyList<string> Set(string actor, IReadOnlyList<ActorChoice>? choices) => Set([(actor, choices)]);
+    public void Set(string actor, IReadOnlyList<ActorChoice>? choices) => Set([(actor, choices)]);
 
     /// <summary>
     /// The one write of the staffing (§19.15, steps 1 to 5): the staffing lock, a writer waiting past <see cref="LockWait"/> refused with
@@ -354,7 +336,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// written under the same lock.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal, a lock held past its wait, or a write not done; said.</exception>
-    public IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes) => Set(changes, also: null);
+    public void Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes) => Set(changes, also: null);
 
     /// <summary>
     /// <see cref="Set(IReadOnlyList{ValueTuple{string, IReadOnlyList{ActorChoice}}})"/> with <paramref name="also"/> run in the commit's
@@ -362,21 +344,19 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// file is the staffing, it runs in a transaction of its own after the file's write. A policy bound to a changed role's choices is
     /// re-keyed in the same transaction, or deleted where the role is left with none (§2.1).
     /// </summary>
-    internal IReadOnlyList<string> Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, Action<DesktopWrite>? also)
+    internal void Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, Action<DesktopWrite>? also)
     {
         foreach (var (actor, choices) in changes) ActorChoices.Judged(actor, choices);
         using var held = Lock();
-        var kept = new List<string>();
         if (Read() is not { } read)
         {
-            StandingChoices.Write(FileOfHome, config => Changed(config, changes, kept));
+            StandingChoices.Write(FileOfHome, config => Changed(config, changes));
             // The file is the staffing before the import: the record and the policy follow it in a transaction of their own.
             if (also is not null) Publishing(also);
-            return kept;
+            return;
         }
 
-        Commit(Changed(StaffingProjection.Config(read), changes, kept), read.AsFound, also, [.. changes.Select(change => change.Actor)]);
-        return kept;
+        Commit(Changed(StaffingProjection.Config(read), changes), read.AsFound, also, [.. changes.Select(change => change.Actor)]);
     }
 
     /// <summary>
@@ -512,14 +492,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     private static DriverConfig Changed(
-        DriverConfig config, IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, List<string> kept)
+        DriverConfig config, IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes)
     {
-        foreach (var (actor, choices) in changes)
-        {
-            config = ActorChoices.With(config, actor, choices, out var each);
-            kept.AddRange(each.Where(name => !kept.Contains(name)));
-        }
-
+        foreach (var (actor, choices) in changes) config = ActorChoices.With(config, actor, choices);
         return config;
     }
 
@@ -572,7 +547,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>A fresh home's staffing (ONEWAY1b): each of the five roles with an order of its own at its seed, nothing in the file.</summary>
     private static Staffing Seeds() => new(
-        [.. ActorChoices.Ordered.Select(role => new StaffingRow(role, "set", Write(ActorChoices.Seed(role)!), null, role == "build" ? DriverConfig.Empty.Adapter : null))],
+        [.. ActorChoices.Ordered.Select(role => new StaffingRow(role, "set", Write(ActorChoices.Seed(role)!), null, null))],
         new StaffingPaths(null, null, null, null));
 
     /// <summary>

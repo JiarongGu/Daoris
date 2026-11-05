@@ -39,7 +39,7 @@ internal static class SessionsConsole
     {
         try
         {
-            return AdapterSet.Built().Resolve(config.Adapter).Wire;
+            return AdapterSet.Built().Resolve(ActorChoices.BuildAgent(config)).Wire;
         }
         catch (DriverException)
         {

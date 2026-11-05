@@ -51,7 +51,7 @@ public static class DriverStateSlice
     /// said), and what no view reads (the file's path, the cap, the agent, the poll, the released stops).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["retried", "reviewed", "shownAgain", "configPath", "cap", "adapter", "pollSeconds", "released"];
+        ["retried", "reviewed", "shownAgain", "configPath", "cap", "pollSeconds", "released"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change a press or the driver declared to its state, its sessions (what runs) or its agents

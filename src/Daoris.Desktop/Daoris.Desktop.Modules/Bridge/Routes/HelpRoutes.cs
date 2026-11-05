@@ -40,7 +40,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         // Asked first: no service answer changes it, and it says what to do.
         var config = DriverConfig.Load(_loop.ConfigPath);
-        if (config.HelperAdapter is not { Length: > 0 } helper)
+        if (ActorKey.FirstAgent("ask-daoris", config) is not { Length: > 0 } helper)
         {
             throw new DriverException(
                 "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
@@ -565,7 +565,7 @@ public sealed class HelpRoutes(DriverContext context)
     private async Task<object?> HelpStartFromAsync(HelpStartFrom press, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
-        if (config.HelperAdapter is not { Length: > 0 } helper)
+        if (ActorKey.FirstAgent("ask-daoris", config) is not { Length: > 0 } helper)
         {
             throw new DriverException(
                 "Ask Daoris has no agent to run on — name one under Agents → Roles, Ask Daoris, or "
