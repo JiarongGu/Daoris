@@ -45,7 +45,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | AttentionStateSlice, NeedsAPerson | `Modules/Loop/AttentionStateSlice.cs`, `NeedsAPerson.cs` | *What needs you*'s rows, judged once and pushed to every window |
 | StewardDesk | `Modules/Platform/StewardDesk.cs`; holder's verb `Driver/Roles/StewardCommand.cs` | Requests for the steward, as claims, bounded, history in `data/steward-desk.json` |
 | Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
-| Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `Web/work/attention/attention.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, the ask's channel, *What needs you*, the steward's line |
+| Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request; the ask's channel; *What needs you* and the foot's count by one key; the steward's line |
 
 The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 
@@ -164,13 +164,16 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 
 45. *At work* draws the attended line from records, never conversation text: its parts, its co-workers (reviewers from records whose
     `serves` names the line), the quests it asked, its subagents and the channel's last words. *Waiting on* is the requests that hold;
-    the head draws the same line. (from D203, D225)
+    the head draws the same line, and its door opens *At work* at the first request the line names, that row outlined and focused.
+    (from D203, D225)
 46. A message is drawn whole once, at its home. Each word's turn is headed by its sender chip: who, by the one rule, and when it was
     taken. An agent's helper ask is one card at its call, and the answer folds into it; a helper's answer no card holds is that
     agent's block, under the question it answers. A channel message's home is the channel: the turn that took it names its poster
     and opens the channel, its words folded where the door is. (from D225)
 47. *What needs you* has one row per obligation, keyed by its exchange's id or its kind and id. A park on one decision is that row,
-    never a second. Rows are judged once in .NET and pushed. (from D225, D182)
+    never a second. Rows are judged once in .NET and pushed. A session's foot counts its waits by the same keys
+    (`Web/work/waits/waitObligations.ts`), so one wait is counted once on the foot, the bell, the places and *Notifications*; an
+    unread message is counted on none. (from D225, D182)
 48. The steward desk files any caller's `{act, target, why}` as claims and grants nothing; the act is judged from the holder alone. At
     most 10 open per caller and 100 in all; a restart reads open ones as interrupted. (from D209, D225)
 49. A holder of a role the person appointed reads the asking agent's words as claims, never instructions. A go-ahead, a sign-in,
@@ -198,7 +201,7 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
 `DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `SenderChip.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
-`ChannelSection.test.tsx`, `attention.test.ts`, `StewardLine.test.tsx`.
+`ChannelSection.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
 
 **Gates that bite.** `driver`, `modules`, `service` and `censuses` (the tool-class and transitional censuses), `web-unit`, the web
 gate's `i18n:check` and `names:check -- --strict` for any visible word (glossary: *urgency*, *channel*, *co-worker*, *At work*),
@@ -217,7 +220,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 9. D163 point 3 (helpers default `ask`) vs code (default `on` for agents set up here, `Driver/Settings/HelperKey.cs:17`, D163's HELPERDEFAULT1 note). Code reads right.
 10. D199 point 2 (the lead asks a piece with `partner_ask`) vs code (no such tool; `Mcp/ToolClasses.cs` has `partner_answer` alone). Code reads right today.
 11. D203 point 7 (*What needs you* gains no kind) vs code (a `helper-ended` row, `Modules/Loop/AttentionStateSlice.cs:304`, from D203's own HELPERWAIT1c note). Code reads right: it stands in for the park row.
-12. D225's COMMS1i note (*At work* lists no reviewers) vs its later note and code (reviewers from records with `serves`, `Driver/WorkOrders/AtWorkExchangeReading.cs:14-31`); `Driver/Participants/Domain/AtWorkExchanges.cs:8` still lists no `opinion`. Code reads right.
+12. D225's COMMS1i note (*At work* lists no reviewers) vs its later note and code (reviewers from records with `serves`, `Driver/WorkOrders/AtWorkExchangeReading.cs:14-31`). Code reads right.
 13. D136 point 4 (*Send now* stops the turn on a turn-end door) vs D188 (now stops nothing; `--now` is refused, naming `--level now`). D188 reads right.
 14. D176 point 1 (the driver's verb writes the request) vs its ONEWAY1t note and code (the service desk is the one writer, `Service/Sessions/BrainstormDesk.cs`). Code reads right.
 15. D32's shape (a quest is a checklist item written into the receiver's backlog by `daoris quest post`) vs its amendment and code (the service holds quests; the CLI has no quest command). The amendment reads right.

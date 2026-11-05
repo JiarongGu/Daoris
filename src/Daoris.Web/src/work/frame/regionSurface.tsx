@@ -11,6 +11,7 @@ import { sentence } from '../../locales/format';
 import { WorkflowRunView } from '../../workflow/WorkflowRunView';
 import { noteIsInTheHead } from '../AttendedSession';
 import { AtWorkView } from '../atWork/AtWorkView';
+import type { ExchangeSeek } from '../atWork/exchangeSeek';
 import { lastWords } from '../channel';
 import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
@@ -45,7 +46,7 @@ import type { useFrameLayout } from './useFrameLayout';
  */
 export function useRegionSurfaces({
   t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
-  session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork,
+  session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek,
 }: {
   t: TFunction;
   notify: Notify;
@@ -70,6 +71,8 @@ export function useRegionSurfaces({
   attend: (id: string) => void;
   runNodeWord: ReturnType<typeof useRunNodeWord>;
   atWork: ReturnType<typeof useSessionAtWork>;
+  /** The request the head's *Waiting on* opened *At work* at (COMMS1i). */
+  atWorkSeek?: ExchangeSeek | null;
 }) {
   const { attended, entries, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
   const { following, previewing, openPreview, openView, dock, panelView } = views;
@@ -266,6 +269,7 @@ export function useRegionSurfaces({
           considered={considered}
           // COMMS1i: its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
           nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
+          seek={atWorkSeek}
           // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); none for a session with no ask.
           channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
             words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),

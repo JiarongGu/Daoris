@@ -35,7 +35,7 @@ import { useWaitsOnScreen } from './waitsOnScreen';
  * each stands on the screen, the way to it, and the conversation's presses above the waiting panel.
  */
 export function useAttendedWaits({
-  t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, onAnswerAsk,
+  t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
   boxWords, openView, work, talking, centre,
 }: {
   t: TFunction;
@@ -52,6 +52,8 @@ export function useAttendedWaits({
   answering: boolean;
   question: WaitProps['question'];
   goAheads: WaitProps['goAheads'];
+  /** The ask the park's go-aheads are on, which keys each as *What needs you* does. */
+  parkAsk: string | null;
   onAnswerAsk?: (ask: string) => void;
   boxWords: ReturnType<typeof useBoxWords>;
   openView: (view: ViewId) => void;
@@ -191,6 +193,7 @@ export function useAttendedWaits({
     onAnswerAsk: here ? onAnswerAsk : undefined,
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,
+    goAheadsOn: parkAsk,
     onGoAhead: here ? onGoAhead : undefined,
     // Its question (PARKVIEW1), and whether the box below is the park's answer box, which carries every press of what it asks: then
     // the strip draws none of the park's waits, and the head lists them with no press. A parked chat's composer draws none of it.

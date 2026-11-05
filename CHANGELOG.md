@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session waiting on a go-ahead it asked says *Waiting on you* once at its foot, as the bell and *What needs you* count it, where it said *2 waiting on you* over its question and the go-ahead. *Open At work* beside a session's *Waiting on* opens *At work* at the request the line waits on, that row outlined.
 - Each turn of a session's conversation opens with who its words are from and when they were taken: you, Daoris, the supervisor, a helper, another session on the channel or a second opinion. A helper's answer to a question you asked it from the session's page is drawn as that agent's answer under your question, a claim to check and never your words. Another session's message names its repository and agent, with *Open the channel* to read it where it was posted, its words folded here.
 - Daoris's browser plays H.264, AAC and HEVC video.
 - Sessions working together can now speak to one part of their own line of work. A lead and the lane part it published beside it address each other by session id in `channel_post`'s `to`, and only that part reads it (or the part that carries it on after a hand-over); a session outside the line is refused rather than reached. Work on no ask, such as a chat and the quests it published, has a channel of its own too. An ask's page shows the messages to one part each beneath its channel, read-only, with what each reached, and `daoris ask channel <id>` prints them under *To one part alone*.

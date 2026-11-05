@@ -89,7 +89,9 @@ describe('COMMS1i the head’s Waiting on', () => {
       const line = head.container.querySelector('[data-waiting-on]')!;
       expect(line.textContent).toBe(`${inView}Open At work`);
       await userEvent.click(within(line as HTMLElement).getByRole('button', { name: 'Open At work' }));
+      // The door opens At work at the first request the line names.
       expect(onOpen).toHaveBeenCalledOnce();
+      expect(onOpen).toHaveBeenCalledWith(answerOf(held).exchanges!.find((exchange) => exchange.holds)!.id);
       head.unmount();
     }
     expect(answerOf(LEAD_WAITING_ON_HELPER).exchanges).toHaveLength(1);
@@ -98,5 +100,39 @@ describe('COMMS1i the head’s Waiting on', () => {
   it('COMMS1i draws nothing where the line waits on nothing it asked', () => {
     const { container } = render(<WaitingOnLine answer={{ ...answerOf(COWORKERS), exchanges: [] }} onOpen={() => {}} />);
     expect(container.textContent).toBe('');
+  });
+});
+
+/**
+ * COMMS1i (the comms design §7): the head's *Waiting on* opens *At work* at the exchange. The request's row takes the focus,
+ * outlined, a co-worker's or a quest's; a request with no row of its own leads to the view's *Waiting on* line.
+ */
+describe('COMMS1i At work opened at the request the head named', () => {
+  const QUEST = { id: 'q7', title: 'Draw the policy chip', status: 'Taken', lanes: ['core'], taker: { untaken: true } };
+  const withQuest = answerOfHeld(LEAD_WAITING_ON_LANE, { quests: [QUEST] as AtWorkA['quests'] });
+
+  function answerOfHeld(held: typeof COWORKERS, extra: Partial<AtWorkA>) {
+    return { ...(held as { answer: AtWorkA }), answer: { ...answerOf(held), ...extra } } as typeof COWORKERS;
+  }
+
+  it('COMMS1i focuses and outlines the co-worker the line waits on', () => {
+    const { container } = render(<AtWorkView held={COWORKERS} nameOf={nameOf} seek={{ exchange: 'helper:h7', n: 1 }} />);
+    const row = container.querySelector('[data-exchange="helper:h7"]') as HTMLElement;
+    expect(row).toHaveFocus();
+    expect(row.className).toContain('outline-accent');
+    expect((container.querySelector('[data-exchange="helper:h8"]') as HTMLElement).className).not.toContain('outline-accent');
+  });
+
+  it('COMMS1i focuses the quest the line waits on among its quests', () => {
+    const { container } = render(<AtWorkView held={withQuest} seek={{ exchange: 'quest:q7', n: 1 }} />);
+    expect(container.querySelector('[data-exchange="quest:q7"]')).toHaveFocus();
+  });
+
+  it('COMMS1i leads to the Waiting on line where the request has no row on screen, and seeks again on a second press', () => {
+    const view = render(<AtWorkView held={LEAD_WAITING_ON_LANE} seek={{ exchange: 'quest:q7', n: 1 }} />);
+    expect(view.container.querySelector('[data-wait-line]')).toHaveFocus();
+    (document.activeElement as HTMLElement).blur();
+    view.rerender(<AtWorkView held={LEAD_WAITING_ON_LANE} seek={{ exchange: 'quest:q7', n: 2 }} />);
+    expect(view.container.querySelector('[data-wait-line]')).toHaveFocus();
   });
 });

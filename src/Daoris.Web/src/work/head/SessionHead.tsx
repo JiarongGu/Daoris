@@ -118,7 +118,7 @@ export function SessionHead({
    * What its line waits on (COMMS1i, the comms design §7): *At work*'s answer, whose *Waiting on* line the head draws in the same words,
    * and the door that opens *At work*. Absent where the frame holds no answer for it.
    */
-  waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: () => void } | null;
+  waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void } | null;
   /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own (REVIEWFLOW1a, D168). */
   entry?: EntryPress | null;
   /**

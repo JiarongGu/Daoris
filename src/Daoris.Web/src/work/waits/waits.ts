@@ -117,6 +117,8 @@ export type WaitFacts = {
   onAnswerSession?: unknown;
   onAnswerAsk?: unknown;
   goAheads?: GoAhead[];
+  /** The ask its go-aheads are on, by which *What needs you* keys each (`waitObligations`); absent, a go-ahead is keyed by its number. */
+  goAheadsOn?: string | null;
   onGoAhead?: unknown;
   /** The permissions this machine's sessions hold for the person as the shell read them, and the door that answers one (AUTONOMY1b3c). */
   permissions?: { waits?: readonly PermissionWait[]; onAnswer?: unknown } | null;

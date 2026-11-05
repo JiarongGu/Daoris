@@ -26,7 +26,7 @@ type Page = ComponentProps<typeof AttendedSession>;
  */
 export function AttendedPane({
   t, notify, session, record, work, boxState, waitsState, headState, roster, nameOf, agentRoster, following, atWorkHeld, heavy, partRows,
-  onShowPart, openView, attend, onOpenQuest, onAnswerAsk, onOpenBranch,
+  onShowPart, openAtWork, attend, onOpenQuest, onAnswerAsk, onOpenBranch,
 }: {
   t: TFunction;
   notify: Notify;
@@ -44,7 +44,8 @@ export function AttendedPane({
   heavy: Page['heavy'];
   partRows: NonNullable<Page['parts']>['rows'];
   onShowPart: (id: string) => void;
-  openView: (view: 'atWork') => void;
+  /** Opens *At work* at the request named (COMMS1i). */
+  openAtWork: (exchange: string) => void;
   attend: (id: string) => void;
   onOpenQuest?: (quest: string) => void;
   onAnswerAsk?: (ask: string) => void;
@@ -68,11 +69,11 @@ export function AttendedPane({
       {...waits}
       // Its pieces (COAGENT1b): what other agents write for it, and the ask of one; no wait of the person's.
       pieces={pieceSection}
-      // COMMS1i: what its line waits on of others, At work's line from At work's read, a door to At work.
+      // COMMS1i: what its line waits on of others, At work's line from At work's read, a door to At work at the request it names.
       waitingOn={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? {
         answer: atWorkHeld.answer,
         nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
-        onOpen: () => openView('atWork'),
+        onOpen: openAtWork,
       } : null}
       workAsk={workAskAt('head')}
       ruleAsk={ruleAskAt('head')}
