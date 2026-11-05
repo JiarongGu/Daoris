@@ -30,7 +30,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | The move | `GitMove.cs`, `GitMoved.cs` | Where both doors are laid, a remote nothing serves gets no credential of the person's; the ssh door's one line |
 | Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, GCM or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
-| The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitPushUpdates.cs` | One verdict per act; a push's force and delete read and judged; the landing's grant in `run/git/grants` |
+| The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitGrantRef.cs` | One verdict per act; a grant in `run/git/grants` bound to its address and its refs (ref, new commit, old commit where known) |
+| A push's updates | `GitPushUpdates.cs`, `GitPushJudge.cs`, `GitPushDoor.cs`, `GitHelperPush.cs` | Each update read and kinded (plain, force, delete, tag, mirror, prune); the batch judged by grant and Dangerous; the helper's remote refs and objects |
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
@@ -103,16 +104,19 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 22. Git access has three classes, Read, Write and Dangerous, each `allow`, `ask` or `deny`, set in `gitAccess`,
     `workspaceGitAccess` and `machineGitAccess`. Each class resolves repository, workspace, machine, then the default. (from D198)
 23. The default is Read `allow`, Write `as-today` (the landing pushes on the person's yes; a session on any harness does
-    not), Dangerous `deny`. The `dangerous` key is read and never written. (from D198, D72)
+    not), Dangerous `deny`. Dangerous is set on the page, in `git access` and by `SET_GIT_ACCESS` to `allow` or `deny`, never
+    `ask`: no person is waited on for it, and a stale `ask` in the file reads as `deny`. (from D198, D72, D241)
 24. Git access is apart from `access`: full access never touches it. A loosening is a widening and is confirmed. (from
     D198, D184)
 25. The doors judge by the remote command: `push`, `list for-push` and `receive-pack` are Write. Each door hands the judge
     the identity serving the act; one read only on its host refuses every Write through it, a grant's included, in its
-    own line. `deny` refuses and no grant lifts it; `allow` passes; `ask` holds the act at the door. A push's force or branch delete is Dangerous, judged
-    at the doors for every agent whatever its harness: the helper reads git's `push` lines (`+src:dst`, `:dst`), the ssh
-    door reads receive-pack's commands before it forwards them (`GitPushUpdates`) and asks git whether each keeps its ref's
-    history. It is refused unless Dangerous allows it; the landing's grant carries it as it carries the landing's push.
-    (from D198, D233)
+    own line. `deny` refuses and no grant lifts it; `allow` passes; `ask` holds the act at the door. Each update of a push is
+    judged by its kind at the doors for every agent whatever its harness: the ssh door reads receive-pack's commands before it
+    forwards them; the helper holds git's `push` lines to the batch's end, reads the remote's refs from the `list for-push`
+    answer, resolves each source to its object and forwards the objects it judged (`GitPushUpdates`, `GitHelperPush`). A delete,
+    a force (the old commit is not an ancestor of the new, asked of git), a tag, a mirror (a ref outside `refs/heads/`) and a
+    prune (a delete beside updates) are Dangerous: the place's Dangerous value, `allow` or `deny`, decides, unless the grant
+    carries the update. One refused update refuses the batch before any ref moves (`GitPushJudge`, `GitPushDoor`). (from D198, D233, D241)
 26. A held `ask` is a git go-ahead, `run/git/asks/{id}.json`, answered *Allow* or *Refuse* in *What needs you*, the
     session's head or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once.
     Where no instance of Daoris (the desktop or a headless driver) holds the home's lease, the door takes a kept grant or
@@ -122,7 +126,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     and release sentence and is switched alone. The home's migration converted a switched-off `no-push`: the machine's Write
     became `allow` where it was unset, and `no-publish` went off. (from D198)
 28. A session's harness rules follow its Write. `deny` or the default keeps every push form denied; `ask` or `allow` opens
-    the plain push and still denies force, delete, tag, mirror and prune. Codex takes no rules file and holds none of the
+    the plain push and still denies force, delete, tag, mirror and prune unless Dangerous is `allow`. Codex takes no rules file and holds none of the
     person's denies; its block and the access setup say so. (from D198, D72, D233)
 29. Identity is who, access is what. A read-only identity refuses writes at both doors and at the landing. (from D198)
 
@@ -133,8 +137,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
     yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
     because the plugin's start and its pull-request call pass no door. (from D198, D145)
-32. The plugin's push carries a grant bound to its process and origin's push address, used once within the bound. The
-    frame names origin's address; the plugin has two minutes and answers `{pushed, pullRequest, message}`. (from D100, D198)
+32. The plugin's push carries a grant bound to its process, origin's push address and exactly its own ref and commit
+    (`refs/heads/<branch>` at the frame's tip), taken once within the bound by the push that it carries; it carries a creation or a
+    fast-forward and never a Dangerous kind, and a ref it does not name is refused at the door. A grant with the old commit
+    bound carries that exact update whatever its kind. The frame names origin's address; the plugin has two minutes and answers
+    `{pushed, pullRequest, message}`. (from D100, D198, D241)
 33. A pull request's state is asked only of the plugin that pushed it, at occasions that may remove, never on a timer. A
     `completed` answer clears a branch only where git holds its merge commit on the line. (from D148)
 
@@ -202,7 +209,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 - **Quest conflicts:** `QuestLog` and `QuestExchange` (service), `Planner` (driver), the quest page.
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
-`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
+`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
@@ -243,7 +250,6 @@ catalogues (`i18n:check`).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
 - **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts.
-- **GITAUTH1g:** the rest of the transport judge: Dangerous settable on the page, tag, mirror and prune judged, a grant bound to its ref.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).
 - **GITAPP2n:** push a lightweight tag (after GITAUTH1g). Stash Drop stays deferred. Ask Daoris's fetch card is not built.
