@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver help</c> was asked (ASKHIST1).</summary>
+/// <summary>What <c>daoris help</c> was asked (ASKHIST1).</summary>
 /// <param name="Verb"><c>list</c>, <c>resume</c>, <c>rename</c>, <c>pin</c>, <c>unpin</c> or <c>delete</c>.</param>
 public sealed record HelpVerbAsk(string Verb)
 {
@@ -43,7 +43,7 @@ public sealed record HelpVerbAsk(string Verb)
 }
 
 /// <summary>
-/// <c>daoris-driver help</c> (ASKHIST1, D50): Ask Daoris's history from a terminal, the panel's other door. It lists and searches
+/// <c>daoris help</c> (ASKHIST1, D50): Ask Daoris's history from a terminal, the panel's other door. It lists and searches
 /// this machine's Ask Daoris conversations through <see cref="HelpConversations"/>, the one reader the panel's route reads; says
 /// words to one, which goes on in its own conversation, through <c>sessions say</c>'s own door; names, pins and unpins one; and
 /// deletes one through <c>sessions delete</c>'s owner, listed first and pressed with <c>--yes</c>, as the panel asks once.

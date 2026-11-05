@@ -33,7 +33,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Ask Daoris grants | `Plugins/HelpGrants.cs` | `<home>/plugin-approvals.json`: a server's tools the person approved |
 | Health and log | `PluginHealth.cs`, `PluginLog.cs`, `PluginActivity.cs`, `Domain/PluginEvents.cs` | `plugin.*` lines; the loop's record of each plugin's health |
 | Switch | `Plugins/PluginState.cs` | `<home>/plugins.json`: the disabled rows |
-| Doors | `PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris-driver plugin` and `plugins`; the `PLUGIN*` routes |
+| Doors | `PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
 
 Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
@@ -145,7 +145,7 @@ example's `node --test`.
 
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
-- EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris-driver events relay`.
+- EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris events relay`.
 - GITAUTH1b: the pull-request plugins carry today's credentials through the doors.
 - No row: D120's workshop (`<home>/plugins/.workshop/`, `plugin-sources.json`, `daoris plugin workshop`, *Send to a repository…*).
 - No row: D120's NuGet source (find, show, install by id, update from a source, *Available*, another publisher's installing off, pinned `plugin-offers.json`).

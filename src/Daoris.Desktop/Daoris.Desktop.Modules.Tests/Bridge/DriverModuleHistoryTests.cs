@@ -361,7 +361,7 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         var (lines, code) = SaidOf(await AnswerAsync(module, "HISTORY_CLEAR", new { workspace = "aurora", said = true }));
 
         Assert.Equal(0, code);
-        Assert.StartsWith("daoris-driver: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest and 1 session", lines, StringComparison.Ordinal);
+        Assert.StartsWith("daoris: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest and 1 session", lines, StringComparison.Ordinal);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions, "s1.log")));
     }
 }

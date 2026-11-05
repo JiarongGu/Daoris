@@ -60,7 +60,7 @@ public sealed record AskWorkLook(IReadOnlyList<QuestView> Quests, IReadOnlyList<
 
 /// <summary>
 /// The one reader of an ask's work, and of one quest's (PAUSE1a, D132 point 1): the pause and the abandon read this answer,
-/// and the screen's <c>WORK_PLAN</c> and <c>daoris-driver</c> print it, so they cannot disagree, as
+/// and the screen's <c>WORK_PLAN</c> and <c>daoris</c> print it, so they cannot disagree, as
 /// <see cref="SessionGroups.Read"/> is one reader for both (D126 §2.4).
 /// </summary>
 /// <remarks>

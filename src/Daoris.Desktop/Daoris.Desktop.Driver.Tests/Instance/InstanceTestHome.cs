@@ -48,7 +48,7 @@ internal sealed class InstanceTestHome : IAsyncDisposable
     }
 
     /// <summary>Where a verb looks for the instance: this home, its output and its error, and a bound a loaded machine cannot pass.</summary>
-    public InstanceWorld World(string verb = "daoris-driver") => new()
+    public InstanceWorld World(string verb = "daoris") => new()
     {
         Home = Home,
         // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).

@@ -185,7 +185,7 @@ public sealed class DriverModule : ModuleBase
         catch (ChoiceRefusal coded)
         {
             // PUSH1f2a: a standing choice's operation refusing by a named check, said in the code the library's table gives it, the
-            // code `daoris-driver driver` says it in alone.
+            // code `daoris driver` says it in alone.
             throw Refusals.Declared(ChoiceCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (ToolRefusal coded) when (ToolCodes.Coded(coded))
@@ -197,7 +197,7 @@ public sealed class DriverModule : ModuleBase
         catch (PluginRefusal coded) when (PluginCodes.Coded(coded))
         {
             // PUSH1f2f: a plugin's operation refusing by a check the library's table codes (not installed, its folder held), the code
-            // `daoris-driver plugin` says it in alone.
+            // `daoris plugin` says it in alone.
             throw Refusals.Declared(PluginCodes.Of(coded), coded.Message, [.. coded.Facts]);
         }
         catch (DriverException error)

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ASKHIST1 (D50): <c>daoris-driver help</c>, Ask Daoris's history from a terminal, the panel's other door. It lists and searches
+/// ASKHIST1 (D50): <c>daoris help</c>, Ask Daoris's history from a terminal, the panel's other door. It lists and searches
 /// this machine's Ask Daoris conversations, says words to one through <c>sessions say</c>'s door, names, pins and unpins one, and
 /// deletes one listed first. Any other session is refused, naming the verb that acts on it. Files and an in-process ledger only:
 /// the suite's fast half.

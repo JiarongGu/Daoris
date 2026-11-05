@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where <c>daoris-driver plugin</c> acts (PUSH1f2f): the terminal it says its words on and finds the running Daoris from, the folder a
+/// Where <c>daoris plugin</c> acts (PUSH1f2f): the terminal it says its words on and finds the running Daoris from, the folder a
 /// relative folder is named from, and the harness names this build carries. A test hands its own of each.
 /// </summary>
 public sealed record PluginWorld
@@ -43,7 +43,7 @@ public sealed class PluginWords(string message, int exit = 2) : Exception(messag
 }
 
 /// <summary>
-/// <c>daoris-driver plugin</c> (PUSH1f2f, D194, the alone-path design §1.2): this machine's plugins from a terminal, the words
+/// <c>daoris plugin</c> (PUSH1f2f, D194, the alone-path design §1.2): this machine's plugins from a terminal, the words
 /// <c>daoris plugin …</c> hands this program, beside the host's own <c>plugins</c> (the kit, a package, a plugin's page); no sub-verb
 /// is shared. Each change is its route through <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its
 /// window; else its operation, on the terminal's word (D50), refused from a session's terminal (D194 point 5). A replace has no route: the

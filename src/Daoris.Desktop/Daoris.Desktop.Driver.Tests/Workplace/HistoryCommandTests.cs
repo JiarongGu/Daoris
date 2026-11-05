@@ -174,7 +174,7 @@ public sealed class HistoryCommandTests : IDisposable
         var (exit, said) = await QuestAsync(service, "clear", "q1");
 
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: clearing #q1 would take 1 quest and 2 sessions, with what this machine kept of them (", said);
+        Assert.StartsWith("daoris: clearing #q1 would take 1 quest and 2 sessions, with what this machine kept of them (", said);
         Assert.Contains("their words, transcripts and files. Nothing brings it back; `daoris quest clear q1 --yes` clears it.", said);
         Assert.Empty(service.Pressed);
         Assert.True(Holds("s1") && Holds("s2"));
@@ -196,7 +196,7 @@ public sealed class HistoryCommandTests : IDisposable
         log.Dispose();
 
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: cleared #q1 from this machine: 1 quest and 2 sessions, ", said);
+        Assert.StartsWith("daoris: cleared #q1 from this machine: 1 quest and 2 sessions, ", said);
         Assert.Equal(["quest:q1"], service.Pressed);
         Assert.False(Holds("s1") || Holds("s2"));
         var line = Assert.Single(
@@ -235,7 +235,7 @@ public sealed class HistoryCommandTests : IDisposable
         var listed = await QuestAsync(service, "clear", "q1");
         var pressed = await QuestAsync(service, "clear", "q1", "--yes");
 
-        const string Said = "daoris-driver: #q1 stays on this machine: Session `s1`'s tree is still here; clean it up, or discard it, first.\n";
+        const string Said = "daoris: #q1 stays on this machine: Session `s1`'s tree is still here; clean it up, or discard it, first.\n";
         Assert.Equal((1, Said), listed);
         Assert.Equal((1, Said), pressed);
         Assert.Empty(service.Pressed);
@@ -253,7 +253,7 @@ public sealed class HistoryCommandTests : IDisposable
         var (exit, said) = await QuestAsync(service, "clear", "q1", "--yes");
 
         Assert.Equal(1, exit);
-        Assert.Equal("daoris-driver: #q1 stays on this machine: Quest `#q1` is taken: its record is work in progress.\n", said);
+        Assert.Equal("daoris: #q1 stays on this machine: Quest `#q1` is taken: its record is work in progress.\n", said);
         Assert.Empty(service.Pressed);
     }
 
@@ -264,7 +264,7 @@ public sealed class HistoryCommandTests : IDisposable
         var service = new HistoryStandIn();
         service.Listings["quest=q9"] = [Unit("quest", "q9", refusal: Refusal("unknown", quest: "q9", error: "No quest `#q9` on this machine."))];
 
-        Assert.Equal((1, "daoris-driver: No quest `#q9` on this machine.\n"), await QuestAsync(service, "clear", "q9"));
+        Assert.Equal((1, "daoris: No quest `#q9` on this machine.\n"), await QuestAsync(service, "clear", "q9"));
     }
 
     /// <summary>
@@ -282,7 +282,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Equal(
-            "daoris-driver: kept #q1, which changed since the list: Its last moves have not reached the remote for `aurora`; sync, then clear it.\n",
+            "daoris: kept #q1, which changed since the list: Its last moves have not reached the remote for `aurora`; sync, then clear it.\n",
             said);
         Assert.True(Holds("s1") && Holds("s2"));
     }
@@ -314,7 +314,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(2, exit);
         Assert.Equal(
-            $"daoris-driver: cleared #q1 from this machine: 1 quest and 1 session, {HistoryCommand.Size(went)}.\n"
+            $"daoris: cleared #q1 from this machine: 1 quest and 1 session, {HistoryCommand.Size(went)}.\n"
             + "  1 file could not be removed and is left over; the next clear of a workspace takes it.\n",
             output.ToString().ReplaceLineEndings("\n"));
         Assert.True(File.Exists(transcript));
@@ -348,14 +348,14 @@ public sealed class HistoryCommandTests : IDisposable
         var (listedExit, listed) = await QuestAsync(service, "clear", "q1", "--failed");
 
         Assert.Equal(0, listedExit);
-        Assert.StartsWith("daoris-driver: clearing #q1's failed sessions would take 1 session, with what this machine kept of them (", listed);
+        Assert.StartsWith("daoris: clearing #q1's failed sessions would take 1 session, with what this machine kept of them (", listed);
         Assert.Contains("#q1 and its other sessions stay. Nothing brings it back; `daoris quest clear q1 --failed --yes` clears it.", listed);
         Assert.Contains("  keeps laptop/f2: Session `laptop/f2` ran on `laptop`; its record is theirs.", listed.Split('\n'));
 
         var (exit, said) = await QuestAsync(service, "clear", "q1", "--failed", "--yes");
 
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: cleared #q1's failed sessions from this machine: 1 session, ", said);
+        Assert.StartsWith("daoris: cleared #q1's failed sessions from this machine: 1 session, ", said);
         Assert.Contains("  keeps laptop/f2: Session `laptop/f2` ran on `laptop`; its record is theirs.", said.Split('\n'));
         Assert.False(Holds("f1"));
 
@@ -363,7 +363,7 @@ public sealed class HistoryCommandTests : IDisposable
         var (nothingExit, nothing) = await QuestAsync(service, "clear", "q1", "--failed", "--yes");
 
         Assert.Equal(0, nothingExit);
-        Assert.StartsWith("daoris-driver: #q1 has no failed session of this machine's to clear.\n", nothing);
+        Assert.StartsWith("daoris: #q1 has no failed session of this machine's to clear.\n", nothing);
         Assert.Equal(["failed:q1"], service.Pressed);
     }
 
@@ -385,10 +385,10 @@ public sealed class HistoryCommandTests : IDisposable
         var (exit, said) = await AskAsync(service, "--clear", "#a1", "--yes");
 
         Assert.Equal(0, listedExit);
-        Assert.StartsWith("daoris-driver: clearing ask #a1 would take 1 ask, 1 quest and 2 sessions, with what this machine kept of them (", listed);
+        Assert.StartsWith("daoris: clearing ask #a1 would take 1 ask, 1 quest and 2 sessions, with what this machine kept of them (", listed);
         Assert.Contains("`daoris ask clear a1 --yes` clears it.", listed);
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: cleared ask #a1 from this machine: 1 ask, 1 quest and 2 sessions, ", said);
+        Assert.StartsWith("daoris: cleared ask #a1 from this machine: 1 ask, 1 quest and 2 sessions, ", said);
         Assert.Equal(["ask:a1"], service.Pressed);
         Assert.False(Holds("i1") || Holds("s1"));
     }
@@ -435,7 +435,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         var lines = said.TrimEnd('\n').Split('\n');
-        Assert.StartsWith("daoris-driver: clearing aurora's finished history would take 1 quest, 1 session and the intake's room, ", lines[0]);
+        Assert.StartsWith("daoris: clearing aurora's finished history would take 1 quest, 1 session and the intake's room, ", lines[0]);
         Assert.EndsWith(", and keep 1; `daoris history clear --workspace aurora --yes` clears what this list holds. Nothing brings it back.", lines[0]);
         Assert.StartsWith("  takes #q1: 1 quest and 1 session, ", lines[1]);
         Assert.Contains(lines, line => line.StartsWith("  takes the intake's room, ", StringComparison.Ordinal));
@@ -459,7 +459,7 @@ public sealed class HistoryCommandTests : IDisposable
         log.Dispose();
 
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest, 1 session and the intake's room, ", said);
+        Assert.StartsWith("daoris: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest, 1 session and the intake's room, ", said);
         Assert.Equal(["quest:q1"], service.Pressed);
         Assert.False(Holds("s1"));
         Assert.True(Holds("s2"));
@@ -491,11 +491,11 @@ public sealed class HistoryCommandTests : IDisposable
         var (listedExit, listed) = await HistoryAsync(service, "clear", "--workspace", workspace);
 
         Assert.Equal((0, 0), (readExit, listedExit));
-        Assert.StartsWith($"daoris-driver: {workspace} keeps 1 closed quest on this machine, with 1 session: ", read);
+        Assert.StartsWith($"daoris: {workspace} keeps 1 closed quest on this machine, with 1 session: ", read);
         Assert.Contains(read.Split('\n'), line => line.StartsWith("  a clear would take 1 quest and 1 session, ", StringComparison.Ordinal)
             && line.EndsWith($": `daoris history clear --workspace {spelled}` lists it first.", StringComparison.Ordinal));
         var first = listed.Split('\n')[0];
-        Assert.StartsWith($"daoris-driver: clearing {workspace}'s finished history would take 1 quest and 1 session, ", first);
+        Assert.StartsWith($"daoris: clearing {workspace}'s finished history would take 1 quest and 1 session, ", first);
         Assert.EndsWith(
             $", and keep 0; `daoris history clear --workspace {spelled} --yes` clears what this list holds. Nothing brings it back.", first);
         Assert.Empty(service.Pressed);
@@ -510,7 +510,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         var (exit, said) = await HistoryAsync(service, "clear", "--workspace", "aurora", "--yes");
 
-        Assert.Equal((0, "daoris-driver: nothing of aurora's finished history may be cleared now, so nothing changed.\n"), (exit, said));
+        Assert.Equal((0, "daoris: nothing of aurora's finished history may be cleared now, so nothing changed.\n"), (exit, said));
         Assert.Empty(service.Pressed);
     }
 
@@ -531,7 +531,7 @@ public sealed class HistoryCommandTests : IDisposable
 
         Assert.Equal(0, exit);
         var lines = said.TrimEnd('\n').Split('\n');
-        Assert.StartsWith("daoris-driver: aurora keeps 2 closed quests on this machine, with 2 sessions: ", lines[0]);
+        Assert.StartsWith("daoris: aurora keeps 2 closed quests on this machine, with 2 sessions: ", lines[0]);
         Assert.Contains(lines, line => line.StartsWith("  on the disk: ", StringComparison.Ordinal) && line.Contains(" of conversations", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.StartsWith("  a clear would take 1 quest, 1 session and the intake's room, ", StringComparison.Ordinal)
             && line.EndsWith(": `daoris history clear --workspace aurora` lists it first.", StringComparison.Ordinal));
@@ -541,7 +541,7 @@ public sealed class HistoryCommandTests : IDisposable
             lines);
         Assert.Contains(lines, line => line.StartsWith("  1 conversation that served no quest, ", StringComparison.Ordinal)
             && line.EndsWith(": a clear never takes one; `daoris session delete <id>` does.", StringComparison.Ordinal));
-        Assert.StartsWith("daoris-driver: the home as a whole: nothing left over from records already gone; the machine log holds ", lines[^1]);
+        Assert.StartsWith("daoris: the home as a whole: nothing left over from records already gone; the machine log holds ", lines[^1]);
         Assert.Empty(service.Pressed);
         Assert.DoesNotContain(_home, said, StringComparison.OrdinalIgnoreCase);
     }
@@ -555,18 +555,18 @@ public sealed class HistoryCommandTests : IDisposable
         var (exit, said) = await HistoryAsync(service);
 
         Assert.Equal(0, exit);
-        var firsts = said.Split('\n').Where(line => line.StartsWith("daoris-driver: ", StringComparison.Ordinal)).ToList();
+        var firsts = said.Split('\n').Where(line => line.StartsWith("daoris: ", StringComparison.Ordinal)).ToList();
         Assert.Equal(3, firsts.Count);
-        Assert.StartsWith("daoris-driver: aurora keeps ", firsts[0]);
-        Assert.StartsWith("daoris-driver: default keeps 1 closed quest on this machine, with 1 session", firsts[1]);
-        Assert.StartsWith("daoris-driver: the home as a whole: ", firsts[2]);
+        Assert.StartsWith("daoris: aurora keeps ", firsts[0]);
+        Assert.StartsWith("daoris: default keeps 1 closed quest on this machine, with 1 session", firsts[1]);
+        Assert.StartsWith("daoris: the home as a whole: ", firsts[2]);
     }
 
     /// <summary>A machine no record names any workspace on keeps nothing finished, and says so.</summary>
     [Fact]
     public async Task The_reading_of_an_empty_machine_says_it_keeps_nothing()
     {
-        Assert.Equal((0, "daoris-driver: nothing finished is kept on this machine: no record names a workspace.\n"), await HistoryAsync(new HistoryStandIn()));
+        Assert.Equal((0, "daoris: nothing finished is kept on this machine: no record names a workspace.\n"), await HistoryAsync(new HistoryStandIn()));
     }
 
     // ——— --json: HISTORY_PLAN's answer, field for field.

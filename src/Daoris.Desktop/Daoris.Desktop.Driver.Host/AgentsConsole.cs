@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The agents' rules, trust and settings from a terminal (PUSH1f2d, D194, D50): <c>daoris-driver agent</c>, the words
+/// The agents' rules, trust and settings from a terminal (PUSH1f2d, D194, D50): <c>daoris agent</c>, the words
 /// <c>daoris agent rules|trust|settings …</c> hands this program. The grammar, the switch and the words are the library's
 /// (<see cref="AgentsCommand"/>); this hands it the process's terminal and the home the host resolves.
 /// </summary>

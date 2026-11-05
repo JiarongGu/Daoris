@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// Clearing finished history from a terminal (HIST1d, D153 point 7, the history-clearing design §6.2, D50): <c>daoris-driver
+/// Clearing finished history from a terminal (HIST1d, D153 point 7, the history-clearing design §6.2, D50): <c>daoris
 /// history</c>, <c>history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c>. The words are the library's
 /// (<see cref="HistoryCommand"/>); this wires the real world: the service, the home and its file, the home's process markers
 /// (this host runs no session, so a live one any driver on the home marked keeps its unit), and this host's machine log, where
@@ -23,7 +23,7 @@ internal static class HistoryConsole
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (ask is null)
         {
-            Console.Error.WriteLine($"daoris-driver: {problem}");
+            Console.Error.WriteLine($"daoris: {problem}");
             Console.Error.WriteLine(HistoryCommand.Usage);
             return 2;
         }
@@ -35,7 +35,7 @@ internal static class HistoryConsole
         {
             Log = log,
             // RPC1e: the running Daoris's client where one answers, a clear confirmed in its window.
-            Instance = InstanceHost.World(home, "daoris-driver"),
+            Instance = InstanceHost.World(home, "daoris"),
         };
         return await HistoryCommand.RunAsync(ask, world, Console.Out).ConfigureAwait(false);
     }

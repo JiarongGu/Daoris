@@ -8,7 +8,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 FINDDAORIS1 (D171 point 1): the owner ran <c>daoris-driver setup &lt;repository&gt; --plan</c> in a PowerShell of their
+/// 🔴 FINDDAORIS1 (D171 point 1): the owner ran <c>daoris setup &lt;repository&gt; --plan</c> in a PowerShell of their
 /// own and met <i>no DAORIS_SERVICE_URL</i>, with Daoris running. A program the install carries now finds the service in this
 /// order: the variable; else the address the running desktop left in the home, trusted only while the process it names lives
 /// and the address answers as this home's Daoris host on this machine; else the refusal, which says Daoris is not running and

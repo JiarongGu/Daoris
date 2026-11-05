@@ -164,7 +164,7 @@ public sealed class RemoteSyncSet : IDisposable
 /// carry the retires this machine owes the circle; keep the team's rows here current, updated and
 /// removed (SYNC5b); then ask the host to fetch, rebase and push the circle's quests and records (D68).
 /// Registrations go first, so the remote knows who is joined before their records and quests arrive.
-/// Runs on the driver's own tick — a server machine running `daoris-driver` with a key is just another
+/// Runs on the driver's own tick — a server machine running `daoris` with a key is just another
 /// machine, not a special deployment.
 /// </summary>
 /// <remarks>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver driver</c>, the standing choices <c>daoris driver …</c> hands on (PUSH1f2a, D194 points 1, 2 and 5; the alone-path
+/// <c>daoris driver</c>, the standing choices <c>daoris driver …</c> hands on (PUSH1f2a, D194 points 1, 2 and 5; the alone-path
 /// design §1.2 and §2): a change goes to the running Daoris's route where one answers, confirmed in its window whatever the
 /// terminal's environment says; with none it is the verb's own act, on the terminal's word, refused from a session's terminal; a read is
 /// never refused; and a verb it does not have is its usage.

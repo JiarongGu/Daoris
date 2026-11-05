@@ -9,7 +9,7 @@ namespace Daoris.Driver.Host;
 /// <para><b>Why a headless door at all.</b> The desktop is where a person chats (D49 §3), and the
 /// console stream never leaves the machine that produced it (D47 §4) — but "the machine with no
 /// screen is just another machine" (D47), and D50 says no capability may be stranded on one. A
-/// server running `daoris-driver` can be talked to over ssh with exactly the same lock, the same
+/// server running `daoris` can be talked to over ssh with exactly the same lock, the same
 /// record and the same transcript; nothing here is a second implementation, because the mechanics are
 /// <see cref="ChatRunner"/>'s and this is the reporting half.</para>
 ///

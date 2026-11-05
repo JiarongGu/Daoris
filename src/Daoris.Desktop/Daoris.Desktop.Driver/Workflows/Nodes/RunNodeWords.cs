@@ -251,8 +251,8 @@ public static class RunNodeWords
     /// <summary>The usage of the terminal's skip and stop, as it says them when their words are not understood.</summary>
     public const string Usage =
         "usage: daoris workflow skip <run> <node> \"…\"  ·  daoris workflow stop <run> <node> [\"…\"]\n"
-        + "       daoris-driver workflow send <run> <node>  (a ready request under `start: you`)\n"
-        + "       daoris-driver workflow ask-again <run> <node>  ·  daoris-driver workflow go-on <run> <node> \"…\"  (a declined request)\n"
+        + "       daoris workflow send <run> <node>  (a ready request under `start: you`)\n"
+        + "       daoris workflow ask-again <run> <node>  ·  daoris workflow go-on <run> <node> \"…\"  (a declined request)\n"
         + "       daoris workflow changes <run> <node> \"…\"  (a review: what the work should change before it lands)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";

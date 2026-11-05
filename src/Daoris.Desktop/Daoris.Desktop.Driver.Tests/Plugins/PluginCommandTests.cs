@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver plugin</c> (PUSH1f2f, D194, the alone-path design §1.2, §1.3, §2): each change names the route the window's press
+/// <c>daoris plugin</c> (PUSH1f2f, D194, the alone-path design §1.2, §1.3, §2): each change names the route the window's press
 /// takes, its payload written from the words, or none for the terminal's replace; a person's press acting alone is refused from a
 /// session's terminal with nothing written; and an alone remove of a folder something holds is refused as the route refuses it, nothing
 /// taken. Today's words are <see cref="PluginsTextTests"/>'; both ways through the route are the modules' <c>PluginsBothWaysTests</c>.

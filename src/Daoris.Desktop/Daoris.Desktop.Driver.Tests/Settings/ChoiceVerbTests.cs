@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The verbs of <c>daoris-driver driver</c> that the subdomains above the settings own (FOUNDATION1 mod-iii): the settings declare the
+/// The verbs of <c>daoris driver</c> that the subdomains above the settings own (FOUNDATION1 mod-iii): the settings declare the
 /// port, each subdomain implements its verbs, and Loop wires them into the terminal's world, so the settings' command names none of them.
 /// </summary>
 public sealed class ChoiceVerbTests : IDisposable
