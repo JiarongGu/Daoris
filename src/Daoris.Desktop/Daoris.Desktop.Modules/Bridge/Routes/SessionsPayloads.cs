@@ -7,8 +7,6 @@ public sealed record StopSession(string Id, bool Said = false);
 
 public sealed record ResolveSession(string Id, string State, string? Note, bool Said = false);
 
-public sealed record SessionGoOnNew(string Id, bool Said = false);
-
 public sealed record SessionHelperAsk(string Id, string? Question, string? Agent, bool Said = false);
 
 public sealed record SessionHelpers(string Id);

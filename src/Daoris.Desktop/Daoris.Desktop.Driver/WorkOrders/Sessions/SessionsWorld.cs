@@ -55,7 +55,7 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public Action<string>? Fell { get; init; }
 
     /// <summary>
-    /// The cool-off a start on an adapter would read for an account, or null where it is ready (<c>go-on-new</c>): read from this
+    /// The cool-off a start on an adapter would read for an account, or null where it is ready (<c>hand-over</c> naming no agent): read from this
     /// home's cool-offs by the account's owner, as the roster reads them, plugins' harnesses included.
     /// </summary>
     public Func<string?, string?, CoolingEntry?>? CoolingOf { get; init; }

@@ -9,7 +9,6 @@ import type { PartSpent } from '../../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../../work/groups';
 import type { PermissionAnswered, PermissionChoice, PermissionWait } from '../../work/waits/PermissionAsks';
 import type { AnswerAloneAnswered, AnswerRule, AnswerWait } from '../../work/waits/AnswerAlone';
-import type { NewSessionAnswer } from '../../work/say';
 import type { SessionWhere } from '../../work/rail/SessionRow';
 import type { SessionRecord } from '../../work/head/sessionRecord';
 import type { RelatedOwn, RelatedRow } from '../../work/head/RelatedSessions';
@@ -401,24 +400,6 @@ export const useDeleteSession = () => useMutation({
  */
 export const useOpenSessionFolder = () => useMutation({
   mutationFn: (id: string) => call('SESSION_OPEN_FOLDER', { id }) as Promise<{ opened: boolean }>,
-});
-
-/**
- * *Go on in a new session* (MSG1g, D137 §2.2): words a resume holds while the account their session ran on cools go on in a
- * new session at the driver's next look, handed them, without that conversation. By the session's id alone: the driver
- * judges it and keeps the person's choice, the door `daoris session go-on-new` calls too (D50). Read field by field,
- * so a refusal keeps its code for the page to word, and a shell older than the route answers no choice kept. The sessions
- * and the driver are asked again by the state hub (STATEHUB1d), since the loop takes the choice up at its next look.
- */
-export const useGoOnNew = () => useMutation({
-  mutationFn: async (id: string): Promise<NewSessionAnswer> => {
-    const answer = (await call('SESSION_GO_ON_NEW', { id })) as { sent?: boolean; why?: string | null; message?: string } | null;
-    return {
-      sent: answer?.sent === true,
-      why: typeof answer?.why === 'string' ? answer.why : null,
-      message: typeof answer?.message === 'string' ? answer.message : '',
-    };
-  },
 });
 
 export {

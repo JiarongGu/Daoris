@@ -378,7 +378,7 @@
   "note.waits.account": "It does not go on yet: the `{{owner}}` account `{{account}}` is cooling until {{until}} ({{why}}), and its conversation is on that account, so your words wait to go on in it then.",
   "note.waits.own": "It does not go on yet: `{{owner}}`'s own sign-in is cooling until {{until}} ({{why}}), and its conversation is on that account, so your words wait to go on in it then.",
   "note.waits.read-again": "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts.",
-  "note.waits.door-new-session": "To go on now in a new session instead, without that conversation: `daoris session go-on-new {{session}}`.",
+  "note.waits.door-new-session": "To go on now in a new session instead, without that conversation: `daoris session hand-over {{session}}`.",
   "note.waits.door-chat": "To start a conversation with these words now instead, without that one: `daoris session start-from {{session}}`.",
   "note.waits.door-help": "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.",
   "note.held.no-checkout": "It does not go on yet: `{{repository}}` has no checkout on this machine any more. Your words wait on it.",

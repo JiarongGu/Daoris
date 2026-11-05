@@ -66,16 +66,14 @@ internal static class SessionsReading
             case ["reword", ..]:
                 problem = "`reword` takes one session's id, the word to reword, then the words to put in its place.";
                 return null;
-            case ["go-on-new", var id] when Id(id):
-                return new SessionsAsk("go-on-new") { Ids = [id] };
-            case ["go-on-new", ..]:
-                problem = "`go-on-new` takes one session's id.";
-                return null;
             case ["start-from", var id] when Id(id):
                 return new SessionsAsk("start-from") { Ids = [id] };
             case ["start-from", ..]:
                 problem = "`start-from` takes one session's id.";
                 return null;
+            // No agent named: the words a cooling account holds go on in a new session on the walk's pick.
+            case ["hand-over", var id] when Id(id):
+                return new SessionsAsk("hand-over") { Ids = [id] };
             case ["hand-over", var id, "--agent", var agent] when Id(id) && Id(agent):
                 return new SessionsAsk("hand-over") { Ids = [id], Agent = agent };
             case ["hand-over", var id, "--agent", var agent, "--account", var account] when Id(id) && Id(agent) && Id(account):
@@ -86,7 +84,7 @@ internal static class SessionsReading
             case ["hand-over", var id, "--decline"] when Id(id):
                 return new SessionsAsk("hand-over-decline") { Ids = [id] };
             case ["hand-over", ..]:
-                problem = "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`; "
+                problem = "`hand-over` takes one session's id, with `--agent <adapter>` to name the agent and, where one is wanted, `--account <name>`; "
                     + "or `--approve` or `--decline` for its agent's own ask to hand it over.";
                 return null;
             case ["helper", ..]:

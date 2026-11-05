@@ -54,8 +54,8 @@ public sealed class NewSessionChoices(string home)
 
 /// <summary>
 /// *Go on in a new session* (MSG1g, D137 §2.2's account paragraph): words a resume holds while the account their session ran on
-/// cools go on now in a new session, handed them, without that conversation. One door for the screen's route and the terminal's
-/// <c>daoris session go-on-new</c> (D50): it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
+/// cools go on now in a new session, handed them, without that conversation. The hand-over's press naming no agent, the screen's
+/// <c>SESSION_HAND_OVER</c> and the terminal's <c>daoris session hand-over &lt;id&gt;</c> alike (D50): it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
 /// driver's next look carries the words on as it carries on words whose account cannot run there.
 /// </summary>
 /// <remarks>

@@ -262,7 +262,7 @@ export function coolingFor(
 }
 
 /**
- * What *Go on in a new session* came to, as `SESSION_GO_ON_NEW` answers it (MSG1g, D137 §2.2): kept for the driver's next
+ * What *Go on in a new session* came to, as `SESSION_HAND_OVER` naming no agent answers it (MSG1g, D137 §2.2; `kept` is `sent` here): kept for the driver's next
  * look (`sent`), or refused by a code, with the driver's sentence beside it in the terminal's words.
  */
 export type NewSessionAnswer = { sent: boolean; why: string | null; message: string };

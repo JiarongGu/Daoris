@@ -42,18 +42,6 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
     private Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken) => _moves.ResolveAsync(press, cancellationToken);
 
-    // *Go on in a new session*: words a resume holds while the account their session ran on cools go on now
-    // in a new session, handed them, without that conversation. The driver's door judges and keeps the person's choice
-    //, the same door `daoris session go-on-new` calls; the loop is nudged so its next look carries
-    // them on. What cannot is `sent: false` with its code, for the page to word, and the driver's sentence beside it. The
-    // page's press is a later row.
-    [DriverRoute("SESSION_GO_ON_NEW", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("SESSION_GO_ON_NEW", Session = "id")]
-    [GroundSession("SESSION_GO_ON_NEW", "id")]
-    [Says("SESSION_GO_ON_NEW", "id:session")]
-    [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
-    private Task<object?> SessionGoOnNewAsync(SessionGoOnNew press, CancellationToken cancellationToken) => _moves.GoOnNewAsync(press, cancellationToken);
-
     // *Ask another agent…*: the person's own ask of a helper for a session,
     // the file `daoris session helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
     // and `off` do not hold it), judged as that verb judges: a question within the bound, an agent of one word, and a session of

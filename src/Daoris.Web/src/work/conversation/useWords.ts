@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
-  logEvent, stoppedWaiting, type TurnStop, useCancelTurn, type useChatTurns, useEndChat, useGoOnBrief, useGoOnNew, useMoveQueued, useSay,
+  logEvent, stoppedWaiting, type TurnStop, useCancelTurn, type useChatTurns, useEndChat, useGoOnBrief, useHandOver, useMoveQueued, useSay,
   useSendMessage, useStartFrom, type WordsAnswer,
 } from '../../bridge/shell';
 import type { Session } from '../../data/api';
@@ -231,12 +231,12 @@ export function useWords({
   };
   // *Go on in a new session* (MSG1g2, D137 §2.2): words a cooling account holds go on in a new session at the driver's next
   // look. The driver judges and keeps the choice; what it came to is said under the words, in the page's words.
-  const goOnNew = useGoOnNew();
+  const goOnNew = useHandOver();
   const onGoOnNew = () => {
     if (!attended || goOnNew.isPending) return;
     const session = attended.id;
-    goOnNew.mutate(session, {
-      onSuccess: (answer) => setNewSession({ session, answer }),
+    goOnNew.mutate({ session }, {
+      onSuccess: ({ kept, why, message }) => setNewSession({ session, answer: { sent: kept, why, message } }),
       onError: failure(notify),
     });
   };

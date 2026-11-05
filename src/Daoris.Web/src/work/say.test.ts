@@ -246,7 +246,7 @@ describe('coolingFor', () => {
 
 /**
  * MSG1g2 (D137 §2.2, MSG1g's note): what *Go on in a new session* came to, in the page's own words: kept, or each code
- * `SESSION_GO_ON_NEW` refuses by, in both catalogues; and *Start a conversation with these words* the door where nothing
+ * `SESSION_HAND_OVER` naming no agent refuses by, in both catalogues; and *Start a conversation with these words* the door where nothing
  * carries the words on by itself.
  */
 describe('newSessionSaid', () => {

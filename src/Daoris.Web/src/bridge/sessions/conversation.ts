@@ -659,15 +659,19 @@ const handedOf = (answer: unknown): HandedOver => {
  * the reason `press`. A conversation that is not talking goes on at once in a new one of its own; one that is talking keeps the
  * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer (MIXAGENT1b-ii) names its reason, `near` or
  * `limit`, and is then asked as Daoris's (`askedBy`), the person's press on the offer; a press sends neither.
+ *
+ * A press naming no agent is *Go on in a new session* (MSG1g, D137 §2.2, ONEWAY1j): words a resume holds while the account their
+ * session ran on cools go on in a new session at the driver's next look, handed them, without that conversation. Nothing opens
+ * here (`sessionId` is null); `kept` says the choice is kept, and a refusal keeps its code for the page to word.
  */
 export const useHandOver = () => useMutation({
   mutationFn: async (over: {
-    session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
+    session: string; agent?: string | null; account?: string | null; why?: 'near' | 'limit';
     /** The model and effort of the choice the offer named (STAFFPOLICY1d): started as approved, never picked again. */
     model?: string | null; effort?: string | null;
   }): Promise<HandedOver> =>
     handedOf(await call('SESSION_HAND_OVER', {
-      id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
+      id: over.session, ...(over.agent ? { agent: over.agent } : {}), ...(over.account ? { account: over.account } : {}),
       ...(over.model ? { model: over.model } : {}), ...(over.effort ? { effort: over.effort } : {}),
       ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
     })),

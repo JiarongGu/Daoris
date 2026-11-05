@@ -159,13 +159,10 @@ public static class PersonPresses
     /// <summary><c>sessions delete &lt;id&gt;</c>: a conversation's record deleted.</summary>
     public static InstanceRoute SessionDelete { get; } = Person("SESSION_DELETE");
 
-    /// <summary><c>sessions go-on-new &lt;id&gt;</c>: words a resume holds go on in a new session.</summary>
-    public static InstanceRoute SessionGoOnNew { get; } = Person("SESSION_GO_ON_NEW");
-
     /// <summary><c>sessions start-from &lt;id&gt;</c>: a conversation started with the words a session could not go on with.</summary>
     public static InstanceRoute SessionStartFrom { get; } = Person("SESSION_START_FROM");
 
-    /// <summary><c>sessions hand-over &lt;id&gt;</c>: a conversation handed to another agent.</summary>
+    /// <summary><c>sessions hand-over &lt;id&gt;</c>: a session handed to another agent, or, naming none, gone on in a new session.</summary>
     public static InstanceRoute SessionHandOver { get; } = Person("SESSION_HAND_OVER");
 
     /// <summary><c>sessions helper &lt;id&gt; "…"</c>: the person's ask of a helper.</summary>
@@ -325,7 +322,6 @@ public static class PersonPresses
         ("sessions take-back <id> <word>", SessionQueueEdit),
         ("sessions reword <id> <word> \"…\"", SessionQueueEdit),
         ("sessions delete <id>", SessionDelete),
-        ("sessions go-on-new <id>", SessionGoOnNew),
         ("sessions start-from <id>", SessionStartFrom),
         ("sessions hand-over <id>", SessionHandOver),
         ("sessions hand-over <id> --approve", SessionHandOverApprove),
