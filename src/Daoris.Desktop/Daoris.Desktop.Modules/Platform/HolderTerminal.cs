@@ -28,8 +28,12 @@ public static class HolderTerminal
     /// </summary>
     public const string InitialPrompt = "You hold a role Daoris appointed. Run `daoris role brief` and do as it says.";
 
+    /// <summary>The holder's harness as its provider's registration declares it: its program and the variable naming its configuration directory.</summary>
+    public static ManagedProgram Program { get; } = ManagedProgram.Of(Harness);
+
     /// <summary>The variable naming the harness's configuration directory.</summary>
-    public const string ConfigVariable = "CLAUDE_CONFIG_DIR";
+    public static string ConfigVariable => Program.HomeVariable
+        ?? throw new InvalidOperationException($"the holder's harness '{Harness}' declares no configuration variable");
 
     /// <summary>The holder's <c>settings.json</c>, byte for byte: no hook, no plugin, no status line, no helper command.</summary>
     public const string Settings = "{\"disableAllHooks\":true}";
@@ -233,7 +237,7 @@ public static class HolderHarness
 
         if (string.IsNullOrWhiteSpace(version)) return (null, "no version of claude-code is pinned");
         var managed = HarnessSettings.ManagedHome(home, HolderTerminal.Harness, version);
-        var binary = Path.Combine(managed, "bin", OperatingSystem.IsWindows() ? "claude.exe" : "claude");
+        var binary = Path.Combine(managed, "bin", HolderTerminal.Program.FileName);
         if (!File.Exists(binary)) return (null, $"claude-code {version} is not installed from its maker's channel");
         var recorded = VerifiedBinary.Recorded(managed, binary);
         if (recorded is null) return (null, $"claude-code {version} holds no record of the hash its install verified");

@@ -138,7 +138,7 @@ public sealed class ProviderRegistryTests : IDisposable
     [InlineData(new string[0], false)]
     public void Adoption_drives_where_the_loop_planned_the_protocol_door(string[] build, bool drives)
     {
-        // The loop's cases (`StartDoor`): the protocol where any of Build's candidates rides it, else the pipe; an unknown id the pipe.
+        // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe; an unknown id the pipe.
         var adapters = AdapterSet.Built();
         Assert.Equal(drives, Adoption.Drives(build, adapters.AbilitiesOf));
         Assert.Equal(drives, build.Any(door => Adoption.Unadopted(door, adapters.AbilitiesOf)));
