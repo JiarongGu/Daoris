@@ -41,7 +41,7 @@ internal sealed class ChatContext(
     /// Which adapter each live conversation runs on: how a person's message is framed for its harness (CONV3). An entry lives
     /// exactly as long as the conversation's process.
     /// </summary>
-    public ConcurrentDictionary<string, ISessionAdapter> Talking { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public ConcurrentDictionary<string, ChatAgent> Talking { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Each live conversation's watch, which ends by writing its record: what closing the driver waits on, because the host goes

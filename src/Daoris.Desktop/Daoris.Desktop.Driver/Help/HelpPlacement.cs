@@ -85,10 +85,10 @@ internal static class HelpPlacement
     /// </param>
     /// <exception cref="DriverException">Full access on an agent with no mode that asks nothing: it ends saying so.</exception>
     internal static (ChatPlace Place, string? Said, string? Mode) UnderMode(
-        ChatPlace place, ISessionAdapter resolved, DriverConfig config, string? ran = null)
+        ChatPlace place, ChatAgent agent, DriverConfig config, string? ran = null)
     {
         if (!string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) return (place, null, null);
-        var access = HelpAccess.For(config.HelpMode, resolved);
+        var access = HelpAccess.For(config.HelpMode, agent);
         if (access.Refusal is { } refused) throw new DriverException(refused);
         var changed = ran is null ? null : HelpModes.ChangedSince(ran, access.Mode);
         return (Under(place, access), changed is null ? $"— {access.Said}" : $"— {changed} {access.Said}", access.Mode);

@@ -389,7 +389,7 @@ public sealed class ChatGoOnTests : IDisposable
         var events = Events;
         using var runner = Runner(ledger, events);
         // Its run has concluded the record and holds the conversation still, as its watch does until its last disposal.
-        runner.Context.Talking["c1"] = new Talk();
+        runner.Context.Talking["c1"] = new ChatAgent(new Talk());
 
         events.Append("c1", Shown("w1", "Also log the port."));
         await Task.Delay(300);

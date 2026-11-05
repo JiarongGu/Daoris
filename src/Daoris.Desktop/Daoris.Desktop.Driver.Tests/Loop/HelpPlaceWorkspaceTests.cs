@@ -195,7 +195,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         var full = Config.WithHelpMode(HelpModes.Full);
         var ask = new ResumeAsk("conv-1", [], "— your words are the next turn of its own conversation.");
         async Task<ChatStart> GoOnAsync() => await runner.RunAsync(
-            "ask-daoris", id, "goes on", placed.Adapter!, placed.Selection!, full, runner.HelpPlace(HelpRoom.PathOf(_home, "alpha"), [], "alpha"),
+            "ask-daoris", id, "goes on", new ChatAgent(placed.Adapter!), placed.Selection!, full, runner.HelpPlace(HelpRoom.PathOf(_home, "alpha"), [], "alpha"),
             null, CancellationToken.None, new GoingOn((await ledger.Client().RecordAsync(id))!, ask));
 
         var went = await GoOnAsync();

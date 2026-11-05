@@ -443,10 +443,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     /// <inheritdoc cref="ChatRun.RunAsync"/>
     internal Task<ChatStart> RunAsync(
-        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
         ChatPending? pending = null) =>
-        _run.RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        _run.RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
 
     /// <summary>A conversation's start refused at its open moved on: the refused record and the replacement that took its words (<see cref="ChatReplacement.Replaced"/>).</summary>
     public event Action<string, string>? Replaced
@@ -564,9 +564,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // The chat runner's port (the course's IChatRunning): the operations the course's executors call, forwarded as they are. The public ones
     // implement it where they stand; the internal ones, whose places are internal records, answer it here.
     Task<ChatStart> IChatRunning.RunAsync(
-        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
-        RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
 
     ChatPlace IChatRunning.RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree, IReadOnlyList<string>? continued,
@@ -607,18 +607,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     internal static SessionEvent? ToldProcess(ChatMessage message) => ChatRecorded.ToldProcess(message);
 
     /// <inheritdoc cref="ChatTold.Process"/>
-    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null) =>
-        ChatTold.Process(commits, plan, dependencies, adapter);
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ChatAgent? agent = null) =>
+        ChatTold.Process(commits, plan, dependencies, agent);
 
     /// <inheritdoc cref="ChatAccountReads.Limited"/>
-    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null) =>
-        _accounts.Limited(sessionId, adapter, profile, failure, coolOff, byCode);
+    internal Noted? Limited(string sessionId, ChatAgent agent, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null) =>
+        _accounts.Limited(sessionId, agent, profile, failure, coolOff, byCode);
 
     /// <inheritdoc cref="ChatAccountReads.Carried"/>
     private RotatedOpening.Carried? LimitCarried(string? carries) => _accounts.Carried(carries);
 
     /// <inheritdoc cref="ChatAccountReads.SignedOut"/>
-    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure) => _accounts.SignedOut(adapter, profile, failure);
+    internal Noted? SignedOut(ChatAgent agent, string? profile, string failure) => _accounts.SignedOut(agent, profile, failure);
 
     /// <summary>What a conversation's ending note adds where Daoris kept no id for its harness conversation (<see cref="ChatEnded.NotKept"/>).</summary>
     public const string NotKept = ChatEnded.NotKept;

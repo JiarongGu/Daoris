@@ -27,7 +27,7 @@ public sealed class ToolsAtTheStartCensusTests
         }
 
         // The one place, and the shim that answers it for a door written on the contract.
-        Assert.Equal(["LegacyDoor.cs", "SessionEquipment.cs"], readers.Order(StringComparer.Ordinal));
+        Assert.Equal(["LegacyDoor.cs", "SpawnEquipment.cs"], readers.Order(StringComparer.Ordinal));
     }
 
     [Fact]

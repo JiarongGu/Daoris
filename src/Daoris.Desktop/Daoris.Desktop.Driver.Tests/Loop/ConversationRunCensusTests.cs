@@ -42,7 +42,26 @@ public sealed class ConversationRunCensusTests
 
         Assert.NotEmpty(runner);
         Assert.True(found.Count == 0, "the conversation's runner does what its run does:\n" + string.Join('\n', found));
-        Assert.Contains(runner, each => each.Source.Contains("new TransportRun(", StringComparison.Ordinal));
+        Assert.Contains(runner, each => each.Source.Contains("agent.Run(", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The conversation reads its agent through <c>ChatAgent</c> and the run it makes, as the run reads its door: no file of the conversation's
+    /// runner, its turns, its account reads or what it is told names the adapter seam, which row t replaces beneath them.
+    /// </summary>
+    [Fact]
+    public void No_file_of_the_conversation_names_the_adapter_seam()
+    {
+        var chat = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
+            .Where(file => file.Replace('\\', '/').Contains("/Loop/Chat/", StringComparison.Ordinal))
+            .ToList();
+        var naming = chat
+            .Where(file => Regex.IsMatch(Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bISessionAdapter\b"))
+            .Select(Path.GetFileName)
+            .ToArray();
+
+        Assert.Contains(chat, file => Path.GetFileName(file) == "ChatRun.cs");
+        Assert.True(naming.Length == 0, "a file of the conversation names the adapter seam:\n" + string.Join('\n', naming));
     }
 
     [Fact]

@@ -21,7 +21,7 @@ internal sealed class ChatReplacement(IExecutorWiring wiring) : IExecutor
     /// (<see cref="ChatPending.Next"/>), and null ends the open.
     /// </summary>
     public async Task<ActorEffective?> ReaskAsync(
-        ChatPending pending, string sessionId, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config, ModelRefusal refusal)
+        ChatPending pending, string sessionId, ChatAgent resolved, HarnessSelection selection, DriverConfig config, ModelRefusal refusal)
     {
         var context = wiring.Context;
         using var log = new MachineLog(context.Home, "driver");

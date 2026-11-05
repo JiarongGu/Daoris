@@ -269,7 +269,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var roster = Roster();
         using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: roster);
 
-        Assert.NotNull(runner.Limited("c1", AdapterSet.Built().Resolve("acp-stub"), profile: null, NoTime, TimeSpan.FromMinutes(25)));
+        Assert.NotNull(runner.Limited("c1", new ChatAgent(AdapterSet.Built().Resolve("acp-stub")), profile: null, NoTime, TimeSpan.FromMinutes(25)));
 
         Assert.Equal(Seen.AddMinutes(25), roster.CoolingOf("acp-stub", null)!.Until);
     }
@@ -284,7 +284,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: roster, events: events);
-        var acp = AdapterSet.Built().Resolve("acp-stub");
+        var acp = new ChatAgent(AdapterSet.Built().Resolve("acp-stub"));
 
         var said = runner.Limited("c1", acp, profile: null, Refusal);
 
@@ -314,7 +314,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         using var service = _ledger.Client();
         using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: Roster());
 
-        var said = runner.Limited("c1", AdapterSet.Built().Resolve("acp-stub"), "account-1", Refusal)!;
+        var said = runner.Limited("c1", new ChatAgent(AdapterSet.Built().Resolve("acp-stub")), "account-1", Refusal)!;
 
         NoteAssert.Holds(said);
         var line = Assert.Single(said.Parts);
