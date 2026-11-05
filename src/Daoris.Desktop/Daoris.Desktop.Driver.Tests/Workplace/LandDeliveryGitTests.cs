@@ -244,8 +244,7 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's. A push
-    /// and a pull request go on to their plugin's phases (<see cref="DeliveryPluginPhasesTests"/>).
+    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's.
     /// </summary>
     [Theory]
     [InlineData(DeliveryMethods.Integrate)]
