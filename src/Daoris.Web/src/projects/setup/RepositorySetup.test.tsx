@@ -33,7 +33,7 @@ describe("a repository's Setup", () => {
 
     for (const name of ['Driving', 'Line and landing', 'Sessions', 'Reach']) expect(head(name)).toHaveAttribute('aria-expanded', 'false');
     expect(head('Driving')).toHaveAccessibleDescription('driven here · a tree per session · not held');
-    expect(head('Line and landing')).toHaveAccessibleDescription("line main (the workspace's default) · lands into its line (Daoris's default)");
+    expect(head('Line and landing')).toHaveAccessibleDescription("line main (the workspace's default)");
     expect(head('Sessions')).toHaveAccessibleDescription("no session language (Daoris's default) · no standing answer");
     expect(head('Reach')).toHaveAccessibleDescription(
       "read by agents outside it (Daoris's default) · writes into nothing else · no rules of its own");
@@ -100,7 +100,7 @@ describe("a repository's Setup", () => {
 
     for (const twin of [
       'daoris place drive|undrive engine', 'daoris place hold|resume engine', 'daoris place trees engine on|off',
-      'daoris place line engine <branch>|--clear', 'daoris place landing engine merge|branch <pattern>|--clear',
+      'daoris place line engine <branch>|--clear',
       'daoris place language engine en|zh|--clear', 'daoris place standing engine "…"|--clear',
       'daoris place across engine read on|off|--clear', 'daoris place across engine write-to <other> [--clear]',
       'daoris agent rules allow|ask|deny|remove "<rule>" --repository engine',
@@ -451,7 +451,7 @@ describe("a repository's review before landing", () => {
     draw(withReview({ repository: 'engine', workspace: 'default' }));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · no review environment (Daoris's default)");
+      "line main (the workspace's default) · no review environment (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const review = row(section('Line and landing'), 'Review before landing');
     expect(review).toHaveTextContent('None: work is offered to land once its quest is done.');
@@ -514,7 +514,7 @@ describe("a repository's second opinion before landing", () => {
     draw(withOpinion({ repository: 'engine', workspace: 'default' }));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · no second opinion (Daoris's default)");
+      "line main (the workspace's default) · no second opinion (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent('None: no other agent reads work here.');
@@ -580,7 +580,7 @@ describe("a repository's commit rule", () => {
     draw(withCommits({ repository: 'engine', workspace: 'default', rule: { mode: 'as-you-go' }, source: 'default' }, onCommits));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · commits as it goes (Daoris's default)");
+      "line main (the workspace's default) · commits as it goes (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const commits = row(section('Line and landing'), 'Commits');
     expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
@@ -846,7 +846,7 @@ describe('Setup in 中文', () => {
     draw(SETUP_DEFAULTS);
 
     for (const name of ['驱动', '主线与落地', '会话', '边界']) expect(head(name)).toBeInTheDocument();
-    expect(head('主线与落地')).toHaveAccessibleDescription('主线 main（工作区的默认） · 落地时并入主线（Daoris 的默认）');
+    expect(head('主线与落地')).toHaveAccessibleDescription('主线 main（工作区的默认）');
     await userEvent.click(head('主线与落地'));
     // Its line stands from above, so it offers to be set here; the landing is the version's own or the conversion's.
     expect(within(section('主线与落地')).getAllByRole('button', { name: '为此仓库设定' })).toHaveLength(1);
