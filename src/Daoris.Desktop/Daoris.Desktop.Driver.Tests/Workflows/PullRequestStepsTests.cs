@@ -41,20 +41,24 @@ public sealed class PullRequestStepsTests : IDisposable
     {
         var graph = Graph(NodeKinds.Land, NodeKinds.Push, "example.github/pull-request");
 
-        var none = PullRequestSteps.Unserved(graph, [], "`ship` v1");
+        var none = PullRequestSteps.Unserved(graph, [], "ship", 1);
         Assert.NotNull(none);
-        Assert.Contains("example.github", none);
-        Assert.Contains("daoris plugin list", none);
+        Assert.Equal(BindingProblem.PullRequestUnserved, none.Code);
+        Assert.Equal(
+            new Dictionary<string, string> { ["workflow"] = "ship", ["version"] = "1", ["step"] = "pull-request", ["plugin"] = "example.github" },
+            none.Values);
+        Assert.Contains("example.github", none.Said);
+        Assert.Contains("daoris plugin list", none.Said);
 
         // A plugin on but speaking on no perform point serves no step.
-        Assert.NotNull(PullRequestSteps.Unserved(graph, [new WorkflowPlugin("example.github", [HookPoints.State])], "`ship` v1"));
+        Assert.NotNull(PullRequestSteps.Unserved(graph, [new WorkflowPlugin("example.github", [HookPoints.State])], "ship", 1));
 
-        Assert.Null(PullRequestSteps.Unserved(graph, [new WorkflowPlugin("EXAMPLE.GITHUB", [HookPoints.Perform, HookPoints.State])], "`ship` v1"));
+        Assert.Null(PullRequestSteps.Unserved(graph, [new WorkflowPlugin("EXAMPLE.GITHUB", [HookPoints.Perform, HookPoints.State])], "ship", 1));
     }
 
     [Fact]
     public void A_graph_with_no_pull_request_step_is_never_refused_for_a_plugin() =>
-        Assert.Null(PullRequestSteps.Unserved(Graph(NodeKinds.Land, NodeKinds.Push), [], "`ship` v1"));
+        Assert.Null(PullRequestSteps.Unserved(Graph(NodeKinds.Land, NodeKinds.Push), [], "ship", 1));
 
     [Fact]
     public void A_pull_request_steps_evidence_address_is_its_reference_and_another_steps_is_not()

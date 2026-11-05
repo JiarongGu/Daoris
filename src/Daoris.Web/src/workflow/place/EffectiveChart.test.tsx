@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { EffectiveChart } from './EffectiveChart';
 import {
-  EFFECTIVE_CURRENT, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD,
+  EFFECTIVE_CURRENT, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE, EFFECTIVE_UNREAD, EFFECTIVE_UNSERVED,
 } from './effectiveFixtures';
 import type { WorkflowEffective } from '../current';
 
@@ -121,6 +121,16 @@ describe("a route's chart", () => {
     draw(EFFECTIVE_UNREAD);
     expect(screen.getByText(/keeps no version that reads here/)).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: /moves/ })).toBeNull();
+  });
+
+  it("words a coded refusal from the catalogue, in English and in Chinese, never in the driver's English", async () => {
+    const { unmount } = draw(EFFECTIVE_UNSERVED);
+    expect(screen.getByText(/is a pull request of the plugin/)).toBeInTheDocument();
+    expect(screen.queryByText(/which is not installed here\.$/)).toBeNull();
+    unmount();
+    await i18n.changeLanguage('zh');
+    draw(EFFECTIVE_UNSERVED);
+    expect(screen.getByText(/的拉取请求/)).toBeInTheDocument();
   });
 
   it('says its words in Chinese', async () => {

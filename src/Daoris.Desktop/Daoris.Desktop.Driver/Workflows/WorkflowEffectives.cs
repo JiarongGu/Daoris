@@ -30,6 +30,9 @@ public sealed record WorkflowEffective(
     string Route, string Workflow, string? Name, int? Version, string? Digest, int? Schema, EffectiveSource Source, bool Verifies,
     JsonNode? Graph, IReadOnlyList<EffectiveCell> Cells, string? Problem, ShippedNewer? Newer = null)
 {
+    /// <summary>The problem as a code and its values, for the page to word; null where the chart has none, or where it is the choice's own (no workflow chosen).</summary>
+    public BindingProblem? Coded { get; init; }
+
     /// <summary>The limit codes the cells carry, each once, in node order.</summary>
     public IReadOnlyList<string> Limits => [.. Cells.Select(cell => cell.Step.Limit).OfType<string>().Distinct(StringComparer.Ordinal)];
 }
@@ -78,19 +81,22 @@ public static class WorkflowEffectives
                 route == LandedRoute ? null : WorkflowProcess.NoWorkflow(repository ?? workspace ?? ""));
         }
 
-        return OfSaved(store, workflow, route, source, verifies, WorkflowProcess.Declared(config, repository ?? "", workspace));
+        return OfSaved(store, workflow, route, source, verifies, WorkflowProcess.Declared(config, repository ?? "", workspace), plugins);
     }
 
-    private static WorkflowEffective OfSaved(IWorkflowStore store, string id, string route, EffectiveSource source, bool verifies, WorkflowProcess process)
+    private static WorkflowEffective OfSaved(
+        IWorkflowStore store, string id, string route, EffectiveSource source, bool verifies, WorkflowProcess process, IReadOnlyList<WorkflowPlugin> plugins)
     {
-        WorkflowEffective Unread(string problem) => new(route, id, null, null, null, null, source, verifies, null, [], problem);
+        WorkflowEffective Unread(BindingProblem problem) => new(route, id, null, null, null, null, source, verifies, null, [], problem.Said) { Coded = problem };
         var found = WorkflowNamed.IsId(id) ? store.Load(id) : null;
-        if (found is null) return Unread($"no workflow `{id}` is saved here any more.");
-        if (found.Read.Problem is { } unread) return Unread($"`{id}` cannot be read: {unread}");
+        if (found is null) return Unread(BindingProblem.ForNotSaved(id));
+        if (found.Read.Problem is { } unread) return Unread(BindingProblem.ForUnread(id, unread));
         // The newest version, as a run's bind takes it: one that does not read is the problem every run will hold on, not a reason to draw an older.
         var newest = found.Read.Versions.LastOrDefault();
-        if (newest is null) return Unread($"`{id}` keeps no version that reads here.");
-        if (newest.Graph is not { } held) return Unread($"`{id}` v{newest.Version} cannot be read here: {newest.Problem ?? "it is no graph"}");
+        if (newest is null) return Unread(BindingProblem.ForNoVersion(id));
+        if (newest.Graph is not { } held) return Unread(BindingProblem.ForVersionUnread(id, newest.Version, newest.Problem ?? "it is no graph"));
+        // The refusal a run's bind makes, said on the chart too, so the page shows why no run starts on it.
+        if (!verifies && PullRequestSteps.Unserved(held, plugins, id, newest.Version) is { } unserved) return Unread(unserved);
 
         var graph = found.File!["versions"]![found.Read.Versions.ToList().IndexOf(newest)]!["graph"]!.DeepClone();
         var cells = held.Nodes.Select(node => new EffectiveCell(node.Id, WorkflowGraphRuns.Cell(node, process, source.Level))).ToList();

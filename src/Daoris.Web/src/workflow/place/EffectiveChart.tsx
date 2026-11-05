@@ -6,7 +6,7 @@ import type { ChartNode } from '../chart/stepKinds';
 import type { WorkflowEffective } from '../current';
 import { executorSaid, limitSaid } from '../said';
 import { StepSettings, Who, type WorkflowDoors } from '../WorkflowChart';
-import { effectiveFlow, effectiveLabel, routeWords } from './effective';
+import { bindingProblemSaid, effectiveFlow, effectiveLabel, routeWords } from './effective';
 
 /**
  * **The chart of the chosen route** (SETUPUX1o; D221, the Setup design's §2.3): the graph the driver answers as `effective`, Current drawn
@@ -40,7 +40,7 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
   const [holdsOpen, setHoldsOpen] = useState(false);
   const route = routeWords(t, effective.route, routeLabel);
 
-  if (effective.problem) return <p className="m-0 text-small text-ink-soft"><Inline text={effective.problem} /></p>;
+  if (effective.problem) return <p className="m-0 text-small text-ink-soft"><Inline text={bindingProblemSaid(t, effective)} /></p>;
   if (effective.graph === null || effective.graph === undefined) {
     return (
       <p className="m-0 text-small text-ink-soft">

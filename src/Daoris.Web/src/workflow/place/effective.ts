@@ -28,6 +28,23 @@ export function routeWords(t: TFunction, route: string, label: string | null): s
   return label ?? route.slice('kind:'.length);
 }
 
+/**
+ * Why a chart is not drawn, in the page's words: the driver's code and values worded from the catalogue in the language shown, and the
+ * driver's own sentence where it sent no code, or one a newer driver names.
+ */
+export function bindingProblemSaid(t: TFunction, effective: WorkflowEffective): string {
+  const coded = effective.problemCoded;
+  const values = coded?.values ?? {};
+  switch (coded?.code) {
+    case 'not-saved': return t('workflow.place.chart.problem.notSaved', values);
+    case 'unread': return t('workflow.place.chart.problem.unread', values);
+    case 'no-version': return t('workflow.place.chart.problem.noVersion', values);
+    case 'version-unread': return t('workflow.place.chart.problem.versionUnread', values);
+    case 'pull-request-unserved': return t('workflow.place.chart.problem.pullRequestUnserved', values);
+    default: return effective.problem ?? '';
+  }
+}
+
 /** The rows of the start node's routes: default work, each kind the workspace declares, and landed work. */
 export function routeRows(t: TFunction, start: WorkflowStart, scope: RouteScope): RouteRow[] {
   const rows = start.routes.map((route): RouteRow => {

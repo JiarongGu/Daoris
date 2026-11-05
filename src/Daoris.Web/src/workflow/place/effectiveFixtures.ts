@@ -68,4 +68,12 @@ export const EFFECTIVE_LANDED_VERIFIES: WorkflowEffective = {
 /** A saved workflow that no longer reads: the driver says why and draws nothing. */
 export const EFFECTIVE_UNREAD: WorkflowEffective = {
   ...EFFECTIVE_RELEASE, graph: null, cells: [], schema: null, version: null, problem: '`release` keeps no version that reads here.',
+  problemCoded: { code: 'no-version', values: { workflow: 'release' } },
+};
+
+/** A saved workflow whose pull-request step no plugin performs here: the bind's refusal, as the chart says it. */
+export const EFFECTIVE_UNSERVED: WorkflowEffective = {
+  ...EFFECTIVE_RELEASE, graph: null, cells: [], schema: null, version: null,
+  problem: '`release` v1\'s step `pr` is a pull request of plugin `acme.pr`, which is not installed here.',
+  problemCoded: { code: 'pull-request-unserved', values: { workflow: 'release', version: '1', step: 'pr', plugin: 'acme.pr' } },
 };
