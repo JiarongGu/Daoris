@@ -18,7 +18,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
     /// <param name="said">Told what it says about its account's windows.</param>
     public TransportProtocol Of(
         TransportRun run, ProtocolChat chat, string sessionId, string cwd, string? posture, object? meta, IReadOnlyList<AcpMcpServer> servers,
-        ISessionAdapter resolved, Action<JsonElement> said)
+        ChatAgent agent, Action<JsonElement> said)
     {
         void Record(SessionEvent e) => wiring.Context.Events.Keep(sessionId, e, run.Say);
 
@@ -27,7 +27,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
             Posture = posture,
             Meta = meta,
             Servers = servers,
-            TypedFailures = resolved.Toolchain?.ErrorWords?.TypedFailures == true,
+            TypedFailures = agent.TypedFailures,
             // Its model and effort, told each time they change, so the page offers what the agent does.
             Options = options => optionsChanged(sessionId, ChatOptions.ThePersons(options)),
             Configure = session =>
@@ -56,7 +56,7 @@ internal sealed class ProtocolHeld(IExecutorWiring wiring, Action<string, IReadO
                         // the reason goes back to the record, which goes back to how it ended. Its reason by code, the agent's words its own.
                         goOn.Refused = refused.Why;
                         chat.Opened(null, run.Say, Record);
-                        var refusal = DoorNotes.ResumeRefused(refused, resolved.Name);
+                        var refusal = DoorNotes.ResumeRefused(refused, agent.Name);
                         run.Say(refusal.Note);
                         Record(new SessionEvent { Kind = SessionEventKind.Note, Text = refusal.Note, Parts = refusal.Parts });
                         break;

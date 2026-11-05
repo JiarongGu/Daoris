@@ -17,12 +17,12 @@ internal sealed class ChatAccountReads(ChatContext context)
     /// The reader's reading of the same failure where it read a limit by its code or kind with no sentence, as a driven run passes it: cooled
     /// for the unstated default. Null reads the sentence alone.
     /// </param>
-    public Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null)
+    public Noted? Limited(string sessionId, ChatAgent agent, string? profile, string failure, TimeSpan? coolOff = null, LimitSeen? byCode = null)
     {
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
         {
-            limited = context.Harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff, byCode);
+            limited = context.Harnesses.Limited(agent.Name, profile, failure, sessionId, coolOff, byCode);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -32,7 +32,7 @@ internal sealed class ChatAccountReads(ChatContext context)
         if (limited is not { } read) return null;
 
         context.Service.AccountSaid(AccountLine.Limited(
-            sessionId, adapter.Name, profile, read.Seen, context.Events.TurnsEnded(sessionId) + 1, used: null));
+            sessionId, agent.Name, profile, read.Seen, context.Events.TurnsEnded(sessionId) + 1, used: null));
         return CoolingWords.ConversationOf(read.Entry, context.Harnesses.Zone);
     }
 
@@ -50,11 +50,11 @@ internal sealed class ChatAccountReads(ChatContext context)
     /// signed out, kept as a reading is, so the next start walks past it, and the line for its record comes back. Null is a refusal like any
     /// other. Read from the door's failure, never from the transcript.
     /// </summary>
-    public Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure)
+    public Noted? SignedOut(ChatAgent agent, string? profile, string failure)
     {
         try
         {
-            return RefusedAccounts.SignInRefused(context.Harnesses, adapter, profile, failure);
+            return agent.SignInRefused(context.Harnesses, profile, failure);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

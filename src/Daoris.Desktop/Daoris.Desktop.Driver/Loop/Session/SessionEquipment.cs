@@ -17,7 +17,7 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
         // A standing block past what the first prompt carries goes through its file, written before the spawn reads it.
         if (prepared is null) StandingBlocks.Hand(target);
         var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(variable) }, config.Commands.GetValueOrDefault(adapter.Name));
-        Equip(adapter, info, selection);
+        SpawnEquipment.Equip(adapter, info, selection);
 
         // Only a dsh home Daoris made is written to; anywhere else the notice says what happens, and a home holding somebody
         // else's patch layer is reported rather than overwritten.
@@ -35,23 +35,6 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
         }
 
         return (info, harnessNotice);
-    }
-
-    /// <summary>
-    /// What every session's process carries on its environment: its toolchain's account, binary and pin, then its tools at the
-    /// start by the adapter's own switch, so its connector's tools come with its first request. Applied here rather than inside
-    /// each adapter's spawn so no adapter can forget it; the switch is set last, so an account's own variables cannot defer the tools again.
-    /// </summary>
-    public static void Equip(ISessionAdapter adapter, ProcessStartInfo info, HarnessSelection selection)
-    {
-        if (adapter.Toolchain is { } toolchain)
-        {
-            HarnessProbe.Apply(
-                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                selection.Environment);
-        }
-
-        foreach (var (name, value) in adapter.ToolsUpFront) info.Environment[name] = value;
     }
 
     /// <summary>

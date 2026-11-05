@@ -75,10 +75,10 @@ public sealed record HelpAccess(string Mode, string Said)
     public bool Full => Mode == HelpModes.Full;
 
     /// <summary>
-    /// The access a start of Ask Daoris gets on <paramref name="adapter"/> in <paramref name="mode"/>: restricted as it always ran;
-    /// full in the harness's own mode that asks nothing (<see cref="ISessionAdapter.FullPosture"/>), or refused where it names none.
+    /// The access a start of Ask Daoris gets on its conversation's <paramref name="adapter"/> in <paramref name="mode"/>: restricted as it
+    /// always ran; full in the harness's own mode that asks nothing (<see cref="ChatAgent.FullPosture"/>), or refused where it names none.
     /// </summary>
-    public static HelpAccess For(string mode, ISessionAdapter adapter)
+    internal static HelpAccess For(string mode, ChatAgent adapter)
     {
         if (mode != HelpModes.Full)
         {

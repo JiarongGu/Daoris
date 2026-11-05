@@ -61,12 +61,12 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// What a conversation in a tree of its own is told of its process: the commit rule standing for its repository and its landing, in
     /// <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
     /// </summary>
-    public static ProcessBriefing Process(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ISessionAdapter? adapter = null)
+    public static ProcessBriefing Process(ResolvedCommits commits, LandingPlan? plan, string? dependencies = null, ChatAgent? agent = null)
     {
         // A copy of the tree's dependencies is told with the process, so the agent does not run the install that would delete it; no new
         // note code, it rides the process's own.
         var words = ProcessWords.Conversation(commits, plan);
-        if (adapter is not null) words = $"{words}\n\n{CommitTrailers.For(adapter)}";
+        if (agent is not null) words = $"{words}\n\n{agent.Trailers()}";
         if (!string.IsNullOrEmpty(dependencies)) words = $"{words}\n\n{dependencies}";
         return new(words, commits.Rule.Mode, commits.Source);
     }
@@ -77,7 +77,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// join what the process told it, once, so the conversation hears the checks only as they are enforced.
     /// </summary>
     public async Task<HeavyHanded> HeldChecksAsync(
-        string sessionId, string workTree, ChatPlace place, DriverConfig config, ISessionAdapter resolved, CancellationToken ct)
+        string sessionId, string workTree, ChatPlace place, DriverConfig config, ChatAgent agent, CancellationToken ct)
     {
         var home = context.Home;
         if (!place.Keeps || !new SessionTrees(home).Holds(workTree)) return HeavyHanded.None;
@@ -88,7 +88,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
 
         if (await chatRuns.ChecksAsync(sessionId, workTree, config).ConfigureAwait(false) is not { } checks) return HeavyHanded.None;
         if (SessionChecks.Hold(home, sessionId, checks.Checks, checks.Minutes) is { } kept) _checksKept[sessionId] = kept;
-        var heavy = HeavyTold.Hand(workTree, home, checks.Repository, checks.Checks, resolved.TakesSettings);
+        var heavy = HeavyTold.Hand(workTree, home, checks.Repository, checks.Checks, agent.TakesSettings);
         if (heavy.Words is { } words && _process.TryGetValue(sessionId, out var told))
         {
             _process[sessionId] = told with { Words = $"{told.Words}\n\n{words}" };
@@ -104,7 +104,7 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
     /// </summary>
     /// <param name="process">The chat run's bound process, which plans its landing as its press's gate does; null reads the rule.</param>
     public async Task<ProcessBriefing> ProcessAsync(
-        string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct,
+        string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ChatAgent agent, CancellationToken ct,
         IWorkplaceProcess? process = null)
     {
         LandingPlan? plan;
@@ -117,6 +117,6 @@ internal sealed class ChatTold(ChatContext context, ChatRunBinds chatRuns)
             plan = null;
         }
 
-        return Process(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, adapter);
+        return Process(CommitRules.Resolve(config, known.Repository, known.Workspace), plan, dependencies, agent);
     }
 }

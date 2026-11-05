@@ -26,7 +26,7 @@ internal interface IChatRunning
 
     /// <summary>Run a conversation in a place: a new one's first message, or an ended one going on in its own conversation.</summary>
     Task<ChatStart> RunAsync(
-        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
         ChatPending? pending = null);
 

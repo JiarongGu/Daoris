@@ -62,10 +62,6 @@ internal sealed class ChatTransportHost(
 
     public IReadOnlyList<string>? Command(string adapter) => config.Commands.GetValueOrDefault(adapter);
 
-    /// <summary>Never asked: a conversation goes on through a start of its own (MSG1c), and its run is handed no selection to go on with.</summary>
-    public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
-        throw new NotSupportedException("a conversation goes on through a start of its own, never through its run's go-on.");
-
     public TimeSpan LingerBound => SessionWaits.LingerBound;
 
     public Task<bool> EndedLingeringAsync(Process process, AcpEnding? ending) => SessionWaits.EndedLingeringAsync(process, SessionWaits.LingerBound, ending);

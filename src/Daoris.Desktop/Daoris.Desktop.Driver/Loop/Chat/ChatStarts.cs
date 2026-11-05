@@ -289,6 +289,9 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
                     moves: MovedWords.Asked(owner.Current, owner.KeptIds, owner.KeptIds))));
         }
 
+        // The agent the walk settled on, as the conversation reads it from here on: what it is told, and the run that holds it.
+        var agent = new ChatAgent(resolved);
+
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs its new maker's
         // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or
         // Ask Daoris's, is told nothing ahead of the person's words.
@@ -300,7 +303,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         {
             var bound = context.ChatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
             answers = ChatRunBinds.AnswersFindings(bound);
-            told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false));
+            told.HoldProcess(sessionId, await told.ProcessAsync(opened.Path, sessionId, config, known, opened.Dependencies, agent, ct, bound).ConfigureAwait(false));
         }
         else if (from is not null)
         {
@@ -309,7 +312,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
             // A part on another maker than the one before it, which left work uncommitted in the tree, is told that maker's trailer too, as a
             // driven carry-on is.
             var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
-            told.HoldProcess(sessionId, new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source));
+            told.HoldProcess(sessionId, new ProcessBriefing(agent.Trailers(left), commits.Rule.Mode, commits.Source));
         }
 
         // A conversation that continues another reads the kept folders of its line's parts, whose files its brief names.
@@ -319,7 +322,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         try
         {
             started = await wiring.RunAsync(
-                "chat", sessionId, message, resolved, selection, config,
+                "chat", sessionId, message, agent, selection, config,
                 wiring.RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers),
                 onEnded, ct, chosen: chosen, pending: context.Pending.For(sessionId)).ConfigureAwait(false);
             // What the open moved, for the move that asked it to hand the new part.
