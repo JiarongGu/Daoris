@@ -9,6 +9,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <!-- The gates report findings, not exceptions; a stack trace here would be noise in a hook. -->
     <StackTraceSupport>false</StackTraceSupport>
+    <!-- The AOT compiler package comes with the SDK's own runtime version, so its advisory (GHSA-p3jp-9v83-76w9) cannot be
+         pinned away here; it stays a warning, and the binary runs gates on this repository, never untrusted input. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1903</WarningsNotAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Daoris.Devkit.Core/Daoris.Devkit.Core.csproj" />
