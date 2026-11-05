@@ -109,9 +109,15 @@ const SLICES: Record<string, (ask: Ask, remotes: Ask) => Promise<Partitions>> = 
   },
   groups: async (ask) => {
     const groups = await ask('SESSION_GROUPS', {});
+    const sessions = await servedList('/api/sessions');
+    const record = (id: unknown) => sessions.filter(object).find((each) => each.id === id);
+    // A row carries the sort inputs the shell pushes with it (the session's repository and its two instants), which the page orders by.
     const rows = byKey(object(groups) ? list(groups.sessions) : [], (row) => row.session);
-    const entries = object(groups) && Array.isArray(groups.entries)
-      ? groups.entries : ownEntries(await servedList('/api/sessions'), rows);
+    for (const [id, row] of Object.entries(rows)) {
+      const own = record(id);
+      if (object(row) && own) Object.assign(row, { repository: own.repository, created: own.created, updated: own.updated });
+    }
+    const entries = object(groups) && Array.isArray(groups.entries) ? groups.entries : ownEntries(sessions, rows);
     return { rows, entries: byKey(entries, (entry) => entry.entry) };
   },
   calls: async (ask) => {
@@ -185,7 +191,8 @@ export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceS
         store.register(spec);
         void store.resync(spec.name);
       }
-    });
+      // A test that ended before the page's modules were read has no module runner left to read them: nothing to hold.
+    }).catch(() => {});
   };
 
   const hear = async (push: unknown) => {
@@ -227,17 +234,26 @@ export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceS
     }
   };
 
-  const shell = async (module: string, type: string, options?: { payload?: unknown }) => {
+  // The arguments are handed on as the page gave them, so a call made with no options is recorded with none.
+  const shell = async (module: string, type: string, ...rest: [options?: { payload?: unknown }]) => {
+    const options = rest[0];
     if (module !== 'DAORIS.DRIVER' || type !== 'STATE_SLICE') {
       try {
-        return await invoke(module, type, options);
+        return await invoke(module, type, ...rest);
       } finally {
         // What a declared press moved is pushed once it answered, after the state hub was told.
-        if (PUBLISHES[module]?.[type]) setTimeout(() => void moved(), 0);
+        if (PUBLISHES[module]?.[type]) setTimeout(() => void moved().catch(() => {}), 0);
       }
     }
     const slice = String((options?.payload as { slice?: unknown } | undefined)?.slice ?? '');
-    const own = await settled(() => invoke(module, type, options));
+    let own: unknown;
+    try {
+      own = await invoke(module, type, ...rest);
+    } catch (refused) {
+      // The driver not being up yet is the shell's own refusal, which the page is told. Any other throw is a test that fails every
+      // route alike, and its slices are judged from the routes.
+      if (object(refused) && refused.code === 'DRIVER_NOT_READY') throw refused;
+    }
     if (object(own) && own.slice === slice) return own;
     const partitions = await judge(slice);
     return snapshotOf(slice, partitions, numbered(slice, partitions).seq);

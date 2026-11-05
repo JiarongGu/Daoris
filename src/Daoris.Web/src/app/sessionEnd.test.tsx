@@ -8,7 +8,7 @@ import { Profiler } from 'react';
 // streamed as hundreds of one-line `message` events of one id, twice, and with no boundary the window went blank. The whole
 // window, as `main.tsx` mounts it, over a mocked shell that delivers each event to every handler the page holds, through what such
 // an end changes: the turn ends, the quest is done, the work lands, the session ends and says so, and the next look reads it all
-// again, on Sessions and on Overview, its state pulled and pushed, with jsdom's empty boxes and with a box for every element. The
+// again, on Sessions and on Overview, its state pushed, with jsdom's empty boxes and with a box for every element. The
 // loop itself is the last case's: each streamed line left an update behind its commit, which React 19.2 counts as nested.
 
 const { invoke, notifyReady, shenora, handlers } = vi.hoisted(() => {
@@ -149,9 +149,6 @@ const push = async (slice: string, partition: string) => {
   });
 };
 
-/** Whether the shell pushes its slices with their data, or the page pulls them (an older shell's, which answers no snapshot). */
-let pushes = false;
-
 /** The shell, telling `type` to every handler the page holds for it. */
 const tell = (type: string, payload: unknown) => act(async () => {
   for (const each of [...(handlers.get(`DAORIS.${type}`) ?? [])]) each(payload);
@@ -176,7 +173,7 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
       if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
       if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE') {
         const slice = options?.payload?.slice ?? '';
-        if (pushes && slice in partitionsOf()) return snapshot(slice);
+        if (slice in partitionsOf()) return snapshot(slice);
         throw Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' });
       }
       if (module === 'DAORIS.DRIVER' && type === 'STATE') {
@@ -213,7 +210,6 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
     invoke.mockReset();
     handlers.clear();
     seqs.clear();
-    pushes = false;
     window.localStorage.clear();
   });
 
@@ -242,7 +238,7 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
   /**
    * The end, in the order the install's sessions met it: the turn ends with the call that closes the quest done; the quest is done
    * and the work lands by its rule; seconds later the session ends, its record, its group, what runs and its attention row moved,
-   * and says so; and the next look reads it all again. Where the shell pushes, each slice is pushed as its owner moves it.
+   * and says so; and the next look reads it all again. Each slice is pushed as its owner moves it.
    */
   async function throughTheEnd() {
     const closing = [
@@ -252,10 +248,8 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
     world.events = [...world.events, ...closing];
     await tell('SESSION_EVENTS', { session: SESSION, events: closing });
     world.quest = 'Done';
-    if (pushes) {
-      await push('quests', 'default');
-      await push('work', 'engine');
-    }
+    await push('quests', 'default');
+    await push('work', 'engine');
     // The agent's last message streams in chunk by chunk, each a `message` event of one id, with the quest done and the session
     // still working (the install's log: the page failed while they came).
     let seq = 10;
@@ -268,13 +262,11 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
     await tell('DRIVER_TICK', { considered: [], untrusted: [], waits: [] });
     world.state = 'completed';
     world.running = [];
-    if (pushes) {
-      await push('sessions', 'default');
-      await push('groups', 'rows');
-      await push('groups', 'entries');
-      await push('attention', 'working');
-      await push('driver', 'running');
-    }
+    await push('sessions', 'default');
+    await push('groups', 'rows');
+    await push('groups', 'entries');
+    await push('attention', 'working');
+    await push('driver', 'running');
     await tell('SESSION_ENDED', { session: SESSION, state: 'completed' });
     await tell('SESSION_ATTENTION', { kind: 'Ended', session: SESSION, headline: 'engine finished q1' });
     await tell('DRIVER_TICK', { considered: [], untrusted: [], waits: [] });
@@ -302,11 +294,10 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
     });
   }
 
-  for (const laidOut of [false, true]) for (const pushed of [false, true]) {
+  for (const laidOut of [false, true]) {
     for (const { place, open, after } of PLACES) {
-      const how = `its state ${pushed ? 'pushed' : 'pulled'}${laidOut ? ', every element laid out' : ''}`;
+      const how = `its state pushed${laidOut ? ', every element laid out' : ''}`;
       it(`draws the window ${place} through the session's end with no update loop, ${how}`, async () => {
-        pushes = pushed;
         if (laidOut) layOut();
         window.localStorage.setItem('daoris.dockClosed', '0');
         render(<PageRoot client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);
@@ -318,8 +309,8 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
         await throughTheEnd();
 
         await after();
-        // Where pushed, the ended record its push wrote is what the window read.
-        if (pushed) expect(invoke.mock.calls.filter(([, type]) => type === 'STATE_SLICE').length).toBeGreaterThanOrEqual(6);
+        // The ended record its push wrote is what the window read.
+        expect(invoke.mock.calls.filter(([, type]) => type === 'STATE_SLICE').length).toBeGreaterThanOrEqual(6);
         expect(loops()).toEqual([]);
         expect(screen.queryByRole('heading', { level: 1, name: "This window's page stopped on an error" })).toBeNull();
         expect(screen.getByRole('navigation', { name: 'Views' })).toBeInTheDocument();
@@ -333,7 +324,6 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
    * line and its scroll came before the count could rest. The Profiler names such commits `nested-update`: a streamed line makes none.
    */
   it("streams the agent's last message line by line with no commit leaving an update behind", async () => {
-    pushes = true;
     const phases: string[] = [];
     let counting = false;
     render(

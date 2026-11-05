@@ -11,12 +11,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => ({ ...(await import('../test/sliceShell')).mockedShell(invoke), useShenoraEvent: () => {} }));
 
 import '../locales/i18n';
 import type { FrameIntent } from '../menus/commands';
@@ -73,14 +68,16 @@ describe("the session's Workflow view", () => {
     );
 
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    // The session's record, which the side bar follows, is pushed in as the window holds it: the tabs are pressed once it is here.
+    await screen.findByRole('heading', { level: 1, name: 'Fix the header' });
     const tabs = within(side).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
     expect(tabs.slice(0, 3)).toEqual(['Timeline', 'Review', 'Workflow']);
     expect(asked()).toHaveLength(0);
 
     await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
 
-    await waitFor(() => expect(asked()[0]?.[2]).toEqual(expect.objectContaining({ payload: { session: 's1' } })));
     expect(await within(side).findByText('At The work · working')).toBeInTheDocument();
+    expect(asked()[0]?.[2]).toEqual(expect.objectContaining({ payload: { session: 's1' } }));
     const work = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'work')!;
     expect(work).toHaveTextContent('this session');
     expect(work).toHaveTextContent('Being worked on by claude-code.');

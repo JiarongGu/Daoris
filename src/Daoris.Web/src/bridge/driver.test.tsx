@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { getBridge } from '@shenora/react';
 
 // The driver's own calls, as hooks (MOD3: moved from `shell.test.tsx` beside the domain they call).
 
@@ -21,7 +22,6 @@ vi.mock('@shenora/react', async () => ({
 
 import { keys } from '../data/queries';
 import { useDriverReady, useNudge, usePlaces, useRoleStructure, useRoleStructureChain, useSyncNow } from './driver';
-import { useLines } from './repositories/lines';
 
 describe('the driver domain', () => {
   afterEach(() => {
@@ -83,7 +83,7 @@ describe('the driver domain', () => {
     let up = false;
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (!up) throw notReady();
-      return type === 'LINES'
+      return type === 'PLACES'
         ? { lines: [{ repository: 'engine', workspace: 'aurora', branch: 'main', source: 'checkout' }], landings: [] }
         : null;
     });
@@ -95,7 +95,8 @@ describe('the driver domain', () => {
     const { result } = renderHook(() => {
       useDriverReady();
       return {
-        lines: useLines(),
+        // A read the page makes itself, under the driver's key: the lines are pushed, and are not asked again by this.
+        lines: useQuery({ queryKey: [...keys.driver, 'places-read'], queryFn: () => getBridge().invoke<{ lines: unknown[] }>('DAORIS.DRIVER', 'PLACES') }),
         review: useQuery({ queryKey: ['sessions', 's-1', 'diff'], queryFn: review }),
         gone: useQuery({ queryKey: ['sessions', 's-2', 'diff'], queryFn: gone }),
       };

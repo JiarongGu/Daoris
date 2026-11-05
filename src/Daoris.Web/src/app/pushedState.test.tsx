@@ -888,6 +888,10 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       for (const partition of ['rows', 'sessions']) {
         heard.get('STATE_PUSH')?.({ slice: 'attention', epoch: 'attention-1', partition, seq: 1, status: 'ready', data: {}, baseSeq: null, removed: [] });
       }
+      // The service's lists are judged too, empty, as the shell pushes them once its reads land.
+      for (const slice of ['quests', 'sessions', 'asks']) {
+        heard.get('STATE_PUSH')?.({ slice, epoch: `${slice}-1`, partition: 'default', seq: 1, status: 'ready', data: {}, baseSeq: null, removed: [] });
+      }
       await vi.advanceTimersByTimeAsync(1_000);
     });
     expect(within(band).getByText('Nothing needs you')).toBeInTheDocument();
