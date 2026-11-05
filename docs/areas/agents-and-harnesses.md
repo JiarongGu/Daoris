@@ -295,7 +295,11 @@ Agents page, and `orient-index` and `code-map` once files move.
   `UsageOf`) still read toolchains, not the registry. **1e**'s rest: the window, limit and sign-in tables split between provider and
   door (`AccountLimits.cs`, `AccountReadings.cs`, `HarnessAccountFolders.cs`), `ToolHomeLeftovers`' homes from the providers, the key
   variable read once, `alt-stub`'s account cases un-pended; then s-iii.
-- **AGENTPROVIDER1** host rows (f, g, h, l, m-ii, n, o, p, q, r, s, u): the readings' one sink per run (l), words through
+- **AGENTPROVIDER1** host rows (f, h, l, m-ii, n, o, p, q, r, s, u): f's programs as `ToolSpec`s and `AgentPinCommand`'s second
+  copy of pin, update and newest folded onto `HarnessActions` (the two copies differ: the terminal asks npm through the tools'
+  npm and reads its answer unshown, the window runs the `npm` it is handed and streams it, and their refusal words differ); s-i,
+  the machine door's holders reading `Adoption.Drives` and an unknown id refused; h's spawn, a door's `ISpawn` returning a
+  `ProcessRecipe` that `Shell` completes, `ISessionGit` from Workplace; the readings' one sink per run (l), words through
   the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice (n), one connector plan (p, with **CONNECTORS1**),
   the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
