@@ -44,7 +44,8 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
         + "their next message. Each door is a `daoris place`, `daoris settings` or `daoris quest` verb: drive, undrive, hold, resume, trees, line, "
         + "across, standing, language, review, opinion, helpers, commits, retry, notify, cap, "
-        + "cooloff, keep, git-use. A role's agents are no setting: `role_propose` proposes them. `git-use` points a repository's remote (the target; `--remote <name>` for one other than origin) or a workspace's host "
+        + "cooloff, quiet, keep, git-use. A role's agents are no setting: `role_propose` proposes them. `quiet` sets how long a session may say "
+        + "nothing and run nothing before Daoris looks in on it, 5 to 120 minutes; a session is never stopped for running long. `git-use` points a repository's remote (the target; `--remote <name>` for one other than origin) or a workspace's host "
         + "(`--host <host>`) at a git identity already set up on this machine, by its label, or takes the choice back with `--clear`; it never sets "
         + "an identity up, tests, trusts or removes one, never chooses the person's own git sign-ins, and sees no key or token. `keep` sets how long this machine keeps one kind of thing Daoris writes, its words a kind and "
         + "its rule: `set-aside <days>|whole|slim|default` (trees the look moved aside), `downloads <days>|never|default` "
@@ -80,7 +81,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         + "for a push, a merge, a discard, a sign-in or an account's key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as its terminal verb spells it: drive, undrive, hold, resume, trees, line, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, keep or git-use.")]
+        [Description("The door, as its terminal verb spells it: drive, undrive, hold, resume, trees, line, across, standing, language, review, opinion, helpers, commits, retry, notify, cap, cooloff, quiet, keep or git-use.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
@@ -88,7 +89,7 @@ public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox?
         string? target = null,
         [Description("The workspace, for a line, a language, a review, a second opinion, a helpers rule or a commit rule, or `across … read`, set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
-        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers), `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits), a number (cap, cooloff minutes), a kind and its rule (keep: `set-aside 30`, `downloads never`, `logs default`, `history 365`), an identity's label or `--clear`, with `--remote <name>` for a repository's remote or `--host <host>` for a workspace's (git-use).")]
+        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--agents <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers), `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits), a number (cap, cooloff minutes, quiet minutes), a kind and its rule (keep: `set-aside 30`, `downloads never`, `logs default`, `history 365`), an identity's label or `--clear`, with `--remote <name>` for a repository's remote or `--host <host>` for a workspace's (git-use).")]
         string? value = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();

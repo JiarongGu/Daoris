@@ -43,6 +43,8 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("across", "plugins", null, "write-to engine --clear")]
     [InlineData("cap", null, null, "3")]
     [InlineData("cooloff", null, null, "90")]
+    [InlineData("quiet", null, null, "5")]
+    [InlineData("quiet", null, null, "120")]
     // GITAUTH1e: a repository's remote or a workspace's host pointed at an identity, or taken back.
     [InlineData("git-use", "engine", null, "Work")]
     [InlineData("git-use", "engine", null, "--remote upstream Work")]
@@ -315,6 +317,9 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
     [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
+    [InlineData("quiet", null, null, "4", "a whole number of minutes from 5 to 120")]
+    [InlineData("quiet", null, null, "121", "a whole number of minutes from 5 to 120")]
+    [InlineData("quiet", null, null, "soon", "a whole number of minutes from 5 to 120")]
     [InlineData("git-use", null, null, "Work", "name exactly one")]
     [InlineData("git-use", "engine", "work", "Work", "name exactly one")]
     [InlineData("git-use", "engine", null, "", "`git-use` is an identity's label or `--clear`")]
