@@ -363,10 +363,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
         public bool Interactive => true;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("this test spawns nothing");
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
             throw new InvalidOperationException("this test spawns nothing");
     }
 

@@ -16,7 +16,7 @@ public sealed class SpawnTableTests
         QuestId: "abc123", Title: "Fix the flaky gate", Body: "It fails one run in five.", Asker: "Platform",
         Repository: "Game", Root: "D:/fam/Game", ServiceUrl: "http://localhost:5177");
 
-    private static ChatTarget Chat() => new("Game", "D:/fam/Game", "http://localhost:5177");
+    private static SpawnRequest Chat(string? session = null) => SpawnRequests.Chat("Game", "D:/fam/Game", "http://localhost:5177", session);
 
     private static readonly string[] Stream = ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
 
@@ -140,7 +140,7 @@ public sealed class SpawnTableTests
         try
         {
             Environment.SetEnvironmentVariable("DAORIS_TARGET", "inherited");
-            var chat = SpawnRequests.Of(Chat() with { Session = "c-1", PermissionMode = "bypassPermissions", Resume = "kept" }, null);
+            var chat = Chat("c-1") with { Mode = "bypassPermissions", Resume = "kept" };
             Assert.Equal(("bypassPermissions", "kept"), (chat.Mode, chat.Resume));
             var info = Shell.Chat(new ProcessRecipe("stand", []), chat);
             Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
@@ -255,6 +255,6 @@ public sealed class SpawnTableTests
 
         public SessionWire Wire => SessionWire.Acp;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new NotSupportedException();
+        public ProcessStartInfo Prepare(SpawnRequest request) => throw new NotSupportedException();
     }
 }

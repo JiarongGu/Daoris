@@ -238,7 +238,7 @@ public sealed class LineAccountTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     private static int _built;

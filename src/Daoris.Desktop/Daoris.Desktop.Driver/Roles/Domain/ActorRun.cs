@@ -13,16 +13,23 @@ public static class ActorAskedChoices
     {
         public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
 
+        /// <summary>
+        /// The choice a start asked (D205 §3.2), read from its whole <see cref="SpawnRequest"/>: the request's asked choice, else the record's
+        /// <paramref name="kept"/>, else the opening's default; a model or effort the machine's command names, the command's own; and, where
+        /// nothing named it, what the door's program reads from the <paramref name="environment"/> it starts with, by its spawn's
+        /// <paramref name="variables"/>. What the door's recipe carries of it, what the agent acknowledges and what its turns report are each
+        /// read apart from this, never back into it.
+        /// </summary>
         public static ActorAsked ForSpawn(
-            string agent, System.Diagnostics.ProcessStartInfo info, SpawnChoiceVariables variables, ActorAsked? requested = null)
+            string agent, SpawnRequest request, IDictionary<string, string?> environment, SpawnChoiceVariables variables, ActorAsked? kept = null)
         {
-            var asked = requested ?? Before(agent);
+            var asked = request.Asked ?? kept ?? Before(agent);
             ActorValue Command(string flag, ActorValue value)
             {
-                var words = info.ArgumentList.ToArray();
-                for (var i = 0; i < words.Length; i++)
+                var words = request.Command ?? [];
+                for (var i = 0; i < words.Count; i++)
                 {
-                    var named = words[i] == flag && i + 1 < words.Length ? words[i + 1]
+                    var named = words[i] == flag && i + 1 < words.Count ? words[i + 1]
                         : words[i].StartsWith(flag + "=", StringComparison.Ordinal) ? words[i][(flag.Length + 1)..] : null;
                     if (named is not null) return value is { Source: "entry" or "override", Carried: true } && value.Value == named ? value : new("command", named, false);
                 }
@@ -32,9 +39,9 @@ public static class ActorAskedChoices
             var effort = Command("--effort", asked.Effort);
             // What the door's program reads from its environment is the door's to say (its spawn's `ChoiceVariables`), never a name here.
             if (model.Source == "account-default" && variables.Model is { } modelVariable
-                && info.Environment.TryGetValue(modelVariable, out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
+                && environment.TryGetValue(modelVariable, out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
                 model = new("environment", ownModel, false);
-            if (variables.Effort is { } effortVariable && info.Environment.TryGetValue(effortVariable, out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
+            if (variables.Effort is { } effortVariable && environment.TryGetValue(effortVariable, out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
                 effort = new("environment", ownEffort, false);
             return asked with { Model = model, Effort = effort };
         }

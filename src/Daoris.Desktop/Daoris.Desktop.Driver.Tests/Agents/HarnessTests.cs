@@ -770,8 +770,7 @@ public sealed class HarnessSelectionTests : IDisposable
         /// <summary>Which door — the protocol one asks for the Agent SDK's executable seam (ACP2).</summary>
         public SessionWire Wire => wire;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(
-            SessionTarget target, IReadOnlyList<string>? command) => new();
+        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }

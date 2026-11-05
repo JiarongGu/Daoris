@@ -42,10 +42,10 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
 
         public string? FullPosture => full;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("a placing test spawns nothing");
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
             throw new InvalidOperationException("a placing test spawns nothing");
     }
 

@@ -31,10 +31,10 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     /// <summary>Whether the protocol door reads a failure by its typed code before its words.</summary>
     public bool TypedFailures => adapter.Toolchain?.ErrorWords?.TypedFailures == true;
 
-    /// <summary>The conversation's process as the door makes it, then equipped as every session's is (D230 point 3).</summary>
-    public ProcessStartInfo Prepare(ChatTarget target, IReadOnlyList<string>? command, HarnessSelection selection)
+    /// <summary>The conversation's process as the door makes it for its runner's request, then equipped as every session's is (D230 point 3).</summary>
+    public ProcessStartInfo Prepare(SpawnRequest request, HarnessSelection selection)
     {
-        var info = adapter.PrepareChat(target, command);
+        var info = adapter.PrepareChat(request);
         SpawnEquipment.Equip(adapter, info, selection);
         return info;
     }

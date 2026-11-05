@@ -116,7 +116,7 @@ public sealed class DeclaredDoorsTests : IDisposable
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
 
         var start = adapter.Prepare(target, command: null);
-        var chat = adapter.PrepareChat(new ChatTarget("engine", _home, "http://localhost"), command: null);
+        var chat = adapter.PrepareChat(SpawnRequests.Chat("engine", _home, "http://localhost", null));
 
         Assert.Equal("acme-agent", Path.GetFileNameWithoutExtension(start.FileName));
         Assert.True(start.RedirectStandardInput);

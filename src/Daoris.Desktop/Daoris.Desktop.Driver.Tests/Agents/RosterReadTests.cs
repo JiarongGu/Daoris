@@ -53,7 +53,7 @@ public sealed class RosterReadTests : IDisposable
     {
         public string Name => name;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new();
+        public ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }

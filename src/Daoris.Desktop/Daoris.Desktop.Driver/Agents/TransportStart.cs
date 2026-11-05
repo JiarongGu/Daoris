@@ -33,8 +33,11 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// <summary>Where the harness's own words are kept for its ending (AGT3c), which its executor reads after; null keeps the run's own.</summary>
     public HarnessWords? Own { get; init; }
 
-    /// <summary>The target the spawn was prepared for, which a go-on prepares its resume from.</summary>
+    /// <summary>The target the spawn was prepared for, which a go-on's resume is equipped for as its start was.</summary>
     public SessionTarget? Target { get; init; }
+
+    /// <summary>What the spawn was asked, composed by the run's executor, which a go-on asks again naming the conversation it resumes.</summary>
+    public SpawnRequest? Request { get; init; }
 
     /// <summary>
     /// What the harness is selected as (its account's home, its binary), which a go-on is handed as the first run was; null where the run goes
@@ -212,9 +215,6 @@ internal interface ITransportHost
 
     /// <summary>The downloads a start is handed, kept on its record before it is spawned (KEEP1b).</summary>
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
-
-    /// <summary>The command configured for a door, or null for its own.</summary>
-    IReadOnlyList<string>? Command(string adapter);
 
     /// <summary>
     /// A resume's process given the environment a start has (<c>Driver.Prepare</c>). Never asked of a host whose runs are handed no selection,

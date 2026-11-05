@@ -77,9 +77,9 @@ public sealed class CurveMoveStoreTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
 
-        public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns");
+        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
     }
 
     /// <summary>A conversation's turns over a door that writes nothing: <paramref name="wire"/> is told each message as its write is made.</summary>

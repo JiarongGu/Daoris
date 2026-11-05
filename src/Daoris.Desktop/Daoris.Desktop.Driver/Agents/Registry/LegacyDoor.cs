@@ -77,18 +77,16 @@ internal sealed class LegacyDoor : ISessionAdapter
     public HarnessToolchain? Toolchain => _toolchain.Value;
 
     /// <summary>The door's recipe completed by the transports' shell, stripped of every other provider's registered variable (s-vi).</summary>
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-        SpawnRequests.Started(Spawn(), target, command, Stripped());
+    public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(Spawn(), request, Stripped());
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+    public ProcessStartInfo PrepareChat(SpawnRequest request) =>
         Interactive
-            ? SpawnRequests.Chatted(Spawn(), target, command, Stripped())
+            ? DoorStarts.Chatted(Spawn(), request, Stripped())
             : throw new DriverException(
                 $"the `{Name}` adapter cannot hold a conversation — it spawns an agent that takes its "
                 + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
 
-    public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-        SpawnRequests.Resumed(Spawn(), target, command, conversation, Stripped());
+    public ProcessStartInfo? PrepareResume(SpawnRequest request) => DoorStarts.Resumed(Spawn(), request, Stripped());
 
     /// <summary>Whether the door's program runs Claude Code's, so its spawn takes Claude Code's seam (<see cref="ISpawn.ClaudeSeam"/>).</summary>
     public bool ClaudeSeam => Spawn().ClaudeSeam;

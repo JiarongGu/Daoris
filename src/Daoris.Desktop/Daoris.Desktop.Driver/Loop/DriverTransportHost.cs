@@ -38,8 +38,6 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
     public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
         DownloadKeeping.KeepHandedAsync(driver.Context.Service, Home, sessionId, info, ct);
 
-    public IReadOnlyList<string>? Command(string adapter) => driver.Context.Config.Commands.GetValueOrDefault(adapter);
-
     public ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         driver.Prepare(adapter, target, selection, next).Info;
 

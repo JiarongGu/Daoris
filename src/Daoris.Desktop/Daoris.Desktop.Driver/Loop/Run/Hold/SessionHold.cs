@@ -89,12 +89,15 @@ internal sealed class SessionHold(IRunWiring wiring)
         // this process's agents' job, and a partner's in its piece's job beneath it.
         var whose = resume is null ? StartClass.Background : StartClass.Person;
 
+        // What the start asked of its door's spawn, which its asked choice is read from and a go-on asks again naming its conversation.
+        var request = SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(adapter.Name));
+
         // The run holds the process, its capture and its wait; the steps below are this hold's own, between the spawn and the open. The
         // spawn keeps the downloads the start is handed and brackets its process's lineage; it is tracked so who drives Daoris's browser
         // lasts exactly as long as it, and reaped.
         var start = new TransportStart(info, whose)
         {
-            RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Selection = goesOnAs,
+            RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Request = request, Selection = goesOnAs,
         };
         await using var run = new TransportRun(wiring.Transport, adapter, start);
         await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
@@ -110,7 +113,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         }
         actor = prior?.Actor ?? actor;
         if (taken is { } role) context.Conversations.KeepRole(sessionId, role.Role, role.Revision);
-        var asked = ActorAsked.ForSpawn(adapter.Name, info, adapter.ChoiceVariables(), target.Asked ?? prior?.Asked);
+        var asked = ActorAsked.ForSpawn(adapter.Name, request, info.Environment, adapter.ChoiceVariables(), prior?.Asked);
 
         // The entry a new start's walk took; a continuation keeps its record's own.
         var choice = target.Choice ?? prior?.Choice ?? "before";

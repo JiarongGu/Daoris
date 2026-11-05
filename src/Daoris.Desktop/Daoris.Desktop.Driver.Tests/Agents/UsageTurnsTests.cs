@@ -301,7 +301,7 @@ public sealed class UsageTurnsTests : IDisposable
 
         public HarnessToolchain? Toolchain => null;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
     [Fact]

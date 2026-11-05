@@ -82,7 +82,7 @@ public sealed class CommandShimTests : IDisposable
         var pipe = AdapterSet.Built().Resolve("claude-code");
 
         var driven = acp.Prepare(Target(), command: null);
-        var chat = pipe.PrepareChat(new ChatTarget("Game", _folder, "http://localhost:5177"), command: null);
+        var chat = pipe.PrepareChat(SpawnRequests.Chat("Game", _folder, "http://localhost:5177", null));
         foreach (var (info, adapter) in new[] { (driven, acp), (chat, pipe) })
         {
             info.Environment["PATH"] = _folder;

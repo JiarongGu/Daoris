@@ -167,7 +167,7 @@ public sealed class StartRoleTests : IDisposable
 
         public HarnessToolchain? Toolchain => toolchain;
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => throw new InvalidOperationException("nothing spawns here");
+        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
     }
 
     /// <summary>

@@ -54,7 +54,7 @@ public sealed class DshAdapter : ISessionAdapter
     public const string Posture = "workspace-write";
 
     /// <summary>Its door's spawn (<see cref="DshSpawn"/>), the posture its recipe's own variable, until row t.</summary>
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => SpawnRequests.Started(new DshSpawn(), target, command);
+    public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(new DshSpawn(), request);
 
     /// <summary>
     /// Pinned exact, and <b>vendored nowhere</b>: 561 MB per machine, and a harness's own packaging is

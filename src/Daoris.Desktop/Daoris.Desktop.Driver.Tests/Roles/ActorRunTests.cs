@@ -51,7 +51,7 @@ public sealed class ActorRunTests : IDisposable
         Assert.Equal("high", roundtrip.Effort.Value);
         var adapter = new ClaudeCodeAdapter();
         var target = new SessionTarget("q", "title", "body", "asker", "Owner", _home, "http://stand-in") { Asked = roundtrip };
-        var chat = new ChatTarget("Owner", _home, "http://stand-in") { Asked = roundtrip, Resume = "conv-1" };
+        var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = roundtrip, Resume = "conv-1" };
         foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "conv-1"), adapter.PrepareChat(chat, null) })
         {
             var arguments = info.ArgumentList.ToList();
@@ -155,7 +155,7 @@ public sealed class ActorRunTests : IDisposable
         Assert.Equal(new ActorOverride("sonnet", "low"), ActorOverride.Read(kept));
         Assert.Null(ActorOverride.Read(null));
 
-        var chat = new ChatTarget("Owner", _home, "http://stand-in") { Asked = asked.Overlaid(new ActorOverride("sonnet", null)), Resume = "conv-1" };
+        var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = asked.Overlaid(new ActorOverride("sonnet", null)), Resume = "conv-1" };
         var arguments = new ClaudeCodeAdapter().PrepareChat(chat, null).ArgumentList.ToList();
         Assert.Equal("sonnet", arguments[arguments.IndexOf("--model") + 1]);
         Assert.DoesNotContain("--effort", arguments);

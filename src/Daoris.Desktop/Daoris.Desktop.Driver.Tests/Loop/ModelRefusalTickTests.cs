@@ -270,8 +270,8 @@ public sealed class ModelRefusalTickTests : IDisposable
             Binary: [], VersionArguments: [], ProfileVariable: StubAdapter.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
             RunsInOwnHome: true);
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            Shell.Start(ProcessRecipe.Of(command!, target.Asked?.NativeArguments(command!)), SpawnRequests.Of(target, command));
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
+            Shell.Start(ProcessRecipe.Of(request.Command!, request.Asked?.NativeArguments(request.Command!)), request);
     }
 
     /// <summary>
