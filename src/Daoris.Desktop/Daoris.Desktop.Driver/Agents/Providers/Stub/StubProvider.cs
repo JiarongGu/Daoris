@@ -88,7 +88,7 @@ internal static class StubProvider
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Absent,
             Known<LentPart>.Declared(lent, Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

@@ -100,7 +100,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// Asked where its agent refused <see cref="Asked"/>'s model at the open, before any prompt: a later entry to set on this same session,
     /// or null, and the open ends <c>choice-not-offered</c>. Null reads the model as not carried.
     /// </summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; init; }
+    public IChoiceReask? ModelRefused { get; init; }
 
     /// <summary>The refusal that ended its open before any prompt, or null.</summary>
     public ModelRefusal? NotOffered { get; set; }

@@ -40,7 +40,7 @@ internal static class DshProvider
             Known<TablesPart>.Absent,
             Known<UsagePart>.Absent,
             Known<LentPart>.Declared(new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

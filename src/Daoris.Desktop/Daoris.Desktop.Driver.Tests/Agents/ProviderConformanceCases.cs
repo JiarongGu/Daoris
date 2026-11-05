@@ -772,7 +772,7 @@ internal static class ConformanceCases
             new DoorTablesPart(null, null), null, InstructionsPart.None);
         return new Provider(
             new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ProgramFacts>.Absent,
-            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
+            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
             Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }

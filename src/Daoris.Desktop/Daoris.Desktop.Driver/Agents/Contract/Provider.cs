@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <param name="Tables">Limit, window, sign-in and refused words, and error words.</param>
 /// <param name="Usage">How an account's windows are asked between turns.</param>
 /// <param name="Lent">What a harness whose <c>accountOf</c> names this provider's id reads of it, one level (O4-F1).</param>
-/// <param name="Models">The settings file port (a later row).</param>
+/// <param name="Models">The settings file: the account defaults' aliases and efforts, apart from what a session may carry.</param>
 /// <param name="Children">The child vocabulary port (a later row).</param>
 /// <param name="Rules">The rule language port (a later row).</param>
 /// <param name="Skills">The skill layout port (a later row).</param>
@@ -34,7 +34,7 @@ public sealed record Provider(
     Known<TablesPart> Tables,
     Known<UsagePart> Usage,
     Known<LentPart> Lent,
-    Known<PortRef> Models,
+    Known<ISettingsFile> Models,
     Known<IChildVocabulary> Children,
     Known<PortRef> Rules,
     Known<PortRef> Skills,

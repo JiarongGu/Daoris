@@ -23,7 +23,7 @@ internal sealed class AcpOptions(
     public Action<ActorAsked>? Carried { get; set; }
 
     /// <summary>Asked where the agent does not offer, or refuses, the model at the open: the re-ask, or null to end the open.</summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; set; }
+    public IChoiceReask? ModelRefused { get; set; }
 
     /// <summary>Told the options the open listed, before the posture or any set (D205 §9.2).</summary>
     public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; set; }
@@ -119,7 +119,7 @@ internal sealed class AcpOptions(
             if (refusal is { } refused)
             {
                 NotOffered = refused;
-                var later = await ModelRefused!(refused).ConfigureAwait(false);
+                var later = await ModelRefused!.ReaskAsync(refused).ConfigureAwait(false);
                 if (later is null) throw new AcpChoiceNotOffered(refused);
 
                 // The same agent on the same account (§3.3's first path): what the refused attempt moved is set back where the later

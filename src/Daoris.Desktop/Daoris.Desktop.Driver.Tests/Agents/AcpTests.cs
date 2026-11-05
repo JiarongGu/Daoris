@@ -2892,7 +2892,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("mythos", null),
-            ModelRefused = refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); },
+            ModelRefused = ChoiceReask.Of(refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); }),
             OffersRead = options => offered = options,
         };
 
@@ -2920,7 +2920,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null),
+            ModelRefused = ChoiceReask.Of(refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null)),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
@@ -2945,7 +2945,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = _ => Task.FromResult<ActorAsked?>(Entry(null, "low")),
+            ModelRefused = ChoiceReask.Of(_ => Task.FromResult<ActorAsked?>(Entry(null, "low"))),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);

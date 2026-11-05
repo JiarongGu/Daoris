@@ -60,7 +60,7 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
         IReadOnlyDictionary<string, string>? scope, object? meta, IReadOnlyList<AcpMcpServer> servers, DrivenInbox? inbox,
         ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
-        Action<ActorAsked>? carried, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
+        Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
         Action<IReadOnlyList<ChatMessage>> handedBack)
     {

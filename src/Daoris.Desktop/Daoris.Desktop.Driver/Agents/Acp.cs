@@ -258,7 +258,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Asked where the agent refuses <see cref="Carry"/>'s model at the open: a later choice for this session, or null to end it (<see cref="AcpChoiceNotOffered"/>).</summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused
+    public IChoiceReask? ModelRefused
     {
         get => Options.ModelRefused;
         set => Options.ModelRefused = value;

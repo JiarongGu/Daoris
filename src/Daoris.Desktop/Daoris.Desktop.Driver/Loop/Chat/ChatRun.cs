@@ -359,7 +359,7 @@ internal sealed class ChatRun(
                 OffersRead = offers => options.KeepOffers(agent.Name, selection, sessionId, offers),
                 Pending = pending,
                 Shown = said => Context.TakeShown(sessionId, said),
-                ModelRefused = pending is null ? null : async refusal =>
+                ModelRefused = ChoiceReask.Of(pending is null ? null : async refusal =>
                 {
                     // Kept as the account's reading first, then the walk asked again as if it had been known.
                     var later = await wiring.Of<ChatReplacement>().ReaskAsync(pending, sessionId, agent, selection, config, refusal).ConfigureAwait(false);
@@ -367,7 +367,7 @@ internal sealed class ChatRun(
                     choice = later.From;
                     await service.TryKeepActorAsync(sessionId, null, choice, later.Asked, ct: CancellationToken.None).ConfigureAwait(false);
                     return later.Asked;
-                },
+                }),
             };
             chat.Turns.Closing = () => Context.Closing;
             chat.Turns.Unsent = count => closing.Unsent(sessionId, count);

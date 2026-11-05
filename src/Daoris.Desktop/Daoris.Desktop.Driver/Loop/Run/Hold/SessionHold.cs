@@ -212,7 +212,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 IReadOnlyList<string>? Values(string category) =>
                     options.FirstOrDefault(option => option.Category == category) is { } option ? [.. option.Choices.Select(each => each.Value)] : null;
             };
-        Func<ModelRefusal, Task<ActorAsked?>>? refusedAt = offers?.Refused is not { } reask
+        var refusedAt = ChoiceReask.Of(offers?.Refused is not { } reask
             ? null
             : async refusal =>
             {
@@ -244,7 +244,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                         chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))
                     .ConfigureAwait(false);
                 return later.Asked;
-            };
+            });
 
         // Every run on the protocol door handed its owner's check takes the one transient retry (D210 point 8), its waits on the driver's
         // clock: a driven session, an intake, a helper, an opinion, a partner and a brainstorm voice. Its bound is its line's tries rule, and a

@@ -94,6 +94,12 @@ export interface ToolDoor {
    * offered. Absent from an older shell.
    */
   settingsChoices?: SettingsChoices | null;
+  /**
+   * What a session on this door may carry for a model and an effort, in the tool's own words: the scope the actors offer, apart from
+   * the account's settings above. `max` is among the efforts only where a session may carry it (Claude Code's pipe door) and is never
+   * an account's default. Null where the door lists none yet; absent from an older shell.
+   */
+  sessionChoices?: SettingsChoices | null;
 }
 
 /** The choices a tool offers for an account's own settings, in its own words (AGT6). */
