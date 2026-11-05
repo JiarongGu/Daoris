@@ -23129,6 +23129,12 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
   **Outcome** 2026-11-04: the two roles drawn and edited through the one role editor; DiagramDetail's appointed section and the stories' hold rows left.
 
+## TREEWALK1 (2026-11-05)
+
+- [x] **TREEWALK1 — a session tree's reads skip what git ignores** (driver): a session tree holding a 5.6 GB ignored engine build made each review read take 16 to 58 s and the help room's look 29 s. → `docs/areas/git-and-remotes.md`
+
+  **Outcome** 2026-11-05: a held tree's ignored folder is counted by name before any file's time or size is read (1.6 to 0.3 s on the benchmark's 12,000 ignored files; `604148d70`); the review's own git starts remain PERF1's.
+
 ## LAUNCHCHAIN1 (2026-11-05)
 
 - [x] **LAUNCHCHAIN1 — a session's servers start as one process each** (driver, plugins): each `npx` server ran as `cmd /c npx`, an `npx-cli` node, `cmd /c <bin>` and the server's node, with a `conhost` each. → `docs/areas/plugins.md`
