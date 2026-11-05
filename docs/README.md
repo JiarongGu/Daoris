@@ -243,6 +243,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-03-context-one-design.md` | Design: CONTEXTONE1, a repository owns its context and reconciles with the canon through its own session's model, and Daoris manages only the sessions it runs; round 2 proposed 2026-11-03 (D230)
 | `2026-11-04-consolidation-plan.md` | Plan: CONSOLIDATE1, the current truth per area, the contradictions settled and one lean way to make a change, before any more features (the owner's yes, 2026-11-04)
 | `2026-11-04-codeshape-plan.md` | Plan: CODESHAPE1, each contract declared once (the contracts project, attributes, the command halves, the file map from folders) and the hubs as registered modules, cut into hour-long chunks A to F
+| `2026-11-05-backlog-plan.md` | Plan: every open row of the backlog closed, folded, parked, held for the owner or the install, or cut into chunks BL0 to BL30 and the sweeps, in waves of five (D237 to D239 reserved)
 
 ## UI, browser, tools and plugin contracts
 
