@@ -43,8 +43,11 @@ export type SuppliedWorld = {
   groupOf?: (id: string) => string | null;
 };
 
-/** What a card is drawn with: the tier the zoom asks, whether it is chosen, and whether find or a focus puts it back. */
-export type NodeState = { tier: Tier; selected: boolean; dim: boolean };
+/**
+ * What a card is drawn with: the tier the zoom asks, whether it is chosen or focused (the card the keys or the pointer are on), whether
+ * find puts it back, and the zoom, so a label beside a small card is drawn at the type scale (`1 / scale`).
+ */
+export type NodeState = { tier: Tier; selected: boolean; focused: boolean; dim: boolean; scale: number };
 
 /** What the feature's lines are drawn with; `line(id)` is what a line's group spreads, so the canvas walks and presses it. */
 export type EdgeContext = {
@@ -54,7 +57,7 @@ export type EdgeContext = {
   hovered: string | null;
   /** Past 400 cards, those a line needs an end at to be drawn (`lineDrawn`); `null` where every line is. */
   culled: ReadonlySet<string> | null;
-  line: (id: string) => { 'data-flow-line': string; role: 'button'; tabIndex: number; 'aria-pressed': boolean; onClick: () => void };
+  line: (id: string) => { 'data-flow-line': string; role: 'button'; tabIndex: number; 'aria-pressed': boolean; onClick: (event: { detail: number }) => void };
 };
 
 const stopOf = (target: EventTarget): Stop | null => {
@@ -70,7 +73,7 @@ const hoverOf = (target: EventTarget): string | null => {
 
 export function SuppliedCanvas({
   world, label, moves, fit, feature, storeKey, selected, onSelect, zoom, opening, nodeLabel, titleOf, frameClass, renderNode, renderEdges,
-  tools, findLabel, findFrom = FIND_FROM, findItems, list,
+  tools, findLabel, findFrom = FIND_FROM, findItems, list, reveal: arriving,
 }: {
   world: SuppliedWorld;
   /** Names the region and the world for a reader. */
@@ -106,6 +109,8 @@ export function SuppliedCanvas({
   findItems?: readonly { id: string; title: string; stands?: string }[];
   /** The world as a list (`CanvasList`), the whole reading: given, *Show as list* is offered at every width. */
   list?: ReactNode;
+  /** A card to show once it is drawn, and to give the focus when `focus` (a way back to a map); acted on once per object given. */
+  reveal?: { id: string; focus: boolean } | null;
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pane = useRef<HTMLDivElement>(null);
@@ -129,7 +134,8 @@ export function SuppliedCanvas({
 
   /** A box in the world's own units: the feature's coordinates less the frame's origin. */
   const placed = useCallback((box: Box): Box => ({ x: box.x - frame.x, y: box.y - frame.y, w: box.w, h: box.h }), [frame.x, frame.y]);
-  const press = (id: string) => onSelect(selected === id ? null : id);
+  // A double press is one press: its second click would otherwise release what the first chose.
+  const press = (id: string, detail = 1) => { if (detail < 2) onSelect(selected === id ? null : id); };
   // A stop reached by a key may not be mounted yet (culled, or a dot): it is pinned as the active one, then focused once it is drawn.
   const focusing = useRef<Stop | null>(null);
   const [focusTick, setFocusTick] = useState(0);
@@ -168,6 +174,17 @@ export function SuppliedCanvas({
     awaited.current = null;
     handle.current?.showBox(box);
   }, [shifted]);
+  const arrived = useRef<object | null>(null);
+  useEffect(() => {
+    if (!arriving || arrived.current === arriving) return;
+    const box = shifted.get(arriving.id);
+    if (!box) return;
+    arrived.current = arriving;
+    handle.current?.showBox(box);
+    if (arriving.focus) focusStop({ line: false, id: arriving.id });
+    else setActive({ line: false, id: arriving.id });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- focusStop is rebuilt each render and only sets state and a ref
+  }, [arriving, shifted]);
   // Find dims what does not match; a card standing for matches is not dimmed.
   const standing = useMemo(() => {
     if (find.matching === null) return null;
@@ -178,7 +195,7 @@ export function SuppliedCanvas({
   // What stays mounted wherever the view is: the active stop (a line's two ends), the selected, find's match and the hovered.
   const atLine = at?.line ? world.lines.find((line) => line.id === at.id) : undefined;
   const pinned = [at && !at.line ? at.id : null, atLine?.from ?? null, atLine?.to ?? null, selected, find.shown, hovered];
-  const { cull, onView, overlay } = useSuppliedCull(shifted, rem, pinned);
+  const { cull, scale, onView, overlay } = useSuppliedCull(shifted, rem, pinned);
   const { tier } = cull;
   useLayoutEffect(() => {
     const stop = focusing.current;
@@ -218,7 +235,7 @@ export function SuppliedCanvas({
 
   const context: EdgeContext = {
     tier, selected, hovered, culled: cull.culled,
-    line: (id) => ({ 'data-flow-line': id, role: 'button', tabIndex: isAt({ line: true, id }) ? 0 : -1, 'aria-pressed': selected === id, onClick: () => press(id) }),
+    line: (id) => ({ 'data-flow-line': id, role: 'button', tabIndex: isAt({ line: true, id }) ? 0 : -1, 'aria-pressed': selected === id, onClick: (event) => press(id, event.detail) }),
   };
 
   const options: CanvasOptions = {
@@ -295,7 +312,7 @@ export function SuppliedCanvas({
             const box = placed(raw);
             const place = { left: box.x, top: box.y, width: box.w, height: box.h };
             const dim = standing !== null && !statics.has(id) && !standing.has(id);
-            const state: NodeState = { tier, selected: selected === id, dim };
+            const state: NodeState = { tier, selected: selected === id, focused: hovered === id, dim, scale };
             if (statics.has(id)) {
               return <div key={id} role="img" aria-label={nodeLabel(id)} data-flow-static={id} className={cn('absolute', frameClass?.(id))} style={place}>{renderNode(id, state)}</div>;
             }
@@ -308,7 +325,7 @@ export function SuppliedCanvas({
                   tabIndex={isAt({ line: false, id }) ? 0 : -1}
                   aria-pressed={selected === id}
                   aria-label={nodeLabel(id)}
-                  onClick={() => press(id)}
+                  onClick={(event) => press(id, event.detail)}
                   className={cn(
                     'block h-full w-full cursor-pointer rounded-[inherit] text-left transition-opacity duration-(--speed)',
                     dim && 'opacity-25',

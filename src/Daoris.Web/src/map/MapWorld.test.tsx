@@ -212,3 +212,22 @@ describe('the map as a list', () => {
     expect(screen.getByRole('group', { name: 'the workspace map' })).toBeInTheDocument();
   });
 });
+
+describe('a choice standing forward (MAPUX1b)', () => {
+  const card = (id: string) => document.querySelector<HTMLElement>(`[data-flow-node="${id}"]`)!.firstElementChild!;
+
+  it('keeps the chosen repository and those it shares a line with at full ink and steps the others back', () => {
+    render(map(TOPOLOGY, { kind: 'node', id: 'portal-ui' }));
+    expect(card('portal-ui').className).not.toContain('opacity-40');
+    expect(card('portals-db').className).not.toContain('opacity-40');
+    expect(card('repo-05').className).toContain('opacity-40');
+  });
+
+  it('steps nothing back with nothing chosen, and stands a chosen line\'s two ends forward', () => {
+    const { rerender } = render(map(TOPOLOGY));
+    expect(card('repo-05').className).not.toContain('opacity-40');
+    rerender(<Tooltip.Provider>{map(TOPOLOGY, { kind: 'quests', from: 'portal-ui', to: 'portals-db' })}</Tooltip.Provider>);
+    expect(card('portal-ui').className).not.toContain('opacity-40');
+    expect(card('repo-05').className).toContain('opacity-40');
+  });
+});

@@ -22,9 +22,9 @@ const WORLD: SuppliedWorld = {
   lines: [{ id: 'a>b', from: 'a', to: 'b' }, { id: 'a>c', from: 'a', to: 'c' }, { id: '$>a', from: '$', to: 'a' }],
 };
 
-function Host({ selected: first = null, onChange = () => undefined, zoom = { min: 0.25, max: 2.5 }, findFrom = 40, findItems }: {
+function Host({ selected: first = null, onChange = () => undefined, zoom = { min: 0.25, max: 2.5 }, findFrom = 40, findItems, reveal }: {
   selected?: string | null; onChange?: (id: string | null) => void; zoom?: { min: number; max: number } | 'off'; findFrom?: number;
-  findItems?: { id: string; title: string; stands?: string }[];
+  findItems?: { id: string; title: string; stands?: string }[]; reveal?: { id: string; focus: boolean } | null;
 }) {
   const [selected, setSelected] = useState<string | null>(first);
   return (
@@ -32,7 +32,7 @@ function Host({ selected: first = null, onChange = () => undefined, zoom = { min
       <SuppliedCanvas
         world={WORLD} label="a world" moves="a world: drag to move" fit="Show the whole world" feature="test" storeKey="world"
         selected={selected} onSelect={(id) => { setSelected(id); onChange(id); }} zoom={zoom} opening={0.8}
-        nodeLabel={(id) => (id === '$' ? 'the source' : `card ${id}`)} titleOf={(id) => `card ${id}`} findLabel="find a card" findFrom={findFrom} findItems={findItems}
+        nodeLabel={(id) => (id === '$' ? 'the source' : `card ${id}`)} titleOf={(id) => `card ${id}`} findLabel="find a card" findFrom={findFrom} findItems={findItems} reveal={reveal}
         renderNode={(id, state) => <span data-tier={state.tier}>{id}</span>}
         renderEdges={(context) => WORLD.lines.map((line) => (
           <g key={line.id} {...context.line(line.id)} aria-label={`line ${line.id}`}>
@@ -105,6 +105,34 @@ describe('a supplied world below the canvas floor', () => {
     expect(screen.getByRole('button', { name: 'card b' })).toBe(card);
     expect(card).toHaveFocus();
     expect(card).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('a press, a double press and a way back', () => {
+  // MAPUX1b: a double press counts as one press, so it never chooses and releases at once.
+  it('counts a double press on a card or a line as one press: it chooses and does not release', async () => {
+    const chosen = vi.fn();
+    render(<Host onChange={chosen} />);
+    await user.dblClick(screen.getByRole('button', { name: 'card b' }));
+    expect(chosen).toHaveBeenCalledTimes(1);
+    expect(chosen).toHaveBeenLastCalledWith('b');
+    expect(screen.getByRole('button', { name: 'card b' })).toHaveAttribute('aria-pressed', 'true');
+    await user.dblClick(screen.getByRole('button', { name: 'line a>c' }));
+    expect(chosen).toHaveBeenCalledTimes(2);
+    expect(chosen).toHaveBeenLastCalledWith('a>c');
+  });
+
+  // MAPUX1c: a way back chooses and reveals a card, and gives it the focus when it is told to.
+  it('gives the focus to the card a way back names, once, and only when told to', async () => {
+    const { rerender } = render(<Host reveal={{ id: 'c', focus: false }} />);
+    expect(screen.getByRole('button', { name: 'card c' })).not.toHaveFocus();
+    expect(screen.getByRole('button', { name: 'card c' })).toHaveAttribute('tabindex', '0');
+    const back = { id: 'b', focus: true };
+    rerender(<Host reveal={back} />);
+    expect(screen.getByRole('button', { name: 'card b' })).toHaveFocus();
+    await user.tab();
+    rerender(<Host reveal={back} />);
+    expect(screen.getByRole('button', { name: 'card b' })).not.toHaveFocus();
   });
 });
 

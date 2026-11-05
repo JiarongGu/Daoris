@@ -14,6 +14,8 @@ type Frame = { view: View; viewport: Size; key: string };
  */
 export function useSuppliedCull(boxes: ReadonlyMap<string, Box>, rem: number, pinned: readonly (string | null)[]): {
   cull: SuppliedCull;
+  /** The zoom the cull was decided at, so a label can be drawn at the type scale whatever the zoom. */
+  scale: number;
   onView: (view: View, viewport: Size) => void;
   overlay: ((view: View, viewport: Size) => ReactNode) | undefined;
 } {
@@ -30,5 +32,5 @@ export function useSuppliedCull(boxes: ReadonlyMap<string, Box>, rem: number, pi
   const overlay = cull.dots
     ? (view: View, viewport: Size) => <DotLayer grid={grid} view={view} viewport={viewport} skip={cull.mounted} />
     : undefined;
-  return { cull, onView, overlay };
+  return { cull, scale: frame?.view.k ?? 1, onView, overlay };
 }

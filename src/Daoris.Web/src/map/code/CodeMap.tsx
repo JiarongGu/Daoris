@@ -7,18 +7,14 @@ import { CanvasList } from '../../design/canvas/CanvasList';
 import { type EdgeContext, type NodeState, SuppliedCanvas } from '../../design/canvas/SuppliedCanvas';
 import { lineDrawn } from '../../design/canvas/suppliedCull';
 import { Button, PathText } from '../../design/ui';
+import { CodeCard } from './CodeCards';
 import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
 import { foldable, foldGroup } from './codeFolds';
 
-/** Characters of an id a card can hold at the meta size before it would run past its edge. */
-export const FITS = 17;
 /** Zoom 10–250%: a repository of thousands is read from far, and a name is the type scale's at 100%. */
 const ZOOM = { min: 0.1, max: 2.5 } as const;
 /** The code map opens fitted on its closed folders, never below this. */
 const OPENING = 0.8;
-
-/** An id cut to what a card holds, with an ellipsis; whole in the detail and in the name a reader hears. */
-export const cutId = (id: string) => (id.length > FITS ? `${id.slice(0, FITS - 1)}…` : id);
 
 const isLine = (lines: readonly CodeLine[], id: string) => lines.some((line) => line.id === id);
 
@@ -30,6 +26,9 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
     ? context.selected === line.id
     : focus === null || line.from === focus || line.to === focus);
   const dotted = context.tier === 'dot';
+  // At the chip tier a count is said only on the chosen line and the hovered card's; at the dot tier on none, and a line is 1 px of ink.
+  const counted = (line: CodeLine) => !dotted && (context.tier === 'full' || line.id === context.selected
+    || (context.hovered !== null && (line.from === context.hovered || line.to === context.hovered)));
   // What a line says it is, for a reader: a dependency by its kind as written, or the count between two groups.
   const lineName = (line: CodeLine) => {
     const [from, to] = [name(line.from), name(line.to)];
@@ -63,10 +62,10 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
             <path
               d={line.d} fill="none" markerEnd={lit ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
               strokeDasharray={line.aggregated ? '6 3' : undefined}
-              style={{ strokeWidth: (chosen ? 2 : 0) + 1.5 + (line.aggregated ? Math.min(Math.log2(line.count), 4) : 0) }}
+              style={{ strokeWidth: dotted ? 1 : (chosen ? 2 : 0) + 1.5 + (line.aggregated ? Math.min(Math.log2(line.count), 4) : 0) }}
               className={cn('shown', lit ? 'stroke-accent' : 'stroke-ink-faint')}
             />
-            {line.aggregated && !dotted && (
+            {line.aggregated && counted(line) && (
               <>
                 <circle cx={line.mid.x} cy={line.mid.y} r={13} className={cn('fill-page stroke-[1.5]', lit ? 'stroke-accent' : 'stroke-line-strong')} />
                 <text x={line.mid.x} y={line.mid.y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
@@ -204,35 +203,14 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   const renderNode = (id: string, state: NodeState): ReactElement => {
     const group = tree.groups.get(id);
     const back = neighbours !== null && !neighbours.has(id);
-    const dot = state.tier === 'dot';
-    if (group) {
-      return (
-        <span
-          className={cn(
-            'flex h-full w-full items-center justify-between gap-2 rounded-card border-[1.5px] border-dashed bg-raised px-2.5',
-            state.selected ? 'border-accent' : 'border-line-strong', back && 'opacity-40',
-          )}
-        >
-          {!dot && (
-            <>
-              <span className="min-w-0 truncate text-small font-semibold text-ink">
-                {group.kind === 'folder' ? group.name || repository : group.across ? t('code.cycleAcrossCard', { folders: group.across.length }) : t('code.cycleCard')}
-              </span>
-              <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">{t('code.times', { count: group.members.length })}</span>
-            </>
-          )}
-        </span>
-      );
-    }
+    if (!group) return <CodeCard id={id} state={state} back={back} />;
     return (
-      <span
-        className={cn(
-          'flex h-full w-full items-center justify-center rounded-card border bg-raised px-2',
-          state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong', back && 'opacity-40',
-        )}
-      >
-        {!dot && <span className="truncate font-mono text-meta text-ink">{cutId(id)}</span>}
-      </span>
+      <CodeCard
+        id={id} state={state} back={back}
+        group={group.kind === 'folder'
+          ? { kind: 'folder', name: group.name || repository, count: group.members.length }
+          : { kind: 'cycle', title: nameOf(id), count: group.members.length }}
+      />
     );
   };
 

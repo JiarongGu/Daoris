@@ -8,7 +8,8 @@ import type { CodeDependency, CodeModule } from '../../data/api';
 import { graphIdentity, memoryKey } from '../../design/canvas/viewMemory';
 import { buildTree, defaultOpen, layoutCode } from './codeClusters';
 import { type CodeFixture, CYCLE_ACROSS_FOLDERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
-import { CodeMapDetail, CodeMapWorld, cutId, FITS } from './CodeMap';
+import { CodeMapDetail, CodeMapWorld } from './CodeMap';
+import { cutId, FITS } from './CodeCards';
 
 // MAP3a and CANVAS1f: a repository's own code map on the canvas — folders, modules as buttons, only the supplied dependencies as lines.
 // jsdom lays nothing out, so unless a width is stood in for the canvas is below its floor and the world is drawn whole as a pane.
