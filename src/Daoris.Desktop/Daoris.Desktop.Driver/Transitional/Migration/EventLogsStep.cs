@@ -25,10 +25,12 @@ public sealed class EventLogsStep : IHomeMigrationStep
         if (!Directory.Exists(folder)) return;
         foreach (var path in Directory.EnumerateFiles(folder, "*.events.jsonl").Order(StringComparer.Ordinal))
         {
-            if (!File.ReadLines(path).Any(line => Signs.Any(sign => line.Contains(sign, StringComparison.Ordinal)))) continue;
+            var whole = AtomicFile.ReadText(path);
+            if (!Signs.Any(sign => whole.Contains(sign, StringComparison.Ordinal))) continue;
             var text = new StringBuilder();
             var changed = false;
-            foreach (var line in File.ReadLines(path))
+            using var lines = new StringReader(whole);
+            for (var line = lines.ReadLine(); line is not null; line = lines.ReadLine())
             {
                 var next = Signs.Any(sign => line.Contains(sign, StringComparison.Ordinal)) ? Converted(line) : line;
                 changed |= !ReferenceEquals(next, line);

@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OUTPUTS, sourceHash, staleness } from './contracts.mjs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { LOCK, OUTPUTS, sourceHash, staleness, writeContracts } from './contracts.mjs';
+
+const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
+mkdirSync(join(REPO, '_fixtures'), { recursive: true });
 
 const sources = {
   'src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs': 'public sealed record Search(string Q);\n',
@@ -36,4 +43,50 @@ test('CODESHAPE1: a file whose stamp is the hash is fresh; one missing, unstampe
     assert.match(staleness('', hash, output), /is stale/);
   }
   assert.deepEqual(Object.values(OUTPUTS), ['src/Daoris.Web/src/data/generated/service.ts', 'src/Daoris.Web/src/bridge/generated/routes.ts']);
+});
+
+/** A generator that is a test's: what it was asked to build, and the files as `look` reads them, stale or fresh. */
+const stand = (why) => {
+  const asked = { builds: [], looks: [] };
+  return { asked, look: (root) => { asked.looks.push(existsSync(join(root, LOCK))); return { hash: 'h', why }; }, build: (_, hash) => asked.builds.push(hash) > 0 };
+};
+
+test('two web gates writing the page\'s types at once take turns: the one that waited reads the files again and builds nothing', async () => {
+  const root = mkdtempSync(join(REPO, '_fixtures', 'contracts-lock-'));
+  try {
+    // The first run, in a process of its own, holds the lock through its build.
+    const first = spawn(process.execPath, ['--input-type=module', '-e', [
+      `import { withRunLock } from ${JSON.stringify(new URL('./run-lock.mjs', import.meta.url).href)};`,
+      "withRunLock(process.argv[1], () => { console.log('held'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500); });",
+    ].join('\n'), join(root, LOCK)], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const ended = new Promise((done) => first.once('exit', done));
+    await new Promise((held) => first.stdout.once('data', held));
+
+    const second = stand(null);
+    const started = Date.now();
+    assert.equal(writeContracts(root, '--if-stale', second), 0);
+    assert.ok(Date.now() - started >= 1000, 'the second run built beside the first');
+    assert.deepEqual(second.asked, { builds: [], looks: [true] }, 'it read the files again under the lock, found them written and built nothing');
+    assert.equal(await ended, 0);
+    assert.equal(existsSync(join(root, LOCK)), false, 'each run let the lock go');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a lock left by a run that died is taken at once, and the files are built', () => {
+  const root = mkdtempSync(join(REPO, '_fixtures', 'contracts-lock-'));
+  try {
+    const dead = spawnSync(process.execPath, ['-e', '']).pid;
+    mkdirSync(dirname(join(root, LOCK)), { recursive: true });
+    writeFileSync(join(root, LOCK), `${JSON.stringify({ pid: dead, since: new Date().toISOString() })}\n`);
+    const run = stand('stale');
+    const started = Date.now();
+    assert.equal(writeContracts(root, '--if-stale', run), 0);
+    assert.ok(Date.now() - started < 5000, 'it waited on a holder that was gone');
+    assert.deepEqual(run.asked, { builds: ['h'], looks: [true] });
+    assert.equal(existsSync(join(root, LOCK)), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
