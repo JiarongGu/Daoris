@@ -49,8 +49,8 @@ internal static class StaffPolicyFixture
             if (choice.Effort is { } effort) each["effort"] = effort;
         }
 
-        var (read, refused) = StaffPolicy.Parse(written.ToJsonString());
-        Assert.True(refused is null, $"{row["name"]}: {refused?.Said}");
+        var read = PolicyRules.Parse(written.ToJsonString());
+        Assert.True(read is not null, $"{row["name"]}: the policy does not read");
         return read;
     }
 

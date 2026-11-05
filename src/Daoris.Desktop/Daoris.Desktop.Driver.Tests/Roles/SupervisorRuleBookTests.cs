@@ -88,7 +88,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
             [StaffConditions.Quiet] = new(StaffActions.Retry),
         });
 
-        var rules = SupervisorRuleBook.FromPolicy(policy, "build", "machine");
+        var rules = PolicyRules.From(policy, "build", "machine");
 
         Assert.Equal(
             ["failures-on-choice at 2: next", "limits at 1: wait", "tries at 2: weighted", "moves at 3: ask"],
@@ -132,24 +132,25 @@ public sealed class SupervisorRuleBookTests : IDisposable
     }
 
     [Fact]
-    public void CONTEXTDRIVE1e_on_a_reached_home_a_preset_s_moves_become_rules_and_a_move_set_through_the_policy_door_is_refused()
+    public void CONTEXTDRIVE1l_a_preset_s_limit_move_and_bound_become_rules_naming_the_role_and_the_policy_holds_neither()
     {
         var role = new RoleRecord("build", AuthoredText.Of("Build"), RoleRecord.Always, [RoleWork.Build], RoleScope.Everywhere);
         var choices = new List<ActorChoice> { new("claude", "sonnet", "high"), new("claude", "opus", "high") };
-        var preset = StaffPolicy.Preset(StaffPresets.Even, choices, null);
 
-        var (kept, rules, refused) = RuledPolicy.On(role, new RolePolicyPress(preset, StaffPresets.Even), preset);
-        Assert.Null(refused);
-        Assert.Empty(kept!.Moves);
-        Assert.Null(kept.Most);
-        Assert.Equal(["limits at 1: weighted", "moves at 3: ask"], rules.Select(rule => $"{rule.Count} at {rule.At}: {rule.Do}"));
-
-        var (_, _, moves) = RuledPolicy.On(role, new RolePolicyPress(preset), preset);
-        Assert.Contains("daoris role rules --place machine --roles build", moves!.Said);
-        Assert.Equal(StaffPolicy.Code, moves.Code);
+        foreach (var name in new[] { StaffPresets.Even, StaffPresets.Weighted })
+        {
+            var preset = StaffPolicy.Preset(name, choices, null);
+            Assert.Empty(preset.Moves);
+            Assert.Null(preset.Most);
+            var rules = RuledPolicy.Of(role, new RolePolicyPress(preset, name));
+            Assert.Equal(["limits at 1: weighted", "moves at 3: ask"], rules.Select(rule => $"{rule.Count} at {rule.At}: {rule.Do}"));
+            Assert.All(rules, rule => Assert.Equal(("machine", "build"), (rule.Place, Assert.Single(rule.Roles!))));
+        }
 
         var order = StaffPolicy.Preset(StaffPresets.First, choices, null);
-        Assert.Equal((order, 0, (RoleRefusal?)null), (RuledPolicy.On(role, new RolePolicyPress(order), order).Policy, RuledPolicy.On(role, new RolePolicyPress(order), order).Rules.Count, RuledPolicy.On(role, new RolePolicyPress(order), order).Refused));
+        Assert.Empty(RuledPolicy.Of(role, new RolePolicyPress(order, StaffPresets.First)));
+        Assert.Empty(RuledPolicy.Of(role, new RolePolicyPress(order)));
+        Assert.Empty(RuledPolicy.Of(role, new RolePolicyPress(Clear: true)));
     }
 
     [Fact]

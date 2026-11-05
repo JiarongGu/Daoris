@@ -135,7 +135,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
 
     /// <summary>CONTEXTDRIVE1e: a preset on a reached home writes its choices into the policy and its limit move and bound as rules in the same press.</summary>
     [Fact]
-    public void CONTEXTDRIVE1e_a_preset_on_a_reached_home_writes_its_moves_as_rules_naming_the_role_and_a_move_of_its_own_is_refused()
+    public void CONTEXTDRIVE1e_a_preset_on_a_reached_home_writes_its_moves_as_rules_naming_the_role()
     {
         Reach();
         Staffing.Set("build", [new ActorChoice("claude", "sonnet", "high"), new ActorChoice("claude", "opus", "high")]);
@@ -148,11 +148,6 @@ public sealed class SupervisorRuleDoorTests : IDisposable
         Assert.Equal(2L, machine.Revision);
         Assert.Contains(machine.Rules, rule => rule is { Count: "limits", Do: "weighted" } && rule.Roles!.Single() == "build");
         Assert.Contains(machine.Rules, rule => rule is { Count: "moves", At: 3, Do: "ask" } && rule.Roles!.Single() == "build");
-
-        var moves = new StaffPolicy(StaffRules.Order, [], new Dictionary<string, StaffMove> { [StaffConditions.Quiet] = new(StaffActions.Next) });
-        var refused = Assert.Throws<RoleRefusedException>(() =>
-            RoleDoor.Apply(Staffing, RoleChange.Set(RoleCatalog.Seed[0]), null, null, new RolePolicyPress(moves, Read: Staffing.Policy("build").Revision)));
-        Assert.Contains("daoris role rules", refused.Message);
     }
 
     [Theory]

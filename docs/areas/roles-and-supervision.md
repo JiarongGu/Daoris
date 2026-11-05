@@ -27,15 +27,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StaffingProjection`, `StaffingStep` | `Roles/StaffingProjection.cs`, `Transitional/Migration/StaffingStep.cs` | The store's rows as a record's fields; the migration's staffing step |
 | `ActorChoices`, `ActorKey` | `Roles/ActorChoices.cs`, `Settings/ActorKey.cs` | An order of 1 to 4 choices, its effective entries, its judge, who may be off |
 | `StartPlan`, `ReaskMove` | `Roles/StartPlan.cs`, `Roles/OneTurnReask.cs` | The one walk over a role's order, work to role, pass codes; the one re-ask |
-| `StaffPolicy` | `Roles/StaffPolicy.cs` | The policy record: rules, entries, conditions, actions, presets, digest, judge |
+| `StaffPolicy` | `Roles/StaffPolicy.cs` | The policy record: rule, entries, presets, digest, judge. Its `Moves` and `Most` are the course's read of a line's rules, set by `SupervisorRuleBook.Course`, never stored |
 | `StaffJudge` | `Roles/StaffJudge.cs` | `Arrange` (weights, shares, budgets, works) and `OnCondition` |
 | `StaffPolicies`, `StaffLedger`, `StaffCapabilities` | `Roles/StaffLedger.cs`, `Roles/StaffPolicyDoor.cs` | `role_policy` and starts ledger; stale reads; the fields a build enforces |
 | `RoleOrders`, `ActorSuggestion`, `StaffWeek` | `Roles/RoleOrders.cs`, `Roles/ActorSuggestion.cs`, `Roles/StaffWeek.cs` | The other readers' order; suggested choices; a role's last seven days |
 | `RoleUse`, `RoleUseMoves` | `Roles/RoleUse.cs`, `Roles/RoleUseMoves.cs` | A role's week from the machine log: starts per choice, those that fell and why (`actor.chose`), its moves by condition (`actor.moved`) |
 | `ApprovedChoice` | `Course/HandOver/ApprovedChoice.cs` | The choice a hand-over is approved on: an agent's own ask takes the arranged order's step for its agent; a handed quest's file keeps its model and effort, and its start takes them while the role still lists them |
 | `SupervisorRules` | `Roles/SupervisorRules.cs` | The rule supervisor's pure half: counts, actions, bounds, places, judge, effective set, act |
-| `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a policy's moves refused |
-| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place |
+| `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a preset's rules |
+| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
@@ -109,16 +109,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 24. A choice may take only some of the role's works, hold a share of the window (1 to 99%), and keep a daily budget of
     starts or reported tokens in the machine's local day. A budget acts at a start only. (from D226)
 25. Presets fill the form and never save: *First that can run*, *Spread evenly* and *Spread by weight*; the two spreads
-    move a limit by weight, at most 3 moves. (from D226)
+    move a limit by weight, at most 3 moves: they write those as rules naming the role, beside the policy. (from D226, D229)
 26. One pure judge, `StaffJudge.Arrange`, orders the role's own entries inside the one walk. The account walk inside a
     choice is unchanged; no account is named or assigned. (from D226)
-27. A build offers only what it enforces. The fields are the rule, weight, share, both budgets, works, the moves on a limit,
-    a transient episode, a fatal error and a quiet stop, and `most`. Any other field is refused and nothing saved. (from D226)
+27. A build offers only what it enforces. The fields are the rule, weight, share, both budgets and works. A stored
+    `moves` or `most` is passed over and the next write holds neither. (from D226, D229)
 28. A signed-out sign-in, a refused model and a reached budget are passes of the walk, never fields. (from D226)
 29. A move to another choice is a new part handed the brief at a part's end, never mid-turn. An uncertain send is never
     replayed. It is said as *move to another choice*, never *switch*. (from D226)
-30. A policy's moves and `most` are refused, naming `role rules`; a preset writes them as rules naming the role. The lines
-    read their moves and bound from the effective rules alone. (from D226, D229, D232)
+30. A policy holds no moves and no `most`, and `role policy` takes no `--on` or `--most`. The lines read their moves and
+    bound from the effective rules alone. (from D226, D229, D232)
 
 **The rule supervisor**
 
@@ -134,7 +134,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     conversion first. (from D229, D232)
 35. A fresh home is seeded at its first start: answers alone at 2, failures at 3, tries at 5. The release's migration
     writes an older home's caps as the machine's rules (answers alone 2, failures at its `strikes`, tries 5, moves 3 a
-    day), each policy's moves as rules at its role's place, and takes those moves and `strikes` out. Where the machine's
+    day), and takes `strikes` out; a stored policy's moves are passed over. Where the machine's
     place holds nothing, or the store does not read, the seeded rules decide. (from D229, D232)
 36. Every executor reads the effective rules: the answers-alone hold, the failures that park a quest, the tries of a
     transient episode and a line's moves. A count no rule watches acts on nothing. (from D229, D232)
@@ -249,10 +249,10 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 2. D229 point 5 (a rule is a holder of the supervisor role) vs `Modules/Platform/StandingConfirmation.cs:172-176` (holders
    are `terminal` and `actor`; rules are a store set through the role door). Same meaning; the code's split reads right.
 3. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs:130` (`driver role rules`);
-   `Roles/RuledPolicy.cs:25,35` print the note's form. The verb's grammar reads right.
+   the note's form is not printed anywhere now. The verb's grammar reads right.
 4. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicyDoor.cs:12-34` (moves for four; signed-out,
    model-refused and budget are the walk's). Code reads right.
-5. D226 (moves and `most` live in the policy) vs D229 and `Roles/RuledPolicy.cs:14-26` (they are the supervisor's rules).
+5. D226 (moves and `most` live in the policy) vs D229 and `Roles/StaffPolicy.cs` (the policy holds neither; they are the supervisor's rules).
    D229 reads right.
 6. D205 points 2 and 7 (choices in `driver.json`'s `actors`) vs `Roles/RoleStaffing.cs` (`role_staffing` alone). Code reads right.
 7. D205 points 8-9 (Settings → Actors, `driver actor`, `ACTORS`/`SET_ACTOR`, `actor_propose`) vs `driver role`,
@@ -270,17 +270,14 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1e (rest):** the failures park, the tries hold and a move recording their acts through
-  `SupervisorRuleActs`; *Details*' Supervisor line and the supervisor's print reading them.
+- **CONTEXTDRIVE1e (rest):** *Details*' Supervisor line reading the recorded acts (the web).
 - **CONTEXTDRIVE1g (rest):** the machine's page mounts the fold only through a place's Roles; `HelpCoverageTests`' rows
-  for the new hooks; the failures and tries holds carry no rule of their own yet, as they record no act.
+  for the new hooks; the failures and tries holds carry no rule words of their own yet.
 - **CONTEXTDRIVE1h (rest):** *Details*' counts (the session read's `counts`), the head's chip with its count, and the
   frame handing `onChangeRule` (the door to the place's Roles) to the head and the strip.
 - **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `rules` card words.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** the policy record's `moves` and `most` are still parsed only to be refused (`StaffPolicy.Parse`,
-  `StaffCapabilities.Fields`, `role policy --on` and `--most`, `RuledPolicy`'s refusal), and the migration still converts a
-  stored policy's moves (`SupervisorRuleCensus`); the installed proof.
+- **CONTEXTDRIVE1l, m:** the web's `StaffPolicy` wire type still names `moves` and `most`; the installed proof.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
   (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5

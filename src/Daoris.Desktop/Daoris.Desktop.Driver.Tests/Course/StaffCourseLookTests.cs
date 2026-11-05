@@ -25,16 +25,15 @@ public sealed class StaffCourseLookTests : IDisposable
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.True(staffing.ImportFile().How is StaffingImported.Done or StaffingImported.Already);
         var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
-        var parsed = StaffPolicy.Parse(policy).Policy!;
-        // A reached home keeps no moves or bound on a policy: the policy keeps its rule, and its moves are written as rules below.
-        var kept = parsed with { Moves = new Dictionary<string, StaffMove>(), Most = null };
-        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices, null, new RolePolicyPress(kept));
+        var parsed = PolicyRules.Parse(policy)!;
+        // A policy keeps no moves or bound: it keeps its rule, and the fixture's moves are written as rules below.
+        RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices, null, new RolePolicyPress(StaffPolicy.Parse(policy).Policy!));
         // The course reads the line's rules, never a policy's own moves: the policy's moves, written as rules beside the seeded ones.
         var store = new SupervisorRuleStore(_home);
         var world = SupervisorRuleDoor.World(_home);
         Assert.True(store.Write(
             SupervisorRules.Machine, store.Of(SupervisorRules.Machine).Revision,
-            [.. SupervisorRuleBook.Seeded(3), .. SupervisorRuleBook.FromPolicy(parsed, RoleWork.Build, SupervisorRules.Machine)],
+            [.. SupervisorRuleBook.Seeded(3), .. PolicyRules.From(parsed, RoleWork.Build, SupervisorRules.Machine)],
             SupervisorRuleBook.SeedDoor, world).Stored);
         return new StaffLedger(_home, () => StoreSettled.Yes);
     }
@@ -67,12 +66,12 @@ public sealed class StaffCourseLookTests : IDisposable
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         var scoped = RoleCatalog.Seed[0] with { Id = "engine-build", Scope = new RoleScope(RoleScope.Repository, "engine") };
         var choices = new[] { new ActorChoice("acp-stub", "sonnet", "low"), new ActorChoice("acp-other", "codex-mini", "high") };
-        var next = StaffPolicy.Parse(Policy("""{"quiet":"next"}""")).Policy!;
+        var next = PolicyRules.Parse(Policy("""{"quiet":"next"}"""))!;
         RoleDoor.Apply(staffing, RoleChange.Set(scoped), choices);
         var store = new SupervisorRuleStore(_home);
         var machine = store.Of(SupervisorRules.Machine);
         Assert.True(store.Write(
-            SupervisorRules.Machine, machine.Revision, [.. machine.Rules, .. SupervisorRuleBook.FromPolicy(next, scoped.Id, SupervisorRules.Machine)],
+            SupervisorRules.Machine, machine.Revision, [.. machine.Rules, .. PolicyRules.From(next, scoped.Id, SupervisorRules.Machine)],
             SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(_home)).Stored);
 
         // The record's actor is the seeded id, as on every driven record: the scoped role that takes the quest's work is the one asked.

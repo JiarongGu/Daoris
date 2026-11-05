@@ -34,10 +34,9 @@ internal static class HelpDoorRowsMachine
             + "added roles kept", "Agents → Roles → Working roles, and its *Restore all role defaults*",
             "`daoris role set|remove|default <id> …`, `daoris role default --all`"),
         // How a role spends its choices, a policy proposed with `role_propose`'s `policy`; the terminal's twin names a choice by its number.
-        ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget, the work a choice takes "
-            + "and what a limit or a service that does not answer does", "Agents → Roles → Working roles, a role's Edit",
-            "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--on <condition>=<action>] "
-            + "[--most <n>] [--clear]`"),
+        ("choose how a role spends its choices: first that can run, or spread by weight, with a share, a daily budget and the work a choice takes",
+            "Agents → Roles → Working roles, a role's Edit",
+            "`daoris role policy <id> [--preset first|even|weighted] [--rule order|weight] [--weight <n>=<0-10>] [--clear]`"),
         // The quest's drawer is a page. A stop's release names its session, since the terminal cannot see which hold a quest is under.
         ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris quest retry <quest>`"),
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
