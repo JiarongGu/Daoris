@@ -264,10 +264,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
 - **WORKFLOWCLEAN1z (NOCOMPAT1b2, NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
-  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the workspace's Setup tab, once its
-  other rows have a page; `AutoLandingWorld`, whose name still says the auto lander. The service holds no bind door: only its
-  exchange's `BindAsync` writes a quest's closure bind, which service tests seed and the take reads, until a bound run's close no
-  longer reads a bind recorded at the take.
+  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs. A workspace's page has three tabs
+  (Details, Branches, Workflow); its setup is its place's (defaults under Workflow, access and Reach under Sessions) and the remote's
+  wiring a row of Details, so a door naming a section is sent there by the opener. The service answers no bind door, yet its exchange's
+  `BindAsync` still writes a quest's closure bind and the take still consumes a bind named for it (`QuestBindOperation`,
+  `QuestGraphBinds`, the `took_bind` session column, `ServiceClient.TookBindAsync`): service tests seed it, and no driver writes it, so
+  a bound run's close reads its run only once that whole chain goes. The look's second pass in `WorkflowRunStart.BindAsync` (a run whose
+  session opened with no binding) is the same leftover, a start binding its own run.
 - **CHATFLOW1 (the rest):** the installed window.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
