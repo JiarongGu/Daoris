@@ -504,9 +504,9 @@ test('the record\'s spellings it reads are the driver\'s: the tool event, its fi
   // The cut's spelling is the one helper's (DEDUP7): `TextBounds.ClipCounted`, which both fields' cuts call.
   assert.match(readFileSync(driverFile('TextBounds.cs'), 'utf8'), /\$"\{text\[\.\.limit\]\}\{Ellipsis\} \(\{text\.Length\} chars\)"/);
   assert.match(events, /TextBounds\.ClipCounted\(text, limit\)/);
-  assert.match(readFileSync(driverFile('Acp.cs'), 'utf8'), /TextBounds\.ClipCounted\(raw, 400\)/);
+  assert.match(readFileSync(driverFile('AcpRender.cs'), 'utf8'), /TextBounds\.ClipCounted\(raw, 400\)/);
   // Only the Bash family is the native door's `execute`: a PowerShell call is `other`, which is why its command decides.
   assert.match(readFileSync(driverFile('StructuredOutput.cs'), 'utf8'), /"Bash" or "BashOutput" or "KillShell" => "execute",/);
-  assert.match(readFileSync(driverFile('SessionTrees.cs'), 'utf8'), /\$"s-\{Guid\.NewGuid\(\)\.ToString\("N"\)\[\.\.8\]\}"/);
+  assert.match(readFileSync(driverFile('TreeOpening.cs'), 'utf8'), /\$"s-\{Guid\.NewGuid\(\)\.ToString\("N"\)\[\.\.8\]\}"/);
   assert.match(readFileSync(driverFile('ServiceClient.cs'), 'utf8'), /public const string Driven = "driven";/);
 });

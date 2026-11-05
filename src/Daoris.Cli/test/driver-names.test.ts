@@ -49,7 +49,7 @@ const isReader = (path: string): boolean =>
   || (/^src\/Daoris\.Service\/Daoris\.Service\.Tests\/.+\.cs$/.test(path))
   || (/^src\/Daoris\.Cli\/test\/.+\.ts$/.test(path))
   || (/^src\/Daoris\.Web\/src\/.+\.tsx?$/.test(path))
-  || (/^tools\/[^/]+\.mjs$/.test(path));
+  || (/^tools\/(?:[^/]+\/)*[^/]+\.mjs$/.test(path));
 
 /**
  * The cases about readers, not reads: this file's, the merge tool's scan of what each suite reads, and the page finder's own
@@ -96,7 +96,7 @@ test('each name a reader reads a desktop source by is one file under its project
   assert.deepEqual(problems, [], 'each a name that does not name one file');
   assert.ok(names.size >= 40, `the scan found only ${names.size} names: its patterns no longer match how the readers read by name`);
   // PluginIconTests.cs left the list with the CLI's plugins.ts, its last reader (PUSH1f2f).
-  for (const read of [`${DRIVER}/NoteCodes.cs`, `${DRIVER}/Landing.cs`, `${DRIVER}/DriverCommand.cs`]) {
+  for (const read of [`${DRIVER}/NoteCodes.cs`, `${DRIVER}/TreesPlanWords.cs`, `${DRIVER}/DriverCommand.cs`]) {
     assert.ok(names.has(read), `the scan does not see ${read} read by name`);
   }
 });
