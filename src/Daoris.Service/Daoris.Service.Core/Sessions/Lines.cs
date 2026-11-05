@@ -38,7 +38,11 @@ public static class Lines
     /// its own head with no probe: its quest's runs here are this machine's line, never the one it ran on (the say door refuses it
     /// <c>not-ours</c>, as before).
     /// </summary>
-    public static async Task<LineWalk> WalkAsync(SessionStore sessions, Session named, CancellationToken ct = default)
+    public static Task<LineWalk> WalkAsync(SessionStore sessions, Session named, CancellationToken ct = default) =>
+        WalkAsync(new StoreLineFacts(sessions, null), named, ct);
+
+    /// <summary>The same walk over facts read for many records at once (<see cref="ListedFacts"/>).</summary>
+    public static async Task<LineWalk> WalkAsync(ILineFacts sessions, Session named, CancellationToken ct = default)
     {
         List<Session> records = [named];
         if (named.Origin is not null) return new LineWalk(named, records, LineEnd.Head);
@@ -74,14 +78,21 @@ public static class Lines
     /// The walk <see cref="HeadOfLineAsync"/> takes, chain hops included, with every record it visited, the one named first (LINESTOGETHER1b:
     /// a moved word is looked for on each of them).
     /// </summary>
-    public static async Task<LineWalk> LineOfAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default)
+    public static Task<LineWalk> LineOfAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default) =>
+        LineOfAsync(new StoreLineFacts(sessions, quests), named, ct);
+
+    /// <summary>The head of the line <paramref name="named"/> is on, over facts read for many records at once (<see cref="ListedFacts"/>).</summary>
+    public static async Task<Session?> HeadOfLineAsync(ILineFacts facts, Session named, CancellationToken ct = default) =>
+        (await LineOfAsync(facts, named, ct).ConfigureAwait(false)).Head;
+
+    private static async Task<LineWalk> LineOfAsync(ILineFacts sessions, Session named, CancellationToken ct)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var walk = await WalkAsync(sessions, named, ct).ConfigureAwait(false);
         var records = new List<Session>(walk.Records);
         while (walk.Head is { Quest: { } quest } head && seen.Add(head.Id) && head.Origin is null)
         {
-            var chain = await quests.ChainAsync(quest, ct).ConfigureAwait(false);
+            var chain = await sessions.ChainAsync(quest, ct).ConfigureAwait(false);
             var below = new HashSet<string>(StringComparer.Ordinal) { quest };
             // ChainAsync lists a quest after its parent, so one pass finds every descendant.
             var steps = chain.Where(step => step.Parent is { } parent && below.Contains(parent) && below.Add(step.Id)).OrderByDescending(step => step.Filed).ToList();

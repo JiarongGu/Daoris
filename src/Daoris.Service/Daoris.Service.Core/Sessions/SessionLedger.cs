@@ -145,16 +145,21 @@ public sealed class SessionLedger(
         keeps.KeepResolvedAsync(id, versions, ct);
 
     /// <summary>The record with the entry's key it answers: the one stored, else the rule's (<see cref="SessionEntries"/>), never written back.</summary>
-    public async Task<Session> WithEntryAsync(Session session, CancellationToken ct = default) =>
-        session.Entry is not null
-            ? session
-            : session with { Entry = await SessionEntries.KeyAsync(session, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false) };
+    public Task<Session> WithEntryAsync(Session session, CancellationToken ct = default) =>
+        WithEntryAsync(session, new StoreEntryFacts(quests, sessions), ct);
 
-    /// <summary>Each record with the key it answers, as <see cref="WithEntryAsync"/> answers one.</summary>
-    public async Task<IReadOnlyList<Session>> WithEntriesAsync(IEnumerable<Session> records, CancellationToken ct = default)
+    private static async Task<Session> WithEntryAsync(Session session, ISessionEntryFacts facts, CancellationToken ct) =>
+        session.Entry is not null ? session : session with { Entry = await SessionEntries.KeyAsync(session, facts, ct).ConfigureAwait(false) };
+
+    /// <summary>Each record with the key it answers, as <see cref="WithEntryAsync(Session, CancellationToken)"/> answers one.</summary>
+    public Task<IReadOnlyList<Session>> WithEntriesAsync(IEnumerable<Session> records, CancellationToken ct = default) =>
+        WithEntriesAsync(records, new StoreEntryFacts(quests, sessions), ct);
+
+    /// <summary>Each record with the key it answers, its facts read for all of them at once (<see cref="ListedFacts"/>).</summary>
+    public async Task<IReadOnlyList<Session>> WithEntriesAsync(IEnumerable<Session> records, ISessionEntryFacts facts, CancellationToken ct = default)
     {
         var answered = new List<Session>();
-        foreach (var record in records) answered.Add(await WithEntryAsync(record, ct).ConfigureAwait(false));
+        foreach (var record in records) answered.Add(await WithEntryAsync(record, facts, ct).ConfigureAwait(false));
         return answered;
     }
 
