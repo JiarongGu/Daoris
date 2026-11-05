@@ -134,5 +134,7 @@ finishes first and the whole set runs once.
 
 - CODESHAPE1: each contract declared once and the rest generated, then the hubs split into registered domain modules.
 - SCOPEVERIFY1: the scope's one verification, its known reds listed in `TASKS.md`.
+- MERGETOOL1 and QUEUEHANG1: the merge tool, the queue and the rehearsals cut into modules by what each becomes, their run folders
+  under `local/scratch/` kept by age and size, and a gate killed from outside said as lost (`docs/2026-11-05-merge-tool-design.md`).
 - Daoris measures its own sessions as `tools/subagent-time.mjs` measures builders (turns before the first edit, context growth,
   where the clock goes), and its supervisor can read it.
