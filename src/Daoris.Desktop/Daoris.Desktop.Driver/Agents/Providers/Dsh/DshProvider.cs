@@ -22,7 +22,7 @@ internal static class DshProvider
             LentPart.None, Known<PortRef>.Absent,
             // Its posture is its own mechanism, an environment variable its spawn sets, never a mode on the wire.
             new PosturesPart(null, null, null, null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new DshAdapter()), Evidence),
+            Known<ISpawn>.Declared(new DshSpawn(), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(false, Evidence),

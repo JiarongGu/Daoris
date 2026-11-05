@@ -459,7 +459,7 @@ public static class HarnessActions
     /// An agent's own command at a terminal (PUSH1f2e5, the alone-path design §1.1, <i>The second hop</i>): its installer, as the CLI's
     /// <c>relay</c> started it, said first as <c>$ command</c> and a blank line, then started with the console's three streams left as
     /// the host's and no window flag, so the person answers its prompts, it finds a terminal, and Ctrl+C reaches it. The same facts as
-    /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="HarnessProbe.Apply"/>,
+    /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="Shell.Equip"/>,
     /// the account's variable, the pin's environment) through the same start gate. Its exit code, once it ended: the person's Ctrl+C,
     /// which <paramref name="ct"/> carries, reached the agent too, so the host waits for it to end by its own rule.
     /// </summary>
@@ -495,7 +495,7 @@ public static class HarnessActions
 
     /// <summary>
     /// A harness action's start: its streams redirected as UTF-8, the tools' environment, and the account and binary
-    /// through the one seam every spawn takes (<see cref="HarnessProbe.Apply"/>), with the pin's environment where
+    /// through the one seam every spawn takes (<see cref="Shell.Equip"/>), with the pin's environment where
     /// <paramref name="managed"/> is the pin's executable (AGT2). At a <paramref name="terminal"/> its streams are the host's
     /// console's and it may have a window, the tools read from <paramref name="home"/>'s file (<see cref="TerminalRunAsync"/>).
     /// </summary>
@@ -528,7 +528,7 @@ public static class HarnessActions
         if (terminal) Tools.Hand(info, home);
         else Tools.Hand(info);
         // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
-        HarnessProbe.Apply(info, toolchain, profileHome, binary: managed);
+        Shell.Equip(info, toolchain, profileHome, binary: managed);
         return info;
     }
 
@@ -572,7 +572,7 @@ public static class HarnessActions
     /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
     /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
     /// the twin, fixed 2026-09-22). An agent npm installed globally is the same shape (USE1f), so every
-    /// spawn of a harness comes through here, by <see cref="HarnessProbe.Apply"/>. A shim is then run by
+    /// spawn of a harness comes through here, by <see cref="Shell.Equip"/>. A shim is then run by
     /// `cmd.exe`, which parses its arguments again and stops at a line break — so an argument it would
     /// reinterpret is refused rather than escaped. An installer's are paths and `package@version`s, and
     /// never carry one; the pipe door's prompt does, and is refused on a shim rather than cut short.

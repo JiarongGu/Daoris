@@ -132,7 +132,7 @@ public sealed class ApiKeyAccountTests : IDisposable
 
         var selection = await Roster(toolchain).SelectAsync("fake", Config(), null, null);
         var info = new ProcessStartInfo("fake");
-        HarnessProbe.Apply(info, toolchain, selection.ProfileHome, selection.Binary,
+        Shell.Equip(info, toolchain, selection.ProfileHome, selection.Binary,
             selection.ClaudeExecutable, selection.Environment);
 
         Assert.True(selection.Allowed, selection.Refusal);
@@ -151,7 +151,7 @@ public sealed class ApiKeyAccountTests : IDisposable
         var selection = await Roster(toolchain).SelectAsync("fake", Config(), null, null);
         var info = new ProcessStartInfo("fake");
         info.Environment.Remove("FAKE_KEY");
-        HarnessProbe.Apply(info, toolchain, selection.ProfileHome, selection.Binary,
+        Shell.Equip(info, toolchain, selection.ProfileHome, selection.Binary,
             selection.ClaudeExecutable, selection.Environment);
 
         Assert.False(info.Environment.ContainsKey("FAKE_KEY"));

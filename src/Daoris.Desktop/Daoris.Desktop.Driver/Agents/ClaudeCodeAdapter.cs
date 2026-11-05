@@ -38,65 +38,18 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// </summary>
     public bool Interactive => true;
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        var arguments = resolved.Skip(1)
-            .Concat(["-p", "--permission-mode", DrivenMode(target)])
-            .Concat(target.Asked?.NativeArguments(resolved) ?? [])
-            .Concat(StreamJsonOut);
+    /// <summary>Its door's spawn (<see cref="ClaudeCodeSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
+    private static readonly ClaudeCodeSpawn Spawn = new();
 
-        return PromptOnInput(Spawning.InRoot(target, resolved[0], arguments, redirectInput: true));
-    }
-
-    /// <summary>
-    /// The prompt goes on the harness's standard input under a bare <c>-p</c> (AGENTLYNTAI1s-i, <see cref="NativePrompt"/>): a process's
-    /// arguments are readable machine-wide. The input is written as BOM-less UTF-8, because a byte order mark would be the prompt's
-    /// first character, and the harness's own default for a pipe is not Daoris's to guess.
-    /// </summary>
-    private static ProcessStartInfo PromptOnInput(ProcessStartInfo info)
-    {
-        info.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-        return info;
-    }
-
-    /// <summary>
-    /// The permission mode a driven run names: its repository's permission prompts' (AUTONOMY1b, D184 point 3), <c>default</c> asking or
-    /// <c>bypassPermissions</c> unrestricted, in place of <c>acceptEdits</c>; <c>acceptEdits</c> under auto and for every target the
-    /// setup does not reach (D81).
-    /// </summary>
-    private static string DrivenMode(SessionTarget target) => target.Access?.PermissionMode ?? "acceptEdits";
-
-    /// <summary>
-    /// The harness's own structured output (D76, CONV3), checked against the binary before it was
-    /// written (docs/2026-09-25-stream-json-evidence.md): `stream-json` needs `--verbose` beside it, and
-    /// partial messages are what let the words stream as they are written.
-    /// </summary>
-    private static readonly string[] StreamJsonOut =
-        ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Shell.Start(Spawn.Start(target, command), target);
 
     public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
 
     /// <summary>The harness's own resume (ANSWER1a, D131 §1): <c>--resume &lt;id&gt;</c>, the id its <c>init</c> line named.</summary>
     public bool Resumes => true;
 
-    /// <summary>
-    /// <c>claude -p --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
-    /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again. It goes on the
-    /// harness's input, never in its arguments (AGENTLYNTAI1s-i): the driver writes it there as it starts the run
-    /// (<see cref="NativePrompt"/>).
-    /// 🔴 The flag is the maker's documented one, not yet run on this machine by a driven session (design §6).
-    /// </summary>
-    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
-    {
-        var resolved = Resolve(command);
-        var arguments = resolved.Skip(1)
-            .Concat(["-p", "--resume", conversation, "--permission-mode", DrivenMode(target)])
-            .Concat(target.Asked?.NativeArguments(resolved) ?? [])
-            .Concat(StreamJsonOut);
-
-        return PromptOnInput(Spawning.InRoot(target, resolved[0], arguments, redirectInput: true));
-    }
+    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+        Shell.Start(Spawn.Resume(target, command, conversation), target);
 
     /// <summary>
     /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
@@ -137,20 +90,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// all the same. In full access it names <see cref="FullPosture"/> (<see cref="ChatTarget.PermissionMode"/>), in place of
     /// <c>acceptEdits</c>.</para>
     /// </remarks>
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        // A conversation on the harness's structured wire (CONV3): each message a `stream-json` line on
-        // stdin, one turn each, until input ends — the same two endings the chat door keeps. One that goes on
-        // (MSG1c) resumes its own conversation by the id kept for its record, never `--continue` (D137 §4.2).
-        return Spawning.ChatInRoot(
-            target, resolved[0],
-            resolved.Skip(1)
-                .Concat(["-p", "--input-format", "stream-json", "--permission-mode", target.PermissionMode ?? "acceptEdits"])
-                .Concat(target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : [])
-                .Concat(target.Asked?.NativeArguments(resolved) ?? [])
-                .Concat(StreamJsonOut));
-    }
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => Shell.Chat(Spawn.Chat(target, command), target);
 
     /// <summary>
     /// <c>--permission-mode bypassPermissions</c>, Claude Code's mode that asks nothing, measured on 2.1.281 (the stream-json
@@ -167,46 +107,14 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// </summary>
     public string? AskingPosture => "default";
 
-    /// <summary>
-    /// `--mcp-config &lt;file&gt;` — verified on the binary (`claude --help`, 2026-09-23: *"Load MCP
-    /// servers from JSON files"*). The file is Daoris's, under its home; the repository's own
-    /// `.mcp.json` is untouched and still governs its own servers. What the session may CALL stays
-    /// the repository's allow-list (D37, D46 §5) — a server offered is a tool available, not a tool
-    /// approved.
-    /// </summary>
-    public void HandServers(ProcessStartInfo info, string configFile)
-    {
-        info.ArgumentList.Add("--mcp-config");
-        info.ArgumentList.Add(configFile);
-    }
+    public void HandServers(ProcessStartInfo info, string configFile) => Spawn.HandServers(info, configFile);
 
     /// <summary>The rules Daoris composed (PERM1, D72), as this harness's settings flag.</summary>
     public bool TakesSettings => true;
 
-    /// <summary>
-    /// `--settings &lt;file&gt;` — *"load additional settings from"* (`claude --help`, 2.1.280, HELP3's
-    /// evidence): the command-line tier, which the harness merges with the person's own settings and the
-    /// repository's, `deny` beating `allow`. The posture stays `acceptEdits`: rules are a scope, not a mode.
-    /// </summary>
-    public void HandSettings(ProcessStartInfo info, string settingsFile)
-    {
-        info.ArgumentList.Add("--settings");
-        info.ArgumentList.Add(settingsFile);
-    }
+    public void HandSettings(ProcessStartInfo info, string settingsFile) => Spawn.HandSettings(info, settingsFile);
 
-    /// <summary>
-    /// `--plugin-dir &lt;path&gt;` — *"Load a plugin from a directory or .zip for this session only"* (`claude --help`, 2.1.299):
-    /// one per plugin a spawn composed (HELPPLUG1b). Measured in an untrusted folder with a fresh config directory (D170's
-    /// note): each plugin's skills load, named <c>&lt;plugin&gt;:&lt;skill&gt;</c>, a dotted plugin name among them.
-    /// </summary>
-    public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins)
-    {
-        foreach (var plugin in plugins)
-        {
-            info.ArgumentList.Add("--plugin-dir");
-            info.ArgumentList.Add(plugin);
-        }
-    }
+    public void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) => Spawn.HandPlugins(info, plugins);
 
     /// <summary>
     /// The harness's own mechanisms (D49 §4), <b>verified against the real binary</b> before they were
@@ -249,7 +157,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
         // own settings reader and its SDK's settings schema, never guessed. The ACP door's are this one's.
         SettingsFile: AgentSettings.FileName,
-        PinnedEnvironment: StayPinned,
+        PinnedEnvironment: ClaudeCodeSpawn.StayPinned,
         // An account that is an API key (AGT3). Measured on 2.1.280 with an invalid key: `auth
         // status` reads it (api_key, no email) and a `-p` run takes it with no prompt.
         KeyVariable: "ANTHROPIC_API_KEY",
@@ -282,31 +190,5 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // recorded transient sentences, which its ACP door reads after its own entry.
         ErrorWords: ClaudeErrors.Words);
 
-    /// <summary>
-    /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a
-    /// pinned 2.1.270 with no login: its own <c>claude doctor</c> read <i>Auto-updates: enabled</i> and
-    /// called a copy in Daoris's folder an npm-global install; with <c>DISABLE_UPDATES=1</c> it read
-    /// disabled, refused <c>claude update</c>, and stayed 2.1.270. <c>DISABLE_AUTOUPDATER</c> stops
-    /// only the background check, and a pin is every path.
-    /// </summary>
-    internal static readonly IReadOnlyDictionary<string, string> StayPinned =
-        new Dictionary<string, string> { ["DISABLE_UPDATES"] = "1" };
-
-    public IReadOnlyDictionary<string, string> ToolsUpFront => LoadToolsUpFront;
-
-    /// <summary>
-    /// 🔴 Read in the managed binary (HELP5, Claude Code 2.1.274): with <c>ENABLE_TOOL_SEARCH</c> unset, every
-    /// MCP tool waits behind a <c>ToolSearch</c> step, a whole model round trip before the agent's first real
-    /// move; a value its parser reads as false loads every tool with the first request instead.
-    /// </summary>
-    /// <remarks>
-    /// It loads every server's tools, not only the connector's (CONTEXTONE1d). Claude Code 2.1.314 also reads a server entry's
-    /// <c>alwaysLoad</c> and a tool's <c>_meta</c> <c>anthropic/alwaysLoad</c>, but the protocol door's servers are composed by its
-    /// adapter, not shown to carry the key, and a tool's mark does not hold the first request for a server still starting.
-    /// </remarks>
-    internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront =
-        new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
-
-    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : Toolchain!.Binary;
+    public IReadOnlyDictionary<string, string> ToolsUpFront => Spawn.ToolsUpFront;
 }

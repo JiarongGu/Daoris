@@ -64,19 +64,12 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// </summary>
     public bool Interactive => true;
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
-    }
+    /// <summary>Its door's spawn (<see cref="ClaudeAcpSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
+    private static readonly ClaudeAcpSpawn Spawn = new();
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
-    {
-        // A chat already redirects stdin — it is the person's channel over the pipe door, and the
-        // driver's frames over this one.
-        var resolved = Resolve(command);
-        return Spawning.ChatInRoot(target, resolved[0], resolved.Skip(1));
-    }
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Shell.Start(Spawn.Start(target, command), target);
+
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => Shell.Chat(Spawn.Chat(target, command), target);
 
     /// <summary>The rules Daoris composed (PERM1, D72), taken on the wire rather than as an argument.</summary>
     public bool TakesSettings => true;
@@ -110,7 +103,7 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// The pipe door's switch (HELP5), on this door's spawn: the Agent SDK runs <c>claude</c> with this
     /// process's environment, which is how the pin's own switch reaches it too (AGT2).
     /// </summary>
-    public IReadOnlyDictionary<string, string> ToolsUpFront => ClaudeCodeAdapter.LoadToolsUpFront;
+    public IReadOnlyDictionary<string, string> ToolsUpFront => Spawn.ToolsUpFront;
 
     /// <summary>
     /// The adapter's own mechanisms. Pinned EXACT by default (D53's note on a harness that moved
@@ -144,7 +137,4 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         // Its own server's word that -32000 means authentication required (AGENTERRORS1a, the agent-errors design §4.4), read from
         // this entry alone; the provider's kind words and transient sentences are its owner's, read after it.
         ErrorWords: ClaudeAcpErrors.Words);
-
-    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }

@@ -70,6 +70,7 @@ public sealed class ProviderRegistry
         Providers = [.. _providers.Values.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)];
         Reserved = reserved;
         Known = [.. Providers.SelectMany(ProviderRegistration.Names).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.Ordinal)];
+        RegisteredVariables.Register(this);
     }
 
     /// <summary>The registry over today's adapters: doors grouped by the account key each declares (see <see cref="ProviderRegistration"/>).</summary>
