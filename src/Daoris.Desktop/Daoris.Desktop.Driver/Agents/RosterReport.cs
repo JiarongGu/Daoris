@@ -31,7 +31,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         var resolved = roster.Adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain) return null;
         var name = resolved.Name;
-        var owner = roster.Adapters.OwnerOf(name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
 
         if (refresh && account is not null)
         {
@@ -107,7 +107,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         {
             var report = await HarnessProbe.ProbeAsync(
                 name, toolchain, config.Commands.GetValueOrDefault(name), roster.Settings, roster.Home, CancellationToken.None,
-                asks: _ => false, accountOf: roster.Adapters.OwnerOf(name)).ConfigureAwait(false);
+                asks: _ => false, accountOf: roster.Adapters.Registry.OwnerOfAgent(name).Value).ConfigureAwait(false);
             roster._binaries[name] = new HarnessRoster.Binary(report.Present, report.Version, report.Problem);
         }, ct).ConfigureAwait(false);
         return roster._binaries.TryGetValue(name, out var asked) ? asked : new HarnessRoster.Binary(false, null, null);
@@ -119,7 +119,7 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// </summary>
     private HarnessReport Composed(string name, HarnessToolchain toolchain, HarnessRoster.Binary binary)
     {
-        var owner = roster.Adapters.OwnerOf(name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
         var reads =AccountReads.Of(roster.Home, owner);
         var names = AccountNames.Of(roster.Home, owner);
         var profiles = HarnessSettings.Profiles(roster.Home, owner).Select(account =>
@@ -285,7 +285,7 @@ internal sealed class RosterReport(HarnessRoster roster)
         if (resolved.Toolchain is not { } toolchain) return new LoginRead(LoginState.Unknown, null);
 
         // A door's account is its owner's (AGT7), asked the way the owner asks when this build has it.
-        var owner = roster.Adapters.OwnerOf(resolved.Name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
         var asker = AccountAgent(resolved.Name, toolchain);
         var answer = await HarnessProbe.AskAccountAsync(
             asker.Name, asker.Toolchain, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home,
@@ -327,7 +327,7 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// </remarks>
     internal (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
     {
-        var owner = roster.Adapters.OwnerOf(name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
         if (string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)) return (name, toolchain);
         if (roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase) && roster.Adapters.Resolve(owner).Toolchain is { } ownerToolchain)
         {

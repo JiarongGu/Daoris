@@ -66,12 +66,9 @@ public sealed class AdapterSet(
             : holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
 
     /// <summary>
-    /// The one reader of whose accounts an agent runs as (AGENTPROVIDER1 row d): a door's account key, a provider's own, else the
-    /// name itself. Every account, default, key and cool-off is kept under it; a pin is not.
+    /// The providers and doors this set carries, made once (<see cref="ProviderRegistry.Of"/>): the one reader of whose accounts an
+    /// agent runs as is its <see cref="ProviderRegistry.OwnerOfAgent"/>, a door's account key, a provider's own, else the name itself.
     /// </summary>
-    public string OwnerOf(string agent) => Registry.OwnerOfAgent(agent).Value;
-
-    /// <summary>The providers and doors this set carries, made once (<see cref="ProviderRegistry.Of"/>).</summary>
     public ProviderRegistry Registry => LazyInitializer.EnsureInitialized(ref _registry, () => ProviderRegistry.Of(this))!;
 
     private ProviderRegistry? _registry;
