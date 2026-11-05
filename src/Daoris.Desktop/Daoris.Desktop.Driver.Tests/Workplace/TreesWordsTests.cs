@@ -307,7 +307,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesWords.Remove(")]
     [InlineData("TreesWords.Clean(")]
     [InlineData("TreesWords.Sync(")]
-    [InlineData("TreesWords.Hand(")]
     [InlineData("TreesWords.FollowMovedAsync(")]
     [InlineData("TreesWords.EntryLand(")]
     [InlineData("TreesWords.EntryNone(")]
@@ -320,7 +319,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesPlanWords.SyncPlan(")]
     [InlineData("TreesPlanWords.LandPlanAsync(")]
     [InlineData("TreesPlanWords.LandedPlan(")]
-    [InlineData("TreesPlanWords.HandPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
     // CHATFLOW1g (D228): the press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
     [InlineData("TreesWords.AcceptedForPass(")]

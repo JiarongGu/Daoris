@@ -91,7 +91,7 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         var wire = WorkplacePlugins.Current.Wire(_home);
         Assert.IsType<LandingPlugins>(wire);
         Assert.NotSame(wire, WorkplacePlugins.Current.Wire(_home));
-        Assert.StartsWith("the landing rule names plugin `acme.lands`, which is not installed", wire.Problem("acme.lands"));
+        Assert.StartsWith("the landing names plugin `acme.lands`, which is not installed", wire.Problem("acme.lands"));
         Assert.Equal(DateTimeOffset.UtcNow, wire.Now, TimeSpan.FromMinutes(1));
 
         // The catalogue is read as the driver reads it: a harness name this build carries refuses the plugin that declares it.
