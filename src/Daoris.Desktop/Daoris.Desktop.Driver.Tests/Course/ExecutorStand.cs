@@ -49,7 +49,7 @@ internal sealed class ExecutorStand(IChatRunning runner, ChatContext context) : 
         runner.RunHelpAsync(placed, config, machine, onEnded, ct);
 
     Task<ChatStart> IChatRunning.RunAsync(
-        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        string actor, string sessionId, string message, ChatAgent resolved, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
         runner.RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending);
 

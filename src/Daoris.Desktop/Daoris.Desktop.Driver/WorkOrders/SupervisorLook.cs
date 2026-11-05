@@ -21,7 +21,11 @@ internal sealed class SupervisorLook(ILookWiring wiring) : ILookPass
         var alone = round.State.Alone = AnswersAloneHold.For(wiring.Events, wiring.Marks, wiring.Home);
         IReadOnlyDictionary<string, PriorSession>? lines = null;
         SupervisorBound bound = async (session, token) =>
-            alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
+        {
+            if (alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false))) return SupervisorWhy.SupervisorBound;
+            var counts = (await LineCountsRead.FactsAsync(service, wiring.Home, session, token).ConfigureAwait(false)).Counts;
+            return SupervisorRuleHold.Why(atBound: false, counts);
+        };
         round.State.Snapshot = await wiring.Stages.TimeAsync("supervisor", async () => await SupervisorQuarantine.LookAsync(
             await SupervisorQuarantine.DecideAsync(undecided, wiring.Supervisor, SayAsync, takeBack, DateTimeOffset.UtcNow, ct, bound)
                 .ConfigureAwait(false),

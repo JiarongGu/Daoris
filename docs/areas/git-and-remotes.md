@@ -229,6 +229,8 @@ catalogues (`i18n:check`).
 
 ## Open
 
+- **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
+  request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
 - **GITAUTH1b:** the doors' measurements against a real sshd, MinGit, `gh`, `az` and git-lfs; then `--git-doors` becomes the default.
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.

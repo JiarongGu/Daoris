@@ -30,10 +30,10 @@ internal sealed class NativeChat : ITurnedChat
     /// </param>
     /// <param name="wentOn">Told once the words it goes on with are on stdin.</param>
     public NativeChat(
-        string sessionId, ISessionAdapter adapter, SessionProcesses processes, Action<SessionEvent> record,
+        string sessionId, ChatAgent agent, SessionProcesses processes, Action<SessionEvent> record,
         Action<ChatQueue> changed, Task<bool>? ready = null, Action? wentOn = null)
     {
-        Interrupts = adapter.FrameInterrupt() is not null;
+        Interrupts = agent.FrameInterrupt() is not null;
         Turns = new ChatTurns(
             ready: () => ready ?? Task.FromResult(true),
             take: (message, sent) =>
@@ -51,14 +51,14 @@ internal sealed class NativeChat : ITurnedChat
                         foreach (var opening in goOn.Opening()) record(opening);
                     }
 
-                    line = adapter.FrameMessage(goOn.Prompt);
+                    line = agent.FrameMessage(goOn.Prompt);
                 }
                 else
                 {
                     foreach (var recorded in ChatRecorded.Recorded(message, Shown?.Invoke(message))) record(recorded);
                     // Each attached file named by its path, which the agent reads with its own tool; the record keeps the person's
                     // words, not these lines.
-                    line = adapter.FrameMessage(message.PromptWithFiles);
+                    line = agent.FrameMessage(message.PromptWithFiles);
                 }
 
                 if (!processes.Send(sessionId, line))
@@ -81,7 +81,7 @@ internal sealed class NativeChat : ITurnedChat
             },
             interrupt: () =>
             {
-                if (adapter.FrameInterrupt() is { } stop) processes.Send(sessionId, stop);
+                if (agent.FrameInterrupt() is { } stop) processes.Send(sessionId, stop);
                 return Task.CompletedTask;
             },
             changed);

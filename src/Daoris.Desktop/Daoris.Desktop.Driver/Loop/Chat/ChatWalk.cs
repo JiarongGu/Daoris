@@ -34,7 +34,7 @@ internal sealed class ChatWalk(ChatContext context)
                 Workspace = workspace, Kind = StartKind.Conversation, Subject = $"conversation:{actor}:{workspace}:{profile}", Log = log,
                 Pinned = profile, WalksOne = true, Staff = context.Harnesses.StaffFor(context.Home), OwnOrder = true,
                 Gate = (_, adapter) => !adapter.Interactive ? (StartPasses.Unavailable, $"`{adapter.Name}` does not hold conversations")
-                    : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, adapter).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
+                    : actor == "ask-daoris" && HelpAccess.For(config.HelpMode, new ChatAgent(adapter)).Refusal is { } unposed ? (StartPasses.NoPosture, unposed)
                     : null,
             };
         }

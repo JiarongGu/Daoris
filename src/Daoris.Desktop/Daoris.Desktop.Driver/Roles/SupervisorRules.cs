@@ -32,20 +32,14 @@ public sealed record RuleRefusal(string Code, string Message, string? Place = nu
 
 /// <summary>What <see cref="SupervisorRules.Judge"/> weighs a write against besides the sets.</summary>
 /// <param name="Roles">The catalogue's working role ids.</param>
-/// <param name="Reached">This home's rules are reached (the machine's revision row); a home not reached refuses a rule with <c>convert-first</c>.</param>
 /// <param name="ReferOffered">The agent supervisor's <c>refer</c> is offered.</param>
 /// <param name="Known">Whether a place is one Daoris drives (a line on this machine); none accepts every well-formed place.</param>
 /// <param name="Wider">The places a place's lines also read, narrow to wide and before the machine; none names only the place itself.</param>
 public sealed record SupervisorRuleWorld(
     IReadOnlyList<string> Roles,
-    bool Reached = true,
     bool ReferOffered = false,
     Func<string, bool>? Known = null,
-    Func<string, IReadOnlyList<string>>? Wider = null)
-{
-    /// <summary>The person's doors: <see cref="Reached"/> read from the store inside the write, so a home not reached refuses every rule.</summary>
-    public bool ReadReached { get; init; }
-}
+    Func<string, IReadOnlyList<string>>? Wider = null);
 
 /// <summary>A count as read for a line (the course's <c>LineCount</c>): its code, what it stands at and whether that is known.</summary>
 /// <param name="N">What the count stands at; none where it is not known.</param>
@@ -95,7 +89,7 @@ public static class SupervisorRules
 
     /// <summary>The refusals, a closed set.</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        ["count", "window", "at", "do", "upTo", "place", "roles", "moves-unbounded", "tries-unbounded", "refer-not-offered", "revision", "convert-first"];
+        ["count", "window", "at", "do", "upTo", "place", "roles", "moves-unbounded", "tries-unbounded", "refer-not-offered", "revision"];
 
     // The actions each count allows (§4.2); `off` is every ruled count's but tries'.
     private static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
@@ -186,7 +180,6 @@ public static class SupervisorRules
     /// </summary>
     public static RuleRefusal? Judge(string place, long revision, IReadOnlyList<SupervisorRule> rules, IReadOnlyList<SupervisorRuleSet> held, SupervisorRuleWorld world)
     {
-        if (!world.Reached) return new RuleRefusal("convert-first", "this home has not been converted: review the conversion before a rule is set.");
         var current = held.FirstOrDefault(set => set.Place == place)?.Revision ?? 0;
         if (revision != current) return new RuleRefusal("revision", $"{place}'s rules moved to revision {current}; read them again.", place);
         if (!PlaceReads(place) || world.Known?.Invoke(place) == false) return new RuleRefusal("place", $"`{place}` is not a place Daoris drives.", place);

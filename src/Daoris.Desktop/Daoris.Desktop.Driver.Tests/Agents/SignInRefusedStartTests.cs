@@ -357,7 +357,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         using var runner = Runner(service, roster);
 
         Assert.NotNull(RefusedAccounts.SignInRefused(roster, adapter, "account-1", Refusal));
-        Assert.NotNull(runner.SignedOut(adapter, "account-2", Refusal));
+        Assert.NotNull(runner.SignedOut(new ChatAgent(adapter), "account-2", Refusal));
         var held = await roster.SelectAsync("fake", FakeConfig, null, null);
         var again = await roster.SelectAsync("fake", FakeConfig, null, null);
 
@@ -554,7 +554,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = FakeSigningIn();
         using var runner = Runner(service, roster);
 
-        var said = runner.SignedOut(roster.Adapters.Resolve("fake"), "account-1", Refusal);
+        var said = runner.SignedOut(new ChatAgent(roster.Adapters.Resolve("fake")), "account-1", Refusal);
 
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
         Assert.Equal(
@@ -575,7 +575,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = FakeSigningIn();
         using var runner = Runner(service, roster);
 
-        runner.SignedOut(roster.Adapters.Resolve("fake"), "account-1", Refusal);
+        runner.SignedOut(new ChatAgent(roster.Adapters.Resolve("fake")), "account-1", Refusal);
         var selection = await roster.SelectAsync("fake", FakeConfig, null, null);
 
         Assert.True(selection.Allowed);
@@ -597,8 +597,8 @@ public sealed class SignInRefusedStartTests : IDisposable
         var silent = Fake();
         using var unsigned = Runner(service, silent);
 
-        Assert.Null(runner.SignedOut(signing.Adapters.Resolve("fake"), "account-1", "the ACP agent refused the call: Internal error: Overloaded"));
-        Assert.Null(unsigned.SignedOut(silent.Adapters.Resolve("fake"), "account-1", Refusal));
+        Assert.Null(runner.SignedOut(new ChatAgent(signing.Adapters.Resolve("fake")), "account-1", "the ACP agent refused the call: Internal error: Overloaded"));
+        Assert.Null(unsigned.SignedOut(new ChatAgent(silent.Adapters.Resolve("fake")), "account-1", Refusal));
         Assert.False(File.Exists(AccountReads.PathOf(_home)));
     }
 
@@ -610,7 +610,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = Built();
         using var runner = Runner(service, roster);
 
-        var said = runner.SignedOut(AdapterSet.Built().Resolve("acp-stub"), profile: null, Refusal);
+        var said = runner.SignedOut(new ChatAgent(AdapterSet.Built().Resolve("acp-stub")), profile: null, Refusal);
 
         Assert.Equal("account.signed-out-own", said!.Parts![^1].Code);
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);

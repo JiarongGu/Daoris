@@ -42,7 +42,7 @@ const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Dr
 const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
 // REHLANE1: this rehearsal runs beside the driver's git half, which builds into and runs from the desktop projects' own folders,
 // so the driver host is built into an output of this rehearsal's own. The HTTP host and the connector stay where the driver
-// finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no Process half builds.
+// finds a development build (ServiceHostLocator, KnowledgeConnector): the service's folders, which no git half builds.
 const ownOutput = ownBuildRoot(repoRoot, 'family');
 const driverDll = ownBuilt(ownOutput, driverProject, 'daoris-driver.dll');
 // The apphost the same build writes beside the DLL (PUSH1f2a, D194 point 1): the program a checkout's `daoris …` is handed to.

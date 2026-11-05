@@ -21,6 +21,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
+import { withRunLock } from './run-lock.mjs';
 
 export const OUTPUTS = Object.freeze({
   service: 'src/Daoris.Web/src/data/generated/service.ts',
@@ -116,6 +117,24 @@ function generate(root, hash) {
   }
 }
 
+/** Where the generator's runs take their turns, beside its output (`tools/run-lock.mjs`). */
+export const LOCK = `${OWN_OUTPUT}.lock`;
+
+/**
+ * Write the files, one run at a time: the web gates' pre-scripts start together, and two builds into the one output fight over its
+ * files (CS2012), as two generators would over the files they write. A run that waited reads the files again, and builds nothing
+ * where the run before it wrote them. `build` and `look` are a test's.
+ */
+export function writeContracts(root, mode, { build = generate, look = standing } = {}) {
+  return withRunLock(join(root, LOCK), () => {
+    const { hash, why } = look(root);
+    if (mode === '--if-stale' && !why) return 0;
+    if (!build(root, hash)) return 2;
+    console.log(`contracts: wrote ${Object.values(OUTPUTS).join(' and ')}`);
+    return 0;
+  });
+}
+
 function main(argv) {
   const root = dirname(dirname(fileURLToPath(import.meta.url)));
   const mode = argv[0] ?? '--write';
@@ -123,15 +142,13 @@ function main(argv) {
     console.error('usage: node tools/contracts.mjs [--if-stale | --check]');
     return 2;
   }
-  const { hash, why } = standing(root);
+  const { why } = standing(root);
   if (mode === '--check') {
     if (why) console.error(`contracts: ${why}`);
     return why ? 1 : 0;
   }
   if (mode === '--if-stale' && !why) return 0;
-  if (!generate(root, hash)) return 2;
-  console.log(`contracts: wrote ${Object.values(OUTPUTS).join(' and ')}`);
-  return 0;
+  return writeContracts(root, mode);
 }
 
 if (isMain(import.meta.url)) process.exit(main(process.argv.slice(2)));

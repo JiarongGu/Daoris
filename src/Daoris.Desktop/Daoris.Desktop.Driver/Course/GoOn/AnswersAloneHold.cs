@@ -18,19 +18,20 @@ namespace Daoris.Driver;
 /// it. Where the service's records did not read, or the store holds no admissions (a start before its confirmation settled), nothing is
 /// held, and the next look judges again.</para>
 /// </remarks>
-public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null)
+public sealed class AnswersAloneHold(
+    SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null, SupervisorRuleActs? acts = null)
 {
-    /// <summary>The hold of <paramref name="home"/>, judged by the rules its store holds now.</summary>
+    /// <summary>The hold of <paramref name="home"/>, judged by the rules its store holds now, each hold kept as its rule's act.</summary>
     public static AnswersAloneHold For(SessionEvents events, GoOnMarks marks, string home) =>
-        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home));
+        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home), new SupervisorRuleActs(home, events));
 
     /// <summary>
     /// The answers alone in a row <paramref name="session"/>'s line goes on by: its line's effective rule, null where none holds it. A hold
-    /// handed no rules holds at Daoris's own bound.
+    /// handed no rules reads the seeded ones.
     /// </summary>
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
-        if (rules is not { } book) return AnswersAlone.Bound;
+        var book = rules ?? SupervisorRuleBook.Seed;
         var record = records.GetValueOrDefault(session);
         return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
     }
@@ -64,7 +65,19 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
         var agent = AgentOf(words, records);
         marks.Mark(record.Session, answers, GoOnMarks.AnswersAlone, at, agent);
         events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers), say: null);
+        Acted(record, records, at);
         return true;
+    }
+
+    // The hold is the answers-alone rule's act: said on the line by its rule and kept in the decision record (the context counters design §4.7).
+    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, DateTimeOffset at)
+    {
+        if (acts is null) return;
+        var book = rules ?? SupervisorRuleBook.Seed;
+        var line = LineKeys.Of(record.Session, records).Key;
+        var effective = book.For(SupervisorRuleBook.RoleOf(records.GetValueOrDefault(record.Session) ?? record), record.Repository, record.Workspace, line);
+        if (SupervisorRuleBook.Acting(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold) is not { } rule) return;
+        acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), rule.At, Known: true, "go-on", at));
     }
 
     /// <summary>

@@ -31,7 +31,7 @@ public sealed class StaffCourseLookTests : IDisposable
         RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed[0]), choices, null, new RolePolicyPress(kept));
         // The course reads the line's rules, never a policy's own moves: the policy's moves, written as rules beside the seeded ones.
         var store = new SupervisorRuleStore(_home);
-        var world = SupervisorRuleDoor.World(_home) with { ReadReached = false, Reached = true };
+        var world = SupervisorRuleDoor.World(_home);
         Assert.True(store.Write(
             SupervisorRules.Machine, store.Of(SupervisorRules.Machine).Revision,
             [.. SupervisorRuleBook.Seeded(3), .. SupervisorRuleBook.FromPolicy(parsed, RoleWork.Build, SupervisorRules.Machine)],
@@ -73,7 +73,7 @@ public sealed class StaffCourseLookTests : IDisposable
         var machine = store.Of(SupervisorRules.Machine);
         Assert.True(store.Write(
             SupervisorRules.Machine, machine.Revision, [.. machine.Rules, .. SupervisorRuleBook.FromPolicy(next, scoped.Id, SupervisorRules.Machine)],
-            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(_home) with { ReadReached = false, Reached = true }).Stored);
+            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(_home)).Stored);
 
         // The record's actor is the seeded id, as on every driven record: the scoped role that takes the quest's work is the one asked.
         var snapshot = Looking(Ended("ended.quiet"));

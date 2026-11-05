@@ -155,7 +155,7 @@ public sealed class CurveMoveStoreTests : IDisposable
             CancellationToken ct = default) => throw new NotSupportedException();
 
         public Task<ChatStart> RunAsync(
-            string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+            string actor, string sessionId, string message, ChatAgent resolved, HarnessSelection selection, DriverConfig config,
             ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
             ChatPending? pending = null) => throw new NotSupportedException();
 

@@ -30,6 +30,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart |
+| `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
 | `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
 | `OpenPrompts`, `OpenPrompt`, `PromptPassage` | `Turn/` | The prompts on the wire and the run's door they pass, under one gate whose header names what it guards, the order of the locks and what a race would break: a prompt opens as it is admitted under the write lock, the door shuts between two writes, a word is taken once |
 | `AcpPrompting` | same name | A prompt written (through the door, its words marked first, in the order asked) and its answer read on the reader's thread: the turn's event, the hand-off to the words behind it, the receipts, the calls a steer cut; reaches the session through `ITurnPromptWiring` |
@@ -67,7 +68,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs` and same names | Rules in scopes and defaults, an agent's proposals, folder trust, reach into other checkouts |
 | `SpawnServers`, `SpawnSkills`, `DshProfile` | same names | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
-| `Driver.Prepare`, `Equip`, `HandRules` | `Loop/Driver.cs:2829-3001` | The spawn's assembly, shared by every kind of start |
+| `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings |
 | `SessionProcesses`, `LineageTokens` | same names | The live process per session (never sent to the service), and the token each process runs under |
 
@@ -89,7 +90,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 7. Each `AgentRun` operation is admitted by the run's own evidence. One it lacks is refused as unsupported before anything is
    written. (from D213)
 8. Every executor holds its run through `TransportRun`: the driven start, the continuations, the go-on, the resume's one retry
-   and the conversation's runner. No executor prepares a process itself. (from D213)
+   and the conversation's runner. No executor prepares a process itself. A conversation reads its agent through `ChatAgent` and the
+   run it makes; no file of `Loop/Chat/` names `ISessionAdapter`. (from D213)
 9. A provider translates; Daoris selects. A provider never walks accounts, picks a model, starts another participant or
    decides whether a line goes on. (from D213, D67)
 10. On the protocol door the wire enriches the console and transcript. A record still concludes from the exit code and the

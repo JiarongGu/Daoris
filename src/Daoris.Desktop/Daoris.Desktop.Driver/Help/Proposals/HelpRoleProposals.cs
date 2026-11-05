@@ -125,10 +125,9 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
             var existing = staffing.Policy(id);
             var (resolved, notTaken) = StaffPolicyDoor.Judge(set, effective, policy, existing, staffing.InUse());
             if (notTaken is not null) return Refused(notTaken.Said);
-            var reached = new SupervisorRuleStore(home).Reached();
-            if (reached && RuledPolicy.On(set, policy, resolved).Refused is { } ruled) return Refused(ruled.Said);
-            // On a reached home a preset is carried as its name, so the door writes its moves as rules beside the policy.
-            policy = reached && policy.Preset is not null ? policy : policy with { Policy = resolved, Preset = null, Clear = resolved is null };
+            if (RuledPolicy.On(set, policy, resolved).Refused is { } ruled) return Refused(ruled.Said);
+            // A preset is carried as its name, so the door writes its moves as rules beside the policy.
+            policy = policy.Preset is not null ? policy : policy with { Policy = resolved, Preset = null, Clear = resolved is null };
             var before = (existing.Applied, config.Actors.TryGetValue(id, out var held) ? held : []);
             return new HelpPlan(null, Describe(change, choices) + PolicyDescribe(set.Name.Texts.FirstOrDefault() ?? set.Id, before, existing, resolved, effective), Terminal(change, choices) + PolicyTerminal(id, resolved, effective), null)
             {

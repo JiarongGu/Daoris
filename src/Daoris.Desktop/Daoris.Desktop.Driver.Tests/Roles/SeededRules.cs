@@ -14,7 +14,7 @@ internal static class SeededRules
     public static void In(string home, int strikes = 3, StaffPolicy? policy = null, string role = RoleWork.Build)
     {
         var store = new SupervisorRuleStore(home, () => StoreSettled.Yes);
-        var world = SupervisorRuleDoor.World(home) with { ReadReached = false, Reached = true };
+        var world = SupervisorRuleDoor.World(home);
         IReadOnlyList<SupervisorRule> rules = policy is null
             ? SupervisorRuleBook.Seeded(strikes)
             : [.. SupervisorRuleBook.Seeded(strikes), .. SupervisorRuleBook.FromPolicy(policy, role, SupervisorRules.Machine)];
