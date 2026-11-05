@@ -93,7 +93,6 @@ internal sealed class PullRequestAsks(TreeContext context)
         string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct,
         IReadOnlyCollection<LandedBranch>? moment = null)
     {
-        var rule = LandingRules.Line(context.Config(), repository, workspace).Rule;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         // The repository's refs read once for its entries (PROC1d-ii), and only where one is due.
         var refs = RefSnapshot.Take(root);
@@ -107,7 +106,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         foreach (var entry in context.Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
         {
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
-            if (PullRequestAsking.PluginFor(entry, rule) is not { } plugin) continue;
+            if (PullRequestAsking.PluginFor(entry) is not { } plugin) continue;
             // A due moment's own entries alone, its answer now feeding the end as well as a removal (FABRIC-END6).
             if (moment is not null && !moment.Any(each => SameLanding(each, entry))) continue;
             if (again is null && moment is null)
@@ -171,7 +170,7 @@ internal sealed class PullRequestAsks(TreeContext context)
         {
             asked = asked with { Final = true };
         }
-        else if (PullRequestAsking.PluginFor(entry, LandingRules.Line(context.Config(), entry.Repository, workspace).Rule) is null)
+        else if (PullRequestAsking.PluginFor(entry) is null)
         {
             asked = asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
         }

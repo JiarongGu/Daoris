@@ -13,6 +13,6 @@ public static class CarryKeys
     /// and which carry-on of the Accept's two it is, so an unchanged tree is told once however often the person presses, and the second
     /// carry-on after a turn that changed nothing is still a word of its own. No quest's fact: <see cref="DaorisKeys.Read"/> names none.
     /// </summary>
-    /// <param name="basis">The dirty tree's fingerprint (<see cref="AutoLandingRules.Fingerprint"/>) or <c>conflict-</c> and the tip.</param>
+    /// <param name="basis">The dirty tree's fingerprint (<see cref="LandTries.Fingerprint"/>) or <c>conflict-</c> and the tip.</param>
     public static string Of(string session, string basis, int carryOn) => $"{Kind}/{session}/{basis.Replace(':', '-')}/{carryOn}";
 }

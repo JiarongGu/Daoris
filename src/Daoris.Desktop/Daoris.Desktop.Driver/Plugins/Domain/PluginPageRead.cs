@@ -49,7 +49,7 @@ public sealed record PageServer(string Name, IReadOnlyList<string> Command, IRea
 /// <summary>A landing rule that names the plugin: a repository's or a workspace's, and its pattern.</summary>
 public sealed record PageRule(string Scope, string Name, string? Pattern);
 
-/// <summary>A landing plugin's rules, and why it cannot land work here now, or null when it can (<see cref="LandingRules.PluginProblem"/>).</summary>
+/// <summary>A landing plugin's rules, and why it cannot land work here now, or null when it can (<see cref="LandingPlugins.ProblemOf"/>).</summary>
 public sealed record PageLanding(IReadOnlyList<PageRule> Rules, string? Problem);
 
 /// <summary>

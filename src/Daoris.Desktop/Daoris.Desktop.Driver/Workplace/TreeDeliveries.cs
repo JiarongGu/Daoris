@@ -235,19 +235,17 @@ internal sealed class TreeDelivering
     }
 
     /// <summary>
-    /// The landing as its delivery lands it: the method's form and squash the intent's; of the rule only what setup keeps (its tidy), the plugin
-    /// only of a push or a pull request, and that the intent's, told through <see cref="DispatchAsync"/>; no switch and no integrate, since the
-    /// delivery's authorization and the next node hold those. Under Current (<see cref="Live"/>) the intent was read from that very rule a
-    /// moment ago, so the rule stands whole, its <c>integrate</c> the line's policy and its record's provenance (LANDNODE1c3); under a bound
-    /// version (LANDNODE1m) the landing its version's steps read stands whole the same way.
+    /// The landing as its delivery lands it: the method's form and squash the intent's, the plugin only of a push or a pull request, and
+    /// that the intent's, told through <see cref="DispatchAsync"/>; no switch, since the delivery's authorization holds it. A delivery the
+    /// door wrote (<see cref="Door"/>) was read from the run's bound <c>land</c> a moment ago, so that landing stands whole.
     /// </summary>
-    public Landing Over(Landing live) => Door ? live with { Rule = live.Rule with { Squash = Squash } } :
-        new(live.Rule with
+    public Landing Over(Landing live) => Door ? live with { Squash = Squash } :
+        live with
         {
             Form = Intent.Method == DeliveryMethods.Merge ? LandingForm.Merge : LandingForm.Branch,
-            Pattern = null, AutoAccept = false, Squash = Squash, Integrate = null,
+            Pattern = null, AutoAccept = false, Squash = Squash,
             Plugin = Intent.Method is DeliveryMethods.Push or DeliveryMethods.PullRequest ? Intent.Plugin : null,
-        }, live.Source);
+        };
 
     /// <summary>
     /// The plugin told this delivery (LANDNODE1e; the land node design §3 step 4 and the restart ladder): the frame carries the delivery key where

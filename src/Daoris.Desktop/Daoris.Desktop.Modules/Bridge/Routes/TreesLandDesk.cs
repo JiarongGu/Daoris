@@ -147,7 +147,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var landed = await Landing().LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
             joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush, beside: token => BranchTidying.BesideAsync(service, token));
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press.
-        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
+        if (landed.Landed) _loop.Events.Keep(id, LandingNotes.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
         {
             SessionLog.WriteLanding(log, held);
@@ -261,7 +261,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
 
         var landed = pressed.Landed;
         var gate = pressed.Gate ?? LandingGate.Open(repository);
-        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
+        if (landed.Landed) _loop.Events.Keep(id, LandingNotes.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, (workspace, repository), gate, landed, ReviewDoors.Screen) is { } held)
         {
             SessionLog.WriteLanding(log, held);
@@ -309,7 +309,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     {
         try
         {
-            return File.Exists(_loop.Events.PathOf(id)) ? LandingRules.LeftOutOf(_loop.Events.After(id, 0).Events) : null;
+            return File.Exists(_loop.Events.PathOf(id)) ? LandingNotes.LeftOutOf(_loop.Events.After(id, 0).Events) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

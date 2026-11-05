@@ -385,7 +385,7 @@ public sealed record AutoTry(DateTimeOffset At, string Code)
     /// <summary>The tree's HEAD when it was tried, or null where none was read.</summary>
     public string? Tip { get; init; }
 
-    /// <summary>The tree's status when it was tried (<see cref="AutoLandingRules.Fingerprint"/>), or null where none was read.</summary>
+    /// <summary>The tree's status when it was tried (<see cref="LandTries.Fingerprint"/>), or null where none was read.</summary>
     public string? Status { get; init; }
 
     /// <summary>How many paths were uncommitted, where that is what held it.</summary>
@@ -404,7 +404,7 @@ public sealed record AutoTry(DateTimeOffset At, string Code)
 /// it ran in, when it was judged, and the last try kept of it.
 /// </summary>
 /// <param name="Tree">The tree its record names, under this home's trees (D51): machine-local.</param>
-public sealed record AutoLanding(string Session, string Quest, string Repository, string Workspace, string Tree, DateTimeOffset DueAt)
+public sealed record LandEntry(string Session, string Quest, string Repository, string Workspace, string Tree, DateTimeOffset DueAt)
 {
     public IReadOnlyList<AutoTry> Tries { get; init; } = [];
 
@@ -534,17 +534,4 @@ public static class LandingSource
     public const string Repository = "repository";
     public const string Workspace = "workspace";
     public const string Default = "default";
-}
-
-
-/// <summary>A repository's landing rule and what said so.</summary>
-public sealed record Landing(LandingRule Rule, string Source)
-{
-    /// <summary>
-    /// Where the repository's access setup said <c>landing: rule</c> (AUTONOMY1c2, D184 point 3), one of <see cref="AccessRules.FromRepository"/>
-    /// and the rest, where it changes how this rule lands: a branch rule whose own switch is off, which it accepts automatically
-    /// (<see cref="LandingRules.Effective"/>), or a merge rule, which it cannot (D51 rule 6). Null where the setup is the person's, or the
-    /// rule accepts by its own switch.
-    /// </summary>
-    public string? Access { get; init; }
 }

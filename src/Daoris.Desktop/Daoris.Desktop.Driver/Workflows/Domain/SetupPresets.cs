@@ -123,7 +123,7 @@ public static class SetupPresets
     /// </summary>
     public static string? PluginFor(string? host, string? named, IWorkplacePluginCatalog catalog)
     {
-        if (named is not null && LandingRules.PluginProblem(named, catalog) is null) return named;
+        if (named is not null && LandingPlugins.ProblemOf(named, catalog) is null) return named;
         if (PlatformOf(host) is not { } platform) return null;
         return catalog.Contributing.FirstOrDefault(entry => entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
             && entry.Id[(entry.Id.IndexOf('.') + 1)..].Contains(platform, StringComparison.OrdinalIgnoreCase))?.Id;

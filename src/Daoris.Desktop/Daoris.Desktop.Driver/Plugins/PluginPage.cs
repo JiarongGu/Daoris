@@ -113,7 +113,7 @@ public static class PluginPage
     private static bool DrivesBrowser(string text) => text.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal);
 
     /// <summary>Whether the plugin can land work here; no rule names it, since a workflow's <c>land</c> does.</summary>
-    private static PageLanding Landing(string plugin, PluginCatalog catalog) => new([], LandingRules.PluginProblem(plugin, catalog));
+    private static PageLanding Landing(string plugin, PluginCatalog catalog) => new([], LandingPlugins.ProblemOf(plugin, catalog));
 
     /// <summary>Where it came from, and what an update would do: <c>waits</c> with what changes, <c>current</c>, or the refusal.</summary>
     private static PageSource Source(string home, PluginEntry entry, string? offers)
