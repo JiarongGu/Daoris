@@ -629,7 +629,7 @@ export type GitStashPlan = {
   applyWhy: string | null;
 };
 
-const readPlanOf = <T>(fill: (value: Partial<T>) => T) => (raw: unknown): GitAnswer<T> | null => {
+export const readPlanOf = <T>(fill: (value: Partial<T>) => T) => (raw: unknown): GitAnswer<T> | null => {
   const answer = raw as Partial<GitAnswer<Partial<T>>> | null;
   if (!answer || typeof answer !== 'object' || !('value' in answer)) return null;
   return {

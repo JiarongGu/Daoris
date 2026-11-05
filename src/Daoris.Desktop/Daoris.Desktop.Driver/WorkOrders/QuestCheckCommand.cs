@@ -108,13 +108,13 @@ public static class QuestCheckCommand
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            output.WriteLine($"daoris-driver: the service did not answer, so nothing was read: {error.Message}");
+            output.WriteLine($"daoris: the service did not answer, so nothing was read: {error.Message}");
             return 2;
         }
 
         if (quest is null)
         {
-            output.WriteLine($"daoris-driver: there is no quest `#{ask.Quest}` here. Ids come from `quest_list`.");
+            output.WriteLine($"daoris: there is no quest `#{ask.Quest}` here. Ids come from `quest_list`.");
             return 1;
         }
 
@@ -122,7 +122,7 @@ public static class QuestCheckCommand
 
         if (registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase)) is not { Root: { Length: > 0 } root })
         {
-            output.WriteLine($"daoris-driver: there is no checkout of `{quest.To}` registered on this machine, so there is nowhere "
+            output.WriteLine($"daoris: there is no checkout of `{quest.To}` registered on this machine, so there is nowhere "
                 + $"to read quest `#{quest.Id}`'s commit.");
             return 1;
         }
@@ -140,7 +140,7 @@ public static class QuestCheckCommand
         var commit = ask.Commit ?? dones;
         if (commit is null)
         {
-            output.WriteLine($"daoris-driver: no driven end on this machine read quest `#{quest.Id}`'s evidence, so name the commit "
+            output.WriteLine($"daoris: no driven end on this machine read quest `#{quest.Id}`'s evidence, so name the commit "
                 + $"to read: `daoris quest check {quest.Id} --commit <sha>`. Daoris never guesses it from what stands now.");
             return 1;
         }
@@ -154,11 +154,11 @@ public static class QuestCheckCommand
             switch (await EvidenceReader.PlaceAsync(tree, dones, named, world.Git, ct).ConfigureAwait(false))
             {
                 case EvidencePlace.Elsewhere:
-                    output.WriteLine($"daoris-driver: `{named}` does not come after the done's commit `{Short(dones)}` on its history: a "
+                    output.WriteLine($"daoris: `{named}` does not come after the done's commit `{Short(dones)}` on its history: a "
                         + "check reads the done's commit or one after it, so the work it reads is the work that was done.");
                     return 1;
                 case EvidencePlace.Unknown:
-                    output.WriteLine($"daoris-driver: git here cannot place `{named}` against the done's commit `{Short(dones)}`: both "
+                    output.WriteLine($"daoris: git here cannot place `{named}` against the done's commit `{Short(dones)}`: both "
                         + $"must be commits this checkout of `{quest.To}` holds. Fetch them, then check again.");
                     return 1;
             }
@@ -184,8 +184,8 @@ public static class QuestCheckCommand
         }
 
         output.WriteLine(quest.Status != "Done"
-            ? $"daoris-driver: quest `#{quest.Id}` is {quest.Status}: its evidence is read on a done, once the session that closed it ends."
-            : $"daoris-driver: quest `#{quest.Id}`'s done waits on no evidence: no requirement it met names any, or the person "
+            ? $"daoris: quest `#{quest.Id}` is {quest.Status}: its evidence is read on a done, once the session that closed it ends."
+            : $"daoris: quest `#{quest.Id}`'s done waits on no evidence: no requirement it met names any, or the person "
               + "accepted it as it stood.");
         return 1;
     }

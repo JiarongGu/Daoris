@@ -357,7 +357,7 @@ public sealed class HelpRoomDoorsTests
 
     /// <summary>
     /// HIST1f-b (design §6.1, §6.2, §6.4): the room names where finished history is cleared, the workspace's reading first, and
-    /// the terminal's history verbs as <c>daoris-driver</c>'s usage spells them, after a conversation's delete.
+    /// the terminal's history verbs as <c>daoris</c>'s usage spells them, after a conversation's delete.
     /// </summary>
     [Fact]
     public void The_rooms_row_names_where_finished_history_is_cleared_with_its_twins()

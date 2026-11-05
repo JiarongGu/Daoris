@@ -121,13 +121,6 @@ const PARKED: Attention = {
   },
 };
 
-/** A park from before parts: its note as kept, marked. */
-const PARKED_BEFORE: Attention = {
-  ...PARKED,
-  id: 'b4f0r3',
-  note: { note: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.' },
-};
-
 /**
  * A quest parked on its failed sessions here (SESSUX1i, D126 §4.6): the quest, waiting since its last session ended, and
  * the driver's sitting sentence; its door is the quest's page, where Try again is.
@@ -747,7 +740,7 @@ export const Acting: StoryObj = {
 };
 
 /**
- * The band's rows one by one: parked, its note by code and then one from before parts (LANG1b), a quest parked on its
+ * The band's rows one by one: parked, its note by code (LANG1b), a quest parked on its
  * failed sessions, the two kinds of ask, a quest nobody can take, a long title, one that said nothing — and last, a
  * parked row with no door, as a browser shows it.
  */
@@ -756,7 +749,6 @@ export const Rows: StoryObj = {
     <Main width={900}>
       <ul className="m-0 list-none border border-line bg-raised p-0">
         <AttentionRow item={PARKED} onOpen={() => {}} />
-        <AttentionRow item={PARKED_BEFORE} onOpen={() => {}} />
         <AttentionRow item={PARKED_QUEST} acts={ACTS} onOpen={() => {}} />
         {/* A folder waiting on the person's trust (D73): the folder, what it holds, and why. */}
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} />

@@ -172,7 +172,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         {
             ["talk"] = new CurveTalk(new HarnessToolchain(
                 Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new UsageQuestion("talk", ["talk-agent", "usage"], [], UsageKind.Claude))),
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,

@@ -6,7 +6,7 @@ import { code } from '../test/code';
 import { Note } from './Note';
 
 // Props-only, like every molecule here (LANG1b, D142; the language design §2, §5, §6): the coded parts in both languages,
-// a split note with the agent's question, a code the page does not know, and a record from before parts are each reached
+// a split note with the agent's question, a code the page does not know, and a record with no parts are each reached
 // by passing them.
 
 const ASKED: NotePart[] = [
@@ -68,15 +68,15 @@ describe('a session’s note', () => {
     expect(screen.getAllByText('按原文显示')).toHaveLength(1);
   });
 
-  /** §6: a record from before parts shows its note as kept, marked, in either language. */
-  it('shows a record from before parts as it was kept, marked', async () => {
-    const { rerender } = render(<Note note={'the quest reached done.\nIn the tree it worked in.'} />);
-    expect(screen.getByText('shown as recorded')).toBeInTheDocument();
-    expect(screen.getByText(/the quest reached done\./).textContent).toBe('the quest reached done.\nIn the tree it worked in.');
+  /** §6: a record with no parts draws nothing, in either language; its English is never read. */
+  it('draws nothing for a record with a note and no parts', async () => {
+    const note = 'the quest reached done.\nIn the tree it worked in.';
+    const { container, rerender } = render(<Note note={note} />);
+    expect(container).toBeEmptyDOMElement();
 
     await i18n.changeLanguage('zh');
-    rerender(<Note note={'the quest reached done.\nIn the tree it worked in.'} parts={[]} />);
-    expect(screen.getByText('按原文显示')).toBeInTheDocument();
+    rerender(<Note note={note} parts={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('draws nothing for a record with no note', () => {

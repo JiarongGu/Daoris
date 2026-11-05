@@ -300,6 +300,7 @@ export const Failed: Story = {
   args: {
     session: {
       ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
+      noteParts: [{ words: 'the process exited 1 with the quest unexplained.', by: 'program' }],
     },
   },
 };
@@ -312,6 +313,7 @@ export const FailedItsBranchLeft: Story = {
   args: {
     session: {
       ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
+      noteParts: [{ words: 'the process exited 1 with the quest unexplained.', by: 'program' }],
     },
     branch: {
       repository: 'engine', workspace: 'default', branch: 'daoris/streaming-budget', hasTree: false,
@@ -450,9 +452,8 @@ export const FailedItsLongBranchLeftAtTheFloor: Story = {
 
 /**
  * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
- * lead-in as written. The two stories above are records from before parts, shown as kept and marked. The cooling line is
- * shown in the shape a note from before AGT3d keeps and in the shape written since, naming whose accounts and the kind of
- * limit, both worded.
+ * lead-in as written. The cooling line is shown in the shape a note from before AGT3d keeps and in the shape written since,
+ * naming whose accounts and the kind of limit, both worded.
  */
 export const FailedByCode: Story = {
   args: {

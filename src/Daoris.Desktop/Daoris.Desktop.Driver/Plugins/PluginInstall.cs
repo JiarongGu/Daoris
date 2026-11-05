@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Once a twin of the CLI's <c>plugins.ts</c></b>, which left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f): the same
 /// refusals in the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
-/// folder untouched, all held by <c>fixtures/plugins-text.json</c> since <c>daoris plugin</c> is <c>daoris-driver plugin</c>.</para>
+/// folder untouched, all held by <c>fixtures/plugins-text.json</c> since <c>daoris plugin</c> is <c>daoris plugin</c>.</para>
 ///
 /// <para><b>One difference, deliberate:</b> <see cref="Add(string, string, IEnumerable{string})"/> adds, and never replaces an
 /// installed plugin. Replacing one wholesale is <c>daoris plugin add</c>'s at a terminal, <see cref="Replace"/>, which no route

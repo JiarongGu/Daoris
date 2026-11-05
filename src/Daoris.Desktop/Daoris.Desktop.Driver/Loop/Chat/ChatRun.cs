@@ -248,7 +248,7 @@ internal sealed class ChatRun(
         }
 
         // Its turns are kept in the usage history under the account it runs as, as a driven session's are: bound before any word is queued to it.
-        UsageTurns.Bound(home, events, sessionId, agent.Binding(selection.Profile) with { Actor = actor });
+        UsageTurns.Bound(home, events, sessionId, agent.Binding(Context.Harnesses.Adapters, selection.Profile) with { Actor = actor });
         var actorLog = new MachineLog(home, "driver");
         var actorRun = new ActorRun(events, sessionId, actor, goOn?.Record.Ran, ran => service.KeepActorAsync(sessionId, ran: ran), actorLog);
         Context.ActorRuns[sessionId] = actorRun;

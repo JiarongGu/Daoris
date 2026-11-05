@@ -172,7 +172,7 @@ public sealed record SessionTarget(
     public string? Dependencies { get; init; }
 
     /// <summary>
-    /// For a session in a repository that marks heavy gates, with <c>daoris-driver</c> on its PATH (HEAVYRUN1b1, D180's HEAVYRUN1
+    /// For a session in a repository that marks heavy gates, with <c>daoris</c> on its PATH (HEAVYRUN1b1, D180's HEAVYRUN1
     /// notes): to run focused checks while it works and those gates once, at its end, through <c>run-heavy</c>
     /// (<see cref="HeavyTold.For"/>), said before how to take the quest. Null where neither holds, and the instruction reads as it did.
     /// </summary>

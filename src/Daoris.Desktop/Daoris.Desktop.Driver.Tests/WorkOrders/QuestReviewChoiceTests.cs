@@ -65,7 +65,7 @@ public sealed class QuestReviewChoiceTests
         using var sent = JsonDocument.Parse(body);
         Assert.Equal(("skipped", "a readme change"), (sent.RootElement.GetProperty("verdict").GetString(), sent.RootElement.GetProperty("words").GetString()));
         Assert.False(sent.RootElement.TryGetProperty("setUp", out _));
-        Assert.Contains("daoris-driver: Skipped the review of quest `#q1`'s work: its landing waits for no review.\n", output.ToString().ReplaceLineEndings("\n"));
+        Assert.Contains("daoris: Skipped the review of quest `#q1`'s work: its landing waits for no review.\n", output.ToString().ReplaceLineEndings("\n"));
     }
 
     /// <summary>
@@ -85,8 +85,8 @@ public sealed class QuestReviewChoiceTests
         using var sent = JsonDocument.Parse(body);
         Assert.Equal("local", sent.RootElement.GetProperty("environment").GetString());
         Assert.Equal(
-            $"daoris-driver: {Published}\n"
-            + "daoris-driver: the gate: `web-app`'s work waits for set-up step `#q3` to show it in `local`, then for your look: "
+            $"daoris: {Published}\n"
+            + "daoris: the gate: `web-app`'s work waits for set-up step `#q3` to show it in `local`, then for your look: "
             + "`daoris quest review q3 reviewed` once you have looked.\n",
             output.ToString().ReplaceLineEndings("\n"));
     }
@@ -160,7 +160,7 @@ public sealed class QuestReviewChoiceTests
 
         Assert.Equal(1, await QuestReviewCommand.RunAsync(Choice("on"), World(service), output));
 
-        Assert.Equal($"daoris-driver: {refusal}\n", output.ToString().ReplaceLineEndings("\n"));
+        Assert.Equal($"daoris: {refusal}\n", output.ToString().ReplaceLineEndings("\n"));
     }
 
     [Fact]

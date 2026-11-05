@@ -29,12 +29,12 @@ you again.
 
 `${browser}` is the in-app browser's endpoint. The driver fills it in when it hands a session its
 servers, and brings the window up first, without taking focus. Where no shell answers (the headless
-`daoris-driver`, or a gate), the server is not handed, and the session's transcript says why. For a
+`daoris` with no window, or a gate), the server is not handed, and the session's transcript says why. For a
 machine that runs without the shell, the `browser` example launches a browser of its own instead.
 
 ## What it needs
 
-- **Daoris's desktop**, which carries the browser and fills `${browser}`; the headless `daoris-driver`
+- **Daoris's desktop**, which carries the browser and fills `${browser}`; a headless Daoris
   hands a session no such server.
 - **node** on the PATH, with `npx`: the server is started as `npx -y @playwright/mcp@0.0.82`, which
   fetches it the first time a session is handed it.

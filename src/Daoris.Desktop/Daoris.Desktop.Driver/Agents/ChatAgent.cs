@@ -58,7 +58,7 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     public StandingFacts OnHarness(StandingFacts facts, string tree) => AgentContext.Current.OnHarness(facts, adapter, tree);
 
     /// <summary>Its turns' binding in the usage history, under the account <paramref name="profile"/> it runs as.</summary>
-    public TurnBinding Binding(string? profile) => TurnBinding.Of(adapter, profile);
+    public TurnBinding Binding(AdapterSet adapters, string? profile) => TurnBinding.Of(adapters, adapter, profile);
 
     /// <summary>The structured wire's mapper where the door says where a turn ends; null for a text-only pipe.</summary>
     public IStreamMapper? StructuredOutput() => adapter.StructuredOutput();

@@ -7,10 +7,12 @@ Every process Daoris starts gets its git from `GitWiring`: nothing prompts, and 
 The ssh door carries SSH; the remote helper carries HTTP and HTTPS through a `daoris::` rewrite.
 At each act a door finds the repository, applies the identity its remote points at, and asks one judge about the act's class.
 A remote that cannot authenticate is held, and said once in *What needs you*, until something changes it.
-The person's own git acts (fetch, refs, history edits, staging, commit, switch, stash, resolve) run through one journal under one lock.
+The person's own git acts (fetch, push, refs, history edits, staging, commit, switch, stash, resolve) run through one journal under one lock,
+and so does every branch delete Daoris's own doors judge.
 Apart from code hosts, a workspace may be wired to a shared deployment of the service. Quests, session records, messages,
 registrations and code maps sync with it as fetch, rebase, push. Two machines that take one quest end as a git conflict does.
-A pull request is pushed and opened by a landing plugin, on the person's yes. Daoris itself pushes nothing.
+Daoris's one push is the journal's push act under a grant bound to its ref and commits, on the person's press. A pull request is still
+pushed and opened by a landing plugin, on the person's yes.
 
 ## Its parts
 
@@ -24,7 +26,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |
 | Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitIdentityTokens.cs`, `GitSshFiles.cs`, `GitHostKeys.cs` | Generate or import a key, add an HTTPS identity with its token and test it, set or clear an API token, Daoris's `ssh_config` and `known_hosts`, host-key compare |
 | Secrets at rest | `GitTokens.cs`, `GitPrivateFolder.cs`, `GitKeys` in `GitIdentities.cs` | `profiles/git/tokens/<id>/` (`https`, `api`) beside `profiles/git/keys/<id>/`, each folder made limited to the person's account before a byte is written |
-| Identity verbs | `GitIdentityCommand.cs` | `daoris-driver git identity` and `git use`; a widening pressed through the running window |
+| Identity verbs | `GitIdentityCommand.cs` | `daoris git identity` and `git use`; a widening pressed through the running window |
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
@@ -39,7 +41,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
-| The person's acts | `GitFetchActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
+| The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
+| The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
+| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO` |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | `work/land` with origin's address, the judge before the plugin, `work/state` asks |
@@ -135,7 +139,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     answer, resolves each source to its object and forwards the objects it judged (`GitPushUpdates`, `GitHelperPush`). A delete,
     a force (the old commit is not an ancestor of the new, asked of git), a tag, a mirror (a ref outside `refs/heads/`) and a
     prune (a delete beside updates) are Dangerous: the place's Dangerous value, `allow` or `deny`, decides, unless the grant
-    carries the update. One refused update refuses the batch before any ref moves (`GitPushJudge`, `GitPushDoor`). (from D198, D233, D241)
+    carries the update. A grant names an update by its ref, its new commit and its old one where bound, and Write passed on a grant reaches
+    only the updates it names; it carries a Dangerous kind past the place's value only with its old commit bound, and never a tag. One
+    refused update refuses the batch before any ref moves (`GitPushJudge`, `GitPushDoor`). (from D198, D233, D241)
 26. A held `ask` is a git go-ahead, `run/git/asks/{id}.json`, answered *Allow* or *Refuse* in *What needs you*, the
     session's head or `git answer`. The door waits up to 15 minutes; a late allow is a grant the identical retry takes once.
     Where no instance of Daoris (the desktop or a headless driver) holds the home's lease, the door takes a kept grant or
@@ -151,15 +157,16 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Landing and pull requests**
 
-30. Daoris pushes nothing and opens no pull request. A landing rule names a plugin that declares `work/land`; it pushes
-    and opens the pull request after Daoris made the branch. With no plugin named, nothing pushes. (from D87, D100)
+30. Daoris's one push is the push act (rule 36); it opens no pull request. A landing rule names a plugin that declares `work/land`; it
+    pushes and opens the pull request after Daoris made the branch, its `git push` still its own until the plugins move to their APIs
+    (G9). With no plugin named, the landing pushes nothing. (from D87, D100, D241)
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
     yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
     because the plugin's start and its pull-request call pass no door. (from D198, D145)
 32. The plugin's push carries a grant bound to its process, origin's push address and exactly its own ref and commit
     (`refs/heads/<branch>` at the frame's tip), taken once within the bound by the push that it carries; it carries a creation or a
     fast-forward and never a Dangerous kind, and a ref it does not name is refused at the door. A grant with the old commit
-    bound carries that exact update whatever its kind. The frame names origin's address; the plugin has two minutes and answers
+    bound carries that exact update whatever its kind but a tag. The frame names origin's address; the plugin has two minutes and answers
     `{pushed, pullRequest, message}`. (from D100, D198, D241)
 33. A pull request's state is asked only of the plugin that pushed it, at occasions that may remove, never on a timer. A
     `completed` answer clears a branch only where git holds its merge commit on the line. (from D148)
@@ -173,12 +180,23 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **The person's acts**
 
-36. The person's acts are a fetch of origin's branches, a branch or lightweight tag made, renamed or deleted, and pick,
-    revert or rebase onto a branch no tree holds. (from D204, D147)
+36. The person's acts are a fetch of origin's branches, a push of one branch or lightweight tag to origin, a branch or lightweight tag
+    made, renamed or deleted, and pick, revert or rebase onto a branch no tree holds. The push is one `push` step,
+    `<commit>:refs/heads/<name>` or `refs/tags/<name>`, no `+`, no `-u`, no followed tags, no submodules, no signing, its hooks run, only
+    where origin names one push address and no setting runs another program. The step writes a grant bound to origin's push address, the
+    ref, the commit origin had it at as last fetched (the zero id where none, and always for a tag) and the commit it moves to, hands it to
+    that git alone and drops it when git ends. It is refused before it starts where Write denies, the identity is read only, origin is
+    held, the ref moved since shown, or the branch is `daoris/*`; a tag's Dangerous value is the door's to judge. It has no Undo; an end
+    with no exit is unknown and never retried. A workflow's `push` step (G8) is the same act. (from D204, D241)
 37. Behind Setup's *Daoris may change this checkout's files* (`checkoutWrites`, off by default): stage by file, hunk or
     line, commit, amend, resolve, switch and stash save or apply. (from D204)
-38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal.
-    A reconciler settles an open act; nothing is re-run. (from D204)
+38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal; an act
+    reached inside a flow that holds that lock alone already (a tidy, a removal) runs under it. A reconciler settles an open act;
+    nothing is re-run. (from D204)
+    Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
+    (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal) through
+    `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. Each door keeps its judgement and its own recovery ref;
+    only an opening undoing the branch it just made deletes one itself. (from D204, D228)
 39. Always refused: a hard reset, `clean`, any force, a remote delete, `push -u`, an act while a session runs there or a
     landing holds it, a delete or rename of Daoris's own branches, and any write into a session's tree. (from D204)
 40. Every write says how it recovers: deletes under `refs/daoris/discarded/`, index snapshots and Resolve's stages under
@@ -228,13 +246,15 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 - **Quest conflicts:** `QuestLog` and `QuestExchange` (service), `Planner` (driver), the quest page.
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
-`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
+`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `GitPushActProcessTests` (the press's push
+under its grant on the SSH host, the same push refused without one, a tag refused by `deny` and passed by `allow`), `GitPushCommandTests`,
+`JournaledDeletesTests` (a judged and a forced delete journaled with their Undo, the one-way census), `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
 `SessionSyncTests`, `BroughtForwardLookTests`, `RemotesModuleTests`, `DriverModuleGitAccessTests`; on the page
-`Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAccessFact.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`.
+`Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAccessFact.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`, `PushRef.test.tsx`.
 
 **The remotes they reach** are stand-ins in the test process on free loopback ports, one per test class, with nothing installed
 (D241 point 8): `GitSshHost` (an SSH host from Microsoft's dev-tunnels library serving `git-upload-pack` and `git-receive-pack`,
@@ -253,8 +273,6 @@ catalogues (`i18n:check`).
   `TreeDiffs` and the process starts, with their test seams, are `GitRuns`. A set-aside folder's marks, reads and keeping are
   `SetAsideMarks`, `SetAsideReads` and `SetAsideKeeps`, with `TreeSetAside` the front.
 - D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:44` (Git inside Repositories): D150 reads right.
-- D147 points 4-5 (`daoris-driver git push`, the person's push) vs `Workplace/GitBranchesCommand.cs`' mark (no push verb): the code
-  reads right; the push is GITAPP2g, open.
 - D204's head ("proposed, not yet read; nothing built") vs its 2026-10-31 acceptance note and the built acts
   (`ActRuns.cs:67`): the note and the code read right.
 - D87 and D100's plugin push "with whatever that platform's tools are signed in as" (still said at `LandingPlugins.cs:8-10`)
@@ -269,8 +287,11 @@ catalogues (`i18n:check`).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sync card's screen door. The browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241).
 - **GITAUTH1h:** the install, seen (the owner).
-- **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).
-- **GITAPP2n:** push a lightweight tag (after GITAUTH1g). Stash Drop stays deferred. Ask Daoris's fetch card is not built.
+- **GITAPP2:** Stash Drop stays deferred. Ask Daoris's fetch card is not built. The push's interruption (an end with no exit, said
+  unknown) and the person's `pre-push` hook have no proof of their own yet.
+- **ONEWAY1r:** the doors' own recovery refs and undo records (`RecoveryRetention`, `RecoveryDropping`) give way to the journal's,
+  their reader kept until the last record from before ONEWAY1r passes its retention; the git page lists no journal of deletes yet.
+- **G9:** the pull-request plugins' own `git push` (in the plugins repository) leaves for the push act.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).

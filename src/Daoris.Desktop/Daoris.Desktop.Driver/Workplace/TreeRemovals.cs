@@ -276,12 +276,11 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         {
             if (judged is null)
             {
-                var (deleted, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-                stays = deleted == 0 ? null : $"git would not delete it: {FirstLine(deleteErr)}";
+                stays = await JournaledDeletes.ForcedAsync(content, root, context.OwnerOf(full).Repository, branch, ct).ConfigureAwait(false);
             }
             else
             {
-                stays = await content.DeleteJudgedAsync(root, branch, judged, rests, ct).ConfigureAwait(false);
+                stays = await content.DeleteJudgedAsync(root, context.OwnerOf(full).Repository, branch, judged, rests, ct).ConfigureAwait(false);
                 if (stays is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
             }
 

@@ -93,7 +93,7 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
                 {
                     ["jsonrpc"] = "2.0",
                     ["id"] = JsonNode.Parse(id.GetRawText()),
-                    ["error"] = new JsonObject { ["code"] = -32603, ["message"] = $"daoris-driver could not read {name}: {error.Message}" },
+                    ["error"] = new JsonObject { ["code"] = -32603, ["message"] = $"daoris could not read {name}: {error.Message}" },
                 }).ConfigureAwait(false);
                 throw;
             }
@@ -132,7 +132,7 @@ internal sealed class AcpReader(ITurnReadWiring wiring, AcpWire wire)
             ["error"] = new JsonObject
             {
                 ["code"] = -32601,
-                ["message"] = $"daoris-driver does not implement {method}",
+                ["message"] = $"daoris does not implement {method}",
             },
         }).ConfigureAwait(false);
     }

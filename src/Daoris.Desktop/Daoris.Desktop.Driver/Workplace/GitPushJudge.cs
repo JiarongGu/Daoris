@@ -8,10 +8,10 @@ namespace Daoris.Driver;
 public sealed record GitBatchVerdict(bool Allowed, string Code, string? Line, bool UsedGrant = false);
 
 /// <summary>
-/// The judge of a push's updates (D241 point 3): each update by its kind, and the batch as one. No person is waited on. An update a grant
-/// carries passes (<see cref="GitGrantRef.Carries"/>); the Write a grant alone allowed does not reach a ref the grant does not carry;
-/// every other Dangerous update passes only where the place's Dangerous value is <c>allow</c>, and <c>deny</c>, the default and a
-/// stale <c>ask</c> refuse it.
+/// The judge of a push's updates (D241 point 3): each update by its kind, and the batch as one. No person is waited on. The Write a grant
+/// alone allowed reaches only the updates the grant names (<see cref="GitGrantRef.Names"/>); a Dangerous update the grant carries passes
+/// (<see cref="GitGrantRef.Carries"/>), and every other, a tag the grant names included, passes only where the place's Dangerous value is
+/// <c>allow</c>: <c>deny</c>, the default and a stale <c>ask</c> refuse it.
 /// </summary>
 /// <remarks>Pure: the doors compile it in (<c>Daoris.Desktop.GitDoor</c>) and hand it what they read.</remarks>
 public static class GitPushJudge
@@ -35,11 +35,12 @@ public static class GitPushJudge
         {
             var update = updates[index];
             var kind = kinds[index];
+            var named = grant?.Any(each => each.Names(update)) == true;
             var carried = grant?.Any(each => each.Carries(update, kind)) == true;
-            if (writeByGrant && !carried) return new(false, "grant-bound", NotCarriedLine(update.Ref));
+            if (writeByGrant && !named) return new(false, "grant-bound", NotCarriedLine(update.Ref));
             if (kind != GitPushKind.Plain && !carried && dangerous != GitAccessKeys.Allow)
                 return new(false, "dangerous-denied", GitPushUpdates.DeniedLine(kind));
-            used |= carried && (writeByGrant || kind != GitPushKind.Plain);
+            used |= (named && writeByGrant) || (carried && kind != GitPushKind.Plain);
         }
 
         return new(true, writeByGrant || used ? "granted" : "access", null, used);

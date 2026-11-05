@@ -78,7 +78,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// </remarks>
     public Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId)
     {
-        UsageTurns.Bound(home, context.Events, sessionId, TurnBinding.Of(adapter, selection.Profile));
+        UsageTurns.Bound(home, context.Events, sessionId, TurnBinding.Of(context.Harnesses.Adapters, adapter, selection.Profile));
         return info =>
         {
             try
@@ -106,13 +106,13 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// <param name="ended">What the harness said of its ending, by its door.</param>
     public SessionConclusion Refused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended)
     {
-        if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords } refusing
+        if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords }
             || !Observation.Refused(ended, refusedWords))
         {
             return conclusion;
         }
 
-        return conclusion.Then(" ", Refuse(adapter, selection, refusing.Owner(adapter.Name)));
+        return conclusion.Then(" ", Refuse(adapter, selection, context.Harnesses.Adapters.OwnerOf(adapter.Name)));
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="holders">
 /// The agents whose accounts a door runs as (<see cref="HarnessToolchain.AccountOf"/>) where this set carries no door of that
-/// agent, each by its toolchain (CODEXACCT1): see <see cref="Holder"/>. None by default, so a set a test builds asks nobody.
+/// agent, each by its toolchain (CODEXACCT1): see <see cref="ToolchainOf"/>. None by default, so a set a test builds asks nobody.
 /// </param>
 /// <param name="declared">
 /// Every agent an installed plugin's harness names, enabled or not (POOLSTRAY1): see <see cref="Agents"/>. None by default.
@@ -31,7 +31,7 @@ public sealed class AdapterSet(
     public IReadOnlyList<string> Agents =>
     [
         .. Reserved
-            .Concat(adapters.Select(each => each.Value.Toolchain?.Owner(each.Key) ?? each.Key))
+            .Concat(adapters.Select(each => each.Value.Toolchain?.AccountOf is { Length: > 0 } owner ? owner : each.Key))
             .Concat(declared ?? [])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(k => k, StringComparer.Ordinal),
@@ -39,9 +39,9 @@ public sealed class AdapterSet(
 
     /// <summary>
     /// Every name this set runs as a harness, in a stable order (PLUGINRESERVE1): each door it carries and each agent a door
-    /// runs as with no door here (<see cref="Holder"/>). Of the built set, what no plugin may declare
+    /// runs as with no door here (<see cref="ToolchainOf"/>). Of the built set, what no plugin may declare
     /// (<see cref="PluginCatalog.Reserved"/>): a plugin's harness named for a holder would be a door of that agent, and
-    /// <see cref="Holder"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
+    /// <see cref="ToolchainOf"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
     /// </summary>
     public IReadOnlyList<string> Reserved =>
     [
@@ -60,8 +60,21 @@ public sealed class AdapterSet(
     /// Not a door: it is no adapter, the roster lists it nowhere, and no session starts on it (D23: an adapter arrives
     /// deliberately). A plugin's door that names the same agent reads the same holder.
     /// </remarks>
-    public HarnessToolchain? Holder(string agent) =>
-        !adapters.ContainsKey(agent) && holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
+    public HarnessToolchain? ToolchainOf(string agent) =>
+        adapters.TryGetValue(agent, out var door)
+            ? door.Toolchain
+            : holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
+
+    /// <summary>
+    /// The one reader of whose accounts an agent runs as (AGENTPROVIDER1 row d): a door's account key, a provider's own, else the
+    /// name itself. Every account, default, key and cool-off is kept under it; a pin is not.
+    /// </summary>
+    public string OwnerOf(string agent) => Registry.OwnerOfAgent(agent).Value;
+
+    /// <summary>The providers and doors this set carries, made once (<see cref="ProviderRegistry.Of"/>).</summary>
+    public ProviderRegistry Registry => LazyInitializer.EnsureInitialized(ref _registry, () => ProviderRegistry.Of(this))!;
+
+    private ProviderRegistry? _registry;
 
     /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
     public string? DeclaredBy(string name) =>

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Stripped everywhere else</b>: every Daoris executable removes the variable from its own environment at its entry
 /// (<see cref="Strip"/>), before anything else, so no start it builds can copy it; and every start's environment drops it
-/// (<see cref="GitWiring.Removed"/>). The verb is the one reader: <c>daoris-driver</c> takes it into memory first and then removes it
+/// (<see cref="GitWiring.Removed"/>). The verb is the one reader: <c>daoris</c> takes it into memory first and then removes it
 /// (<see cref="Take"/>), and only <c>sessions supervise</c> reads what it took.</para>
 /// </remarks>
 public static class HolderKey

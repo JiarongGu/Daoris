@@ -257,7 +257,7 @@ public static class AgentErrors
     /// </summary>
     private static HarnessToolchain? OwnerOf(AdapterSet adapters, ISessionAdapter adapter)
     {
-        var owner = adapter.Toolchain?.Owner(adapter.Name);
+        var owner = adapter.Toolchain is null ? null : adapters.OwnerOf(adapter.Name);
         return owner is not null
                && !string.Equals(owner, adapter.Name, StringComparison.OrdinalIgnoreCase)
                && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)

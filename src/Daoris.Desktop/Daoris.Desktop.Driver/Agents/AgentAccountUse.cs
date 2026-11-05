@@ -319,6 +319,6 @@ internal static class AgentAccountUse
     private static HarnessToolchain? Toolchain(AccountVerbContext at, string agent)
     {
         var set = at.World.Adapters(at.Home);
-        return set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? set.Resolve(agent).Toolchain : set.Holder(agent);
+        return set.ToolchainOf(agent);
     }
 }

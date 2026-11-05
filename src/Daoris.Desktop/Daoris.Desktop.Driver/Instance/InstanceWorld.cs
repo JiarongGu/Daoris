@@ -31,7 +31,7 @@ public sealed class InstanceWorld : IToolTerminal
     public TextReader In { get; init; } = Console.In;
 
     /// <summary>The verb, as its sentences begin (<c>trees</c>).</summary>
-    public string Verb { get; init; } = "daoris-driver";
+    public string Verb { get; init; } = "daoris";
 
     /// <summary>How long the pipe is given to connect and answer the hello (§7.2: five seconds).</summary>
     public TimeSpan Answer { get; init; } = TimeSpan.FromSeconds(5);

@@ -61,7 +61,7 @@ public sealed class HistoryThroughInstanceTests
         await using var home = new InstanceTestHome();
         var standIn = home.Serve();
         standIn.Confirming = true;
-        string[] lines = [$"daoris-driver: said for {name}.", "  and its second line"];
+        string[] lines = [$"daoris: said for {name}.", "  and its second line"];
         standIn.Data = new { said = new TreesSaid(lines, [], 0).ToWire() };
         var service = new EmptyService();
         var output = new StringWriter();
@@ -70,7 +70,7 @@ public sealed class HistoryThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(string.Concat(lines.Select(line => line + Environment.NewLine)), output.ToString());
-        Assert.Matches(InstanceStandIn.WaitingAlone("daoris-driver"), home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("daoris"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
         Assert.Equal(route, press.GetProperty("type").GetString());
@@ -90,14 +90,14 @@ public sealed class HistoryThroughInstanceTests
         var (ask, route, payload) = Verb(name);
         await using var home = new InstanceTestHome();
         var standIn = home.Serve();
-        standIn.Data = new { said = new TreesSaid([$"daoris-driver: read for {name}."], [], 1).ToWire() };
+        standIn.Data = new { said = new TreesSaid([$"daoris: read for {name}."], [], 1).ToWire() };
         var service = new EmptyService();
         var output = new StringWriter();
 
         var exit = await HistoryCommand.RunAsync(ask, World(service, home.Home, home.World()), output);
 
         Assert.Equal(1, exit);
-        Assert.Equal($"daoris-driver: read for {name}.{Environment.NewLine}", output.ToString());
+        Assert.Equal($"daoris: read for {name}.{Environment.NewLine}", output.ToString());
         Assert.Equal("", home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
@@ -141,7 +141,7 @@ public sealed class HistoryThroughInstanceTests
         var exit = await HistoryCommand.RunAsync(new HistoryAsk(HistoryScope.Workspace, null), World(service, home.Home, home.World()), output);
 
         Assert.Equal(0, exit);
-        Assert.Equal("daoris-driver: nothing finished is kept on this machine: no record names a workspace." + Environment.NewLine, output.ToString());
+        Assert.Equal("daoris: nothing finished is kept on this machine: no record names a workspace." + Environment.NewLine, output.ToString());
         Assert.True(service.Requests > 0);
     }
 }

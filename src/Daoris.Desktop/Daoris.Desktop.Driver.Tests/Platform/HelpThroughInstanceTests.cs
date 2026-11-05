@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris-driver help</c> through the running Daoris (the terminal RPC design §7.2 and §7.3). <c>rename</c>, <c>pin</c>,
+/// RPC1e: <c>daoris help</c> through the running Daoris (the terminal RPC design §7.2 and §7.3). <c>rename</c>, <c>pin</c>,
 /// <c>unpin</c> and <c>delete --yes</c> are the person's presses, sent to the instance, which shows each in its window; <c>list</c> is a
 /// read. The terminal prints the lines the route answers (<c>said</c>, the alone path's own words), and this process asks the service
 /// nothing. <c>resume</c> stays this terminal's own until RPC1g, and a delete's first ask reads alone.

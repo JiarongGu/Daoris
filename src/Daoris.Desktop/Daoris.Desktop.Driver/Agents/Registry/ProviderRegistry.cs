@@ -260,7 +260,15 @@ public sealed class ProviderRegistry
                 provider.Usage.IsKnown ? provider.Usage.Required : UsagePart.None);
         }
 
-        return (programFacts, door.Lent.Accounts, door.Lent.Tables, door.Lent.Usage);
+        // A built-in door of a holder (`codex-acp` of `codex`) says its accounts' words and asks their windows as its provider does: the
+        // agent's, not the door's. A plugin's door joined to it, and a door of a provider with a door of its own id, read their own.
+        var ofHolder = door.Identity.DeclaredBy is null && provider.Tables.IsKnown
+            && door.AccountOf is { } key && Ids.Same(key.Value, provider.Id.Value)
+            && !provider.Doors.Any(each => Ids.Same(each.Id.Value, provider.Id.Value));
+        return (
+            programFacts, door.Lent.Accounts,
+            ofHolder ? provider.Tables.Required : door.Lent.Tables,
+            ofHolder && provider.Usage.IsKnown ? provider.Usage.Required : door.Lent.Usage);
     }
 
     /// <summary>

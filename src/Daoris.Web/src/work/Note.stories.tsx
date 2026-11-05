@@ -81,17 +81,17 @@ export const UnknownCode: Story = {
   decorators: [chinese],
 };
 
-/** A record from before parts, every record on the install before LANG1a: its note as kept, marked. */
-export const OldNote: Story = {
+/** A sentence the driver wrote with no code, carried whole as one part: its English as kept, marked. */
+export const UncodedSentence: Story = {
   args: {
     note: 'It stopped with its quest still taken, to ask you: should the budget live on the chunk API or in the scheduler?',
-    parts: null,
+    parts: [{ words: 'It stopped with its quest still taken, to ask you: should the budget live on the chunk API or in the scheduler?', by: 'before' }],
   },
   decorators: [chinese],
 };
 
-/** The old note in English: the same mark, since the page did not word it here either. */
-export const OldNoteEnglish: Story = { ...OldNote, decorators: [] };
+/** The same sentence in English: the same mark, since the page cannot word it here either. */
+export const UncodedSentenceEnglish: Story = { ...UncodedSentence, decorators: [] };
 
 /** A program's words passed through as written, beneath the line that leads into them. */
 export const ProgramWords: Story = {

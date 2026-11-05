@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris-driver plugins`, the host's one door for plugins (D50): the kit's <c>new</c> and <c>try</c>
+/// `daoris plugins`, the host's one door for plugins (D50): the kit's <c>new</c> and <c>try</c>
 /// (<see cref="PluginKitCommand"/>), and a plugin's page and activity, <c>show</c> and <c>activity</c> (PLUGUI1d,
 /// D119 §4.4), the terminal twins of the Plugins view's page and its Activity.
 /// </summary>

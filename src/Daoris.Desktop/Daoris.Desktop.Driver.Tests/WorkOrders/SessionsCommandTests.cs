@@ -756,7 +756,7 @@ public sealed class SessionsCommandTests : IDisposable
         // Their words go to the person's own door, never respond's: the service writes the sentence that says the done was
         // theirs before them (QuestPersonDoneTests), and answers none of the quest's requirements.
         Assert.Equal("The write-up is in the shared folder.", ledger.DoneWords("q1"));
-        Assert.Equal("daoris-driver: Quest `#q1` is now Done: you marked it done.\n", output.ToString().ReplaceLineEndings("\n"));
+        Assert.Equal("daoris: Quest `#q1` is now Done: you marked it done.\n", output.ToString().ReplaceLineEndings("\n"));
         // The session's record still says the person finished it.
         Assert.Equal("The person finished this at a checkpoint.", ledger.Note("p4rk3d00"));
     }

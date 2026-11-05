@@ -139,6 +139,37 @@ internal sealed class GitRefDesk(DriverContext context)
         };
     }
 
+    public async Task<object?> GitPushPlanAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(_loop, read.Repository, read.Workspace, cancellationToken,
+            (root, token) => GitPushActs.PlanReadAsync(_loop.Home, read.Repository!, read.Workspace, root, token));
+
+    public async Task<object?> GitPushAsync(GitRefAct act, CancellationToken cancellationToken)
+    {
+        var repository = act.Repository ?? throw new DriverException("a push names its repository.");
+        var kind = act.Kind;
+        var name = act.Name;
+        if (kind is not ("branch" or "tag") || string.IsNullOrWhiteSpace(name)) throw new DriverException("a push names its kind, `branch` or `tag`, and its name.");
+        _ = _loop.Service ?? throw NotReady();
+
+        var verb = new GitPushVerb(repository, kind, name, act.At, Yes: true);
+        var world = new GitRefWorld(async (_, token) => await CheckoutOfAsync(_loop, repository, act.Workspace, token).ConfigureAwait(false), () => _acts);
+        if (act.Said)
+        {
+            var writer = new StringWriter { NewLine = "\n" };
+            var code = await GitPushCommand.ExecuteAsync(verb, world, "terminal", "window", writer, writer, cancellationToken).ConfigureAwait(false);
+            var lines = writer.ToString().Split('\n');
+            return new { Said = new TreesSaid(lines[^1].Length == 0 ? lines[..^1] : lines, [], code).ToWire() };
+        }
+
+        if (await world.CheckoutOf(repository, cancellationToken).ConfigureAwait(false) is not { } checkout) return NoCheckout(repository);
+        var run = await GitPushActs.PushAsync(_acts, new PushAsk(repository, checkout, kind, name, act.At, act.Workspace), "window", "window", cancellationToken).ConfigureAwait(false);
+        return new
+        {
+            run.Act, run.Outcome, run.Refused, Said = WithoutRoots(run.Said, [checkout], repository) ?? "",
+            Notes = run.Notes is null ? null : WithoutRoots(run.Notes, [checkout], repository),
+        };
+    }
+
     public async Task<object?> GitHistoryEditAsync(GitHistoryEditAct act, CancellationToken cancellationToken)
     {
         var repository = act.Repository ?? throw new DriverException("a history edit names its repository.");

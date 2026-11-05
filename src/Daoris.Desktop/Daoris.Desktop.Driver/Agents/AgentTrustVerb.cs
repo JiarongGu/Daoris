@@ -20,7 +20,7 @@ internal static class AgentTrustVerb
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        var (name, toolchain, _, _) = AgentsCommand.Agent(args, "trust", "<agent>", world, path);
+        var (name, toolchain, _, roster) = AgentsCommand.Agent(args, "trust", "<agent>", world, path);
         if (toolchain.TrustFile is not { } trustFile)
         {
             throw new AgentWords($"`{name}` has no trust question Daoris knows of, so there is nothing to grant: its own permissions apply as they are.");
@@ -30,7 +30,7 @@ internal static class AgentTrustVerb
         var folder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(world.Folder, given)));
         if (!Directory.Exists(folder)) throw new AgentWords($"no folder at `{folder}` — trust is granted to a folder a session would run in.");
 
-        var owner = toolchain.Owner(name);
+        var owner = roster.Adapters.OwnerOf(name);
         if (owner != name) Say($"{AgentsCommand.Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var profile = AgentsCommand.FlagValue(args, "--account") is { } named ? AgentsCommand.AccountNamed(home, owner, named) : null;
         // With no account named, the set in its order (the account-pool design §5.1): the order's accounts that are here, then the rest.

@@ -73,6 +73,14 @@ public sealed class TreeLock : IDisposable
     /// <summary>Whether this holds the repository alone, as a replay or a writer of its checkout does.</summary>
     internal bool Alone => _by is not null;
 
+    /// <summary>Whether this is <paramref name="checkout"/>'s lock, the one its common git directory keys.</summary>
+    internal bool Holds(string home, string checkout) =>
+        string.Equals(Path.GetFullPath(_file.Name), Path.GetFullPath(PathOf(home, checkout)), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The lock this flow holds alone on <paramref name="checkout"/> already, or null: an act reached from inside it runs under it.</summary>
+    internal static TreeLock? HeldHere(string home, string checkout) =>
+        LockWaits.Holding is TreeLock { Alone: true } outer && outer.Holds(home, checkout) ? outer : null;
+
     /// <summary>
     /// Where a checkout's lock is: one file per common git directory, named by its digest, whatever name or workspace the checkout is
     /// registered under. <paramref name="checkout"/> is the checkout or any session tree of it.

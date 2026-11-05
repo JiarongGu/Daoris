@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each of the plugins' presses both ways (PUSH1f2f, D194 points 4 and 6, the alone-path design §3): <c>daoris-driver plugin</c> acting
+/// Each of the plugins' presses both ways (PUSH1f2f, D194 points 4 and 6, the alone-path design §3): <c>daoris plugin</c> acting
 /// alone, through the library's operation, and the same words' press sent to the Plugins place's route (<c>PLUGIN_ADD</c>,
 /// <c>PLUGIN_INSTALL</c>, <c>PLUGIN_UPDATE</c>, <c>PLUGIN_ACTION</c>), its answer said by the same words function, over one home from the
 /// same files. The files left, the text, the refusal's line and the exit are equal: red where a route and its operation disagree, or

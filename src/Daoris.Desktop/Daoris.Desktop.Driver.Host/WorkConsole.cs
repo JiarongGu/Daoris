@@ -66,7 +66,7 @@ internal static class WorkConsole
         var words = args.Where(word => word != "--entries").ToList();
         if (words.Count > 1 || words.Any(word => word.StartsWith('-')))
         {
-            Console.Error.WriteLine($"daoris-driver: `work state` takes one unit and `--entries`: {string.Join(" ", args)}");
+            Console.Error.WriteLine($"daoris: `work state` takes one unit and `--entries`: {string.Join(" ", args)}");
             Console.Error.WriteLine("usage: daoris work state [<unit>] [--entries]");
             return 2;
         }
@@ -102,7 +102,7 @@ internal static class WorkConsole
     {
         if (RecoveryCommand.Read(args, out var problem) is not { } ask)
         {
-            Console.Error.WriteLine($"daoris-driver: {problem}");
+            Console.Error.WriteLine($"daoris: {problem}");
             Console.Error.WriteLine(RecoveryCommand.Usage);
             return 2;
         }
@@ -119,7 +119,7 @@ internal static class WorkConsole
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or TaskCanceledException)
         {
-            Console.Error.WriteLine($"daoris-driver: the service did not answer ({error.Message}), so no checkout is known to delete in.");
+            Console.Error.WriteLine($"daoris: the service did not answer ({error.Message}), so no checkout is known to delete in.");
             return 2;
         }
 
@@ -155,7 +155,7 @@ internal static class WorkConsole
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
         if (WorkCommand.Read(scope, args, out var problem) is not { } ask)
         {
-            Console.Error.WriteLine($"daoris-driver: {problem}");
+            Console.Error.WriteLine($"daoris: {problem}");
             Console.Error.WriteLine(WorkCommand.Usage);
             return 2;
         }
@@ -172,7 +172,7 @@ internal static class WorkConsole
             Door = SessionsConsole.Wire(config),
             Log = log,
             // RPC1e: the running Daoris's client where one answers, the person's presses confirmed in its window.
-            Instance = InstanceHost.World(home, "daoris-driver"),
+            Instance = InstanceHost.World(home, "daoris"),
             Sync = async (workspace, ct) => sync.Workspaces.Contains(RemoteTarget.Workspace(workspace), StringComparer.OrdinalIgnoreCase)
                 ? await sync.RunOnceAsync(workspace, ct).ConfigureAwait(false)
                 : null,

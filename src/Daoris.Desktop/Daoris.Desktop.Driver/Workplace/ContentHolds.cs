@@ -352,12 +352,13 @@ internal sealed class ContentHolds(TreeContext context)
     /// git refuses (a lock, a branch made meanwhile) is said as such, and the caller keeps any recovery ref, since
     /// <see cref="DropKeptAsync"/> drops one only while the branch is shown to hold the commit.</para>
     /// </remarks>
+    /// <param name="repository">The repository the journal's record names, which <c>GIT_REF_UNDO</c> undoes it in.</param>
     /// <param name="held">What the proof rested on, each ref at the commit the proof read it at, as the proof returned it (FABRIC-END4a, third
     /// review): the holder by ancestry, the ref holding the work by content, a squashing landing's branch, the landing a landed branch is
     /// inside and what that one rests on, the form of the line a merge or a pull request's merge was found on. Verified exactly, and never
     /// looked for again here. Empty is no proof, and keeps the branch.</param>
     internal async Task<string?> DeleteJudgedAsync(
-        string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
+        string root, string repository, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
     {
         if (held.Count == 0) return NothingRested;
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
@@ -375,23 +376,17 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (context.BeforeRefDeleted is { } late) await late(branch).ConfigureAwait(false);
         var none = CancellationToken.None;
-        // LANDRETIRE1: a proof resting on the branch itself at the commit judged is the delete's own old value; the transaction names it once.
-        var run = await new RefTransaction().Verify(held).Delete($"refs/heads/{branch}", judged).RunAsync(root, none).ConfigureAwait(false);
-        if (!run.Done) return await RefusedAsync(root, branch, judged, held, run.Said).ConfigureAwait(false);
-
-        // The late checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear.
-        var trees = await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false);
-        var lateTree = trees?.GetValueOrDefault(branch);
-        if (trees is null || lateTree is not null)
+        // ONEWAY1r: the journal's delete, with its Undo; LANDRETIRE1: a proof resting on the branch itself is named once. Then the late
+        // checkout, which no ref says: a tree on the branch, or a list git could not give, is not clear. Then the branch's section goes.
+        var gone = await JournaledDeletes.DeleteAsync(context.Home, root, repository, branch, judged, held, async () =>
         {
-            return await PutBackAsync(root, branch, judged, trees is null
+            var trees = await context.Worktrees.ReadAsync(root, none).ConfigureAwait(false);
+            var lateTree = trees?.GetValueOrDefault(branch);
+            return trees is not null && lateTree is null ? null : await PutBackAsync(root, branch, judged, trees is null
                 ? $"{ListUnread} once it went, so whether a tree checked it out as it went is not known"
                 : $"it was checked out at {lateTree} as it went").ConfigureAwait(false);
-        }
-
-        // What git branch -D also removes: the branch's own section of the config, its upstream where it had one.
-        await WorkingTree.GitAsync(root, ["config", "--remove-section", $"branch.{branch}"], none).ConfigureAwait(false);
-        return null;
+        }).ConfigureAwait(false);
+        return gone.Said is { } said ? await RefusedAsync(root, branch, judged, held, said).ConfigureAwait(false) : gone.Kept;
     }
 
     /// <summary>

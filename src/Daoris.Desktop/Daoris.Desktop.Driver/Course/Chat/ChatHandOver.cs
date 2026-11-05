@@ -353,7 +353,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
             var resolved = _context.Harnesses.Adapters.Resolve(agent);
             if (!resolved.Interactive) return null;
             return resolved.Toolchain is { } toolchain
-                ? HarnessSettings.Profiles(_context.Harnesses.Home, toolchain.Owner(resolved.Name))
+                ? HarnessSettings.Profiles(_context.Harnesses.Home, _context.Harnesses.Adapters.OwnerOf(resolved.Name))
                 : [];
         }
         catch (DriverException)

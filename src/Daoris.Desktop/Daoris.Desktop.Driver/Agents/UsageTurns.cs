@@ -27,9 +27,9 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
     public string? Brainstorm { get; init; }
 
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
-    public static TurnBinding Of(ISessionAdapter adapter, string? profile)
+    public static TurnBinding Of(AdapterSet adapters, ISessionAdapter adapter, string? profile)
     {
-        var owner = adapter.Toolchain?.Owner(adapter.Name);
+        var owner = adapter.Toolchain is null ? null : adapters.OwnerOf(adapter.Name);
         return new(
             owner, owner is null ? null : profile ?? AccountWindows.Own, adapter.Name,
             adapter.Toolchain?.TurnReport ?? UsageHistory.MeaningUnknown);
