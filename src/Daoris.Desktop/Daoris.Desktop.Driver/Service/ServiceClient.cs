@@ -231,8 +231,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     public Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) => Standing.SyncAsync(workspace, ct);
 
-    public Task<string> SessionsJsonAsync(bool includeClosed, CancellationToken ct = default) => SessionList.JsonAsync(includeClosed, ct);
-
     public Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct = default) => SessionList.StrikesAsync(ct);
 
     public Task<IReadOnlyList<SessionRun>> SessionRunsAsync(CancellationToken ct = default) => SessionList.RunsAsync(ct);
@@ -264,6 +262,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     public Task<IReadOnlyList<SessionRecord>> SessionRecordsAsync(CancellationToken ct = default) => SessionList.AllAsync(ct);
 
+    /// <summary>Every record as the kept list's text, for a reader that needs the records beside the one it names (its line, its quest's earlier parts).</summary>
     public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => SessionList.JsonAsync(true, ct);
 
     public Task<(bool Kept, string Message)> AddedToSessionAsync(string id, string text, CancellationToken ct = default) => Words.AddedAsync(id, text, ct);
