@@ -1,9 +1,8 @@
 namespace Daoris.Driver;
 
-/// <summary>Workplace prepares a start's git environment and composes its resolved process instruction.</summary>
+/// <summary>Workplace composes a start's resolved process instruction; its git is the shell's <see cref="ISessionGit"/>.</summary>
 public interface IAgentWorkplace
 {
-    void HandGit(IDictionary<string, string?> environment, string? home, string root);
     string? ProcessWords(IStartCommits? commits, IStartLanding? plan);
 }
 

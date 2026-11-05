@@ -61,13 +61,17 @@ export function stateSaid(t: TFunction, state: string): string {
 /** Why a check is not known, the codes the page words (`VerifyResult`'s `changed`, `bound`, `stopped`, `busy`); another is said as the general. */
 const CHECK_WHY = ['changed', 'bound', 'stopped', 'busy'];
 
+/** Why a check is not known, in the reader's words: a code the page knows, else the general. */
+export const checkWhy = (t: TFunction, code: string | null | undefined): string =>
+  t(`workflow.run.check.why.${CHECK_WHY.includes(code ?? '') ? code : 'other'}`);
+
 /**
  * A check's verdict as a status word (FABRIC-PIPELINE1d, the pipeline design §4.4): *verified*, *failed: `<gate>`*, *not known: `<why>`*,
  * *waiting for `<what>`*, *not now*; null for a step that is no check, or a check standing where no verdict word applies.
  */
 export function checkWord(t: TFunction, step: RunStep): string | null {
   if (step.node !== 'check') return null;
-  const why = t(`workflow.run.check.why.${CHECK_WHY.includes(step.code ?? '') ? step.code : 'other'}`);
+  const why = checkWhy(t, step.code);
   switch (step.detail) {
     case 'reached': return t('workflow.run.check.verified');
     case 'failed': return step.gate ? t('workflow.run.check.failed', { gate: step.gate }) : t('workflow.run.check.failedNone');

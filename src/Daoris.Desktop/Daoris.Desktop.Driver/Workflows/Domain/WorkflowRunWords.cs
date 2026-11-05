@@ -350,13 +350,15 @@ public static class WorkflowRunWords
         {
             var run = runs[index];
             if (index > 0) said.Append('\n');
-            var quests = run.ChatRun is { } chat ? $"chat run {chat}"
+            var quests = run.Line is { } verified ? LineRunWords.Subject(verified)
+                : run.ChatRun is { } chat ? $"chat run {chat}"
                 : run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
             var workflow = run.Process?.Named == true ? $"{run.Process.Name} workflow"
                 : run.Problem is not null ? "Workflow unread" : $"Current workflow, version {run.Current.Version}";
             said.Append($"{run.Repository} · {workflow} · {quests}");
             if (run.Ask is { } ask) said.Append($" · ask #{ask}");
             said.Append('\n');
+            foreach (var asked in run.Line is { } judged ? LineRunWords.Under(judged) : []) said.Append($"  {asked}\n");
             if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
             if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
             if (run.Graph is { } graph)

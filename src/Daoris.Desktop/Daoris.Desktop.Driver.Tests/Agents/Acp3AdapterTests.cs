@@ -195,7 +195,7 @@ public sealed class Acp3AdapterTests : IDisposable
             Assert.False(Directory.Exists(home), "the profile must not exist before the spawn is prepared");
 
             var info = adapter.Prepare(Target(_home), command: null);
-            HarnessProbe.Apply(info, adapter.Toolchain!, home);
+            Shell.Equip(info, adapter.Toolchain!, home);
 
             Assert.True(
                 Directory.Exists(home),

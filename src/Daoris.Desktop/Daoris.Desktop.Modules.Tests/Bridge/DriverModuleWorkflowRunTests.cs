@@ -414,9 +414,41 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var two = await RefusalAsync(Module(), "WORKFLOW_RUN", new { quest = "q1", ask = "a1" });
         var early = await RefusalAsync(Module(), "WORKFLOW_RUN", new { quest = "q1" });
 
-        Assert.Contains("a run is read for a `session`, a `quest` or an `ask` — name one of them.", neither);
+        Assert.Contains("a run is read for a `session`, a `quest`, an `ask` or a repository's `line` — name one of them.", neither);
         Assert.Contains("name one of them", two);
         Assert.Contains("still coming up", early);
+    }
+
+    /// <summary>
+    /// FABRIC-PIPELINE1d: a repository's line answers its verification runs, each with the commit it judged, the branch it was asked of and its
+    /// verdict from its record; a line with none answers no run and the sentence that says how one is asked.
+    /// </summary>
+    [Fact]
+    public async Task A_line_answers_its_verification_runs_with_their_verdicts()
+    {
+        Directory.CreateDirectory(WorkflowStore.FolderOf(Home));
+        File.WriteAllText(WorkflowStore.PathOf(Home, "verify"), """
+            {"id":"verify","name":"Verify","pipeline":"verification","versions":[{"version":1,"at":"2026-10-31T09:00:00Z","door":"terminal","schema":2,
+             "graph":{"schemaVersion":2,"entries":["verify"],"end":"verify","nodes":[{"id":"verify","kind":"check","version":1,"reach":"performed"}],"wires":[]}}]}
+            """);
+        var digest = new WorkflowFiles(Home).Load("verify")!.Read.Versions.Single().Digest!;
+        const string run = "v-0123456789abcdef";
+        VerifyRuns.Bind(Home, new VerifyRun(run, "engine", "aurora", "checkout", "verify", 1, digest, Commit, VerifyRuns.Person, T) { Branch = "feature/x" });
+        var unit = RunUnits.IdOf(run);
+        new NodeRecordFiles(Home, () => true).Write(new NodeRecord(unit)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["verify"] = new(unit, "verify", NodeStates.Reached) { Attempt = 1, By = NodeSource.Gates } },
+        });
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { line = "engine" });
+        var line = answer.GetProperty("runs")[0].GetProperty("line");
+        Assert.Equal((run, Commit, "feature/x", "verified"),
+            (line.GetProperty("run").GetString(), line.GetProperty("commit").GetString(), line.GetProperty("branch").GetString(), line.GetProperty("verdict").GetString()));
+
+        var none = await AnswerAsync(module, "WORKFLOW_RUN", new { line = "nowhere" });
+        Assert.Equal(0, none.GetProperty("runs").GetArrayLength());
+        Assert.Contains("`daoris gate verify nowhere`", none.GetProperty("problem").GetString());
     }
 
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";

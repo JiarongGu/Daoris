@@ -232,27 +232,19 @@ internal static class AgentPinCommand
         var error = world.Instance.Error;
         var home = HarnessSettings.HomeOf(path);
         var scope = named is not null ? $" for the `{named}` workspace" : "";
+        Say(toolchain.Channel is { Length: > 0 }
+            ? $"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking {toolchain.Maker ?? "its maker"}'s own release channel which release is newest."
+            : $"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking npm which release of `{toolchain.Package}` is newest.");
         string newest;
         try
         {
-            if (toolchain.Channel is { Length: > 0 } channel)
-            {
-                Say($"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking {toolchain.Maker ?? "its maker"}'s own release channel which "
-                    + "release is newest.");
-                try
-                {
-                    newest = await ReleaseChannels.LatestAsync(channel, ct, world.Transport).ConfigureAwait(false);
-                }
-                catch (DriverException refused)
-                {
-                    throw new AgentWords($"{refused.Message} The pin stays at {pin}.");
-                }
-            }
-            else
-            {
-                Say($"{Prefix}: `{name}` is pinned at {pin}{scope}. Asking npm which release of `{toolchain.Package}` is newest.");
-                newest = await NewestOnNpmAsync(world, home, toolchain, pin, ct).ConfigureAwait(false);
-            }
+            // The window's one way (PinNewest): the npm handed, through the tools; its answer shown; the refusal in the window's words.
+            newest = await PinNewest.AskAsync(toolchain, home, pin, world.Npm, line => Say($"  {line}"), ct, transport: world.Transport)
+                .ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            throw new AgentWords(refused.Message);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -279,48 +271,4 @@ internal static class AgentPinCommand
         return await InstallAndPinAsync(world, path, name, toolchain, newest, named, ct).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The newest version npm publishes of a package, asked with <c>npm view &lt;package&gt; version</c> through the tools' npm, as the pin
-    /// it would make runs it. Anything but one version is a refusal that says so.
-    /// </summary>
-    private static async Task<string> NewestOnNpmAsync(
-        AgentsWorld world, string home, HarnessToolchain toolchain, string pin, CancellationToken ct)
-    {
-        var package = toolchain.Package!;
-        var stays = $"Nothing was fetched or pinned, and the pin stays at {pin}.";
-        IReadOnlyList<string> command;
-        try
-        {
-            command = HarnessActions.ThroughTools(home, [.. world.Npm, "view", package, "version"]);
-        }
-        catch (DriverException refused)
-        {
-            throw new AgentWords($"{refused.Message} {stays}");
-        }
-
-        world.Instance.Out.WriteLine($"  $ {string.Join(' ', command)}");
-        var heard = new List<string>();
-        int code;
-        try
-        {
-            // Its answer is read, not shown: the line RunAsync echoes first is Daoris's, not npm's.
-            code = await HarnessActions.RunAsync(command, toolchain, profileHome: null,
-                line => { if (!line.StartsWith("$ ", StringComparison.Ordinal)) heard.Add(line); }, ct).ConfigureAwait(false);
-        }
-        catch (DriverException refused)
-        {
-            throw new AgentWords($"`{command[0]}` could not be run — {refused.Message.TrimEnd('.')}. {stays}");
-        }
-
-        var said = heard.Select(line => line.Trim()).FirstOrDefault(line => line.Length > 0);
-        if (code != 0)
-        {
-            throw new AgentWords(
-                $"npm could not say which release of `{package}` is newest — it exited {code}{(said is null ? "" : $" ({TextBounds.Clip(said, 160)})")}. {stays}");
-        }
-
-        return HarnessActions.VersionFromNpm(heard)
-            ?? throw new AgentWords(
-                $"npm answered no single version of `{package}`{(said is null ? "" : $" (it said `{TextBounds.Clip(said, 160)}`)")}. {stays}");
-    }
 }

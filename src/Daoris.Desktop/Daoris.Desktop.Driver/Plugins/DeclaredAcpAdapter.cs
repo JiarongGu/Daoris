@@ -31,17 +31,12 @@ public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : I
 
     public bool Interactive => true;
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
-    }
+    /// <summary>Completed by the transports' shell, its stdin open for the driver's frames; nothing stripped, since its program is unmeasured (s-vi).</summary>
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        Shell.Start(ProcessRecipe.Of(Resolve(command)) with { Input = true }, target);
 
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = Resolve(command);
-        return Spawning.ChatInRoot(target, resolved[0], resolved.Skip(1));
-    }
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        Shell.Chat(ProcessRecipe.Of(Resolve(command)), target);
 
     public HarnessToolchain? Toolchain => new(
         Binary: [harness.Command[0]],

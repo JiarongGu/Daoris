@@ -17,14 +17,15 @@ public static class WorkflowRunCommand
 {
     public const string Usage =
         """
-        usage: daoris workflow run --session <id> | --quest <id> | --ask <id>
+        usage: daoris workflow run --session <id> | --quest <id> | --ask <id> | --line <repository>
                where a piece of work stands in the workflow it follows, as the session's Workflow view draws it: each step of
                its repository's workflow with its state and what that state says, the step the run stands at marked ●. A
-               session's run is its quest's; an ask's, each repository its chains reach. Reads only.
+               session's run is its quest's; an ask's, each repository its chains reach; a line's, the repository's newest
+               verifications, each with the commit it judged, its verdict and its gates. Reads only.
         """;
 
     /// <summary>The flags that name whose run is read, each with its id.</summary>
-    private static readonly string[] Flags = ["--session", "--quest", "--ask"];
+    private static readonly string[] Flags = ["--session", "--quest", "--ask", "--line"];
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     /// <param name="args">The words after <c>workflow</c>.</param>
@@ -37,13 +38,14 @@ public static class WorkflowRunCommand
             {
                 "--session" => new WorkflowRunAsk(Session: id.Trim()),
                 "--quest" => new WorkflowRunAsk(Quest: id.Trim()),
+                "--line" => new WorkflowRunAsk(Line: id.Trim()),
                 _ => new WorkflowRunAsk(Ask: id.Trim()),
             };
         }
 
         problem = args is ["run", ..]
-            ? "`workflow run` reads one run: name its session, its quest or its ask, one of them (`workflow run --quest <id>`)."
-            : "`workflow` reads a run: `workflow run --session <id> | --quest <id> | --ask <id>`.";
+            ? "`workflow run` reads one run: name its session, its quest, its ask or a repository's line, one of them (`workflow run --quest <id>`)."
+            : "`workflow` reads a run: `workflow run --session <id> | --quest <id> | --ask <id> | --line <repository>`.";
         return null;
     }
 

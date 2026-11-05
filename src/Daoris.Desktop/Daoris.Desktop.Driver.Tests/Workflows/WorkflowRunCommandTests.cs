@@ -43,9 +43,10 @@ public sealed class WorkflowRunCommandTests : IDisposable
 
     public static TheoryData<string, string?> Lines() => new()
     {
-        { "run --session s1", "session=s1 quest= ask=" },
-        { "run --quest #q1", "session= quest=#q1 ask=" },
-        { "run --ask a1", "session= quest= ask=a1" },
+        { "run --session s1", "session=s1 quest= ask= line=" },
+        { "run --quest #q1", "session= quest=#q1 ask= line=" },
+        { "run --ask a1", "session= quest= ask=a1 line=" },
+        { "run --line engine", "session= quest= ask= line=engine" },
         { "run", null },
         { "run --session", null },
         { "run --session  ", null },
@@ -70,7 +71,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
         }
 
         Assert.Null(problem);
-        Assert.Equal(read, $"session={ask!.Session} quest={ask.Quest} ask={ask.Ask}");
+        Assert.Equal(read, $"session={ask!.Session} quest={ask.Quest} ask={ask.Ask} line={ask.Line}");
     }
 
     // ——— the usage
@@ -81,7 +82,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
         Assert.Equal(Golden("usage.txt").TrimEnd('\n'), WorkflowRunCommand.Usage.ReplaceLineEndings("\n"));
 
         var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
-        Assert.Contains("\n  workflow run --session <id> | --quest <id> | --ask <id>\n", usage);
+        Assert.Contains("\n  workflow run --session <id> | --quest <id> | --ask <id> | --line <repository>\n", usage);
 
         var host = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host");
         var program = File.ReadAllText(Path.Combine(host, "Program.cs"));

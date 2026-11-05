@@ -182,7 +182,7 @@
   "workflow.start.landed.notRun": "A verification you start here runs its checks; landed work is not verified by itself yet.",
   "workflow.start.verify.open": "Verify…",
   "workflow.start.verify.title": "Verify a branch or a commit of {{repository}}",
-  "workflow.start.verify.says": "Its checks run under the gates you accepted, after any verification ahead of it; the verdict shows on the run's Workflow view.",
+  "workflow.start.verify.says": "Its checks run under the gates you accepted, after any verification ahead of it; the verdict shows under Verifications on this tab.",
   "workflow.start.verify.meanIt": "Verify",
   "workflow.start.verify.name": "a branch or a commit",
   "workflow.compose.title": "A workflow of your own",

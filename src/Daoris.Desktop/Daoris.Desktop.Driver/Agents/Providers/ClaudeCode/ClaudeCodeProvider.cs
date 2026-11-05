@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
 /// </summary>
 /// <remarks>
-/// Each door's spawn and dialect are its class's (<see cref="AdapterSpawn"/>), until rows h, i and k make them the door's own. The
+/// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's until rows i and k. The
 /// protocol door's home variable and trust file are its own <see cref="DoorHome"/>, the same values as the pipe door's (O2-F2).
 /// </remarks>
 internal static class ClaudeCodeProvider
@@ -32,7 +32,7 @@ internal static class ClaudeCodeProvider
             ["claude"], ["--version"], ["npm", "install", "-g", "@anthropic-ai/claude-code"], ["update"], Package: null,
             // A pin comes from the release bucket, against its signed manifest (AGT2b).
             Channel: ClaudeReleases.Channel,
-            PinnedEnvironment: ClaudeCodeAdapter.StayPinned,
+            PinnedEnvironment: ClaudeCodeSpawn.StayPinned,
             ProbeByPresence: false);
         var pool = new PoolFacts(
             // An account that is an API key (AGT3), measured on 2.1.280.
@@ -60,7 +60,7 @@ internal static class ClaudeCodeProvider
             new DoorId("claude-code"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ProgramFacts>.Absent, home, LentPart.None, Known<PortRef>.Absent,
             new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new ClaudeCodeAdapter()), Evidence),
+            Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
             Known<IDialect>.Declared(new AdapterNativeDialect(new ClaudeCodeAdapter()), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
@@ -77,7 +77,7 @@ internal static class ClaudeCodeProvider
                 Evidence),
             home, LentPart.None, Known<PortRef>.Absent,
             new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions", Reading: null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new ClaudeAcpAdapter()), Evidence),
+            Known<ISpawn>.Declared(new ClaudeAcpSpawn(), Evidence),
             Known<IDialect>.Declared(new AdapterProtocolDialect(new ClaudeAcpAdapter()), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),

@@ -308,5 +308,17 @@
   "workflow.run.check.said.notNow": "You left it for now; nothing more is asked of it.",
   "workflow.run.check.said.waiting": "It has not started: it waits its turn behind other heavy runs.",
   "workflow.run.check.again": "Run again",
-  "workflow.run.check.stop": "Not now"
+  "workflow.run.check.stop": "Not now",
+  "workflow.run.line.title": "Verifications",
+  "workflow.run.line.reading": "Reading this repository's verifications…",
+  "workflow.run.line.none": "Nothing is verified here yet. Verify… on the start node verifies a branch or a commit under the accepted gates.",
+  "workflow.run.line.body": "The newest verifications first, each under the gates you accepted.",
+  "workflow.run.line.of": "{{branch}} at {{commit}}",
+  "workflow.run.line.asked": "asked by you {{when}}",
+  "workflow.run.line.started": "started {{when}}",
+  "workflow.run.line.unread": "The workflow version it was bound to cannot be read here.",
+  "workflow.run.line.gates": "Its gates",
+  "workflow.run.line.exit": "exit {{exit}}",
+  "workflow.run.line.wall": "{{seconds}} s",
+  "workflow.run.line.join": " · "
 }

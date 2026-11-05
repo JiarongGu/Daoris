@@ -235,6 +235,30 @@ public sealed class AgentPinCommandTests : IDisposable
                 "  Nothing was pinned: a pin naming a version that is not there would run a different tool than the one you asked for.", said[^1]);
             Assert.False(File.Exists(_held.Wiring));
         }
+
+        /// <summary>
+        /// A package pin's update asks npm the window's one way (<see cref="PinNewest"/>, AGENTPROVIDER1f's s-ix rows): the npm handed, through
+        /// the tools; its answer shown, as the window streams it; its refusal in the window's words, and the pin stays.
+        /// </summary>
+        [Fact]
+        public async Task A_package_update_asks_npm_the_one_way_shows_its_answer_and_refuses_in_its_words()
+        {
+            string[] npm = OperatingSystem.IsWindows()
+                ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", "exit 3", "&&"]
+                : ["/bin/sh", "-c", "exit 3", "npm"];
+            HarnessSettings.Pin(_held.Wiring, _held.Home, "dsh", "1.2.3");
+
+            var exit = await AgentsCommand.RunAsync(["update", "dsh"], _held.World(npm: npm), CancellationToken.None);
+
+            Assert.Equal(2, exit);
+            var said = Lines(_held._out);
+            Assert.Equal("daoris: `dsh` is pinned at 1.2.3. Asking npm which release of `@deepseek-ai/dsh` is newest.", said[0]);
+            Assert.StartsWith("  $ ", said[1]);
+            var refused = string.Join(' ', Lines(_held._error).Select(line => line.Trim()));
+            Assert.Contains("npm could not say which release of @deepseek-ai/dsh is newest — it exited 3.", refused);
+            Assert.Contains("Nothing was fetched or pinned, and the pin stays at 1.2.3.", refused);
+            Assert.Equal("1.2.3", HarnessSettings.Load(_held.Wiring).Versions["dsh"]);
+        }
     }
 
     private static string[] Lines(StringWriter writer) =>
