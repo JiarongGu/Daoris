@@ -3,7 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { EntryAcceptPlan } from '../../work/review/EntryAccept';
 import type { LandingConflict, LeftOutCommit } from './trees';
-import { call, pluginBound, pressBound } from '../call';
+import { call, pressBound } from '../call';
 
 export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
 
@@ -26,12 +26,6 @@ export type EntryLanded = { entry: string; repository: string; done: boolean; me
 
 /** What an ask's Accept came to (point 4): per repository, a refusal holding only its own. */
 export type AskLanded = { ask: string; done: boolean; repositories: EntryLanded[] };
-
-/**
- * How long an Accept of `parts` may take: each part one replay and its plugin's push, one after another, as the host lands them.
- * The host's own bounds, spelled in `call.ts`.
- */
-const landsBound = (parts: number) => pressBound(parts) + Math.max(1, parts) * pluginBound;
 
 /**
  * Where a line of work's one Accept would land its parts (`ENTRY_LANDING`), read only while its ask is open: the plan reads git
@@ -65,7 +59,7 @@ export const useLandEntry = () =>
     // Keyed by its route, so every view reads it under way (STATEHUB1c).
     mutationKey: ['LAND_ENTRY'],
     mutationFn: ({ entry, parts, leaveOut }: { entry: string; parts: number; leaveOut: readonly string[] }) =>
-      call('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }) as Promise<EntryLanded>,
+      call('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,
   });
 
 /** An ask's one Accept (`LAND_ASK`): each of its lines of work lands in its own repository, answered per repository. */
@@ -73,5 +67,5 @@ export const useLandAsk = () =>
   useMutation({
     mutationKey: ['LAND_ASK'],
     mutationFn: ({ ask, parts, leaveOut }: { ask: string; parts: number; leaveOut: readonly string[] }) =>
-      call('LAND_ASK', { ask, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: landsBound(parts) }) as Promise<AskLanded>,
+      call('LAND_ASK', { ask, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: pressBound(parts) }) as Promise<AskLanded>,
   });

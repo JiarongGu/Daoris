@@ -77,10 +77,9 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it; where
-    /// <paramref name="named"/> is given, the hold comes to name its holder once the wait has begun (LANDHOLD3).
+    /// A route whose landing waits behind another's hold (LANDHOLD2), said as the hold says it, and ends when the test lets it.
     /// </summary>
-    private sealed class Queued(LandingHolder? named = null) : ModuleBase
+    private sealed class Queued : ModuleBase
     {
         private readonly TaskCompletionSource _wait = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _end = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -96,9 +95,8 @@ public sealed class StatePublisherTests : DriverModuleBridge
             PressSteps.Reach(PressSteps.Landing);
             using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
             LandingHoldNotice.Waiting(true);
-            if (named is not null) LandingHoldNotice.Waiting(true, named);
             await _wait.Task;
-            LandingHoldNotice.Waiting(false, named);
+            LandingHoldNotice.Waiting(false);
             await _end.Task;
             return new { Done = true };
         }
@@ -304,29 +302,6 @@ public sealed class StatePublisherTests : DriverModuleBridge
         queued.LetWait();
         await UntilAsync(() => Told().Count == 4);
         Assert.Equal("""{"seq":4,"presses":[{"route":"MOVE","session":"s1","step":"landing"}]}""", Told()[^1]);
-
-        queued.LetEnd();
-        Assert.True((await pressing).Success);
-    }
-
-    /// <summary>
-    /// LANDHOLD3: once the hold names who holds it, the waiting step says it again with the holder's session, and only its session, no
-    /// branch; the step it goes back to names nobody.
-    /// </summary>
-    [Fact]
-    public async Task A_waiting_press_names_the_session_it_waits_behind()
-    {
-        var queued = new Queued(new LandingHolder("s-other", "feature/other"));
-        var dispatcher = Compose([queued], request => new StateChange(StateScopes.Landing, "id"), Loop().UnderWay);
-
-        var pressing = Dispatch(dispatcher, queued.ModuleName, "MOVE", new { id = "s1" });
-        await UntilAsync(() => Told().Count == 4);
-        Assert.Equal("""{"seq":3,"presses":[{"route":"MOVE","session":"s1","step":"waiting"}]}""", Told()[^2]);
-        Assert.Equal("""{"seq":4,"presses":[{"route":"MOVE","session":"s1","step":"waiting","behind":"s-other"}]}""", Told()[^1]);
-
-        queued.LetWait();
-        await UntilAsync(() => Told().Count == 5);
-        Assert.Equal("""{"seq":5,"presses":[{"route":"MOVE","session":"s1","step":"landing"}]}""", Told()[^1]);
 
         queued.LetEnd();
         Assert.True((await pressing).Success);

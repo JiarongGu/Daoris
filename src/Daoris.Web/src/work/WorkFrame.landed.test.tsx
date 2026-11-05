@@ -1070,7 +1070,7 @@ describe('acting on what a session landed', () => {
     expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/delta, for you to push and open a pull request from.');
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 7 * 60_000 });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/delta` — 1 commit(s).'));
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
 
@@ -1336,7 +1336,7 @@ describe('acting on what a session landed', () => {
     // Held until the plan of that exact name has answered.
     await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 6 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 7 * 60_000 });
   });
 
   /**
@@ -1632,7 +1632,7 @@ describe('acting on what a session landed', () => {
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', answers: token }, timeoutMs: 6 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', answers: token }, timeoutMs: 7 * 60_000 });
   });
 
   /**
@@ -1731,10 +1731,10 @@ describe('acting on what a session landed', () => {
     await review();
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
-    // LEFT3 a: a landing may hand its branch to a plugin, so it waits as long as the plugin may (`pluginBound`).
+    // A landing waits as long as one replay may take (`pressBound`).
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', {
       payload: { id: 's1a2b3c4' },
-      timeoutMs: 6 * 60_000,
+      timeoutMs: 7 * 60_000,
     });
     expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
   });

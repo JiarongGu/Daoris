@@ -9,7 +9,7 @@ import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/gates/o
 import type { TreeFile } from '../../work/review/preview';
 import type { SessionProcessAnswer } from '../../work/head/process';
 import type { ReviewWaits } from '../../work/gates/review';
-import { call, pluginBound } from '../call';
+import { call, pressBound } from '../call';
 
 export type { DiffFile, SessionDiff } from '../../work/review/diff';
 export type { TreeFile } from '../../work/review/preview';
@@ -521,7 +521,7 @@ export const useLandSessionTree = () =>
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
       // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
-      return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound }) as Promise<TreeAct & {
+      return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pressBound(1) }) as Promise<TreeAct & {
         branch?: string;
         leftOut?: LeftOutCommit[] | null;
         /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */

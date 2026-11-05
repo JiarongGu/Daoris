@@ -22,7 +22,6 @@ public sealed partial class SyncBoundsTests
         { "fetchMinutes", SyncBounds.Fetch.TotalMinutes },
         { "fetchesAtOnce", SyncBounds.FetchesAtOnce },
         { "replayMinutes", SyncBounds.Replay.TotalMinutes },
-        { "pluginMinutes", LandingPlugins.DefaultPatience.TotalMinutes },
         // TOOLS7: Settings → Tools' *Look for updates* waits a look's bound for each resource location.
         { "toolLookMinutes", ToolInstall.LookBound.TotalMinutes },
     };
