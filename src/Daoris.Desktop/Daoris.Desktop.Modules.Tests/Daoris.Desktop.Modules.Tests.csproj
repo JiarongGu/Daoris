@@ -17,6 +17,13 @@
     <ProjectReference Include="..\..\..\tools\contracts\ContractsGen.csproj" />
   </ItemGroup>
 
+  <!-- The application CodecPlaybackProcessTests starts as Daoris's browser (D234), built with this project so the test
+       starts this checkout's build, on the codecs package's engine, and never an older layout left in its folder. Its
+       output is not referenced. Windows only: the application is, and this suite runs headless elsewhere. -->
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <ProjectReference Include="..\Daoris.Desktop.App\Daoris.Desktop.App.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- The git a test's own fixture starts, past Git for Windows' launcher (GITSTART1, GITSTART6): the driver tests'
          helper, compiled in, so both projects' fixtures start git one way. -->
