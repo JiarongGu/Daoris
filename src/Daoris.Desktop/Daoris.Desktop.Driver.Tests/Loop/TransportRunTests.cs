@@ -72,8 +72,8 @@ public sealed class TransportRunTests : IDisposable
     {
         var run = Over(door);
 
-        await Refused(run.SendAsync("go on", CancellationToken.None), TransportRun.WordsAbility);
-        await Refused(run.SteerAsync("go on", CancellationToken.None), TransportRun.WordsAbility);
+        if (door == "acp-stub") await Refused(run.SendAsync(new DoorWord("w1", "go on"), CancellationToken.None), TransportRun.WordsAbility);
+        await Refused(run.SteerAsync("go on", CancellationToken.None), TransportRun.SteerAbility);
 
         Assert.False(run.Started);
     }
@@ -99,7 +99,6 @@ public sealed class TransportRunTests : IDisposable
         var run = Over("stub");
 
         await Refused(run.ResumeAsync("c-1", CancellationToken.None), "a resume");
-        await Refused(run.GoOnAsync("c-1", "go on", [], CancellationToken.None), "a go-on");
 
         Assert.False(run.Started);
     }
@@ -110,7 +109,7 @@ public sealed class TransportRunTests : IDisposable
     {
         var run = Over("acp-stub");
 
-        await Refused(run.GoOnAsync("c-1", "go on", [], CancellationToken.None), "a go-on");
+        Assert.False(run.GoesOn);
 
         Assert.False(run.Started);
     }
@@ -212,8 +211,9 @@ public sealed class TransportRunTests : IDisposable
         var told = 0;
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
-        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(
-            () => run.GoOnAsync("0b5e7c1a", "Also log the port.", [], started: () => told++, CancellationToken.None));
+        // The words wait on the run's input and the next process is its resume (D243); a spawn that fails writes none of them.
+        run.Input.Hold(new DoorWord([], "Also log the port.", Written: () => told++));
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.NextProcessAsync("0b5e7c1a", CancellationToken.None));
 
         var info = Assert.Single(host.Bracketing);
         var arguments = info.ArgumentList.ToList();

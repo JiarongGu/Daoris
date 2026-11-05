@@ -225,9 +225,11 @@ public sealed class TransportRunProcessTests : IDisposable
         Assert.Equal(1, named);
 
         var told = new List<Process?>();
-        var end = await run.GoOnAsync(
-            "conv-1", "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }],
-            started: () => told.Add(run.Process), Bound);
+        run.Input.Hold(new DoorWord(
+            [], "Also log the port.", [new SessionEvent { Kind = SessionEventKind.Note, Text = "resumed on `scripted`" }],
+            Written: () => told.Add(run.Process)));
+        await run.ResumeAsync("conv-1", Bound);
+        var end = await run.EndAsync(Bound);
 
         Assert.Equal(0, end.Exit);
         Assert.True(end.Named);

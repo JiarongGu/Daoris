@@ -34,6 +34,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// <summary>The ability a word operation is refused as on a protocol door, whose words stay on its session (design §4.1).</summary>
     public const string WordsAbility = "words through the run on a protocol door";
 
+    /// <summary>The ability a steer is refused as: a word said into a turn that runs is a protocol door's, and no door's input carries one yet.</summary>
+    public const string SteerAbility = "a steer through the run";
+
     /// <summary>The ability a later choice on the same session is refused as until <c>IChoiceReask</c> (row n).</summary>
     public const string ChoiceAbility = "a later choice on the same session before IChoiceReask (row n)";
 
@@ -141,7 +144,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     internal override Task<Delivery> SendAsync(DoorWord word, CancellationToken ct) =>
         IsProtocol ? Task.FromException<Delivery>(Unsupported(WordsAbility)) : Input.SayAsync(word, ct);
 
-    public override Task SteerAsync(string text, CancellationToken ct) => Refused(WordsAbility);
+    public override Task SteerAsync(string text, CancellationToken ct) => Refused(SteerAbility);
 
     public override async Task StopTurnAsync(CancellationToken ct)
     {
@@ -206,7 +209,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// servers the run before it was handed, so it runs under the same rules; the words held on <see cref="Input"/> go as its one prompt, and
     /// the record opens with theirs. A conversation it names is never told to the resume this run began with, whose own words it does not carry.
     /// </summary>
-    private async Task NextProcessAsync(string conversation, CancellationToken ct)
+    internal async Task NextProcessAsync(string conversation, CancellationToken ct)
     {
         if (!GoesOn) throw Unsupported("a go-on");
 

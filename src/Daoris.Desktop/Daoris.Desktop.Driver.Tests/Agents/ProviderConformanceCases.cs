@@ -420,10 +420,11 @@ internal static class ConformanceCases
         // What this door's evidence does not admit: the words on every door, then by its wire and its resume.
         var refused = new List<(Task Operation, string Ability)>
         {
-            (transport.SendAsync("go on", never), TransportRun.WordsAbility),
-            (transport.SteerAsync("go on", never), TransportRun.WordsAbility),
+            (transport.SteerAsync("go on", never), TransportRun.SteerAbility),
             (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
         };
+        // A native door's words go through the run's input; a protocol door's stay on its session.
+        if (Protocol(door)) refused.Add((transport.SendAsync(new DoorWord("w1", "go on"), never), TransportRun.WordsAbility));
         if (!Protocol(door))
         {
             refused.Add((transport.StopTurnAsync(never), "a stop that keeps the conversation"));
@@ -431,7 +432,7 @@ internal static class ConformanceCases
         }
         else
         {
-            refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
+            refused.Add((transport.NextProcessAsync("c-1", never), "a go-on"));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
