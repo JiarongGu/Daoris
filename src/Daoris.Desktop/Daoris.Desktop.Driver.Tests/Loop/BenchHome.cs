@@ -73,6 +73,22 @@ internal sealed class BenchHome : IAsyncDisposable
         var home = Path.Combine(scratch, "home");
         Directory.CreateDirectory(home);
         var made = new BenchHome(scratch, host, client, root, home) { Doors = doors };
+        try
+        {
+            await made.FillAsync(records, trees, built);
+            return made;
+        }
+        catch
+        {
+            // The host holds its store open and outlives the test unless it is stopped here: no disposal follows a failed start.
+            await made.DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task FillAsync(int records, int trees, int built)
+    {
+        var (root, home, client, made) = (Root, Home, Client, this);
         var (ok, message) = await client.RegisterAsync(new JsonObject
         {
             ["repository"] = Repository,
@@ -101,7 +117,6 @@ internal sealed class BenchHome : IAsyncDisposable
         Build(Path.Combine(root, Ignored), built);
         Build(Path.Combine(made.Large.Tree, Ignored), built);
         made.Copy(made.Trees[^1].Session, records - trees);
-        return made;
     }
 
     /// <summary>An ended conversation in <paramref name="tree"/>, opened and ended as the driver opens and ends one.</summary>
@@ -168,10 +183,25 @@ internal sealed class BenchHome : IAsyncDisposable
         transaction.Commit();
     }
 
+    private RealServiceHost? _again;
+
+    /// <summary>
+    /// The service's host stopped and started again over this home's store, until it answers: what the desktop's start waits on the host
+    /// for at this size. The client is left on the stopped host.
+    /// </summary>
+    public async Task<long> HostAgainAsync()
+    {
+        Host.Dispose();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        _again = await RealServiceHost.StartAsync(Path.Combine(Scratch, "service"));
+        return watch.ElapsedMilliseconds;
+    }
+
     public ValueTask DisposeAsync()
     {
         Client.Dispose();
         Host.Dispose();
+        _again?.Dispose();
         SqliteConnection.ClearAllPools();
         GitSeed.Discard(Scratch);
         return ValueTask.CompletedTask;
