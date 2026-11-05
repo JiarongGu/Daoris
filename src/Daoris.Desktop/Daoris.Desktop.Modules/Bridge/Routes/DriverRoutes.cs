@@ -264,6 +264,19 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // How long a session may say nothing and run nothing before Daoris looks in: whole minutes in the setting's bounds, the same
+    // `quiet` `daoris settings quiet <minutes>` edits. Out of its bounds is the driver's refusal.
+    [DriverRoute("SET_QUIET", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_QUIET", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_QUIET", nameof(PipeReads.Quiet))]
+    [Publishes("SET_QUIET", StateScopes.Driver)]
+    private object? SetQuiet(SetQuiet press)
+    {
+        var minutes = press.Minutes is { } value && QuietSetting.Takes(value) ? (int)value : throw new DriverException(QuietSetting.Refusal);
+        _context.Change(config => config.WithQuiet(minutes));
+        return State(_loop);
+    }
+
     // One kind's keep rule (KEEP1d, D195 point 2; the cleanup design §2.2, §4.4): the set-aside folders' days, `whole` or not, the
     // downloads' days or `never`, the logs' days, or a kind's default again; the same `keep` `daoris settings keep` edits, judged by the
     // one judgement (`KeepRules.Apply`) before anything is written, a value out of its bounds refused as KEEP_OUT_OF_RANGE. What the

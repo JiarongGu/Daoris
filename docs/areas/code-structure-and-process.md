@@ -23,6 +23,7 @@ finishes first and the whole set runs once.
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
+| The settings list | the driver's `Settings/List/MachineSettings.cs`; the page's `SETTINGS` | every machine setting declared once, with the one key each of its doors spells; the modules' `MachineSettingsCensusTests` and the page's `settings/everySetting.test.tsx` hold the doors to it |
 | The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
 | The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
@@ -88,7 +89,8 @@ finishes first and the whole set runs once.
    did. `Program.cs` maps no route, and `HostWiring` carries what a module needs of the start. A window
    route is its handler's marks in the desktop modules (`[DriverRoute]` and those beside it); the same tool writes from them the
    ignored `src/Daoris.Web/src/bridge/generated/routes.ts`: `DriverRoute`, which `call` takes, `PUBLISHES`, which the page's
-   publishing seam reads, and `PERSON_WORDS`, which the names check requires worded in every language. A handler takes its
+   publishing seam reads, `PERSON_WORDS`, which the names check requires worded in every language, and `SETTINGS`, the driver's
+   settings list, whose folder (`Settings/List/`) is the one part of the driver library the stamp reads. A handler takes its
    payload record, named for its route (`SetCap(SetCap press)`), which `RoutePayload` reads off the request by its parameters'
    types as the hand-written reads did, a `JsonElement?` field as sent and null only where absent (a shape another reader owns,
    or a field whose sending is the choice), and a list of records each by the same rules. A route serving a plan and its press is

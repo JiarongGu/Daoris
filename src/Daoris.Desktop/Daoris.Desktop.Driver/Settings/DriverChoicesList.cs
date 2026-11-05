@@ -31,8 +31,10 @@ internal static class DriverChoicesList
             }
         }
 
-        // SESSWATCH1a: a value an older Daoris wrote is said once, as kept for it; nothing reads it for a bound.
-        if (choices.KeptTimeoutMinutes is { } kept) Say($"  timeout    {kept}  (no longer limits a session; kept for an older Daoris)");
+        Say(choices.QuietMinutes is { } quiet
+            ? $"  quiet      {quiet} minutes before Daoris looks in on a session"
+            : $"  quiet      {QuietSetting.Default} minutes before Daoris looks in on a session  (the default — "
+              + "`daoris settings quiet <minutes>` changes it)");
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
             : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "

@@ -49,12 +49,9 @@ public sealed class OwnerSetCensusTests
         ["START_ROLE_TERMINAL"] = OwnerNone.RoleTerminal, // a role's terminal acts on the role, never on the repository its scope names
     };
 
-    /// <summary>The setting doors that name no repository, workspace or quest (a machine's), each with why.</summary>
-    internal static readonly IReadOnlyDictionary<string, string> MachineDoors = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["notify"] = "the machine's notifications",
-        ["cap"] = "the machine's cap", ["cooloff"] = "the machine's cool-off", ["keep"] = "how long the machine keeps what it keeps",
-    };
+    /// <summary>The setting doors that name no repository, workspace or quest: the machine's settings, each a door of its own key.</summary>
+    internal static readonly IReadOnlySet<string> MachineDoors =
+        MachineSettings.All.Where(setting => setting.Door).Select(setting => setting.Key).ToHashSet(StringComparer.Ordinal);
 
     // The fields that name a target, as a handler reads them: what the sweep tells a naming route by.
     private static readonly string[] TargetFields = ["repository", "workspace", "quest", "session", "id", "ids", "ask", "entry", "unit"];
@@ -128,13 +125,13 @@ public sealed class OwnerSetCensusTests
         {
             var target = door == "retry" ? "#q1" : "engine";
             var owned = HelpProposals.Owned(new HelpProposal("p1", kind, door, target, null, null, null, "", null, "proposed"));
-            if (MachineDoors.ContainsKey(door) && kind == "setting") continue;
+            if (MachineDoors.Contains(door) && kind == "setting") continue;
             Assert.True(owned.Repositories.Count + owned.Quests.Count > 0, $"{kind}.{door} declares no target");
             if (door == "retry") Assert.Equal(["q1"], owned.Quests);
             else Assert.Equal(["engine"], owned.Repositories);
         }
 
-        Assert.Empty(MachineDoors.Keys.Where(door => !HelpProposals.DoorsOf("setting").Contains(door)));
+        Assert.Empty(MachineDoors.Where(door => !HelpProposals.DoorsOf("setting").Contains(door)));
         var workspace = HelpProposals.Owned(new HelpProposal("p2", "setting", "landing", null, "games", "merge", null, "", null, "proposed"));
         Assert.Equal(["games"], workspace.Workspaces);
     }

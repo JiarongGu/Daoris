@@ -240,7 +240,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
             ? {
               helpGrants: [
                 { id: 'housekeeping', chosen, built: ['inspect', 'clean-up', 'discard-branch'], pending },
-                { id: 'settings', chosen: settings, built: ['notify', 'language', 'timeout', 'cap', 'cooloff'], pending: false },
+                { id: 'settings', chosen: settings, built: ['notify', 'language', 'cap', 'cooloff'], pending: false },
                 { id: 'checkouts', chosen: checkouts, built: ['engine', 'game'], pending: false },
                 { id: 'browser', chosen: ['reads', 'browser_click'], pending: false, changed: false, plugin: 'in-app-browser' },
               ],

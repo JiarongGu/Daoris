@@ -37,7 +37,7 @@ public sealed class HelpRoomDoorsTests
             "daoris place <repository>… --preset keep --adoption [--what-it-builds <kind>] --plan",
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent account order <agent> <profile>…|--clear",
-            "daoris agent account ready <agent> <profile>|--own", "daoris settings cooloff <minutes>",
+            "daoris agent account ready <agent> <profile>|--own", "daoris settings cooloff <minutes>", "daoris settings quiet <minutes>",
             // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g); its switch and the
             // person's curve since SWITCH1d.
             "daoris agent account use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "

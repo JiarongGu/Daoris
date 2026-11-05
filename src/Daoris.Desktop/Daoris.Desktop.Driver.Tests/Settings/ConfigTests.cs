@@ -75,12 +75,12 @@ public sealed class ConfigTests
     }
 
     /// <summary>
-    /// 🔴 SESSWATCH1a (D200, the session-watch design §3, case 15): <c>timeoutMinutes</c> is kept, never read for a bound. A loaded file
-    /// keeps it as stored through a save that changes something else, so an older build finds the person's value after a rollback; a
-    /// configuration built in memory writes none, and the tests' bound is never written or read.
+    /// 🔴 <c>timeoutMinutes</c> is no setting: nothing reads it, and <c>quietMinutes</c> is the one quiet setting. A loaded file keeps it
+    /// as stored through a save that changes something else, as it keeps every key it does not own; a configuration built in memory
+    /// writes none, and the tests' bound is never written or read.
     /// </summary>
     [Fact]
-    public void A_timeout_is_kept_as_stored_and_never_written_from_memory()
+    public void A_timeout_is_no_setting_kept_as_stored_and_never_written_from_memory()
     {
         var dir = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "config-kept-timeout", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(dir);
@@ -96,18 +96,17 @@ public sealed class ConfigTests
             """);
 
         var loaded = DriverConfig.Load(path);
-        Assert.Equal(90, loaded.KeptTimeoutMinutes);
+        Assert.Null(loaded.QuietMinutes);
         Assert.Null(loaded.TestBound);
         loaded.WithCap(4).Save(path);
 
         var text = File.ReadAllText(path);
         Assert.Contains("\"timeoutMinutes\": 90", text);
         Assert.Contains("\"cap\": 4", text);
-        Assert.Equal(90, DriverConfig.Load(path).KeptTimeoutMinutes);
+        Assert.DoesNotContain(QuietSetting.File, text);
 
         var built = (DriverConfig.Empty with { TestBound = 2 }).WithCap(3).ToJson();
         Assert.DoesNotContain("timeoutMinutes", built);
-        Assert.Null(DriverConfig.Parse(built).KeptTimeoutMinutes);
         Assert.Null(DriverConfig.Parse("""{ "testBound": 2 }""").TestBound);
     }
 
@@ -119,7 +118,7 @@ public sealed class ConfigTests
               "drivable": ["Game", "Tools"],
               "holds": ["Tools"],
               "cap": 3,
-              "timeoutMinutes": 10,
+              "quietMinutes": 15,
               "pollSeconds": 5,
               "commands": { "stub": ["node", "local/agent.mjs"] }
             }
@@ -128,7 +127,7 @@ public sealed class ConfigTests
         Assert.Equal(["Game", "Tools"], config.Drivable);
         Assert.Equal(["Tools"], config.Holds);
         Assert.Equal(3, config.Cap);
-        Assert.Equal(10, config.KeptTimeoutMinutes);
+        Assert.Equal(15, config.QuietMinutes);
         Assert.Equal(5, config.PollSeconds);
         Assert.Equal(["node", "local/agent.mjs"], config.Commands["stub"]);
     }

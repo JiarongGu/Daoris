@@ -298,6 +298,41 @@ describe('the driver domain', () => {
   });
 
   /**
+   * `quietMinutes`, the one quiet setting, the `quiet` `daoris settings quiet` edits: written only when changed to whole minutes
+   * from 5 to 120; an older shell that answers no such field is offered no row.
+   */
+  it('sets how long a session may be quiet in its bounds, and offers nothing to a shell older than it', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      return type === 'SET_QUIET' ? { ...DRIVER_STATE, quiet: 25 } : { ...DRIVER_STATE, quiet: 10 };
+    });
+    const { unmount } = show(<SettingsView notify={notify} section="driver" />);
+    const field = await screen.findByLabelText('Look in on a quiet session after');
+    expect((field as HTMLInputElement).value).toBe('10');
+
+    for (const out of ['4', '121']) {
+      await userEvent.clear(field);
+      await userEvent.type(field, out);
+      await userEvent.tab();
+      expect(invoke.mock.calls.some(([, type]) => type === 'SET_QUIET')).toBe(false);
+      expect((field as HTMLInputElement).value).toBe('10');
+    }
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '25');
+    await userEvent.tab();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_QUIET', { payload: { minutes: 25 } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Daoris now looks in on a session quiet for 25 minutes.'));
+    unmount();
+
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    await driverRead();
+    expect(screen.queryByLabelText('Look in on a quiet session after')).toBeNull();
+  });
+
+  /**
    * Notifications (SURF5b): the desktop's door onto the same `driver.json` field
    * `daoris settings notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
    * has to watch is the point of one — and the surface names the other door so a person on a

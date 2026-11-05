@@ -27,7 +27,10 @@ export const OUTPUTS = Object.freeze({
   service: 'src/Daoris.Web/src/data/generated/service.ts',
   routes: 'src/Daoris.Web/src/bridge/generated/routes.ts',
 });
-export const SOURCES = Object.freeze(['src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/', 'tools/contracts/']);
+// The driver's settings list is read alone of the driver library, so a driver change stales no page file.
+export const SOURCES = Object.freeze([
+  'src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/List/', 'tools/contracts/',
+]);
 const GENERATOR = 'tools/contracts';
 const SOURCE_FILE = /\.(?:cs|csproj)$/;
 const SKIPPED = new Set(['bin', 'obj']);

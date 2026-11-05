@@ -52,6 +52,7 @@ internal sealed class SessionWatching(string home, DriverConfig config, LoopCont
     {
         var watch = SessionWatch.Of(context.Events);
         watch.Log = context.Log;
+        watch.Follow(QuietSetting.Of(config));
         var lines = new LookLines(said, "watch");
         var steps = watch.Look(
             id => context.Processes.JobOf(id) is { } job ? new JobRead(job.Holds, job.Cpu) : null, TimeSpan.FromSeconds(config.PollSeconds),

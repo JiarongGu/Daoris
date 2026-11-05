@@ -39,8 +39,8 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, int> Forgiven { get; init; } =
         Forgiven ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The <c>timeoutMinutes</c> a file holds, read only to be said and never written: a save keeps the key as stored, so a rollback finds it.</summary>
-    public int? KeptTimeoutMinutes { get; init; }
+    /// <summary>How long a session may be quiet before Daoris looks in, as the file sets it; null is the default (<see cref="QuietSetting"/>).</summary>
+    public int? QuietMinutes { get; init; }
 
     /// <summary>Whether an update drains the look: set only by <see cref="InstallUpdate.Drained"/>, never read or written.</summary>
     public bool Draining { get; init; }

@@ -37,6 +37,9 @@ Paths are under `src/`. The verb itself (`daoris place …` or `daoris settings 
 driver library's choices, ONEWAY1ai-i; `command-group` names a group's places) exists before the door: `DriverChoicesCommand` in `Daoris.Desktop.Driver/Settings` for the
 settings' own keys, and for a rule a subdomain above owns, that subdomain's `ChoiceVerb` beside the rule (`HelpersVerb`, `ReviewVerb`,
 `LandingVerb`, …, wired in `Loop/DriverChoiceVerbs`; FOUNDATION1 mod-iii); the door judges by the verb's own rule, never a second one.
+A machine's setting (a value of `driver.json`, no repository's) is first an entry in `MachineSettings.All`
+(`Daoris.Desktop/Daoris.Desktop.Driver/Settings/List/`), and every door is spelled by its key: the verb, `SET_<KEY>`, the door and the
+page's `settings.<key>.*` words. The modules' `MachineSettingsCensusTests` fails a setting listed twice or a door under a second name.
 
 | # | Place | Where | What goes in |
 |---|---|---|---|

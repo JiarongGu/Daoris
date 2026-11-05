@@ -60,6 +60,7 @@ public sealed class VerbLeasesTests
     [InlineData("driver retry 12 --at 2")]
     [InlineData("driver retry 12 --session s-1")]
     [InlineData("driver cooloff 45")]
+    [InlineData("driver quiet 20")]
     [InlineData("driver line engine develop")]
     [InlineData("driver across engine read off")]
     [InlineData("driver standing engine words")]

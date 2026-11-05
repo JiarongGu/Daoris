@@ -97,6 +97,7 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
     [InlineData("notify off")]
     [InlineData("cap 4")]
     [InlineData("cooloff 30")]
+    [InlineData("quiet 25")]
     [InlineData("line engine develop")]
     [InlineData("line --workspace aurora --clear")]
     [InlineData("across engine read off")]

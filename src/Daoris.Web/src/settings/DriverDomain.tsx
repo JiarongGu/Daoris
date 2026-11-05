@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useUpdateState,
+  useDriver, usePlugins, useSayUpdate, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetNotify, useSetQuiet, useUpdateState,
 } from '../bridge/shell';
 import { failure } from '../design/ui';
 import { sentence } from '../locales/format';
@@ -36,6 +36,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
   const setNotify = useSetNotify();
   const setCoolOff = useSetCoolOff();
+  const setQuiet = useSetQuiet();
   const setCap = useSetCap();
   // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
   const update = useUpdateState();
@@ -53,6 +54,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,
         coolOff: driver.data?.coolOff,
+        quiet: driver.data?.quiet,
         cap: driver.data?.cap,
         machineAccess: driver.data?.machineAccess,
         machineGitAccess: driver.data?.machineGitAccess,
@@ -71,6 +73,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onCoolOff={(value) => setCoolOff.mutate({ minutes: value }, {
         onSuccess: () => notify(t('settings.cooloff.set', { count: value })),
+        onError,
+      })}
+      onQuiet={(value) => setQuiet.mutate({ minutes: value }, {
+        onSuccess: () => notify(t('settings.quiet.set', { count: value })),
         onError,
       })}
       onCap={(value) => setCap.mutate({ cap: value }, {

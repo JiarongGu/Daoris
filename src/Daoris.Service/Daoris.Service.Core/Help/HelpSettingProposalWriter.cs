@@ -4,7 +4,7 @@ using static Daoris.Knowledge.HelpProposalFile;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `keep` or `git-use`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `retry`, `notify`, `cap`, `cooloff`, `quiet`, `keep` or `git-use`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent, `set-aside 30`…</param>
@@ -22,7 +22,7 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
     public static readonly IReadOnlyList<string> Doors =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
+        "helpers", "commits", "retry", "notify", "cap", "cooloff", "quiet", "keep", "git-use",
     ];
 
     /// <summary>The flags a review's words may carry, as <c>daoris place review</c> takes them (REVIEWENV1a).</summary>
@@ -131,6 +131,11 @@ internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1
                     ? null
                     : "`cooloff` is a whole number of minutes, 1 or more: how long an account cools when its limit names no time.";
+            case "quiet":
+                // The one quiet setting, as `daoris settings quiet` takes it: the driver judges the same bounds.
+                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var quiet) && quiet is >= 5 and <= 120
+                    ? null
+                    : "`quiet` is a whole number of minutes from 5 to 120: how long a session may say nothing and run nothing before Daoris looks in.";
             case "keep":
             {
                 // KEEP1d (D195 point 2): one kind's keep rule, as `daoris settings keep <kind> <rule>` takes it; its bounds are the

@@ -37,7 +37,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "across", "standing", "language", "review", "opinion",
-        "helpers", "commits", "retry", "notify", "cap", "cooloff", "keep", "git-use",
+        "helpers", "commits", "retry", "notify", "cap", "cooloff", "quiet", "keep", "git-use",
     ];
 
     /// <summary>
@@ -56,7 +56,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>
     /// STEWARDROLE1a-ii (D209 §5.4): each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
     /// door its repository, or its workspace where the plan is the workspace's (a line, a landing, a language). A machine's door
-    /// (<c>notify</c>, <c>cap</c>, <c>cooloff</c>, <c>keep</c>) names neither, and marks nothing.
+    /// (each of <see cref="MachineSettings.All"/>) names neither, and marks nothing.
     /// </summary>
     public HelpOwned Owned(HelpProposal proposal)
     {
@@ -231,6 +231,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "cooloff" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1:
                 planned = ($"An account whose limit names no time cools for {cool} minute{(cool == 1 ? "" : "s")} before it is offered again.",
                     $"daoris settings cooloff {cool}", c => c.WithCoolOff(cool));
+                break;
+            // How long a session may be quiet before Daoris looks in, judged as `daoris settings quiet` takes it.
+            case "quiet" when long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var quiet) && QuietSetting.Takes(quiet):
+                planned = ($"Look in on a session that says nothing and runs nothing for {quiet} minutes; none is ever stopped for running long.",
+                    $"daoris settings quiet {quiet}", c => c.WithQuiet((int)quiet));
                 break;
             // KEEP1d (D195 point 2; the cleanup design §2.2): one kind's keep rule, its words `<kind> <rule>` as `daoris settings keep`
             // takes them, judged by the one judgement the terminal and SET_KEEP make, so a value out of its bounds is refused here.

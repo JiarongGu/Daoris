@@ -50,6 +50,8 @@ internal static class DriverStateAnswer
             config.Strikes,
             // The cool-off a limit naming no time takes, in minutes (TOOL4g): the file's, or the hour when it sets none.
             CoolOff = (int)config.CoolOff.TotalMinutes,
+            // How long a session may be quiet before Daoris looks in, in minutes: the file's, or the default.
+            Quiet = (int)QuietSetting.Of(config).TotalMinutes,
             config.Forgiven,
             // The stops the person released (SESSUX1b), the quest against the session, as the terminal lists them.
             config.Released,

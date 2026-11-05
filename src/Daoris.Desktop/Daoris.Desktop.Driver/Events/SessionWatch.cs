@@ -86,8 +86,8 @@ public sealed record QuietStep(string Session, string Kind, string Adapter, stri
 /// </remarks>
 public sealed class SessionWatch
 {
-    /// <summary>The quiet bound Q's default (§1.5, §3): ten minutes, longer than the longest foreground command Claude Code allows.</summary>
-    public static readonly TimeSpan DefaultQuiet = TimeSpan.FromMinutes(10);
+    /// <summary>The quiet bound Q's default (§1.5, §3), the setting's.</summary>
+    public static readonly TimeSpan DefaultQuiet = TimeSpan.FromMinutes(QuietSetting.Default);
 
     /// <summary>The idle floor (§1.5): 0.2 seconds of CPU a minute, a third of a percent of one core.</summary>
     public static readonly TimeSpan IdleFloor = TimeSpan.FromMilliseconds(200);
@@ -137,8 +137,28 @@ public sealed class SessionWatch
     /// <summary>The clock quiet is counted on; a test hands one it moves.</summary>
     public QuietClock Clock { get; set; } = QuietClock.System;
 
-    /// <summary>Q, how long a session may say nothing before Daoris looks in (§1.5): <see cref="DefaultQuiet"/> until SESSWATCH1c sets it.</summary>
-    public TimeSpan Quiet { get; set; } = DefaultQuiet;
+    /// <summary>
+    /// Q, how long a session may say nothing before Daoris looks in (§1.5, §3): the machine's <c>quietMinutes</c>, which each look hands
+    /// <see cref="Follow"/>. A test that sets it pins it, since a test's bound is seconds, which the setting never takes.
+    /// </summary>
+    public TimeSpan Quiet
+    {
+        get => _quiet;
+        set
+        {
+            _quiet = value;
+            _pinned = true;
+        }
+    }
+
+    private TimeSpan _quiet = DefaultQuiet;
+    private bool _pinned;
+
+    /// <summary>Takes the machine's quiet setting as Q, unless a test pinned one.</summary>
+    public void Follow(TimeSpan setting)
+    {
+        if (!_pinned) _quiet = setting;
+    }
 
     /// <summary>
     /// A headless run's <c>--quiet-end</c> (§2): a session unheard this long, busy or not, is ended and carried on; null, every shell's,
