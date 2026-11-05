@@ -332,7 +332,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(root))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService(root)))));
         return (module, loop);
     }
 

@@ -53,7 +53,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
         _service.Sessions = Records(records);
         _service.Quests = $"[{Quest("q1", "Open")},{Quest("q2", "Taken")},{Quest("q3", "Taken")},{Quest("q4", "Done")},{Quest("q5", "Taken")}]";
         var loop = Loop();
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(_service)));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(_service))));
         loop.Look.Record([]);
         return (loop, loop.Slices.Find(GroupsStateSlice.Name)!);
     }
@@ -440,7 +440,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     private static partial Regex PageField();
 
     /// <summary>The service's doors a look at the sessions reads, standing in: the records and the quests as a test sets them.</summary>
-    private sealed class StandIn : SessionChangesHandler
+    private sealed class StandIn : HttpMessageHandler
     {
         private string _sessions = "[]";
         private string _quests = "[]";
@@ -457,7 +457,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             set => Volatile.Write(ref _quests, value);
         }
 
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var answer = request.RequestUri!.PathAndQuery switch
             {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -71,7 +72,7 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
         OpinionRules.Apply(config, new OpinionEdit { Repository = "game", None = true }).Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var opinions = (await AnswerAsync(module, "LINES")).GetProperty("opinions").EnumerateArray().ToList();
 
@@ -98,7 +99,7 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
         // The machine drives with `claude-code` by default; the loop reads the plugins as it is made.
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var state = await AnswerAsync(module, "SET_OPINION", new
         {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -53,7 +54,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             .Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var lines = (await AnswerAsync(module, "LINES")).GetProperty("lines").EnumerateArray().ToList();
 
@@ -319,7 +320,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     private async Task<DriverModule> ModuleOverAsync(DiscardService service)
     {
         var loop = Loop();
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(service)));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))));
         // The come-up's own reads (the census) are not the press's: settled, then forgotten.
         await loop.Settling;
         service.Forget();
@@ -537,7 +538,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False((await AnswerAsync(module, "STATE")).GetProperty("ready").GetBoolean());
         Assert.DoesNotContain(Raised, message => message.Type == "DRIVER_READY");
 
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         Assert.True((await AnswerAsync(module, "STATE")).GetProperty("ready").GetBoolean());
         Assert.Single(Raised, message => message.Type == "DRIVER_READY");

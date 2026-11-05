@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -64,7 +65,7 @@ public sealed class DriverModuleLanguageTests : DriverModuleBridge
         DriverConfig.Empty.WithLanguage("engine", "en").WithWorkspaceLanguage("aurora", "zh").Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService()))));
 
         var languages = (await AnswerAsync(module, "LINES")).GetProperty("languages").EnumerateArray().ToList();
 

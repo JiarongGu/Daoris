@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -138,7 +139,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
         };
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service)));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
             _ => Task.FromResult<IKnowledgeSessionLook?>(Look("engine")),
@@ -354,7 +355,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
         var judged = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service)));
         var whole = new HelpMachineWhole(new Snapshot([], [new RepoView("alpha", true, Root("alpha"), "w1"), new RepoView("beta", true, Root("beta"), "w1")], []), [], []);
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             _ => Task.FromResult<HelpMachineWhole?>(whole),

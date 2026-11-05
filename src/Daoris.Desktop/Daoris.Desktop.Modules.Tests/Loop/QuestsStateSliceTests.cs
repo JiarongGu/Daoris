@@ -47,7 +47,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
     private async Task<(DriverLoop Loop, StateSlice Slice)> UpAsync()
     {
         var loop = Loop();
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(_service)));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(_service))));
         return (loop, loop.Slices.Find(QuestsStateSlice.Name)!);
     }
 
@@ -228,7 +228,7 @@ public sealed class QuestsStateSliceTests : DriverModuleBridge
 /// The service's doors the quests' and the asks' slices read, standing in: every quest and every ask as a test sets them, each read
 /// whole with the closed.
 /// </summary>
-internal sealed class ServiceStandIn : SessionChangesHandler
+internal sealed class ServiceStandIn : HttpMessageHandler
 {
     private string _quests = "[]";
     private string _asks = "[]";
@@ -245,7 +245,7 @@ internal sealed class ServiceStandIn : SessionChangesHandler
         set => Volatile.Write(ref _asks, value);
     }
 
-    protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var answer = request.RequestUri!.PathAndQuery switch
         {

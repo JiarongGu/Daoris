@@ -65,7 +65,7 @@ public sealed class HelpSetupDoorTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { SetupWorlds = _ => _world };
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SetupStandIn.EmptyHost())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new SetupStandIn.EmptyHost()))));
         return module;
     }
 }
