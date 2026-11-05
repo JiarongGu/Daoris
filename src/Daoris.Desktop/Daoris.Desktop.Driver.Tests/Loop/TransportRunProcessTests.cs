@@ -273,9 +273,13 @@ public sealed class TransportRunProcessTests : IDisposable
         Hand(run, output, keepAs: "scripted", own: new HarnessWords(), opening: opening);
 
         // The first process exits 1 before its `init`; the run tries the same resume once more on its own, and its end is the retry's.
+        // A word said before either process is up waits on the run's input, is handed to the first process and, as that one ended before it
+        // named its conversation, to the retry's (D243); once the conversation is named it is acknowledged and never written again.
+        run.Input.Hold(new DoorWord("w1", "Also log the port."));
         await run.ResumeAsync("conv-1", Bound, resume);
         var again = await run.EndAsync(Bound);
 
+        Assert.Empty(run.Input.Unacknowledged);
         Assert.Equal(0, again.Exit);
         Assert.True(again.Named);
         Assert.True(resume.Retried);

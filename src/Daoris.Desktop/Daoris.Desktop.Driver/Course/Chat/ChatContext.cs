@@ -58,6 +58,15 @@ internal sealed class ChatContext(
     /// <summary>Each running conversation's run over its process, which a person's finish closes.</summary>
     public ConcurrentDictionary<string, TransportRun> Runs { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// One line to a text-only conversation's process, through its run's <see cref="DoorInput"/> (D243): nothing above the run writes to a
+    /// process's stdin. False for a session with no run here and for a line nothing will take; a line said before the process is up waits
+    /// for it and counts as sent.
+    /// </summary>
+    public bool SendLine(string sessionId, string line) =>
+        Runs.TryGetValue(sessionId, out var run)
+        && run.Input.SayAsync(new DoorWord([], line), CancellationToken.None).GetAwaiter().GetResult() != Delivery.Refused;
+
     public ConcurrentDictionary<string, ActorRun> ActorRuns { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>

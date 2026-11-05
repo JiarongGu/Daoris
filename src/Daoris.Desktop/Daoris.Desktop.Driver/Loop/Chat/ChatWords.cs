@@ -176,7 +176,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     {
         var text = said.PromptWithFiles;
         var framed = context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
-        return context.Processes.Send(sessionId, framed);
+        return context.SendLine(sessionId, framed);
     }
 
     /// <summary>A word's reach in the spelling the record and the page use.</summary>

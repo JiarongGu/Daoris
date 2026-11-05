@@ -439,7 +439,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message.Prompt) : message.Prompt;
         for (var attempt = 0; attempt < 50; attempt++)
         {
-            if (_context.Processes.Send(sessionId, framed))
+            if (_context.SendLine(sessionId, framed))
             {
                 if (shown is null)
                 {

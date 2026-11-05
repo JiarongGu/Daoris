@@ -46,6 +46,21 @@ public sealed class ConversationRunCensusTests
     }
 
     /// <summary>
+    /// D243 point 1: a conversation's words reach its process through the run's <c>DoorInput</c> alone, so the one file that writes a line to a
+    /// tracked process's stdin is the run's; no executor, turn or hand-over does.
+    /// </summary>
+    [Fact]
+    public void Nothing_above_the_run_writes_a_line_to_a_tracked_process()
+    {
+        var writing = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
+            .Where(file => Regex.IsMatch(Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", ""), @"\bProcesses\.Send\s*\("))
+            .Select(Path.GetFileName)
+            .ToArray();
+
+        Assert.Equal(["TransportRun.cs"], writing);
+    }
+
+    /// <summary>
     /// The conversation reads its agent through <c>ChatAgent</c> and the run it makes, as the run reads its door: no file of the conversation's
     /// runner, its turns, its account reads or what it is told names the adapter seam, which row t replaces beneath them.
     /// </summary>

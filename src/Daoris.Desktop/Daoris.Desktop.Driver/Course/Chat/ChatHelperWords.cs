@@ -79,7 +79,7 @@ internal sealed class ChatHelperWords(IExecutorWiring wiring) : IExecutor
 
         if (!context.Talking.TryGetValue(sessionId, out var adapter)) return false;
 
-        if (!context.Processes.Send(sessionId, adapter.FrameMessage(message.Prompt))) return false;
+        if (!context.SendLine(sessionId, adapter.FrameMessage(message.Prompt))) return false;
         foreach (var recorded in ChatRecorded.Recorded(message)) context.Record(sessionId, recorded);
         await TakeOffAsync(sessionId, word.Id!).ConfigureAwait(false);
         return true;
