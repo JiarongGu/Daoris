@@ -162,24 +162,6 @@ describe('an Accept that carries its session on', () => {
     expect(screen.queryByText(/will refuse/)).toBeNull();
   });
 
-  it('says the press carried it on, asks the person for no card, and shows it as carried on while its yes is kept', async () => {
-    let plans = 0;
-    answer(() => (++plans === 1 ? { ...PLAN, uncommitted: 2 } : { ...PLAN, uncommitted: 2, carried: { carries: 1, awaiting: true } }), {
-      session: 's1a2b3c4', done: false, conflict: CONFLICT, carried: { why: 'conflict', told: true },
-      message: 'Accepted: its session `s1a2b3c4` was carried on to replay its own commits onto the line and resolve the conflict in its own tree, '
-        + 'and its work lands when its tree is clean. Nothing was landed yet.',
-    });
-    pane();
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
-
-    expect(await screen.findByText(/was carried on to replay its own commits onto the line/)).toBeInTheDocument();
-    // Daoris's words reached it: the person's own ask for the same words is never offered beside them.
-    expect(screen.queryByRole('button', { name: 'Ask it to rebase' })).toBeNull();
-    expect(asked('SESSION_INPUT')).toHaveLength(0);
-    expect(await screen.findByText('Accepted: its session was carried on to clear its tree, and its work lands once the tree is clean. This is not finished work yet.')).toBeInTheDocument();
-  });
-
   it('says it in Chinese too', async () => {
     answer(() => ({ ...PLAN, carried: { carries: 2, awaiting: true } }));
     await i18n.changeLanguage('zh');

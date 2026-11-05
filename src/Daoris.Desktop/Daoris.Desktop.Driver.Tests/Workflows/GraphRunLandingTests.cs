@@ -462,4 +462,40 @@ public sealed class GraphRunLandingTests : AutoLandingFixture
         if (form == LandingForm.Branch) Assert.Equal(late, (await GitAsync(root, "rev-parse", PushBranch)).Trim());
         else Assert.Equal(late, (await GitAsync(root, "merge-base", "main", late)).Trim());
     }
+
+    /// <summary>
+    /// LANDNODE1: a session whose tree heads an operation bringing sessions together lands by its combined Accept where the run's pass readies
+    /// its <c>land</c>: the door lands the head with its member brought in (the member's commit stands on the line), and the operation reads landed.
+    /// </summary>
+    [Fact]
+    public async Task A_land_ready_on_a_combined_head_lands_the_head_with_its_members_brought_into_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var branch = Assert.Single(new SessionBranches(_home).All());
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ClaimedThenLand("""{"method":"merge"}""")), DateTimeOffset.UtcNow);
+        var line = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var beside = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+        await CommitAsync(beside.Path, "beside.txt", "beside\n", "the work beside it");
+        var member = (await GitAsync(beside.Path, "rev-parse", "HEAD")).Trim();
+        var at = new DateTimeOffset(2026, 11, 5, 9, 0, 0, TimeSpan.Zero);
+        var (opened, refused) = new TogetherOperations(_home).Open(
+            "engine", new TogetherHead("s1", "s1", tree, branch.Branch, (await GitAsync(tree, "rev-parse", "HEAD")).Trim()),
+            [new TogetherMember("s-beside", beside.Path, beside.Branch, line, member)], at);
+        Assert.Null(refused);
+        await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "cherry-pick", member);
+        new TogetherOperations(_home).TurnEnded(opened!.Id, at);
+        var ready = await new TogetherLook(_home, () => at).StepAsync(
+            root, opened.Id, new TogetherFacts("s1", false, null, false, "main"), null, CancellationToken.None);
+        Assert.True(ready!.Phase == TogetherPhase.Ready, $"{ready.Phase}: {ready.Why}");
+
+        var door = Door();
+        await PassAsync(root, branch, tree, door: door);
+        var head = await HeadAsync(tree);
+        await door.IdleAsync();
+
+        Assert.Equal(head, (await GitAsync(root, "merge-base", "main", head)).Trim());
+        Assert.Equal(TogetherPhase.Landed, new TogetherOperations(_home).Of(opened.Id)!.Phase);
+        Assert.True((await GitAsync(root, "show", "main:beside.txt")).Contains("beside", StringComparison.Ordinal), "the member's work stands on the line");
+    }
 }
