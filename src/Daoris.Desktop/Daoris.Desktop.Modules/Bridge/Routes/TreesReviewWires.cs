@@ -93,18 +93,17 @@ public static class TreesReviewWires
         },
     };
 
+    /// <summary>
+    /// Why a record with no tree here has nothing to diff: what a record looks like when it travelled from the machine that did the work. The
+    /// route says instead which session's tree it is where the id given is a tree's name (TREENAME1, <see cref="TreeNamedRefusals"/>).
+    /// </summary>
+    public const string NoTreeToDiff = "this session's record names no working tree on this machine, so there is nothing here to diff. That is "
+        + "what a record looks like when it travelled from the machine that did the work.";
+
     /// <summary>Why a review with no landing to read instead has nothing to show, as the refusal the page renders — each its own code.</summary>
     public static ShenoraException Unreviewable(string session, string? tree, string? baseCommit)
     {
-        if (string.IsNullOrWhiteSpace(tree))
-        {
-            return Refusals.Because(
-                Refusals.SessionNotReviewable,
-                "this session's record names no working tree on this machine, so there is nothing "
-                + "here to diff. That is what a record looks like when it travelled from the machine "
-                + "that did the work.",
-                ("session", session));
-        }
+        if (string.IsNullOrWhiteSpace(tree)) return Refusals.Because(Refusals.SessionNotReviewable, NoTreeToDiff, ("session", session));
 
         if (TreeFolders.TreeGone(tree))
         {

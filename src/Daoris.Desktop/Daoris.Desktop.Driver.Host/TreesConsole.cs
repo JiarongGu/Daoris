@@ -186,10 +186,8 @@ internal static class TreesConsole
             case ["land", "--entry" or "--ask", ..]:
                 return await TreesEntryLandVerb.RunAsync(args, home, configPath, log).ConfigureAwait(false);
 
-            // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
-            // door, which the landing had not had. The workspace's rule decides the form (merged into the
-            // line, or a branch for the person to push, or for the rule's plugin to push — D100), and --plan
-            // says where it would go and does nothing.
+            // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second door. The run's `land` lands it
+            // (D228), so the press keeps the word for the pass and lands nothing itself, and --plan says where it would go and does nothing.
             case ["land", var session, ..]:
             {
                 // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
@@ -244,8 +242,8 @@ internal static class TreesConsole
                 // CHATFLOW1i: a chat that took a quest is gated by that quest's chain, as the window's press reads it.
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false) ?? ChatRuns.TakenOf(session, recordsJson);
                 var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
-                // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
-                var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
+                // No plugin wire: this verb lands nothing (CHATFLOW1g, D228), so no plugin is told.
+                var landing = new SessionTrees(home);
 
                 // CHATFLOW1d (the chat-flow design §5.2 point 1, Codex's finding 11): a chat in a tree of its own is gated by its chat run, and
                 // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing (point 5).
@@ -280,65 +278,17 @@ internal static class TreesConsole
                     return planned.Code;
                 }
 
-                // WORKFLOWCLEAN1 1c (the cleanup design §2.1): a terminal with no loop keeps the word under the verb's lease and never performs a
-                // run's `land`: the running Daoris lands it at its next pass.
-                if (TreesWords.AcceptedForPass(home, gate) is { } accepted)
-                {
-                    accepted.Print(Console.Out, Console.Error);
-                    return accepted.Code;
-                }
-
-                // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, judged again under the tree's hold and before the push,
-                // as the route's press is.
-                var pressed = await quests.PressedAsync(session, questId).ConfigureAwait(false);
-                // LANDHOLD2: said once where the landing has to wait behind another landing of this session's work.
-                using var waiting = SayWaiting(Console.WriteLine);
-                // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
-                var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
-                    .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins,
-                    judged: pressed?.Judged, beforePush: pressed?.BeforePush,
-                    beside: token => BranchTidying.BesideAsync(service, token)).ConfigureAwait(false);
-                Told(home, PressesTold.Land, session);
-                // The plugin's lines were said as they came; the landing's sentence and the exit are the route's words too (RPC1b3).
-                var said = TreesWords.Land(landed, []);
-                // LANDBACK1 part 1 (D87's note, after LANDREBASE2): uncommitted work or a conflict is the session's to clear, and the Accept is
-                // the person's yes already. The words go to the session itself, as Daoris's, never through `sessions say` (which would make
-                // them the person's, and wait for their Confirm); the yes is kept on it and its work lands once its tree is clean. The
-                // exit is 0: the person's act took effect. Words the door keeps nothing of leave the refusal as it was, with why.
-                if (LandCarry.WhyOf(landed) is not null
-                    && await LandCarry.CarryAsync(
-                        // FOUNDATION1d-ii: said at the head of the session's line where it went on, under its key.
-                        async (named, text, key, token) => (await WordsHead.FollowAsync(
-                            named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
-                        home, session, tree, landed,
-                        (await service.SessionRecordsAsync().ConfigureAwait(false)).FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)),
-                        DateTimeOffset.UtcNow).ConfigureAwait(false) is { } carried)
-                {
-                    if (carried.Told)
-                    {
-                        Console.WriteLine($"trees: {carried.Sentence}");
-                        await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
-                        return 0;
-                    }
-
-                    said.Print(Console.Out, Console.Error);
-                    Console.WriteLine($"trees: {carried.Sentence}");
-                }
-                else
-                {
-                    said.Print(Console.Out, Console.Error);
-                }
-
-                if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)
+                // WORKFLOWCLEAN1 1c (the cleanup design §2.1), CHATFLOW1g (D228): a terminal with no loop lands nothing. It keeps the word under
+                // the verb's lease for a run whose `land` the runtime performs, which the running Daoris lands at its next pass; any other is held.
+                var accepted = TreesWords.AcceptedForPass(home, gate);
+                accepted.Print(Console.Out, Console.Error);
+                if (log is not null && gate.Refusal is { } refused
+                    && LandingGateWords.Held(session, landing.Owner(tree), gate, refused, ReviewDoors.Terminal) is { } held)
                 {
                     SessionLog.WriteLanding(log, held);
                 }
-                // Kept where the conversation is kept, as the review's press keeps it (D100).
-                if (landed.Landed) events.Keep(session, LandingNotes.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
-                await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
-                // 1 where the step the rule asked for did not happen: refused, or the plugin did not push.
-                return said.Code;
+
+                return accepted.Code;
             }
 
             case ["hand", var named, ..]:

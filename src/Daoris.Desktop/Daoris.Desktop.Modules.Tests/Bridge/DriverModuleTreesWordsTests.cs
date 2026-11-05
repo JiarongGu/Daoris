@@ -290,6 +290,32 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("no working tree", refusal);
     }
 
+    /// <summary>
+    /// TREENAME1: a tree's name given where the doors take a session names the session whose tree it is, at the press, the plan, the
+    /// discard and the review, as the terminal's alone path says it; never that the session names no tree here.
+    /// </summary>
+    [Fact]
+    public async Task A_trees_name_given_for_a_session_names_the_session_whose_tree_it_is_at_every_tree_door()
+    {
+        var module = await ComeUpAsync(Path.Combine(Home, "trees", "engine", "s-92ed2c8c"));
+        var sentence = $"`s-92ed2c8c` is a tree's name, and this verb takes the session: that tree is session `s1a2b3c4`'s, so say `s1a2b3c4`.";
+
+        var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s-92ed2c8c" });
+        Assert.False(press.GetProperty("done").GetBoolean());
+        Assert.Equal([$"trees: {sentence}"], Said(press).Error);
+        Assert.Equal([$"trees: {sentence}"], Said(await AnswerAsync(module, "LANDING", new { id = "s-92ed2c8c", said = true })).Error);
+
+        foreach (var (route, payload) in new (string, object)[]
+                 {
+                     ("LANDING", new { id = "s-92ed2c8c" }), ("DISCARD_SESSION_TREE", new { id = "s-92ed2c8c" }), ("SESSION_DIFF", new { id = "s-92ed2c8c" }),
+                 })
+        {
+            var refusal = await RefusalAsync(module, route, payload);
+            Assert.Contains("that tree is session `s1a2b3c4`'s", refusal);
+            Assert.DoesNotContain("no working tree", refusal);
+        }
+    }
+
     private sealed class StandInService(string? tree = null, string state = "working") : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>

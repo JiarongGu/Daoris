@@ -97,25 +97,20 @@ public sealed partial class CheckoutWritersCensusTests
     /// <summary>
     /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions (GITAPP2's §3 <i>Beside a
     /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
-    /// landing's doors (GITLOCK2), each of which hands it the same.
+    /// run's <c>land</c> (GITLOCK2), whose performer hands it the same; the Accept doors land nothing themselves (D228).
     /// </summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
-        ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull, and the terminal's Accept and Accept all",
-        ["TreesLandDesk.cs"] = "the window's Accept, a merge rule's move",
-        ["ChatLandCommand.cs"] = "a conversation's Accept in the terminal, a merge rule's move",
-        ["AutoLandingWorld.cs"] = "the look's landing at done, a merge rule's move",
+        ["TreesConsole.cs"] = "`daoris tree sync --yes`'s pull",
+        ["AutoLandingWorld.cs"] = "a run's `land` performed, a merge rule's move",
         ["TreesTidyDesk.cs"] = "the window's Bring up to date",
         ["HelpScreenDoors.cs"] = "Ask Daoris's Bring up to date",
         ["WatchNodes.cs"] = "the integration transport's promotions",
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
 
-    /// <summary>The doors that land through the landing desk's accepts, which hand the writer the ledger for them: door, then the file that does.</summary>
-    private static readonly Dictionary<string, (string Desk, string What)> BesideThrough = new(StringComparer.Ordinal)
-    {
-        ["EntriesRoutes.cs"] = ("TreesLandDesk.cs", "the window's Accept on an entry, a merge rule's move"),
-    };
+    /// <summary>The Accept doors, which land nothing themselves (CHATFLOW1g, D228): no checkout's writer starts from them.</summary>
+    private static readonly string[] AcceptDoors = ["TreesLandDesk.cs", "ChatLandCommand.cs", "EntriesRoutes.cs"];
 
     /// <summary>
     /// Writers of a checkout outside Daoris's desktop, which no lock of its reaches, by the source that writes where Daoris has one: what
@@ -234,10 +229,9 @@ public sealed partial class CheckoutWritersCensusTests
             Assert.True(sources[door].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{door} ({what}) hands the writer no ledger");
         }
 
-        foreach (var (door, (desk, what)) in BesideThrough)
+        foreach (var door in AcceptDoors)
         {
-            Assert.True(sources[door].Contains("Accepts(", StringComparison.Ordinal), $"{door} ({what}) takes no accepts of the landing desk");
-            Assert.True(sources[desk].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{desk} hands the accepts of {door} no ledger");
+            Assert.False(sources[door].Contains("BranchTidying.BesideAsync(", StringComparison.Ordinal), $"{door} starts a writer: an Accept lands by its run's `land`");
         }
 
         var pressing = sources.Where(each => Regex.IsMatch(each.Value, @"\.SyncAsync\([^;]*inUseNow:")).Select(each => each.Key);

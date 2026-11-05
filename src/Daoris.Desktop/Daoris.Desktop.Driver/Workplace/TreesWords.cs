@@ -43,14 +43,13 @@ public static class TreesWords
             landed.Landed && landed.Withheld is null && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1);
 
     /// <summary>
-    /// <c>trees land &lt;session&gt;</c> with no running Daoris, for a run whose <c>land</c> the runtime performs (WORKFLOWCLEAN1 1c; the cleanup
-    /// design §2.1): the review's word is kept under the verb's lease (<see cref="VerbLeases"/>) and the verb never performs. Null where the
-    /// gate's run is not performed; what holds the work, said as a press says it, where the gate holds it; exit 0 once the word is kept.
+    /// <c>trees land &lt;session&gt;</c> with no running Daoris (WORKFLOWCLEAN1 1c; the cleanup design §2.1): the verb never lands. For a run
+    /// whose <c>land</c> the runtime performs, the review's word is kept under the verb's lease (<see cref="VerbLeases"/>), exit 0 once kept;
+    /// what holds the work, or why no run's land lands it (<see cref="RunLandHolds"/>), is said as a press says it, exit 1.
     /// </summary>
-    public static TreesSaid? AcceptedForPass(string home, IWorkplaceGate gate)
+    public static TreesSaid AcceptedForPass(string home, IWorkplaceGate gate)
     {
-        if (gate.Process is not { LandsByRuntime: true } process) return null;
-        if (gate.Refusal is { } held) return Land(held, []);
+        if (gate.Process is not { LandsByRuntime: true } process || gate.Refusal is not null) return Land(RunLandHolds.Of(gate), []);
         var word = WorkplaceWorkflows.Current.KeepReviewWord(home, null, process, DateTimeOffset.UtcNow);
         return word.HasReview && !word.Kept && word.Said is { } refused
             ? new([$"trees: {refused}"], [], 1)

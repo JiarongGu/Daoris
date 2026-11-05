@@ -50,7 +50,12 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var review = await SessionReviews.ReadAsync(
             id, tree, baseCommit, new SessionTrees(_loop.Home), (repository, ct) => CheckoutOfAsync(service, repository, ct), _loop.Log,
             cancellationToken);
-        if (review is null) throw TreesReviewWires.Unreviewable(id, tree, baseCommit);
+        if (review is null)
+        {
+            throw string.IsNullOrWhiteSpace(tree)
+                ? await TreeNamedRefusals.RefusalAsync(service, id, TreesReviewWires.NoTreeToDiff, cancellationToken)
+                : TreesReviewWires.Unreviewable(id, tree, baseCommit);
+        }
         return review.FromBranch
             ? TreesReviewWires.ReviewAnswer(id, review.Diff, TreesReviewWires.ReviewSource.Branch, review.Landed, treeGone: review.TreeGone)
             : TreesReviewWires.ReviewAnswer(
@@ -223,11 +228,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         if (string.IsNullOrWhiteSpace(tree))
         {
-            throw Refusals.Because(
-                Refusals.SessionNotReviewable,
-                "this session's record names no working tree on this machine, so there is nothing "
-                + "here to discard.",
-                ("session", id));
+            throw await TreeNamedRefusals.RefusalAsync(service, id,
+                "this session's record names no working tree on this machine, so there is nothing here to discard.", cancellationToken);
         }
 
         // The same home the loop derives for the chat runner and the watch: the directory holding
