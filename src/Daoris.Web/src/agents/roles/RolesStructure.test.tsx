@@ -66,7 +66,7 @@ describe("an agent's page", () => {
         case 'STATE': return { ...DRIVER_STATE, drivable: DRIVER.drivable, holds: DRIVER.holds };
         case 'HARNESSES': return ROSTER;
         case 'ACCOUNTS': return { agents: [CLAUDE_USE, CODEX_USE] };
-        case 'ROLES': return { roles: [], works: ['build', 'design'], kept: true, suggested: [] };
+        case 'ROLES': return { roles: [], works: ['build', 'design'], kept: true };
         case 'STARTS': return { adapter: 'claude-code', starts: [] };
         case 'PLUGINS': return { folder: 'plugins', plugins: PLUGINS };
         case 'LINES': return LINES;

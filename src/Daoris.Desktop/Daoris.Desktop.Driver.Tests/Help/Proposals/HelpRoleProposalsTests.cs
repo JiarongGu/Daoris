@@ -46,7 +46,7 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         Assert.Null(plan.Refusal);
         Assert.Contains("Set the role `designer` (Designer · 设计师): it takes design on this machine, on claude-code · opus · high.", plan.Describe);
         Assert.Equal("daoris role set designer --name \"Designer\" --name-in zh=\"设计师\" --takes design --scope machine \"claude-code opus high\"", plan.Terminal);
-        Assert.Equal(RoleSuggestion.Designer.Role.Json(), Assert.IsType<RoleChange.SetRole>(plan.Role!.Change).Role.Json());
+        Assert.Equal("designer", Assert.IsType<RoleChange.SetRole>(plan.Role!.Change).Role.Id);
     }
 
     /// <summary>I18NOPEN1 (D222): a role proposed in one language, or in a third, plans, and its card and terminal twin say the name as given.</summary>

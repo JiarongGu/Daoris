@@ -112,7 +112,7 @@ describe('Ask Daoris’s access on Settings', () => {
       if (type === 'PLUGINS') return { folder: 'plugins', plugins: [] };
       if (type === 'ROLES') {
         const staffing = { id: 'ask-daoris', state: 'set', choices: [{ agent: 'claude-code-acp', from: '1' }] };
-        return { roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, takes: ['ask-daoris'], revision: 0, staffing }], works: [], kept: true, suggested: [] };
+        return { roles: [{ id: 'ask-daoris', state: 'seed', seeded: true, takes: ['ask-daoris'], revision: 0, staffing }], works: [], kept: true };
       }
       return undefined;
     });

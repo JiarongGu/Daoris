@@ -319,10 +319,6 @@ public sealed class DriverRoutes(DriverContext context)
             Supervisor = SupervisorRuleRows.Of(_loop.Home),
             Works = RoleWork.Codes,
             Kept = RoleStaffing.Of(_loop.ConfigPath) is not null,
-            Suggested = RoleSuggestion.For(catalogue).Select(each => new
-            {
-                each.Role.Id, each.Role.Name, each.Role.Takes, ScopeKind = each.Role.Scope.Kind, each.Choices,
-            }),
             // The choices suggested for the seeded roles, whole; the page leaves out an agent this machine has not set up.
             SuggestedChoices = ActorSuggestion.Table.Select(each => new { each.Role, each.Choices }),
             SuggestedChoicesDated = ActorSuggestion.Dated,

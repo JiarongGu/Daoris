@@ -10,7 +10,11 @@ public sealed record RoleUseChoice(string Choice, int Starts);
 public sealed record RoleUseWhy(string Code, int Starts);
 
 /// <summary>One role's week: its starts, where they landed, how many fell to a later choice and the codes that moved them.</summary>
-public sealed record RoleUseRow(string Role, int Starts, IReadOnlyList<RoleUseChoice> Choices, int Fell, IReadOnlyList<RoleUseWhy> Why);
+public sealed record RoleUseRow(string Role, int Starts, IReadOnlyList<RoleUseChoice> Choices, int Fell, IReadOnlyList<RoleUseWhy> Why)
+{
+    /// <summary>The lines the course moved to another choice, by the condition that moved them (<see cref="RoleUseMoves"/>); none where no line moved.</summary>
+    public IReadOnlyList<RoleUseMoved> Moved { get; init; } = [];
+}
 
 /// <summary>The weeks' rows, and how many days of the machine log they were read over (at most <see cref="RoleUse.Week"/>; none with no log).</summary>
 public sealed record RoleUseRead(int Days, IReadOnlyList<RoleUseRow> Roles);
@@ -38,11 +42,15 @@ public static class RoleUse
         }
 
         var lines = MachineLogReader.Read(folder, new LogFilter(Since: now.AddDays(-Week), Event: "actor.chose")).Lines;
+        var moved = RoleUseMoves.Of(MachineLogReader.Read(folder, new LogFilter(Since: now.AddDays(-Week), Event: "actor.moved")).Lines);
         var days = DaysKept(folder, now);
         var rows = lines
             .Where(line => line.Data.ValueKind == JsonValueKind.Object && Text(line.Data, "actor") is not null)
             .GroupBy(line => Text(line.Data, "actor")!, StringComparer.Ordinal)
-            .Select(group => RowOf(group.Key, group.Select(line => (Text(line.Data, "choice") ?? "", Passed(line.Data))).ToList()))
+            .Select(group => RowOf(group.Key, group.Select(line => (Text(line.Data, "choice") ?? "", Passed(line.Data))).ToList()) with
+            {
+                Moved = moved.GetValueOrDefault(group.Key) ?? [],
+            })
             .OrderBy(row => row.Role, StringComparer.Ordinal)
             .ToList();
         return new(days, rows);

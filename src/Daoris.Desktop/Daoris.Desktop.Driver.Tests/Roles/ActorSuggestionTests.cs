@@ -15,8 +15,8 @@ public sealed class ActorSuggestionTests
     {
         Assert.Empty(ActorSuggestion.Census(Reference()));
 
-        var opus = new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high");
-        Assert.Equal([new ActorChoice(RoleSuggestion.ClaudeCode, "sonnet", "high"), opus], ActorSuggestion.Table.Single(each => each.Role == "build").Choices);
+        var opus = new ActorChoice(ActorChoices.DefaultAgent, "opus", "high");
+        Assert.Equal([new ActorChoice(ActorChoices.DefaultAgent, "sonnet", "high"), opus], ActorSuggestion.Table.Single(each => each.Role == "build").Choices);
         foreach (var role in new[] { "opinion", "helper", "partner", "brainstorm" })
         {
             Assert.Equal([opus], ActorSuggestion.Table.Single(each => each.Role == role).Choices);
@@ -42,7 +42,7 @@ public sealed class ActorSuggestionTests
     {
         static IEnumerable<string> Said(IEnumerable<SuggestedChoices> table) => table.Select(each => $"{each.Role}: {string.Join(", ", each.Choices.Select(choice => choice.Said))}");
         Assert.Equal(Said(ActorSuggestion.Table), Said(ActorSuggestion.For(null)));
-        Assert.Equal(Said(ActorSuggestion.Table), Said(ActorSuggestion.For(new HashSet<string> { RoleSuggestion.ClaudeCode, "codex-acp" })));
+        Assert.Equal(Said(ActorSuggestion.Table), Said(ActorSuggestion.For(new HashSet<string> { ActorChoices.DefaultAgent, "codex-acp" })));
         Assert.Empty(ActorSuggestion.For(new HashSet<string> { "codex-acp" }));
     }
 }

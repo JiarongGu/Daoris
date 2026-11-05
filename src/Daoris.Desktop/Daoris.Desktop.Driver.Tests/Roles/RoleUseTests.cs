@@ -53,6 +53,25 @@ public sealed class RoleUseTests : IDisposable
         Assert.Equal(7, read.Days);
     }
 
+    private static string Moved(string day, string role, string condition) =>
+        "{\"time\":\"" + day + "T10:00:00.000Z\",\"source\":\"driver\",\"level\":\"info\",\"event\":\"actor.moved\",\"data\":{\"role\":\"" + role
+        + "\",\"line\":\"q1\",\"from\":\"1\",\"to\":\"2\",\"condition\":\"" + condition + "\",\"action\":\"next\",\"n\":1}}";
+
+    /// <summary>STAFFPOLICY1f: the lines the course moved are counted by the condition that moved them, the most first.</summary>
+    [Fact]
+    public void A_roles_moves_are_summed_by_condition()
+    {
+        Write("2026-10-30",
+            Chose("2026-10-30", "build", "1"), Chose("2026-10-30", "build", "2"), Chose("2026-10-30", "chat", "1"),
+            Moved("2026-10-30", "build", "limit"), Moved("2026-10-30", "build", "transient"), Moved("2026-10-30", "build", "limit"));
+        Write("2026-10-20", Moved("2026-10-20", "build", "quiet"));
+
+        var read = RoleUse.Of(_home, Now);
+
+        Assert.Equal([("limit", 2), ("transient", 1)], Assert.Single(read.Roles, each => each.Role == "build").Moved.Select(each => (each.Condition, each.Moves)));
+        Assert.Empty(Assert.Single(read.Roles, each => each.Role == "chat").Moved);
+    }
+
     /// <summary>A role with no start in the week is not there: absent stays absent.</summary>
     [Fact]
     public void A_role_without_a_start_this_week_is_absent_and_no_history_is_no_roles()
