@@ -41,6 +41,7 @@ one job each, checked by `verify`.
 | `ToolClasses` | `Mcp/ToolClasses.cs` | Each tool's class: read, restricted or publish |
 | `CallTable`, `SessionWorks` | `Mcp/CallTable.cs` (`Refusal` 121-144), `Mcp/RoleFilter.cs` | What each kind of work is served; filters `tools/list` and every call |
 | Call guards | `Mcp/CallLineageFilter.cs`, `ArgumentFilter.cs`, `WaitingFilter.cs` | Lineage proof, missing arguments, the waiting line |
+| Call keys | `Core/Sessions/CallLineage.cs`, `Core/Sessions/CallKeys/` | A call's `_meta` lineage read by one ordered list of agents' keys, one file per agent (Claude Code's first, so a call carrying both is read as its); the list is held to the driver census's `service.callKeys` twin |
 | `MemoryOpStore` | `Core/Knowledge/Memory/MemoryOpStore.cs` | `memory_ops` in `knowledge.db`: the log of record of every memory change; its read sets are `MemoryOpReads`, its changes since a cursor `MemoryOpChanges`, its rows' types `Memory/Records/` |
 | `LyntaiMemory`, `MemoryEngine` | `Core/Knowledge/Memory/` | One engine per repository over `memory.db`, and its read-only view for others |
 | `MemoryApplier`, `MemoryCoordinator` | `Core/Knowledge/Memory/` | Applies released rows, recovers at start, paces the sweep |
