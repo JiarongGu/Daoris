@@ -23129,6 +23129,12 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 
   **Outcome** 2026-11-04: the two roles drawn and edited through the one role editor; DiagramDetail's appointed section and the stories' hold rows left.
 
+## NOCOMPAT1b8 (2026-11-05)
+
+- [x] **NOCOMPAT1b8 — the single-agent keys gone from their last readers** (driver; D232, D228): `AgentFor`, `ActorChoices.Seed` and `RoleStaffingPort` still read `DriverConfig.Adapter`, and about 220 test sites set it. → `docs/areas/agents-and-harnesses.md`
+
+  **Outcome** 2026-11-05: `Adapter`, `IntakeAdapter` and `HelperAdapter` gone from `DriverConfig` with their readers, writers and keeps; the readers read Build's order (`ActorChoices.BuildAgent`) or the role's first agent; the tests stand on the roles' orders (`StaffedRoles`); the release's migration takes the keys out once (`ae580a6cf`). `ActorView`'s `before` state stays, read by the web; the Process classes not yet run.
+
 ## BUSYPRESS1 (2026-11-05)
 
 - [x] **BUSYPRESS1 — a press the service is too busy to answer says so** (modules, driver): while the machine was out of memory the service missed its 30 seconds and every press came back `UNKNOWN_ERROR`, a landing among them. → `docs/areas/desktop-app.md`
