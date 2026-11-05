@@ -35,8 +35,11 @@ public sealed partial class SettingsBox(string? home)
     /// <summary>How many minutes an account whose limit names no time cools before it is offered again.</summary>
     public const string CoolOff = "cooloff";
 
+    /// <summary>How many minutes a session may say nothing and run nothing before Daoris looks in on it.</summary>
+    public const string Quiet = "quiet";
+
     /// <summary>The settings these tools change, in the grant's order: the five ordinary ones, and never another.</summary>
-    public static readonly IReadOnlyList<string> Settings = [Notify, Language, Cap, CoolOff];
+    public static readonly IReadOnlyList<string> Settings = [Notify, Language, Cap, CoolOff, Quiet];
 
     /// <summary>The request's move in the session requests, beside housekeeping's.</summary>
     public const string Move = "set";

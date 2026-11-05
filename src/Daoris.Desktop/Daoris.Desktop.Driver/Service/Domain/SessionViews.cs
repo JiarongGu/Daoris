@@ -145,7 +145,7 @@ public sealed record PriorSession(
     /// it concludes, so for the whole run they are still on it. Read as waiting, a look took the record up a second time,
     /// whose move to working the ledger refused (working → working), and the driver failed the session it was resuming.
     /// </remarks>
-    public bool WordsWaiting => !Running && Said is { Count: > 0 };
+    public bool WordsWaiting => !Running && Waiting.Count > 0;
 
     /// <summary>
     /// Queued, starting or working: a run has the record (D46 §4), so the words on it are on their way to the session, and
@@ -158,7 +158,7 @@ public sealed record PriorSession(
     /// this one attempted is settled as this one comes up, before any go-on (COWORK1c, <see cref="UncertainWords"/>); one this shell
     /// attempted and kept waiting after a failed turn goes again (TURNFAIL1).
     /// </summary>
-    public IReadOnlyList<SaidWordView> Waiting => Said ?? [];
+    public IReadOnlyList<SaidWordView> Waiting => Said is { } said ? [.. said.Where(word => !DaorisKeys.IsWatch(word.Key))] : [];
 
     /// <summary>
     /// The second opinions whose findings wait among its words (XAGENT1e, D155 point 7), each once, in the order handed: another

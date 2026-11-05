@@ -62,8 +62,26 @@ public static class UncertainWords
     {
         if (record.Running || record.Teammate) return 0;
         List<string> attempted = [.. (record.Said ?? []).Where(word => word.Attempt is not null).Select(word => word.Id).OfType<string>()];
-        if (attempted.Count == 0) return 0;
+        // SESSWATCH1b: the watcher's word left on an ended record (a crash, a withdrawal that failed) speaks of a quiet that is over, so it
+        // leaves here before the first look plans and is said, and is never a conversation's word to show lost or a go-on's release.
+        List<string> watching = [.. (record.Said ?? []).Where(word => DaorisKeys.IsWatch(word.Key)).Select(word => word.Id).OfType<string>()];
+        if (attempted.Count == 0 && watching.Count == 0) return 0;
 
+        var settled = 0;
+        foreach (var word in watching)
+        {
+            try
+            {
+                if ((await service.TakeBackAsync(record.Session, word, text: null, ct).ConfigureAwait(false)) is { Done: true } or { Why: "taken" }) settled++;
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                // It waits for the next come-up, and is read as no word meanwhile (SessionViews.WordsWaiting).
+            }
+        }
+
+        attempted = [.. attempted.Where(word => !watching.Contains(word))];
         var gone = new List<string>();
         foreach (var word in attempted)
         {
@@ -90,7 +108,7 @@ public static class UncertainWords
             }, say: null);
         }
 
-        return gone.Count;
+        return gone.Count + settled;
     }
 
     /// <summary>Whether the session's conversation already showed this word taken: the word's own event as a turn's ask.</summary>

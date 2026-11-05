@@ -237,6 +237,8 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
+        // SESSWATCH1b: the watcher's word to a quiet session, which resets no answers-alone count.
+        Watcher = DaorisKeys.IsWatch(message.Daoris?.Key) ? true : null,
         // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
         Origin = message.Persons ? "person" : Senders.Target,
         // SUPERVISOR1a-i: the supervisor's, on the owner's behalf, never the person's.

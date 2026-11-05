@@ -64,7 +64,7 @@ export const RestrictedWithConfiguredAccess: Story = {
         { id: 'settings', chosen: ['notify'] },
       ],
       built: {
-        housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'cap', 'cooloff'],
+        housekeeping: ['inspect', 'clean-up', 'discard-branch'], settings: ['notify', 'language', 'cap', 'cooloff', 'quiet'],
         checkouts: ['engine', 'reports-db'],
       },
       onChoose: () => {},

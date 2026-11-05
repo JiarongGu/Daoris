@@ -112,10 +112,12 @@ internal static class AnswersAlone
 
     /// <summary>
     /// A word of the person's (a word with no origin, from a record kept before it was written, is theirs) or of Daoris's, taken; or the
-    /// person's press that let an answer go on (<see cref="HeldNoteCodes.AnswersPassed"/>).
+    /// person's press that let an answer go on (<see cref="HeldNoteCodes.AnswersPassed"/>). Never the watcher's word to a quiet session
+    /// (<see cref="SessionEvent.Watcher"/>): on a door where it is a prompt of its own it would otherwise give a line going on by answers
+    /// alone two more answers after every quiet.
     /// </summary>
     private static bool Resets(SessionEvent e) =>
-        e.Kind == SessionEventKind.User && e.Reaches is null && e.From != SupervisorHanded.From
+        e.Kind == SessionEventKind.User && e.Reaches is null && e.From != SupervisorHanded.From && e.Watcher is not true
             && (e.Origin is null or "person" || e.From == DaorisWords.From)
         || e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersPassed.Code) == true;
 

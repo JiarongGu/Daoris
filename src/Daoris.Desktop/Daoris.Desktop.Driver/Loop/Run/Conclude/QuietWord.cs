@@ -8,6 +8,8 @@ namespace Daoris.Driver;
 /// the episode ends or the run ends, so a word not yet on the wire never outlives the quiet it speaks of and never becomes a carry-on's
 /// resume. A word already on the wire cannot be called back: its words say only what ran, true whenever they are read. An intake takes
 /// no words, so it gets the mark alone; where <see cref="LongCalls"/> already told the same call, its word is the episode's.
+/// Every door that takes words has one: the protocol door's reaches the agent at its next step, and the native and the text-only doors'
+/// waits for the turn's end, where it is judged by its episode and goes to no turn once the session was heard again.
 /// </summary>
 public sealed class QuietWord : IDisposable
 {
@@ -65,7 +67,11 @@ public sealed class QuietWord : IDisposable
         var word = new ChatMessage(Words(step), [])
         {
             Level = MessageLevel.Urgent,
-            Daoris = new DaorisWord(DaorisKeys.Watch(_session, step.Episode)),
+            // Judged where it leaves for the wire: a word whose episode ended or whose run ended goes to no turn, on any door.
+            Daoris = new DaorisWord(DaorisKeys.Watch(_session, step.Episode))
+            {
+                Stands = _ => Task.FromResult(Volatile.Read(ref _disposed) == 0 && _told.ContainsKey(step.Episode)),
+            },
         };
         var kept = await _inbox.KeepOrHoldAsync(_door, word, ct).ConfigureAwait(false);
         if (kept.Outcome is InboxKeep.Closed or InboxKeep.Continued)
