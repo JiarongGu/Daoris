@@ -65,8 +65,7 @@
       "rules": [{ "id": "x", "count": "answers-alone", "at": 2, "do": "refer" }, { "id": "t", "count": "tries", "at": 5, "do": "hold" }], "expect": "refer-not-offered" },
     { "name": "refer once offered", "place": "machine", "revision": 1, "referOffered": true,
       "rules": [{ "id": "x", "count": "answers-alone", "at": 2, "do": "refer" }, { "id": "t", "count": "tries", "at": 5, "do": "hold" }], "expect": null },
-    { "name": "a revision that moved", "place": "machine", "revision": 0, "rules": "base", "expect": "revision" },
-    { "name": "a home not converted", "place": "machine", "revision": 1, "rules": "base", "reached": false, "expect": "convert-first" }
+    { "name": "a revision that moved", "place": "machine", "revision": 0, "rules": "base", "expect": "revision" }
   ],
   "effective": [
     { "name": "the line's own place beats the repository's and the machine's",

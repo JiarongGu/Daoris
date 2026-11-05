@@ -149,6 +149,9 @@ public sealed class SessionWatch
     /// <summary>Told a session whose mark or row moved, after the watcher's lock is let go: what wakes the pages' slices.</summary>
     public event Action<string>? Changed;
 
+    /// <summary>Told each step as it is written, after the watcher's lock is let go: what a run's <see cref="QuietWord"/> says and withdraws by.</summary>
+    public event Action<QuietStep>? Stepped;
+
     /// <summary>Register a run while it lasts; disposing ends its episode, if one is open, as <c>ended</c>.</summary>
     public WatchHandle Watch(string session, WatchedRun run)
     {
@@ -305,6 +308,8 @@ public sealed class SessionWatch
         {
             _events.Keep(step.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
         }
+
+        Stepped?.Invoke(step);
     }
 
     // Off a clock that stops in sleep, a gap between looks longer than three paces and at least two minutes is not counted (§1.5).

@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// CONTEXTDRIVE1d (the context counters design §4.3, §4.4): the supervisor's rules through the role door. For the id <c>supervisor</c> a press
 /// carries a place's <c>rules</c> and <c>rulesRevision</c> alone, judged by the rules' judge inside the role door's one transaction: a home not
-/// reached refuses <c>convert-first</c>, a moved revision <c>revision</c>, and any other field is the appointed shape.
+/// seeded takes a rule with no conversion asked, a moved revision is <c>revision</c>, and any other field is the appointed shape.
 /// </summary>
 public sealed class SupervisorRuleDoorTests : IDisposable
 {
@@ -55,15 +55,15 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     }
 
     [Fact]
-    public void CONTEXTDRIVE1d_a_home_not_reached_refuses_a_rule_convert_first_and_writes_nothing()
+    public void CONTEXTDRIVE1l_a_seeded_home_takes_a_rule_with_no_conversion_asked()
     {
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
         var press = Read("""{ "id": "supervisor", "place": "repository:daoris", "rulesRevision": 0, "rules": [{ "count": "answers-alone", "at": 3, "do": "hold" }] }""");
 
-        var refused = Assert.Throws<RuleRefusedException>(() => RoleDoor.Apply(Staffing, press.Change));
+        RoleDoor.Apply(Staffing, press.Change);
 
-        Assert.Equal("convert-first", refused.Code);
-        Assert.Empty(Store.All());
-        Assert.False(Store.Reached());
+        Assert.Equal(1, Store.Of("repository:daoris").Revision);
+        Assert.DoesNotContain("convert-first", SupervisorRules.Codes);
     }
 
     [Fact]

@@ -183,6 +183,16 @@ public static class DaorisKeys
         $"{TransientReleaseKind}/{session}/{ended.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss.fffffff'Z'", System.Globalization.CultureInfo.InvariantCulture)}";
 
     public static bool IsTransientRelease(string? key) => key?.StartsWith(TransientReleaseKind + "/", StringComparison.Ordinal) == true;
+    public const string WatchKind = "watch";
+
+    /// <summary>
+    /// The watcher's word to a quest session seen quiet (SESSWATCH1b, the session-watch design §2.1): the session and its quiet episode, so
+    /// one episode keeps one word. No quest's fact: <see cref="Read"/> names none.
+    /// </summary>
+    public static string Watch(string session, int episode) => $"{WatchKind}/{session}/{episode.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    public static bool IsWatch(string? key) => key?.StartsWith(WatchKind + "/", StringComparison.Ordinal) == true;
+
     public const string RestartKind = "restart";
     public static string Restart(string session, string build) => $"{RestartKind}/{session}/{build}";
     public static bool IsRestart(string? key) => key?.StartsWith(RestartKind + "/", StringComparison.Ordinal) == true;

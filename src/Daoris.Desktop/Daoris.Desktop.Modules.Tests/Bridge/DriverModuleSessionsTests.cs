@@ -1206,7 +1206,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var rules = new SupervisorRuleStore(Home);
         Assert.True(rules.Write(
             SupervisorRules.Machine, rules.Of(SupervisorRules.Machine).Revision, [.. SupervisorRuleBook.Seeded(3)],
-            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(Home) with { ReadReached = false, Reached = true }).Stored);
+            SupervisorRuleBook.SeedDoor, SupervisorRuleDoor.World(Home)).Stored);
         var ledger = new LoopbackHost();
         var root =Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
         string Session(string id, string state, string quest, int minute, string? tree = null) =>

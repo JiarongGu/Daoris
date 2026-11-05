@@ -563,7 +563,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         SupervisorBound atBound = (session, _) =>
         {
             asked.Add(session);
-            return Task.FromResult(true);
+            return Task.FromResult<string?>(SupervisorWhy.SupervisorBound);
         };
         Assert.Empty(await bound.ReleaseAsync(Session, said.Say, Kept.AddMinutes(4), bound: atBound));
         Assert.Empty(asked);
@@ -580,6 +580,12 @@ public sealed class SupervisorDecisionTests : IDisposable
         await SupervisorQuarantine.DecideAsync(snapshot, looked, said.Say, said.TakeBack, Kept.AddMinutes(5), CancellationToken.None, atBound);
         Assert.Equal(SupervisorWhy.SupervisorBound, looked.LiveOf(Session).Single().Why);
         Assert.Equal(0, said.Says);
+
+        // CONTEXTDRIVE1e: another rule holding the line at the release moves it stale with its own code.
+        var ruled = Decisions();
+        await ruled.KeepAsync(Answer(), Park(), Kept);
+        await ruled.ReleaseAsync(Session, said.Say, Kept.AddMinutes(5), bound: (_, _) => Task.FromResult<string?>(SupervisorWhy.RuleHolds));
+        Assert.Equal((SupervisorWhy.RuleHolds, 0), (ruled.LiveOf(Session).Single().Why, said.Says));
     }
 
     /// <summary>

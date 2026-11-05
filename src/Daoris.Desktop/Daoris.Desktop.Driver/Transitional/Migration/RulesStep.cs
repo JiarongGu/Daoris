@@ -20,7 +20,7 @@ public sealed class RulesStep : IHomeMigrationStep
         var home = run.Home;
         var file = DaorisHome.Entry(home, HomeEntry.DriverConfig);
         var location = DesktopStore.LocationIn(home);
-        if (!new SupervisorRuleStore(home, () => StoreSettled.Yes).Reached())
+        if (!new SupervisorRuleStore(home, () => StoreSettled.Yes).Seeded())
         {
             var strikes = Strikes(file);
             var catalogue = RoleCatalog.ReadHome(home);
@@ -29,7 +29,7 @@ public sealed class RulesStep : IHomeMigrationStep
                 .ToList();
             run.Keep(location);
             using var store = DesktopStore.Open(location, StoreProcess.Options(() => StoreSettled.Yes));
-            var world = SupervisorRuleDoor.World(home) with { ReadReached = false, Reached = true };
+            var world = SupervisorRuleDoor.World(home);
             store.Write(SupervisorRuleStore.Family, write =>
             {
                 SupervisorRuleStore.WriteIn(write, SupervisorRules.Machine, 0, [.. SupervisorRuleBook.Seeded(strikes), Moves()], Door, world);

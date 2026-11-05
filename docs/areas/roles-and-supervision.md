@@ -32,7 +32,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StaffPolicies`, `StaffLedger`, `StaffCapabilities` | `Roles/StaffLedger.cs`, `Roles/StaffPolicyDoor.cs` | `role_policy` and starts ledger; stale reads; the fields a build enforces |
 | `RoleOrders`, `ActorSuggestion`, `StaffWeek` | `Roles/RoleOrders.cs`, `Roles/ActorSuggestion.cs`, `Roles/StaffWeek.cs` | The other readers' order; suggested choices; a role's last seven days |
 | `SupervisorRules` | `Roles/SupervisorRules.cs` | The rule supervisor's pure half: counts, actions, bounds, places, judge, effective set, act |
-| `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; reached mark; the fresh seed; what each executor reads; old doors refused |
+| `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a policy's moves refused |
+| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
@@ -121,19 +122,23 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 32. The actions are hold, ask, wait (5 to 600 minutes), next, weighted, refer and off, each count allowing its own set.
     `refer` (ask the agent supervisor) is not offered yet. (from D229)
 33. A place is the machine, `workspace:<id>`, `repository:<id>` or `line:<key>`. For each count the most specific place
-    holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. (from D229)
+    holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
+    repository's workspace, as the driver's last look read the registry, is its wider place at the judge as at the lines. (from D229)
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
-    choice acting at or past failures. A place's set is written whole at the revision read. (from D229)
-35. A home is reached when the machine's place holds a revision. A fresh home is seeded at its first start: answers alone
-    at 2, failures at 3, tries at 5. The release's migration writes an older home's caps as the machine's rules (answers
-    alone 2, failures at its `strikes`, tries 5, moves 3 a day), each policy's moves as rules at its role's place, and takes
-    those moves and `strikes` out. (from D229, D232)
+    choice acting at or past failures. A place's set is written whole at the revision read. No write asks for a
+    conversion first. (from D229, D232)
+35. A fresh home is seeded at its first start: answers alone at 2, failures at 3, tries at 5. The release's migration
+    writes an older home's caps as the machine's rules (answers alone 2, failures at its `strikes`, tries 5, moves 3 a
+    day), each policy's moves as rules at its role's place, and takes those moves and `strikes` out. Where the machine's
+    place holds nothing, or the store does not read, the seeded rules decide. (from D229, D232)
 36. Every executor reads the effective rules: the answers-alone hold, the failures that park a quest, the tries of a
     transient episode and a line's moves. A count no rule watches acts on nothing. (from D229, D232)
 37. A rule decides at the executor that acts on its count: answers alone in the admission's `at`, failures at the
     planner's start, tries at a run's start and past its episode, conditions where the staffing course reads a move. (from D229, D212)
 38. A rule acts between turns only. It never acts on an unknown count, never ends a running or quiet session, and never
-    answers a question. Each hold is released by its own door. (from D229)
+    answers a question. Each hold is released by its own door. Its act is said on the line (`supervisor.rule`: the
+    count, its value, the rule's number, place and act), kept as a final decision file of holder kind `rule` with no
+    question, which the questions' reader and the sweep pass by, and logged; the answers-alone hold records it. (from D229)
 39. The failed sessions that park a quest are the failures rule's alone: no door sets `strikes`. The cap stays a machine
     setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
@@ -157,7 +162,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's
-    rule holds the line (`rule-holds`). The rule is read first and its act stands. (from D208, D229)
+    rule holds the line (`rule-holds`), at the keeping and again at the release. The rule is read first and its act
+    stands. (from D208, D229)
 49. A decision is held whole in memory for the supervisor role's window (1 to 60 minutes, 5 by default), then released in
     one conditional step that asks the admission again. Its word is `From: supervisor`, never the person's; an
     unattributable one is quarantined. (from D208, D233)
@@ -251,13 +257,14 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1e (rest):** `rule-holds` at the release, the `supervisor.rule` note, a rule's decision file,
-  `SupervisorRuleActs`, and a workspace read as a repository's wider place.
+- **CONTEXTDRIVE1e (rest):** the failures park, the tries hold and a move recording their acts through
+  `SupervisorRuleActs`; *Details*' Supervisor line and the supervisor's print reading them.
 - **CONTEXTDRIVE1g, h, k:** the rules' editors on the page (no page code reads them yet); a rule's hold on the head and
   *What needs you*; the room's and glossary's words.
 - **CONTEXTDRIVE1n, j:** a conversation's course reads the rules; `refer`, the agent supervisor's *course* act.
 - **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
-  (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals) see the default; the installed proof.
+  (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals, `driver list`, the seed) see the default, and about thirty
+  tests set it; the policy record's `moves` and `most` are still parsed only to be refused; the installed proof.
 - **STAFFPOLICY1d/f/h/i:** an agent's own ask and a hand-over take no policy; the use line's moves by condition
   (`Roles/RoleUse.cs`); selection by measurement; the installed proof.
 - **ONEWAY1af:** delete `actor-key-before` and `staffing-copy` once the staffing part's census ends.

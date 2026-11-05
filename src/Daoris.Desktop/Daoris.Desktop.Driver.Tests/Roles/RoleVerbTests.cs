@@ -280,9 +280,6 @@ public sealed class RoleVerbTests : IDisposable
     [Fact]
     public async Task CONTEXTDRIVE1d_role_rules_is_refused_by_the_judge_s_code_with_nothing_written()
     {
-        Assert.Equal(2, await Run("rules", "--place", "machine", "--set", "answers-alone=3:hold"));
-        Assert.Contains("(convert-first)", _error.ToString());
-
         Reach();
         Assert.Equal(2, await Run("rules", "--place", "repository:daoris", "--set", "quiet=1:next"));
         Assert.Contains("(moves-unbounded)", _error.ToString());

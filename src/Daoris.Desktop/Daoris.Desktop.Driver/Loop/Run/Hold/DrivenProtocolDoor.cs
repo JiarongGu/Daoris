@@ -148,6 +148,11 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                     failed: error => run.Say($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"),
                     minutes: SessionChecks.HeldMinutes(context.Home, sessionId));
 
+                // A quest session the watcher marks quiet is told once, as Daoris's urgent word, taken off again when its quiet ends.
+                using var quietWord = QuietWord.Tell(
+                    wiring.Watch, sessionId, inbox, inbox is null ? null : new SaidDoor(context.Service, sessionId), RunningCalls.Of(context.Events),
+                    failed: error => run.Say($"— Daoris's word to this quiet session was not kept: {error}"));
+
                 // The person's words in the record the moment they are said, with when they reach the session: the page shows them
                 // waiting in the turn they were said in, rather than nothing until they are handed over.
                 inbox?.OnSaid((message, reach) =>
