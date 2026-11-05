@@ -26,6 +26,7 @@
   "code.dependsLabelPlain": "{{from}} depends on {{to}}",
   "code.showWhole": "Show every folder",
   "code.foldAgain": "Fold the folders again",
+  "code.foldFolder": "Fold {{name}}",
   "code.file": "Read from {{file}}, which the repository keeps and Daoris never writes.",
   "code.fed": "Read from {{file}} at {{commit}} on {{branch}}, fed {{when}} by {{origin}}, and brought here by the sync. The repository keeps it; Daoris never writes it.",
   "code.fedUnknownOrigin": "an unnamed machine",

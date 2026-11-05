@@ -176,6 +176,28 @@ describe('a cycle', () => {
   });
 });
 
+describe('one folder folded alone', () => {
+  it('folds the chosen module\'s folder, releases the choice, keeps the others open and hands the focus to its card', async () => {
+    const onChange = vi.fn();
+    render(<Host map={CYCLE_ACROSS_FOLDERS} first="board" onChange={onChange} />);
+    expect(screen.queryByRole('button', { name: /^Fold src\/core/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Fold src/web' }));
+    expect(onChange).toHaveBeenLastCalledWith(null);
+    const card = screen.getByRole('button', { name: 'src/web, a folder of 1 module. Press to open' });
+    expect(card).toHaveFocus();
+    expect(screen.queryByRole('button', { name: /^board, depends on/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'rules, depends on 0' })).toBeInTheDocument();
+    expect(document.querySelector('[data-code-fold]')).toBeNull();
+  });
+
+  it('folds a cycle across folders to its card, labelled with the folders it crosses', async () => {
+    render(<Host map={CYCLE_ACROSS_FOLDERS} first="session" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Fold cycle of 3 across 3 folders' }));
+    expect(screen.getByRole('button', { name: 'a cycle of 3 modules across 3 folders that depend on one another. Press to open' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^session, depends on/ })).toBeNull();
+  });
+});
+
 describe('the viewer\'s place', () => {
   beforeEach(() => { measured.width = 900; });
   const scaleOf = () => Number(document.querySelector('[data-canvas-scale]')!.getAttribute('data-canvas-scale'));

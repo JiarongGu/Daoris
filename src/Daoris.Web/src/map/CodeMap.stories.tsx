@@ -8,8 +8,8 @@ import { type CodeFixture, CYCLE_ACROSS_FOLDERS, LONG_IDS, REPOSITORY, SKIPPING_
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 
 // A repository's own code map on the canvas (MAP3a; CANVAS1f; D224, the canvas design §3.4), in the shapes a producer writes: this
-// repository's twenty modules, a map with a cycle, ids too long for their cards, a teammate's, and synthetic ones of 500 and 5,000
-// that open on their closed folders. At the main area's 80, 39 and 25rem (below the 36rem floor the world is drawn where it fits and
+// repository's twenty modules, a map with a cycle, a cycle across folders, lines routed around the cards they would cross, one folder
+// folded alone, ids too long for their cards, a teammate's, and synthetic ones of 500 and 5,000 that open on their closed folders. At the main area's 80, 39 and 25rem (below the 36rem floor the world is drawn where it fits and
 // pans in its pane), in English and 中文, light and dark. Frames and cards are measured on these (`measured/code.spec.ts`).
 
 const FED: Provenance = {
@@ -65,6 +65,19 @@ export const FromATeammateNarrow: Story = { ...FromATeammate, decorators: [story
 export const ACycleAcrossFolders: Story = { args: { map: CYCLE_ACROSS_FOLDERS } };
 export const ACycleAcrossFoldersChosen: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, decorators: [storyWidths.half] };
 export const ACycleAcrossFoldersChineseDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS }, decorators: [storyWidths.wide, chinese, inDark] };
+
+/** *Fold* pressed on the chosen module's folder, as a keyboard reaches it in the toolbar. */
+const foldChosen: Story['play'] = async ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>('[data-code-fold]')?.click();
+  await new Promise((settled) => requestAnimationFrame(settled));
+};
+
+/** One folder folded alone: the chosen module's folder is a card again, the choice released, every other folder still open. */
+export const OneFolderFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldChosen };
+export const OneFolderFoldedNarrowChinese: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldChosen, decorators: [storyWidths.narrow, chinese] };
+/** The cycle across folders folded alone: one card, labelled with the folders it crosses. */
+export const ACycleAcrossFoldersFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen };
+export const ACycleAcrossFoldersFoldedDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen, decorators: [storyWidths.half, inDark] };
 
 /** Lines that skip a layer run around the cards between, through the gaps, leaving and entering their cards as every line does. */
 export const LinesAroundCards: Story = { args: { map: SKIPPING_LAYERS, initial: 'app' } };

@@ -8,6 +8,7 @@ import { type EdgeContext, type NodeState, SuppliedCanvas } from '../design/canv
 import { lineDrawn } from '../design/canvas/suppliedCull';
 import { Button, PathText } from '../design/ui';
 import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
+import { foldable, foldGroup } from './codeFolds';
 
 /** Characters of an id a card can hold at the meta size before it would run past its edge. */
 export const FITS = 17;
@@ -165,6 +166,17 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     onSelect(id);
   };
 
+  // One folder folded alone: the chosen module's own, which its choice holds open, so the choice is released and the focus goes to
+  // the card the module now stands in.
+  const folding = selected !== null && tree.modules.has(selected) ? foldable(tree, open, selected) : null;
+  const foldChosen = () => {
+    if (folding === null || selected === null) return;
+    setLine(null);
+    setOpen(foldGroup(tree, open, folding));
+    focusing.current = selected;
+    onSelect(null);
+  };
+
   const outgoing = useMemo(() => {
     const counts = new Map<string, number>();
     for (const each of tree.dependencies) counts.set(each.from, (counts.get(each.from) ?? 0) + 1);
@@ -232,6 +244,11 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setHeld(null); }}>
         {t('code.foldAgain')}
       </Button>
+      {folding !== null && (
+        <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" data-code-fold="" onClick={foldChosen}>
+          {t('code.foldFolder', { name: nameOf(folding) })}
+        </Button>
+      )}
     </>
   );
   const list = (

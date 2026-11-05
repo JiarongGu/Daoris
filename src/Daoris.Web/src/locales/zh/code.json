@@ -26,6 +26,7 @@
   "code.dependsLabelPlain": "{{from}} 依赖 {{to}}",
   "code.showWhole": "展开所有文件夹",
   "code.foldAgain": "重新折叠文件夹",
+  "code.foldFolder": "折叠 {{name}}",
   "code.file": "读自 {{file}}，由仓库自己维护，Daoris 从不写入。",
   "code.fed": "读自 {{branch}} 上提交 {{commit}} 的 {{file}}，{{when}} 由 {{origin}} 送出，经同步带到本机。文件由仓库自己维护，Daoris 从不写入。",
   "code.fedUnknownOrigin": "一台未具名的机器",

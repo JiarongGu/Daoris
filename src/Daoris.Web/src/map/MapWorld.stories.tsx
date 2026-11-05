@@ -9,7 +9,7 @@ import { MapWorld } from './MapWorld';
 import type { MapNode, QuestEdge, Topology } from './topology';
 
 // The reference map on the canvas (CANVAS1e; D224, the canvas design §3.3): a ring of five, the layers of twenty-nine, several workspaces
-// as blocks and a chosen line, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. At 25rem, below the 36rem
+// as blocks, a chosen line, the map as a list, and a kept place whose selection is gone, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. At 25rem, below the 36rem
 // floor, the map is drawn where it fits and pans in its pane. Keyboard: Tab reaches the toolbar, the region, then the world's one stop;
 // → walks from a card to its first line out and on to the card beyond, ← back by the line it came by, ↑ and ↓ cycle the lines at a card.
 // Frames and boxes are measured on these (`measured/map.spec.ts`).
