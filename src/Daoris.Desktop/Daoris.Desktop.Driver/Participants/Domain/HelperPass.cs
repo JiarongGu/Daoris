@@ -49,6 +49,9 @@ public sealed record HelperPassRun(string? Session, string Line)
     /// <summary>An account's limit ended its turn (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag.</summary>
     public bool Limit { get; init; }
 
+    /// <summary>Its provider kept failing past its tries or its minutes (AGENTERRORS1d): refused <see cref="HelperWhy.Transient"/>, never <i>no answer</i>.</summary>
+    public bool Transient { get; init; }
+
     /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
     public bool NotOffered { get; init; }
 }

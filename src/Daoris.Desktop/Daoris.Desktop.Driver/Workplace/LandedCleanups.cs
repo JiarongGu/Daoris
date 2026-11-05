@@ -104,8 +104,7 @@ internal sealed class LandedCleanups(
         if (said is not null) return new(said.Failure!, said.Sentence ?? said.Failure!);
         if (item.Kind is not (LandedKind.Differs or LandedKind.Unknown)) return null;
         if (context.Recorded.Of(item.Repository, item.Branch) is not { } entry || entry.PullRequestState?.State == PullRequestStates.Completed) return null;
-        var rule = LandingRules.Line(config, item.Repository, item.Workspace).Rule;
-        return PullRequestAsking.PluginFor(entry, rule) is null ? new(PullRequestCodes.NoPlugin, PullRequestWords.NoPlugin) : null;
+        return PullRequestAsking.PluginFor(entry) is null ? new(PullRequestCodes.NoPlugin, PullRequestWords.NoPlugin) : null;
     }
 
     /// <summary>

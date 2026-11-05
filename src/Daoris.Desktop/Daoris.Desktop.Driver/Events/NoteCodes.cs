@@ -205,6 +205,7 @@ public static class NoteCodes
         new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
         new(HelperWhy.HandUncertain, [], "note.helper.why.hand-uncertain"),
         new(HelperWhy.Limited, [], "note.helper.why.limited"),
+        new(HelperWhy.Transient, [], "note.helper.why.transient"),
         new(HelperWhy.NotSetUp, [], "note.helper.why.not-set-up"),
         new(HelperWhy.NoneSetUp, [], "note.helper.why.none-set-up"),
     ]);

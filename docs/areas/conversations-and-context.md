@@ -52,6 +52,7 @@ of everything it handed, section by section.
 | `ChatHelperWords` | `Course/Chat/ChatHelperWords.cs` | Executor `helper-words`: a helper's answer said to the conversation that asked, as its next turn |
 | `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
+| `ConversationRules`, `TransientMove`, `LimitRuled` | `Course/Chat/` | A conversation's line as the supervisor's rules read it; executor `transient-move`, the rules' move or hold past its episode; the limits rule's wait and ask and the moves bound before the limit's walk |
 | `HandOver`, `ChatHandOver`, `HandOverQuest` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
 | `DrivenCourse`, `LimitResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs` | A driven line's carry-ons, and its resume after a limit or update |
@@ -122,6 +123,12 @@ of everything it handed, section by section.
     number. (from D188, D229)
 18. Past its transient bound, a record goes on only with a word the person said after it ended, or with *Try again*.
     (from D210, D212)
+19. A conversation's line reads the supervisor's rules as a driven line does (`ConversationRules`): its episode makes its
+    tries rule's number of tries; past them a `next` or `weighted` rule moves it to another choice of its role, a new part
+    handed the brief (`transient`, by `daoris`) and counted in `moves` (`TransientMove`), an `ask` or the moves rule's
+    bound holds it, and the seeded `hold` ends its turn `chat.transient-stopped`. Its limits rule's `wait` (within its
+    `upTo`) and `ask`, and the bound, keep it on its own account before the limit's walk (`LimitRuled`); a walk to another
+    choice is counted. Each act is said and kept as the rule's decision. (from D229)
 
 **Moves between accounts and agents**
 
@@ -261,7 +268,6 @@ of everything it handed, section by section.
   agent and account.
 - **LIMITGOON1 (row i):** the limit move seen on the installed window.
 - **LIMITRESUME1 (ONEWAY1g row f):** the limit resume's remaining row on the installed doors.
-- **CONTEXTDRIVE1n:** a conversation's course reads the supervisor rules (STAFFPOLICY1e3's conversation half).
 - **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow.
 - **HELPWIRED1b:** what the door says it loaded, beside what was handed.
 - **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and

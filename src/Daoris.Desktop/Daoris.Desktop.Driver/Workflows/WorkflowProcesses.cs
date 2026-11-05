@@ -132,12 +132,12 @@ public static class WorkflowProcesses
             };
         }
 
-        var bound = LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), binding.Land);
+        var bound = LandNodes.LandingOf(landNode, LandNodes.Reviewed(graph), binding.Land);
         var process = WorkflowProcess.Of(config, repository, workspace, binding, gates, bound) with
         {
             Run = run, Steps = Involvement.StepsOf(graph), Claimed = claimed, Graph = graph,
         };
-        var cannots = IntegrateCarry.Cannots(repository, graph, config.LinePolicyOf(repository, workspace), process.Landing.Rule, accepted);
+        var cannots = IntegrateCarry.Cannots(repository, graph, config.LinePolicyOf(repository, workspace), process.Landing, accepted);
         return cannots.Count == 0 ? process : process with { Problem = string.Join(' ', cannots) };
     }
 

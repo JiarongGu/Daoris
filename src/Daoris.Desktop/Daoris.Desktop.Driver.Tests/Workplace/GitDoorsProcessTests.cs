@@ -12,8 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>Each git is started as Daoris starts its own (<c>WorkingTree.GitStart</c> with the home), then kept from every configuration
 /// of the person's: no system file, an empty global file and a scratch home. No real host, key, agent or credential store is touched.</para>
-/// <para><b>An sshd</b> is used only where <c>DAORIS_TEST_SSHD</c> names one (<see cref="GitSshHoldsProcessTests"/>); the stand-in
-/// proves the door's judgement, its argument contract and <c>BatchMode</c> given first, not OpenSSH's own transport.</para>
+/// <para><b>OpenSSH's own transport</b> is proved against <see cref="GitSshHost"/> (<see cref="GitSshProcessTests"/>); the stand-in ssh
+/// here proves the door's judgement, its argument contract and <c>BatchMode</c> given first.</para>
 /// <para>In the Process half, beside a listener.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -40,19 +40,6 @@ public sealed class GitDoorsProcessTests : IDisposable
     public void Dispose()
     {
         GitSeed.Discard(_root);
-    }
-
-    /// <summary>The doors' build beside this test's own, laid out as the install's <c>app/bin/</c>: one program, two names.</summary>
-    private void LayDoors(string install)
-    {
-        var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        var desktop = build.Parent!.Parent!.Parent!.Parent!.FullName;
-        var built = Path.Combine(desktop, "Daoris.Desktop.GitDoor", "bin", build.Parent.Name, build.Name);
-        Assert.True(File.Exists(Path.Combine(built, GitWiring.SshDoor)), "the doors are built before these tests: " + built);
-        var bin = Path.Combine([install, .. Tools.InstallBinLayout]);
-        Directory.CreateDirectory(bin);
-        foreach (var file in Directory.EnumerateFiles(built)) File.Copy(file, Path.Combine(bin, Path.GetFileName(file)), overwrite: true);
-        File.Copy(Path.Combine(built, GitWiring.SshDoor), Path.Combine(bin, GitWiring.RemoteHelper), overwrite: true);
     }
 
     /// <summary>A git started as Daoris starts its own, for <paramref name="home"/>, kept from the person's configuration and home.</summary>
@@ -128,7 +115,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         var address = host.Address("org/engine.git");
 
@@ -151,7 +138,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         var address = host.Address("org/engine.git");
         await Ok(_root, "clone", address, Work);
@@ -177,7 +164,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);
         await CommitAsync("forms");
@@ -206,7 +193,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Permissions), """{"defaultsOff":["no-push"]}""");
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);
@@ -226,7 +213,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         Directory.CreateDirectory(outer);
         await Ok(Git(outer, Path.Combine(_root, "no-install"), "init", "--bare", "--initial-branch=main"));
         await Ok(Git(outer, Path.Combine(_root, "no-install"), "config", "http.receivepack", "true"));
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         var shaping = Path.Combine(_root, "shaping");
         await Ok(_root, "clone", host.Address("org/outer.git"), shaping);
@@ -248,7 +235,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);
         var marker = Path.Combine(_root, "hooked").Replace('\\', '/');
@@ -305,7 +292,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         var address = await CloneOverSshAsync();
 
         await Ok(Work, "fetch", "origin");
@@ -329,7 +316,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         var address = await CloneOverSshAsync();
         var tip = await CommitAsync("landed over ssh");
         var push = Git(Work, Home, "push", "origin", "main");
@@ -349,7 +336,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         var home = Path.Combine(install, "data");
         Directory.CreateDirectory(home);
         File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
-        LayDoors(install);
+        GitDoorsLaid.Lay(install);
         Assert.Equal("git-ssh", GitWiring.SshForm(home));
         // Through GIT_SSH git passes the door the remote command alone, with no repository command to run, so it starts git's own
         // ssh; the push is refused before that.
@@ -371,7 +358,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
-        LayDoors(_root);
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);
         var tip = await CommitAsync("the person's own");

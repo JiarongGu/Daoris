@@ -26,8 +26,11 @@ import type { useWords } from './useWords';
  */
 export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
+  channel,
 }: {
   t: TFunction;
+  /** The home of the channel messages its turns took (COMMS1h): who posted each, and the door that opens its channel's panel. */
+  channel?: ComponentProps<typeof SessionConversation>['channel'];
   session: ReturnType<typeof useAttendedSession>;
   boxState: ReturnType<typeof useAttendedBox>;
   words: ReturnType<typeof useWords>;
@@ -101,6 +104,8 @@ export function AttendedConversation({
             onAnchors={(id, state) => setAnchored({ session: id, ...state })}
             // COMMS1h: each helper its agent asked for, a card at its call, the answer folded in, the helper's door on it.
             helpersAsked={helperWaits ? { asks: helperWaits.asks, nameOf: helperWaits.nameOf, onOpen: helperWaits.onOpen } : undefined}
+            // COMMS1h: a channel message it took is a sender chip naming its poster, with the door to the channel where it is whole.
+            channel={channel}
             onToWait={(wait) => {
               const anchor = anchorOf(wait);
               if (anchor) goToWait(anchor);

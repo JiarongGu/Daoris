@@ -235,7 +235,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
     [Fact]
     public void A_landing_is_kept_as_a_note_in_the_conversation()
     {
-        var note = LandingRules.Note(new TreeLanding(true, "put the work on `feature/x`. Plugin `example.lands`: pushed it.", "feature/x"));
+        var note = LandingNotes.Note(new TreeLanding(true, "put the work on `feature/x`. Plugin `example.lands`: pushed it.", "feature/x"));
 
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.StartsWith("the person accepted this work:", note.Text);

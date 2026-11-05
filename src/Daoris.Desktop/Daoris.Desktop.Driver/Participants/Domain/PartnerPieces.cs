@@ -93,7 +93,10 @@ public static class PartnerEnds
     public const string OutOfTime = "out-of-time";
     public const string Limited = "limited";
 
-    public static readonly IReadOnlyList<string> All = [Answered, Stopped, OutOfTime, Limited];
+    /// <summary>Its provider kept failing past its tries or its minutes (AGENTERRORS1d): its work kept, as a limit's is.</summary>
+    public const string Transient = "transient";
+
+    public static readonly IReadOnlyList<string> All = [Answered, Stopped, OutOfTime, Limited, Transient];
 }
 
 /// <summary>

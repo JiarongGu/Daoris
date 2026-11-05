@@ -53,18 +53,6 @@ public sealed class GitHttpsProcessTests : IDisposable
         GitSeed.Discard(_root);
     }
 
-    private void LayDoors()
-    {
-        var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        var desktop = build.Parent!.Parent!.Parent!.Parent!.FullName;
-        var built = Path.Combine(desktop, "Daoris.Desktop.GitDoor", "bin", build.Parent.Name, build.Name);
-        Assert.True(File.Exists(Path.Combine(built, GitWiring.SshDoor)), "the doors are built before these tests: " + built);
-        var bin = Path.Combine([_root, .. Tools.InstallBinLayout]);
-        Directory.CreateDirectory(bin);
-        foreach (var file in Directory.EnumerateFiles(built)) File.Copy(file, Path.Combine(bin, Path.GetFileName(file)), overwrite: true);
-        File.Copy(Path.Combine(built, GitWiring.SshDoor), Path.Combine(bin, GitWiring.RemoteHelper), overwrite: true);
-    }
-
     private ProcessStartInfo Git(string folder, params string[] arguments)
     {
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, Home);
@@ -139,7 +127,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     public async Task An_identitys_stored_token_is_handed_to_git_by_GCM_and_the_host_sees_the_user_and_no_other()
     {
         await ServeAsync();
-        LayDoors();
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects, (User, Token));
         var identity = await SignedInAsync(HostOf(host));
 
@@ -156,7 +144,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     public async Task A_netrc_in_the_accounts_home_is_not_read_under_an_identity_and_is_read_without_one()
     {
         await ServeAsync();
-        LayDoors();
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects, (User, Token));
         var address = host.Address("org/engine.git");
         var netrc = $"machine 127.0.0.1\nlogin {User}\npassword {Token}\n";
@@ -188,7 +176,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     public async Task An_address_carrying_a_password_is_refused_with_one_line_before_the_host_hears_it()
     {
         await ServeAsync();
-        LayDoors();
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects, (User, Token));
         await SignedInAsync(HostOf(host));
         var asked = host.Requests.Count;
@@ -205,7 +193,7 @@ public sealed class GitHttpsProcessTests : IDisposable
     public async Task Removing_an_identity_erases_its_stored_sign_in_so_the_next_fetch_is_refused()
     {
         await ServeAsync();
-        LayDoors();
+        GitDoorsLaid.Lay(_root);
         await using var host = new GitHttpBackendHost(Backend(), Projects, (User, Token));
         var identity = await SignedInAsync(HostOf(host));
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);

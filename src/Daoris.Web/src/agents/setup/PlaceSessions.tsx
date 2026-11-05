@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../../data/queries';
 import { shellWord } from '../../lib/shellWord';
-import type { RepositoryLanding } from '../../settings/repository/Landings';
 import { type FoldSpec } from '../../projects/setup/FoldRow';
-import { landingSays, type UnreadLanding } from '../../projects/setup/SetupParts';
 import { workspaceOf } from '../../data/workspaces';
 import { type Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
-import { useDriver, useWorkflowCurrent, useWorkflowEditor } from '../../bridge/shell';
+import { useWorkflowCurrent, useWorkflowEditor } from '../../bridge/shell';
 import { FoldRow } from '../../projects/setup/FoldRow';
 import { LandingSetting } from '../../projects/setup/setupBits';
 import { FOLD_SECTIONS, RepositorySetup, type RepositorySetupProps, SESSIONS_SECTIONS } from '../../projects/setup/RepositorySetup';
@@ -61,15 +59,14 @@ export function PlaceSessionsBodyView({ setup }: { setup: RepositorySetupProps |
 }
 
 /** A repository place's setup, from the registry's row and the driver's answers; read only while the section that draws it is open. */
-function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenGit }: {
+function useRepositoryPlace({ place, notify, onOpenGit }: {
   place: PlaceHold['row'];
   notify: Notify;
-  onOpenPlugin?: (plugin: string) => void;
   onOpenGit?: (host: string) => void;
 }) {
   const registry = useRegistry('machine');
   const registration = (registry.data ?? []).find((row) => row.repository === place.repository && workspaceOf(row) === workspaceOf(place));
-  const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenPlugin, onOpenGit });
+  const setup = useRepositorySetup({ registration, enabled: true, notify, onOpenGit });
   return { registration, setup };
 }
 
@@ -77,23 +74,22 @@ function useRepositoryPlace({ place, notify, onOpenPlugin, onOpenGit }: {
  * **A place's Workflow section**: a repository's or a workspace's, from its Workflow answer for the route the person chose, read only
  * while the section is open. The route and the step are the shell's, held above the mounts.
  */
-export function PlaceWorkflow({ place, notify, onOpenPlugin, onConvert, landingAsked = false }: {
+export function PlaceWorkflow({ place, notify, onConvert, landingAsked = false }: {
   place: PlaceHold;
   notify: Notify;
   /** A door asked for the landing rows (a refusal of *Set up…* whose cause is put right there): the Landing fold opens and takes the focus. */
   landingAsked?: boolean;
-  onOpenPlugin?: (plugin: string) => void;
   /** Opens the home's conversion review. */
   onConvert?: () => void;
 }) {
-  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} onConvert={onConvert} />;
-  return <RepositoryWorkflow place={place} notify={notify} onOpenPlugin={onOpenPlugin} onConvert={onConvert} landingAsked={landingAsked} />;
+  if (place.kind === 'workspace') return <WorkspaceWorkflow place={place} notify={notify} onConvert={onConvert} />;
+  return <RepositoryWorkflow place={place} notify={notify} onConvert={onConvert} landingAsked={landingAsked} />;
 }
 
-function RepositoryWorkflow({ place, notify, onOpenPlugin, onConvert, landingAsked }: {
-  place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; onConvert?: () => void; landingAsked: boolean;
+function RepositoryWorkflow({ place, notify, onConvert, landingAsked }: {
+  place: PlaceHold; notify: Notify; onConvert?: () => void; landingAsked: boolean;
 }) {
-  const { registration, setup } = useRepositoryPlace({ place: place.row, notify, onOpenPlugin });
+  const { registration, setup } = useRepositoryPlace({ place: place.row, notify });
   const workflowOf = useWorkflowTab({
     repository: registration?.repository ?? null, enabled: setup !== null, ready: setup !== null, notify, route: place.view.route,
   });
@@ -122,33 +118,23 @@ function RepositoryWorkflow({ place, notify, onOpenPlugin, onConvert, landingAsk
 }
 
 /**
- * A workspace's Landing row (WORKFLOWCLEAN1h-c, D228): the same row a repository has, under the folds of its Workflow. Under a saved version
- * it is the version's `land` options; under Current, the old rule as it stands, read, with the conversion's door.
+ * A workspace's Landing row (WORKFLOWCLEAN1h-c, D228): the same row a repository has, under the folds of its Workflow, the saved version's
+ * `land` options; a workspace on Current has none.
  */
-export function WorkspaceLandingFolds({ workspace, hand, landing, unread, onOpenPlugin }: {
-  workspace: string;
-  hand: LandingHand;
-  landing: RepositoryLanding | null;
-  unread: (UnreadLanding & { name: string }) | null;
-  onOpenPlugin?: (plugin: string) => void;
-}) {
+export function WorkspaceLandingFolds({ workspace, hand }: { workspace: string; hand: LandingHand }) {
   const { t } = useTranslation();
   const { lands } = hand;
-  const row = lands
-    ? (
-      <LandingSetting
-        twin={t('projects.workspace.twin.landing', { workspace: shellWord(workspace, '<workspace>') })}
-        landing={landing}
-        lands={lands}
-        unread={unread}
-        onOpenPlugin={onOpenPlugin}
-      />
-    )
-    : null;
-  const summary = lands?.is === 'version' ? lands.summary : landing ? landingSays(t, landing) : t('projects.setup.summary.landsMerge');
   const folds: FoldSpec[] = [
     ...hand.lead,
-    ...(row ? [{ id: 'landing', title: t('projects.setup.section.landing'), summary, body: row, opens: unread !== null }] : []),
+    ...(lands?.is === 'version'
+      ? [{
+        id: 'landing',
+        title: t('projects.setup.section.landing'),
+        summary: lands.summary,
+        body: <LandingSetting twin={t('projects.workspace.twin.landing', { workspace: shellWord(workspace, '<workspace>') })} lands={lands} />,
+        opens: false,
+      }]
+      : []),
   ];
   if (folds.length === 0) return null;
   return <FoldRow key={workspace} folds={folds} open={hand.asked ?? undefined} again={hand.again} />;
@@ -158,14 +144,10 @@ export function WorkspaceLandingFolds({ workspace, hand, landing, unread, onOpen
  * A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own, its Landing row, then the line's
  * defaults it gives each repository that sets none (SETUPUX1v, moved from the Setup tab): its line, commits, review and second opinion.
  */
-function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: PlaceHold; notify: Notify; onOpenPlugin?: (plugin: string) => void; onConvert?: () => void }) {
+function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; notify: Notify; onConvert?: () => void }) {
   const workspace = place.row.workspace ?? '';
   const answer = useWorkflowCurrent({ workspace }, { route: place.view.route });
   const editor = useWorkflowEditor({ workspace });
-  const state = useDriver().data;
-  const set = (state?.workspaceLandings ?? []).find((row) => row.workspace === workspace);
-  const landing: RepositoryLanding | null = set ? { ...set, repository: '', source: 'workspace' } : null;
-  const unread = (state?.workspaceUnreadLandings ?? []).find((row) => row.workspace === workspace);
   // The route chosen before it, kept drawn while the next is read, is this workspace's alone.
   const current = answer.data?.workspace === workspace ? answer.data : null;
   return (
@@ -185,15 +167,7 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: 
         held={place.held}
         onHold={place.onHold}
         onConvert={onConvert}
-        landing={(hand) => (
-          <WorkspaceLandingFolds
-            workspace={workspace}
-            hand={hand}
-            landing={landing}
-            unread={unread ? { ...unread, name: workspace } : null}
-            onOpenPlugin={onOpenPlugin}
-          />
-        )}
+        landing={(hand) => <WorkspaceLandingFolds workspace={workspace} hand={hand} />}
       />
       <div className="mt-3">
         <WorkspaceSetupPart
@@ -212,7 +186,7 @@ function WorkspaceWorkflow({ place, notify, onOpenPlugin, onConvert }: { place: 
  *
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
-export function PlaceSessions({ place, notify, onOpenPlugin, onOpenGit }: {
+export function PlaceSessions({ place, notify, onOpenGit }: {
   place: Pick<PlaceHold, 'kind' | 'row' | 'asked'>;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
@@ -220,7 +194,7 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenGit }: {
   onOpenGit?: (host: string) => void;
 }) {
   if (place.kind === 'repository') {
-    return <RepositorySessions place={place.row} notify={notify} onOpenPlugin={onOpenPlugin} onOpenGit={onOpenGit} />;
+    return <RepositorySessions place={place.row} notify={notify} onOpenGit={onOpenGit} />;
   }
   // A workspace's Sessions hold its access and session rows and, since SETUPUX1v, Reach: its rules and the machines its remote counts undeclared.
   return (
@@ -234,12 +208,12 @@ export function PlaceSessions({ place, notify, onOpenPlugin, onOpenGit }: {
   );
 }
 
-function RepositorySessions({ place, notify, onOpenPlugin, onOpenGit }: {
+function RepositorySessions({ place, notify, onOpenGit }: {
   place: PlaceHold['row'];
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
   onOpenGit?: (host: string) => void;
 }) {
-  const { setup } = useRepositoryPlace({ place, notify, onOpenPlugin, onOpenGit });
+  const { setup } = useRepositoryPlace({ place, notify, onOpenGit });
   return <PlaceSessionsBodyView setup={setup} />;
 }

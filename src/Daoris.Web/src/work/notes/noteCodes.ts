@@ -357,6 +357,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'partner.stopped': { values: ['agent'] },
   'partner.out-of-time': { values: ['agent'] },
   'partner.limited': { values: ['agent'] },
+  // A pass's provider kept failing past its tries or its minutes (D210 point 8): the agent and the tries made, then the provider's words.
+  'partner.transient': { values: ['agent'] },
+  'helper.transient': { values: ['agent', 'count'] },
+  'opinion.transient': { values: ['agent', 'count'] },
+  'intake.transient': { values: ['agent', 'count'] },
+  'voice.transient': { values: ['agent', 'count'] },
   'partner.uncertain': { values: ['why'], why: 'partner' },
   'partner.beyond': { values: ['count'] },
   'partner.kept': { values: ['why'], why: 'partner' },

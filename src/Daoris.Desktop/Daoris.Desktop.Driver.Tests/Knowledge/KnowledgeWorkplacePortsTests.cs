@@ -12,11 +12,10 @@ public sealed class KnowledgeWorkplacePortsTests
         Assert.IsType<KnowledgeWorkplaceReads>(read);
         Assert.Equal(TreeGuard.Matcher, read.TreeGuardMatcher);
         Assert.Equal(TreeGuard.EditMatcher, read.TreeGuardEditMatcher);
-        Assert.Equal(new[] { LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text! }, read.AcceptanceNotes);
+        Assert.Equal(new[] { LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.HandNote(new TreeHand(true, "")).Text! }, read.AcceptanceNotes);
         Assert.Equal(LandedBranches.FileName, read.LandingsFileName);
         Assert.Equal(CanonicalLine.Judged(DriverConfig.Empty, "app", "default", null, null),
             read.JudgedLine(DriverConfig.Empty, "app", "default", null, null));
-        Assert.Equal(LandingRules.Line(DriverConfig.Empty, "app", "default"), read.ChooseLanding(DriverConfig.Empty, "app", "default"));
         var state = new PullRequestState("completed");
         Assert.Equal(PullRequestWords.Row(state, null, null, null), read.PullRequestRow(state, null));
         Assert.Equal(HistoryCommand.Count(2, "file"), read.HistoryCount(2, "file"));

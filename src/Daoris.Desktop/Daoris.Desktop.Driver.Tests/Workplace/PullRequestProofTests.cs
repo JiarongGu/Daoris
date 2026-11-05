@@ -68,16 +68,12 @@ public sealed class PullRequestProofTests
     private static LandedBranch Entry(string? plugin = null) =>
         new("engine", "aurora", "feature/q1-fix", "main", new string('b', 40), "s1", "q1", "Fix", Now.AddDays(-1)) { Plugin = plugin };
 
-    /// <summary>The plugin that pushed the branch is asked, since it opened the pull request; else the one the rule names now; a merge names none.</summary>
+    /// <summary>The plugin that pushed the branch is asked, since it opened the pull request; an entry that kept none asks none.</summary>
     [Fact]
-    public void The_plugin_that_pushed_it_is_asked_else_the_rules()
+    public void The_plugin_that_pushed_it_is_asked_and_an_entry_that_kept_none_asks_none()
     {
-        var rule = new LandingRule(LandingForm.Branch, "feature/{quest}", Plugin: "acme.now");
-
-        Assert.Equal("acme.pushed", PullRequestAsking.PluginFor(Entry("acme.pushed"), rule));
-        Assert.Equal("acme.now", PullRequestAsking.PluginFor(Entry(), rule));
-        Assert.Null(PullRequestAsking.PluginFor(Entry(), new LandingRule(LandingForm.Branch, "feature/{quest}")));
-        Assert.Null(PullRequestAsking.PluginFor(Entry(), LandingRule.Merge));
+        Assert.Equal("acme.pushed", PullRequestAsking.PluginFor(Entry("acme.pushed")));
+        Assert.Null(PullRequestAsking.PluginFor(Entry()));
     }
 
     /// <summary>

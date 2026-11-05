@@ -89,7 +89,6 @@ export const SETUP_DEFAULTS: RepositorySetupProps = {
     line: { repository: 'engine', workspace: 'default', branch: 'main', source: 'workspace' },
     onLine: nothing,
     onLinePolicy: nothing,
-    landing: { repository: 'engine', workspace: 'default', form: 'merge', source: 'default' },
   },
   sessions: {
     language: { resolved: null, table: LANGUAGES, onSet: nothing },
@@ -118,10 +117,6 @@ export const SETUP_OWN: RepositorySetupProps = {
   work: {
     ...SETUP_DEFAULTS.work,
     line: { repository: 'engine', workspace: 'default', branch: 'develop', source: 'repository' },
-    landing: {
-      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request',
-      autoAccept: true, source: 'repository',
-    },
   },
   sessions: {
     language: {
@@ -169,10 +164,6 @@ export const SETUP_PROCESS_OWN: RepositorySetupProps = {
   ...SETUP_PROCESS,
   work: {
     ...SETUP_PROCESS.work,
-    landing: {
-      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: '[A-Z]+-\\d+',
-      squash: true, plugin: 'github-pull-request', source: 'repository',
-    },
     commits: {
       repository: 'engine', workspace: 'default', source: 'repository',
       rule: { mode: 'ask', convention: 'Imperative subject line under 72 characters, the ticket key first; say why in the body.' },
@@ -181,18 +172,6 @@ export const SETUP_PROCESS_OWN: RepositorySetupProps = {
   sessions: {
     ...SETUP_PROCESS.sessions,
     helpers: { repository: 'engine', workspace: 'default', rule: { mode: 'off', agents: [] }, source: 'repository' },
-  },
-};
-
-/** The engine's branch rule integrating into its line (AGENTSPLACE1d): batch 4, oldest first, gates declared. */
-export const SETUP_INTEGRATING: RepositorySetupProps = {
-  ...SETUP_PROCESS,
-  work: {
-    ...SETUP_PROCESS.work,
-    landing: {
-      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'work/{quest}', source: 'repository',
-      integrate: { batch: 4, order: 'arrival', gates: 'declared' },
-    },
   },
 };
 

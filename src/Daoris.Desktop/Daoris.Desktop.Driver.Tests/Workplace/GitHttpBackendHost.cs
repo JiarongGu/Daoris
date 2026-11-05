@@ -75,16 +75,10 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
         var stream = client.GetStream();
         try
         {
-            var head = ReadHead(stream);
-            if (head is null) return;
-            var lines = head.Split("\r\n");
-            var parts = lines[0].Split(' ');
-            lock (_requests) _requests.Add(lines[0]);
-            var headers = lines.Skip(1).Where(line => line.Contains(':'))
-                .Select(line => (Name: line[..line.IndexOf(':')].Trim(), Value: line[(line.IndexOf(':') + 1)..].Trim()))
-                .GroupBy(pair => pair.Name, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.Last().Value, StringComparer.OrdinalIgnoreCase);
-            var body = ReadBody(stream, headers);
+            if (LoopbackHttpRequest.Read(stream) is not { } request) return;
+            lock (_requests) _requests.Add(request.Line);
+            var headers = request.Headers;
+            var body = request.Body;
             var presented = headers.GetValueOrDefault("Authorization");
             lock (_authorizations) _authorizations.Add(UserOf(presented));
             if (_expected is not null && presented != _expected)
@@ -103,8 +97,6 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
                 body = plain.ToArray();
             }
 
-            var target = parts[1];
-            var query = target.IndexOf('?');
             var info = new ProcessStartInfo(_backend)
             {
                 UseShellExecute = false,
@@ -115,9 +107,9 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
             };
             info.Environment["GIT_PROJECT_ROOT"] = _projects;
             info.Environment["GIT_HTTP_EXPORT_ALL"] = "1";
-            info.Environment["REQUEST_METHOD"] = parts[0];
-            info.Environment["PATH_INFO"] = Uri.UnescapeDataString(query < 0 ? target : target[..query]);
-            info.Environment["QUERY_STRING"] = query < 0 ? "" : target[(query + 1)..];
+            info.Environment["REQUEST_METHOD"] = request.Method;
+            info.Environment["PATH_INFO"] = request.Path;
+            info.Environment["QUERY_STRING"] = request.Query;
             info.Environment["CONTENT_TYPE"] = headers.GetValueOrDefault("Content-Type") ?? "";
             info.Environment["CONTENT_LENGTH"] = body.Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
             info.Environment["REMOTE_ADDR"] = "127.0.0.1";
@@ -167,59 +159,6 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
         catch (FormatException)
         {
             return "-";
-        }
-    }
-
-    private static string? ReadHead(Stream stream)
-    {
-        var head = new MemoryStream();
-        while (true)
-        {
-            var next = stream.ReadByte();
-            if (next < 0) return null;
-            head.WriteByte((byte)next);
-            if (head.Length >= 4 && head.GetBuffer().AsSpan((int)head.Length - 4, 4).SequenceEqual("\r\n\r\n"u8))
-                return Encoding.ASCII.GetString(head.GetBuffer(), 0, (int)head.Length - 4);
-        }
-    }
-
-    private static byte[] ReadBody(Stream stream, Dictionary<string, string> headers)
-    {
-        if (headers.TryGetValue("Content-Length", out var length) && int.TryParse(length, out var count))
-        {
-            var body = new byte[count];
-            stream.ReadExactly(body);
-            return body;
-        }
-
-        if (!headers.TryGetValue("Transfer-Encoding", out var transfer) || !transfer.Contains("chunked", StringComparison.OrdinalIgnoreCase))
-            return [];
-
-        var all = new MemoryStream();
-        while (true)
-        {
-            var size = Convert.ToInt32(ReadLine(stream).Split(';')[0].Trim(), 16);
-            if (size == 0)
-            {
-                ReadLine(stream);
-                return all.ToArray();
-            }
-
-            var chunk = new byte[size];
-            stream.ReadExactly(chunk);
-            all.Write(chunk);
-            ReadLine(stream);
-        }
-    }
-
-    private static string ReadLine(Stream stream)
-    {
-        var line = new StringBuilder();
-        while (true)
-        {
-            var next = stream.ReadByte();
-            if (next < 0 || next == '\n') return line.ToString().TrimEnd('\r');
-            line.Append((char)next);
         }
     }
 

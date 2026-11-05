@@ -144,6 +144,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     {
         Read = retry.Read,
         Clock = retry.Clock,
+        Limit = retry.Limit,
         // The owner's check: the conversation wants another turn unless its session or the turn was stopped by the person.
         Wanted = _ =>
         {
@@ -157,7 +158,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             new ChatMessage(text, []) { Daoris = new DaorisWord(DaorisKeys.TransientRetry(retry.Session, episode.Began)) }),
         Began = (episode, next) =>
         {
-            var noted = TransientRetry.Retrying(retry.Agent, episode.Words, next);
+            var noted = TransientRetry.Retrying(retry.Agent, episode.Words, next, retry.Limit);
             _line(noted.Note);
             _record(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts });
         },
@@ -458,6 +459,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
                 $"{retry.Agent}'s provider kept failing, so this turn ends; your next words go on in this conversation:",
                 ("agent", retry.Agent));
             if (exhausted.Episode.Words is { Length: > 0 } words) stopped = stopped.Then(" ", Noted.Said(words, NoteBy.Program));
+            retry.PastBound?.Invoke();
             _line($"— {stopped.Note}");
             _record(new SessionEvent { Kind = SessionEventKind.Note, Text = stopped.Note, Parts = stopped.Parts });
             _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });

@@ -1,17 +1,14 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { clockOf, compact, elapsed, moment, span } from '../../locales/format';
+import { compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { Button, Chip, Dot, Icon, Tip } from '../../design/ui';
 import { turnEnd } from '../waits/anchors';
-import { CHANNEL_CLAIM_OPENING } from '../channel';
-import {
-  type Ask, type Block, type Level, type Receipts, runCount, type RunningCall, runningCall, segments, type Turn,
-} from './conversation';
-import type { Author } from './sender';
+import { type Block, type Level, runCount, type RunningCall, runningCall, segments, type Turn } from './conversation';
 import { useNow } from '../useNow';
 import type { AccountNames } from '../accountNames';
-import { HandedAccount } from './HandedAccount';
+import { AskView, Attached, AUTHOR_KEYS, ChannelHomes, ChoiceWords } from './AskView';
+import { type ChannelHome, NO_CHANNEL_HOME } from './channelHome';
 import { PlanView, RawLine, ThoughtRow } from './BlockLines';
 import { CannotLine, CodedLine, handedTo, HandedLine, NewSessionDoor, NoteLine, WentLine } from './NoteLines';
 import { type Cooling, SaidDoors } from './saidDoors';
@@ -69,10 +66,15 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME,
 }: {
   /** The requests its agent made, each drawn as its card at its call, its answer folded in (COMMS1h); none, every call is a tool card. */
   exchanges?: Exchanges;
+  /**
+   * The home of the channel messages its turns took (COMMS1h): each poster, named on the turn's sender chip, and the door that opens the
+   * channel. Absent, a claim is named as one and drawn whole here.
+   */
+  channel?: ChannelHome;
   /** Open a helper's conversation from its card; absent, the card offers none. */
   onOpenHelper?: (session: string) => void;
   /** Bring the page to a card from the turn that took its answer, by the card's call; absent, that turn's line opens nothing. */
@@ -175,6 +177,7 @@ export function ConversationView({
     <SaidDoors.Provider value={{ chat, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons, cooling: chat ? undefined : cooling, names }}>
       <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
         <AskedCards.Provider value={{ exchanges, onOpenHelper, onShow }}>
+        <ChannelHomes.Provider value={channel}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
           {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
               height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
@@ -199,6 +202,7 @@ export function ConversationView({
             />
           ))}
         </section>
+        </ChannelHomes.Provider>
         </AskedCards.Provider>
       </WaitMarks.Provider>
     </SaidDoors.Provider>
@@ -265,7 +269,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark }: {
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
       {turn.ask && (
         <Held id={turn.ask.key} reveal={reveal}>
-          {taken ? <TakenLine card={taken} onShow={onShow} /> : <AskView ask={turn.ask} />}
+          {taken ? <TakenLine card={taken} onShow={onShow} /> : <AskView ask={turn.ask} answer={exchanges.answers[turn.ask.key]} />}
         </Held>
       )}
       {onLoadEarlier && <Earlier onLoadEarlier={onLoadEarlier} />}
@@ -377,104 +381,6 @@ function TurnMeter({ turn }: { turn: Turn }) {
 }
 
 /**
- * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it was composed
- * of beneath it (CONTEXT1). Another agent's findings handed as the session's next turn (XAGENT1g, the second-agent design §6.3)
- * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's. Daoris's own words
- * (COWORK1b), a reopen told or a step's go-on, are named as Daoris's by their mark, open, and never as the person's.
- */
-/** What each author's words are headed with: never *You* for words that are not the person's (SUPERVISOR1a-i, D208 §6.1). */
-const AUTHOR_KEYS = {
-  daoris: 'work.conversation.daoris',
-  supervisor: 'work.conversation.supervisor',
-  unattributed: 'work.conversation.unattributed',
-  helper: 'work.conversation.helper',
-  partner: 'work.conversation.partner',
-} as const satisfies Record<Author, string>;
-
-function AskView({ ask }: { ask: Ask }) {
-  const { t } = useTranslation();
-  const findings = Boolean(ask.opinion);
-  // Words by an author's mark (COWORK1b; SUPERVISOR1a-i): Daoris's, the supervisor's on the owner's behalf, or not attributed.
-  const marked = Boolean(ask.from);
-  // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
-  // read whole and never the target Daoris composed. Told by its channel mark (SESSCTX1b), and a record from before by its opening.
-  const claim = ask.origin === 'target' && !findings && !marked
-    && (Boolean(ask.channel) || (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING));
-  const target = ask.origin === 'target' && !claim && !marked;
-  const [open, setOpen] = useState(!target || findings);
-
-  return (
-    <div
-      className={cn(
-        'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
-        findings || marked ? 'border-l-line-strong' : 'border-l-accent',
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-meta text-ink-faint">
-          {findings ? t('work.conversation.opinion') : ask.from ? t(AUTHOR_KEYS[ask.from]) : claim ? t('work.conversation.claim')
-            // SESSCTX1b: a new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
-            : target && ask.continues ? t('work.conversation.brief')
-              : target ? t('work.conversation.target') : t('work.conversation.you')}
-        </span>
-        {target && (
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((was) => !was)}
-            className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-          >
-            {open ? t('work.conversation.hide') : t('work.conversation.show')}
-          </button>
-        )}
-      </div>
-      {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways (ASKHIST1b). */}
-      {ask.choice
-        ? <ChoiceWords choice={ask.choice} text={ask.text ?? ''} className="text-ink" />
-        : ask.text && (
-          <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
-        )}
-      <Attached files={ask.files} />
-      {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
-      {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
-      {target && !findings && <HandedAccount account={ask.account} />}
-    </div>
-  );
-}
-
-/**
- * What the door observed of these words (COWORK1c, the message-urgency design §7, §8.2): *sent 14:02 · taken 14:03 · turn ended 14:09*,
- * each only where it was observed, folded under them as a quiet line. A turn's end is what Daoris saw, never an answer (COMMS1h).
- */
-function ReceiptsLine({ receipts }: { receipts: Receipts }) {
-  const { t, i18n } = useTranslation();
-  const seen = (['sent', 'taken', 'ended'] as const)
-    .filter((receipt) => receipts[receipt])
-    .map((receipt) => `${t(`work.receipt.${receipt}`)} ${clockOf(receipts[receipt]!, new Date(), i18n.language)}`);
-  if (seen.length === 0) return null;
-  return <p data-receipts className="m-0 mt-1 text-meta text-ink-faint">{seen.join(' · ')}</p>;
-}
-
-/** What the person attached (CONV4c): names, as the record keeps them. */
-function Attached({ files }: { files?: string[] }) {
-  const { t } = useTranslation();
-  if (!files || files.length === 0) return null;
-  return (
-    <ul aria-label={t('work.conversation.attached')} className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
-      {files.map((name, index) => (
-        <li
-          key={`${index}:${name}`}
-          className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-meta text-ink-soft"
-        >
-          <Icon name="attach" size={11} className="shrink-0 text-ink-faint" />
-          <span className="min-w-0 truncate">{name}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
  * When the person's words reach the session, by the door's reach (D136, MSG1f): a chat's conversation opens again. Held for the
  * turn's end at a level the door could not honour (COWORK1a, the message-urgency design §3.1, §8.2), the line says so: urgent
  * words, and words at now, whose door takes words only when its turn ends.
@@ -520,25 +426,6 @@ function HeldAsk({ block }: { block: Block }) {
       <Attached files={block.files} />
       {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}
     </div>
-  );
-}
-
-/**
- * Words the person pressed as an answer of its park's question (PARKVIEW1; Fable's read, Q4): *Chose* and the answer as its question
- * offered it, then the person's own words, so a press reads as a choice and never as words they typed. The words begin with the label,
- * as the page composes a press; where a record says otherwise they are drawn whole beneath the mark.
- */
-function ChoiceWords({ choice, text, className }: { choice: string; text: string; className: string }) {
-  const { t } = useTranslation();
-  const own = text === choice ? '' : text.startsWith(`${choice}\n\n`) ? text.slice(choice.length + 2) : text;
-  return (
-    <>
-      <p className="m-0 mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-body">
-        <Chip>{t('work.conversation.chose')}</Chip>
-        <span className={cn('wrap-anywhere font-semibold', className)}>{choice}</span>
-      </p>
-      {own && <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body', className)}>{own}</p>}
-    </>
   );
 }
 

@@ -425,8 +425,8 @@ What each line waits on was not read, so do not say what any session waits on: t
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |
 |---|---|---|---|---|---|---|
-| `engine` | not driven | `main` (the checkout's own) | merged into the line (the old landing rule, the default) | no review environment | no second opinion | Current (the default) |
-| `site` | not driven, no checkout here | none git can name | merged into the line (the old landing rule, the default) | no review environment | no second opinion | Current (the default) |
+| `engine` | not driven | `main` (the checkout's own) | not landed: no saved workflow is chosen for it, so its work is held | no review environment | no second opinion | Current (the default) |
+| `site` | not driven, no checkout here | none git can name | not landed: no saved workflow is chosen for it, so its work is held | no review environment | no second opinion | Current (the default) |
 
 Kinds of work `alpha` declares (`daoris workflow kind <workspace> <kind> --label "…" [--paths …]`):
 

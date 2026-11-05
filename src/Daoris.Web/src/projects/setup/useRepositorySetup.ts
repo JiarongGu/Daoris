@@ -40,11 +40,10 @@ type Row<K extends keyof LinesAnswer> = NonNullable<LinesAnswer[K]>[number];
  * the plugins that land work and its Workflow answer's start node. Null for a repository the driver does not know, or while it has not
  * answered. A hook, so a view that shows setup holds it and the molecule stays props.
  */
-export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin, onOpenGit }: {
+export function useRepositorySetup({ registration, enabled, notify, onOpenGit }: {
   registration: Registration | undefined;
   enabled: boolean;
   notify: Notify;
-  onOpenPlugin?: (plugin: string) => void;
   /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e); absent, the press is not drawn. */
   onOpenGit?: (host: string) => void;
 }): RepositorySetupProps | null {
@@ -163,8 +162,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
 
   const driving = drivingOf();
   const line = resolved<Row<'lines'>>(lines.data?.lines);
-  const landing = resolved<Row<'landings'>>(lines.data?.landings);
-  const workspace = line?.workspace ?? landing?.workspace ?? registration.workspace ?? 'default';
+  const workspace = line?.workspace ?? registration.workspace ?? 'default';
 
   const work: RepositorySetupProps['work'] = lines.data === undefined ? null : {
     line: line ?? null,
@@ -180,14 +178,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
         : t('settings.lines.policyCleared', { name: registration.repository })),
       onError: onDriverError,
     }),
-    landing: landing ?? null,
-    // FABRIC-GRAPH1d: a rule the file keeps that reads as no rule, its own, else its workspace's where Daoris's merge stands.
-    landingUnread: (() => {
-      const own = (state.unreadLandings ?? []).find((row) => same(row.repository));
-      if (own) return { name: own.repository, why: own.why, said: own.said };
-      const shared = landing?.source === 'default' ? ofWorkspace(state.workspaceUnreadLandings, workspace) : undefined;
-      return shared ? { name: shared.workspace, why: shared.why, said: shared.said } : null;
-    })(),
     // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
     review: Array.isArray(lines.data?.reviews) ? resolved<NonNullable<RepositorySetupProps['work']>['review'] & object>(lines.data.reviews) ?? { repository, workspace } : undefined,
     onReview: Array.isArray(lines.data?.reviews)
@@ -406,7 +396,6 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenPlugin
     sessions,
     reach,
     git,
-    onOpenPlugin,
     busy: setLine.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setHeavy.isPending || setStanding.isPending
       || setRead.isPending || setWrite.isPending || ruleAction.isPending || setLanded.isPending || acceptIntegration.isPending

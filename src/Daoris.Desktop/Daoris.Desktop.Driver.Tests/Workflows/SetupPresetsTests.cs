@@ -98,7 +98,7 @@ public sealed class SetupPresetsTests
         Assert.False(open.ContainsKey("key"));
         // A written pattern stands, and one that says {ticket} resolves the default key.
         Assert.False(named.ContainsKey("pattern"));
-        Assert.Equal(LandingKey.DefaultKey, named["key"]);
+        Assert.Equal(BranchPatterns.DefaultKey, named["key"]);
         Assert.Empty(LandNodes.Resolve(NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land), Plugin));
         // No plugin serves the remote: none is resolved, and the bind holds the run.
         Assert.False(LandNodes.Resolve(land, platformPlugin: null).ContainsKey("plugin"));

@@ -187,9 +187,8 @@ public static class PullRequestAsking
     /// <summary>An entry asked within this long is not asked again, so a page that lists twice asks once.</summary>
     public static readonly TimeSpan Fresh = TimeSpan.FromMinutes(1);
 
-    /// <summary>The plugin that pushed the branch, which opened its pull request; else the one the repository's landing rule names now.</summary>
-    public static string? PluginFor(LandedBranch entry, LandingRule rule) =>
-        entry.Plugin ?? (rule.Form == LandingForm.Branch ? rule.Plugin : null);
+    /// <summary>The plugin that pushed the branch, which opened its pull request; null where none did.</summary>
+    public static string? PluginFor(LandedBranch entry) => entry.Plugin;
 
     /// <summary>When it was last asked, answered or not; <see cref="DateTimeOffset.MinValue"/> where it never was.</summary>
     public static DateTimeOffset LastAsked(LandedBranch entry)

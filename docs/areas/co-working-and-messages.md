@@ -44,7 +44,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | ContextWorkOrders | `Driver/Context/ContextWorkOrders.cs` | The exchanges and channel bounds as an instruction and a hand-over brief quote them |
 | AttentionStateSlice, NeedsAPerson | `Modules/Loop/AttentionStateSlice.cs`, `NeedsAPerson.cs` | *What needs you*'s rows, judged once and pushed to every window |
 | StewardDesk | `Modules/Platform/StewardDesk.cs`; holder's verb `Driver/Roles/StewardCommand.cs` | Requests for the steward, as claims, bounded, history in `data/steward-desk.json` |
-| Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts` | The level menu, a helper ask's card, the exchanges drawn |
+| Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
 | Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `Web/work/attention/attention.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, the ask's channel, *What needs you*, the steward's line |
 
 The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
@@ -165,7 +165,10 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 45. *At work* draws the attended line from records, never conversation text: its parts, its co-workers (reviewers from records whose
     `serves` names the line), the quests it asked, its subagents and the channel's last words. *Waiting on* is the requests that hold;
     the head draws the same line. (from D203, D225)
-46. A message is drawn whole once, at its home. An agent's helper ask is one card at its call, and the answer folds into it. (from D225)
+46. A message is drawn whole once, at its home. Each word's turn is headed by its sender chip: who, by the one rule, and when it was
+    taken. An agent's helper ask is one card at its call, and the answer folds into it; a helper's answer no card holds is that
+    agent's block, under the question it answers. A channel message's home is the channel: the turn that took it names its poster
+    and opens the channel, its words folded where the door is. (from D225)
 47. *What needs you* has one row per obligation, keyed by its exchange's id or its kind and id. A park on one decision is that row,
     never a second. Rows are judged once in .NET and pushed. (from D225, D182)
 48. The steward desk files any caller's `{act, target, why}` as claims and grants nothing; the act is judged from the holder alone. At
@@ -194,7 +197,7 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `ChannelSyncTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
-`DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
+`DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `SenderChip.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
 `ChannelSection.test.tsx`, `attention.test.ts`, `StewardLine.test.tsx`.
 
 **Gates that bite.** `driver`, `modules`, `service` and `censuses` (the tool-class and transitional censuses), `web-unit`, the web
@@ -226,7 +229,6 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **COWORKUX1** (rows d, i): the head's *Co-workers* with its presses, *Bring in another agent…*, a member's thread with *Back to lead*, talking to a member as asking again.
 - **COAGENT1b2, 1c, 1e, 1g**: a piece's later acts and landing proofs; a conversation as the lead; the provider sheet; a hand-over that waits for children. The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel. **SESSONE2i**: posting to a teammate's ask.
-- **MIXAGENT3a-iii**: cost per row, and a helper's answer as its block.
 - No row: the page drawing a line's own channel and the messages to one part for a line on no ask.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.

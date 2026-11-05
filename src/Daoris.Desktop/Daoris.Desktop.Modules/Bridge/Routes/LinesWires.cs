@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 internal static class LinesWires
 {
     /// <summary>
-    /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line, and how its work lands, the language its
+    /// What <c>LINES</c> answers for <paramref name="lines"/>: each repository's line and its policy, the language its
     /// sessions write in, where its work is reviewed, which other agent reads it, what a helper does, how its work is committed and
     /// the access setup its sessions start under, each as it resolves from <paramref name="config"/> and where it was set, in arrays keyed by repository and workspace. The lines
     /// slice pushes each repository's rows of it: one builder for both doors, so the pull and the push cannot drift.
@@ -19,24 +19,6 @@ internal static class LinesWires
         {
             // The policy that reaches each line (the Line row, WORKFLOWCLEAN1h): its own, else its workspace's; left out where none is set.
             Lines = lines.Select(line => line with { Policy = IntegrateWire(config.LinePolicyOf(line.Repository, line.Workspace)) }).ToArray(),
-            // How each one's work lands, from the same file and the same circles.
-            Landings = lines.Select(line => (line, landing: LandingRules.Line(config, line.Repository, line.Workspace)))
-                .Select(pair => new
-                {
-                    pair.line.Repository,
-                    pair.line.Workspace,
-                    pair.landing.Rule.Form,
-                    pair.landing.Rule.Pattern,
-                    pair.landing.Rule.Plugin,
-                    pair.landing.Rule.AutoAccept,
-                    // The ticket's key and the squash, for the page to show and keep: none is left out.
-                    pair.landing.Rule.Key,
-                    pair.landing.Rule.Squash,
-                    // the rule's `integrate` as the file holds it (null when none), for the editor to start from.
-                    Integrate = IntegrateWire(pair.landing.Rule.Integrate),
-                    pair.landing.Source,
-                })
-                .ToArray(),
             // What each one's sessions are asked to write to the person in, and where that was set: the driver's
             // resolution, read rather than recomputed by the page. None leaves the language and its source out.
             Languages = lines.Select(line => (line, language: SessionLanguages.Resolve(config, line.Repository, line.Workspace)))

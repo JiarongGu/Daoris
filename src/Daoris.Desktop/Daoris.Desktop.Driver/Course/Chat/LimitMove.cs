@@ -76,6 +76,9 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     /// </summary>
     internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
 
+    /// <summary>The supervisor's rules a limit reads before its walk (CONTEXTDRIVE1n); a test hands its own.</summary>
+    internal ConversationRules? Rules { get; set; }
+
     /// <summary>A turn's end, told as the turns move: judged on a task of its own, as <see cref="CurveMove.Due"/> is.</summary>
     public void Due(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded)
     {
@@ -142,6 +145,12 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off, at a limit as at a go-on: its conversation waits
         // for it, its words with it, and the look's stage wakes it at that account's reset.
         var picked = context.Conversations.PickedOn(sessionId, prior.Profile);
+        // CONTEXTDRIVE1n: the line's limits rule's wait or ask, or its moves bound, keeps it on its own account before any walk.
+        if (!picked && LimitRuled.Holds(context, wiring.Of<LimitWaits>(), Rules ??= ConversationRules.Of(context), prior, sessionId, chat, ranOn) is { } ruled)
+        {
+            return ruled;
+        }
+
         var workspace = picked || isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
         // The one walk (FOUNDATION1a-iii, as LIMITSWITCH2 made the ended move): the account judged here is the one the new part opens on,
         // handed the selection rather than asking the roster again, so a second walk neither names another account nor counts a start
@@ -294,6 +303,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
             made = true;
             move.Answered();
+            if (elsewhere is { Order: [var other, ..] }) LimitRuled.Moved(context, prior, sessionId, other);
 
             // FOUNDATION1f-ii part a (§13.4 steps 2 and 3): the open's answer, every word it moved by its id on the new part, read whatever
             // `Moves` says; then `delivering` and the prompt's mark, before any word is marked attempted or handed. A write the store refuses

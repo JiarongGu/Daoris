@@ -14,6 +14,7 @@ import { isPartnerRecord } from './sender';
 import { type CallMark, ConversationView } from './ConversationView';
 import type { Cooling } from './saidDoors';
 import { exchangesOf, NO_EXCHANGES } from './exchanges';
+import type { ChannelHome } from './channelHome';
 import type { HelperAskRow } from '../waits/HelperAsks';
 import type { ReasonValues } from '../say';
 import { useFollowTail } from './followTail';
@@ -87,8 +88,10 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel,
 }: {
+  /** The home of the channel messages its turns took (COMMS1h), the attended session's alone — `ConversationView`'s. */
+  channel?: ChannelHome;
   /**
    * The helpers its agent asked for, each drawn as its card at its call with its answer folded in (COMMS1h): the session's asks as the
    * frame read them, the agents' names, and the door to a helper's conversation.
@@ -355,6 +358,7 @@ export function SessionConversation({
         exchanges={exchanges}
         onOpenHelper={own ? helpersAsked?.onOpen : undefined}
         onShow={show}
+        channel={own ? channel : undefined}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}

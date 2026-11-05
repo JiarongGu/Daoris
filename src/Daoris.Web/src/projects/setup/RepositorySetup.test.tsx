@@ -33,7 +33,7 @@ describe("a repository's Setup", () => {
 
     for (const name of ['Driving', 'Line and landing', 'Sessions', 'Reach']) expect(head(name)).toHaveAttribute('aria-expanded', 'false');
     expect(head('Driving')).toHaveAccessibleDescription('driven here · a tree per session · not held');
-    expect(head('Line and landing')).toHaveAccessibleDescription("line main (the workspace's default) · lands into its line (Daoris's default)");
+    expect(head('Line and landing')).toHaveAccessibleDescription("line main (the workspace's default)");
     expect(head('Sessions')).toHaveAccessibleDescription("no session language (Daoris's default) · no standing answer");
     expect(head('Reach')).toHaveAccessibleDescription(
       "read by agents outside it (Daoris's default) · writes into nothing else · no rules of its own");
@@ -100,7 +100,7 @@ describe("a repository's Setup", () => {
 
     for (const twin of [
       'daoris place drive|undrive engine', 'daoris place hold|resume engine', 'daoris place trees engine on|off',
-      'daoris place line engine <branch>|--clear', 'daoris place landing engine merge|branch <pattern>|--clear',
+      'daoris place line engine <branch>|--clear',
       'daoris place language engine en|zh|--clear', 'daoris place standing engine "…"|--clear',
       'daoris place across engine read on|off|--clear', 'daoris place across engine write-to <other> [--clear]',
       'daoris agent rules allow|ask|deny|remove "<rule>" --repository engine',
@@ -220,35 +220,6 @@ describe("Setup's Work", () => {
     expect(onLine).toHaveBeenLastCalledWith(undefined);
   });
 
-  it("says a rule of its own whole: its branch, the plugin that pushes it, and that it accepts automatically", () => {
-    draw(SETUP_OWN);
-
-    const landing = row(section('Line and landing'), 'How work lands');
-    expect(within(landing).getByText(/On a branch/)).toHaveTextContent(
-      'On a branch feature/{quest}-{slug}, set for this repository. Then plugin github-pull-request pushes it and opens the pull request. Accepted automatically when its quest is done.');
-  });
-
-  /** PLUGUI1c2c: the landing plugin is a door to that plugin's page; absent the opener, its name stays words. */
-  it("opens the plugin's page from its name in the landing sentence, and keeps the sentence whole", async () => {
-    const onOpenPlugin = vi.fn();
-    draw({ ...SETUP_OWN, onOpenPlugin });
-
-    const landing = row(section('Line and landing'), 'How work lands');
-    expect(within(landing).getByText(/On a branch/)).toHaveTextContent(
-      'On a branch feature/{quest}-{slug}, set for this repository. Then plugin github-pull-request pushes it and opens the pull request. Accepted automatically when its quest is done.');
-    await userEvent.click(within(landing).getByRole('button', { name: 'github-pull-request' }));
-    expect(onOpenPlugin).toHaveBeenCalledWith('github-pull-request');
-  });
-
-  it('names a rule of its own in the folded line, unmarked, beside a line from its workspace', async () => {
-    draw({ ...SETUP_OWN, work: { ...SETUP_OWN.work, line: SETUP_DEFAULTS.work!.line } });
-    // Its own rule opened the section; folded, the line names it.
-    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
-    await userEvent.click(head('Line and landing'));
-    expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands on feature/{quest}-{slug}, pushed by github-pull-request, accepted automatically");
-  });
-
   // WORKFLOWCLEAN1h-b: the Line row shows the line's policy and edits it through SET_LINE's policy.
   it("shows the line's policy beside its line, and withdraws it", async () => {
     const onLinePolicy = vi.fn();
@@ -262,7 +233,7 @@ describe("Setup's Work", () => {
     expect(onLinePolicy).toHaveBeenLastCalledWith(null);
   });
 
-  // WORKFLOWCLEAN1h-b (D228): the row is the followed version's land options, or under Current the rule read and the conversion's door.
+  // WORKFLOWCLEAN1h-b (D228): the row is the followed version's land options; a place on Current has none.
   it("is the followed version's land options, folded to what the version says", async () => {
     draw({ ...SETUP_DEFAULTS, lands: { is: 'version', summary: 'Merge into the line, as Release v2 says', editor: <p>the land options</p> } });
     expect(head('Line and landing')).toHaveAccessibleDescription(expect.stringContaining('Merge into the line, as Release v2 says'));
@@ -273,36 +244,11 @@ describe("Setup's Work", () => {
     expect(within(landing).queryByRole('button', { name: 'Set for this repository' })).toBeNull();
   });
 
-  it('reads the rule as it stands under Current, with the conversion and no editor', async () => {
-    const onConvert = vi.fn();
-    draw({ ...SETUP_DEFAULTS, lands: { is: 'current', onConvert } });
+  it('draws no landing row under Current, which the place head converts', async () => {
+    draw({ ...SETUP_DEFAULTS, lands: { is: 'current', onConvert: vi.fn() } });
     await userEvent.click(head('Line and landing'));
 
-    const landing = row(section('Line and landing'), 'How work lands');
-    expect(within(landing).getByText('Merged into its line — the default.')).toBeInTheDocument();
-    expect(within(landing).getByText('Follows its old landing rule')).toBeInTheDocument();
-    expect(within(landing).queryByRole('radio', { name: 'Branch' })).toBeNull();
-    await userEvent.click(within(landing).getByRole('button', { name: 'Convert…' }));
-    expect(onConvert).toHaveBeenCalledTimes(1);
-  });
-
-  /** FABRIC-GRAPH1d: a rule the file keeps that reads as no rule is said under the row, and opens the section. */
-  it('names a landing rule that does not read under its row, opening the section', () => {
-    draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landingUnread: { name: 'engine', why: 'form', said: 'it names no `form`, `merge` or `branch`.' } } });
-
-    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
-    const landing = row(section('Line and landing'), 'How work lands');
-    expect(within(landing).getByRole('note')).toHaveTextContent(
-      'driver.json keeps a landing rule for engine that names no form, merge or branch, so nothing reads it: work lands as though it set none.');
-    expect(within(landing).getByText('Merged into its line — the default.')).toBeInTheDocument();
-  });
-
-  it("says a refused rule in the driver's own sentence, in Chinese too", async () => {
-    await i18n.changeLanguage('zh');
-    draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landingUnread: { name: 'aurora', why: 'refused', said: 'Pushing is a plugin\'s to do.' } } });
-
-    expect(within(row(section('主线与落地'), '工作如何落地')).getByRole('note')).toHaveTextContent(
-      'driver.json 为 aurora 保存的落地规则无法落地工作，因此没有谁读取它：工作按未设置规则落地。Pushing is a plugin\'s to do.');
+    expect(screen.queryByText('How work lands')).toBeNull();
   });
 
 });
@@ -505,7 +451,7 @@ describe("a repository's review before landing", () => {
     draw(withReview({ repository: 'engine', workspace: 'default' }));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · no review environment (Daoris's default)");
+      "line main (the workspace's default) · no review environment (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const review = row(section('Line and landing'), 'Review before landing');
     expect(review).toHaveTextContent('None: work is offered to land once its quest is done.');
@@ -568,7 +514,7 @@ describe("a repository's second opinion before landing", () => {
     draw(withOpinion({ repository: 'engine', workspace: 'default' }));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · no second opinion (Daoris's default)");
+      "line main (the workspace's default) · no second opinion (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent('None: no other agent reads work here.');
@@ -634,7 +580,7 @@ describe("a repository's commit rule", () => {
     draw(withCommits({ repository: 'engine', workspace: 'default', rule: { mode: 'as-you-go' }, source: 'default' }, onCommits));
 
     expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands into its line (Daoris's default) · commits as it goes (Daoris's default)");
+      "line main (the workspace's default) · commits as it goes (Daoris's default)");
     await userEvent.click(head('Line and landing'));
     const commits = row(section('Line and landing'), 'Commits');
     expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
@@ -787,33 +733,6 @@ describe("a repository's sessions' access", () => {
 });
 
 /**
- * DOORS1b (D164's amendment point 2): the landing row says what finds its pattern's `{ticket}` and that Accept squashes; read under Current.
- */
-describe("a repository's landing, its ticket's key and its squash", () => {
-  const withLanding = (landing: NonNullable<RepositorySetupProps['work']>['landing']) => ({
-    ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landing },
-  });
-
-  it('says the key that finds the ticket and the squash', async () => {
-    draw(withLanding({
-      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true,
-      source: 'repository',
-    }));
-
-    // A rule of its own opens the section; folded, its line names the squash.
-    await userEvent.click(head('Line and landing'));
-    expect(head('Line and landing')).toHaveAccessibleDescription(
-      "line main (the workspace's default) · lands on feature/{ticket}-{slug}, squashed to one commit");
-    await userEvent.click(head('Line and landing'));
-    const landing = row(section('Line and landing'), 'How work lands');
-    expect(landing).toHaveTextContent(
-      '{ticket} is the first match of TK-\\d+ in the title, then the request, then its links, as written; where none is found, the '
-      + "session's id stands in.");
-    expect(landing).toHaveTextContent("Squashed: Accept makes the pull request's branch one commit from the session's work");
-  });
-});
-
-/**
  * FABRIC-PIPELINE1a (the pipeline design §1.3): the landed route is a row of *Line and landing*, folded to what verifies the work that
  * lands, open where the repository names a route of its own, and its choice the person's press.
  */
@@ -927,7 +846,7 @@ describe('Setup in 中文', () => {
     draw(SETUP_DEFAULTS);
 
     for (const name of ['驱动', '主线与落地', '会话', '边界']) expect(head(name)).toBeInTheDocument();
-    expect(head('主线与落地')).toHaveAccessibleDescription('主线 main（工作区的默认） · 落地时并入主线（Daoris 的默认）');
+    expect(head('主线与落地')).toHaveAccessibleDescription('主线 main（工作区的默认）');
     await userEvent.click(head('主线与落地'));
     // Its line stands from above, so it offers to be set here; the landing is the version's own or the conversion's.
     expect(within(section('主线与落地')).getAllByRole('button', { name: '为此仓库设定' })).toHaveLength(1);

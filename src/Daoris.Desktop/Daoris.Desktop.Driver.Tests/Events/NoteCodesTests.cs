@@ -207,7 +207,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void A_look_held_for_a_second_opinion_is_noted_under_its_own_code()
     {
-        var note = AutoLandingNotes.Of(AutoLandingCode.Opinion, new TreeLanding(false, "Waits for a second opinion.") { Refusal = AutoLandingCode.Opinion });
+        var note = LandTryNotes.Of(AutoLandingCode.Opinion, new TreeLanding(false, "Waits for a second opinion.") { Refusal = AutoLandingCode.Opinion });
 
         Assert.Equal(["landing.opinion", null], NoteAssert.Codes(note.Parts));
         Assert.Contains(ChatNoteCodes.LandingRefused, NoteCodes.All);

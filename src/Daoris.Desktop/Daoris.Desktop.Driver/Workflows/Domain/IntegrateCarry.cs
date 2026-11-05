@@ -29,7 +29,7 @@ public static class IntegrateCarry
     /// <param name="policy">The line's policy (<see cref="DriverConfig.LinePolicyOf"/>): its gates are the line's declaration (§17.7).</param>
     /// <param name="landing">The landing the version makes (<see cref="WorkflowProcess.Of"/>): its form, pattern, plugin and press.</param>
     /// <param name="accepted">What the door read of the accepted declaration; null where it did not ask, so that fact is not judged here.</param>
-    public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingIntegrate? policy, LandingRule landing, AcceptedGates? accepted)
+    public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingIntegrate? policy, Landing landing, AcceptedGates? accepted)
     {
         var integrate = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate);
         var pushes = graph.Nodes.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest).ToList();

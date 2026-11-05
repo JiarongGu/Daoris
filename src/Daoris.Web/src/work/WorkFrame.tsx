@@ -48,6 +48,7 @@ import { useSessionsList } from './rail/useSessionsList';
 import { AttendedPane } from './head/AttendedPane';
 import { partRowsOf } from './head/partRows';
 import { AttendedConversation } from './conversation/AttendedConversation';
+import { channelHomeOf } from './conversation/channelHome';
 import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
@@ -442,6 +443,10 @@ export function WorkFrame({
             partRows={partRows}
             partBox={partBox}
             attend={attend}
+            // COMMS1h: the channel its panel reads names each message's poster, and a turn's door opens that panel.
+            channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
+              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
+            ) : undefined}
           />
         </ViewMain>
 

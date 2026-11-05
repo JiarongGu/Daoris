@@ -56,7 +56,7 @@ public sealed class LinesRoutes(DriverContext context)
         LandingIntegrate? policy = null;
         if (press.Policy is { ValueKind: not JsonValueKind.Null } wire)
         {
-            policy = LandingKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
+            policy = LinePolicyKey.IntegrateOf(wire, out var shape) ?? throw new DriverException(shape!);
         }
 
         var keepsLine = named && press.Branch is null;

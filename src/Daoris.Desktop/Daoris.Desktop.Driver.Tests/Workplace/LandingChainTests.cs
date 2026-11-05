@@ -48,14 +48,14 @@ public sealed class LandingChainTests : IDisposable
         };
         Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
 
-        var drillDown = await LandingRules.SubjectAsync("s3", "q3", Find, opening: null);
-        var unrelated = await LandingRules.SubjectAsync("s4", "q4", Find, opening: null);
+        var drillDown = await BranchPatterns.SubjectAsync("s3", "q3", Find, opening: null);
+        var unrelated = await BranchPatterns.SubjectAsync("s4", "q4", Find, opening: null);
 
         Assert.Equal(new LandingSubject("s3", "q1", "TK-2203: the common report"), drillDown);
         Assert.Equal(new LandingSubject("s4", "q4", "Rename the report's export"), unrelated);
         var rule = "feature/{slug}-{quest}";
-        Assert.Equal(LandingRules.Expand(rule, new LandingNames("q1", LandingRules.Slug("TK-2203: the common report"), "portal-ui", "s1")),
-            LandingRules.Expand(rule, new LandingNames(drillDown.Quest!, LandingRules.Slug(drillDown.Title), "portal-ui", "s3")));
+        Assert.Equal(BranchPatterns.Expand(rule, new LandingNames("q1", BranchPatterns.Slug("TK-2203: the common report"), "portal-ui", "s1")),
+            BranchPatterns.Expand(rule, new LandingNames(drillDown.Quest!, BranchPatterns.Slug(drillDown.Title), "portal-ui", "s3")));
     }
 
     /// <summary>
@@ -253,19 +253,19 @@ public sealed class LandingChainTests : IDisposable
     public void An_advance_is_kept_as_advanced_and_a_merged_branch_waits_as_completed()
     {
         var advanced = new TreeLanding(true, "moved `feature/x` on.", "feature/x") { AdvancedFrom = Tip };
-        Assert.Equal(AutoLandingCode.Advanced, AutoLandingRules.CodeOf(advanced));
+        Assert.Equal(AutoLandingCode.Advanced, LandTries.CodeOf(advanced));
         // The push is still the plugin's: an advance it did not push is kept as that, as a landing's is.
-        Assert.Equal(AutoLandingCode.PluginFailed, AutoLandingRules.CodeOf(advanced with
+        Assert.Equal(AutoLandingCode.PluginFailed, LandTries.CodeOf(advanced with
         {
             Plugin = new PluginLanding("acme.lands", Pushed: false, "https://example.test/pull/7", "its pull request is completed"),
         }));
-        Assert.Equal(AutoLandingCode.Completed, AutoLandingRules.CodeOf(new TreeLanding(false, "merged") { Refusal = AutoLandingCode.Completed }));
+        Assert.Equal(AutoLandingCode.Completed, LandTries.CodeOf(new TreeLanding(false, "merged") { Refusal = AutoLandingCode.Completed }));
 
         Assert.True(AutoLandingCode.Closes(AutoLandingCode.Advanced));
         Assert.False(AutoLandingCode.Closes(AutoLandingCode.Completed));
         Assert.True(AutoLandingCode.OnChange(AutoLandingCode.Completed));
-        Assert.True(AutoLandingNotes.Says(AutoLandingCode.Advanced));
-        Assert.True(AutoLandingNotes.Says(AutoLandingCode.Completed));
+        Assert.True(LandTryNotes.Says(AutoLandingCode.Advanced));
+        Assert.True(LandTryNotes.Says(AutoLandingCode.Completed));
     }
 
     /// <summary>
@@ -275,12 +275,12 @@ public sealed class LandingChainTests : IDisposable
     [Fact]
     public void An_advance_is_said_as_an_acceptance_and_a_merged_branch_as_a_refusal()
     {
-        var advanced = AutoLandingNotes.Of(AutoLandingCode.Advanced,
+        var advanced = LandTryNotes.Of(AutoLandingCode.Advanced,
             new TreeLanding(true, "moved `feature/x` on from 1111111 — 1 more commit(s).", "feature/x") { AdvancedFrom = Tip });
         Assert.Equal(ChatNoteCodes.LandingAccepted.Code, advanced.Parts![0].Code);
         Assert.Contains("moved `feature/x` on", advanced.Text);
 
-        var completed = AutoLandingNotes.Of(AutoLandingCode.Completed,
+        var completed = LandTryNotes.Of(AutoLandingCode.Completed,
             new TreeLanding(false, "`feature/x`'s work already reads on `main`.") { Refusal = AutoLandingCode.Completed }, branch: "feature/x");
         Assert.Equal(ChatNoteCodes.LandingRefused.Code, completed.Parts![0].Code);
         Assert.Contains("already reads on `main`", completed.Text);

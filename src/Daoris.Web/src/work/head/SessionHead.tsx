@@ -32,7 +32,7 @@ import { type HeadLink, linkRow, requestRow } from './headRows';
 import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/HelperAsks';
 import { type PieceSection, Pieces } from '../pieces/Pieces';
 import { hasNote } from '../noteLines';
-import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
+import { processCommitsSays, type SessionProcess } from './process';
 import { heldFor, PermissionAsks, type PermissionWaits } from '../waits/PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from '../waits/AnswerAlone';
 import { GitAsk, gitAsksFor, type GitAskWaits } from '../waits/GitAsk';
@@ -561,9 +561,8 @@ export function SessionHead({
           linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
           // Its heavy run (HEAVYSLOT1): the head's line opens to its gates here, or its wait with the holder a door.
           ...(heavy ? [heavy] : []),
-          // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.
+          // The commit rule its own tree runs under and where it was set, in Setup's words.
           { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
-          { label: t('work.head.landing'), value: process ? <Inline text={processLandingSays(t, process)} /> : null },
           // The access it started under (SESSACCESS1, D184 point 1): each pause as its record keeps it, never today's settings.
           accessRow(t, session),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },

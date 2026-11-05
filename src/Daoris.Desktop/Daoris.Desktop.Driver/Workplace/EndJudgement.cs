@@ -77,21 +77,21 @@ internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = 
         _ => "no landing",
     };
 
-    /// <summary>A landing's rule as it stands, from the version's landing step or the repository's rule.</summary>
+    /// <summary>A landing as it stands, from the run's bound <c>land</c>.</summary>
     public static EndCycle Of(Landing landing, LandingWorkflow? workflow = null)
     {
-        var branch = landing.Rule.Form == LandingForm.Branch;
-        return new(landing.Rule.Form, branch && landing.Rule.Plugin is not null, branch && landing.Rule.Squash, workflow);
+        var branch = landing.Form == LandingForm.Branch;
+        return new(landing.Form, branch && landing.Plugin is not null, branch && landing.Squash, workflow);
     }
 
     /// <summary>
-    /// The cycle for work not yet handed, through the effective process <i>Accept</i> reads (<c>TreeLands.LandAsync</c>): under a
-    /// named workflow its bound version's landing, else the repository's rule, else its workspace's (<see cref="LandingRules.Choose"/>).
+    /// The cycle for work not yet handed, through the process <i>Accept</i> reads (<c>TreeLands.LandAsync</c>): its bound version's
+    /// landing, else the merge a process with no bound version declares.
     /// </summary>
     public static EndCycle Accepts(DriverConfig config, string repository, string? workspace, IWorkplaceProcess? process = null)
     {
         var named = process is { Named: true } ? process : null;
-        return Of(named?.Landing ?? LandingRules.Line(config, repository, workspace), named?.Record);
+        return Of(named?.Landing ?? Landing.Merge, named?.Record);
     }
 
     /// <summary>

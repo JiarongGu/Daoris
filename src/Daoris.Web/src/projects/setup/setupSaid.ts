@@ -4,7 +4,6 @@ import { HELPER_DEFAULT, helperSummary } from '../../settings/repository/Helpers
 import { HAND_OVER_DEFAULT, handOverSummary } from '../../settings/repository/HandOver';
 import { opinionSummary } from '../../settings/repository/Opinions';
 import { reviewSummary } from '../../settings/repository/Reviews';
-import { landingSays } from './SetupParts';
 import { type TFunction } from 'i18next';
 import type { AccessSetup, Driving, GitSetup, HeavySetup, LandsHere, ReachSetup, SessionsSetup, SetupSectionId, WorkSetup } from './RepositorySetup';
 import { JOIN } from './setupBits';
@@ -35,8 +34,6 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   // Work: its line, then how its work lands, each with where it came from.
   const line = work?.line;
   const lineOwn = line?.source === 'repository';
-  const landing = work?.landing;
-  const landingOwn = landing?.source === 'repository';
   // Where its work is reviewed before it lands (REVIEWENV1a): its own, its workspace's, or none set, which is Daoris's.
   const review = work?.onReview ? work.review : undefined;
   const reviewOwn = review?.source === 'repository';
@@ -57,8 +54,7 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
           : line.branch ? t('projects.setup.summary.line', { branch: line.branch }) : t('projects.setup.summary.noLine'),
         line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')
     : null;
-  const landingSaid = lands?.is === 'version' ? lands.summary
-    : landing ? marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source) : null;
+  const landingSaid = lands?.is === 'version' ? lands.summary : null;
   const commitsSaid = commits ? marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris') : null;
   const reviewSaid = review ? marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris') : null;
   const opinionSaid = opinion ? marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris') : null;
@@ -120,9 +116,8 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    // An unread landing rule opens it too (FABRIC-GRAPH1d): the person wrote something nothing reads.
     // A declaration owed acceptance opens it too (INTEGRATE1h): *What needs you*'s door brings the person here to read it and accept.
-    work: lineOwn || landingOwn || Boolean(work?.landingUnread) || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
+    work: lineOwn || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
     // A remote nothing serves opens it: the person has something to do there (GITAUTH1e); so does git access set here (GITAUTH1f).
     git: Boolean(git?.remotes.some((remote) => remote.serves === 'none') || git?.access?.classes.some((each) => each.source === 'repository')),
     access: accessOwn,
@@ -130,13 +125,13 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
     sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0 || Boolean(reach?.checkout?.on),
-    // The Workflow folds open for a need alone (SETUPUX1o): a landing rule that reads as none, and a door that asked for one.
-    landing: Boolean(work?.landingUnread),
+    // The Workflow folds open for a need alone (SETUPUX1o): a door that asked for one.
+    landing: false,
     opinion: false,
     look: false,
     landedRoute: false,
     line: false,
     more: false,
   };
-  return { drivingLine, line, lineOwn, landing, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, workParts, accessShown, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid, opensItself };
+  return { drivingLine, line, lineOwn, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, workParts, accessShown, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid, opensItself };
 }

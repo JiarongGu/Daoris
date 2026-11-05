@@ -30,7 +30,7 @@ internal static class CurrentDeliveries
         string home, IWorkplacePluginWire wire, Landing landing, string repository, string workspace, string root, LandingSubject subject, string tip,
         string line, string tree, string? branch, string acceptedBy, bool waited, Func<string?> standing, CancellationToken ct, BoundLand? bound = null)
     {
-        var rule = landing.Rule;
+        var rule = landing;
         var (method, graph) = bound is null
             ? (rule.Form == LandingForm.Merge ? "merge" : rule.Plugin is not null ? "pull-request" : "branch", "none")
             : (bound.Method, bound.Graph);
@@ -55,10 +55,10 @@ internal static class CurrentDeliveries
         var intent = new DeliveryIntent(
             subject.Session, repository, tip, method, bound?.Target ?? line, line, method == DeliveryMethods.Merge ? null : branch, bound?.Ticket,
             bound?.Message ?? words, method is DeliveryMethods.PullRequest or DeliveryMethods.Push ? rule.Plugin : null,
-            IntegrationEpoch.Of((rule.Integrate ?? new LandingIntegrate()).Resolved(), null));
+            IntegrationEpoch.Of(new LandingIntegrate().Resolved(), null));
         var options = bound?.Options ?? JsonSerializer.Serialize(new Dictionary<string, object> { ["method"] = method, ["squash"] = squash });
         var authorization = acceptedBy == AcceptedBy.Auto
-            ? DeliveryAuthorization.Automatic(bound?.Authority ?? $"{landing.Source}:{repository}", tip, graph, options, "[]")
+            ? DeliveryAuthorization.Automatic(bound?.Authority ?? $"{LandingSource.Default}:{repository}", tip, graph, options, "[]")
             : DeliveryAuthorization.Person($"{AcceptedBy.Person}:{subject.Session}", tip, graph, options, "[]");
 
         var store = new DeliveryStore(home);

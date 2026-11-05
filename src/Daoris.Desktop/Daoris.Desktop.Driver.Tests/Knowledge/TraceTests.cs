@@ -313,7 +313,7 @@ public sealed class TraceTests : IDisposable
     {
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s4", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 5) });
-        events.Append("s4", LandingRules.Note(new TreeLanding(true, "merged `daoris/s4` into `main` — 2 commit(s).")) with { At = At(11, 0) });
+        events.Append("s4", LandingNotes.Note(new TreeLanding(true, "merged `daoris/s4` into `main` — 2 commit(s).")) with { At = At(11, 0) });
         JsonArray sessions = [Record("s4", "completed", "q1", 5, 15, evidence: "commits landed:\n7c7c7c7 Read through v3")];
 
         var (_, said, _) = await TraceAsync(new TraceAsk("s4"), sessions: sessions);
@@ -619,7 +619,7 @@ public sealed class TraceTests : IDisposable
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 40) });
         var landed = new TreeLanding(true, "put the work on `feature/q1-fix-the-dashboard-figure` — 2 commit(s) from `main`.",
             "feature/q1-fix-the-dashboard-figure");
-        events.Append("s2", AutoLandingNotes.Of(AutoLandingCode.Landed, landed) with { At = At(10, 5) });
+        events.Append("s2", LandTryNotes.Of(AutoLandingCode.Landed, landed) with { At = At(10, 5) });
         new LandedBranches(_home).Record(new LandedBranch(
             "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
             "Fix the dashboard figure", At(10, 5))

@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -11,25 +9,21 @@ namespace Daoris.Desktop.Driver.Tests;
 /// changed is held as <c>host-changed</c>. Counted by the server's own log of each connection.
 /// </summary>
 /// <remarks>
-/// <para><b>Its server</b> is an OpenSSH <c>sshd.exe</c> named by <c>DAORIS_TEST_SSHD</c> (Win32-OpenSSH's portable build serves
-/// the loopback as an ordinary account), started on a free loopback port with a host key made here; where the variable names none,
-/// each test holds nothing, as <c>GitForWindowsProcessTests</c> does on a machine without Git for Windows. Its keys are made by the
-/// <c>ssh-keygen.exe</c> beside it, each limited to this account as OpenSSH requires.</para>
+/// <para><b>Its server</b> is <see cref="GitSshHost"/>, in this process on a free loopback port, which admits no key of these tests'.
+/// The client's key is made by the <c>ssh-keygen</c> beside the ssh an identity uses, limited to this account as OpenSSH requires.</para>
 /// <para>Every git and ssh here is kept from the person's own: no system or global git configuration, a scratch home, and an ssh
 /// handed an empty configuration, a key of its own with <c>IdentitiesOnly</c>, no agent and a known-hosts file of the test's.</para>
 /// <para>Alone: it sets the process's environment (the home <c>TreeRefs</c> resolves, the git variables above).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Collection(Alone.Name)]
-public sealed class GitSshHoldsProcessTests : IDisposable
+public sealed class GitSshHoldsProcessTests : IClassFixture<GitSshHost>, IDisposable
 {
+    private readonly GitSshHost _host;
+
     private readonly string _root = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "git-ssh-holds", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Dictionary<string, string?> _was = [];
-
-    private Process? _server;
-
-    private readonly List<string> _said = [];
 
     private string Home => Path.Combine(_root, "home");
 
@@ -37,8 +31,9 @@ public sealed class GitSshHoldsProcessTests : IDisposable
 
     private string Keys => Path.Combine(_root, "keys");
 
-    public GitSshHoldsProcessTests()
+    public GitSshHoldsProcessTests(GitSshHost host)
     {
+        _host = host;
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Repo);
         Directory.CreateDirectory(Keys);
@@ -52,8 +47,6 @@ public sealed class GitSshHoldsProcessTests : IDisposable
 
     public void Dispose()
     {
-        try { _server?.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
-        _server?.Dispose();
         foreach (var (name, value) in _was) Environment.SetEnvironmentVariable(name, value);
         GitSeed.Discard(_root);
     }
@@ -71,56 +64,27 @@ public sealed class GitSshHoldsProcessTests : IDisposable
         Assert.True(process.ExitCode == 0, $"{Path.GetFileName(file)} {string.Join(' ', arguments)}: {await error}{await output}");
     }
 
-    private async Task<string> KeyAsync(string sshd, string name)
+    /// <summary>A client key no host admits, made by the <c>ssh-keygen</c> beside the ssh an identity uses.</summary>
+    private async Task<string> KeyAsync(string name)
     {
         var file = Path.Combine(Keys, name);
-        await Run(Path.Combine(Path.GetDirectoryName(sshd)!, "ssh-keygen.exe"), "-q", "-t", "ed25519", "-N", "", "-C", "fixture-" + name, "-f", file);
+        var keygen = Path.Combine(GitIdentityActs.SshTools(Home), OperatingSystem.IsWindows() ? "ssh-keygen.exe" : "ssh-keygen");
+        // RSA: the stand-in host verifies RSA and ECDSA keys, and an ed25519 key's offer ends the connection unanswered.
+        await Run(keygen, "-q", "-t", "rsa", "-b", "2048", "-N", "", "-C", "fixture-" + name, "-f", file);
         // OpenSSH refuses a private key others can read: this account alone.
         await Run("icacls", file, "/inheritance:r", "/grant:r", $"{Environment.UserName}:F");
         return file;
     }
 
-    private static int FreePort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
-    }
+    /// <summary>The known-hosts line for the stand-in host under <paramref name="key"/>, its own unless another is named.</summary>
+    private string Known(string? key = null) => $"[127.0.0.1]:{_host.Port} {key ?? _host.HostKey}";
 
-    /// <summary>Its server on a free loopback port, refusing every key, and the known-hosts line ssh is to trust it by.</summary>
-    private async Task<(int Port, string Known)> ServeAsync(string sshd)
-    {
-        var host = await KeyAsync(sshd, "host");
-        var authorized = Path.Combine(Keys, "authorized_keys");
-        File.WriteAllText(authorized, "");
-        var port = FreePort();
-        var config = Path.Combine(Keys, "sshd_config");
-        File.WriteAllText(config, $"ListenAddress 127.0.0.1\nPort {port}\nHostKey {Slashed(host)}\nAuthorizedKeysFile {Slashed(authorized)}\n"
-            + "PasswordAuthentication no\nKbdInteractiveAuthentication no\nPubkeyAuthentication yes\nStrictModes no\nPidFile none\nLogLevel VERBOSE\n");
-        var info = new ProcessStartInfo(sshd) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true };
-        foreach (var argument in new[] { "-D", "-e", "-f", config }) info.ArgumentList.Add(argument);
-        _server = Process.Start(info)!;
-        var listening = new TaskCompletionSource();
-        _server.ErrorDataReceived += (_, line) =>
-        {
-            if (line.Data is not { } said) return;
-            lock (_said) _said.Add(said);
-            if (said.Contains("Server listening", StringComparison.Ordinal)) listening.TrySetResult();
-        };
-        _server.BeginErrorReadLine();
-        await listening.Task.WaitAsync(Poll.Patience);
-        return (port, $"[127.0.0.1]:{port} {string.Join(' ', File.ReadAllText(host + ".pub").Split(' ')[..2])}");
-    }
-
-    private int Connections()
-    {
-        lock (_said) return _said.Count(line => line.Contains("Connection from 127.0.0.1", StringComparison.Ordinal));
-    }
+    private string Address => _host.Address("org/engine.git");
 
     /// <summary>The process's git kept from the person's, and its ssh handed the test's own key, configuration and known hosts.</summary>
-    private async Task WireAsync(string sshd, string known)
+    private async Task WireAsync(string known)
     {
-        var client = await KeyAsync(sshd, "client");
+        var client = await KeyAsync("client");
         var config = Path.Combine(Keys, "empty_config");
         File.WriteAllText(config, "");
         var knownHosts = Path.Combine(Keys, "known_hosts");
@@ -157,44 +121,40 @@ public sealed class GitSshHoldsProcessTests : IDisposable
         }
     }
 
-    [SshdFact]
+    [Fact]
     public async Task A_key_the_server_refuses_is_held_once_and_no_moment_connects_again_until_try_again()
     {
-        var sshd = SshdFactAttribute.Named()!;
-        var (port, known) = await ServeAsync(sshd);
-        await WireAsync(sshd, known);
+        var before = _host.Connections;
+        await WireAsync(Known());
         await Git("init", "-q", "-b", "main");
-        await Git("remote", "add", "origin", $"ssh://git@127.0.0.1:{port}/org/engine.git");
+        await Git("remote", "add", "origin", Address);
 
         var first = await FetchAsync();
         await Task.Delay(500);
-        var connected = Connections();
+        var connected = _host.Connections;
 
         Assert.Equal(1, first.Fetches);
-        Assert.True(connected > 0, "the fetch never reached the server");
-        Assert.Contains("Permission denied (publickey)", first.Failed, StringComparison.Ordinal);
+        Assert.True(connected > before, "the fetch never reached the server");
+        Assert.True(first.Failed?.Contains("Permission denied (publickey)", StringComparison.Ordinal) == true, first.Failed);
         var held = Assert.Single(GitHolds.Read(Home));
-        Assert.Equal(("refused", "all", $"127.0.0.1:{port}"), (held.Class, held.Holds, held.Host));
+        Assert.Equal(("refused", "all", _host.Host), (held.Class, held.Holds, held.Host));
 
         for (var moment = 0; moment < 3; moment++) Assert.Equal(0, (await FetchAsync()).Fetches);
         await Task.Delay(500);
-        Assert.Equal(connected, Connections());
+        Assert.Equal(connected, _host.Connections);
 
         GitHolds.LiftRepository(Home, "engine", "work");
         Assert.Equal(1, (await FetchAsync()).Fetches);
         await Task.Delay(500);
-        Assert.True(Connections() > connected);
+        Assert.True(_host.Connections > connected);
     }
 
-    [SshdFact]
+    [Fact]
     public async Task A_server_whose_key_changed_is_held_as_changed()
     {
-        var sshd = SshdFactAttribute.Named()!;
-        var (port, _) = await ServeAsync(sshd);
-        var other = await KeyAsync(sshd, "other");
-        await WireAsync(sshd, $"[127.0.0.1]:{port} {string.Join(' ', File.ReadAllText(other + ".pub").Split(' ')[..2])}");
+        await WireAsync(Known(GitSshHost.OtherKey()));
         await Git("init", "-q", "-b", "main");
-        await Git("remote", "add", "origin", $"ssh://git@127.0.0.1:{port}/org/engine.git");
+        await Git("remote", "add", "origin", Address);
 
         var first = await FetchAsync();
 
