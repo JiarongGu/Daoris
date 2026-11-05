@@ -461,15 +461,8 @@ public sealed class NodeRuntime(
                 break;
             }
 
-            // A `land` attempt a lapse left unreconciled is settled by its deliveries before anything new starts on it; the store is read only
-            // where one is held.
-            if (LandAttempts.Holds(governed.Graph, record))
-            {
-                var deliveries = new DeliveryStore(records.Home);
-                var repository = governed.Watched.Repository;
-                records.Edit(unit, now => (LandAttempts.Settled(governed.Graph, now, tip => deliveries.At(repository, tip).Any(each => each.Unresolved)), 0));
-                if (records.Read(unit) is { } settled) record = settled;
-            }
+            // A `land` attempt a lapse left unreconciled is settled by its deliveries before anything new starts on it.
+            record = await LandAttemptSettling.SettleAsync(records, governed, record, ct).ConfigureAwait(false);
 
             // What git says for the built-ins this round's record holds waiting on it, read once a pass; the gates its opinion and look wait
             // on, likewise.
