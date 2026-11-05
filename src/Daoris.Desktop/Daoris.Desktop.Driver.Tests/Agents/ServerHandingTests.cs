@@ -18,7 +18,7 @@ public sealed class ServerHandingTests : IDisposable
     public void Dispose() => GitSeed.Discard(_home);
 
     private static ConnectorPlan Plan(string session) => new(
-        session, [new AcpMcpServer("browser", "npx", ["-y", "@playwright/mcp@latest"], new Dictionary<string, string> { ["HEADLESS"] = "1" })]);
+        session, [new ServerEntry("browser", "npx", ["-y", "@playwright/mcp@latest"], new Dictionary<string, string> { ["HEADLESS"] = "1" })]);
 
     [Fact]
     public void Claude_codes_native_door_hands_the_plan_as_its_own_file_and_every_other_built_door_has_no_carrier()
@@ -48,7 +48,7 @@ public sealed class ServerHandingTests : IDisposable
         Assert.Null(new Adapter(SessionWire.Acp).ServerHanding());
     }
 
-    private static AcpMcpServer Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
+    private static ServerEntry Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
 
     [Fact]
     public void One_plan_per_workspace_carries_its_workspace_its_permitted_sources_and_the_connector_it_requires()

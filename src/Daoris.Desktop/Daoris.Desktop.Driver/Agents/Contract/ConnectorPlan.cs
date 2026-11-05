@@ -24,7 +24,7 @@ public enum ConnectorSource
 /// </summary>
 /// <param name="SessionId">The session the servers are handed to, which names the file a door writes for it.</param>
 /// <param name="Servers">The servers, in the order a door hands them; by name, so a name given twice is refused.</param>
-public sealed record ConnectorPlan(string SessionId, IReadOnlyList<AcpMcpServer> Servers)
+public sealed record ConnectorPlan(string SessionId, IReadOnlyList<ServerEntry> Servers)
 {
     /// <summary>The workspace whose connectors these are; null for a start that has none.</summary>
     public string? Workspace { get; init; }

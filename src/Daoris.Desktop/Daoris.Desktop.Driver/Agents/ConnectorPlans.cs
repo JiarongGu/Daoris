@@ -13,7 +13,7 @@ internal static class ConnectorPlans
     public static IReadOnlyList<ConnectorSource> ConnectorOnly { get; } = [ConnectorSource.Daoris];
 
     /// <summary>Where a server a start chose comes from.</summary>
-    public static ConnectorSource SourceOf(AcpMcpServer server) =>
+    public static ConnectorSource SourceOf(ServerEntry server) =>
         server.Name == KnowledgeConnector.ServerName ? ConnectorSource.Daoris
         : InAppBrowserServers.Needs(server) ? ConnectorSource.Browser
         : ConnectorSource.Plugin;
@@ -24,7 +24,7 @@ internal static class ConnectorPlans
     /// </summary>
     /// <param name="permitted">The sources the start draws from; the session's by default.</param>
     public static ConnectorPlan For(
-        string sessionId, string? workspace, IReadOnlyList<AcpMcpServer> servers, IReadOnlyList<ConnectorSource>? permitted = null)
+        string sessionId, string? workspace, IReadOnlyList<ServerEntry> servers, IReadOnlyList<ConnectorSource>? permitted = null)
     {
         permitted ??= Sessions;
         if (servers.FirstOrDefault(server => !permitted.Contains(SourceOf(server))) is { } barred)

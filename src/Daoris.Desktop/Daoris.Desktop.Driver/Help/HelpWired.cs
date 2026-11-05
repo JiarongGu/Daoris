@@ -140,7 +140,7 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transp
     public bool SkillsHanded { get; init; }
 
     /// <summary>The servers put on the spawn: the knowledge connector where one was found, and the plugins' servers handed.</summary>
-    public IReadOnlyList<AcpMcpServer> Servers { get; init; } = [];
+    public IReadOnlyList<ServerEntry> Servers { get; init; } = [];
 
     /// <summary>Whether the spawn was handed them: the protocol door always is; the native door where it takes the servers file.</summary>
     public bool ServersHanded { get; init; }

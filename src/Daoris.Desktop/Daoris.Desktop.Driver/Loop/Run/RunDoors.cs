@@ -140,6 +140,6 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
     bool IRunWiring.HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
         driver.HandedConnector(adapter, workspace, repository, tool);
 
-    AcpMcpServer? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) =>
+    ServerEntry? IRunWiring.Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc) =>
         driver.Connector(sessionId, scope, proc);
 }

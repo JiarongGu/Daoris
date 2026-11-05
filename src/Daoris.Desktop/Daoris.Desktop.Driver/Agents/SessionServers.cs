@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 public static class SessionServers
 {
     /// <inheritdoc cref="InAppBrowserServers.HandNotedAsync"/>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
-        string home, IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
+    public static async Task<(IReadOnlyList<ServerEntry> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
+        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
     {
         var (filled, notice, _, drivers) = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
         var direct = await DirectAsync(home, filled, log, ct).ConfigureAwait(false);
@@ -24,8 +24,8 @@ public static class SessionServers
     }
 
     /// <inheritdoc cref="InAppBrowserServers.HandAsync"/>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandAsync(
-        string home, IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
+    public static async Task<(IReadOnlyList<ServerEntry> Handed, string? Notice, bool Drives)> HandAsync(
+        string home, IReadOnlyList<ServerEntry> servers, IInAppBrowser? browser, MachineLog? log, CancellationToken ct)
     {
         var (handed, notice, drives, _) = await HandNotedAsync(home, servers, browser, log, ct).ConfigureAwait(false);
         return (handed, notice?.Note, drives);
@@ -36,10 +36,10 @@ public static class SessionServers
     /// declared; one that cannot be started left out, and logged.
     /// </summary>
     /// <param name="npm">The package manager an install runs; Tools' npm where null.</param>
-    public static async Task<IReadOnlyList<AcpMcpServer>> DirectAsync(
-        string home, IReadOnlyList<AcpMcpServer> servers, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null)
+    public static async Task<IReadOnlyList<ServerEntry>> DirectAsync(
+        string home, IReadOnlyList<ServerEntry> servers, MachineLog? log, CancellationToken ct, IReadOnlyList<string>? npm = null)
     {
-        var handed = new List<AcpMcpServer>();
+        var handed = new List<ServerEntry>();
         string? node = null;
         foreach (var server in servers)
         {

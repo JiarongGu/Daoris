@@ -761,7 +761,7 @@ public sealed class PluginCatalogTests : IDisposable
     [Fact]
     public void The_pipe_door_is_handed_a_file_under_the_home_in_the_harness_own_shape_and_the_file_goes_with_the_session()
     {
-        var server = new AcpMcpServer(
+        var server = new ServerEntry(
             "browser", "npx", ["-y", "@playwright/mcp@latest"],
             new Dictionary<string, string> { ["HEADLESS"] = "1" });
 

@@ -218,7 +218,7 @@ internal sealed class LoopContext(
     public AdapterSet Adapters { get; set; } = adapters;
 
     /// <summary>The servers this tick hands every session (D65 §1f): what the contributing plugins declare, beside the knowledge host.</summary>
-    public IReadOnlyList<AcpMcpServer> Servers { get; set; } = [];
+    public IReadOnlyList<ServerEntry> Servers { get; set; } = [];
 
     /// <summary>The catalogue those servers came from: which plugin declares each, for the machine log's `plugin.served` (PLUGUI1d).</summary>
     public PluginCatalog Catalog { get; set; } = PluginCatalog.None;

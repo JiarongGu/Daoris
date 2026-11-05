@@ -156,5 +156,5 @@ internal interface IRunWiring
     bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool);
 
     /// <summary>The knowledge server a session is offered, located per run; null where this machine has no connector.</summary>
-    AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc);
+    ServerEntry? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope, string? proc);
 }

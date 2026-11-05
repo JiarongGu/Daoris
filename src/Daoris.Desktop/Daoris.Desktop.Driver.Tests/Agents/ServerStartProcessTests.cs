@@ -24,7 +24,7 @@ public sealed class ServerStartProcessTests : IDisposable
 
     private static string Node => PackageStarts.Node(null, null) ?? throw new InvalidOperationException("node is not on PATH");
 
-    private static AcpMcpServer Npx(string name, params string[] arguments) => new(name, "npx", arguments, new Dictionary<string, string>());
+    private static ServerEntry Npx(string name, params string[] arguments) => new(name, "npx", arguments, new Dictionary<string, string>());
 
     /// <summary>
     /// npm's stand-in: <c>install --prefix &lt;folder&gt; … &lt;package&gt;[@version]</c> lays the package there, at its exact version or at

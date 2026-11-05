@@ -65,10 +65,10 @@ internal sealed class ChatRun(
         string? servers = null;
         string? skills = null;
         object? meta = null;
-        IReadOnlyList<AcpMcpServer> pluginServers = [];
+        IReadOnlyList<ServerEntry> pluginServers = [];
         // What its door is handed of the servers: the knowledge connector and the plugins', composed once for both doors, so the receipt
         // names the list the spawn got.
-        IReadOnlyList<AcpMcpServer> offered = [];
+        IReadOnlyList<ServerEntry> offered = [];
         var connectors = ConnectorPlans.For(sessionId, null, []);
         Noted? browserNotice = null;
         var drivesBrowser = false;

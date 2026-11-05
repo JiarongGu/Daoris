@@ -125,19 +125,19 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     /// door carries one (ACP4). The knowledge host is not among them: it is Daoris's own, offered
     /// first by the driver, and a plugin may not declare its name. Since HELPPLUG1a, the ones declared for sessions.
     /// </summary>
-    public IReadOnlyList<AcpMcpServer> Servers => ServersTo(PluginServerTo.Sessions);
+    public IReadOnlyList<ServerEntry> Servers => ServersTo(PluginServerTo.Sessions);
 
     /// <summary>
     /// The servers the contributing plugins declare for Ask Daoris (HELPPLUG1a, D170 point 3), approved or not: what reaches it,
     /// and the rules for their tools, are the person's approvals' (<see cref="HelpGrants"/>).
     /// </summary>
-    public IReadOnlyList<AcpMcpServer> HelpServers => ServersTo(PluginServerTo.Help);
+    public IReadOnlyList<ServerEntry> HelpServers => ServersTo(PluginServerTo.Help);
 
     /// <summary>The servers the contributing plugins hand <paramref name="to"/>, in catalogue order, as the protocol door carries one.</summary>
-    public IReadOnlyList<AcpMcpServer> ServersTo(string to) => Contributing
+    public IReadOnlyList<ServerEntry> ServersTo(string to) => Contributing
         .SelectMany(p => p.Manifest.Servers)
         .Where(s => s.HandedTo(to))
-        .Select(s => new AcpMcpServer(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
+        .Select(s => new ServerEntry(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
         .ToList();
 
     /// <summary>Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash.</summary>
