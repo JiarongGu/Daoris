@@ -33,7 +33,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task On_a_wired_home_the_press_writes_the_store_alone_and_a_hand_edit_is_read_nowhere()
     {
-        var staffing = Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }], "intake": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -54,7 +54,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task ONEWAY1a_an_order_set_by_the_role_door_is_read_back_and_written_through_with_chat_and_brainstorm_kept()
     {
-        Wired("""{ "adapter": "claude-code" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -87,7 +87,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task ONEWAY1a_off_for_intake_its_default_and_a_refused_order_writing_nothing_through_the_role_door()
     {
-        Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }], "intake": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -114,7 +114,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task The_staffing_read_is_the_role_reads_and_actors_is_no_route()
     {
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
+        File.WriteAllText(DriverConfigPath, """{ "actors": { "build": [{ "agent": "claude-code" }] } }""");
         var module = Module();
 
         await RefusalAsync(module, "ACTORS");
@@ -147,7 +147,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     {
         var root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(root);
-        Wired("""{ "adapter": "talk" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "talk" }], "chat": [{ "agent": "talk" }] } }""");
         try
         {
             var service = new DriverModuleStartFromTests.StandIn(root);

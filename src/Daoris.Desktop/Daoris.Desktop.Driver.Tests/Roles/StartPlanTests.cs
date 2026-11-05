@@ -410,7 +410,7 @@ public sealed class StartPlanTests : IDisposable
         var catalogue = RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1")) with { Name = AuthoredText.Of("Checker") }, 5)]);
         var config = DriverConfig.Empty with
         {
-            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["opinion"] = [new ActorChoice("piped")], ["checker"] = [new ActorChoice("gone"), new ActorChoice("fine", "opus")] },
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["build"] = [new ActorChoice("cool")], ["opinion"] = [new ActorChoice("piped")], ["checker"] = [new ActorChoice("gone"), new ActorChoice("fine", "opus")] },
         };
         StartPlan Named(string role, RolePlace place) =>
             new(ParticipantWork.Review, config, _roster, _adapters, _memory, catalogue: catalogue, place: place, role: role) { Workspace = "default", Subject = "quest:q1" };

@@ -28,7 +28,7 @@ public sealed class StartWiringRouteTests : Bridge
             }
             """);
         File.WriteAllText(DriverConfigPath, $$"""
-            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+            { "drivable": [], "holds": [], "cap": 1, "actors": { "build": [{ "agent": "stub" }] },
               "commands": { "stub": ["node", {{JsonSerializer.Serialize(script)}}] } }
             """);
         return new DriverModule(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));

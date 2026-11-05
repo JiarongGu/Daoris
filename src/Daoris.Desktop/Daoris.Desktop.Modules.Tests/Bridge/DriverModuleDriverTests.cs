@@ -22,7 +22,6 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         Assert.Empty(state.GetProperty("drivingBrowser").EnumerateArray());
         // The path is answered so the page can tell a person which file its checkboxes edit.
         Assert.Equal(DriverConfigPath, state.GetProperty("configPath").GetString());
-        Assert.Equal("claude-code", state.GetProperty("adapter").GetString());
         // And the home (D63), so the page can say where this machine's Daoris lives.
         Assert.Equal(Home, state.GetProperty("home").GetString());
     }
