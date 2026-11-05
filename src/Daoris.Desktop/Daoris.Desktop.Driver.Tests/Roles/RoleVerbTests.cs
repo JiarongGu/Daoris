@@ -20,6 +20,8 @@ public sealed class RoleVerbTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(File_)!);
         File.WriteAllText(File_, """{ "adapter": "claude-code-acp", "intakeAdapter": "codex-acp" }""");
         RoleStaffing.Wire(_home, () => StoreSettled.Yes).ImportFile();
+        // The seeded Design role takes design machine-wide; the cases below add one that does, so it is removed first.
+        RoleCatalog.Write(DesktopStore.LocationIn(_home), RoleChange.Remove("design"), () => StoreSettled.Yes);
     }
 
     public void Dispose()

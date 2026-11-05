@@ -9,9 +9,18 @@ internal static class StaffingProjection
     /// <summary>The store's staffing as the five fields of a loaded record hold it.</summary>
     public static DriverConfig Config(StaffingRead read) => DriverConfig.Empty with
     {
-        Actors = read.Actors,
+        Actors = WithDesign(read),
         ActorErrors = read.Errors,
     };
+
+    /// <summary>
+    /// A home older than the Design role holds no row for it, which would read as no order at all: its seed stands until the person sets one,
+    /// as a fresh home's does. A row that does not read keeps its error and holds the start.
+    /// </summary>
+    private static IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> WithDesign(StaffingRead read) =>
+        read.Actors.ContainsKey("design") || read.Errors.ContainsKey("design")
+            ? read.Actors
+            : new Dictionary<string, IReadOnlyList<ActorChoice>>(read.Actors, StringComparer.Ordinal) { ["design"] = ActorChoices.Seed("design")! };
 
     /// <summary>The staffing's rows rewritten as <paramref name="staffing"/> holds them, as the import writes them.</summary>
     public static void Rows(DesktopWrite write, DriverConfig staffing, IReadOnlyDictionary<string, string> asFound, string at)

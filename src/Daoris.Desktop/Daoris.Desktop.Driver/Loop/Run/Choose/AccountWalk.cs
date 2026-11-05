@@ -79,7 +79,8 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
             if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
                 && !string.Equals(wasAsked.Agent, state.Agent, StringComparison.OrdinalIgnoreCase))
             {
-                chosen = state.MovedTo = wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
+                chosen = state.MovedTo = ApprovedChoice.Of(handedQuest, wiring.QuestOrder(start, role: stepRole))
+                                         ?? wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
             }
 
             if (policyMove is null && wiring.GoOns.ResumesOwn(start, state.Agent) is { } words)
@@ -141,7 +142,11 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
                 // A carry-on and a handed quest take the walk as any start does: no context stays with an account. A handed quest asks
                 // first for the account its hand-over named, within the named agent's, its model the role's entry for that agent; a
                 // carry-on keeps its record's asked choice. Each account is judged by its reading for that model.
-                if (handedQuest is not null && start.Resumes is null) chosen = wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
+                if (handedQuest is not null && start.Resumes is null)
+                {
+                    chosen = ApprovedChoice.Of(handedQuest, wiring.QuestOrder(start, role: stepRole))
+                             ?? wiring.QuestOrder(start, handed: state.Agent, role: stepRole)[0];
+                }
                 var model = chosen is not null ? chosen.Model : state.CarriedModel(start.Resumes);
                 (selection, passedAccount) = await context.Harnesses
                     .SelectHandedAsync(state.Agent, context.Config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct, model)

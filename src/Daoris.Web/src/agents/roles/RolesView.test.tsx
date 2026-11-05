@@ -79,14 +79,13 @@ const ROLES = {
   roles: [{ id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 }],
   works: ['build', 'design'],
   kept: true,
-  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 /** A seeded role as `ROLES` answers it with no record of its own: named by its actor's words. */
 const seeded = (id: string) => ({ id, state: 'seed', seeded: true, takes: [id], scopeKind: 'machine', revision: 0 });
 
 /** The catalogue with the seeded roles whose editors these tests open. */
-const SEEDED = { ...ROLES, roles: ['build', 'intake', 'ask-daoris', 'chat'].map(seeded), works: ['build', 'intake', 'ask-daoris', 'chat'], suggested: [] };
+const SEEDED = { ...ROLES, roles: ['build', 'intake', 'ask-daoris', 'chat'].map(seeded), works: ['build', 'intake', 'ask-daoris', 'chat'] };
 
 /** Open the Roles mode from the list's head. */
 const openRoles = async () => userEvent.click(await screen.findByRole('radio', { name: 'Setup' }));
@@ -235,24 +234,6 @@ describe('The Agents place, Roles mode', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('adds the suggested Designer over SET_ROLE and says so', async () => {
-    window.localStorage.setItem('daoris.list.agents.mode', 'setup');
-    const notify = vi.fn();
-    show(<Place notify={notify} />);
-    const user = userEvent.setup();
-
-    await user.click(await screen.findByRole('button', { name: 'Add the Designer' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ROLE', {
-      payload: {
-        change: 'set', id: 'designer', revision: 0,
-        role: { name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scope: { kind: 'machine', id: null } },
-        choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
-      },
-    });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Designer is saved; new work takes it.'));
-  });
-
   // AGENTSPLACE1g2: *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
   describe.each([[false], [true]])('the suggested choices pressed, refused %s', (refused) => {
     it('goes out as one SET_ROLES and says so, or says the driver\'s sentence', async () => {
@@ -261,7 +242,7 @@ describe('The Agents place, Roles mode', () => {
       invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
         if (type === 'ROLES') {
           return {
-            ...ROLES, suggested: [], suggestedChoicesDated: '2026-10-31',
+            ...ROLES, suggestedChoicesDated: '2026-10-31',
             suggestedChoices: [{ role: 'build', choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }] }],
           };
         }

@@ -32,7 +32,6 @@ const CATALOGUE: RoleCatalogue = {
   ],
   works: ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'],
   kept: true,
-  suggested: [{ id: 'designer', name: { en: 'Designer', zh: '设计师' }, takes: ['design'], scopeKind: 'machine', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }] }],
 };
 
 const row = (id: string, state: ActorRow['state'], choices: ActorRow['choices'] = [], error?: string): ActorRow => ({ id, state, choices, error });
@@ -70,7 +69,7 @@ export default meta;
 
 type Story = StoryObj<typeof RolesCard>;
 
-/** The seeded roles with their staffing, Chat removed and waiting, a night shift in one workspace, and the Designer suggested. */
+/** The seeded roles with their staffing, Chat removed and waiting, and a night shift in one workspace. */
 export const Catalogue: Story = {};
 
 /** The same at the half width. */
@@ -166,16 +165,16 @@ export const RoleEditorDark: Story = { args: EDIT, decorators: [dark] };
 export const RoleEditorChineseDarkNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese, dark] };
 
 /** A home whose driver.json is the file's own: each seeded row keeps its order editor, and Add a role and Remove are held. */
-export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } } };
+export const NotKept: Story = { args: { catalogue: { ...CATALOGUE, kept: false } } };
 
 /** The same at the floor, in 中文. */
-export const NotKeptChineseNarrow: Story = { args: { catalogue: { ...CATALOGUE, kept: false, suggested: [] } }, decorators: [storyWidths.narrow, chinese] };
+export const NotKeptChineseNarrow: Story = { args: { catalogue: { ...CATALOGUE, kept: false } }, decorators: [storyWidths.narrow, chinese] };
 
 /** A read that failed, told apart from a shell that does not offer it. */
 export const ReadFailed: Story = { args: { catalogue: null, read: 'failed' } };
 
 /** An empty catalogue. */
-export const Empty: Story = { args: { catalogue: { ...CATALOGUE, roles: [], suggested: [] }, staffing: [] } };
+export const Empty: Story = { args: { catalogue: { ...CATALOGUE, roles: [] }, staffing: [] } };
 
 /** Build's entry in driver.json does not read: the driver's sentence, and nothing starts. */
 export const Unreadable: Story = { args: { staffing: [row('build', 'unreadable', [], 'choice 1 names no agent'), ...STAFFING.slice(1)] } };

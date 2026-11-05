@@ -20,7 +20,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `RoleCatalog` | `Roles/RoleCatalog.cs` | The roles: the seed per id, the store's rows, the judge, the role that takes a work at a place, the appointed role of a kind at a place |
 | `RoleHold`, `AppointedRoles`, `RoleHolders` | `Roles/RoleHold.cs` | The appointed shape: kind, acts, holder, the supervisor's window; the kinds' act vocabularies; its judge |
 | `RoleRecord`, `RoleWork`, `RoleScope` | `Roles/RoleRecords.cs` | A role's record; the nine works; machine, workspace or repository scope |
-| The seed | `Defaults/roles.json` | The eight seeded roles, machine-wide |
+| The seed | `Defaults/roles.json` | The nine seeded roles, machine-wide; Design's order is `ActorChoices.DesignSeed` |
 | `RoleDoor` | `Roles/RoleDoor.cs` | The person's one door: judges a press, then writes role, staffing, policy and rules in one transaction |
 | `RoleVerb` | `Roles/RoleVerbs.cs` | `daoris driver role` and `role set/remove/default/policy/rules/supervisor/suggested` |
 | `RoleStaffing` | `Roles/RoleStaffing.cs` | `role_staffing` in the desktop store: import, the one writer |
@@ -31,6 +31,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `StaffJudge` | `Roles/StaffJudge.cs` | `Arrange` (weights, shares, budgets, works) and `OnCondition` |
 | `StaffPolicies`, `StaffLedger`, `StaffCapabilities` | `Roles/StaffLedger.cs`, `Roles/StaffPolicyDoor.cs` | `role_policy` and starts ledger; stale reads; the fields a build enforces |
 | `RoleOrders`, `ActorSuggestion`, `StaffWeek` | `Roles/RoleOrders.cs`, `Roles/ActorSuggestion.cs`, `Roles/StaffWeek.cs` | The other readers' order; suggested choices; a role's last seven days |
+| `RoleUse`, `RoleUseMoves` | `Roles/RoleUse.cs`, `Roles/RoleUseMoves.cs` | A role's week from the machine log: starts per choice, those that fell and why (`actor.chose`), its moves by condition (`actor.moved`) |
+| `ApprovedChoice` | `Course/HandOver/ApprovedChoice.cs` | The choice a hand-over is approved on: an agent's own ask takes the arranged order's step for its agent; a handed quest's file keeps its model and effort, and its start takes them while the role still lists them |
 | `SupervisorRules` | `Roles/SupervisorRules.cs` | The rule supervisor's pure half: counts, actions, bounds, places, judge, effective set, act |
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a policy's moves refused |
 | `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place |
@@ -53,8 +55,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
    holds of that kind's vocabulary, a scope, its holder, and the supervisor's window. A role carries no doors of its own. (from D212, D222, D233)
 2. The works are build, design, chat, ask-daoris, intake, help, partner, review and brainstorm. A record's work is read
    from its marks by one rule, never stored. Design falls to the role that takes build when none takes design. (from D212)
-3. Eight roles are seeded: build, intake, opinion, helper, partner, brainstorm, ask-daoris and chat, machine-wide. An id
-   reads as its seed until the store holds a record of it, so an upgrade writes nothing. (from D205, D212)
+3. Nine roles are seeded: build, design, intake, opinion, helper, partner, brainstorm, ask-daoris and chat, machine-wide.
+   An id reads as its seed until the store holds a record of it, so an upgrade writes nothing. Design takes design work
+   (a quest its publisher or the intake marked so) on Claude Code · `opus` · high, the reference's judgement row, the quest
+   naming no model; a home from before it reads that seed for it, and a workflow step may name it. Removed, design work
+   falls to Build's. A seeded role is edited, restored and removed by the one door; no suggestion adds it. (from D205, D212)
 4. The most specific scope's role takes a work: repository, then workspace, then machine. At most one role takes a work
    in one scope (`two-roles-one-work`). (from D212)
 5. Only Intake and Ask Daoris may be off. A work that may not be off keeps a role on the machine (`may-not-be-off`). A
@@ -265,8 +270,11 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
   (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals, `driver list`, the seed) see the default, and about thirty
   tests set it; the policy record's `moves` and `most` are still parsed only to be refused; the installed proof.
-- **STAFFPOLICY1d/f/h/i:** an agent's own ask and a hand-over take no policy; the use line's moves by condition
-  (`Roles/RoleUse.cs`); selection by measurement; the installed proof.
+- **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
+  (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
+- **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5
+  removes Ask Daoris's Accept and hand-over proposals, not the hand-over doors a person or an agent presses, so the
+  hand-over's model stands; the four fenced roles are edited in the one role editor.
 - **ONEWAY1af:** delete `actor-key-before` and `staffing-copy` once the staffing part's census ends.
 - **SUPERVISOR1a-i (rest):** the author sweep test, the page's decision mark with *Overrule*, the go-on's process cases.
 - **SUPERVISOR1a-iii:** the supervisor's activation (its flag on, on a candidate build).

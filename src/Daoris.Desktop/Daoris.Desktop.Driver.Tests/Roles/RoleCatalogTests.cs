@@ -57,7 +57,7 @@ public sealed class RoleCatalogTests : IDisposable
     {
         Assert.Equal([.. ActorChoices.Ids, AppointedRoles.Supervisor, AppointedRoles.Steward], RoleCatalog.Seed.Select(role => role.Id));
         Assert.Equal(
-            [("build", "Build", "开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
+            [("build", "Build", "开发"), ("design", "Design", "设计"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
                 ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天"),
                 ("supervisor", "Supervisor", "主管"), ("steward", "Steward", "管家")],
             RoleCatalog.Seed.Select(role => (role.Id, role.Name.In("en"), role.Name.In("zh"))));
@@ -68,7 +68,7 @@ public sealed class RoleCatalogTests : IDisposable
     public void Restoring_every_default_returns_the_seeded_roles_and_keeps_the_added_ones()
     {
         var db = DesktopStore.LocationIn(_home);
-        var added = Working("designer", ParticipantWork.Design);
+        var added = Working("designer", ParticipantWork.Design, new RoleScope(RoleScope.Workspace, "w1"));
         var changed = RoleCatalog.Seed[0] with { Name = AuthoredText.Of("Maker") };
         RoleCatalog.WriteAll(db, [RoleChange.Set(added), RoleChange.Set(changed), RoleChange.Remove("intake")], () => StoreSettled.Yes);
         var before = RoleCatalog.Read(db);
@@ -235,7 +235,7 @@ public sealed class RoleCatalogTests : IDisposable
         }
 
         var read = RoleCatalog.Read(db);
-        Assert.Equal(["build", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "supervisor", "steward", "designer"], read.Slots.Select(slot => slot.Id));
+        Assert.Equal(["build", "design", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat", "supervisor", "steward", "designer"], read.Slots.Select(slot => slot.Id));
         Assert.Equal((RoleState.Set, 7L, added.Json()), (read.Slots[^1].State, read.Slots[^1].Revision, read.Slots[^1].Role!.Json()));
     }
 
