@@ -337,11 +337,11 @@ Agents page, and `orient-index` and `code-map` once files move.
   its own way (the terminal at its console and under the home's lease, the window redirected: s-ix f4); an unknown door id is refused
   (`UnknownDoorException`), never the pipe, by `Adoption`, `BuildDoor` and the window's, set-up's and the terminal's reads; the commit
   trailer reads the registration's maker (`CommitTrailers.MakerOf`); a door's spawn and the shell read the start's `SpawnRequest`
-  alone, which `SpawnRequests` composes from the target at the adapter seam's prepare, and every agent's completed recipe is started
-  and contained by Platform's launcher (`AgentStarts.StartAsync`, D201) through the run; h's rest: the request composed by Loop's
-  executors themselves once they prepare through the door rather than the adapter seam (row t: Loop's folder is named from nowhere,
-  and the seam's `Prepare(SessionTarget, …)` is what they and the stand-ins call), and `containment.not-widened`, whose proof that a
-  process is born in the agents' job needs the installed launcher; the identity names are down (`AgentWorkVariables`, `ChildMarks`);
+  alone, which Loop's executors compose (`SpawnRequests`) and hand the adapter seam's `Prepare`, `PrepareResume` and `PrepareChat`, a
+  go-on's resume asking the start's own request again naming its conversation (`TransportStart.Request`), and every agent's completed
+  recipe is started and contained by Platform's launcher (`AgentStarts.StartAsync`, D201) through the run; h's rest:
+  `containment.not-widened`, whose proof that a door's process is born in the agents' job needs the installed launcher, and the
+  stand-ins preparing through the door rather than the seam (row t); the identity names are down (`AgentWorkVariables`, `ChildMarks`);
   `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   `ChildBindings`' fold names no agent: each line is learnt, and each call read as the child it came from (`ChildCall`), by the
@@ -356,12 +356,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   never is written through by; the protocol open or resume is `ProtocolOpen.BeginAsync`, read by the driven run and the conversation
   alike; the hand-over's accounts are `HandOverAccounts.Of`, read by the chat runner, the curve and the loop; left: the protocol
   words not yet through `DoorInput` itself (a prompt is a request the session answers, so `TransportRun.SendAsync` still refuses it
-  on a protocol door), `TransportRun.Session` kept for the options its agent lists), n's rest (the doors' `Offers` part and the offers
-  read through `AgentOffers.Offers` are built; the asked choice's environment is read through the door's spawn
-  (`ISpawn.ChoiceVariables`, `ActorAsked.ForSpawn`; a plugin's adapter keeps Claude Code's names until its spawn declares its own);
-  left: `ActorAsked.ForSpawn` reading the asked choice and the command's flags from the start's `SpawnRequest` rather than the
-  completed process's arguments (its two callers, `SessionHold` and `ChatRun`, hold no request until Loop composes it, row h's rest),
-  and the asked, carried, acknowledged and reported kept apart); a start's words go on in its
+  on a protocol door), `TransportRun.Session` kept for the options its agent lists), n is built (the doors' `Offers` part and the offers
+  read through `AgentOffers.Offers` are built; the asked choice is read from the start's whole `SpawnRequest`
+  (`ActorAsked.ForSpawn`: the request's asked choice, else the record's, else the opening's default; a flag of the machine's command
+  the command's own; the program's own variables, `ISpawn.ChoiceVariables`, from the environment it starts with), never from the
+  arguments its door's recipe carries it by, so asked, carried, acknowledged (`ActorEntry`) and reported (`ActorReports`) are each
+  read apart; a plugin's adapter keeps Claude Code's names until its spawn declares its own); a start's words go on in its
   record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
   home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one
