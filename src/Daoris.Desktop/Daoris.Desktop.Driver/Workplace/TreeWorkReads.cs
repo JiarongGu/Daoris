@@ -37,6 +37,8 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     internal async Task<TreeWork?> WorkAsync(
         string tree, CancellationToken ct = default, int? uncommitted = null, TreeGit.CommonDirAndBranch? here = null)
     {
+        // Reads only (the remark above): each question of git is asked once, the tree's layout in one start.
+        using var once = GitReadOnce.Within();
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
         uncommitted ??= await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
