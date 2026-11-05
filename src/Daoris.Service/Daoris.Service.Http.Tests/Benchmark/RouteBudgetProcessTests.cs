@@ -9,13 +9,16 @@ namespace Daoris.Service.Http.Tests.Benchmark;
 /// read that warms it.
 /// </summary>
 /// <remarks>
-/// <para>The budgets are the window's. A list it polls while the person looks at it (the sessions, the quests, the asks, what waits on
-/// the person) is answered in 200 ms at the median, inside the tenth of a second or two in which a page still reads as answering
-/// at once, with room for the page's own render. A read the person waits on once, on a press or a page's first paint (the registry,
-/// the repositories, the history to clear, the whole session list for the page's older groups), is answered in a second. The
-/// slowest of the samples is held to five times its median, so an answer that is quick only when nothing is read stays a failure.</para>
-/// <para>Each budget is what the read costs over this home, with the margin a busy machine takes: the reading is printed whole, so a
-/// failure says which read and by how much.</para>
+/// <para>The budgets are the window's. A read it makes again while the person looks at it is answered in 200 ms at the median, inside
+/// the fifth of a second in which a page still reads as answering at once, with room for the page's own render: the sessions, the
+/// quests and the asks, open or whole (the window's pushed slice and the driver's look read the whole lists on every change), what
+/// waits on the person, and the registry, which every door that resolves a workspace reads too. A read the person waits on once, a
+/// page's first paint or a press (the history to clear, the repositories' readings), is answered in a second. The first read after
+/// the start, which no kept answer serves, and the slowest sample are each held to five times the budget, and every read asked all
+/// at once to three times it, since one read's cost is every other's wait.</para>
+/// <para>Measured on this home when they were set: a polled read answers in single milliseconds to some 60 ms one after another and
+/// the whole session list in about 520 ms when nothing kept serves it. The reading is printed whole, so a failure says which read and
+/// by how much.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class RouteBudgetProcessTests(ITestOutputHelper output) : IDisposable
@@ -26,15 +29,15 @@ public sealed class RouteBudgetProcessTests(ITestOutputHelper output) : IDisposa
     [
         ("/api/sessions", 200),
         ("/api/sessions?workspace=default", 200),
-        ("/api/sessions?includeClosed=true", 1000),
+        ("/api/sessions?includeClosed=true", 200),
         ("/api/quests", 200),
-        ("/api/quests?includeClosed=true", 1000),
+        ("/api/quests?includeClosed=true", 200),
         ("/api/asks?workspace=default", 200),
-        ("/api/asks?workspace=default&includeClosed=true", 1000),
+        ("/api/asks?workspace=default&includeClosed=true", 200),
         ("/api/memory/waits", 200),
         ("/api/history?workspace=default", 1000),
-        ("/api/registry", 1000),
-        ("/api/registry?workspace=default", 1000),
+        ("/api/registry", 200),
+        ("/api/registry?workspace=default", 200),
         ("/api/repositories", 1000),
     ];
 
@@ -59,7 +62,7 @@ public sealed class RouteBudgetProcessTests(ITestOutputHelper output) : IDisposa
     public async Task Every_read_the_window_makes_answers_in_its_budget_over_a_home_of_three_thousand_sessions()
     {
         var clock = Stopwatch.StartNew();
-        await BenchmarkHome.WriteAsync(_scratch);
+        await BenchmarkHome.WriteAsync(_scratch, output.WriteLine);
         output.WriteLine($"home written in {clock.ElapsedMilliseconds} ms");
 
         using var host = await RealHost.StartAsync(_scratch, new Dictionary<string, string?>());
@@ -72,6 +75,7 @@ public sealed class RouteBudgetProcessTests(ITestOutputHelper output) : IDisposa
             var times = new List<double>();
             for (var sample = 0; sample < Samples; sample++) times.Add(await TimeAsync(client, route));
             Judge(route, budget, times, $"first {first,8:F0} ms", over);
+            if (first > budget * 5) over.Add($"{route}: the first read took {first:F0} ms, past five times its budget of {budget} ms");
         }
 
         // A window's first paint and the driver's look ask together, so one read's cost is every other's wait.
@@ -92,7 +96,7 @@ public sealed class RouteBudgetProcessTests(ITestOutputHelper output) : IDisposa
         for (var sample = 0; sample < Samples; sample++) during.Add(await TimeAsync(client, "/api/registry?workspace=default"));
         var rescanned = await rescan;
         output.WriteLine($"the rescan answered {(int)rescanned.StatusCode}");
-        Judge("/api/registry?workspace=default", 1000, during, "rescan", over);
+        Judge("/api/registry?workspace=default", 200, during, "rescan", over);
 
         Assert.True(over.Count == 0, "over budget:\n" + string.Join('\n', over));
     }

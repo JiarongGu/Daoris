@@ -16,10 +16,14 @@ internal sealed class ReadingBehind(Func<CancellationToken, Task<bool>> holdsAny
 {
     private int _running;
 
+    // Asked until the index first holds something, and never after: a door that resolves a workspace reads the registry once per
+    // record it judges, and a count of the index each time was most of what such a door cost.
+    private volatile bool _held;
+
     /// <summary>The reading the caller may count from: awaited where the index holds nothing, else started behind it.</summary>
     public async Task ReadyAsync(CancellationToken ct)
     {
-        if (!await holdsAny(ct).ConfigureAwait(false))
+        if (!_held && !(_held = await holdsAny(ct).ConfigureAwait(false)))
         {
             await read(ct).ConfigureAwait(false);
             return;

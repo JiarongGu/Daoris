@@ -43,13 +43,22 @@ public static class BenchmarkHome
     public static IReadOnlyList<string> RepositoryNames => Names;
 
     /// <summary>Write the home, its index and its checkouts under <paramref name="scratch"/>, laid out as <see cref="RealHost"/> starts over.</summary>
-    public static async Task WriteAsync(string scratch, CancellationToken ct = default)
+    /// <param name="said">Told each part as it is written, with how long it took.</param>
+    public static async Task WriteAsync(string scratch, Action<string>? said = null, CancellationToken ct = default)
     {
+        var clock = Stopwatch.StartNew();
+        void Wrote(string part)
+        {
+            said?.Invoke($"{part} in {clock.ElapsedMilliseconds} ms");
+            clock.Restart();
+        }
+
         var home = Path.Combine(scratch, "home");
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(home);
         Directory.CreateDirectory(repositories);
         foreach (var name in Names) Checkout(repositories, name);
+        Wrote("the checkouts");
 
         using var environment = new ScopedEnvironment(new Dictionary<string, string?>
         {
@@ -72,6 +81,7 @@ public static class BenchmarkHome
         }
 
         await service.Service.ImportAsync(repositories, Start, Workspace, ct);
+        Wrote("the store and the registry");
 
         var asks = new List<string>();
         for (var i = 0; i < Asks; i++)
@@ -80,6 +90,7 @@ public static class BenchmarkHome
             asks.Add(asked.Ask!.Id);
         }
 
+        Wrote("the asks");
         var quests = new List<Quest>();
         for (var i = 0; i < Quests; i++)
         {
@@ -89,9 +100,12 @@ public static class BenchmarkHome
                 $"Carry the {Topic(i)} change through the {Topic(i + 3)} module and say what moved.", At(i * 300), Workspace, ct: ct));
         }
 
+        Wrote("the quests");
         string Root(string repository) => Path.Combine(repositories, repository);
         await EndedAsync(service, home, Root, quests, asks, ct);
+        Wrote("the ended sessions");
         await OpenAsync(service, home, Root, quests, ct);
+        Wrote("the open sessions");
     }
 
     private static async Task EndedAsync(
@@ -207,7 +221,7 @@ public static class BenchmarkHome
                 $"# {name} note {note}\n\n## What it says\n\nWhat {name} learned about the {Topic(note)} and step {note}.\n");
         }
 
-        for (var decision = 0; decision < 120; decision++)
+        for (var decision = 0; decision < 60; decision++)
         {
             File.WriteAllText(
                 Path.Combine(root, "docs", "decisions", $"D{decision + 1}.md"),
