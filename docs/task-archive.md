@@ -23255,3 +23255,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **CALLTABLE2 — a session is never offered a tool its box refuses** (service): the call table offers `helper_ask` to Ask Daoris and an intake, and `HelperBox.cs:129-140` refuses both. Proof: the census pins the table against the box. → `docs/areas/knowledge-memory-records.md`, Contradictions 11
 
   **Outcome** 2026-11-05: BL24: `CallTable.Unowned` refuses `helper_ask` to Ask Daoris and to an intake, as `HelperBox` does; the census `fixtures/call-table.json` agrees.
+
+## WIRING1d (2026-11-05)
+
+- [x] **WIRING1d — every setting in one list, one key per setting** (ONEWAY1ad, wave 2). → `docs/2026-11-02-oneway-design.md` §10
+
+  **Outcome** 2026-11-05: BL25: `Settings/List/MachineSettings.cs` is the one list (notify, cooloff, quiet, cap, keep), written into the page as `SETTINGS` by `tools/contracts`; `MachineSettingsCensusTests` and `everySetting.test.tsx` fail a setting listed twice, two keys on one field, a second verb for one route, or a door spelled another way. Settings outside `driver.json` are not yet in the list.
