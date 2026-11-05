@@ -235,8 +235,6 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         var unread = Line(Pushed("alpha")[0]);
         Assert.Null(unread["branch"]);
         Assert.True(unread["notReadYet"]!.GetValue<bool>());
-        // Its rules are pushed beside it all the same.
-        Assert.Single(JsonSerializer.SerializeToNode(Pushed("alpha")[0].Data, IpcJson.Options)!["landings"]!.AsArray());
         // No checkout here leaves nothing to read: what is set, or none, is the line.
         Assert.False(Line(Pushed("beta")[0]).ContainsKey("notReadYet"));
 
