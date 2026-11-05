@@ -17,6 +17,7 @@ import type { useAttendedHead } from './useAttendedHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useAttendedSession } from './useAttendedSession';
 import { relationsOf } from './relations';
+import { SessionTerminalHold } from './TerminalHold';
 
 type Page = ComponentProps<typeof AttendedSession>;
 
@@ -75,6 +76,8 @@ export function AttendedPane({
         nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
         onOpen: openAtWork,
       } : null}
+      // RPC1g1: a terminal holding this conversation, said on its head with *Let go of the terminal*.
+      terminalHold={<SessionTerminalHold session={attended.id} />}
       workAsk={workAskAt('head')}
       ruleAsk={ruleAskAt('head')}
       toEvent={toEvent}

@@ -26,6 +26,8 @@ export const keys = {
   update: ['update'] as const,
   /** What a terminal asked the window to confirm over the pipe (RPC1c): asked as the page mounts, then kept by `CONFIRMATIONS`. */
   terminalAsks: ['terminal-asks'] as const,
+  /** The conversations a terminal holds over the pipe (RPC1g1): asked as the page mounts, then kept by `SESSION_HOLDS`. */
+  sessionHolds: ['session-holds'] as const,
   /** What waits at the service for the person's confirmation (PERSONDOOR1f): asked only while the page holds the person key. */
   serviceAsks: ['service-asks'] as const,
   /** The same, as the shell tells it (NOTIFY2j): asked as the page mounts, then kept by `SERVICE_CONFIRMATIONS`; a browser polls. */

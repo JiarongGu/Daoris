@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../../data/api';
@@ -113,8 +113,10 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess,
+  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold,
 }: {
+  /** A terminal holding this conversation (RPC1g1, D238), the frame's `SessionTerminalHold`: absent where none can be read. */
+  terminalHold?: ReactNode;
   /** What each running session holds of git access (D241 point 7), the frame's: *Details*' *Git access* row, with *Tighten…*. */
   gitAccess?: SessionGitAccessHold | null;
   /**
@@ -341,6 +343,7 @@ export function SessionHead({
     <header ref={own} data-record-head tabIndex={-1} className="grid gap-2.5 outline-none" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
+      {terminalHold}
       {answered !== null && <AnsweredPark answer={answered} />}
       {/* COMMS1i: what the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
       {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}

@@ -45,5 +45,11 @@
   "work.head.id": "ID",
   "work.head.copyId": "Copy",
   "work.head.copied": "copied",
-  "work.head.viewRequest": "View full request"
+  "work.head.viewRequest": "View full request",
+  "work.head.held": "Held by a terminal",
+  "work.head.heldBy": "{{process}}, process {{pid}}, speaks for you in this conversation until it lets go.",
+  "work.head.heldByPid": "Process {{pid}} speaks for you in this conversation until it lets go.",
+  "work.head.heldByUnknown": "A terminal speaks for you in this conversation until it lets go.",
+  "work.head.letGo": "Let go of the terminal",
+  "work.head.notHeld": "No terminal holds this conversation now."
 }

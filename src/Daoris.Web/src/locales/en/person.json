@@ -34,6 +34,7 @@
   "person.restoredPid": "The record says it was sent by process {{pid}} before Daoris restarted.",
   "person.restoredUnknown": "The record does not say what sent it before Daoris restarted.",
   "person.keyed": "This carries a key, so it does not wait across a restart of Daoris.",
+  "person.hold": "Confirm also lets this terminal speak for you in this conversation until it lets go.",
   "person.until": "It waits until {{time}}, then is refused.",
   "person.values": "What it carries",
   "person.cannotTell": "Daoris cannot tell whether you ran this or an agent did. Confirm only what you ran.",
@@ -207,5 +208,6 @@
   "person.route.HARNESSES_REFRESH": "read an agent's accounts again",
   "person.route.REGISTRY.WRITE_DECLARATION": "write a declaration into a repository",
   "person.route.REMOTES.SET": "wire a workspace to a remote",
-  "person.route.REMOTES.REMOVE": "unwire a workspace from the remote it is wired to"
+  "person.route.REMOTES.REMOVE": "unwire a workspace from the remote it is wired to",
+  "person.route.PIPE.HOLD": "hold a conversation"
 }
