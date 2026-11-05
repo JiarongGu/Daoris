@@ -53,7 +53,10 @@ describe('one timeline entry', () => {
 
   it('carries a record from before parts as it was kept, marked, beside it', () => {
     render(<TimelineEntry
-      event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1' }}
+      event={{
+        kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1',
+        noteParts: [{ words: 'the process exited 1', by: 'before' }],
+      }}
     />);
     expect(screen.getByText('the process exited 1')).toBeInTheDocument();
     expect(screen.getByText('shown as recorded')).toBeInTheDocument();
@@ -105,7 +108,9 @@ describe('one timeline entry', () => {
    */
   it('folds a note longer than four lines to them, and shows it all on the press', () => {
     const report = ['verify passed:', 'typecheck clean', 'cli 1200 tests', 'web 3798 tests', 'doc-budgets reported', 'devkit gates green'].join('\n');
-    render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note: report }} />);
+    render(<TimelineEntry
+      event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note: report, noteParts: [{ words: report, by: 'agent' }] }}
+    />);
 
     const more = screen.getByRole('button', { name: 'Show all' });
     expect(more).toHaveAttribute('aria-expanded', 'false');
@@ -117,7 +122,12 @@ describe('one timeline entry', () => {
   });
 
   it('leaves a note of four lines or fewer whole, with nothing to press', () => {
-    render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1' }} />);
+    render(<TimelineEntry
+      event={{
+        kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1',
+        noteParts: [{ words: 'the process exited 1', by: 'before' }],
+      }}
+    />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByText('the process exited 1').closest('.line-clamp-4')).toBeNull();
   });
@@ -134,7 +144,9 @@ describe('one timeline entry', () => {
     await i18n.changeLanguage('zh');
     try {
       const note = '验证通过，每一道检查都已通过。'.repeat(12);
-      render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note }} />);
+      render(<TimelineEntry
+        event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note, noteParts: [{ words: note, by: 'agent' }] }}
+      />);
       expect(screen.getByRole('button', { name: '展开全部' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');

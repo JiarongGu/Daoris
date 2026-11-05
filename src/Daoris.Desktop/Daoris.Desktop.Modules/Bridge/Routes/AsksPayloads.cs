@@ -6,6 +6,9 @@ public sealed record ChannelReadRequest(string? Ask, string? Entry, string? Sinc
 /// <summary>A post to an ask's channel; <c>Said</c> asks for the verb's words, <c>Ordinary</c> its level.</summary>
 public sealed record ChannelPostPress(string? Ask, string? Text, string? To, string? Re, bool Said = false, bool Ordinary = false);
 
+/// <summary>The channel of the line <c>Session</c> is a part of, as the person reads it.</summary>
+public sealed record LineChannelRead(string? Session);
+
 /// <summary>The channel's read mark moved through a moment.</summary>
 public sealed record ChannelMarkPress(string? Ask, string? Through);
 

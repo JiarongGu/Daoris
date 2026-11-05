@@ -60,7 +60,6 @@ public sealed class BuiltInNodesTests
         {
             (NodeKinds.Land, NodeSource.Landing, "landings.json#feature/x"),
             (NodeKinds.Line, NodeSource.Git, "landings.json#feature/x"),
-            (NodeKinds.PullRequest, NodeSource.Plugin, "landings.json#feature/x"),
         })
         {
             var moved = Applied(unit, kind);
@@ -74,43 +73,20 @@ public sealed class BuiltInNodesTests
     }
 
     /// <summary>
-    /// <c>pushed</c> needs git's remote-tracking ref as well as the plugin's answer: unread, it is unknown; read at the pushed tip it is
-    /// reached; elsewhere it is not yet. The records keep no failed push, so it never fails here.
+    /// <c>push</c> (G8) is Daoris's own push read against git's remote-tracking ref: unread, it is unknown; read at the pushed tip it is reached
+    /// by git; elsewhere it is not yet. Nothing pushed is no outcome.
     /// </summary>
     [Fact]
-    public void Pushed_needs_the_plugins_answer_and_gits_ref()
+    public void Push_is_reached_by_gits_ref_at_the_commit_the_push_act_left()
     {
         var unit = Unit(Grown(), Landed(pushed: true));
 
-        Assert.Equal(NodeStates.Unknown, Applied(unit, NodeKinds.Pushed).Status.State);
-        Assert.Equal(NodeStates.Reached, Applied(unit, NodeKinds.Pushed, new NodeGitReads(RemoteTip: _ => "t1")).Status.State);
-        var elsewhere = BuiltInNodes.Observe(unit, Node(NodeKinds.Pushed), Graph, 1, new NodeGitReads(RemoteTip: _ => "t0"));
+        Assert.Equal(NodeStates.Unknown, Applied(unit, NodeKinds.Push).Status.State);
+        var reached = Applied(unit, NodeKinds.Push, new NodeGitReads(RemoteTip: _ => "t1"));
+        Assert.Equal((NodeStates.Reached, NodeSource.Git), (reached.Status.State, reached.Status.By));
+        var elsewhere = BuiltInNodes.Observe(unit, Node(NodeKinds.Push), Graph, 1, new NodeGitReads(RemoteTip: _ => "t0"));
         Assert.Null(elsewhere.Outcome);
-        Assert.Null(BuiltInNodes.Observe(Unit(Grown(), Landed()), Node(NodeKinds.Pushed), Graph, 1).Outcome);
-    }
-
-    /// <summary>
-    /// A pull request abandoned is its failure, with its code; an ask that failed, or a state the platform did not give, is unknown; a
-    /// completed answer whose source is not the recorded tip waits on git's ancestry, and one failing D148's checks is no event.
-    /// </summary>
-    [Fact]
-    public void A_pull_requests_answers_are_its_outcomes_by_its_authority()
-    {
-        var abandoned = Applied(Unit(Grown(), Landed(pr: new PullRequestState(PullRequestStates.Abandoned))), NodeKinds.PullRequest);
-        Assert.Equal((NodeStates.Failed, PullRequestStates.Abandoned), (abandoned.Status.State, abandoned.Status.Code));
-
-        var askFailed = new PullRequestAskFailed("timeout", "acme-pr", Then);
-        Assert.Equal(NodeStates.Unknown, Applied(Unit(Grown(), Landed(pr: new PullRequestState(PullRequestStates.Open), askFailed: askFailed)), NodeKinds.PullRequest).Status.State);
-        Assert.Equal(NodeStates.Unknown, Applied(Unit(Grown(), Landed(pr: new PullRequestState(PullRequestStates.Unknown))), NodeKinds.PullRequest).Status.State);
-        Assert.Null(BuiltInNodes.Observe(Unit(Grown(), Landed(pr: new PullRequestState(PullRequestStates.Open))), Node(NodeKinds.PullRequest), Graph, 1).Outcome);
-
-        var ahead = new PullRequestState(PullRequestStates.Completed) { MergeCommit = "m9", SourceCommit = "t2", Target = "main" };
-        var unit = Unit(Grown(), Landed(pr: ahead));
-        Assert.Equal(NodeStates.Unknown, Applied(unit, NodeKinds.PullRequest).Status.State);
-        Assert.Equal(NodeStates.Reached, Applied(unit, NodeKinds.PullRequest, new NodeGitReads(Holds: (source, tip) => source == "t2" && tip == "t1")).Status.State);
-
-        var elsewhere = new PullRequestState(PullRequestStates.Completed) { MergeCommit = "m9", SourceCommit = "t1", Target = "release" };
-        Assert.Null(BuiltInNodes.Observe(Unit(Grown(), Landed(pr: elsewhere)), Node(NodeKinds.PullRequest), Graph, 1).Outcome);
+        Assert.Null(BuiltInNodes.Observe(Unit(Grown(), Landed()), Node(NodeKinds.Push), Graph, 1).Outcome);
     }
 
     /// <summary>Not yet is pending, never failed: a branch nothing handed on or held is observed with no outcome, and stays active.</summary>
@@ -118,7 +94,7 @@ public sealed class BuiltInNodesTests
     public void Not_yet_is_no_outcome_and_an_unknown_owner_is_unknown()
     {
         var unit = Unit(Grown());
-        foreach (var kind in new[] { NodeKinds.Land, NodeKinds.Line, NodeKinds.PullRequest })
+        foreach (var kind in new[] { NodeKinds.Land, NodeKinds.Line, NodeKinds.Push })
         {
             var observed = BuiltInNodes.Observe(unit, Node(kind), Graph, 1);
             Assert.Equal((kind, (string?)null, (NodeMove?)null), (kind, observed.Outcome, observed.Move));

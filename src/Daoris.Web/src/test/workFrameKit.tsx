@@ -81,6 +81,7 @@ export const CHAT = {
 export const PARKED = {
   ...DRIVEN, id: 'p4rk3d00', state: 'awaiting-person',
   note: 'Two ways forward; I recommend the second.',
+  noteParts: [{ words: 'Two ways forward; I recommend the second.', by: 'agent' }],
 };
 
 /** An intake that could not settle whose an ask is, parked asking the person (INT4b). */
@@ -88,6 +89,7 @@ export const PARKED_INTAKE = {
   id: 'i9n8t7k6', quest: null, repository: 'ask #0fda18', ask: '0fda18', adapter: 'stub',
   state: 'awaiting-person', kind: 'chat', tree: 'C:/somewhere/data/intake/default',
   note: 'published nothing: it asks you rather than guess.',
+  noteParts: [{ words: 'published nothing: it asks you rather than guess.', by: 'before' }],
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
 };
 

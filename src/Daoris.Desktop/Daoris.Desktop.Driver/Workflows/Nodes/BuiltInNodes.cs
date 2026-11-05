@@ -1,12 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The git reads an observation may be handed where the records cannot establish an outcome alone: <c>pushed</c>'s remote-tracking ref,
-/// and <c>pull-request</c>'s ancestry check (D148 point 4's third). Absent, the outcome is unknown, never guessed.
+/// The git read an observation may be handed where the records cannot establish an outcome alone: <c>push</c>'s remote-tracking ref.
+/// Absent, the outcome is unknown, never guessed.
 /// </summary>
 /// <param name="RemoteTip">The commit git's remote-tracking ref holds for a landing's branch, or null where git could not say.</param>
-/// <param name="Holds">Whether the first commit holds the second (is it, or descends from it), or null where git could not say.</param>
-public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null, Func<string, string, bool?>? Holds = null)
+public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
 {
     /// <summary>
     /// What the line and the person's branches hold of a branch unit's work at a commit (LANDNODE1k's <c>content.holds</c>), by the unit's id and
@@ -77,7 +76,7 @@ public static class BuiltInNodes
 {
     /// <summary>The kinds observed from records.</summary>
     public static readonly IReadOnlyList<string> Observed =
-        [NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds];
+        [NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Push, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds];
 
     /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
     public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
@@ -110,8 +109,7 @@ public static class BuiltInNodes
             return Seen(NodeStates.Reached, said) with
             {
                 // A `land`'s reach is the landing record's by its authority (LANDNODE1c); a `review`'s is the person's.
-                Source = node.Kind switch { NodeKinds.Land => NodeSource.Landing, NodeKinds.Review => NodeSource.Person, _ => source },
-                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
+                Source = node.Kind switch { NodeKinds.Land => NodeSource.Landing, NodeKinds.Review => NodeSource.Person, _ => source },                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", evidenced, accepted.Id) },
             };
         }
 
@@ -171,31 +169,21 @@ public static class BuiltInNodes
                     ? Reached(NodeSource.Git, unit.End.Revision, LandedBranches.FileName, holder.Branch, unit.End.Said)
                     : Reached(NodeSource.Git, unit.End.Revision, SessionBranches.FileName, branch?.Branch ?? unit.Subject.Artifact ?? unit.Id, unit.End.Said);
 
-            case NodeKinds.Pushed:
-                if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(null, "no plugin answered that it pushed the work");
+            default:
+                // G8: Daoris's push (the push act) wrote the commit it pushed on the landing; the node is reached when git's remote-tracking ref holds it.
+                if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(null, "the branch was not pushed yet");
                 if (git?.RemoteTip is not { } remoteTip)
                 {
-                    return Seen(NodeStates.Unknown, $"the plugin answered that it pushed {TextBounds.ShortCommit(pushed, 8)}, and git's remote-tracking ref was not read");
+                    return Seen(NodeStates.Unknown, $"{TextBounds.ShortCommit(pushed, 8)} was pushed, and git's remote-tracking ref was not read");
                 }
 
                 return remoteTip(landing) switch
                 {
                     null => Seen(NodeStates.Unknown, "git could not read the remote-tracking ref"),
-                    var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => Reached(NodeSource.PluginRef, pushed, LandedBranches.FileName,
+                    var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => Reached(NodeSource.Git, pushed, LandedBranches.FileName,
                         landing.Branch, $"pushed at {TextBounds.ShortCommit(pushed, 8)}, and the remote-tracking ref holds it"),
                     _ => Seen(null, "the remote-tracking ref does not hold the pushed commit"),
                 };
-
-            default:
-                // FABRIC-WIRE1h: the work went into the line with no branch landed, so there is none to open a pull request on: the landing
-                // record's skip, as D157's run reads it. A unit with no branch kept yet only waits, and nothing is passed over on a guess.
-                if (landing is null && branch?.Held is { } into)
-                {
-                    return Seen(NodeStates.Skipped, $"merged into the line {WorkInventory.Minute(into.At)} UTC with no branch landed, so no pull request opens")
-                        with { Source = NodeSource.Landing };
-                }
-
-                return PullRequest(landing, git, Seen, Reached);
         }
     }
 
@@ -208,18 +196,6 @@ public static class BuiltInNodes
     /// answered that it pushed, naming the commit, so a reader asks git nothing for a landing no plugin pushed.
     /// </summary>
     public static bool AsksRemote(LandedBranch landing) => landing is { Pushed: true, PushedTip: not null };
-
-    /// <summary>
-    /// The ancestry <c>pull-request</c>'s observation of <paramref name="landing"/> asks (FABRIC-RUN1b; D148 point 4's third check): whether its
-    /// completed answer's source holds the landed tip, where the answer passes the first check and was completed from another commit; null
-    /// where it asks none.
-    /// </summary>
-    public static (string Holder, string Held)? AncestryOf(LandedBranch landing) =>
-        landing.PullRequestState is { State: PullRequestStates.Completed, MergeCommit.Length: > 0, SourceCommit: { Length: > 0 } source } answer
-        && landing.Line is not null && string.Equals(answer.Target, landing.Line, StringComparison.Ordinal)
-        && !string.Equals(source, landing.Tip, StringComparison.Ordinal)
-            ? (source, landing.Tip)
-            : null;
 
     /// <summary>
     /// The quest's done, by the ledger. On a run's subject (<paramref name="onRun"/>: a binding naming its subject, which only a run's record
@@ -239,39 +215,4 @@ public static class BuiltInNodes
             "Open" or "Taken" or "Declined" => seen(null, unit.End.Said),
             _ => seen(NodeStates.Unknown, unit.End.Said),
         };
-
-    private static NodeObservation PullRequest(
-        LandedBranch? landing, NodeGitReads? git, Func<string?, string, NodeObservation> seen,
-        Func<string, string?, string, string, string, NodeObservation> reached)
-    {
-        if (landing is null) return seen(null, "nothing was handed on yet");
-        var answer = landing.PullRequestState;
-        if (answer?.State == PullRequestStates.Completed)
-        {
-            // D148 point 4's first check from the record: both commits named, its target the line. Its third, below.
-            if (answer is not { MergeCommit.Length: > 0, SourceCommit: { Length: > 0 } source } || landing.Line is null
-                || !string.Equals(answer.Target, landing.Line, StringComparison.Ordinal))
-            {
-                return seen(null, "its completed answer does not pass D148's checks, so it is no event");
-            }
-
-            var holds = string.Equals(source, landing.Tip, StringComparison.Ordinal) ? true : git?.Holds?.Invoke(source, landing.Tip);
-            return holds switch
-            {
-                true => reached(NodeSource.Plugin, landing.Tip, LandedBranches.FileName, landing.Branch,
-                    $"its pull request completed, merging {TextBounds.ShortCommit(source, 8)} into `{answer.Target}`"),
-                false => seen(null, "its completed pull request's source does not hold the recorded tip"),
-                null => seen(NodeStates.Unknown, "its pull request completed from a newer commit, and git's ancestry check was not read"),
-            };
-        }
-
-        if (landing.PullRequestAskFailed is { } failed) return seen(NodeStates.Unknown, $"the last ask failed ({failed.Code})");
-        return answer?.State switch
-        {
-            PullRequestStates.Abandoned => seen(NodeStates.Failed, "its pull request was abandoned") with { Source = NodeSource.Plugin, Code = PullRequestStates.Abandoned },
-            PullRequestStates.Unknown => seen(NodeStates.Unknown, "the platform answered without a state"),
-            PullRequestStates.Open => seen(null, "its pull request is open"),
-            _ => seen(null, "no plugin answered about a pull request yet"),
-        };
-    }
 }

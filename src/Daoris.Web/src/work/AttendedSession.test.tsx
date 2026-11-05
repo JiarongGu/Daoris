@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { render as plain, screen } from '@testing-library/react';
 
 // The bridge mocked as present, because the promoted stream is the half a browser structurally
 // cannot reach (frontend architecture §4) and the point of this region is that it is one surface.
@@ -21,6 +22,9 @@ vi.mock('@shenora/react', () => ({
 
 import type { Session } from '../data/api';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
+
+// The canvas toolbar's tooltips need the provider the app shell holds.
+const render = (ui: React.ReactElement) => plain(ui, { wrapper: Tooltip.Provider });
 
 const NOW = new Date('2026-09-21T12:00:00Z');
 

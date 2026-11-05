@@ -17,12 +17,13 @@ import {
 } from './words';
 
 /**
- * The newest messages of the page's own channel read (COWORKVIEW1c, the design §3.3): the lines the session's panel already holds, so the
- * view asks the channel for nothing. Absent for a session with no ask, which has no channel and then no block.
+ * The newest messages of the line's channel (COWORKVIEW1c, the design §3.3): on an ask, the lines the session's panel already holds, so
+ * the view asks the channel for nothing; on no ask held here, its own channel's (COMMS1k, `CHANNEL_LINE`), a message to one part naming
+ * it. Absent while neither is read, and then no block.
  */
 export type AtWorkChannel = {
   words: readonly ChannelItem[];
-  /** *All messages*: opens the panel that holds the channel. */
+  /** *All messages*: opens the panel that holds the channel. Absent for a line's own channel, which no panel holds. */
   onOpen?: () => void;
 };
 
@@ -196,13 +197,14 @@ function listsParts(answer: AtWorkA, t: TFunction): boolean {
   return !(answer.parts.length < 2 && more === 0 && !worthListing(answer, t));
 }
 
-/** One message of the channel's last words, as the channel draws it: who, when, and the words as written. */
+/** One message of the channel's last words, as the channel draws it: who, to which part alone where it is to one, when, and the words. */
 export function Word({ item }: { item: ChannelItem }) {
   const { t } = useTranslation();
   const first = (item.text ?? '').trim();
   return (
     <li className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small text-ink-soft" title={first}>
       <span className="font-semibold text-ink">{whoOf(t, item)}</span>
+      {item.part && <span className="text-meta text-ink-faint">{t('asks.channel.toPart', { part: item.part })}</span>}
       <span className="text-meta text-ink-faint">{ago(item.at)}</span>
       <span className="line-clamp-2 min-w-0 flex-1 basis-40 [overflow-wrap:anywhere]">{first}</span>
     </li>

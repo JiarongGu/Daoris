@@ -262,7 +262,7 @@ describe("an ask's intake note", () => {
   });
 
   it('shows a record from before parts as it was kept, marked', () => {
-    intakePage(INTAKE_SESSION);
+    intakePage({ ...INTAKE_SESSION, noteParts: [{ words: INTAKE_SESSION.note!, by: 'before' }] });
     expect(screen.getByText('shown as recorded')).toBeInTheDocument();
     expect(screen.getByText(code('#3e4f5a6b7c8d'))).toBeInTheDocument();
   });

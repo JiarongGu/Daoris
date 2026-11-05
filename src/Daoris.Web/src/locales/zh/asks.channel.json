@@ -6,6 +6,7 @@
   "asks.channel.unread": "{{count}} 条未读",
   "asks.channel.new": "新",
   "asks.channel.who.you": "你",
+  "asks.channel.who.teammate": "{{machine}} 上的队友",
   "asks.channel.who.daoris": "Daoris",
   "asks.channel.who.session": "某个会话",
   "asks.channel.to": "发给 {{to}}",

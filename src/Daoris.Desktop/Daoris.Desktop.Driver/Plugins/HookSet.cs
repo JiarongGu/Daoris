@@ -41,7 +41,9 @@ public sealed class HookSet(
     // work wire, listens to its events and tells it what is awaited; a `--share` loop, which holds nothing, never does.
     Func<bool>? holdsHome = null,
     // The clock the work wire's waits and bounds are read on.
-    Func<DateTimeOffset>? clock = null) : IAsyncDisposable, IWorkRuntimePort
+    Func<DateTimeOffset>? clock = null,
+    // D241 point 5: the API token a plugin's start is handed, or the refusal that stops it; null for a plugin that takes none.
+    Func<PluginEntry, HostTokenHand?>? hostToken = null) : IAsyncDisposable, IWorkRuntimePort
 {
     /// <summary>A running plugin's process, with what it was started from: what a stop's reason is judged against.</summary>
     /// <param name="Work">Whether the plugin speaks the work wire (FABRIC-PERFORM1a): its starts are supervised by <see cref="WorkPlugins"/>.</param>
@@ -200,7 +202,19 @@ public sealed class HookSet(
                 var took = Stopwatch.StartNew();
                 try
                 {
-                    var channel = await _start(plugin, line => Say(id, line), ct).ConfigureAwait(false);
+                    var hand = hostToken?.Invoke(plugin);
+                    if (hand?.Refusal is { } refused) throw new DriverException($"plugin `{id}`: {refused}.");
+                    IHookChannel channel;
+                    HookProcess.HostToken.Value = hand?.Token;
+                    try
+                    {
+                        channel = await _start(plugin, line => Say(id, line), ct).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        HookProcess.HostToken.Value = null;
+                    }
+
                     // FABRIC-PERFORM1a: its next generation, heard and told only where this loop holds the lease.
                     var work = WorkPlugins.Speaks(plugin);
                     if (work) _work.Started(id, channel, listen: holds, now);

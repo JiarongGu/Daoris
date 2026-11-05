@@ -16,7 +16,14 @@ public sealed record ChannelForwarded(bool Sent, string? Code, string? Session);
 public sealed record ChannelItemAnswer(
     string Kind, DateTimeOffset At, string? Id, bool Person, string? Session, string? Repository, string? Agent, string? Entry, string? To,
     string? Re, bool Question, bool Open, string? Text, string? Code, string? Quest, string? Name, string? From, bool? Urgent = null,
-    IReadOnlyList<ChannelReceiptView>? Receipts = null, string? Part = null, string? Channel = null, string? Receipt = null);
+    IReadOnlyList<ChannelReceiptView>? Receipts = null, string? Part = null, string? Channel = null, string? Receipt = null,
+    string? Origin = null);
+
+/// <summary>
+/// A line's own channel as the person reads it (COMMS1k, <c>CHANNEL_LINE</c>): its origin and its messages, oldest first; no origin where
+/// the line has none of its own, or the host has no such door.
+/// </summary>
+public sealed record LineChannelAnswer(string? Origin, IReadOnlyList<ChannelItemAnswer> Items);
 
 /// <summary>The person's <i>Send to its session</i> (COWORK1d): sent, to which session, or the code that says why not.</summary>
 public sealed record ChannelForwardAnswer(bool Sent, string? Code, string? Session);
@@ -50,6 +57,9 @@ public static class ChannelAnswers
     /// <summary>A channel nothing is on: an ask the host does not hold, or a host from before the channel.</summary>
     public static ChannelAnswer Empty(string ask) => new(ask.TrimStart('#'), "person", [], 0, null);
 
+    /// <summary>A line's own channel as the page reads it.</summary>
+    public static LineChannelAnswer Line(LineChannelView? view) => view is null ? new(null, []) : new(view.Origin, [.. view.Items.Select(Item)]);
+
     /// <summary>The person's post as the page reads it.</summary>
     public static ChannelPostAnswer Posted(ChannelPosted posted) =>
         new(posted.Ok, posted.Code, posted.Message is { } message ? Item(message) : null);
@@ -59,5 +69,6 @@ public static class ChannelAnswers
 
     private static ChannelItemAnswer Item(ChannelItemView item) => new(
         item.Kind, item.At, item.Id, item.Person, item.Session, item.Repository, item.Agent, item.Entry, item.To, item.Re,
-        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From, item.Urgent, item.Receipts, item.Part, item.Channel, item.Receipt);
+        item.Question, item.Open, item.Text, item.Code, item.Quest, item.Name, item.From, item.Urgent, item.Receipts, item.Part, item.Channel, item.Receipt,
+        item.Origin);
 }

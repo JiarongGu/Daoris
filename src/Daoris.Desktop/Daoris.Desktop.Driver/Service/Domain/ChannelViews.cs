@@ -57,6 +57,12 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// </summary>
     public string? Origin { get; init; }
 
+    /// <summary>
+    /// Whether this machine's person wrote it, so a part takes it as their words. A teammate's person's message, posted to an ask held
+    /// here from their machine (SESSONE2i), is a claim, as an agent's is.
+    /// </summary>
+    public bool ByThisPerson => Person && Origin is null;
+
     /// <summary>A line's code: <c>published</c>, <c>taken</c>, <c>done</c>, <c>declined</c> or <c>awaiting</c>.</summary>
     public string? Code { get; init; }
 

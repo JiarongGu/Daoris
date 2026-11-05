@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import type { PlaceNeed, PlaceRow, PlacesRead } from '../../data/wiring';
 import { Button, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
-import { isComposing } from '../../lib/composing';
 import { LIST_ROW } from '../../work/frame/listKeys';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
 import { landsSaid } from './placeShell';
@@ -109,11 +108,11 @@ function PlacesTree({ state, chosen, onChoose }: { state: SetupState; chosen: st
     tree.current?.querySelector<HTMLElement>(`[data-tree-id="${CSS.escape(id)}"]`)?.focus();
   };
   const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (isComposing(event) || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     const at = (event.target as HTMLElement).closest<HTMLElement>('[role="treeitem"]');
     if (!at || at.parentElement !== event.currentTarget) return;
     const id = at.dataset.treeId ?? '';
-    const move = keyInTree(items, id, event.key);
+    const move = keyInTree(items, id, event);
     if (!move) return;
     event.preventDefault();
     const item = items.find((each) => each.id === id);

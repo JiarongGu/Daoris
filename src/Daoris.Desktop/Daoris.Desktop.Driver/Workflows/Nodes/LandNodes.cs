@@ -4,9 +4,9 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>target</c>, <c>pattern</c>, <c>plugin</c>,
+/// A <c>land</c> node's options (LANDNODE1a; the land node design §2): <c>method</c>, <c>target</c>, <c>pattern</c>,
 /// <c>squash</c> and <c>message</c>. Each is optional here, since a version leaves some open and the bind resolves them; a written one is held
-/// to its choices, and the method's own refusals (a pattern on a merge, a plugin beside an integrate, a squash of an integrate) are the
+/// to its choices, and the method's own refusals (a pattern on a merge, a squash of an integrate) are the
 /// declaration's. Where the graph's other nodes must stand is <see cref="NodeGraphs.Problems"/>'s. The person's Accept is a
 /// <see cref="NodeKinds.Review"/> before it (LANDNODE1c2), so an <c>accept</c> option is refused: a version 1a to 1h saved with one is held,
 /// never landed without the press it named.
@@ -15,17 +15,13 @@ public static class LandNodes
 {
     public const string Merge = "merge";
     public const string Branch = "branch";
-    public const string Push = "push";
-    public const string PullRequest = "pull-request";
     public const string Integrate = "integrate";
 
     /// <summary>The option LANDNODE1a gave the Accept, refused by name since LANDNODE1c2.</summary>
     public const string AcceptOption = "accept";
 
-    /// <summary>The word a <c>plugin</c> option takes for no plugin.</summary>
-    public const string NoPlugin = "none";
-
-    public static readonly IReadOnlyList<string> Methods = [Merge, Branch, Push, PullRequest, Integrate];
+    /// <summary>The methods a <c>land</c> takes. A push and a pull request are steps after a <c>branch</c> (G8, D241 point 4).</summary>
+    public static readonly IReadOnlyList<string> Methods = [Merge, Branch, Integrate];
 
     /// <summary>What a commit message template may say: the landing's own names, frozen before the landing.</summary>
     public static readonly IReadOnlyList<string> MessagePlaceholders = ["title", "quest", "ticket", "session"];
@@ -43,21 +39,16 @@ public static class LandNodes
 
     /// <summary>
     /// The options a version's <paramref name="land"/> leaves open, resolved from derived defaults and never from a rule (WORKFLOWCLEAN1 1a; the
-    /// cleanup design §1.4): the <see cref="DefaultPattern"/>, the plugin that serves the remote's platform (<paramref name="platformPlugin"/>,
-    /// null where none does), and the default key where the pattern says <c>{ticket}</c>. A merge has none to resolve, and an integrate no
-    /// plugin. Called once, at the run's bind, and kept; a written option stands.
+    /// cleanup design §1.4): the <see cref="DefaultPattern"/> and the default key where the pattern says <c>{ticket}</c>. A merge has none to
+    /// resolve. Called once, at the run's bind, and kept; a written option stands.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land, string? platformPlugin)
+    public static IReadOnlyDictionary<string, string> Resolve(NodeDeclaration land)
     {
         var method = Written(land, "method");
         if (method is null or Merge) return NoResolved;
         var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
         var pattern = Written(land, "pattern");
         if (pattern is null) resolved["pattern"] = pattern = DefaultPattern;
-        if (method != Integrate && Written(land, "plugin") is null && platformPlugin is not null && method is PullRequest or Push)
-        {
-            resolved["plugin"] = platformPlugin;
-        }
 
         // The key rides with the binding whether written or defaulted, since the landing reads it from there.
         if (pattern.Contains("{ticket}", StringComparison.Ordinal)) resolved[KeyOption] = Written(land, KeyOption) ?? BranchPatterns.DefaultKey;
@@ -65,7 +56,7 @@ public static class LandNodes
     }
 
     /// <summary>
-    /// A <c>land</c> node's options as the landing step they stand for reads them (<c>form</c>, <c>accept</c>, <c>pattern</c>, <c>plugin</c>), the
+    /// A <c>land</c> node's options as the landing step they stand for reads them (<c>form</c>, <c>accept</c>, <c>pattern</c>), the
     /// open ones taken from <paramref name="resolved"/>; an option left out stays left out. JSON texts, as a node's options are. Its
     /// <c>accept</c> is the graph's: <c>you</c> where a <see cref="NodeKinds.Review"/> comes before it (<paramref name="reviewed"/>).
     /// </summary>
@@ -74,7 +65,7 @@ public static class LandNodes
         var options = new Dictionary<string, string>(StringComparer.Ordinal);
         if (Written(land, "method") is { } method) options["form"] = JsonSerializer.Serialize(method == Merge ? LandingForm.Merge : LandingForm.Branch);
         options[AcceptOption] = JsonSerializer.Serialize(reviewed ? "you" : "automatic");
-        foreach (var name in new[] { "pattern", "plugin" })
+        foreach (var name in new[] { "pattern" })
         {
             if (land.Options.TryGetValue(name, out var written)) options[name] = written;
             else if (resolved is not null && resolved.TryGetValue(name, out var bound)) options[name] = JsonSerializer.Serialize(bound);
@@ -94,15 +85,9 @@ public static class LandNodes
         if (method == Merge) return new Landing(LandingForm.Merge, AutoAccept: !reviewed);
 
         var pattern = Written(land, "pattern") ?? resolved?.GetValueOrDefault("pattern");
-        var plugin = Written(land, "plugin") switch
-        {
-            NoPlugin => null,
-            null => resolved?.GetValueOrDefault("plugin"),
-            var id => id,
-        };
         var key = resolved?.GetValueOrDefault(KeyOption);
-        var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch or Push or PullRequest;
-        return new Landing(LandingForm.Branch, pattern, plugin, AutoAccept: !reviewed, key, squash);
+        var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch;
+        return new Landing(LandingForm.Branch, pattern, Plugin: null, AutoAccept: !reviewed, key, squash);
     }
 
     /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>
@@ -125,13 +110,8 @@ public static class LandNodes
             if (method == Merge || Written(node, "pattern") is not { } pattern || BranchPatterns.Problem(pattern) is not null) return "pattern";
         }
 
-        // A pull request and a push are a plugin's to do; an integrate is the line's, and no plugin lands it (D87, D215).
-        var plugin = Written(node, "plugin");
-        if (node.Options.ContainsKey("plugin") && (plugin is null || (plugin != NoPlugin && !PluginIds.IsId(plugin)))) return "plugin";
-        var named = plugin is not null && plugin != NoPlugin;
-        // A plugin left open is the repository's, resolved at the bind (LANDNODE1h), which refuses a run whose rule names none; `none` is refused here.
-        if (method is Push or PullRequest && plugin == NoPlugin) return "plugin";
-        if (method is Merge or Integrate && named) return "plugin";
+        // A landing hands the work to no plugin: a pull request is the plugin's own step after a push (G8, D241 point 4).
+        if (node.Options.ContainsKey("plugin")) return "plugin";
 
         // The ticket's key (WORKFLOWCLEAN1 1a): read only for a pattern that says {ticket}, so a merge, a pattern without it and an
         // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.

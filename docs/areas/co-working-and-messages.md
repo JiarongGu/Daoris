@@ -24,6 +24,8 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | Channel records | `Service/Asks/Records/` | `ChannelMessage`, `ChannelLine`, `ChannelRead`, `ChannelOutcome`, `ChannelReadOutcome`, `ElsewhereAsk`, `IChannelItem` |
 | HistoryDesk | `Service/Asks/HistoryDesk.cs`, its units and refusals in `Service/Asks/Records/` (`HistoryUnit`, `HistoryKept`, `HistoryRefusal` and the words beside them) | The records' half of clearing finished history: listed first, then pressed, each unit judged again inside the transaction that clears it |
 | ChannelParts | `Service/Asks/ChannelParts.cs` | A line's own channel and messages to one part, kept in `channel_addressed`, never synced |
+| LineChannel | `Service/Asks/LineChannel.cs`, `GET /api/channel/line`, the window's `CHANNEL_LINE` | The person's read of the channel of a line on no ask held here, each message to one part with its receipt |
+| TeammateAskChannel | `Service/Asks/TeammateAskChannel.cs` | A teammate's ask's channel, posted to by the person and by a session here on it, and read by that session |
 | ChannelBounds, ChannelRefusal, ChannelAcks | `Service/Asks/ChannelTerms.cs` | The bounds (4,000 chars, 10 posts, 3 urgent, 20 handed), refusal codes, acknowledgment states |
 | ChannelTools | `Mcp/ChannelTools.cs` | `channel_post` (urgent or ordinary, `to`, `re`) and `channel_read` |
 | CallTable, ToolClasses | `Mcp/CallTable.cs`, `Mcp/ToolClasses.cs` | Which work may call which connector tool; a census holds every tool to a class |
@@ -45,7 +47,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | AttentionStateSlice, NeedsAPerson | `Modules/Loop/AttentionStateSlice.cs`, `NeedsAPerson.cs` | *What needs you*'s rows, judged once and pushed to every window |
 | StewardDesk | `Modules/Platform/StewardDesk.cs`; holder's verb `Driver/Roles/StewardCommand.cs` | Requests for the steward, as claims, bounded, history in `data/steward-desk.json` |
 | Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
-| Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request; the ask's channel; *What needs you* and the foot's count by one key; the steward's line |
+| Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `TeammateAskPage.tsx`, `Web/bridge/sessions/asks.ts`'s `useLineChannel`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request, with the line's channel; the ask's channel and a teammate's; *What needs you* and the foot's count by one key; the steward's line |
 
 The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 
@@ -73,9 +75,12 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 **The channel and posts to one part**
 
 9. Each ask has one channel for its sessions and the person: messages to everyone or to one of its repositories, and Daoris's lines
-   read from the ask's quests. It is service records, travels within the ask's workspace, and carries no path or file. (from D167)
-10. A line on no ask posts on its own channel, on its entry's origin. A helper and a reviewer have no channel: they neither post nor
-    read. (from D225, D163, D155)
+   read from the ask's quests. It is service records, travels within the ask's workspace, and carries no path or file. A teammate's
+   ask, held on another machine, is posted to from here by the person and by a session here on its quest: the message is kept as this
+   machine's own, at its level, and travels to the holder, where a teammate's person's message is a claim named as theirs that reopens
+   nothing, never the holder's person's words. (from D167, D225)
+10. A line on no ask posts on its own channel, on its entry's origin, which the person reads on *At work*. A helper and a reviewer
+    have no channel: they neither post nor read. (from D225, D163, D155)
 11. A part posts at most 10 messages of at most 4,000 characters, and at most 3 urgent. A further urgent post is kept ordinary, and its
     poster is told. The person has no cap. (from D188, D167)
 12. A post may name one other part of the poster's own entry on this machine by its session. It is kept apart, never travels, and is
@@ -163,7 +168,8 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 ***At work*, *What needs you* and the steward desk**
 
 45. *At work* draws the attended line from records, never conversation text: its parts, its co-workers (reviewers from records whose
-    `serves` names the line), the quests it asked, its subagents and the channel's last words. *Waiting on* is the requests that hold;
+    `serves` names the line), the quests it asked, its subagents and the last words of its channel, its ask's or, on no ask held here,
+    its own, a message to one part naming it. *Waiting on* is the requests that hold;
     the head draws the same line, and its door opens *At work* at the first request the line names, that row outlined and focused.
     (from D203, D225)
 46. A message is drawn whole once, at its home. Each word's turn is headed by its sender chip: who, by the one rule, and when it was
@@ -197,11 +203,11 @@ The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
 `HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
-`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `ChannelSyncTests`,
+`Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
 `DriverModuleSessionAnswersAloneTests`. Web: `sender.test.ts`, `ExchangeCard.test.tsx`, `SenderChip.test.tsx`, `Composer.test.tsx`, `AtWork*.test.tsx`,
-`ChannelSection.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
+`ChannelSection.test.tsx`, `TeammateAskPage.test.tsx`, `attention.test.ts`, `waitObligations.test.tsx`, `StewardLine.test.tsx`.
 
 **Gates that bite.** `driver`, `modules`, `service` and `censuses` (the tool-class and transitional censuses), `web-unit`, the web
 gate's `i18n:check` and `names:check -- --strict` for any visible word (glossary: *urgency*, *channel*, *co-worker*, *At work*),
@@ -224,15 +230,15 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 13. D136 point 4 (*Send now* stops the turn on a turn-end door) vs D188 (now stops nothing; `--now` is refused, naming `--level now`). D188 reads right.
 14. D176 point 1 (the driver's verb writes the request) vs its ONEWAY1t note and code (the service desk is the one writer, `Service/Sessions/BrainstormDesk.cs`). Code reads right.
 15. D32's shape (a quest is a checklist item written into the receiver's backlog by `daoris quest post`) vs its amendment and code (the service holds quests; the CLI has no quest command). The amendment reads right.
-16. `Web/work/atWork/AtWorkView.tsx:18` ("a session with no ask has no channel") and the ask-keyed read (`Web/bridge/sessions/asks.ts:25`) vs D225's COMMS1k (a line on no ask has one). D225 reads right; the page does not draw it.
 
 ## Open
 
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (rows d, i): the head's *Co-workers* with its presses, *Bring in another agent…*, a member's thread with *Back to lead*, talking to a member as asking again.
 - **COAGENT1b2, 1c, 1e, 1g**: a piece's later acts and landing proofs; a conversation as the lead; the provider sheet; a hand-over that waits for children. The lead's own `partner_ask` has no row.
-- **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel. **SESSONE2i**: posting to a teammate's ask.
-- No row: the page drawing a line's own channel and the messages to one part for a line on no ask.
+- **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel.
+- No row: a look handing a teammate's ask's messages to a part here that runs on its quest (today they wait for the agent's own
+  `channel_read`); the person posting on a line's own channel; *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.
 - **BRAINSTORM1b2, 1b3, 1c, 1d, 1e, 1f, 1a2b, 1a4**: the CLI's stop and id, a limit on a real door, the measured run, a caller from another repository and the page, the skeptical pass, a workflow step, a no-connector pass test, a pass's traces.

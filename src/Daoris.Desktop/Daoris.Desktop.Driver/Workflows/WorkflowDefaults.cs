@@ -155,7 +155,14 @@ public static class WorkflowDefaults
         var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
         var method = NodeOptions.Text(land, "method") ?? LandNodes.Merge;
         var accept = LandNodes.Reviewed(graph) ? SetupLand.You : SetupLand.Automatic;
-        var plugin = method == LandNodes.Integrate ? LandNodes.NoPlugin : NodeOptions.Text(land, "plugin");
+        // A branch followed by a push and a plugin's pull-request step is the pull-request delivery (G8): the plugin is the step's own.
+        var pullRequest = graph.Nodes.FirstOrDefault(node => NodeKinds.IsPlugin(node.Kind) && node.Kind.EndsWith("/pull-request", StringComparison.Ordinal));
+        if (method == LandNodes.Branch && pullRequest is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Push))
+        {
+            return new SetupLand(SetupLand.PullRequest, accept, NodeGoverning.PluginOf(pullRequest.Kind));
+        }
+
+        string? plugin = null;
         var request = method == LandNodes.Integrate
             ? graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate) is { } integrate ? NodeOptions.Text(integrate, "request") ?? LandingIntegrate.Owner : LandingIntegrate.Owner
             : null;

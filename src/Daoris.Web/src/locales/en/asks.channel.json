@@ -6,6 +6,7 @@
   "asks.channel.unread": "{{count}} unread",
   "asks.channel.new": "new",
   "asks.channel.who.you": "You",
+  "asks.channel.who.teammate": "A teammate on {{machine}}",
   "asks.channel.who.daoris": "Daoris",
   "asks.channel.who.session": "A session",
   "asks.channel.to": "to {{to}}",

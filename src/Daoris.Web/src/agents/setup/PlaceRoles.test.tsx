@@ -142,7 +142,7 @@ describe('A place page, Roles', () => {
   it('edits an imported, not-driven place\'s roles through the same presses, and never sets driving', async () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
-    await userEvent.click(await screen.findByRole('button', { name: /archive-1/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /archive-1/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     await unfold();
     await userEvent.click(await screen.findByRole('button', { name: 'Give archive-1 its own… for design and decisions' }));

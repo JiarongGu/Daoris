@@ -3,7 +3,10 @@ using Daoris.Knowledge.Hosting;
 
 namespace Daoris.Knowledge.Http.Routes;
 
-/// <summary>The messages to one part, a local host's alone: what waits for one part a driver runs, and that part's acknowledgment.</summary>
+/// <summary>
+/// The messages to one part and a line's own channel, a local host's alone: what waits for one part a driver runs, that part's
+/// acknowledgment, and the person's read of a line's own channel.
+/// </summary>
 public sealed class AddressedRoutes(HostWiring host) : IRouteModule
 {
     private ComposedService Service => host.Service;
@@ -14,6 +17,18 @@ public sealed class AddressedRoutes(HostWiring host) : IRouteModule
 
         routes.Map<ReadAddressed, AddressedResponse>(ReadAsync);
         routes.Map<AcknowledgeAddressed, ChannelAckResponse>(AcknowledgeAsync);
+        routes.Map<ReadLineChannel, LineChannelResponse>(ReadLineAsync);
+    }
+
+    private async Task<Answer<LineChannelResponse>> ReadLineAsync(ReadLineChannel request, HttpContext http, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Session) || await Service.Channel.Line.ReadAsync(request.Session.Trim(), ct) is not { } read)
+        {
+            return NoSession(request.Session);
+        }
+
+        return new LineChannelResponse(read.Origin, [.. read.Messages.Select(message =>
+            ChannelRoutes.ToChannelItem(message) with { Receipt = read.Receipts.GetValueOrDefault(message.Id) })]);
     }
 
     private async Task<Answer<AddressedResponse>> ReadAsync(ReadAddressed request, HttpContext http, CancellationToken ct) =>

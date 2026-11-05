@@ -87,10 +87,10 @@ transcript in `_fixtures/rehearsal-logs/`:
 a process of its own; no code from one ever loads into Daoris. Two hand sessions a browser:
 [`plugins/browser`](plugins/browser/README.md) launches one of its own, and
 [`plugins/in-app-browser`](plugins/in-app-browser/README.md) attaches to Daoris's own window (D78),
-where the person signs in once. Two land work (D100): once accepting a session has put its work on a
-branch, [`plugins/github-pull-request`](plugins/github-pull-request/README.md) pushes it and opens a
-pull request with `gh`, and [`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md)
-with `az repos`. Neither runs until it is installed and a workspace's landing rule names it. The
+where the person signs in once. Two open a pull request (D241): once Daoris's `push` node has pushed a branch,
+[`plugins/github-pull-request`](plugins/github-pull-request/README.md) opens a pull request through GitHub's REST API, and
+[`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md) through Azure DevOps', each with the API token of
+the git identity serving origin and running no git or CLI. Neither runs until it is installed and a place's workflow holds its step. The
 published desktop carries those two and `in-app-browser` as **Daoris's own plugins**, offered in
 Plugins and by `daoris plugin list` and never installed until a press (D103);
 `hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell.

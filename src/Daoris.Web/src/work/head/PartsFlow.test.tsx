@@ -1,4 +1,5 @@
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { act, cleanup, render as plain, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
@@ -9,6 +10,9 @@ import { PartsFlow } from './PartsFlow';
 // FLOWCHART1b (the flowchart design §2.3, §7 trap 21): the parts flow takes the parts strip's place on the session's page, the
 // strip its rail. jsdom lays nothing out, so the pane's width is stood in for, as `FlowNodeBox.test.tsx` does, and the drawing's own
 // geometry is the measured-box check's; here is what the page reads and presses.
+
+// The canvas toolbar's tooltips need the provider the app shell holds.
+const render = (ui: React.ReactElement) => plain(ui, { wrapper: Tooltip.Provider });
 
 const APP = EVIDENCE_ENTRIES[0]!;
 const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((session) => [session.id, { session, root: 'C:/work/app' }]));

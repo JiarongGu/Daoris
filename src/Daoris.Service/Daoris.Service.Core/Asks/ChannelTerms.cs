@@ -54,9 +54,6 @@ public enum ChannelRefusal
     /// <summary>The part has posted <see cref="ChannelBounds.MaxPerPart"/> messages already.</summary>
     TooMany,
 
-    /// <summary>The ask is a teammate's, held on another machine and only read here (SESSONE2g): a post to it is theirs to take.</summary>
-    HeldElsewhere,
-
     /// <summary>A <c>to</c> naming a session that is no other part of the poster's own line of work.</summary>
     BadPart,
 

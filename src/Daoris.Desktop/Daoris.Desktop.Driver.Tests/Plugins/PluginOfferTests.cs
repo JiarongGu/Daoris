@@ -145,9 +145,8 @@ public sealed class PluginOfferTests : IDisposable
             Assert.NotEmpty(PluginOffers.Needs(Path.Combine(examples, id)));
         }
 
-        Assert.Contains(PluginOffers.Needs(Path.Combine(examples, "github-pull-request")), need => need.Contains("`gh auth login`", StringComparison.Ordinal));
-        Assert.Contains(PluginOffers.Needs(Path.Combine(examples, "azure-devops-pull-request")), need => need.Contains("`az login`", StringComparison.Ordinal)
-            && need.Contains("`az extension add --name azure-devops`", StringComparison.Ordinal));
+        foreach (var id in new[] { "github-pull-request", "azure-devops-pull-request" })
+            Assert.Contains(PluginOffers.Needs(Path.Combine(examples, id)), need => need.Contains("API token", StringComparison.Ordinal));
     }
 
     /// <summary>

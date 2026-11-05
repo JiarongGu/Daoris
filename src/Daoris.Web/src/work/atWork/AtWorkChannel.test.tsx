@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import { AtWorkView } from './AtWorkView';
-import { LANES_ALONGSIDE_AND_UNTAKEN, SAID, THREE } from './atWork.fixtures';
-import { type Channel, type ChannelItem, lastWords } from '../channel';
+import { LANES_ALONGSIDE_AND_UNTAKEN, LINE_SAID, SAID, THREE } from './atWork.fixtures';
+import { type Channel, type ChannelItem, lastMessages, lastWords, lineChannelOf } from '../channel';
 
 // COWORKVIEW1c: the channel's last words (the cowork view design §3.3): the page's own channel read, each message on the part whose
 // session posted it, *All messages* opening the panel; the view reads no channel and holds no field of it.
@@ -35,6 +35,21 @@ describe('the channel’s last words in the view', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'All messages' }));
     expect(open).toHaveBeenCalledOnce();
+  });
+
+  /** COMMS1k: a line on no ask held here draws its own channel; two alongside parts to each other alone, each named, and no panel to open. */
+  it('draws a line’s own channel: each message on the part that posted it, naming the part it is to alone, with no All messages', async () => {
+    render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID }} />);
+
+    expect(rowHolding('The contract changed').textContent).toContain('to part s2 alone');
+    expect(rowHolding('Taken; the index reads the region now.').textContent).toContain('to part c1 alone');
+    expect(screen.getByText('On the channel')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All messages' })).toBeNull();
+
+    cleanup();
+    await i18n.changeLanguage('zh');
+    render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID }} />);
+    expect(rowHolding('The contract changed').textContent).toContain('只发给段 s2');
   });
 
   it('draws no block for a session with no ask, and says nothing yet for a channel that is empty', () => {
@@ -84,5 +99,17 @@ describe('lastWords', () => {
 
     expect(lastWords(channel(items), only).map((item) => item.id)).toEqual(['m2']);
     expect(lastWords(null, only)).toEqual([]);
+  });
+});
+
+describe('a line’s own channel, read', () => {
+  it('reads the shell’s CHANNEL_LINE answer, and none where the line has no channel of its own or the shell answered another shape', () => {
+    const line = lineChannelOf({ origin: 'session:c1', items: [...LINE_SAID, { kind: 'message' }] });
+
+    expect(line?.origin).toBe('session:c1');
+    expect(line?.items.map((item) => item.id)).toEqual(['aaaaaaaaa1', 'aaaaaaaaa2', 'aaaaaaaaa3']);
+    expect(lastMessages(line, 2).map((item) => item.id)).toEqual(['aaaaaaaaa2', 'aaaaaaaaa3']);
+    expect(lineChannelOf({ origin: null, items: [] })).toBeNull();
+    expect(lineChannelOf('something else')).toBeNull();
   });
 });

@@ -5,9 +5,11 @@ import { keys, NOTICES_SLICE } from '../../data/queries';
 import { useAskMessages } from '../notices';
 import { usePushedLive } from '../state/slices';
 import {
-  type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, postedOf,
+  type Channel, type ChannelForwarded, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, forwardedOf, type LineChannel,
+  lineChannelOf, postedOf,
 } from '../../work/channel';
 import { call } from '../call';
+import { askHeld } from '../state/held';
 
 // An ask's own doors (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): its channel, where its sessions and the person
 // talk, read, posted to and marked read. The driver's `AsksRoutes` answers all three over the service's doors, which
@@ -98,6 +100,24 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
     refetchOnWindowFocus: false,
   });
   return { asks: query.data ?? [], loading: query.isPending && query.fetchStatus !== 'idle', available: isAvailable };
+};
+
+/**
+ * The channel of the line `session` is a part of, where that line is on no ask held here (`CHANNEL_LINE`, COMMS1k): a chat's, a quest
+ * session's, a teammate's ask's. Told by event, and under the asks' key, so a tick asks it again with each channel. Null while it is
+ * read, where the line has none of its own, and in a browser.
+ */
+export const useLineChannel = (session: string | null, { enabled = true }: { enabled?: boolean } = {}): LineChannel | null => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.allAsks, 'line', session ?? 'none'] as const;
+  const query = useQuery({
+    queryKey,
+    queryFn: () => askHeld('CHANNEL_LINE', client, queryKey, { session: session ?? '' }, lineChannelOf),
+    enabled: isAvailable && enabled && session !== null,
+    refetchOnWindowFocus: false,
+  });
+  return query.data ?? null;
 };
 
 /**

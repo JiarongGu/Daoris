@@ -510,7 +510,6 @@ describe('a session’s page header and its acts', () => {
           session: 's1a2b3c4',
           process: {
             commits: { repository: 'engine', workspace: 'default', rule: { mode: 'at-end' }, source: 'repository' },
-            landing: { repository: 'engine', workspace: 'default', source: 'default', form: 'merge' },
           },
         }
       : DRIVER_STATE));
@@ -521,7 +520,7 @@ describe('a session’s page header and its acts', () => {
     expect(await within(head).findByText('Commits')).toBeInTheDocument();
     expect(within(head).getByText('Commits').nextElementSibling)
       .toHaveTextContent('One commit is made when the work is done. Set for this repository.');
-    expect(within(head).getByText('Landing').nextElementSibling).toHaveTextContent('Merged into its line — the default.');
+    expect(within(head).queryByText('Landing')).toBeNull();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PROCESS', expect.objectContaining({ payload: { id: 's1a2b3c4' } }));
   });
 
@@ -1190,16 +1189,6 @@ describe('acting on what a session landed', () => {
     await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
     expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
       .toHaveTextContent('which a branch would leave behind.');
-
-    // LANDBACK1 part 1: where Daoris carried the session on and kept the yes, the press took effect: said, and the ask closes, no refusal.
-    landed = {
-      session: 's1a2b3c4', done: false,
-      message: 'Accepted: its session `s1a2b3c4` was carried on to commit or restore its uncommitted work in its own tree, and its work lands when its tree is clean. Nothing was landed yet.',
-      carried: { why: 'uncommitted', told: true },
-    } as typeof landed;
-    await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('was carried on to commit or restore its uncommitted work')));
-    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
   });
 
   /**
