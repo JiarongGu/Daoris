@@ -121,39 +121,86 @@ public sealed class PluginHostTokenTests : IDisposable
     }
 
     [Fact]
-    public async Task The_set_does_not_start_a_plugin_whose_hand_is_refused_and_starts_one_with_the_token_alone()
+    public async Task The_set_starts_a_place_with_the_token_of_its_origin_identity_and_in_no_other_environment()
     {
-        string? seen = null;
-        var started = 0;
+        Serving();
+
+        var (tokens, _) = await LookAsync();
+
+        Assert.Equal([Secret], tokens);
+        Assert.Null(HookProcess.HostToken.Value);
+    }
+
+    [Fact]
+    public async Task The_set_starts_no_process_where_no_identity_serves_origin()
+    {
+        var (tokens, said) = await LookAsync();
+
+        Assert.Empty(tokens);
+        Assert.Contains(said, line => line.Contains("no git identity serves", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task The_set_starts_no_process_for_a_read_only_identity()
+    {
+        GitIdentityActs.ReadOnly(Home, Serving().Id, on: true);
+
+        var (tokens, said) = await LookAsync();
+
+        Assert.Empty(tokens);
+        Assert.Contains(said, line => line.Contains("read only", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task The_set_starts_no_process_where_Write_is_denied()
+    {
+        Serving();
+        Deny();
+
+        var (tokens, said) = await LookAsync();
+
+        Assert.Empty(tokens);
+        Assert.Contains(said, line => line.Contains("denies writes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task The_set_starts_no_process_for_an_identity_with_no_api_token_and_says_no_value()
+    {
+        Serving(apiToken: false);
+
+        var (tokens, said) = await LookAsync();
+
+        Assert.Empty(tokens);
+        Assert.Contains(said, line => line.Contains("no API token", StringComparison.Ordinal));
+        Assert.DoesNotContain(said, line => line.Contains("throwaway", StringComparison.Ordinal));
+    }
+
+    /// <summary>One look of a hook set that holds the home, a plugin with a pull-request step awaited at the place <c>work</c>: what started with what token, and what was said.</summary>
+    private async Task<(List<string?> Tokens, List<string> Said)> LookAsync()
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "pr");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "pr", "hooks": { "command": ["node", "plugin.mjs"], "points": ["work/watch", "work/step", "work/perform"] },
+              "steps": [{ "id": "pull-request", "reach": "performed" }] }
+            """);
+        var tokens = new List<string?>();
+        var said = new List<string>();
         await using var set = new HookSet(
             Home,
-            start: (plugin, _, _) =>
+            start: (_, _, _) =>
             {
-                started++;
-                seen = HookProcess.HostToken.Value;
+                tokens.Add(HookProcess.HostToken.Value);
                 return Task.FromException<IHookChannel>(new DriverException("stub: stops here"));
             },
-            say: (_, _) => { },
-            hostToken: _ => new HostTokenHand(null, "no git identity serves x, so the plugin was not started"));
-        var catalog = new PluginCatalog([Plugin()]);
-
-        await set.ReconcileAsync(catalog, CancellationToken.None);
-        Assert.Equal(0, started);
-
-        await using var handed = new HookSet(
-            Home,
-            start: (plugin, _, _) =>
-            {
-                started++;
-                seen = HookProcess.HostToken.Value;
-                return Task.FromException<IHookChannel>(new DriverException("stub: stops here"));
-            },
-            say: (_, _) => { },
-            hostToken: _ => new HostTokenHand(Secret, null));
-        await handed.ReconcileAsync(catalog, CancellationToken.None);
-
-        Assert.Equal(1, started);
-        Assert.Equal(Secret, seen);
-        Assert.Null(HookProcess.HostToken.Value);
+            say: (_, line) => said.Add(line),
+            holdsHome: () => true,
+            hostToken: (_, place, _) => Task.FromResult(PluginHostToken.Hand(Home, place.Repository, place.Workspace, Origin)));
+        set.Watch(new Dictionary<string, IReadOnlyList<WatchedUnit>>
+        {
+            ["pr"] = [new WatchedUnit("app", "work", "C:/fam/app", "quest/a", new string('a', 40), "main", null, ["pull-request"]) { Unit = "u1" }],
+        });
+        await set.ReconcileAsync(PluginCatalog.Load(Home), CancellationToken.None);
+        return (tokens, said);
     }
 }

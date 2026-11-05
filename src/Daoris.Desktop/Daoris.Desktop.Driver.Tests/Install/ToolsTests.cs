@@ -84,8 +84,6 @@ public sealed class ToolsTests : IDisposable
                 "git Git [git] [--version] [core.sshCommand]",
                 "node Node.js [node npm npx] [--version] []",
                 "pwsh PowerShell [pwsh] [--version] []",
-                "gh GitHub CLI [gh] [--version] []",
-                "az Azure CLI [az] [version] []",
             ],
             Tools.Declared.Select(tool =>
                 $"{tool.Id} {tool.Name} [{string.Join(' ', tool.Answers)}] [{string.Join(' ', tool.Version)}] [{string.Join(' ', tool.Settings)}]"));
@@ -106,7 +104,7 @@ public sealed class ToolsTests : IDisposable
     [InlineData("managed at four numbers", """{"tools":{"git":{"use":"managed","version":"2.51.0.2"}}}""", "git", "managed", "2.51.0.2", null, null)]
     [InlineData("managed at one number", """{"tools":{"git":{"use":"managed","version":"2"}}}""", "git", "managed", "2", null, null)]
     [InlineData("a file", """{"tools":{"git":{"use":"file","file":"WHOLE"}}}""", "git", "file", null, Whole, null)]
-    [InlineData("another tool's entry", """{"tools":{"gh":{"use":"managed"}}}""", "git", "system", null, null, null)]
+    [InlineData("another tool's entry", """{"tools":{"pwsh":{"use":"managed"}}}""", "git", "system", null, null, null)]
     [InlineData("not an object", """{"tools":{"git":"managed"}}""", "git", null, null, null, "it is not an object")]
     [InlineData("no way", """{"tools":{"git":{"version":"2.51.0"}}}""", "git", null, null, null, "it names no way")]
     [InlineData("a way nobody declared", """{"tools":{"git":{"use":"portable"}}}""", "git", null, null, null, "`use` is `portable`, not system, managed or file")]
@@ -284,35 +282,35 @@ public sealed class ToolsTests : IDisposable
     // ── The resolution (§2.3). The CLI's `a tool resolves as the driver resolves it`, row for row ────
 
     /// <remarks>
-    /// Every row is <c>gh</c>. <paramref name="record"/> is the managed folder: null for none, empty for a
+    /// Every row is <c>pwsh</c>. <paramref name="record"/> is the managed folder: null for none, empty for a
     /// folder with no record, else the record's text. <paramref name="atFile"/> is what is at FILE: none,
     /// file or folder. <paramref name="resolves"/> is PATH, MANAGED, FILE or null.
     /// </remarks>
     [Theory]
     [InlineData("no file, on PATH", null, null, false, "none", true, "PATH", false, null)]
-    [InlineData("no file, not on PATH", null, null, false, "none", false, null, false, "`gh` is not on this machine's PATH")]
-    [InlineData("the system's, on PATH", """{"tools":{"gh":{"use":"system"}}}""", null, false, "none", true, "PATH", false, null)]
-    [InlineData("managed, downloaded", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"gh_2.62.0/bin/gh.exe"}""", true, "none", true, "MANAGED", false, null)]
-    [InlineData("managed, not downloaded", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", null, false, "none", true, null, true, "that version is not downloaded")]
-    [InlineData("managed, a folder with no record", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", "", false, "none", true, null, true, "that version is not downloaded")]
-    [InlineData("managed, a record that is not JSON", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", "not json", false, "none", true, null, true, "is not readable JSON")]
-    [InlineData("managed, a record naming no executable", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", "{}", false, "none", true, null, true, "it names no `exe`")]
-    [InlineData("managed, a record that climbs out", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"../gh.exe"}""", false, "none", true, null, true, "its `exe` is not a relative path inside the package")]
-    [InlineData("managed, a record with a backslash", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"bin\\gh.exe"}""", false, "none", true, null, true, "its `exe` is not a relative path inside the package")]
-    [InlineData("managed, the executable gone", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"gh_2.62.0/bin/gh.exe"}""", false, "none", true, null, true, "and there is no file there")]
-    [InlineData("a file, there", """{"tools":{"gh":{"use":"file","file":"FILE"}}}""", null, false, "file", true, "FILE", false, null)]
-    [InlineData("a file, gone", """{"tools":{"gh":{"use":"file","file":"FILE"}}}""", null, false, "none", true, null, true, "and there is no file there")]
-    [InlineData("a file that is a folder", """{"tools":{"gh":{"use":"file","file":"FILE"}}}""", null, false, "folder", true, null, true, "and there is no file there")]
-    [InlineData("an entry that does not read", """{"tools":{"gh":{"use":"managed"}}}""", null, false, "none", true, null, true, "does not read")]
+    [InlineData("no file, not on PATH", null, null, false, "none", false, null, false, "`pwsh` is not on this machine's PATH")]
+    [InlineData("the system's, on PATH", """{"tools":{"pwsh":{"use":"system"}}}""", null, false, "none", true, "PATH", false, null)]
+    [InlineData("managed, downloaded", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"pwsh_2.62.0/bin/pwsh.exe"}""", true, "none", true, "MANAGED", false, null)]
+    [InlineData("managed, not downloaded", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", null, false, "none", true, null, true, "that version is not downloaded")]
+    [InlineData("managed, a folder with no record", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", "", false, "none", true, null, true, "that version is not downloaded")]
+    [InlineData("managed, a record that is not JSON", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", "not json", false, "none", true, null, true, "is not readable JSON")]
+    [InlineData("managed, a record naming no executable", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", "{}", false, "none", true, null, true, "it names no `exe`")]
+    [InlineData("managed, a record that climbs out", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"../pwsh.exe"}""", false, "none", true, null, true, "its `exe` is not a relative path inside the package")]
+    [InlineData("managed, a record with a backslash", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"bin\\pwsh.exe"}""", false, "none", true, null, true, "its `exe` is not a relative path inside the package")]
+    [InlineData("managed, the executable gone", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", """{"exe":"pwsh_2.62.0/bin/pwsh.exe"}""", false, "none", true, null, true, "and there is no file there")]
+    [InlineData("a file, there", """{"tools":{"pwsh":{"use":"file","file":"FILE"}}}""", null, false, "file", true, "FILE", false, null)]
+    [InlineData("a file, gone", """{"tools":{"pwsh":{"use":"file","file":"FILE"}}}""", null, false, "none", true, null, true, "and there is no file there")]
+    [InlineData("a file that is a folder", """{"tools":{"pwsh":{"use":"file","file":"FILE"}}}""", null, false, "folder", true, null, true, "and there is no file there")]
+    [InlineData("an entry that does not read", """{"tools":{"pwsh":{"use":"managed"}}}""", null, false, "none", true, null, true, "does not read")]
     [InlineData("a file that does not read", "not json", null, false, "none", true, null, true, "is not readable JSON")]
     public void A_tool_resolves_as_the_cli_resolves_it(
         string name, string? text, string? record, bool exe, string atFile, bool onPath, string? resolves, bool refused, string? fragment)
     {
         var pathDir = Path.Combine(_root, "path");
         Directory.CreateDirectory(pathDir);
-        var onPathFile = Path.Combine(pathDir, OperatingSystem.IsWindows() ? "gh.exe" : "gh");
+        var onPathFile = Path.Combine(pathDir, OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh");
         if (onPath) File.WriteAllText(onPathFile, "");
-        var named = Path.Combine(_root, "named", OperatingSystem.IsWindows() ? "gh.exe" : "gh");
+        var named = Path.Combine(_root, "named", OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh");
         if (atFile == "file")
         {
             Directory.CreateDirectory(Path.GetDirectoryName(named)!);
@@ -323,8 +321,8 @@ public sealed class ToolsTests : IDisposable
             Directory.CreateDirectory(named);
         }
 
-        var version = DaorisHome.Entry(Home, HomeEntry.ToolVersions,"gh", "2.62.0");
-        var managed = Path.Combine(version, Tools.Package, "gh_2.62.0", "bin", "gh.exe");
+        var version = DaorisHome.Entry(Home, HomeEntry.ToolVersions,"pwsh", "2.62.0");
+        var managed = Path.Combine(version, Tools.Package, "pwsh_2.62.0", "bin", "pwsh.exe");
         if (record is not null)
         {
             Directory.CreateDirectory(version);
@@ -339,7 +337,7 @@ public sealed class ToolsTests : IDisposable
 
         if (text is not null) Write(text.Replace("FILE", Escaped(named)));
 
-        var resolution = Tools.Resolve(Home, "gh", path: pathDir);
+        var resolution = Tools.Resolve(Home, "pwsh", path: pathDir);
         var expected = resolves switch { "PATH" => onPathFile, "MANAGED" => managed, "FILE" => named, _ => null };
 
         Assert.True(Spelled(expected) == Spelled(resolution.File), $"{name}: {resolution.File}");
@@ -377,10 +375,10 @@ public sealed class ToolsTests : IDisposable
     public void A_tool_PATH_does_not_find_is_said_naming_the_three_ways_and_is_not_a_refusal()
     {
         Assert.Equal(
-            new ToolResolution("az", ToolWay.System, null, null, false,
-                "`az` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: "
-                + "`daoris tool use az file <path>` names one"),
-            Tools.Resolve(Home, "az", path: ""));
+            new ToolResolution("node", ToolWay.System, null, null, false,
+                "`node` is not on this machine's PATH. A tool is run as the system's, managed, or from a file you name: "
+                + "`daoris tool use node file <path>` names one"),
+            Tools.Resolve(Home, "node", path: ""));
     }
 
     // ── Rule 6: a write. The CLI's `setting one way clears the others…`, step for step ─────────────
@@ -400,14 +398,14 @@ public sealed class ToolsTests : IDisposable
 
         Write("""
             {"note":"mine",
-             "tools":{"git":{"use":"managed","version":"2.51.0","keep":"this"},"bun":{"use":"system"},"gh":{"use":"managed"}},
+             "tools":{"git":{"use":"managed","version":"2.51.0","keep":"this"},"bun":{"use":"system"},"pwsh":{"use":"managed"}},
              "git":{"core.sshCommand":"ssh","credential.helper":"manager"},
              "locations":["https://example.org/r.json","ftp://kept.example/r.json"]}
             """);
         Tools.UseFile(Home, "git", whole);
         Same("""
             {"note":"mine",
-             "tools":{"git":{"use":"file","keep":"this","file":"FILE"},"bun":{"use":"system"},"gh":{"use":"managed"}},
+             "tools":{"git":{"use":"file","keep":"this","file":"FILE"},"bun":{"use":"system"},"pwsh":{"use":"managed"}},
              "git":{"core.sshCommand":"ssh","credential.helper":"manager"},
              "locations":["https://example.org/r.json","ftp://kept.example/r.json"]}
             """.Replace("FILE", Escaped(whole)), Parsed());
@@ -441,7 +439,7 @@ public sealed class ToolsTests : IDisposable
     [Theory]
     [InlineData("a file that is not JSON", "not json", "system", "git", null, "is not readable JSON")]
     [InlineData("tools that are a list", """{"tools":[]}""", "system", "git", null, "`tools` is not an object")]
-    [InlineData("a tool nobody declared", "{}", "system", "bun", null, "`bun` is not a tool this build runs — one of: git, node, pwsh, gh, az")]
+    [InlineData("a tool nobody declared", "{}", "system", "bun", null, "`bun` is not a tool this build runs — one of: git, node, pwsh")]
     [InlineData("a file that is not whole", "{}", "file", "git", "bin/git", "`bin/git` is not a whole path")]
     [InlineData("a file that is not there", "{}", "file", "git", "GONE", "no file at")]
     public void A_write_that_cannot_be_made_writes_nothing(string name, string before, string way, string tool, string? file, string fragment)
@@ -478,23 +476,23 @@ public sealed class ToolsTests : IDisposable
     [InlineData("another version downloaded", null, "2.61.0", "2.62.0", null, "is not downloaded")]
     [InlineData("a version that is not exact", null, null, "latest", null, "`latest` is not an exact version")]
     [InlineData("a version that climbs out", null, null, "../2.62.0", null, "`../2.62.0` is not an exact version")]
-    [InlineData("over a file it names", """{"tools":{"gh":{"use":"file","file":"FILE","keep":"this"}}}""", "2.62.0", "2.62.0", """{"use":"managed","keep":"this","version":"2.62.0"}""", null)]
+    [InlineData("over a file it names", """{"tools":{"pwsh":{"use":"file","file":"FILE","keep":"this"}}}""", "2.62.0", "2.62.0", """{"use":"managed","keep":"this","version":"2.62.0"}""", null)]
     [InlineData("over a file that does not read", "not json", "2.62.0", "2.62.0", null, "is not readable JSON")]
     public void Managed_is_written_as_the_cli_writes_it(string name, string? before, string? has, string version, string? after, string? refusal)
     {
         if (before is not null) Write(before.Replace("FILE", Escaped(WholeFile)));
-        if (has is not null) Downloaded("gh", has);
+        if (has is not null) Downloaded("pwsh", has);
         var was = Text();
 
         if (refusal is null)
         {
-            Tools.UseManaged(Home, "gh", version);
-            Same(after!, Parsed()["tools"]!["gh"]!);
-            Assert.Equal(DaorisHome.Entry(Home, HomeEntry.ToolVersions,"gh", version, Tools.Package, "bin", "gh.exe"), Tools.Resolve(Home, "gh", path: "").File);
+            Tools.UseManaged(Home, "pwsh", version);
+            Same(after!, Parsed()["tools"]!["pwsh"]!);
+            Assert.Equal(DaorisHome.Entry(Home, HomeEntry.ToolVersions,"pwsh", version, Tools.Package, "bin", "pwsh.exe"), Tools.Resolve(Home, "pwsh", path: "").File);
         }
         else
         {
-            var error = Assert.Throws<DriverException>(() => Tools.UseManaged(Home, "gh", version));
+            var error = Assert.Throws<DriverException>(() => Tools.UseManaged(Home, "pwsh", version));
             Assert.True(error.Message.Contains(refusal, StringComparison.Ordinal), $"{name}: {error.Message}");
             Assert.Equal(was, Text());
         }

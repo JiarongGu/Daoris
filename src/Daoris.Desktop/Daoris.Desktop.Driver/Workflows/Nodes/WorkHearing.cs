@@ -52,7 +52,7 @@ internal sealed class WorkHearing(
             var told = watched(unit, attempt);
             if ((attempt.Plugin == QuestClosing.Sender
                     ? WorkRefusals.NotSender
-                    : WorkBelief.Completion(each, attempt, port.GenerationOf(attempt.Plugin), node, told, clock())) is { } code)
+                    : WorkBelief.Completion(each, attempt, attempt.Generation is { } held ? port.GenerationOf(attempt.Plugin, held) : port.GenerationOf(attempt.Plugin), node, told, clock())) is { } code)
             {
                 done.Add(Counted(each, new(unit, attempt.Node, PerformedWhat.NotTaken, code)));
                 continue;

@@ -64,19 +64,19 @@ public sealed class KeepingTests : IDisposable
     {
         Assert.Null(KeepingRecord.WriteUnused(_home, KeepingRecord.Read(_home), new Dictionary<string, DateTimeOffset?>
         {
-            ["agent/claude-code/2.0.1"] = Now, ["tool/gh/2.61.0"] = Now.AddDays(-1),
+            ["agent/claude-code/2.0.1"] = Now, ["tool/pwsh/2.61.0"] = Now.AddDays(-1),
         }));
         var read = KeepingRecord.Read(_home);
         Assert.Equal(Now, read.Unused["agent/claude-code/2.0.1"]);
-        Assert.Equal(Now.AddDays(-1), read.Unused["tool/gh/2.61.0"]);
+        Assert.Equal(Now.AddDays(-1), read.Unused["tool/pwsh/2.61.0"]);
 
         // Another writer, between this writer's read and its write: its last run and an entry of its own.
         File.WriteAllText(KeepingRecord.PathOf(_home),
-            """{ "schema": 1, "last": { "set-aside": { "at": "2026-10-20T09:00:00.000Z", "door": "look", "run": "r", "removed": { "count": 1, "bytes": 1 }, "kept": {} } }, "unused": { "agent/claude-code/2.0.1": "2026-10-21T09:00:00.000Z", "tool/gh/2.61.0": "2026-10-20T09:00:00.000Z", "agent/codex/0.40.0": "2026-10-18T09:00:00.000Z" } }""" + "\n");
+            """{ "schema": 1, "last": { "set-aside": { "at": "2026-10-20T09:00:00.000Z", "door": "look", "run": "r", "removed": { "count": 1, "bytes": 1 }, "kept": {} } }, "unused": { "agent/claude-code/2.0.1": "2026-10-21T09:00:00.000Z", "tool/pwsh/2.61.0": "2026-10-20T09:00:00.000Z", "agent/codex/0.40.0": "2026-10-18T09:00:00.000Z" } }""" + "\n");
         Assert.Null(KeepingRecord.WriteUnused(_home, read, new Dictionary<string, DateTimeOffset?> { ["agent/claude-code/2.0.1"] = null }));
 
         var after = KeepingRecord.Read(_home);
-        Assert.Equal(["agent/codex/0.40.0", "tool/gh/2.61.0"], after.Unused.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["agent/codex/0.40.0", "tool/pwsh/2.61.0"], after.Unused.Keys.Order(StringComparer.Ordinal));
         Assert.Equal("look", after.Last["set-aside"].Door);
         Assert.False(File.Exists(KeepLock.PathOf(KeepingRecord.PathOf(_home))));
     }
