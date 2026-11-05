@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { landingFrom, landingProcessSays, type RepositoryLanding } from '../../settings/repository/Landings';
 import { Button, CheckField, Chip, Icon, Inline, SelectField, SettingRow } from '../../design/ui';
-import { landingRowSays, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import type { LandsHere, ReachSetup } from './RepositorySetup';
 
 export const JOIN = ' · ';
@@ -29,41 +27,17 @@ export function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<Reach
   );
 }
 
-/**
- * How its work lands (WORKFLOWCLEAN1h-b, D228): under a saved version, the version's own `land` options; under Current, the old rule as it
- * stands, read and never edited, with the conversion's door.
- */
-export function LandingSetting({ twin, landing, lands, unread, onOpenPlugin }: {
+/** How its work lands (WORKFLOWCLEAN1h-b, D228): the saved version's own `land` options, edited here. */
+export function LandingSetting({ twin, lands }: {
   /** The terminal twin of the row: a repository's, or a workspace's. */
   twin: string;
-  landing: RepositoryLanding | null;
-  lands: LandsHere | null;
-  unread: (UnreadLanding & { name: string }) | null;
-  onOpenPlugin?: (plugin: string) => void;
+  lands: Extract<LandsHere, { is: 'version' }>;
 }) {
   const { t } = useTranslation();
-  const label = t('projects.setup.landing');
-  if (lands?.is === 'version') {
-    return (
-      <SettingRow label={label} hint={twin}>
-        <p className="m-0 text-small text-ink-soft"><Inline text={lands.summary} /></p>
-        <div className="mt-2">{lands.editor}</div>
-      </SettingRow>
-    );
-  }
-  const branch = landing?.form === 'branch';
-  const says = landing
-    ? landingRowSays(t, landingFrom(t, landing), branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin, landingProcessSays(t, landing))
-    : '';
   return (
-    <SettingRow
-      label={label}
-      hint={twin}
-      control={lands?.onConvert ? <Button variant="ghost" onClick={lands.onConvert}>{t('agents.convert.open')}</Button> : undefined}
-    >
-      <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
-      {lands && <p className="m-0 mt-1 text-small text-ink-soft">{t('agents.convert.follows')}</p>}
-      {unread && <UnreadLandingNote name={unread.name} unread={unread} />}
+    <SettingRow label={t('projects.setup.landing')} hint={twin}>
+      <p className="m-0 text-small text-ink-soft"><Inline text={lands.summary} /></p>
+      <div className="mt-2">{lands.editor}</div>
     </SettingRow>
   );
 }

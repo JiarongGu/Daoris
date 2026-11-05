@@ -524,6 +524,9 @@ public sealed class WorkflowPortsTests
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
+            // A service with no change door has only the whole list, which the kept list then reads.
+            if (request.RequestUri!.AbsolutePath == "/api/sessions/changes")
+                return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/quests?includeClosed=true" =>

@@ -305,14 +305,6 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
             ? t('agents.roles.repo.lineIs', { branch: row.line.branch ?? '—', source: t(`agents.roles.repo.lineSource.${row.line.source}`, { defaultValue: row.line.source }) })
             : t('agents.roles.repo.lineNone')}
         </Line>
-        <Line label={t('agents.roles.repo.landing')}>
-          {row.landing
-            ? t(row.landing.plugin ? 'agents.roles.repo.landingPlugin' : 'agents.roles.repo.landingIs', {
-              form: row.landing.form, plugin: row.landing.plugin,
-              source: t(`agents.roles.repo.landingSource.${row.landing.source}`, { defaultValue: row.landing.source }),
-            })
-            : t('agents.roles.repo.landingNone')}
-        </Line>
         <Line label={t('agents.roles.repo.driving')}>
           {t(`agents.roles.repo.driving.${row.driving === 'not-driven' ? 'notDriven' : row.driving ?? 'unread'}`)}
         </Line>
@@ -329,7 +321,7 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
                   )
                   : plugin.name}
                 <span className="text-ink-soft">
-                  {t(plugin.via.length === 2 ? 'agents.roles.repo.viaBoth' : plugin.via[0] === 'landing' ? 'agents.roles.repo.viaLanding' : 'agents.roles.repo.viaAgent')}
+                  {t('agents.roles.repo.viaAgent')}
                 </span>
               </span>
             ))}

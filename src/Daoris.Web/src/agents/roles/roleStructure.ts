@@ -13,7 +13,6 @@ import type { RoleStructure, StructureChoice, StructureWork } from '../../data/w
 import { type Authored, authoredTexts } from '../../locales/authored';
 import type { AccountsAnswer } from '../../settings/accounts/accounts';
 import type { RepositoryLine } from '../../settings/repository/Lines';
-import type { RepositoryLanding } from '../../settings/repository/Landings';
 import { accountStates, agentRows, latestRead } from '../agents';
 import type { Tool } from '../tools';
 
@@ -111,7 +110,8 @@ export type AccountRow = {
   reasons: Reason[];
 };
 
-export type PluginLine = { id: string; name: string; via: ('agent' | 'landing')[] };
+/** A plugin one of the repository's agents is declared by. */
+export type PluginLine = { id: string; name: string };
 
 export type RepositoryWork = {
   work: string;
@@ -135,7 +135,6 @@ export type RepositoryRow = {
   differs: number;
   works: RepositoryWork[];
   line: { branch?: string; source: string } | null;
-  landing: { form: string; plugin?: string; source: string } | null;
   driving: 'driven' | 'held' | 'not-driven' | null;
   plugins: PluginLine[];
   reasons: Reason[];
@@ -210,7 +209,7 @@ export type StructureInput = {
   tools: readonly Tool[];
   accounts: AccountsAnswer | null | undefined;
   plugins: readonly PluginRef[] | null | undefined;
-  lines: { lines: readonly RepositoryLine[]; landings?: readonly RepositoryLanding[] } | null | undefined;
+  lines: { lines: readonly RepositoryLine[] } | null | undefined;
   driver: { drivable: readonly string[]; holds: readonly string[] } | null | undefined;
   /** The appointments from `STATE`; absent, the diagram draws no appointed role. */
   appointed?: AppointedRead | null;
@@ -342,16 +341,14 @@ export function buildStructure(input: StructureInput): Structure {
       .map((row): RepositoryRow => {
         const place = placeAt({ workspace, repository: row.repository });
         const line = input.lines?.lines.find((each) => each.repository === row.repository);
-        const landing = input.lines?.landings?.find((each) => each.repository === row.repository);
         const driven = input.driver ? (input.driver.holds.includes(row.repository) ? 'held' : input.driver.drivable.includes(row.repository) ? 'driven' : 'not-driven') : null;
         const rowWorks = placeWorks(place, machine);
         const agents = new Set((place?.works ?? []).flatMap((each) => each.choices.map((choice) => choice.agent)));
-        const via = new Map<string, Set<'agent' | 'landing'>>();
+        const pluginIds = new Set<string>();
         for (const agent of agents) {
           const id = pluginOfAgent(agent);
-          if (id) via.set(id, (via.get(id) ?? new Set()).add('agent'));
+          if (id) pluginIds.add(id);
         }
-        if (landing?.plugin) via.set(landing.plugin, (via.get(landing.plugin) ?? new Set()).add('landing'));
         const reasons: Reason[] = [];
         if (rowWorks.some((each) => each.held || each.choicesFailed || each.policyFailed)) reasons.push('held');
         if (rowWorks.some((each) => each.cannotRun)) reasons.push('cannot-run');
@@ -360,9 +357,8 @@ export function buildStructure(input: StructureInput): Structure {
           id: placeId({ workspace, repository: row.repository }), workspace, repository: row.repository,
           differs: rowWorks.filter((each) => each.differs).length, works: rowWorks,
           line: line && !line.notReadYet ? { branch: line.branch, source: line.source } : null,
-          landing: landing ? { form: landing.form, plugin: landing.plugin, source: landing.source } : null,
           driving: driven,
-          plugins: [...via.entries()].map(([id, kinds]) => ({ id, name: pluginName(id), via: [...kinds] })), reasons,
+          plugins: [...pluginIds].map((id) => ({ id, name: pluginName(id) })), reasons,
         };
       });
     return { id: placeId({ workspace }), workspace, repositories: rows, differs: rows.filter((each) => each.differs > 0).length };

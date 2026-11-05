@@ -153,19 +153,13 @@ describe('buildStructure', () => {
       expect(aurora!.differs).toBe(1);
     });
 
-    it('says line, landing and driving from the reads', () => {
+    it('says line and driving from the reads', () => {
       const engine = rows()[0]!.repositories[0]!;
       expect(engine.line).toEqual({ branch: 'main', source: 'repository' });
-      expect(engine.landing).toMatchObject({ form: 'branch', plugin: 'github-pull-request' });
       expect(engine.driving).toBe('driven');
       const tools = rows()[1]!.repositories[0]!;
       expect(tools.line).toBeNull();
       expect(tools.driving).toBe('not-driven');
-    });
-
-    it('names the plugins whose landing it uses', () => {
-      const engine = rows()[0]!.repositories[0]!;
-      expect(engine.plugins).toEqual([{ id: 'github-pull-request', name: 'GitHub pull request', via: ['landing'] }]);
     });
   });
 

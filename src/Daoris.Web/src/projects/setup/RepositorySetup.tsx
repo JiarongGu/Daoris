@@ -10,7 +10,6 @@ import { type SessionChecksValue } from '../../settings/repository/SessionChecks
 import { type HelperEdit, type RepositoryHelpers } from '../../settings/repository/Helpers';
 import { type HandOverEdit, type RepositoryHandOver } from '../../settings/repository/HandOver';
 import { type LandingIntegrate } from '../../settings/repository/IntegratePolicy';
-import { type RepositoryLanding } from '../../settings/repository/Landings';
 import { type LanguageOption, type RepositoryLanguage } from '../../settings/repository/Languages';
 import { type RepositoryLine } from '../../settings/repository/Lines';
 import { type OpinionEdit, type RepositoryOpinion } from '../../settings/repository/Opinions';
@@ -18,7 +17,7 @@ import { type RepositoryReview, type ReviewEdit } from '../../settings/repositor
 import { type Answered } from '../../work/InlineConfirm';
 import { type RuleLists } from './RepositoryRules';
 import { type FoldSpec, FoldRow } from './FoldRow';
-import { SetupSection, type UnreadLanding } from './SetupParts';
+import { SetupSection } from './SetupParts';
 import { type GitIdentityShown } from '../../settings/git/Git';
 import { type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
 import { type GitAccessEdit, type ResolvedGitClass } from '../../settings/repository/GitAccess';
@@ -120,13 +119,6 @@ export type WorkSetup = {
   onLine?: (branch: string | undefined) => void;
   /** Sets the line's policy, or with null withdraws it (`SET_LINE`'s `policy`); absent on a shell older than it, and no policy is offered. */
   onLinePolicy?: (policy: LandingIntegrate | null) => void;
-  /** How its work lands as the driver chose it; absent on a shell older than it. */
-  landing?: RepositoryLanding | null;
-  /**
-   * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d): its own, or its workspace's where it lands by
-   * Daoris's merge, with the name it is written under; absent where none, and on a shell older than it.
-   */
-  landingUnread?: (UnreadLanding & { name: string }) | null;
   /**
    * Where its work is reviewed before it lands (REVIEWENV1a, D154 point 2), as the driver resolves it: its own, its
    * workspace's, or none set; absent on a shell older than it, and no row is offered.
@@ -234,8 +226,6 @@ export type RepositorySetupProps = {
   lead?: readonly FoldSpec[];
   /** The integration declaration and its acceptance are the place page's Gates (AGENTSPLACE1h), drawn once there: this section draws neither. */
   gatesApart?: boolean;
-  /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
-  onOpenPlugin?: (plugin: string) => void;
 };
 
 /** The sections the place's page draws under its Sessions (AGENTSPLACE1f): the access, the sessions' own rows and the reach; the heavy gates went to *More* (SETUPUX1o). */
@@ -270,10 +260,10 @@ export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', '
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, lands = null, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false, onOpenPlugin }: RepositorySetupProps) {
+export function RepositorySetup({ repository, lands = null, driving, work, access, heavy, landed, sessions, reach, git, busy = false, open, openAgain, only, lead = [], gatesApart = false }: RepositorySetupProps) {
   const { t, i18n } = useTranslation();
-  const { drivingLine, line, lineOwn, landing, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, workParts, accessShown, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid, opensItself } = setupSaid({ t, driving, work, landed, gatesApart, lands, sessions, reach, access, git, heavy });
-  const { sections, lineRow, landingRow, commitsRow, reviewRow, opinionRow, landedRow, integrationRow, heavyRows, heavySaid } = setupRows({ driving, drivingLine, t, repository, busy, i18n, line, work, lineOwn, landing, lands, onOpenPlugin, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, landed, gatesApart, heavy });
+  const { drivingLine, line, lineOwn, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, workParts, accessShown, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid, opensItself } = setupSaid({ t, driving, work, landed, gatesApart, lands, sessions, reach, access, git, heavy });
+  const { sections, lineRow, landingRow, commitsRow, reviewRow, opinionRow, landedRow, integrationRow, heavyRows, heavySaid } = setupRows({ driving, drivingLine, t, repository, busy, i18n, line, work, lineOwn, lands, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, landed, gatesApart, heavy });
   setupSections({ work, workParts, sections, lineRow, landingRow, commitsRow, reviewRow, opinionRow, landedRow, integrationRow, git, t, repository, busy, accessShown, heavyRows, heavySaid, sessions, sessionsParts, language, languageOwn, helpers, helperRule, helpersOwn, handOver, handOverRule, handOverOwn, standing, reach, reachParts, across, readOwn, writesTo, landingSaid, opinionSaid, reviewSaid, landedSaid, lineSaid, commitsSaid });
 
   // The place's Workflow draws its folds as one row of names (`FoldRow`), Gates first, to keep the first screen.

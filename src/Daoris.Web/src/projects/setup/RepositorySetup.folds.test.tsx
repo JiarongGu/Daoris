@@ -28,6 +28,7 @@ const WITH_EVERYTHING: RepositorySetupProps = {
     opinion: { repository: 'engine', workspace: 'default', rule: null, source: null },
     onOpinion: vi.fn(),
   },
+  lands: { is: 'version', summary: 'merge into the line, as Release v2 says', editor: <p>the land options</p> },
   landed: { start: NO_VERIFICATION, workspace: 'aurora', onChoose: vi.fn() },
   heavy: { gates: [{ name: 'build', run: 'dotnet build' }], onSave: vi.fn() },
 };
@@ -44,7 +45,7 @@ describe("a repository's Workflow folds", () => {
       expect(each).toHaveAttribute('aria-expanded', 'false');
       if (at > 0) expect(heads[at - 1]!.compareDocumentPosition(each) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
-    expect(head('Landing')).toHaveAccessibleDescription("lands into its line (Daoris's default)");
+    expect(head('Landing')).toHaveAccessibleDescription('merge into the line, as Release v2 says');
     expect(head('Second opinion')).toHaveAccessibleDescription("no second opinion (Daoris's default)");
     expect(head('Your look')).toHaveAccessibleDescription("no review environment (Daoris's default)");
     expect(head('Landed route')).toHaveAccessibleDescription("no verification (Daoris's default)");
@@ -77,10 +78,9 @@ describe("a repository's Workflow folds", () => {
     expect(onSave).toHaveBeenCalledWith([{ name: 'unit', run: 'dotnet test' }, { name: 'build', run: 'dotnet build' }], expect.anything());
   });
 
-  it('opens Landing on a landing rule that reads as none, or where a door asked for it, and no fold else', () => {
-    const unread = { ...WITH_EVERYTHING, work: { ...WITH_EVERYTHING.work, landingUnread: { name: 'engine', why: 'form', said: 'no form' } } };
-    const { unmount } = draw(unread);
-    expect(head('Landing')).toHaveAttribute('aria-expanded', 'true');
+  it('opens Landing where a door asked for it, and no fold else', () => {
+    const { unmount } = draw(WITH_EVERYTHING);
+    expect(head('Landing')).toHaveAttribute('aria-expanded', 'false');
     expect(head('The line')).toHaveAttribute('aria-expanded', 'false');
     unmount();
 

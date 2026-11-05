@@ -8,7 +8,6 @@ import type { CommitChange, RepositoryCommits } from '../../settings/repository/
 import type { HelperChange, RepositoryHelpers } from '../../settings/repository/Helpers';
 import type { HandOverChange, RepositoryHandOver } from '../../settings/repository/HandOver';
 import type { LineChange, RepositoryLine } from '../../settings/repository/Lines';
-import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { RepositoryLanguage } from '../../settings/repository/Languages';
 import type { OpinionChange, RepositoryOpinion } from '../../settings/repository/Opinions';
 import type { RepositoryReview, ReviewChange } from '../../settings/repository/Reviews';
@@ -30,7 +29,7 @@ export { stoppedWaiting } from '../call';
  * checkout, and only this machine holds one.
  */
 export type LinesAnswer = {
-  lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[];
+  lines: RepositoryLine[]; languages?: RepositoryLanguage[];
   // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
   reviews?: RepositoryReview[];
   // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
@@ -51,7 +50,7 @@ export type LinesAnswer = {
 };
 
 // The shell's `LinesStateSlice.Fields`, in its order: a field left out here is pushed and never composed (AUTONOMY1d).
-const LINES_FIELDS = ['lines', 'landings', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access', 'gitAccess'] as const;
+const LINES_FIELDS = ['lines', 'languages', 'reviews', 'opinions', 'helpers', 'handOver', 'commits', 'access', 'gitAccess'] as const;
 
 /**
  * The lines as the shell pushes them (PUSH1b2, D182): a partition per repository, named by it, each holding that repository's rows
