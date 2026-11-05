@@ -113,9 +113,10 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(reviewed).toHaveBeenCalled();
   });
 
+  // COMMS1j: a park on the go-ahead it asked waits on that one decision, so its two lines are one wait, as the bell counts it.
   it('folds to one line naming them where several wait, and shows them again', async () => {
     render(<WaitStrip session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
-    expect(strip()).toHaveAccessibleName('2 waiting on you');
+    expect(strip()).toHaveAccessibleName('Waiting on you');
 
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
     expect(within(strip()).queryByRole('button', { name: 'Approve' })).toBeNull();

@@ -184,3 +184,6 @@ export const CoworkersChinese: Story = { args: { held: COWORKERS, nameOf: named 
 /** COMMS1i (wave 2's rest): the line's reviewers among its co-workers, one reading, one ended, one failed. */
 export const Reviewers: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingLight };
 export const ReviewersChinese: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingZh };
+/** COMMS1i: opened from the head's *Waiting on*, at the helper the line waits on, its row outlined and holding the focus. */
+export const OpenedAtTheRequest: Story = { args: { held: COWORKERS, nameOf: named, seek: { exchange: 'helper:h7', n: 1 } }, decorators: routingLight };
+export const OpenedAtTheRequestChinese: Story = { args: { held: COWORKERS, nameOf: named, seek: { exchange: 'helper:h7', n: 1 } }, decorators: routingZh };

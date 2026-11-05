@@ -46,6 +46,7 @@ import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
 import { AttendedPane } from './head/AttendedPane';
+import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
 import { AttendedConversation } from './conversation/AttendedConversation';
 import { channelHomeOf } from './conversation/channelHome';
@@ -343,7 +344,7 @@ export function WorkFrame({
   });
   const { entryAt, workAskAt, entryOffered, landsNow } = work;
   const waitsState = useAttendedWaits({
-    t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, onAnswerAsk,
+    t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre,
   });
   const {
@@ -357,9 +358,11 @@ export function WorkFrame({
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
+  // COMMS1i: the head's *Waiting on* opens At work at the request it names.
+  const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork,
+    session, record, work, views, frame, boxState, asks, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
   });
   const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
   const spec = useSessionsList({
@@ -421,7 +424,7 @@ export function WorkFrame({
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
             partRows={partRows}
             onShowPart={(id) => { attend(id); seek(); }}
-            openView={openView}
+            openAtWork={atWorkSeek.open}
             attend={attend}
             onOpenQuest={onOpenQuest}
             onAnswerAsk={onAnswerAsk}
