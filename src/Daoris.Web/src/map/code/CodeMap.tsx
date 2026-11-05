@@ -1,12 +1,12 @@
 import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CodeDependency, CodeModule, Provenance } from '../data/api';
-import { ago } from '../locales/format';
-import { cn } from '../lib/cn';
-import { CanvasList } from '../design/canvas/CanvasList';
-import { type EdgeContext, type NodeState, SuppliedCanvas } from '../design/canvas/SuppliedCanvas';
-import { lineDrawn } from '../design/canvas/suppliedCull';
-import { Button, PathText } from '../design/ui';
+import type { CodeDependency, CodeModule, Provenance } from '../../data/api';
+import { ago } from '../../locales/format';
+import { cn } from '../../lib/cn';
+import { CanvasList } from '../../design/canvas/CanvasList';
+import { type EdgeContext, type NodeState, SuppliedCanvas } from '../../design/canvas/SuppliedCanvas';
+import { lineDrawn } from '../../design/canvas/suppliedCull';
+import { Button, PathText } from '../../design/ui';
 import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
 import { foldable, foldGroup } from './codeFolds';
 

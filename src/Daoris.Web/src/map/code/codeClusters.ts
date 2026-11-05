@@ -1,7 +1,7 @@
-import type { CodeDependency, CodeModule } from '../data/api';
-import type { ListGroup } from '../design/canvas/CanvasList';
-import type { SuppliedWorld } from '../design/canvas/SuppliedCanvas';
-import type { Box } from '../design/canvas/viewMath';
+import type { CodeDependency, CodeModule } from '../../data/api';
+import type { ListGroup } from '../../design/canvas/CanvasList';
+import type { SuppliedWorld } from '../../design/canvas/SuppliedCanvas';
+import type { Box } from '../../design/canvas/viewMath';
 import { layerModules } from './codeLayout';
 import { createRouter } from './codeRoute';
 

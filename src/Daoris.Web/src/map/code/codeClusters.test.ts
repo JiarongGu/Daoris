@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { Box } from '../design/canvas/viewMath';
+import type { Box } from '../../design/canvas/viewMath';
 import {
   buildTree, CLOSED_PAST, defaultOpen, layoutCode, listByFolder, openingPath,
 } from './codeClusters';

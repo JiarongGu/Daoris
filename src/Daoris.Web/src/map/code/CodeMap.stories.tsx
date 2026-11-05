@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Provenance } from '../data/api';
-import { inDark } from '../design/flowFrames';
-import { chinese } from '../design/storyLanguage';
-import { storyWidths } from '../design/storyWidths';
+import type { Provenance } from '../../data/api';
+import { inDark } from '../../design/flowFrames';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
 import { type CodeFixture, CYCLE_ACROSS_FOLDERS, LONG_IDS, REPOSITORY, SKIPPING_LAYERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 

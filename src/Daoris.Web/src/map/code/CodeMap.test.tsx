@@ -4,8 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
-import type { CodeDependency, CodeModule } from '../data/api';
-import { graphIdentity, memoryKey } from '../design/canvas/viewMemory';
+import type { CodeDependency, CodeModule } from '../../data/api';
+import { graphIdentity, memoryKey } from '../../design/canvas/viewMemory';
 import { buildTree, defaultOpen, layoutCode } from './codeClusters';
 import { type CodeFixture, CYCLE_ACROSS_FOLDERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld, cutId, FITS } from './CodeMap';
@@ -14,7 +14,7 @@ import { CodeMapDetail, CodeMapWorld, cutId, FITS } from './CodeMap';
 // jsdom lays nothing out, so unless a width is stood in for the canvas is below its floor and the world is drawn whole as a pane.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));
-vi.mock('../design/useWidth', async (original) => ({ ...(await original<typeof import('../design/useWidth')>()), useWidth: () => measured.width }));
+vi.mock('../../design/useWidth', async (original) => ({ ...(await original<typeof import('../../design/useWidth')>()), useWidth: () => measured.width }));
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
