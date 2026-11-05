@@ -76,6 +76,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         // Whether its accounts' use is read by asking its agent (USAGEREAD2a, CODEXUSE1), which the screen's
                         // *Read now* and its read as it opens need (SWITCH1d).
                         Reads = owner.Any(door => roster.UsageOf(door.Door) is not null),
+                        // How long a reading of it stands, in seconds, its question's own (Claude's one minute, Codex's five): the
+                        // page reads an account again once its reading is older.
+                        ReadFloor = owner.Select(door => roster.UsageOf(door.Door)?.Fresh).FirstOrDefault(fresh => fresh is not null)?.TotalSeconds,
                         Own = new
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null), roster.Home),
