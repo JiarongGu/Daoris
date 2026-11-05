@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { ago, clockOf, moment } from '../locales/format';
 import { byTool, type ToolDoor } from './tools';
+import { toolsOf } from './agentsFixtures';
 import { scopeOf, THREE } from '../settings/accounts/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts/accounts';
 import {
@@ -173,7 +174,7 @@ describe('the list', () => {
    */
   /** INSTALLDOOR1: a row says whether Daoris has an installer for it; a shell that sends no `installs` reads as one that does. */
   it('says whether Daoris installs each agent, an absent field reading as it does', () => {
-    const rows = (door: Partial<ToolDoor>) => agentRows(byTool([{ ...claude(), present: false, ...door }]), undefined)[0]!;
+    const rows = (door: Partial<ToolDoor>) => agentRows(toolsOf([{ ...claude(), present: false, ...door }]), undefined)[0]!;
     expect(rows({}).installs).toBe(true);
     expect(rows({ installs: true }).installs).toBe(true);
     expect(rows({ installs: false }).installs).toBe(false);
@@ -201,10 +202,10 @@ describe('the list', () => {
   });
 
   it('says an agent with no Daoris account has none yet, not that it runs on its own sign-in', () => {
-    const rows = agentRows(byTool([claude({ profiles: [] })]), undefined);
+    const rows = agentRows(toolsOf([claude({ profiles: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('no Daoris account yet');
     // A plugin's agent that signs in nowhere is installed, and nothing more is claimed of it.
-    const declared = agentRows(byTool([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
+    const declared = agentRows(toolsOf([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
     expect(declared[0]!.phrase).toBe('installed');
   });
 });

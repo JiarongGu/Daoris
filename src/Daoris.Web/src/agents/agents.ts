@@ -548,7 +548,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
     const phrase = !tool.present
       ? i18n.t('harness.absent')
       : tool.accounts.length === 0
-        ? i18n.t(tool.doors[0]?.signsIn === false ? 'harness.installed' : 'agents.row.own')
+        ? i18n.t(tool.acts?.signsIn ? 'agents.row.own' : 'harness.installed')
         : [
           i18n.t('agents.row.accounts', { count: tool.accounts.length }),
           ...(signedOut > 0 ? [i18n.t('agents.row.signedOut', { count: signedOut })] : []),
@@ -562,7 +562,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
       phrase,
       waiting: tool.present ? signedOutHeld(tool, use) : 0,
       mark: marks[at]!,
-      installs: tool.doors[0]?.installs !== false,
+      installs: tool.acts?.installs === true,
     };
   });
 }

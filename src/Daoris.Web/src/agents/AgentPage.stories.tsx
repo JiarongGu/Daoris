@@ -165,8 +165,15 @@ export const NotInstalled: Story = { args: { tool: DSH_TOOL, use: null, rules: n
  * the foot says its maker's own tooling installs it.
  */
 export const NotInstalledNoInstaller: Story = {
-  args: { tool: { ...DSH_TOOL, doors: DSH_TOOL.doors.map((door) => ({ ...door, installs: false })) }, use: null, rules: null, usage: [] },
+  args: { tool: { ...DSH_TOOL, acts: { ...DSH_TOOL.acts!, installs: false } }, use: null, rules: null, usage: [] },
 };
+
+/**
+ * What each door can do, from the roster's sheet (COAGENT1e): each capability with its value and how it is known, or *not known*
+ * with the fallback that applies. *Ways in* is open here because the agent is not installed.
+ */
+export const TheSheet: Story = { args: NotInstalled.args };
+export const TheSheetChinese: Story = { args: NotInstalled.args, decorators: [chinese] };
 
 /** An account that is an API key:its handle, *unchecked*, and no sign-in. */
 export const ApiKey: Story = {

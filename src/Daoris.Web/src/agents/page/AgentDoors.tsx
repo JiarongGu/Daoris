@@ -3,6 +3,7 @@ import type { Tool } from '../tools';
 import { Button, Chip, Inline, Pill, Tip } from '../../design/ui';
 import { doorsSummary, versionOnly } from '../agents';
 import { type TFunction } from 'i18next';
+import { DoorSheetLines } from './DoorSheetLines';
 import { Fold } from './Fold';
 import type { AgentActs, AgentSection } from '../AgentPage';
 
@@ -52,6 +53,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                 <p className="mt-1.5 line-clamp-2 text-small text-ink-soft"><Inline text={each.problem} /></p>
               </Tip>
             )}
+            <DoorSheetLines t={t} sheet={tool.sheet?.find((one) => one.door === each.harness)} />
             {each.pinnable && (
               <div className="mt-2 flex flex-wrap items-center gap-2 text-small">
                 {each.pinned ? (

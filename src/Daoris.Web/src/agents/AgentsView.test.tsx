@@ -16,8 +16,15 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   eventHandlers: new Map<string, (payload: unknown) => void>(),
 }));
 
+// The page reads every agent fact from the roster's `agents` half (COAGENT1e); a roster this suite builds names its doors only, so
+// the answer carries the sheet a driver would make from them, unless the test wrote its own.
 vi.mock('@shenora/react', async () => ({
-  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
+  ...(await import('../test/sliceShell')).mockedShell(async (...call: unknown[]) => {
+    const answer = await (invoke as (...args: unknown[]) => Promise<unknown>)(...call);
+    const roster = answer as { harnesses?: Parameters<(typeof import('./agentsFixtures'))['sheetsOf']>[0]; agents?: unknown } | null;
+    if (call[1] !== 'HARNESSES' || !roster?.harnesses || roster.agents) return answer;
+    return { ...roster, agents: (await import('./agentsFixtures')).sheetsOf(roster.harnesses) };
+  }, { notifyReady }),
   useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
     eventHandlers.set(`${module}.${type}`, handler);
   },
@@ -876,7 +883,7 @@ describe('the Agents place', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/neither can be taken now/);
     await userEvent.click(screen.getByRole('button', { name: 'Use a device code' }));
 
-    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code' },
     });
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
