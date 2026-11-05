@@ -26,11 +26,11 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks, Cont
 
     /// <summary>
     /// The answers alone in a row <paramref name="session"/>'s line goes on by: its line's effective rule, null where none holds it. A hold
-    /// handed no rules holds at Daoris's own bound.
+    /// handed no rules reads the seeded ones.
     /// </summary>
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
-        if (rules is not { } book) return AnswersAlone.Bound;
+        var book = rules ?? SupervisorRuleBook.Seed;
         var record = records.GetValueOrDefault(session);
         return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
     }

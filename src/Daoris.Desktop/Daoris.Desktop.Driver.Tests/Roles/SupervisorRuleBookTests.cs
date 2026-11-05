@@ -23,7 +23,45 @@ public sealed class SupervisorRuleBookTests : IDisposable
     private static SupervisorRule Rule(string count, int at, string does, string place = "machine", IReadOnlyList<string>? roles = null, int? upTo = null) =>
         new($"{count}-{at}", count, SupervisorRules.Windows[count], at, does, upTo, place, roles);
 
-    private static SupervisorRuleBook Book(params SupervisorRuleSet[] sets) => new(true, sets);
+    private static SupervisorRuleBook Book(params SupervisorRuleSet[] sets) => new(sets);
+
+    [Fact]
+    public void CONTEXTDRIVE1l_a_store_with_no_machine_rules_decides_by_the_seeded_rules_as_today_s_readers_did()
+    {
+        var unwritten = SupervisorRuleBook.Read(_home).For("build", "daoris", "w1", "412");
+        Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(unwritten), SupervisorRuleBook.FailuresAt(unwritten), SupervisorRuleBook.TriesLimit(unwritten)));
+        Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(SupervisorRuleBook.Seed.For("chat", null, null, null)),
+            SupervisorRuleBook.FailuresAt(SupervisorRuleBook.Seed.For("chat", null, null, null)), SupervisorRuleBook.TriesLimit(SupervisorRuleBook.Seed.For("chat", null, null, null))));
+
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
+        var seeded = SupervisorRuleBook.Read(_home);
+        Assert.Single(seeded.Sets, set => set.Place == SupervisorRules.Machine && set.Revision == 1);
+    }
+
+    [Fact]
+    public void CONTEXTDRIVE1e_a_workspace_is_a_repository_s_wider_place_at_the_judge_as_at_the_lines()
+    {
+        var wider = RuleWiderPlaces.From([("daoris", "w1"), ("atlas", null)]);
+        Assert.Equal(["workspace:w1"], wider.Of("repository:daoris"));
+        Assert.Empty(wider.Of("repository:atlas"));
+        Assert.Empty(wider.Of("workspace:w1"));
+        Assert.Empty(RuleWiderPlaces.None.Of("repository:daoris"));
+
+        // The workspace moves on quiet with a bound; the repository's own tries rule leaves it no moves rule of its own.
+        var held = new List<SupervisorRuleSet>
+        {
+            new("machine", 1, SupervisorRuleBook.Seeded(3)),
+            new("workspace:w1", 1, [Rule("quiet", 1, "next", "workspace:w1"), Rule("moves", 3, "ask", "workspace:w1")]),
+        };
+        var world = new SupervisorRuleWorld(["build", "chat"], Wider: wider.Of);
+        Assert.Null(SupervisorRules.Judge("repository:daoris", 0, [Rule("tries", 4, "hold", "repository:daoris")], held, world));
+
+        var refused = SupervisorRules.Judge("workspace:w1", 1, [Rule("quiet", 1, "next", "workspace:w1")], held, world);
+        Assert.Equal("moves-unbounded", refused?.Code);
+
+        var line = new SupervisorRuleBook(held).For("build", "daoris", "w1", "412");
+        Assert.Equal("next", line[SupervisorRules.Quiet].Single().Do);
+    }
 
     [Fact]
     public void CONTEXTDRIVE1e_the_seeded_rules_are_today_s_numbers_and_none_for_failures_at_0()

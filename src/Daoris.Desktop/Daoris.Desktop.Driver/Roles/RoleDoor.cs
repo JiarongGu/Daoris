@@ -107,7 +107,6 @@ public static class RoleDoor
         var cleared = new List<string>();
         var ruled = new List<SupervisorRulesPress>();
         var presetRules = new List<(string Place, IReadOnlyList<SupervisorRule> Rules)>();
-        var reached = new SupervisorRuleStore(staffing.Ledger.Home).Reached();
         foreach (var press in batch)
         {
             var (change, choices, read, policy) = (press.Change, press.Choices, press.Read, press.Policy);
@@ -144,13 +143,10 @@ public static class RoleDoor
                     var existing = staffing.Policy(role.Id);
                     var (resolved, refusedPolicy) = StaffPolicyDoor.Judge(role, effective, policy, existing, held is not null);
                     if (refusedPolicy is not null) throw new RoleRefusedException(refusedPolicy);
-                    if (reached)
-                    {
-                        var (kept, brought, notSaved) = RuledPolicy.On(role, policy, resolved);
-                        if (notSaved is not null) throw new RoleRefusedException(notSaved);
-                        resolved = kept;
-                        if (brought.Count > 0) presetRules.Add((RuledPolicy.PlaceOf(role.Scope), brought));
-                    }
+                    var (kept, brought, notSaved) = RuledPolicy.On(role, policy, resolved);
+                    if (notSaved is not null) throw new RoleRefusedException(notSaved);
+                    resolved = kept;
+                    if (brought.Count > 0) presetRules.Add((RuledPolicy.PlaceOf(role.Scope), brought));
 
                     saves.Add((role.Id, resolved, effective, policy.Read ?? existing.Revision));
                 }

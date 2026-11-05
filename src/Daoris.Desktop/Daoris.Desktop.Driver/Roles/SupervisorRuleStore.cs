@@ -14,7 +14,7 @@ public sealed record RuleWritten(long? Revision, RuleRefusal? Refusal)
 /// A place's rules kept in the desktop store (CONTEXTDRIVE1c; the context counters design §4.4): <c>supervisor_rules</c>, one row per rule,
 /// and <c>supervisor_rule_revisions</c>, each place's set as written. A set is written whole, judged by <see cref="SupervisorRules.Judge"/>
 /// in the same transaction, so a refused write leaves nothing. A store before the step, or none, holds no rule and takes none; a write the
-/// store refuses does not raise, it is said so (<see cref="RuleWritten.Stored"/> false). Nothing reads the rules to decide yet.
+/// store refuses does not raise, it is said so (<see cref="RuleWritten.Stored"/> false). The executors read them through <see cref="SupervisorRuleBook"/>.
 /// </summary>
 public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null)
 {
@@ -65,8 +65,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
 
     /// <summary>
     /// <see cref="Write"/> inside a transaction the caller holds (CONTEXTDRIVE1d), so the role door publishes a role, its policy and a place's
-    /// rules in one. Judged against every place's set as the transaction reads it; where <see cref="SupervisorRuleWorld.ReadReached"/>, whether
-    /// this home is reached is read there too. The place's new revision.
+    /// rules in one. Judged against every place's set as the transaction reads it. The place's new revision.
     /// </summary>
     /// <exception cref="RuleRefusedException">The judge's refusal; the caller's transaction rolls back.</exception>
     /// <exception cref="DriverException">The store is before the step that keeps rules.</exception>
@@ -76,8 +75,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
         if (!Has(write)) throw new DriverException("this home's store is not yet at the version that keeps the supervisor's rules, so nothing was saved; try again after the next start.");
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
         var held = Sets(write.Query(RulesSql, RuleOf), write.Query(RevisionsSql, row => (row.GetString(0), row.GetInt64(1))));
-        var judged = world.ReadReached ? world with { Reached = held.Any(set => set.Place == SupervisorRules.Machine) } : world;
-        if (SupervisorRules.Judge(place, revision, rules, held, judged) is { } refusal) throw new RuleRefusedException(refusal);
+        if (SupervisorRules.Judge(place, revision, rules, held, world) is { } refusal) throw new RuleRefusedException(refusal);
         var next = revision + 1;
         write.Execute("DELETE FROM supervisor_rules WHERE place = $place", ("$place", place));
         var ord = 0;
@@ -113,8 +111,8 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
         return WriteIn(write, place, set.Revision, [.. kept, .. rules], door, world);
     }
 
-    /// <summary>Whether this home's rules are reached: the machine's place holds a revision row.</summary>
-    public bool Reached() => All().Any(set => set.Place == SupervisorRules.Machine);
+    /// <summary>Whether the machine's rules were ever written here (a revision row at the machine's place): a home's seed or its migration.</summary>
+    public bool Seeded() => All().Any(set => set.Place == SupervisorRules.Machine);
 
     /// <summary>Whether the store this write is in has the rules' tables.</summary>
     public static bool Has(DesktopWrite write) =>

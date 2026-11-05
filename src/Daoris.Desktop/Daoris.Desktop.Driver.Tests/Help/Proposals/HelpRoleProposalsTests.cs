@@ -206,8 +206,6 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
     public void CONTEXTDRIVE1d_the_supervisor_s_rules_are_judged_described_and_applied_by_the_press_alone()
     {
         const string Press = """{ "place": "repository:daoris", "rulesRevision": 0, "rules": [{ "count": "answers-alone", "at": 3, "do": "hold" }] }""";
-        Assert.Contains("(convert-first)", HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine).Refusal);
-
         var store = new SupervisorRuleStore(_home, () => StoreSettled.Yes);
         store.Write("machine", 0, [new SupervisorRule("m-t", "tries", "episode", 5, "hold", null, "machine", null)], "test", new SupervisorRuleWorld(["build"]));
         var plan = HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine);

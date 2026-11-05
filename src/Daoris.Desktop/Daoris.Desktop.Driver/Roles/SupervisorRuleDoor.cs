@@ -56,16 +56,15 @@ public static class SupervisorRuleDoor
         return new SupervisorRulesPress(place, read, rules);
     }
 
-    /// <summary>The world a person's press is judged in: the catalogue's working roles, and whether this home is reached read inside the write.</summary>
-    public static SupervisorRuleWorld World(string home) => new(Roles(home)) { ReadReached = true };
+    /// <summary>
+    /// The world a press is judged in: the catalogue's working roles, and each repository's workspace as its wider place, so a workspace's
+    /// write is judged on its repositories' lines and a repository's on its workspace's rules.
+    /// </summary>
+    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: RuleWiderPlaces.Read(home).Of);
 
     /// <summary>The judge's refusal of <paramref name="press"/> against the rules stored now, or null: what a door says before anything is sent.</summary>
-    public static RuleRefusal? Judge(string home, SupervisorRulesPress press)
-    {
-        var store = new SupervisorRuleStore(home);
-        var world = World(home) with { Reached = store.Reached(), ReadReached = false };
-        return SupervisorRules.Judge(press.Place, press.Read, press.Rules, store.All(), world);
-    }
+    public static RuleRefusal? Judge(string home, SupervisorRulesPress press) =>
+        SupervisorRules.Judge(press.Place, press.Read, press.Rules, new SupervisorRuleStore(home).All(), World(home));
 
     /// <summary>The rules as a press carries them, a rule's place and window left to the door.</summary>
     public static JsonArray Wire(IReadOnlyList<SupervisorRule> rules) =>

@@ -1,15 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A role's policy on a home whose rules are reached: its moves and their bound are the supervisor's rules, so a press setting them is
-/// refused naming the rules' door, and a preset's limit move and bound become rules naming the role, written beside the policy in its
-/// one transaction. On a home not reached nothing here applies.
+/// A role's policy beside the supervisor's rules: its moves and their bound are the rules, so a press setting them is refused naming the
+/// rules' door, and a preset's limit move and bound become rules naming the role, written beside the policy in its one transaction.
 /// </summary>
 public static class RuledPolicy
 {
     /// <summary>
-    /// The policy saved on a reached home, the rules a preset brings with it at the role's place, or the refusal of a move set through the
-    /// policy door.
+    /// The policy saved, the rules a preset brings with it at the role's place, or the refusal of a move set through the policy door.
     /// </summary>
     public static (StaffPolicy? Policy, IReadOnlyList<SupervisorRule> Rules, RoleRefusal? Refused) On(RoleRecord role, RolePolicyPress press, StaffPolicy? resolved)
     {

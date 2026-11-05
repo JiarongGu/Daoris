@@ -38,11 +38,11 @@ internal static class StaffCourse
         }
     }
 
-    /// <summary>The policy a part's move was made under and the opening note's sentence for it, the rule's words on a reached home.</summary>
+    /// <summary>The policy a part's move was made under and the opening note's sentence for it, in the rule's words.</summary>
     internal static (StaffPolicy? Policy, string Said) MoveSaid(StaffLedger staff, string role, string line, PriorSession left, string condition, int moves)
     {
         var policy = CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace, line));
-        return (policy, MovedSaid(condition, policy, moves, ActorWords.Name(role), staff.Rules().Reached));
+        return (policy, MovedSaid(condition, policy, moves, ActorWords.Name(role)));
     }
 
     /// <summary>A driven quest's line as the rules place it: its repository, the repository's workspace and the quest's id, the line's key.</summary>
@@ -85,17 +85,10 @@ internal static class StaffCourse
     /// <summary>
     /// Why a part moved, as the opening note says it (design §5): the condition, and the role's moves in 24 hours against its bound.
     /// </summary>
-    internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName, bool ruled = false)
+    internal static string MovedSaid(string condition, StaffPolicy? policy, int moves, string roleName)
     {
-        // CONTEXTDRIVE1e: on a reached home the move is the supervisor's rule's, said so.
-        if (ruled)
-        {
-            var bound = policy?.Bound is { } at ? $"{moves} of {at} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
-            return $"{Why(condition)}. Your supervisor rule for {roleName}'s lines moves on that; {bound}";
-        }
-
-        var count = policy?.Bound is { } most ? $"{moves} of {most} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
-        return $"{Why(condition)}. {roleName}'s policy moves on that; {count}";
+        var bound = policy?.Bound is { } at ? $"{moves} of {at} moves today" : $"{moves} move{(moves == 1 ? "" : "s")} today";
+        return $"{Why(condition)}. Your supervisor rule for {roleName}'s lines moves on that; {bound}";
     }
 
     private static string Why(string condition) => condition switch

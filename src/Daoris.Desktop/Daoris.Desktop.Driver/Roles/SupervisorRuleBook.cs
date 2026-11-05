@@ -1,29 +1,34 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's rules as the executors read them (CONTEXTDRIVE1e; the context counters design §4.5): every place's set read once, whether
-/// this home is reached, and for a line its effective rules and the number or move each executor acts on. On a home not reached every answer
-/// is null and the executor reads its old number, kept under its register entry.
+/// The supervisor's rules as the executors read them (CONTEXTDRIVE1e; the context counters design §4.5): every place's set read once, and
+/// for a line its effective rules and the number or move each executor acts on.
 /// </summary>
-public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRuleSet> Sets)
+public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
 {
     /// <summary>How many go-ons by answers alone a line takes in a row (§2.3): the seeded rule's number, which the course's bound reads.</summary>
     public const int AnswersAloneBound = 2;
 
-    /// <summary>A home whose rules are not reached: nothing here decides.</summary>
-    public static SupervisorRuleBook NotReached { get; } = new(false, []);
+    /// <summary>The failed sessions the seeded failures rule parks a quest at.</summary>
+    public const int FailuresByDefault = 3;
 
-    /// <summary>The rules <paramref name="home"/>'s store holds now; a store that does not read is not reached.</summary>
+    /// <summary>The seeded rules alone, at the machine's place: what decides where the store holds no machine's rules or does not read.</summary>
+    public static SupervisorRuleBook Seed { get; } = new([new SupervisorRuleSet(SupervisorRules.Machine, 0, Seeded(FailuresByDefault))]);
+
+    /// <summary>
+    /// The rules <paramref name="home"/>'s store holds now. Every home is seeded at its first start or by its migration; where the machine's
+    /// place holds nothing, or the store does not read, the seeded rules decide there, so no line goes on with no tries rule.
+    /// </summary>
     public static SupervisorRuleBook Read(string home)
     {
         try
         {
             var sets = new SupervisorRuleStore(home).All();
-            return new(sets.Any(set => set.Place == SupervisorRules.Machine), sets);
+            return sets.Any(set => set.Place == SupervisorRules.Machine) ? new(sets) : new([.. sets, .. Seed.Sets]);
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
-            return NotReached;
+            return Seed;
         }
     }
 
@@ -38,18 +43,18 @@ public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRu
         : record?.Kind == SessionKinds.Chat ? RoleWork.Chat
         : RoleWork.Build;
 
-    /// <summary>The answers alone in a row a line goes on by before it waits for the person; null where no rule holds it (the reached home's answer).</summary>
+    /// <summary>The answers alone in a row a line goes on by before it waits for the person; null where no rule holds it.</summary>
     public static int? AnswersAloneAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold);
 
     /// <summary>The failed sessions that park a quest; 0 where no rule holds it.</summary>
     public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold) ?? 0;
 
-    /// <summary>The tries a run's transient episode makes: the lowest <c>at</c> of the effective tries rules, which a reached home always holds.</summary>
+    /// <summary>The tries a run's transient episode makes: the lowest <c>at</c> of the effective tries rules, which every line holds (the judge refuses a write leaving none).</summary>
     public static int TriesLimit(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) =>
         effective.TryGetValue(SupervisorRules.Tries, out var rules) && rules.Count > 0 ? Math.Clamp(rules.Min(rule => rule.At), 1, TransientRetry.Bound) : TransientRetry.Bound;
 
     /// <summary>
-    /// The policy the staffing course reads on a reached home (§4.8 read back): <paramref name="applied"/>'s rule, weights, shares, budgets and works,
+    /// The policy the staffing course reads (§4.8 read back): <paramref name="applied"/>'s rule, weights, shares, budgets and works,
     /// its moves and its bound taken from the effective rules alone. A tries rule that holds is the episode's limit, no move; a role with no policy
     /// and no move rule is null, today's order.
     /// </summary>
@@ -108,17 +113,16 @@ public sealed record SupervisorRuleBook(bool Reached, IReadOnlyList<SupervisorRu
     ];
 
     /// <summary>
-    /// A fresh home's first start (§6.1), beside its workflow's seed: the seeded rules written at the machine's place, which reaches the home, so
-    /// it reads its rules from one place as a converted home does. A store that does not take them leaves the home not reached, for the
-    /// conversion's <c>rules</c> part to seed on the person's press.
+    /// A fresh home's first start (§6.1), beside its workflow's seed: the seeded rules written at the machine's place, so the person reads and
+    /// edits them where every line reads them. A store that does not take them now is seeded at a later start; until then <see cref="Read"/>
+    /// decides by the same rules.
     /// </summary>
     /// <returns>Whether the rules were written.</returns>
     public static bool SeedFresh(string home, DriverConfig config, Func<StoreSettled>? settled = null)
     {
         var store = new SupervisorRuleStore(home, settled);
-        if (store.Reached()) return false;
-        var world = SupervisorRuleDoor.World(home) with { ReadReached = false, Reached = true };
-        return store.Write(SupervisorRules.Machine, 0, Seeded(config.Strikes), SeedDoor, world).Stored;
+        if (store.Seeded()) return false;
+        return store.Write(SupervisorRules.Machine, 0, Seeded(config.Strikes), SeedDoor, SupervisorRuleDoor.World(home)).Stored;
     }
 
     /// <summary>The door a seed's revision is kept as written by.</summary>

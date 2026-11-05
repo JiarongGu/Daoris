@@ -96,7 +96,7 @@ public sealed class RoleVerb : ChoiceVerb
         var press = StaffPolicyFlags.Read(args.Skip(3).ToList(), choices, existing, PolicyGrammar);
         var (policy, refused) = StaffPolicyDoor.Judge(role, choices, press, existing, kept: true);
         if (refused is not null) throw new ChoiceWords($"`driver role policy`: {refused.Said}");
-        if (new SupervisorRuleStore(staffing.Ledger.Home).Reached() && RuledPolicy.On(role, press, policy).Refused is { } ruled)
+        if (RuledPolicy.On(role, press, policy).Refused is { } ruled)
         {
             throw new ChoiceWords($"`role policy`: {ruled.Said}");
         }
@@ -111,7 +111,7 @@ public sealed class RoleVerb : ChoiceVerb
                 ["takes"] = new JsonArray([.. role.Takes.Select(work => (JsonNode)JsonValue.Create(work))]),
                 ["scope"] = new JsonObject { ["kind"] = role.Scope.Kind, ["id"] = role.Scope.Id },
             },
-            ["policy"] = policy is null ? null : press.Preset is { } preset && new SupervisorRuleStore(staffing.Ledger.Home).Reached() ? preset : JsonNode.Parse(policy.Write()),
+            ["policy"] = policy is null ? null : press.Preset is { } preset ? preset : JsonNode.Parse(policy.Write()),
             ["policyRevision"] = existing.Revision,
         };
         return new(Word, ChoiceRoutes.Role, payload, _ =>
@@ -230,14 +230,7 @@ public sealed class RoleVerb : ChoiceVerb
         var said = world.Instance.Out;
         var place = args.Count > 3 && args[2] == "--place" ? args[3] : args.Count > 2 ? throw new ChoiceWords($"`role supervisor` takes `--place <place>` alone: {RulesGrammar}.") : null;
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
-        var store = new SupervisorRuleStore(staffing.Ledger.Home);
-        var sets = store.All();
-        if (!store.Reached())
-        {
-            said.WriteLine("supervisor  this home's rules are not reached yet: Daoris acts on its own numbers until you convert (`daoris convert --plan`).");
-            return 0;
-        }
-
+        var sets = SupervisorRuleBook.Read(staffing.Ledger.Home).Sets;
         foreach (var set in sets.Where(set => place is null || set.Place == place))
         {
             said.WriteLine($"supervisor  {set.Place} · rules revision {set.Revision}");
