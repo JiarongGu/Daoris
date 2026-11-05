@@ -16,8 +16,8 @@ public static class LandTries
         { Code: var code } last when LandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
-        // every look; so does a push held back after its branch was made (FABRIC-CLOSE1h2).
-        { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.PushHeld } => true,
+        // every look.
+        { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion } => true,
         // A `land` is started once a node and tip, so a try that closed at its tip says nothing of a later one.
         { Tip: { } at } when !string.Equals(at, tip, StringComparison.Ordinal) => true,
         _ => false,
@@ -42,9 +42,6 @@ public static class LandTries
     public static string CodeOf(TreeLanding landed)
     {
         if (!landed.Landed) return landed.Refusal ?? LandingCode.Refused;
-        if (landed.Withheld is not null) return LandingCode.PushHeld;
-        if (landed.Unready is not null) return LandingCode.PluginUnready;
-        if (landed.Plugin is { Failed: true } or { Pushed: false }) return LandingCode.PluginFailed;
         return landed.AdvancedFrom is not null ? LandingCode.Advanced : LandingCode.Landed;
     }
 }
@@ -56,25 +53,14 @@ public static class LandTries
 public static class LandTryNotes
 {
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
-    public static bool Says(string code) => code is LandingCode.Landed or LandingCode.Advanced or LandingCode.PluginUnready
-        or LandingCode.PluginFailed or LandingCode.Nothing or LandingCode.Held or LandingCode.Uncommitted
-        or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused or LandingCode.Unreviewed
-        or LandingCode.Opinion or LandingCode.PushHeld or LandingCode.CarriedOn or LandingCode.CarryBound;
-
-    /// <summary>
-    /// How the automatic landing's judgement just before the push begins its sentence where its landing's gate held it (FABRIC-CLOSE1h12),
-    /// so its note says the gate's, not its quest's (FABRIC-CLOSE1h14). The try keeps <c>push-held</c> either way: its recovery is one.
-    /// </summary>
-    public const string GateHeld = "its landing's gate held it";
-
-    /// <summary>Whether a push's <see cref="TreeLanding.Withheld"/> sentence is its landing's gate's (<see cref="GateHeld"/>).</summary>
-    public static bool ByGate(string? withheld) => withheld?.StartsWith(GateHeld, StringComparison.Ordinal) == true;
+    public static bool Says(string code) => code is LandingCode.Landed or LandingCode.Advanced or LandingCode.Nothing
+        or LandingCode.Held or LandingCode.Uncommitted or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused
+        or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
     /// </summary>
     /// <param name="landed">What the landing said, or null where the try never reached one (a hold, uncommitted work, no commits).</param>
-    /// <param name="plugin">The rule's plugin, where the lead-in names it.</param>
     /// <param name="uncommitted">How many paths were uncommitted, where that held it.</param>
     /// <param name="branch">The branch the pattern names, where a refusal names one and the landing did not.</param>
     /// <param name="rebaseTold">
@@ -87,7 +73,7 @@ public static class LandTryNotes
     /// accepted, which says the person's press accepted it and not the rule's switch.
     /// </param>
     public static SessionEvent Of(
-        string code, TreeLanding? landed, string? plugin = null, int? uncommitted = null, string? branch = null, bool rebaseTold = false,
+        string code, TreeLanding? landed, int? uncommitted = null, string? branch = null, bool rebaseTold = false,
         string? carry = null)
     {
         var named = landed?.Branch ?? branch ?? "";
@@ -109,22 +95,6 @@ public static class LandTryNotes
             // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
             LandingCode.Landed or LandingCode.Advanced => Noted.Of(ChatNoteCodes.LandingAccepted,
                 $"{LandingNotes.AutoAccepted} its work is on `{named}`.", ("branch", named)),
-            LandingCode.PluginUnready => Noted.Of(ChatNoteCodes.LandingUnready,
-                $"{LandingNotes.AutoAccepted} its work is on `{named}`, and `{plugin}` cannot land work here, so nothing was pushed; "
-                + "`trees hand` gives it the branch once it can.",
-                ("branch", named), ("plugin", plugin)),
-            LandingCode.PluginFailed => Noted.Of(ChatNoteCodes.LandingPluginFailed,
-                $"{LandingNotes.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
-            // FABRIC-CLOSE1h14: held there by its landing's gate (CLOSE1h12), whose words lead, so it is never said as its quest's.
-            LandingCode.PushHeld when ByGate(landed?.Withheld) => Noted.Of(ChatNoteCodes.LandingPushGated,
-                $"{LandingNotes.AutoAccepted} its work is on `{named}`, but its landing's gate held it before `{plugin}` was told, "
-                + "so nothing was pushed. The first look once the gate lets it go hands the branch on.",
-                ("branch", named), ("plugin", plugin)),
-            // FABRIC-CLOSE1h2: judged once more just before its plugin was told, and held there; its own sentence beneath says why.
-            LandingCode.PushHeld =>Noted.Of(ChatNoteCodes.LandingPushHeld,
-                $"{LandingNotes.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
-                + "so nothing was pushed. The first look once it stands again hands the branch on.",
-                ("branch", named), ("plugin", plugin)),
             LandingCode.Nothing => Noted.Of(ChatNoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),
             LandingCode.Held => Noted.Of(ChatNoteCodes.LandingHeld,
                 "its quest is done and held for your yes, so its work lands at the look after you release it."),

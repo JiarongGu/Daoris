@@ -48,7 +48,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private ContentHolds? _content;
     private TreeSquashes? _squashes;
     private PullRequestAsks? _asks;
-    private TreeHandOffs? _handOffs;
     private BranchReplays? _replays;
     private ReviewRanges? _ranges;
     private LandedReviews? _reviews;
@@ -89,8 +88,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>The occasions' asks, <i>Ask again</i> and what a kept answer proves (PLUGHOOK1a, PLUGHOOK1c).</summary>
     private PullRequestAsks Asks => _asks ??= new(_context);
 
-    /// <summary>The hand-off's look and its press (WSR5b).</summary>
-    private TreeHandOffs HandOffs => _handOffs ??= new(_context);
 
     /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
     private BranchReplays Replays => _replays ??= new(_context, Leftovers);
@@ -576,14 +573,4 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>A repository's line as the asks and the tidy read it (FABRIC-END6): the person's choice, else git's guess; null where none.</summary>
     internal async Task<string?> LineOfAsync(string root, string repository, string? workspace, CancellationToken ct = default) =>
         (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
-
-    /// <inheritdoc cref="TreeHandOffs.HandPlanAsync"/>
-    public Task<HandPlan> HandPlanAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default) =>
-        HandOffs.HandPlanAsync(root, entry, plugin, ct);
-
-    /// <inheritdoc cref="TreeHandOffs.HandAsync"/>
-    public Task<TreeHand> HandAsync(
-        string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
-        HandOffs.HandAsync(root, entry, plugin, ct, beforePush);
 }

@@ -180,8 +180,6 @@ public sealed class HookProcess : IHookChannel
 
     public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
 
-    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
-
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 
     public Task ChangedAsync(object payload, CancellationToken ct) => _peer.ChangedAsync(payload, ct);

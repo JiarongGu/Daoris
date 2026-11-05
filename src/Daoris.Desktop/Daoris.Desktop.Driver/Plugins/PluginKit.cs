@@ -57,19 +57,13 @@ public static class PluginKit
     public static readonly SessionEnded SampleEnding = new(
         "s1a2b3c4", "engine", "completed", ByPerson: false, Note: null, Quest: "0fda18", Adapter: "claude-code", Account: "work");
 
-    /// <summary>A landing's branch, as the kit's samples say it.</summary>
-    public static readonly LandingFrame SampleLanding = new(
-        "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main", "Expose a streaming budget",
-        "0fda18", "s1a2b3c4", [new LandingCommit("3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", "Expose a streaming budget")],
-        Tip: "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
-
     /// <summary>A landed branch asked about, as the kit's samples say it (PLUGHOOK1a): pushed, with the pull request its plugin opened.</summary>
     public static readonly StateFrame SampleState = new(
         "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main",
         "https://example.test/example-org/engine/pull/7", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
 
     /// <summary>A change, as the kit's samples say it (STATEHUB1g): what a session's landing moved, as accepting it declares.</summary>
-    public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "handOff", "sweep", "treesSync"], ["s1a2b3c4"]);
+    public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "sweep", "treesSync"], ["s1a2b3c4"]);
 
     /// <summary>
     /// A sample frame's step (FABRIC-PERFORM1e): the plugin's own, which the wire test and the trial replace with its first declared
@@ -139,37 +133,6 @@ public static class PluginKit
             """
               // An observation, after a session concludes. Nothing said here changes anything; answer {} promptly.
               'session/ended': (frame) => ({}),
-            """),
-        new(
-            HookPoints.Land,
-            "act",
-            "Once a landing has made its branch (only then, and only where a workspace's branch landing rule "
-            + "names this plugin), it is started for that one landing, told the branch, and stopped. It pushes "
-            + "the branch and opens the pull request for its platform, in `root`, with whatever that "
-            + "platform's tools are signed in as. Daoris itself never pushes. Push `tip`, the commit the landing judged, "
-            + "to the branch (`<tip>:refs/heads/<branch>`), not the branch as it stands then: a commit made after the "
-            + "judgement must not ride the push. Where `pullRequest` is set, that pull "
-            + "request is already open from the branch, which has moved on since: read its state, push only while "
-            + "it is open, and open no second one. `acceptedBy` is `person` or `auto`. `mode` is `pull-request` (push, then open or "
-            + "grow the pull request) or `push` (push only, sent only to a plugin whose manifest `hooks.modes` names it). `key`, sent "
-            + "only to a plugin whose manifest says `hooks.key: true`, names one delivery: keep the answer you give under it and give "
-            + "the same answer, with no second effect, when it comes again; `work/state` is asked with the same `key` when a reply is lost.",
-            """`{ "pushed": true, "pullRequest": "https://…", "message": "…" }`. `pushed` is required; the pull """
-            + "request is an absolute web address, or null; the message is the plugin's own sentence, or null. "
-            + "The branch stands whatever it answers.",
-            "the landing would say the plugin's step failed, and the branch stands",
-            LandingPlugins.DefaultPatience,
-            Sample(HookFrames.Land(SampleLanding)),
-            """
-              // An act, once a landing has made its branch: push it and open the pull request for your
-              // platform, in frame.root, and say what happened. The branch stands whatever this answers, and
-              // until it pushes it says so, since `pushed: false` is an honest answer. A push is of the commit judged:
-              //   run('git', ['push', '--quiet', 'origin', `${frame.tip}:refs/heads/${frame.branch}`], frame.root)
-              'work/land': (frame) => ({
-                pushed: false,
-                pullRequest: null,
-                message: `${id} does not push yet; push \`${frame.branch}\` by hand.`,
-              }),
             """),
         new(
             HookPoints.State,
@@ -426,8 +389,8 @@ public static class PluginKit
             """.TrimEnd();
     }
 
-    /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a landing, or a query, PLUGHOOK1a).</summary>
-    private static bool RunsATool(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name is HookPoints.Land or HookPoints.State);
+    /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a query, PLUGHOOK1a).</summary>
+    private static bool RunsATool(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name is HookPoints.State);
 
     private static string WireScript(string id, string name, IReadOnlyList<KitPoint> points)
     {
@@ -553,7 +516,6 @@ public static class PluginKit
                 .Replace("{{step}}", step, StringComparison.Ordinal)
                 .Replace("{{resource}}", ResourceOf(id), StringComparison.Ordinal);
 
-        var lands = points.Any(point => point.Name == HookPoints.Land);
         return PluginKitFiles.Template("README.md")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
@@ -562,12 +524,9 @@ public static class PluginKit
             .Replace("{{work}}", work, StringComparison.Ordinal)
             .Replace("{{run}}", RunsATool(points)
                 ? "`run()` in `plugin.mjs` does exactly that, and `safe()` respells text so it can pass."
-                : "`daoris plugin new <id> --point work/land` writes a `run()` helper that does exactly that.",
+                : "`daoris plugin new <id> --point work/state` writes a `run()` helper that does exactly that.",
                 StringComparison.Ordinal)
-            .Replace("{{install}}", lands
-                ? $" A landing plugin also needs a rule to name it: `daoris place landing --workspace <name> branch "
-                  + $"\"feature/{{quest}}-{{slug}}\" --plugin {id}`, or Repositories → the workspace's page → Setup → Defaults → How work lands."
-                : "", StringComparison.Ordinal);
+            .Replace("{{install}}", "", StringComparison.Ordinal);
     }
 
     private static string Article(string kind) => kind is "observation" or "act" ? "an" : "a";

@@ -25,9 +25,6 @@ public static class OpenRoutes
     /// <summary><c>trees land --ask &lt;id&gt; --plan</c>.</summary>
     public static InstanceRoute AskLanding { get; } = Open("ASK_LANDING");
 
-    /// <summary><c>trees hand &lt;session|branch&gt; --plan</c>.</summary>
-    public static InstanceRoute HandoffPlan { get; } = Open("HANDOFF_PLAN");
-
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
@@ -73,7 +70,6 @@ public static class OpenRoutes
         ("trees land <session> --plan", Landing, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --entry <id> --plan", EntryLanding, "the plan; the press is the person's and acts alone until its client path is built"),
         ("trees land --ask <id> --plan", AskLanding, "the plan; the press is the person's and acts alone until its client path is built"),
-        ("trees hand <session|branch> --plan", HandoffPlan, "the plan; the press is the person's and acts alone until its client path is built"),
         ("sessions", SessionGroups, "the list"),
         ("sessions at-work <session>", AtWork, "the read, asked again once a second while it is pending"),
         ("ask at-work <ask>", AtWork, "the read keyed by the ask, asked again once a second while the slices are pending; an ask the window does not hold is refused at once"),
@@ -364,9 +360,6 @@ public static class TreesMarks
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
     public const string TreesSync = "TREES_SYNC";
 
-    /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a landing plugin.</summary>
-    public const string HandOff = "HANDOFF";
-
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
     public const string LandEntry = "LAND_ENTRY";
 
@@ -416,9 +409,6 @@ public static class TreesRoutes
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
     public static InstanceRoute Sync { get; } = new(DriverModule, TreesMarks.TreesSync, RouteClass.Person);
 
-    /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a plugin.</summary>
-    public static InstanceRoute HandOff { get; } = new(DriverModule, TreesMarks.HandOff, RouteClass.Person);
-
     /// <summary>Each press of the <c>trees</c> verbs, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
@@ -430,6 +420,5 @@ public static class TreesRoutes
         ("trees remove <landing branch> --why", Withdraw),
         ("trees clean --yes", Sweep),
         ("trees sync --yes", Sync),
-        ("trees hand <session|branch>", HandOff),
     ];
 }

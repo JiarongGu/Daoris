@@ -53,9 +53,6 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
     public const string TreesSync = TreesMarks.TreesSync;
 
-    /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a landing plugin.</summary>
-    public const string HandOff = TreesMarks.HandOff;
-
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
     public const string LandEntry = TreesMarks.LandEntry;
 
@@ -66,7 +63,7 @@ public sealed partial class PressesTold(string home)
     public const string RecoveryDrop = "RECOVERY_DROP";
 
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, WithdrawLanding, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, WithdrawLanding, Sweep, TreesSync, LandEntry, LandAsk, RecoveryDrop];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

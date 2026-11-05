@@ -15,9 +15,11 @@ public static class LandingNotes
     /// <summary>The whole sentence the press said, the plugin's part in it.</summary>
     public static SessionEvent Note(TreeLanding landed) => Press(ChatNoteCodes.LandingPersonAccepted, PersonAccepted, landed.Message);
 
-    /// <summary>A hand-off after the landing, kept where the landing's own note is.</summary>
-    public static SessionEvent HandNote(TreeHand handed) =>
-        Press(ChatNoteCodes.LandingPersonHanded, "the person handed this work on:", handed.Message);
+    /// <summary>
+    /// How a note the retired hand-off kept opens. Only read, to know an acceptance note of that time; never written again. It goes with
+    /// the notes of that shape, which G8-CONVERT1 retires.
+    /// </summary>
+    public const string PersonHanded = "the person handed this work on:";
 
     private static SessionEvent Press(NoteCode code, string lead, string message)
     {

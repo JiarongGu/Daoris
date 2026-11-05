@@ -182,20 +182,6 @@ internal static class TreeGit
         return Path.TrimEndingDirectorySeparator(at);
     }
 
-    /// <summary>
-    /// What the plugin's step came to, in the landing's words (D100). Anything short of a push says the
-    /// branch stands and how the person pushes it themselves.
-    /// </summary>
-    internal static string Said(PluginLanding said, string branch)
-    {
-        var byHand = $"The branch stands — push it and open the pull request yourself: `git push -u origin {branch}`.";
-        if (said.Failed) return $"Plugin `{said.Plugin}`'s step failed — {Sentence(said.Message)} {byHand}";
-        if (!said.Pushed) return $"Plugin `{said.Plugin}` did not push it: {Sentence(said.Message)} {byHand}";
-
-        var opened = said.PullRequest is { } pr && !said.Message.Contains(pr, StringComparison.Ordinal) ? $" The pull request: {pr}" : "";
-        return $"Plugin `{said.Plugin}`: {Sentence(said.Message)}{opened}";
-    }
-
     /// <summary>A plugin's words closed as a sentence, so the one after it does not run on.</summary>
     internal static string Sentence(string words) =>
         words.TrimEnd() is var trimmed && trimmed.Length > 0 && ".!?".Contains(trimmed[^1]) ? trimmed : $"{trimmed}.";

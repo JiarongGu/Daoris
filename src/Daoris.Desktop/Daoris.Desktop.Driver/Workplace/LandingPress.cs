@@ -61,22 +61,16 @@ internal sealed class LandingPress(
 
     /// <summary>
     /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (LANDRACE1 and its review): where
-    /// it is, who accepted it, what its plugin answered (a failure said as a landing says it, with how the branch is pushed), and that
-    /// nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
+    /// it is, who accepted it, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
     /// </summary>
     internal static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
     {
         var who = before.AcceptedBy == AcceptedBy.Auto ? "accepted automatically when its quest was done" : "accepted by a press of Accept";
-        var plugin = before.Said is { } said ? $" {Said(said, before.Branch)}"
-            : before.Unready is { } unready ? $" Its push was not tried: {Sentence(unready)}"
-            : before.Plugin is { } named ? $" Plugin `{named}` had not answered when that landing ended: `daoris tree hand {session}` hands it the branch."
-            : "";
         return new(false,
             $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
-            + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}.{plugin} Nothing more was landed.", before.Branch)
+            + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}. Nothing more was landed.", before.Branch)
         {
             Refusal = LandingCode.Already,
-            Plugin = before.Said,
         };
     }
 

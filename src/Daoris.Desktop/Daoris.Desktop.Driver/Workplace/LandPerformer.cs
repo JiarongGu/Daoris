@@ -40,9 +40,6 @@ public sealed class LandPerformer(
     {
         public IWorkplaceGate? Gate { get; init; }
 
-        /// <summary>The branch its landing made whose push was held back, which is handed on rather than landed again; null for a landing.</summary>
-        public LandedBranch? Hands { get; init; }
-
         /// <summary>How many paths the tree's status named, so the landing's dirty check asks git no more; null where git could not say.</summary>
         public int? Uncommitted { get; init; }
     }
@@ -56,11 +53,6 @@ public sealed class LandPerformer(
         Tries.TryRemove($"{home}\n{session}", out _);
         if (unit is not null && tip is not null) LandOutcomes.Forget(unit, tip);
     }
-
-    /// <summary>The sessions of <paramref name="home"/> whose landing made its branch and holds its push back, by their last try.</summary>
-    public static IReadOnlySet<string> PushHeld(string home) =>
-        Tries.Where(each => each.Key.StartsWith($"{home}\n", StringComparison.OrdinalIgnoreCase) && each.Value.Code == LandingCode.PushHeld)
-            .Select(each => each.Key[(home.Length + 1)..]).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Lands the work of a run whose <c>land</c> the runtime started. Null where there is nothing to land from here.</summary>
     public async Task<string?> PerformAsync(LandStart start, CancellationToken ct = default)
@@ -139,13 +131,6 @@ public sealed class LandPerformer(
         var process = await Flows.ReadProcessAsync(home, config, world.QuestsAsync, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
 
-        // Its branch is made and recorded and its push was held back, so it is handed on, never made again.
-        if (entry.Last is { Code: LandingCode.PushHeld } pushHeld
-            && await PushHeldAsync(entry, pushHeld, world, looked, process, run, ct).ConfigureAwait(false) is { } handOn)
-        {
-            return handOn;
-        }
-
         // Landed since another way: a press that moved a chain's branch on lands it too, so its own acceptance is what is compared.
         var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
         if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
@@ -223,7 +208,6 @@ public sealed class LandPerformer(
     /// <param name="fresh">The world the choice was judged from, which names the landing and the trees in use.</param>
     private async Task<string> LandOneAsync(Choice choice, IWorkplaceLandingWorld fresh, CancellationToken ct)
     {
-        if (choice.Hands is { } made) return await HandOnAsync(choice, made, ct).ConfigureAwait(false);
         var entry = choice.Entry;
         using var look = trees.OneLook();
         using var facts = GitFacts.Within();
@@ -258,10 +242,9 @@ public sealed class LandPerformer(
         var landed = operation is not null
             ? await trees.LandTogetherAsync(
                 operation.Id, subject, await MemberGatesAsync(operation, fresh, ct).ConfigureAwait(false), ct, fresh.InUseAsync, choice.Gate,
-                JudgedAsync, (record, waited, token) => BeforePushAsync(choice, record, waited, token), fresh.BesideAsync).ConfigureAwait(false)
+                JudgedAsync, beforePush: null, fresh.BesideAsync).ConfigureAwait(false)
             : await trees.LandAsync(entry.Tree, subject, ct, fresh.InUseAsync, carried is null ? AcceptedBy.Auto : AcceptedBy.Person, choice.Gate, subject.Joins,
-                judged: JudgedAsync, beforePush: (record, waited, token) => BeforePushAsync(choice, record, waited, token), uncommitted: choice.Uncommitted,
-                beside: fresh.BesideAsync).ConfigureAwait(false);
+                judged: JudgedAsync, uncommitted: choice.Uncommitted, beside: fresh.BesideAsync).ConfigureAwait(false);
         LandOutcomes.Kept(choice.Run.Unit, choice.Run.Tip, landed);
         if (judgedAgain is not null) return judgedAgain;
         // A landing the session can clear (a conflict, work left uncommitted since) carries it on again under the review's word.
@@ -273,7 +256,7 @@ public sealed class LandPerformer(
 
         var code = LandTries.CodeOf(landed);
         var told = landed is { Landed: false, Conflict: { } conflict } && await ToldRebaseAsync(fresh, entry, choice.Tip, conflict, ct).ConfigureAwait(false);
-        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told,
+        return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Target, unlanded, rebaseTold: told,
             carry: carried is null ? null : LandCarry.Accepted);
     }
 
@@ -352,133 +335,8 @@ public sealed class LandPerformer(
                 : "its quest's submission was made again while it waited to land, so nothing was landed: the next pass judges the new one.");
     }
 
-    /// <summary>
-    /// The choice's quest judged once more just before its plugin is told (a hold stops a landing up to the moment its push begins). Its branch is
-    /// made and recorded by now, so only what can still stop the push is read: the quest afresh and the gate, for the session that last moved the
-    /// branch and for every earlier session whose work the push carries unpushed.
-    /// </summary>
-    /// <param name="landing">The branch's record as it reads under the branch's hold, null where none was recorded.</param>
-    /// <returns>Why the push is held back, as the landing's sentence says it; null where it goes on.</returns>
-    private async Task<string?> BeforePushAsync(Choice choice, LandedBranch? landing, bool waited, CancellationToken ct)
-    {
-        var entry = choice.Entry;
-        var last = landing?.LastSession() ?? entry.Session;
-        var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
-        var earlier = Earlier(landing, entry.Session, last);
-        if (!later && earlier.Count == 0 && !waited && !QuestResults.Submitted(choice.Quest)) return null;
-        var holds = choice.Gate?.Process?.JudgesHolds != false;
-        var fresh = world.Again();
-        IReadOnlyList<SessionRecord>? records = null;
-        async Task<SessionRecord?> RecordAsync(string session) =>
-            RecordOf(records ??= await fresh.RecordsAsync(ct).ConfigureAwait(false), session);
-
-        if (later || waited || QuestResults.Submitted(choice.Quest))
-        {
-            // A later session on no quest holds the push to nothing: its work landed by the person's own press.
-            var record = later ? await RecordAsync(last).ConfigureAwait(false) : null;
-            if ((later ? record?.Quest : entry.Quest) is { } id)
-            {
-                var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
-                var why = !QuestResults.Judged(quest) ? "its quest was taken back"
-                    : !later && !QuestResults.Same(choice.Quest, quest) ? "its quest's submission was made again"
-                    : holds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "its quest was held for your yes"
-                    : null;
-                if (why is not null)
-                {
-                    return $"{why} before its plugin was told, so its push was not tried: the branch stands, and the first pass once its quest "
-                        + $"stands again hands it on, or `daoris tree hand {last}` does now";
-                }
-
-                // The choice's own work is judged at the commit its branch was made at, so a commit made since, which this push does not carry,
-                // holds nothing back. A later session's tree is read at its head.
-                var (_, held, line) = await GateAsync(entry, last, id, record?.Tree ?? entry.Tree, fresh, ct, tip: later ? null : choice.Gate?.Tip ?? choice.Tip)
-                    .ConfigureAwait(false);
-                if (held is not null)
-                {
-                    if (line is not null) log?.Invoke(line);
-                    return $"{LandTryNotes.GateHeld} before its plugin was told, so its push was not tried: the branch stands, and the first "
-                        + $"pass once the gate lets it go hands it on, or `daoris tree hand {last}` does now. {held.Message}";
-                }
-            }
-        }
-
-        foreach (var work in earlier)
-        {
-            if ((work.Quest ?? (await RecordAsync(work.Session).ConfigureAwait(false))?.Quest) is not { } carried) continue;
-            var id = carried.TrimStart('#');
-            var quest = await fresh.QuestAsync(id, ct).ConfigureAwait(false);
-            var why = !QuestResults.Judged(quest) ? "was taken back"
-                : holds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed ? "was held for your yes"
-                : null;
-            if (why is not null)
-            {
-                return $"session {work.Session}'s quest #{id}, whose work this push carries, {why} before its plugin was told, so its push was "
-                    + $"not tried: the branch stands, and the first pass once that quest stands again hands it on, or "
-                    + $"`daoris tree hand {last}` does now";
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>The earlier sessions whose work a push of <paramref name="landing"/> carries unpushed, besides the choice's own and the branch's last.</summary>
-    private static IReadOnlyList<LandedWork> Earlier(LandedBranch? landing, string own, string last) =>
-        landing is null ? []
-        : [.. landing.UnpushedBesides(own).Where(work => !string.Equals(work.Session, last, StringComparison.OrdinalIgnoreCase))];
-
     private static SessionRecord? RecordOf(IReadOnlyList<SessionRecord> records, string session) =>
         records.FirstOrDefault(record => string.Equals(record.Id, session, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>A quest that would land now: its result in, and no hold for the person's yes but the review's own, where the start judges the holds.</summary>
-    private static bool Stands([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] QuestView? quest, bool holds) =>
-        quest is not null && QuestResults.Judged(quest) && !(holds && quest.Held && quest.Hold != EvidenceCodes.Unreviewed);
-
-    /// <summary>
-    /// A run whose push was held back after its branch was made: while its quest, a later session's that moved the branch on, or an earlier one's
-    /// whose work the push carries is held or taken back, it waits. Once they stand, a tree still at the commit its landing judged is handed on
-    /// (<see cref="TreeHandOffs"/>), once; a tree whose work went on past it is landed as any later done is (null here).
-    /// </summary>
-    private async Task<(string? Said, Choice? Choice)?> PushHeldAsync(
-        LandEntry entry, AutoTry held, IWorkplaceLandingWorld world, Records looked, IWorkplaceProcess process, LandStart run, CancellationToken ct)
-    {
-        var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        var holds = process.JudgesHolds;
-        if (!Stands(quest, holds)) return (null, null);
-
-        // Handed on meanwhile by the person's own `trees hand`, or its record gone with its branch: nothing is handed on twice.
-        if (trees.Recorded.Landing(entry.Session) is not { } landing
-            || landing is { Pushed: true } && string.Equals(landing.PushedTip, landing.Tip, StringComparison.OrdinalIgnoreCase))
-        {
-            return (Closed(entry, LandingCode.Already, branch: held.Branch), null);
-        }
-
-        var last = landing.LastSession();
-        var later = !string.Equals(last, entry.Session, StringComparison.OrdinalIgnoreCase);
-        var record = later ? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), last) : null;
-        if (record?.Quest is { } laterQuest && !Stands(await world.QuestAsync(laterQuest, ct).ConfigureAwait(false), holds)) return (null, null);
-
-        foreach (var work in Earlier(landing, entry.Session, last))
-        {
-            var carried = work.Quest ?? RecordOf(await looked.ReadAsync(ct).ConfigureAwait(false), work.Session)?.Quest;
-            if (carried is not null && !Stands(await world.QuestAsync(carried, ct).ConfigureAwait(false), holds)) return (null, null);
-        }
-
-        var (tip, status, _) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-        if (!string.Equals(tip, held.Tip, StringComparison.OrdinalIgnoreCase)) return null;
-
-        // The gate, for the session whose work the hand-on pushes.
-        var (session, sessionQuest, sessionTree) = later ? (last, record?.Quest, record?.Tree ?? entry.Tree) : (entry.Session, entry.Quest, entry.Tree);
-        var (_, gateHeld, _) = later
-            ? await GateAsync(entry, session, sessionQuest, sessionTree, world, ct).ConfigureAwait(false)
-            : await GateAsync(entry, session, sessionQuest, sessionTree, world, ct, process).ConfigureAwait(false);
-        if (gateHeld is not null)
-        {
-            if (gateHeld.Refusal == LandingCode.Opinion && sessionQuest is not null) Owe(entry, session, sessionQuest, sessionTree);
-            return (null, null);
-        }
-
-        return (null, new Choice(entry, quest, tip, status, run) { Hands = landing });
-    }
 
     /// <summary>
     /// A second opinion holding a landing, owed where its gate is read, for the session whose work would land, unless one is owed there already.
@@ -490,32 +348,12 @@ public sealed class LandPerformer(
         WorkplaceReview.Current.OweLanding(home, session, quest, entry.Repository, entry.Workspace, tree, Now, since);
     }
 
-    /// <summary>
-    /// A branch made and held back from its push, handed on now its quest stands again: the hand-off's own door (<see cref="TreeHandOffs.HandAsync"/>),
-    /// which takes the branch's hold, reads the record under it and pushes once, from the repository the tree is a checkout of.
-    /// </summary>
-    private async Task<string> HandOnAsync(Choice choice, LandedBranch made, CancellationToken ct)
-    {
-        var entry = choice.Entry;
-        var root = TreeTips.CommonDirectory(entry.Tree) is { } common
-            ? Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(common)) ?? entry.Tree
-            : entry.Tree;
-        var handed = await trees.HandAsync(root, made, made.Rule?.Plugin, ct, (record, waited, token) => BeforePushAsync(choice, record, waited, token))
-            .ConfigureAwait(false);
-        // Held back there, it stays `push-held`: a refusal would be kept at this tip and never tried again, since the tree does not move.
-        var landed = handed.Withheld is { } withheld ? new TreeLanding(true, handed.Message, handed.Branch) { Withheld = withheld }
-            : handed.Plugin is not null ? new TreeLanding(true, handed.Message, handed.Branch, handed.Plugin)
-            : new TreeLanding(false, handed.Message, handed.Branch) { Refusal = LandingCode.Refused };
-        return Tried(entry, LandTries.CodeOf(landed), choice.Tip, choice.Status, landed, handed.Plugin?.Plugin ?? made.Rule?.Plugin,
-            made.Branch);
-    }
-
     /// <summary>Keep one try: in memory with its facts, in the conversation where its code is said there, and in the machine log by its code.</summary>
     /// <param name="named">The branch the pattern names, which a refusal's note names where the landing made none.</param>
     /// <param name="rebaseTold">Its replay conflicted and its session was told to rebase, which its note says.</param>
     /// <param name="carry">What the review's word was carried on for, or that it accepted the landing (<see cref="LandTryNotes.Of"/>).</param>
     private string Tried(
-        LandEntry entry, string code, string? tip, string? status, TreeLanding? landed = null, string? plugin = null,
+        LandEntry entry, string code, string? tip, string? status, TreeLanding? landed = null,
         string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false, string? carry = null)
     {
         var made = landed is { Landed: true } ? landed.Branch : null;
@@ -531,13 +369,13 @@ public sealed class LandPerformer(
         var line = Words(code, landed);
         if (LandTryNotes.Says(code))
         {
-            var note = LandTryNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold, carry);
+            var note = LandTryNotes.Of(code, landed, uncommitted, named, rebaseTold, carry);
             events.Keep(entry.Session, note, say: null);
             line = note.Text!;
         }
 
         log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted,
-            plugin, landed?.Plugin?.Pushed));
+            plugin: null, pushed: null));
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
     }
 

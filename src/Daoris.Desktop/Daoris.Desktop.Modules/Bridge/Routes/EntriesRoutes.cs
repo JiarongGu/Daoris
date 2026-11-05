@@ -24,7 +24,7 @@ public sealed class EntriesRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>What an entry's landing changes: what each of its parts' landings does (STATEHUB1b, D169), for every session it names.</summary>
-    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
     /// <summary>

@@ -19,11 +19,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, its hand-off, the clean-up's
     /// list, and which repositories hold Daoris's branches.
     /// </summary>
-    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
-    /// <summary>What discarding a session's tree changes: as a landing, but for the branch a plugin could take, which it keeps.</summary>
-    private const StateScopes Discards = Lands & ~StateScopes.HandOff;
+    /// <summary>What discarding a session's tree changes: what a landing does.</summary>
+    private const StateScopes Discards = Lands;
 
     /// <summary>What a press at the second opinion's gate changes: every plan and gate, and the sessions whose reviewer it moved.</summary>
     private const StateScopes Gates = StateScopes.Sessions | StateScopes.Landing;
@@ -246,7 +246,6 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     public static LandingSubject Entering(LandingSubject subject, string? branch) => subject with { Entered = branch };
 
     private readonly TreesLandDesk _land = new(loop);
-    private readonly TreesHandDesk _hand = new(loop);
 
     // How a reviewed session's work lands: what a press WOULD do, said before it —
     // merge into the line, or the branch the rule names for this session — and the press, which
@@ -598,54 +597,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         ? null
         : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says, review.Decision.ChatRun, review.Decision.LookNode };
 
-    // A branch a landing made, handed to a landing plugin afterwards: what a press would do,
-    // said before it, and the press — `daoris tree hand` is the terminal's door.
-    /// <summary>
-    /// A session's landed branch handed to a landing plugin after its landing: the plan before the
-    /// press, or the press. The branch is the one this session's landing made and recorded; a session whose
-    /// landing made none answers no branch, which is information, not a failure.
-    /// </summary>
-    /// <remarks>
-    /// A refusal is an answer, as a landing's is. The checkout is the registry's, since the tree may have been
-    /// tidied away; a repository with no checkout here is answered in the same sentence form.
-    /// </remarks>
-    [DriverRoute("HANDOFF_PLAN", PipeClass.Open)]
-    private Task<object?> HandOffPlanAsync(HandOffPlan plan, CancellationToken cancellationToken) =>
-        _hand.HandOffAsync(new TreesHandDesk.HandAsk(plan.Id, plan.Branch, plan.Repository, plan.Plugin, Press: false, plan.Said), cancellationToken);
-
-    [DriverRoute("HANDOFF", PipeClass.Person, Drain = PipeDrain.Waits)]
-    [Owner("HANDOFF", Session = "id")]
-    [GroundSession("HANDOFF", "id")]
-    [GroundRepository("HANDOFF", "repository")]
-    [GroundBranch("HANDOFF", "repository", "branch")]
-    [GroundRead("HANDOFF", nameof(PipeReads.HandoffPlan))]
-    [Says("HANDOFF", "repository:repository")]
-    [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
-    private Task<object?> HandOffPressAsync(HandOff press, CancellationToken cancellationToken) =>
-        _hand.HandOffAsync(new TreesHandDesk.HandAsk(press.Id, press.Branch, press.Repository, press.Plugin, Press: true), cancellationToken);
-
     /// <summary>A repository's checkout here, from the registry — or null where it has none on this machine.</summary>
     internal static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
     {
         var root = (await service.RegistryAsync(cancellationToken))
             .FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Root;
         return string.IsNullOrWhiteSpace(root) || !Directory.Exists(root) ? null : root;
-    }
-
-    /// <summary>
-    /// The hand-off's press, which the review's button and Ask Daoris's card share: the plugin spoken
-    /// to, its word kept where the landing's own note is, and the loop told to look again. A static over the loop,
-    /// which Help's doors reach by this class's name.
-    /// </summary>
-    internal static async Task<TreeHand> HandAsync(
-        DriverLoop loop, SessionTrees trees, string root, LandedBranch entry, string? plugin, CancellationToken cancellationToken)
-    {
-        // FABRIC-CLOSE1h8: the result of the session that last moved the branch, read here, judged again just before the
-        // plugin is told, so a hand-off that waited behind another push tells no plugin where that result moved meanwhile.
-        var pressed = await PressQuests.HandedAsync(entry, loop.Service ?? throw NotReady(), cancellationToken);
-        var handed = await trees.HandAsync(root, entry, plugin, cancellationToken, beforePush: pressed.BeforePush);
-        if (handed.Plugin is not null) loop.Events.Keep(entry.Session, LandingNotes.HandNote(handed), line => loop.Output.Append(entry.Session, line));
-        loop.Nudge();
-        return handed;
     }
 }

@@ -93,14 +93,6 @@ internal static class PipeReads
             ? [PipeRef.Of(session, "HEAD"), .. Text(At(a, "target")) is { Length: > 0 } target ? [PipeRef.Of(session, target)] : Array.Empty<PipeRef>()]
             : []);
 
-    /// <summary>An id-only hand-off names no branch: the branch its plan resolved is bound by its tip.</summary>
-    public static PipeGround HandoffPlan() => Plan("HANDOFF_PLAN", ["id", "branch", "repository", "plugin"],
-        p => new { id = Text(p, "id"), branch = Text(p, "branch"), repository = Text(p, "repository"), plugin = Text(p, "plugin") },
-        (a, _) => Fp(Pick(a, "session", "branch", "repository", "plugin", "problem", "commits")),
-        tips: (a, _) => Text(At(a, "repository")) is { Length: > 0 } repository && Text(At(a, "branch")) is { Length: > 0 } branch
-            ? [PipeRef.In(repository, branch)]
-            : []);
-
     public static PipeGround OpinionGate() =>
         Wait("OPINION_GATE", ["id"], p => new { id = Text(p, "id") },
             (a, _) => At(a, "opinion") is { } opinion ? $"{Text(At(opinion, "state"))}|{Raw(At(opinion, "holds"))}|{Text(At(opinion, "opinion"))}" : "");

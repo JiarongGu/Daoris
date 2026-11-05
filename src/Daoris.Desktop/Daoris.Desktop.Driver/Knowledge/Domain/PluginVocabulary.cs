@@ -22,13 +22,6 @@ public static class HookPoints
     public const string SessionEnded = "session/ended";
 
     /// <summary>
-    /// An act, after Daoris's own (WSR4, D100): a branch rule's landing has made its branch, and the plugin
-    /// the rule names pushes it and opens the pull request for its platform. Spoken by the landing, never
-    /// by the loop, and it can undo nothing: a failure here leaves the branch.
-    /// </summary>
-    public const string Land = "work/land";
-
-    /// <summary>
     /// A query (PLUGHOOK1a, D148): a landed branch's pull request, asked of the plugin that pushed it, which only its platform
     /// knows. Asked only at an occasion that may remove something, and acted on only where git confirms the answer. An
     /// unanswered query is not known, never a default.
@@ -47,7 +40,7 @@ public static class HookPoints
     /// with their kit entries (FABRIC-PERFORM1e), so the kit scaffolds, tests and tries them as it does the rest; who speaks them is still
     /// <see cref="Work"/>'s rule.
     /// </summary>
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State, StateChanged, Watch, Step, Perform];
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, State, StateChanged, Watch, Step, Perform];
 
     /// <summary>
     /// The points the driver loop's set speaks at — a plugin that speaks on none of them is not kept running beside it. The
