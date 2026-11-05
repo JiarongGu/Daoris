@@ -90,7 +90,7 @@ internal sealed class LandedWithdrawals(TreeContext context, ContentHolds conten
         }
 
         // The branch at the commit judged is the whole of what this rests on: nothing else holds its work, which is the point.
-        var stays = await content.DeleteJudgedAsync(root, branch, now.Tip, [($"refs/heads/{branch}", now.Tip)], ct).ConfigureAwait(false);
+        var stays = await content.DeleteJudgedAsync(root, repository, branch, now.Tip, [($"refs/heads/{branch}", now.Tip)], ct).ConfigureAwait(false);
         if (stays is not null)
         {
             await ContentHolds.DropKeptAsync(root, branch, reference, now.Tip, CancellationToken.None).ConfigureAwait(false);

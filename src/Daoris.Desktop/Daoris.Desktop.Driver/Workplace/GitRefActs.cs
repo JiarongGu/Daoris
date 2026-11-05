@@ -272,7 +272,7 @@ public static class GitRefActs
     }
 
     /// <summary>The branch's section of the local configuration as the plan keeps it (file, scope, section, text), or null where it has none or the file does not read.</summary>
-    private static async Task<JsonObject?> SectionAsync(string checkout, string name)
+    internal static async Task<JsonObject?> SectionAsync(string checkout, string name)
     {
         var file = Path.Combine(TreeLock.CommonDirOf(checkout), "config");
         var section = $"branch.{name}";
@@ -295,15 +295,16 @@ public static class GitRefActs
     private static async Task<ActRun> UndoDeleteAsync(ActRuns runs, ActRecord record, string checkout, string press, string? confirmed, CancellationToken ct)
     {
         var plan = JsonNode.Parse(record.Plan)!;
-        var (full, id, recovery) = (plan["ref"]!.GetValue<string>(), plan["at"]!.GetValue<string>(), plan["recovery"]!.GetValue<string>());
+        // A delete Daoris judged (JournaledDeletes) keeps its recovery ref by its own door's rule, so its record names none of its own.
+        var (full, id, recovery) = (plan["ref"]!.GetValue<string>(), plan["at"]!.GetValue<string>(), (string?)plan["recovery"]);
         var name = ShortName(full);
         var noun = full.StartsWith("refs/tags/", StringComparison.Ordinal) ? "tag" : "branch";
         var section = plan["section"] as JsonObject;
 
         var transaction = RefTransaction.RestoreDeleted(full, id);
         var moves = new List<(string Ref, string? Before, string? After)> { (full, null, id) };
-        var (code, at, _) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", recovery], ct).ConfigureAwait(false);
-        if (plan["recoveryMade"]?.GetValue<bool>() == true && code == 0 && at.Trim() == id)
+        var (code, at, _) = recovery is null ? (1, "", "") : await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", recovery], ct).ConfigureAwait(false);
+        if (recovery is not null && plan["recoveryMade"]?.GetValue<bool>() == true && code == 0 && at.Trim() == id)
         {
             transaction.Delete(recovery, id);
             moves.Add((recovery, id, null));

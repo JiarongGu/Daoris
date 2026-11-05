@@ -253,7 +253,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
 
         // In one transaction with the ref that held its tip when judged (FABRIC-END4a, second review).
         var branchKept = cut is { Branch: { } branch, Tip: { } tip, Holder: { } holder }
-            ? await content.DeleteJudgedAsync(root, branch, tip, [holder], done).ConfigureAwait(false)
+            ? await content.DeleteJudgedAsync(root, repository, branch, tip, [holder], done).ConfigureAwait(false)
             : null;
         return new StrayResult(cut.Folder, StrayKind.Opening, true, cut.Clause ?? "")
         {
