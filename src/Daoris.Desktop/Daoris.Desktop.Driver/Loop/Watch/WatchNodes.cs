@@ -67,6 +67,9 @@ internal sealed class WatchNodes
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
             said => Log?.Info("landing.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
 
+        // G8: the door a run's `push` is performed through, the push act of the act journal, under the same lease and drain rules.
+        nodes.Pushing = new PushDoor(home, said => Log?.Info("push.run", ("said", said)), () => HomeLease.HeldHere(home) && !watch.DrainsNow());
+
         // FABRIC-PIPELINE1d (the pipeline design §4.2): the heavy executor a check is handed to; its answer asks a pass, which reconciles it.
         _executor = new HeavyExecutor(home, new VerifyWorld
         {

@@ -260,7 +260,7 @@ public static class RunSubjects
             or NodeKinds.Request => RunSubject.Run,
         NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review or NodeKinds.Land or NodeKinds.ContentHolds => RunSubject.Branch,
         // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
-        NodeKinds.Pushed or NodeKinds.PullRequest or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,
+        NodeKinds.Push or NodeKinds.Line or NodeKinds.Integrate => RunSubject.Landing,
         _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
     };
 

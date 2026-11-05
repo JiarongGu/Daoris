@@ -6,11 +6,11 @@ public static class NodeKinds
     /// <summary>The agent's done, on the ledger: a claim, and never the end (§C2).</summary>
     public const string Claimed = "claimed";
 
-    /// <summary>The plugin's push answer, its tip held by git's remote-tracking ref.</summary>
-    public const string Pushed = "pushed";
-
-    /// <summary>The plugin's completed answer, passing D148 point 4's checks.</summary>
-    public const string PullRequest = "pull-request";
+    /// <summary>
+    /// Daoris's own push of the branch the <c>land</c> made (G8, D241 point 2): performed through the push act, reached when git's remote-tracking
+    /// ref holds the pushed commit. A pull request is no kind of its own: it is a plugin's performed step, <c>&lt;plugin&gt;/pull-request</c>.
+    /// </summary>
+    public const string Push = "push";
 
     /// <summary>Git's proof that the line holds the work (§B3): the kept end fact, <i>held</i>.</summary>
     public const string Line = "line";
@@ -99,7 +99,7 @@ public static class NodeKinds
     /// <summary>Whether a kind is a hold Daoris judges before the landing (LANDNODE1k).</summary>
     public static bool IsHold(string kind) => kind is QuestHolds or ContentHolds;
 
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Pushed, PullRequest, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
+    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Push, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds];
 
     /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
     public static bool IsPlugin(string kind)
@@ -184,9 +184,6 @@ public static class NodeSource
 
     /// <summary>A plugin's believed answer or event: the five rules of §C4 passed, bound to the work's commit.</summary>
     public const string Plugin = "plugin";
-
-    /// <summary>A plugin's push answer whose pushed tip git's remote-tracking ref holds (§C2's <c>pushed</c>).</summary>
-    public const string PluginRef = "plugin-ref";
 
     /// <summary>The person, at D156's doors: an approval, <i>reviewed</i>, a yes.</summary>
     public const string Person = "person";
@@ -310,9 +307,9 @@ public static class NodeAuthorities
     {
         [NodeKinds.Claimed] = new(NodeKinds.Claimed, NodeReach.Observed, NodeSource.Ledger, null, false, false, MayEnd: false, Evidenced: true),
         [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
-        [NodeKinds.Pushed] = new(NodeKinds.Pushed, NodeReach.Observed, NodeSource.PluginRef, NodeSource.Plugin, false, true, true, true),
-        // FABRIC-WIRE1h: the landing record passes it over where the work went into the line with no branch landed to open one on.
-        [NodeKinds.PullRequest] = new(NodeKinds.PullRequest, NodeReach.Observed, NodeSource.Plugin, NodeSource.Plugin, false, true, true, true) { SkipBy = NodeSource.Landing },
+        // G8: Daoris's push, reached when git's remote-tracking ref holds the pushed commit and failed by the push act's refusal. Never
+        // skipped, since a skip would read as pushed where nothing was; the person's doors are stop and Try again.
+        [NodeKinds.Push] = new(NodeKinds.Push, NodeReach.Performed, NodeSource.Git, NodeSource.Git, false, PersonSkips: false, true, true),
         [NodeKinds.Human] = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
         // §E4: the look is its gate, observed, and the person's *reviewed* is what reaches it.
         // FABRIC-WIRE1h: the review gate's record passes it over where the chain's or the ask's choice turns it off for this work.

@@ -13,9 +13,8 @@ public static class IntegrateChoice
     /// <param name="NoGates">Whether the version integrates its line there with no gates (§17.7, F42).</param>
     internal sealed record Reach(string Repository, IReadOnlyList<string> Cannots, bool NoGates);
 
-    /// <summary>Whether the graph holds a step this check judges: an <c>integrate</c>, or a plugin's push or pull request.</summary>
-    internal static bool Matters(NodeGraph graph) =>
-        graph.Nodes.Any(node => node.Kind is NodeKinds.Integrate or NodeKinds.Pushed or NodeKinds.PullRequest);
+    /// <summary>Whether the graph holds a step this check judges: an <c>integrate</c>.</summary>
+    internal static bool Matters(NodeGraph graph) => graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
 
     /// <summary>Whether a fact in the accepted declaration is judged: the graph's <c>integrate</c> asks with <c>done</c> or <c>steward</c>.</summary>
     internal static bool NeedsAccepted(NodeGraph graph) =>
@@ -41,7 +40,7 @@ public static class IntegrateChoice
         if (gates.Problem is not null) return new(repository, [], false);
         var landing = WorkflowProcess.Of(
             config, repository, workspace, binding, gates,
-            LandNodes.LandingOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null))).Landing;
+            LandNodes.LandingOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode))).Landing;
         var policy = config.LinePolicyOf(repository, workspace);
         var integrates = graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
         return new(repository, IntegrateCarry.Cannots(repository, graph, policy, landing, accepted), integrates && IntegrateCarry.NoGates(policy));

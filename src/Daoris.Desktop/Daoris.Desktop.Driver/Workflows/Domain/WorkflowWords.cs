@@ -313,16 +313,13 @@ public static class WorkflowWords
         foreach (var gate in gates) Node((string)gate["id"]!, (string)gate["kind"]!, "observed", Options(gate));
         var landing = steps.First(step => (string?)step!["kind"] == WorkflowKinds.Landing)!.AsObject();
         var integrate = current.Steps.FirstOrDefault(step => step.Kind == NodeKinds.Integrate);
-        var plugin = (string?)landing["plugin"];
         var method = (string?)landing["form"] == LandingForm.Merge ? LandNodes.Merge
             : integrate is not null ? LandNodes.Integrate
-            : plugin is not null && plugin != LandNodes.NoPlugin ? LandNodes.PullRequest
             : LandNodes.Branch;
         // LANDNODE1c2: the press is a `review` before the `land`, which takes no `accept` of its own.
         var reviewed = (string?)landing["accept"] != "automatic";
         var land = new JsonObject { ["method"] = method };
         if (method != LandNodes.Merge && (string?)landing["pattern"] is { } pattern) land["pattern"] = pattern;
-        if (method is LandNodes.PullRequest or LandNodes.Branch && plugin is not null) land["plugin"] = plugin;
         if (reviewed) Node("review", NodeKinds.Review, "pressed");
         Node("landing", NodeKinds.Land, "performed", land);
 
@@ -339,15 +336,7 @@ public static class WorkflowWords
         if (gates.Count == 0) Wire("content", reviewed ? "review" : "landing");
         if (reviewed) Wire("review", "landing");
         var end = "landing";
-        if (method == LandNodes.PullRequest)
-        {
-            Node("pushed", NodeKinds.Pushed, "observed");
-            Node("pull-request", NodeKinds.PullRequest, "observed");
-            end = "pull-request";
-            Wire("landing", "pushed");
-            Wire("pushed", "pull-request");
-        }
-        else if (method == LandNodes.Integrate)
+        if (method == LandNodes.Integrate)
         {
             var request = integrate!.Settings.FirstOrDefault(setting => setting.Name == "request")?.Value as string ?? LandingIntegrate.Owner;
             var conflicts = integrate.Settings.FirstOrDefault(setting => setting.Name == "conflicts")?.Value as string ?? LandingIntegrate.Session;
