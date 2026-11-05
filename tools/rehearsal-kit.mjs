@@ -47,7 +47,7 @@ export function evidenceFolder(repoRoot, name, started = new Date()) {
 }
 
 /**
- * Where a rehearsal builds what the Process lane builds (REHLANE1): a folder of its own under `_fixtures/rehearsal-builds/`.
+ * Where a rehearsal builds what the git half builds (REHLANE1): a folder of its own under `_fixtures/rehearsal-builds/`.
  * The family and deployment rehearsals run beside the driver's git half (REHLANE2b the deployment's), which builds into and
  * runs from the desktop projects' own `bin/` and `obj/`; two builds of one project there fight over them, and a build can
  * find a file a running test holds. Outside the rehearsal's scratch, which each run wipes, so the next run's build is

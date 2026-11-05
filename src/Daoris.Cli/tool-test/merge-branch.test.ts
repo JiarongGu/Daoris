@@ -3775,16 +3775,16 @@ function rehearsalProjects(text: string): Record<string, string> {
 }
 
 /**
- * REHLANE1: a rehearsal that runs beside the git half builds a project of a component the Process lane builds only into its
- * own output (`ownBuild`), never into that project's folders, which the Process halves build into and run from; and it shuts
+ * REHLANE1: a rehearsal that runs beside the git half builds a project of a component that half builds only into its
+ * own output (`ownBuild`), never into that project's folders, which the git half builds into and runs from; and it shuts
  * no build server down. Read from the tool its root script runs, as REACH's rows for the rehearsals are. REHLANE2: or it runs
  * no `dotnet` at all, as the release rehearsal does. REHLANE2b: and every publish of the desktop it runs is told an output of
  * its own (`tools/desktop-publish.mjs`'s `--artifacts-path`, whose test holds every `dotnet publish` that tool runs to the
  * output it is told), and no such gate is planned a step before it, as the deployment rehearsal's shutdown once was.
  */
-test('a rehearsal that runs beside the git half builds what the Process lane builds into its own output, or no .NET at all, and shuts no build server down', () => {
+test('a rehearsal that runs beside the git half builds what that half builds into its own output, or no .NET at all, and shuts no build server down', () => {
   const scripts = rootScripts();
-  const processBuilds = new Set(repoPlan.filter((gate) => tool.isProcessGate(gate)).map((gate) => tool.dotnetComponent(gate.run)));
+  const processBuilds = new Set(repoPlan.filter((gate) => tool.isGitHalf(gate)).map((gate) => tool.dotnetComponent(gate.run)));
   assert.deepEqual([...processBuilds], ['src/Daoris.Desktop']);
   const building: string[] = [];
   const publishing: string[] = [];
@@ -3810,7 +3810,7 @@ test('a rehearsal that runs beside the git half builds what the Process lane bui
       const project = projects[name!];
       assert.ok(project, `${file} builds \${${name}}, a project this test cannot place`);
       assert.ok(!processBuilds.has(tool.dotnetComponent(`dotnet build ${project}`)),
-        `${file} builds ${project} into its own folders, which a Process half builds into and runs from`);
+        `${file} builds ${project} into its own folders, which the git half builds into and runs from`);
     }
   }
   // The family's and the deployment's tools are read for their builds: a rehearsal that names no `dotnet` is not, so those

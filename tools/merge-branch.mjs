@@ -346,11 +346,11 @@
  * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
  * serial halves among them, and the rehearsal still waits for the whole light lane.
  *
- * A rehearsal runs beside a Process half only where they share no build output. The Process halves build the desktop's
- * projects into their own `bin/` and `obj/` and run from them, and only the desktop's (a test holds that). So the family
+ * A rehearsal runs beside a Process half only where they share no build output. The git half builds the desktop's
+ * projects into their own `bin/` and `obj/` and runs from them, and only the desktop's (a test holds that). So the family
  * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
  * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
- * build, in folders no Process half builds; and it shuts no build server down. A test reads its tool for both.
+ * build, in folders no git half builds; and it shuts no build server down. A test reads its tool for both.
  *
  * The deployment rehearsal ran alone and last then, where its build-server shutdown stopped no build (D115's REHLANE1
  * note); REHLANE2b, below, moved it beside.
@@ -508,7 +508,7 @@ export const isGitHalf = (gate) => /git\.process\.runsettings/.test(gate.run);
 
 /**
  * The rehearsals that may run beside a git half (REHLANE1), by the root script each runs. Each builds the desktop's projects,
- * which the Process halves build into and run from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`,
+ * which the git half builds into and runs from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`,
  * and `desktop-publish --artifacts-path` for the deployment rehearsal's publishes), or builds no .NET project at all, and
  * shuts no build server down: a test reads each one's tool for both. They run one after the other, in this order, never
  * beside each other; the header's REHLANE2 and REHLANE2b sections say why the release and deployment rehearsals may run here
