@@ -71,7 +71,9 @@ web paths are under `src/Daoris.Web/src/`.
 6. .NET judges each slice of machine state once and pushes it with its data. There are 16 slices. A partition carries
    `{epoch, seq, status, data}`, a delta names its `baseSeq`, and a periodic manifest repairs a dropped push. (from D182)
 7. A window subscribes, asks its snapshot (`STATE_SLICE`), then applies newer pushes. A late push never moves it back.
-   More windows never mean more judges or more git. (from D182)
+   A pushed entry is read from its slice alone, waited for until its owner judges it, with no pull beside it; a failed
+   snapshot is read again at the next manifest. A plain browser, the stories' and e2e's harness, pulls the service's
+   lists. A test stands a shell up with `test/sliceShell.ts`. More windows never mean more judges or more git. (from D182, D139)
 8. A pushed projection is allow-listed. It carries no credential, no arbitrary payload, and a machine path only in a
    desktop-only slice. Diffs, transcripts, graphs and search results stay on demand. (from D182)
 9. The domain's verdicts live in .NET: grouping, attention, eligibility, milestones, usage curves. The page keeps
@@ -87,8 +89,9 @@ web paths are under `src/Daoris.Web/src/`.
     adopted has none, and the window says so. (from D156)
 13. Reads are open. An agent's doors are judged as an agent's. The person's doors need the key. An unclassed write is
     refused. A refusal is a 403 with a code, never a 500. (from D156)
-14. A terminal's press of a `Person` route waits on its card in *Notifications* for the person's Confirm, default no.
-    Its two minutes start when the card is shown. The route's name and raw values sit under *Details*. (from D156, D196)
+14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
+    *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
+    takes it back. The route's name and raw values sit under *Details*. (from D156, D196)
 15. A standing confirmation the person grants in the window lets a terminal outside Daoris's agents stop or finish a
     session and hold or resume a repository with no card. Each use is logged and can be revoked at once. (from D201)
 

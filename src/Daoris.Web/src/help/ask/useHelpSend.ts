@@ -276,9 +276,9 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       },
       onError: (error) => {
         if (stoppedWaiting(error)) {
-          // SENDLOST1: kept, saying the machine has not answered yet, and the list read again.
+          // SENDLOST1: kept, saying the machine has not answered yet. The list is the shell's push, which a read here would only
+          // answer from memory at once, as the list that does not hold the conversation yet: its next push settles them.
           setFirstWords({ words: said, files, circle, late: { before, at: Date.now(), why: sentence(error) } });
-          void sessions.refetch();
           return;
         }
         setFirstWords(null);

@@ -21,7 +21,7 @@ const known = <T extends string>(list: readonly T[], value: string): value is T 
 const NODE_TITLES: Record<string, string> = {
   'go-ahead': 'workflow.step.goAhead',
   human: 'workflow.step.task',
-  pushed: 'workflow.step.pushed',
+  push: 'workflow.step.push',
   handed: 'workflow.step.handed',
   line: 'workflow.step.line',
   'quest.close': 'workflow.step.questClose',

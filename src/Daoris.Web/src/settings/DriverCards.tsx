@@ -6,10 +6,10 @@ import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
-import { MinutesSetting } from './MinutesSetting';
+import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
-import { UpdateSection } from './Update';
+import { UpdateSection } from './machine/Update';
 
 /** What the Driver domain shows, as the shell's state answers it; a field a shell does not answer is absent. */
 export type DriverFacts = {
@@ -40,8 +40,10 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess, onSayUpdate }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess, onSayUpdate }: {
   facts: DriverFacts;
+  /** The two settings held in minutes as the driver's list declares them, which the domain reads from the list. */
+  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared };
   busy: { access: boolean; update: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
@@ -118,13 +120,13 @@ export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onQuiet, o
           {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
               since an older shell answers no such field and has no route to write it. */}
           {typeof facts.coolOff === 'number' && (
-            <MinutesSetting setting="cooloff" held={facts.coolOff} onSet={onCoolOff} />
+            <MinutesSetting setting={minutes.cooloff} held={facts.coolOff} onSet={onCoolOff} />
           )}
 
           {/* How long a session may say nothing and run nothing before Daoris looks in: the one quiet setting, offered where the
               shell says it. A session is never stopped for running long. */}
           {typeof facts.quiet === 'number' && onQuiet && (
-            <MinutesSetting setting="quiet" held={facts.quiet} onSet={onQuiet} />
+            <MinutesSetting setting={minutes.quiet} held={facts.quiet} onSet={onQuiet} />
           )}
 
           {/* How many sessions Daoris starts at once (CAPSET1, D130's CAPCOUNT1 note): the person's one dial for the machine,

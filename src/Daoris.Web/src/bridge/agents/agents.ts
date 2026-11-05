@@ -6,7 +6,7 @@ import type { WiringAnswer } from '../../map/wiring';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { byInstant } from '../sessions/sessions';
-import { mergeKeyed, notPushed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { mergeKeyed, notPushed, readPushed, type SliceSpec } from '../state/slices';
 
 // The toolchain (MOD3): this machine's agents and their accounts, what each carried, each tool's own
 // actions, and what a start in each workspace would run on (D49 §4, D57).
@@ -94,7 +94,7 @@ const ordinal = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
  * under its id) and `accounts` (each account's share under its door and account), a session's end a delta of what it moved
  * (`mergeKeyed`), composed into `USAGE`'s answer in the route's order: the sessions newest first by `when` as an instant (a tie by
  * id, where the route keeps the file's order), the accounts by door, then account, the own home's first (`UsageStateSlice`).
- * Nothing judged yet, or a partition missing, composes nothing, which keeps the pull.
+ * Nothing judged yet, or a partition missing, composes nothing, which is waited for.
  */
 export const usageSlice: SliceSpec = {
   name: USAGE_SLICE,
@@ -113,16 +113,16 @@ export const usageSlice: SliceSpec = {
   merge: mergeKeyed,
 };
 
-/** What sessions consumed: pushed where the shell pushes it (PUSH1e), read from memory with no focus refetch; pulled elsewhere. */
+/** What sessions consumed, as the shell pushes it (PUSH1e): read from memory with no focus refetch. */
 export const useUsage = () => {
   const { isAvailable } = useShenora();
   const client = useQueryClient();
-  const pushed = usePushedLive(USAGE_SLICE);
   return useQuery({
     queryKey: keys.usage,
-    queryFn: () => readPushed(client, USAGE_SLICE, () => call<UsageAnswer>('USAGE')),
+    queryFn: () => readPushed<UsageAnswer>(client, USAGE_SLICE),
     enabled: isAvailable,
-    ...(pushed ? { staleTime: Infinity, refetchOnWindowFocus: false } : {}),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 };
 

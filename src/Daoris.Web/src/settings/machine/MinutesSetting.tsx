@@ -1,14 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type MachineSetting, SETTINGS } from '../bridge/generated/routes';
-import { SettingRow } from '../design/ui';
+import { SettingRow } from '../../design/ui';
 
-/** A machine setting as the driver's one list declares it. */
-export function settingOf(key: string): MachineSetting {
-  const setting = SETTINGS.find((each) => each.key === key);
-  if (!setting) throw new Error(`no machine setting is named ${key}`);
-  return setting;
-}
+/** What a setting held in minutes declares of itself: its key's words, and its bounds (null where it has none). */
+export type MinutesDeclared = { words: string; least: number | null; most: number | null };
 
 /**
  * A machine setting held in whole minutes (the cool-off, the quiet bound), drawn in its one key's words (`.label`, `.terminal`,
@@ -16,14 +11,14 @@ export function settingOf(key: string): MachineSetting {
  * refuses a value out of its bounds, so nothing typed, a value out of them, one not whole, or the one held puts the held value back.
  */
 export function MinutesSetting({ setting, held, onSet }: {
-  /** The setting's key. */
-  setting: string;
+  /** The setting as the driver's list declares it, which the page that draws this reads from the list. */
+  setting: MinutesDeclared;
   /** The minutes the shell answered: the file's, or the default. */
   held: number;
   onSet: (minutes: number) => void;
 }) {
   const { t } = useTranslation();
-  const { words, least, most } = settingOf(setting);
+  const { words, least, most } = setting;
   // Held as text while typed: a number input mid-edit passes through the empty string, which is no value to write.
   const [typed, setTyped] = useState<string | null>(null);
   return (

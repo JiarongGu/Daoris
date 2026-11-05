@@ -19,11 +19,11 @@ const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
 
 vi.mock('@shenora/react', async () => {
   const { publishing } = await import('../../test/publishing');
-  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  const { mockedShell } = await import('../../test/sliceShell');
   return {
-    isShenoraAvailable: () => bridge.available,
-    getBridge: () => ({ isAvailable: bridge.available, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
+    ...mockedShell(invoke, {
+      notifyReady, available: () => bridge.available, through: publishing(invoke, (type, payload) => heard.get(type)?.(payload)),
+    }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       if (module === 'DAORIS') heard.set(type, handler);
     },
@@ -610,7 +610,9 @@ describe('the session rail', () => {
     expect(await screen.findByText('Nothing is running')).toBeInTheDocument();
   });
 
+  // A browser pulls the list from the service itself; in a window the shell reads it, so a failed read is the shell's to say.
   it('surfaces a failed read as the sentence it came with', async () => {
+    bridge.available = false;
     const notify = vi.fn();
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       if (String(input).startsWith('/api/sessions')) {
@@ -651,7 +653,7 @@ describe('the session rail by state', () => {
 
     await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     expect(groupHeadings()).toEqual(['Waiting on you (1)', 'Working (2)', 'Ended (1)']);
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
     // No group header names a repository by state, so each row's line does (§4.2).
     const working = screen.getByRole('heading', { level: 3, name: 'Working (2)' }).closest('section')!;
     expect(within(working).getByText(/^engine · driven/)).toBeInTheDocument();
@@ -690,15 +692,15 @@ describe('the session rail by state', () => {
 
     expect(await screen.findByRole('region', { name: 'Ended' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
   });
 
-  /** The monitor's list is the present tense only and draws no group, so it asks the reader nothing. */
-  it("asks the reader nothing for the monitor's list", async () => {
+  /** The monitor's list is the present tense only and draws no group, whatever the reader says of each session. */
+  it("draws no state group in the monitor's list", async () => {
     show(<SessionRail notify={() => {}} live />);
 
     expect(await screen.findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
+    expect(screen.queryByRole('heading', { level: 3, name: /^Working \(/ })).toBeNull();
   });
 
   /**

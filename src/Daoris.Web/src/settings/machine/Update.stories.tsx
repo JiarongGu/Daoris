@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { storyWidths } from '../design/storyWidths';
-import { InTheme } from '../plugins/storyIcons';
-import type { UpdateOutcome, UpdateState } from '../update/UpdateBanner';
+import { storyWidths } from '../../design/storyWidths';
+import { InTheme } from '../../plugins/storyIcons';
+import type { UpdateOutcome, UpdateState } from '../../update/UpdateBanner';
 import { UpdateSection } from './Update';
 
 // The install's update in Settings (UPDATE1b, D139 §3, §6), in the shape `DAORIS.UPDATE` · `STATE` answers: nothing

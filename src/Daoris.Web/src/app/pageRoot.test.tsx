@@ -22,8 +22,7 @@ vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
   return {
     ...actual,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
     useShenora: () => shenora,
     useShenoraEvent: () => {},
     useWindowMaximized: () => false,
@@ -55,8 +54,16 @@ const freshRoot = async () => {
 describe("the page's root", () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async (module: string, type: string) => {
+    invoke.mockImplementation(async (module: string, type: string, options?: { payload?: { slice?: string } }) => {
       if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
+      // What the first screen waits on is judged, and judged empty: no route answers the attention, the notices or the considerations.
+      if (module === 'DAORIS.DRIVER' && type === 'STATE_SLICE') {
+        const slice = options?.payload?.slice ?? '';
+        const parts: Record<string, string[]> = { attention: ['rows', 'sessions'], notices: ['news'], considerations: ['considered', 'untrusted', 'waits'] };
+        if (parts[slice]) {
+          return { slice, epoch: 'test', status: 'ready', partitions: parts[slice].map((partition) => ({ partition, seq: 1, status: 'ready', data: slice === 'considerations' ? [] : {} })) };
+        }
+      }
       if (module === 'DAORIS.DRIVER' && type === 'STATE') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {} };
       return {};
     });

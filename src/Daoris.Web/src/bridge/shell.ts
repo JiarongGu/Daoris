@@ -39,6 +39,7 @@ export * from './system';
 export * from './terminal';
 export * from './agents/tools';
 export * from './repositories/git';
+export * from './repositories/gitPush';
 export * from './sessions/trace';
 export * from './sessions/trees';
 export * from './update';

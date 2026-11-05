@@ -16,9 +16,7 @@ vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
   return {
     ...actual,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
     useShenoraEvent: () => {},
     useWindowMaximized: () => false,
   };
@@ -167,7 +165,7 @@ describe("Daoris's browser, from the window", () => {
     for (const driving of [[], undefined]) {
       machine(undefined, driving);
       start();
-      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE', {}));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'driver' } }));
       await screen.findByRole('button', { name: "Open Daoris's browser" });
 
       expect(screen.queryByText(/driven by/)).toBeNull();
@@ -201,7 +199,7 @@ describe("Daoris's browser, from the window", () => {
     for (const inReview of [[], undefined]) {
       machine(undefined, undefined, inReview);
       start();
-      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE', {}));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'driver' } }));
       await screen.findByRole('button', { name: "Open Daoris's browser" });
 
       expect(screen.queryByText(/In review/)).toBeNull();

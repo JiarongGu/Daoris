@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
+import i18n from '../../locales/i18n';
 import { FAILED_GATE, lineOf, NOT_NOW, RUNNING, UNKNOWN_HELD, VERIFIED, WAITING } from './lineFixtures';
 import { VerifyRuns } from './VerifyRuns';
 

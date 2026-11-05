@@ -13,10 +13,8 @@ const { invoke, notifyReady, bridge } = vi.hoisted(() => ({
   bridge: { available: true },
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => bridge.available,
-  getBridge: () => ({ isAvailable: bridge.available, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../../test/sliceShell')).mockedShell(invoke, { notifyReady, available: () => bridge.available }),
   useShenoraEvent: () => {},
 }));
 

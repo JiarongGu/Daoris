@@ -103,7 +103,7 @@
         "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
-        "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.pushed", "workflow.step.line",
+        "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.push", "workflow.step.line",
         "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
         "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title",
         "workflow.compose.title", "workflow.edit.title", "workflow.edit.kind.*", "workflow.edit.save.title", "workflow.edit.next.title",

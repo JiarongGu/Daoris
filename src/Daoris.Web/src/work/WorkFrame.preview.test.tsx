@@ -9,12 +9,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => ({ ...(await import('../test/sliceShell')).mockedShell(invoke), useShenoraEvent: () => {} }));
 
 import '../locales/i18n';
 import { WorkFrame } from './WorkFrame';

@@ -1,5 +1,5 @@
-import type { WorkflowStep } from './current';
-import type { RunLine, RunStep, WorkflowRun, WorkflowRunAnswer } from './run';
+import type { WorkflowStep } from '../current';
+import type { RunLine, RunStep, WorkflowRun, WorkflowRunAnswer } from '../run';
 
 // What `WORKFLOW_RUN { line }` answers, for the stories and the tests (FABRIC-PIPELINE1d): a repository's verifications at each verdict a
 // person meets, each a verification pipeline's one check where `LineRunReader` would put it from its record and its newest result

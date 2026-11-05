@@ -23,14 +23,11 @@ vi.mock('@shenora/react', () => ({
 import { keys } from '../../data/queries';
 import { useHarnesses } from '../agents/agents';
 import { useBrowserSettings } from '../browser';
-import { useDriver } from '../driver';
 import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED, useHelpConversations } from '../help';
 import { historyKey, useHistoryPlan } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { usePlugins } from '../plugins';
-import { useRules } from '../agents/rules';
 import { useSessionAtWork } from '../sessions/atWork';
-import { useSessionGroups } from '../sessions/sessions';
 import { useLandEntry } from '../sessions/entries';
 import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
 import { useSystemSpace, useSystemWiring } from '../system';
@@ -166,13 +163,11 @@ describe('the state hub (STATE_CHANGED)', () => {
 
   /**
    * The proof the row asks of each domain: an event alone, with no press in this window (a second window's, or another
-   * view's), asks the view's own data again, through the query the view already holds.
+   * view's), asks the view's own data again, through the query the view already holds. A pushed slice's view (the sessions, the
+   * driver's state, the rules) is moved by its push alone and asks no route, which `pushedState.test.tsx` holds.
    */
   const views: [scope: string, what: string, useView: () => unknown, route: string][] = [
-    ['sessions', 'the session list', () => useSessionGroups(), 'SESSION_GROUPS'],
     ['quests', 'a quest’s work', () => useWorkPlan({ scope: 'quest', id: 'q1' }), 'WORK_PLAN'],
-    ['driver', 'the driver’s state', () => useDriver(), 'STATE'],
-    ['rules', 'the rules', () => useRules(), 'RULES'],
     ['history', 'a workspace’s history', () => useHistoryPlan({ scope: 'workspace', id: 'aurora' }), 'HISTORY_PLAN'],
     ['plugins', 'the plugins', () => usePlugins(), 'PLUGINS'],
     ['harnesses', 'the agents', () => useHarnesses(), 'HARNESSES'],
@@ -210,7 +205,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     let reads = 0;
     invoke.mockReset();
     invoke.mockImplementation(async (_module: string, route: string) => {
-      if (route !== 'RULES') return {};
+      if (route !== 'PLUGINS') return {};
       reads += 1;
       if (reads === 1) return new Promise((resolve) => { first = resolve; });
       return { reads };
@@ -218,17 +213,17 @@ describe('the state hub (STATE_CHANGED)', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     function View() {
       useStateHub();
-      useRules();
+      usePlugins();
       return null;
     }
     render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
     await waitFor(() => expect(reads).toBe(1));
 
-    act(() => changed({ scopes: ['rules'] }));
+    act(() => changed({ scopes: ['plugins'] }));
     await act(async () => first({ reads: 'stale' }));
 
     await waitFor(() => expect(reads).toBe(2));
-    await waitFor(() => expect(client.getQueryData(keys.rules)).toEqual({ reads: 2 }));
+    await waitFor(() => expect(client.getQueryData(keys.plugins)).toEqual({ reads: 2 }));
   });
 });
 

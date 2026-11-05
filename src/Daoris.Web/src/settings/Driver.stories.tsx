@@ -3,6 +3,7 @@ import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { InTheme } from '../plugins/storyIcons';
 import type { UpdateState } from '../update/UpdateBanner';
+import { SETTINGS } from '../bridge/generated/routes';
 import { DriverCards, type DriverFacts } from './DriverCards';
 
 // Settings → Driver (D75), drawn from the shell's facts as `DriverDomain` hands them: the home with its door to This
@@ -29,6 +30,7 @@ const meta: Meta<typeof DriverCards> = {
   component: DriverCards,
   args: {
     facts: FACTS,
+    minutes: { cooloff: SETTINGS.find((each) => each.key === 'cooloff')!, quiet: SETTINGS.find((each) => each.key === 'quiet')! },
     busy: { access: false, update: false },
     onGo: nothing, onNotify: nothing, onCoolOff: nothing, onCap: nothing, onAccess: nothing, onSayUpdate: nothing,
   },

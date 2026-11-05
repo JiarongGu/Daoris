@@ -14,9 +14,7 @@ vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
   return {
     ...actual,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady: () => Promise.resolve() }),
-    useShenora: () => ({ isAvailable: true, bridge: {} }),
+    ...(await import('../../test/sliceShell')).mockedShell(invoke, { notifyReady: () => Promise.resolve() }),
     useShenoraEvent: () => {},
     useWindowMaximized: () => false,
   };

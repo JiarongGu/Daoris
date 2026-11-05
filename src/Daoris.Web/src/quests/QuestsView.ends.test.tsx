@@ -8,10 +8,8 @@ import { act, waitFor, within } from '@testing-library/react';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
   useShenoraEvent: () => undefined,
 }));
 
@@ -49,11 +47,11 @@ describe('a quest’s closure graph’s end, read from the driver for its page',
     await i18n.changeLanguage('en');
   });
 
-  it('asks for the quest’s own unit and says its end alone, in English and in 中文', async () => {
+  it('reads the quest’s own unit from the work the shell pushed and says its end alone, in English and in 中文', async () => {
     show(<QuestsView notify={() => {}} />);
 
     const page = await chooseRow('Expose a streaming budget');
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_STATE', { payload: { unit: 'quest:abc123' } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'work' } }));
     expect(await within(page).findByText(/^Partially closed: #abc123 is no longer done/)).toBeInTheDocument();
     expect(within(page).getByText(/^Its closing step “close” waits again, and would close #abc123 over that take/)).toHaveClass('text-ink-danger');
     expect(page).not.toHaveTextContent('Closed by you before its end');

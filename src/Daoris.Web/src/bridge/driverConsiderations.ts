@@ -44,7 +44,8 @@ function useConsiderations<T>(select: (all: Considerations) => T) {
   const client = useQueryClient();
   return useQuery({
     queryKey: keys.considerations,
-    queryFn: () => readPushed(client, CONSIDERATIONS_SLICE, async () => NOTHING_CONSIDERED),
+    queryFn: () => readPushed<Considerations>(client, CONSIDERATIONS_SLICE),
+    placeholderData: NOTHING_CONSIDERED,
     select,
     staleTime: Infinity,
     gcTime: Infinity,

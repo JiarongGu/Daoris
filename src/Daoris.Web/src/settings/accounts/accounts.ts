@@ -39,25 +39,25 @@ export type WindowSaid = {
   seen: string;
   /**
    * Where its reading came from (USAGEREAD2a, SWITCH1d): `read` from its agent's own answer, asked with no prompt, or `said` by
-   * a session's frame. A shell older than SWITCH1d answers none, read as `said`.
+   * a session's frame. Left out where none is known, read as `said`.
    */
   source?: 'read' | 'said' | null;
   /**
    * Its use projected to now, from 0 to 1 (USAGEPROBE1b): its reading plus Daoris's own turns since, by the account's measured
-   * ratio, the same projection a start reads. A shell older than USAGEPROBE1b answers none.
+   * ratio, the same projection a start reads. Left out where none is judged.
    */
   projected?: number | null;
   /** How it was made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
   projectedBy?: 'reading' | 'measured' | 'unweighed' | (string & {}) | null;
   /**
    * When the window began, its reset less its length, as .NET knows the length (PUSH1e): what a chart places it by. Null for a window
-   * this build has no length for; absent from a shell older than PUSH1e.
+   * this build has no length for.
    */
   from?: string | null;
   /**
    * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as .NET judges them (PUSH1e, D182 point 6;
    * the driver's `UsageCurves`): the page words them and measures nothing. Null where it is not measured (no share, a window with no
-   * curve, the tool's own sign-in, which no list holds); absent from a shell older than PUSH1e.
+   * curve, the tool's own sign-in, which no list holds).
    */
   curve?: number | null;
   over?: boolean | null;
@@ -110,7 +110,7 @@ export type NextStart = {
   when?: string | null;
   /**
    * Where it is `lapsing`, what would lapse as the start's line says it (NEXTLAPSE1): the window that won, the whole percent of it
-   * unused, and when that reading was made; absent from a shell older than that.
+   * unused, and when that reading was made.
    */
   window?: string | null;
   unused?: number | null;
@@ -120,9 +120,8 @@ export type NextStart = {
 };
 
 /**
- * How one scope's list is used (D130 §16.6, D165 §6): `switch` and `curve` (SWITCH1d), which a shell older than that answers
- * neither of, read as the smart switch with no curve; `early` and `near`, the old names, derived from them for a page that still
- * reads them.
+ * How one scope's list is used (D130 §16.6, D165 §6): `switch` and `curve` (SWITCH1d), which read as the smart switch with
+ * no curve where neither is answered; `early` and `near`, the old names, derived from them for a page that still reads them.
  */
 export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number } & CurveScope;
 
@@ -154,10 +153,10 @@ export type AccountScope = {
   problem?: { kind: 'default' | 'keep' | 'alone'; account: string } | null;
   /** The accounts of its list a start passes (D130 §6, D165 point 2): a limit reached, credits, or a number over its curve. */
   near: { account: string; window: string; by: NearBy }[];
-  /** Which account its next start would take, and why (TOOL6e); absent from a shell older than that. */
+  /** Which account its next start would take, and why (TOOL6e); left out where none is judged. */
   next?: NextStart | null;
   /**
-   * The verdicts .NET judges for the switch's charts and the said line (PUSH1e, D182 point 6), absent from a shell older than that:
+   * The verdicts .NET judges for the switch's charts and the said line (PUSH1e, D182 point 6):
    * the curve in effect on each window it names (the person's points under `curve` where set, else Daoris's); each of its list's
    * accounts on each window its agent gave a share of, the curve's value now in whole points and whether the share is over it; and
    * each of its list's accounts whose tightest window is over its curve, with the curve's value there.
@@ -167,8 +166,7 @@ export type AccountScope = {
   overCurve?: CurveOver[];
   /**
    * The accounts of its list a running session could move to at its turn's end (SWITCH1e, D165 point 4), as .NET judges them:
-   * ready, and at least the switch's margin under the curve on every window each said. Judged under every switch; absent from a
-   * shell older than that.
+   * ready, and at least the switch's margin under the curve on every window each said. Judged under every switch.
    */
   room?: string[];
 };
@@ -206,14 +204,14 @@ export type AgentAccounts = {
   speaks: boolean;
   /**
    * Whether its accounts' use is read by asking its agent, with no prompt (USAGEREAD2a, CODEXUSE1): what *Read now* and the read
-   * as its page opens ask (SWITCH1d). A shell older than that answers none, and neither is offered.
+   * as its page opens ask (SWITCH1d). Left out where it is not, and neither is offered.
    */
   reads?: boolean;
   /** How long a reading of its accounts stands, in seconds, its question's own; a shell older than that answers none. */
   readFloor?: number | null;
   /**
    * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
-   * its agent last said of its windows where a press read them (CODEXUSE3); a shell older than that answers none.
+   * its agent last said of its windows where a press read them (CODEXUSE3).
    */
   own: { cooling?: AccountCooling | null; offered?: string | null; said?: AccountSaid | null };
   accounts: AccountFacts[];
@@ -246,7 +244,7 @@ export type AccountUseChange = {
 export const USE_DEFAULTS: ScopeUse = { use: 'goal', keep: null, early: true, near: 90 };
 
 /**
- * When a scope switches (SWITCH1d, D165 §6): its `switch`; from a shell older than that, which answers only the old names,
+ * When a scope switches (SWITCH1d, D165 §6): its `switch`; where none is answered, the old names:
  * `off` where `early` is false and else the smart switch, its `near` alone naming no curve the page could draw.
  */
 export function switchOf(use: ScopeUse): Switch {
@@ -254,8 +252,7 @@ export function switchOf(use: ScopeUse): Switch {
 }
 
 /**
- * An agent's accounts as the answer holds them, read defensively: a shell older than TOOL4g answers no such route, and a
- * field the bridge left out (a null) reads as absent.
+ * An agent's accounts as the answer holds them, read defensively: a field the bridge left out (a null) reads as absent.
  */
 export function agentOf(answer: AccountsAnswer | undefined | null, agent: string): AgentAccounts | null {
   const agents = Array.isArray(answer?.agents) ? answer.agents : [];
@@ -403,7 +400,7 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
     case 'kept':
       return next.over ? i18n.t('harness.next.why.keptOver', { over }) : i18n.t('harness.next.why.kept');
     case 'lapsing':
-      // NEXTLAPSE1: what would lapse, as the start's line says it; a shell older than that says its reset alone.
+      // NEXTLAPSE1: what would lapse, as the start's line says it; where the window is not named, its reset alone.
       if (next.when && next.window && next.seen && typeof next.unused === 'number') {
         return i18n.t('harness.next.why.lapses', {
           window: windowName(next.window), when: moment(next.when), unused: `${next.unused}%`, seen: moment(next.seen),

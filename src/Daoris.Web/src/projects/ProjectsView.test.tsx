@@ -20,11 +20,9 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
 vi.mock('@shenora/react', async () => {
   // What a press moved reaches the state hub as the shell publishes it (STATEHUB1f, D169), where a test mounts the hub.
   const { publishing } = await import('../test/publishing');
-  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  const { mockedShell } = await import('../test/sliceShell');
   return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...mockedShell(invoke, { notifyReady, through: publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload)) }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       eventHandlers.set(`${module}.${type}`, handler);
     },
@@ -89,7 +87,8 @@ describe('the shell-attached platform', () => {
     show(<ProjectsView notify={() => {}} />);
 
     expect(await within(repositoryList()).findByText('No repository is registered yet')).toBeInTheDocument();
-    expect(within(repositoryList()).getByText(code(/daoris repository import/))).toBeInTheDocument();
+    // The terminal's door is said once the driver's state is held, which the shell pushes beside the list.
+    expect(await within(repositoryList()).findByText(code(/daoris repository import/))).toBeInTheDocument();
     // The list's ＋ and its empty state's: the second is where the eye already is.
     expect(within(repositoryList()).getAllByRole('button', { name: 'Add repository' })).toHaveLength(2);
   });
@@ -277,7 +276,7 @@ describe("a workspace's page (UX6g)", () => {
   const WIRED = 'workspace:aurora';
   const WORKSPACE_TAB = 'daoris.list.projects.workspaceTab';
 
-  /** The machine, answered over the bridge; `over` names a type's answer of its own. */
+  /** The machine, answered over the bridge; `over` names a type's answer of its own, or a function that gives it as it stands then. */
   const machine = (over: Record<string, unknown> = {}) => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -287,7 +286,7 @@ describe("a workspace's page (UX6g)", () => {
       if (type in over) {
         const answer = over[type];
         if (answer instanceof Error) throw answer;
-        return answer;
+        return typeof answer === 'function' ? answer() : answer;
       }
       if (module === 'DAORIS.REMOTES') return WIRING;
       if (type === 'HARNESSES') return ROSTER;
@@ -509,9 +508,13 @@ describe("a workspace's page (UX6g)", () => {
       repository: 'engine', workspace: 'aurora', branch: 'daoris/s-failed', hasTree: false, kind: 'unlanded', commits: 2,
       detail: 'a1b2c3d the work\ne4f5a6b more work', removable: false, discardable: true,
     };
+    let left = [...SWEEP.branches, failed];
     machine({
-      SWEEP_PLAN: { branches: [...SWEEP.branches, failed], landed: [] },
-      DISCARD_SESSION_BRANCH: { repository: 'engine', branch: 'daoris/s-failed', done: true, message: 'removed the session branch `daoris/s-failed` from `engine`.' },
+      SWEEP_PLAN: () => ({ branches: left, landed: [] }),
+      DISCARD_SESSION_BRANCH: () => {
+        left = SWEEP.branches;
+        return { repository: 'engine', branch: 'daoris/s-failed', done: true, message: 'removed the session branch `daoris/s-failed` from `engine`.' };
+      },
     });
     const notify = vi.fn();
     show(<><Hub /><ProjectsView notify={notify} /></>);
@@ -524,14 +527,14 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', expect.anything());
     const ask = within(repositoryMain()).getByRole('group', { name: 'discard daoris/s-failed' });
     expect(ask).toHaveTextContent('Discards daoris/s-failed in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
-    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', {
       payload: { repository: 'engine', branch: 'daoris/s-failed', force: true },
     });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-failed` in engine.'));
-    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+    // The list is judged again: the discarded branch is no longer in it.
+    await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('listitem', { name: 'daoris/s-failed' })).toBeNull());
     // UXFIX2: the ask closes once the discard landed, never on the press.
     await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('group', { name: 'discard daoris/s-failed' })).toBeNull());
     // Discarding one branch is not the clean-up's press.
@@ -576,10 +579,14 @@ describe("a workspace's page (UX6g)", () => {
       repository: 'engine', workspace: 'aurora', branch: 'feature/q2-second', kind: 'differs', where: 'main', files: ['shared.txt'], detail: null,
       pullRequest: null, commits: 1, removable: false, landedAt: new Date(Date.now() - 29 * 3_600_000).toISOString(), quest: 'q2', questClosed: true,
     };
+    let landed = [stale];
     machine({
-      SWEEP_PLAN: { branches: SWEEP.branches, landed: [stale] },
-      WITHDRAW_LANDING_BRANCH: {
-        repository: 'engine', branch: 'feature/q2-second', done: true, planned: false, message: 'withdrew it', keptRef: 'refs/daoris/discarded/feature/q2-second',
+      SWEEP_PLAN: () => ({ branches: SWEEP.branches, landed }),
+      WITHDRAW_LANDING_BRANCH: () => {
+        landed = [];
+        return {
+          repository: 'engine', branch: 'feature/q2-second', done: true, planned: false, message: 'withdrew it', keptRef: 'refs/daoris/discarded/feature/q2-second',
+        };
       },
     });
     const notify = vi.fn();
@@ -592,7 +599,6 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(row).getByRole('button', { name: 'Withdraw…' }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WITHDRAW_LANDING_BRANCH', expect.anything());
     const ask = within(repositoryMain()).getByRole('group', { name: 'withdraw feature/q2-second' });
-    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
 
     await userEvent.type(within(ask).getByRole('textbox'), 'the row landed another way');
     await userEvent.click(within(ask).getByRole('button', { name: 'Withdraw branch' }));
@@ -601,7 +607,7 @@ describe("a workspace's page (UX6g)", () => {
     });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Withdrew `feature/q2-second` in engine. Its commits stay on `refs/daoris/discarded/feature/q2-second`.'));
-    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+    await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('listitem', { name: 'feature/q2-second' })).toBeNull());
     await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('group', { name: 'withdraw feature/q2-second' })).toBeNull());
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', expect.anything());
   });
@@ -652,26 +658,6 @@ describe("a workspace's page (UX6g)", () => {
     expect(branches.getByText('daoris/s-three')).toBeInTheDocument();
     expect(branches.queryByText('daoris/s-one')).toBeNull();
     expect(plans()).toBe(1);
-  });
-
-  /** PUSH1c4b: on a host older than the push, *Look again* is still one read of the list, and the rows are its answer. */
-  it('reads the list again at Look again on a host older than the push, and shows its answer (PUSH1c4b)', async () => {
-    machine({ STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }) });
-    show(<><Pushes /><Hub /><ProjectsView notify={() => {}} /></>);
-    await chooseWorkspace('aurora');
-    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
-    const branches = within(repositoryMain());
-    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
-    const opened = plans();
-    expect(opened).toBeGreaterThan(0);
-
-    machine({
-      STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }),
-      SWEEP_PLAN: { branches: [{ ...SWEEP.branches[0], branch: 'daoris/s-three' }], landed: [] },
-    });
-    await userEvent.click(branches.getByRole('button', { name: 'Look again' }));
-    expect(await branches.findByText('daoris/s-three')).toBeInTheDocument();
-    expect(plans()).toBe(opened + 1);
   });
 
   /**

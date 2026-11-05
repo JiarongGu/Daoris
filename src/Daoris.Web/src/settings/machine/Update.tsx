@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../locales/format';
-import { Button, Card, MetaLine, Pill, SectionTitle, SettingList, SettingRow } from '../design/ui';
-import type { UpdateMode, UpdateOutcome, UpdateState } from '../update/UpdateBanner';
+import { moment } from '../../locales/format';
+import { Button, Card, MetaLine, Pill, SectionTitle, SettingList, SettingRow } from '../../design/ui';
+import type { UpdateMode, UpdateOutcome, UpdateState } from '../../update/UpdateBanner';
 
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
 const STATE_TONE: Record<string, string> = { draining: 'taken', applying: 'taken', waiting: 'neutral', refused: 'declined' };

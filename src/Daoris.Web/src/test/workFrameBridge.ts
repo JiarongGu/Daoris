@@ -27,14 +27,15 @@ export const eventHandlers = {
   clear: () => byName.clear(),
 };
 
+export { moved } from './sliceShell';
+
 export async function shenoraMock() {
   // What a press moved reaches the frame's state hub as the shell publishes it (STATEHUB1f, D169), never the press's hook.
   const { publishing } = await import('./publishing');
-  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  const { mockedShell } = await import('./sliceShell');
+  // Every slice's snapshot answered from the same answers the frame's routes are given, and what a press moved pushed.
   return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...mockedShell(invoke, { notifyReady, through: publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload)) }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       eventHandlers.set(`${module}.${type}`, handler);
     },

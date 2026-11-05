@@ -735,7 +735,7 @@ describe('the cards', () => {
     expect(cardMargins([['./settings/AiJobs.tsx', "<Card className={cn('mt-3.5', warn && 'x')}>"]])).toHaveLength(1);
     expect(cardMargins([['./x.tsx', '<Card className="mb-4">']])).toHaveLength(1);
     // And what must keep passing: a scroll margin, no class, a card accented, a story's own frame.
-    expect(cardMargins([['./settings/Update.tsx', '<Card id="settings-update" className="scroll-mt-3">']])).toEqual([]);
+    expect(cardMargins([['./settings/machine/Update.tsx', '<Card id="settings-update" className="scroll-mt-3">']])).toEqual([]);
     expect(cardMargins([['./x.tsx', '<Card accent warn>']])).toEqual([]);
     expect(cardMargins([['./x.stories.tsx', '<Card className="mt-3.5">']])).toEqual([]);
   });

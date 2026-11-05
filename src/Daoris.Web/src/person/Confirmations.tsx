@@ -1,7 +1,7 @@
 import { createContext, type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
-import { ago, clockOf, sentence, span } from '../locales/format';
+import { ago, clockOf, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
 
@@ -36,13 +36,8 @@ export type Confirmation = {
   named?: ConfirmationNamed[];
   /** What sent it, as the system names the pipe's client; null where nothing can say (the service's). */
   asker?: { process?: string | null; pid?: number | null } | null;
-  /** When it was asked. */
+  /** When it was asked. It waits, whichever its source, until the person answers or its asker takes it back (ONEWAY1n). */
   asked?: string | null;
-  /**
-   * When it is refused: the service door's two minutes from its ask. None for a terminal's press, which waits until the person answers
-   * (CONFIRMWAIT1a-i, the confirm-wait design §8.1).
-   */
-  expires: string | null;
   /**
    * Whether it was shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
    * since its door hears none (NOTIFY2b).
@@ -161,8 +156,8 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. **Its default is no** (design §4.2): nothing is
- * focused or pressed for the person, and *Refuse* comes first. A terminal's press waits until the person answers (CONFIRMWAIT1a-i),
- * its card saying whether a terminal still waits on it; the service's is refused when its two minutes end. A refusal of the answer
+ * focused or pressed for the person, and *Refuse* comes first. Every request waits until the person answers (ONEWAY1n-ii), a
+ * terminal's press's card saying whether a terminal still waits on it (CONFIRMWAIT1a-i). A refusal of the answer
  * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
  * answer returns (NOTIFY2a, the notification design §3.4).
  */
@@ -317,10 +312,8 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   useShownOnce(waiting.shown !== true && onShown !== undefined, region, buttons,
     () => latest.current.onShown?.(latest.current.waiting));
 
-  // A service's time left, stepping each second (R2), from its ask, since its door counts its two minutes from then. A terminal's has
-  // none (CONFIRMWAIT1a-i): its age is said instead, which grows in weight once it has waited over an hour.
-  const counting = waiting.source === 'service' && waiting.expires !== null;
-  const now = useNow(counting ? 1000 : 60_000);
+  // No request has a clock (CONFIRMWAIT1a-i, ONEWAY1n-i): its age is said instead, which grows in weight once it has waited over an hour.
+  const now = useNow(60_000);
 
   // Said under the card while it is drawn, or toasted once it has gone with its press.
   const say = (text: string) => {
@@ -354,7 +347,6 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   const others = named.filter((each) => !['words', 'files', 'level', 'form'].includes(each.role)
     && !(head.sessionSaid && each.role === 'session'));
   const asker = waiting.asker;
-  const left = waiting.expires ? Math.max(0, new Date(waiting.expires).getTime() - now) : 0;
   const old = waiting.asked ? now - new Date(waiting.asked).getTime() > HOUR : false;
   const checking = waiting.source === 'pipe' && waiting.checking === true;
   const restored = waiting.source === 'pipe' && waiting.restored === true;
@@ -422,17 +414,12 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
             ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
             : null}
         </p>
-        {waiting.source === 'pipe' ? (
-          <p className="m-0 text-small text-warn">
-            {t('person.waits')}
-            {waiting.waitedOn != null ? <> {t(waiting.waitedOn ? 'person.waitedOn' : 'person.notWaitedOn')}</> : null}
-            {waiting.keyed === true ? <> {t('person.keyed')}</> : null}
-          </p>
-        ) : (
-          <p className="m-0 text-small text-warn">
-            {counting ? t('person.left', { time: span(left) }) : waiting.expires ? t('person.until', { time: clockOf(waiting.expires) }) : null}
-          </p>
-        )}
+        {/* ONEWAY1n-ii: one request row, the host's and a terminal's alike, waiting until the person answers or its asker takes it back. */}
+        <p className="m-0 text-small text-warn">
+          {t('person.waits')}
+          {waiting.waitedOn != null ? <> {t(waiting.waitedOn ? 'person.waitedOn' : 'person.notWaitedOn')}</> : null}
+          {waiting.keyed === true ? <> {t('person.keyed')}</> : null}
+        </p>
         <p className="m-0 text-small">{t('person.cannotTell')}</p>
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
           {checking ? (
@@ -512,7 +499,7 @@ const STATES: Record<string, string> = { session: 'sessionState', quest: 'status
  */
 function refusalOf(t: T, waiting: Confirmation, answer: Extract<ConfirmationAnswer, { answered: false }>): string {
   if (answer.why === 'gone' || (!answer.message && !answer.reason && answer.why !== 'unread')) {
-    return t(waiting.source === 'pipe' ? 'person.gone' : 'person.goneService');
+    return t('person.gone');
   }
   if (answer.why === 'unread') return t('person.unread');
   // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining took no Confirm, and the press waits on across the restart.

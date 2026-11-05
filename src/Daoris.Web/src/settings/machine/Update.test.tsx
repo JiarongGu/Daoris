@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../locales/i18n';
-import type { UpdateState } from '../update/UpdateBanner';
+import i18n from '../../locales/i18n';
+import type { UpdateState } from '../../update/UpdateBanner';
 import { UpdateSection } from './Update';
 
 // UPDATE1b (D139 §3, §6): the install's update as Settings' row draws it, from props alone. The Driver domain's suite

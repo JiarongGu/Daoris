@@ -9,10 +9,8 @@ import userEvent from '@testing-library/user-event';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
   useShenoraEvent: () => undefined,
 }));
 
@@ -360,10 +358,14 @@ describe("a repository's Branches and History tabs", () => {
     const landed = { ...SHARED_BRANCH, branch: LANDED, session: 's-21' };
     const reads = {
       trace: (payload: Record<string, unknown>) => (payload.id === 's-21' ? traceAnswerOf('s-21', landed) : { chain: null, unread: [] }),
-      work: () => ({ units: [...SHARED_UNITS, { ...SHARED_UNITS[0]!, unit: 'u-elsewhere', repository: 'game' }], recovery: [], unread: [], held: [] }),
+      // A unit's entries hold the landing branch it made, which is how the page picks the branch's units from the pushed work.
+      work: () => ({
+        units: [...SHARED_UNITS, { ...SHARED_UNITS[0]!, unit: 'u-elsewhere', repository: 'game' }].map((unit) => ({ ...unit, entries: unit.result })),
+        recovery: [], unread: [], held: [],
+      }),
     };
 
-    it('reads it only once opened, by the session its landing names and its units by the branch, and draws it', async () => {
+    it('reads its trace only once opened, by the session its landing names, takes its units from the work the shell pushed by the branch, and draws it', async () => {
       answering(reads);
       show(<ProjectsView notify={() => {}} />);
       const page = await chooseRepository('engine');
@@ -371,15 +373,13 @@ describe("a repository's Branches and History tabs", () => {
       await userEvent.click(await within(repositoryMain()).findByRole('button', { name: `Open ${LANDED}` }));
       const fold = await within(repositoryMain()).findByRole('button', { name: /^How it landed/ });
       expect(asked('TRACE')).toEqual([]);
-      expect(asked('WORK_STATE')).toEqual([]);
 
       await userEvent.click(fold);
       const flow = await within(repositoryMain()).findByRole('list', { name: `How ${LANDED} landed` });
       expect(asked('TRACE').map(([, , request]) => request.payload)).toEqual([{ kind: 'session', id: 's-21' }]);
-      expect(asked('WORK_STATE').map(([, , request]) => request.payload)).toEqual([{ unit: LANDED }]);
       expect(within(flow).getByRole('listitem', { name: /^Landed on review\/q6-asset-cache/ })).toBeInTheDocument();
       // The units are this repository's: the end says three, not the fourth another repository's unit named.
-      expect(within(flow).getByRole('listitem', { name: /^End/ }).querySelectorAll('p')).toHaveLength(3);
+      expect((await within(flow).findByRole('listitem', { name: /^End/ })).querySelectorAll('p')).toHaveLength(3);
     });
 
     it('offers nothing of it on a branch that is no landing\'s', async () => {

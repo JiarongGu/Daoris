@@ -65,7 +65,8 @@ describe('an ask’s channel', () => {
     cleanup();
     await i18n.changeLanguage('zh');
     render(<ChannelSection channel={CHANNEL({ items: [theirs] })} onPost={() => {}} />);
-    expect(within(row('Keep the old column.')).getByText('bob-laptop 上的队友')).toBeInTheDocument();
+    const chinese = within(screen.getByRole('list', { name: '频道' }));
+    expect(within(chinese.getByText('Keep the old column.').closest('li')!).getByText('bob-laptop 上的队友')).toBeInTheDocument();
   });
 
   it('words every code Daoris writes, in either language, and a code it has no words for as it was written', async () => {

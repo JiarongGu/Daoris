@@ -4,20 +4,20 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 
 /**
  * A slice of the machine's state the shell pushes with its data (PUSH1a, D182): which cache entry its partitions feed, and how.
- * The page's store stays its query cache (D182 point 7): a pushed entry is written by the pushes and read from memory, and every
- * other family keeps its pulls until its own slice moves.
+ * The page's store stays its query cache (D182 point 7): a pushed entry is written by the pushes and read from memory alone, since
+ * the page and the shell are one build (D139) and the shell pushes every slice the page reads.
  */
 export type SliceSpec = {
   /** The slice's name, as the shell's owner names it. */
   name: string;
   /** The one cache entry its partitions feed: this key exactly, never what is read beneath it. */
   key: QueryKey;
-  /** Its snapshot, as the shell answers it (`readSlice`): a host older than the push refuses it, or answers nothing. */
+  /** Its snapshot, as the shell answers it (`readSlice`). */
   read: () => Promise<unknown>;
   /**
    * The entry's data from the partitions held as judged, or undefined while one it needs is not judged yet. `judged` says the owner
    * has judged the slice (its snapshot said so, or a push came): a list judged to have no partition is an empty list (PUSH1d2),
-   * where one not judged yet keeps the pull.
+   * where one not judged yet is waited for.
    */
   compose: (partitions: ReadonlyMap<string, unknown>, judged: boolean) => unknown;
   /** A delta's data applied to its partition; absent where the slice pushes whole replacements only, and a delta is read again whole. */
@@ -39,13 +39,10 @@ type Manifest = { slice: string; epoch: string; partitions: { partition: string;
 
 type Held = { seq: number; status: string; data: unknown };
 
-/**
- * One slice in one window: unknown until its snapshot answers, then live (installed, fed by pushes) or pulled (an older host, or
- * one that pushes no such slice).
- */
+/** One slice in one window: unknown until its snapshot answers, then live (installed, fed by pushes). */
 type Slice = {
   spec: SliceSpec;
-  mode: 'unknown' | 'live' | 'pull';
+  mode: 'unknown' | 'live';
   epoch: string | null;
   partitions: Map<string, Held>;
   /** Whether the owner has judged it in this epoch: its snapshot said `ready`, or a push of it was applied. */
@@ -74,7 +71,7 @@ function partitionOf(value: unknown): Partition | null {
   return { partition: partition.partition, seq: partition.seq, status: partition.status, data: partition.data };
 }
 
-/** A snapshot of the slice asked for, or null: an answer of any other shape is a host that pushes no such slice. */
+/** A snapshot of the slice asked for, or null: an answer of any other shape is a read that failed, asked again at the next manifest. */
 function snapshotOf(value: unknown, slice: string): Snapshot | null {
   const snapshot = value as Record<string, unknown> | null | undefined;
   if (!snapshot || snapshot.slice !== slice || !named(snapshot.epoch) || !Array.isArray(snapshot.partitions)) return null;
@@ -105,8 +102,21 @@ function manifestOf(value: unknown): Manifest | null {
 class Pushed {
   private readonly slices = new Map<string, Slice>();
   private readonly listeners = new Set<() => void>();
+  /** The reads waiting for a slice's entry, by its name: told once it composes, whether or not the slice is registered yet. */
+  private readonly waiters = new Map<string, Set<(data: unknown) => void>>();
 
   constructor(private readonly client: QueryClient) {}
+
+  /** The slice's entry once it composes: at once where it does, else when its snapshot or a push first composes it. */
+  composed(name: string): Promise<unknown> {
+    const now = this.data(name);
+    if (now !== undefined) return Promise.resolve(now);
+    return new Promise((resolve) => {
+      const waiting = this.waiters.get(name) ?? new Set();
+      waiting.add(resolve);
+      this.waiters.set(name, waiting);
+    });
+  }
 
   /** Read a slice pushed from now: what is heard of it is kept until its snapshot answers. */
   register(spec: SliceSpec) {
@@ -115,7 +125,7 @@ class Pushed {
     }
   }
 
-  /** For `useSyncExternalStore`: told when a slice becomes live or pulled. */
+  /** For `useSyncExternalStore`: told when a slice becomes live, or is read again. */
   readonly subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
@@ -159,11 +169,11 @@ class Pushed {
     return false;
   }
 
-  /** A `STATE_PUSH`: applied where newer, kept where the baseline has not answered, and ignored where the slice is pulled. */
+  /** A `STATE_PUSH`: applied where newer, and kept where the baseline has not answered. */
   heard(value: unknown) {
     const push = pushOf(value);
     const slice = push ? this.slices.get(push.slice) : undefined;
-    if (!push || !slice || slice.mode === 'pull') return;
+    if (!push || !slice) return;
     if (slice.mode === 'unknown' || slice.asking) {
       slice.waiting.push(push);
       if (slice.waiting.length > WAITING) slice.waiting.shift();
@@ -174,15 +184,16 @@ class Pushed {
 
   /**
    * A `STATE_MANIFEST`: read once the batch it came in has been applied, since the pump keeps a coalesced push in the later place,
-   * and where it names a number this window does not hold, the slice is read again (a dropped batch, its final update among them).
+   * and where it names a number this window does not hold, the slice is read again (a dropped batch, its final update among them), as
+   * one whose first read failed is.
    */
   manifest(value: unknown) {
     const manifest = manifestOf(value);
     const slice = manifest ? this.slices.get(manifest.slice) : undefined;
-    if (!manifest || slice?.mode !== 'live') return;
+    if (!manifest || !slice) return;
     queueMicrotask(() => {
       if (slice.asking) return;
-      const behind = manifest.epoch !== slice.epoch
+      const behind = slice.mode !== 'live' || manifest.epoch !== slice.epoch
         || manifest.partitions.some((version) => (slice.partitions.get(version.partition)?.seq ?? 0) < version.seq);
       if (behind) void this.resync(manifest.slice);
     });
@@ -190,8 +201,8 @@ class Pushed {
 
   /**
    * Read the slice's snapshot and install it as the baseline (D182 point 3): asked once its pushes are heard, as a window mounts,
-   * and again where the manifest or a push says this window missed one. A host that knows no such route or pushes no such slice
-   * leaves it pulled; a live slice whose read failed keeps what it holds, and the next manifest asks again.
+   * and again where the manifest or a push says this window missed one. A slice whose read failed keeps what it holds, live or not
+   * yet, and the next manifest asks again.
    */
   resync(name: string): Promise<void> {
     const slice = this.slices.get(name);
@@ -204,12 +215,7 @@ class Pushed {
       } catch {
         snapshot = null;
       }
-      if (snapshot) {
-        this.install(slice, snapshot);
-      } else if (slice.mode !== 'live') {
-        slice.mode = 'pull';
-        slice.waiting = [];
-      }
+      if (snapshot) this.install(slice, snapshot);
     })();
     slice.asking = asking.finally(() => {
       slice.asking = null;
@@ -269,7 +275,11 @@ class Pushed {
 
   private write(slice: Slice) {
     const data = slice.spec.compose(ready(slice), slice.judged);
-    if (data !== undefined) this.client.setQueryData(slice.spec.key, data);
+    if (data === undefined) return;
+    this.client.setQueryData(slice.spec.key, data);
+    const waiting = this.waiters.get(slice.spec.name);
+    this.waiters.delete(slice.spec.name);
+    for (const resolve of waiting ?? []) resolve(data);
   }
 }
 
@@ -290,16 +300,11 @@ export function pushedOf(client: QueryClient): Pushed {
 }
 
 /**
- * A pushed slice's entry as a query reads it: from memory where the slice is live, after its first snapshot where one is on its
- * way, so a window opening reads the snapshot and never the pull beside it; the pull otherwise (no shell, an older host, a slice
- * not judged yet).
+ * A pushed slice's entry as a query reads it in the shell: from memory once the slice is live and its owner judged what it needs,
+ * waited for until then, however the window's mount ordered the query and the snapshot. There is no pull beside it.
  */
-export async function readPushed<T>(client: QueryClient, name: string, pull: () => Promise<T>): Promise<T> {
-  const store = pushedOf(client);
-  const asking = store.asking(name);
-  if (asking) await asking;
-  const data = store.data(name);
-  return data === undefined ? pull() : (data as T);
+export function readPushed<T>(client: QueryClient, name: string): Promise<T> {
+  return pushedOf(client).composed(name) as Promise<T>;
 }
 
 /**
@@ -337,7 +342,8 @@ export function usePushedResyncing(name: string): boolean {
 /**
  * The page's half of the push path (PUSH1a, D182): each slice's pushes and manifests heard, then each slice's snapshot asked, in
  * that order, so nothing pushed while the snapshot is on its way is missed. Mounted by `ShellSignals` in both roots, so every
- * window holds its own; mounted again, it reads each snapshot again. A plain browser has no bus and keeps its pulls.
+ * window holds its own; mounted again, it reads each snapshot again. A plain browser, the stories' and e2e's harness, has no bus and
+ * keeps the service's pulls.
  */
 export function useStateSlices(specs: readonly SliceSpec[]) {
   const client = useQueryClient();

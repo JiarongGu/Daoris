@@ -8,10 +8,8 @@ import { QueryClient } from '@tanstack/react-query';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
   useShenoraEvent: () => undefined,
 }));
 
@@ -46,7 +44,7 @@ describe('a teammate’s ask in the shell', () => {
     window.localStorage.clear();
   });
 
-  it('lists it, opens it from its row, and shows its channel read-only with none of an ask’s sections', async () => {
+  it('lists it, opens it from its row, and shows its channel with its composer and none of an ask’s sections', async () => {
     show(<QuestsView notify={vi.fn()} />, new QueryClient({ defaultOptions: { queries: { retry: false } } }));
 
     await userEvent.click(await within(questList()).findByText('#7e6f51'));
@@ -54,9 +52,11 @@ describe('a teammate’s ask in the shell', () => {
     const page = questMain();
     await screen.findByRole('heading', { level: 1, name: /teammate’s ask #7e6f51/ });
     await waitFor(() => expect(within(page).getByText('Which column?')).toBeInTheDocument());
-    expect(within(page).queryByRole('textbox')).toBeNull();
+    // The channel's composer is the one thing the person can do on it: their post is carried to the holder (COMMS1k), and the page
+    // draws no other field.
+    expect(within(page).getAllByRole('textbox').map((box) => box.getAttribute('aria-label'))).toEqual(['Write to the channel']);
     expect(within(page).queryByRole('region', { name: 'Proposal' })).toBeNull();
-    expect(within(page).getByText(/held on their machine/)).toBeInTheDocument();
+    expect(within(page).getByText(/This ask belongs to a teammate, so only the channel their machine shared is here/)).toBeInTheDocument();
     // NOTIFY2g: the service keeps the person's mark on a teammate's ask its mirror holds, so reading its page moves it through the
     // newest, and its item leaves Messages (it moved no mark before, the host holding no record to mark it on).
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_MARK', {

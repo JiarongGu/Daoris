@@ -19,9 +19,7 @@ import { notPushed } from './state/slices';
 export type PipeConfirmation = {
   id: string; module: string; route: string; fields: ConfirmationField[];
   asker?: { process?: string | null; pid?: number | null } | null; asked: string;
-  /** None (CONFIRMWAIT1a-i): a terminal's press waits until the person answers; a shell before it told its time. */
-  expires?: string | null;
-  /** Whether a terminal still waits on its line for it (the confirm-wait design §8.1); absent from a shell before it. */
+  /** Whether a terminal still waits on its line for it (the confirm-wait design §8.1); absent where the shell says nothing. */
   waitedOn?: boolean | null;
   /** That its Confirm is being judged against what it rests on (§5.2): its buttons are replaced meanwhile. */
   checking?: boolean | null;
@@ -64,7 +62,7 @@ function keep(client: QueryClient, told: unknown) {
 const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   source: 'pipe', id: waiting.id, module: waiting.module, route: waiting.route, fields: waiting.fields ?? [],
   named: Array.isArray(waiting.named) ? waiting.named : [], asker: waiting.asker ?? null, asked: waiting.asked ?? null,
-  expires: waiting.expires ?? null, shown: waiting.shownAt != null,
+  shown: waiting.shownAt != null,
   waitedOn: typeof waiting.waitedOn === 'boolean' ? waiting.waitedOn : null, checking: waiting.checking === true,
   checkWithin: typeof waiting.checkWithin === 'number' ? waiting.checkWithin : null,
   keyed: waiting.keyed === true, restored: waiting.restored === true,
@@ -153,8 +151,6 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
     fields: [...(each.values ?? []), ...(each.fields ?? [])],
     asker: null,
     asked: each.asked ?? null,
-    // ONEWAY1n-i: no clock ends one.
-    expires: null,
   })), read: list !== undefined };
 }
 

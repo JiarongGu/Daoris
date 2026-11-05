@@ -42,7 +42,7 @@
   "workflow.step.unknown": "A step this page has no words for: `{{kind}}`",
   "workflow.step.goAhead": "Your go-ahead",
   "workflow.step.task": "Your task",
-  "workflow.step.pushed": "The push",
+  "workflow.step.push": "The push",
   "workflow.step.line": "On the line",
   "workflow.step.questClose": "The quest's close",
   "workflow.step.join": "The join",

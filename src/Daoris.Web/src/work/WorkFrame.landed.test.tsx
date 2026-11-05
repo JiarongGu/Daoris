@@ -12,7 +12,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 
 import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
-import { eventHandlers, invoke } from '../test/workFrameBridge';
+import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
@@ -362,7 +362,7 @@ describe('a session’s page header and its acts', () => {
     lowRespond(undefined, { agents: [{ ...LOW_ACCOUNTS().agents[0], scopes: [scopeOf({})] }, LOW_ACCOUNTS().agents[1]] });
     show('c0ffee11');
     await screen.findByRole('group', { name: 'Session actions' });
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS', expect.anything()));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'accounts' } }));
     expect(screen.queryByRole('group', { name: 'hand-over offer' })).toBeNull();
   });
 
@@ -388,7 +388,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
@@ -433,7 +433,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'Pause quest…' }));
@@ -475,7 +475,7 @@ describe('a session’s page header and its acts', () => {
 
     const user = userEvent.setup();
     const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', { payload: {} }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
     acts.getByRole('button', { name: 'More actions' }).focus();
     await user.keyboard('{Enter}');
     await screen.findByRole('menuitem', { name: 'Archive' });
@@ -556,7 +556,7 @@ describe('a session’s page header and its acts', () => {
     expect(foot).toHaveTextContent('Kept: main');
     expect(foot).toHaveTextContent('Blocked: tree s1a2b3c4, a session still holds this tree');
     expect(foot).toHaveTextContent('folder set aside s1a2b3c4-20261017, kept until');
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_STATE', expect.objectContaining({ payload: { unit: 's1a2b3c4' } }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'work' } });
   });
 
   /**
@@ -576,13 +576,13 @@ describe('a session’s page header and its acts', () => {
       : respond(String(input)))));
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORK_STATE' ? { units: [unit], unread: [] } : DRIVER_STATE));
     SESSIONS = [DRIVEN, intake];
-    const { client } = show('s1a2b3c4');
+    show('s1a2b3c4');
 
     expect(await screen.findByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by ask #0fda18');
     await screen.findByRole('region', { name: 'Where this work stands' });
     for (let minute = 10; minute < 20; minute += 1) {
       SESSIONS = [{ ...DRIVEN, updated: `2026-09-02T01:${minute}:00Z` }, intake];
-      await act(() => client.invalidateQueries());
+      await act(() => moved());
       await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument());
     }
     expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
@@ -1018,15 +1018,12 @@ describe('acting on what a session landed', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', expect.anything());
     const ask = screen.getByRole('group', { name: 'discard daoris/s-abc12345' });
     expect(ask).toHaveTextContent('2 commits no branch of yours holds. Nothing brings them back.');
-    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', {
       payload: { repository: 'engine', branch: 'daoris/s-abc12345', force: true },
     });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-abc12345` in engine.'));
-    // The clean-up's list is read again, so the head says what is left.
-    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
 
     // UXFIX2: it closed once the discard landed; a branch the driver kept is said inside the ask, whole, which stays open.
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-abc12345' })).toBeNull());
