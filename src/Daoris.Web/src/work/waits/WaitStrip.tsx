@@ -16,7 +16,7 @@ import { Discards, EntryWork, type HeadOpinion, type HeadReview, type LandingPla
 import type { EntryPress } from '../review/EntryAccept';
 import { heldFor, PermissionAsks, type PermissionWaits } from './PermissionAsks';
 import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
-import type { SessionGitAccessHold } from '../GitAccessFact';
+import type { SessionGitAccessHold } from '../head/GitAccessFact';
 import { GitAsk, gitAsksFor, type GitAskWaits } from './GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';

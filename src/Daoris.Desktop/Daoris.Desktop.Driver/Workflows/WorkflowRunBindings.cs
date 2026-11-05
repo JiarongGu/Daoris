@@ -98,7 +98,7 @@ public static class WorkflowRunBindings
     /// <param name="roles">The role catalogue the steps' roles are judged by, read only where a step names one; null judges by the seed's.</param>
     public static WorkflowRunBinding Plan(
         DriverConfig config, IWorkflowStore store, string run, string repository, string? workspace, string? ask, WorkflowTaskChoice? task,
-        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at, Func<RoleCatalog>? roles = null, string? remoteHost = null)
+        IReadOnlyList<WorkflowPlugin> plugins, DateTimeOffset at, Func<RoleCatalog>? roles = null)
     {
         var selected = WorkflowSelection.Resolve(config, repository, workspace, task);
         var binding = new WorkflowRunBinding(
@@ -128,23 +128,14 @@ public static class WorkflowRunBindings
         }
 
         // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved now, once, and kept, from derived defaults (the
-        // default pattern, the remote platform's plugin, the default key).
-        var platform = remoteHost is null ? null : SetupPresets.PlatformPlugin(remoteHost, plugins);
+        // default pattern, the default key).
         var resolved = newest.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
-            ? LandNodes.Resolve(land, platform)
+            ? LandNodes.Resolve(land)
             : LandNodes.NoResolved;
-        var unplugged = newest.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } open && !open.Options.ContainsKey("plugin")
-            && NodeOptions.Text(open, "method") is LandNodes.Push or LandNodes.PullRequest && !resolved.ContainsKey("plugin");
         var (named, unstaffed) = newest.Graph is { } graph
             ? StepRoles(graph, $"`{selected.Workflow}` v{newest.Version}", roles, new RolePlace(workspace, repository))
             : ([], null);
-        return binding with
-        {
-            Version = newest.Version, Digest = newest.Digest, Land = resolved, Roles = named,
-            Problem = unplugged
-                ? $"`{selected.Workflow}` v{newest.Version} lands by a plugin, and no plugin serves `{repository}`'s remote: add one on Plugins, or name one in the workflow's `land` step."
-                : unstaffed,
-        };
+        return binding with { Version = newest.Version, Digest = newest.Digest, Land = resolved, Roles = named, Problem = unstaffed };
     }
 
     /// <summary>

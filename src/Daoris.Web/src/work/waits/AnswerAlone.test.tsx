@@ -60,7 +60,7 @@ describe('a third answer alone, held for the person', () => {
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
     render(<AnswerAlone wait={WAIT} onAnswer={vi.fn()} />);
-    expect(screen.getByText('codex-acp 的回答会让这项工作在无人参与的情况下第三次继续。')).toBeInTheDocument();
+    expect(screen.getByText('codex-acp 的回答会让这项工作在无人参与的情况下再次继续。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '带着这个回答继续' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '暂不' })).toBeInTheDocument();
     await i18n.changeLanguage('en');

@@ -265,6 +265,16 @@ export const SAID: ChannelItem[] = [
   posted('m3', '2026-10-31T14:04:00Z', { session: 'c1', repository: 'game', agent: 'claude-code', text: 'Waiting on the docs lane.' }),
 ];
 
+/**
+ * COMMS1k: a line's own channel, a chat's on no ask: the lead and its lane part alongside post to each other, each to the other alone,
+ * and the lead to everyone on it.
+ */
+export const LINE_SAID: ChannelItem[] = [
+  posted('aaaaaaaaa1', '2026-10-31T14:01:00Z', { session: 'c1', repository: 'game', agent: 'claude-code', channel: 'session:c1', part: 's2', receipt: 'read', text: 'The contract changed: the bridge takes a region.' }),
+  posted('aaaaaaaaa2', '2026-10-31T14:02:00Z', { session: 's2', repository: 'driver', agent: 'claude-code', channel: 'session:c1', part: 'c1', receipt: 'taken', text: 'Taken; the index reads the region now.' }),
+  posted('aaaaaaaaa3', '2026-10-31T14:05:00Z', { session: 'c1', repository: 'game', agent: 'claude-code', channel: 'session:c1', text: 'Both lanes are on the new contract.' }),
+];
+
 /** The ask's channel: a message a line of work's part posted, and the person's. */
 export const ASK_SAID: ChannelItem[] = [
   posted('m1', '2026-10-31T14:01:00Z', { person: true, text: 'Start with the index, then the notes.' }),

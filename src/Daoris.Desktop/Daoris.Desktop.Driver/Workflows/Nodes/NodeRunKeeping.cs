@@ -7,8 +7,25 @@ namespace Daoris.Driver;
 /// <param name="say">The say door a run's work is told what was sent back to it through: the session, the words and the key.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
-    Func<IIntegrationDoor?> integration, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<ILandingDoor?> landing)
+    Func<IIntegrationDoor?> integration, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<ILandingDoor?> landing,
+    Func<IPushDoor?> pushing)
 {
+    /// <summary>
+    /// A run's <c>push</c>, active at the tip the landing recorded, started once on the door: the branch the <c>land</c> made is pushed through
+    /// the push act. The door is idempotent by node and tip, and the act is the person's press's own, so the two cannot push twice.
+    /// </summary>
+    public void StartPushes(GovernedUnit governed, RunScope scope)
+    {
+        if (pushing() is not { } door || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
+        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
+        foreach (var node in governed.Declared.Values.Where(each => each.Kind == NodeKinds.Push))
+        {
+            var status = WorkPerformer.StatusOf(record, node.Id);
+            if (status.State != NodeStates.Active || landed.Pushed && landed.PushedTip == landed.Tip) continue;
+            door.Start(new PushStart(governed.Unit.Id, node, governed.Watched.Repository, governed.Watched.Workspace, governed.Watched.Root, landed.Branch, landed.Tip));
+        }
+    }
+
     /// <summary>
     /// A run's <c>land</c>, active at the tip this pass read, started once on the door: a node reaches active only once its wires hold, its
     /// subject is due and the gate holds nothing, and what authorizes it is the run's review word, or the standing authority judged again

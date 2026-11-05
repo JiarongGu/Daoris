@@ -68,13 +68,13 @@ public sealed class PlacePlanTests
     }
 
     [Fact]
-    public async Task A_remote_with_a_landing_plugin_is_offered_a_pull_request_opened_by_it()
+    public async Task A_remote_with_a_plugin_is_not_suggested_a_pull_request_but_may_choose_one()
     {
         var plan = await PlanAsync(new World(), Ask(SetupPresets.PullRequest, "web"));
 
         var web = Assert.Single(plan.Repositories);
-        Assert.Equal((SetupPresets.PullRequest, SuggestionWhy.Plugin), (web.Suggested.Preset, web.Suggested.Why.Code));
-        // The plugin is left open in the copy and resolved at the bind from the remote's platform (design §1.1).
+        // G8, D240 point 5: a plugin serving the platform suggests nothing; the pull request is the person's choice.
+        Assert.Equal((SetupPresets.Merge, SuggestionWhy.Default), (web.Suggested.Preset, web.Suggested.Why.Code));
         Assert.Equal("`pull-request`", web.Changes.Single(change => change.Key == "WORKFLOW_USE").After);
         Assert.Equal("pull-request", web.After.Land!.Method);
         Assert.True(plan.Applies);

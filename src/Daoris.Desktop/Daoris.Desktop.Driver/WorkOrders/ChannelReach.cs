@@ -271,25 +271,25 @@ public sealed class ChannelReach
         {
             var id = message.Id!;
             var level = message.Urgent == false ? MessageLevel.Ordinary : MessageLevel.Urgent;
-            if (!message.Person && !part.Inbox.TakesClaims) continue;
+            if (!message.ByThisPerson && !part.Inbox.TakesClaims) continue;
             var claimed = await doors.AcknowledgeAddressedAsync(part.Session, ChannelAcks.Taking, [id], ct).ConfigureAwait(false);
             if (!claimed.Contains(id, StringComparer.Ordinal)) continue;
 
             var acknowledge = AddressedAcknowledger(doors, part.Session, id);
-            var words = new ChatMessage(message.Person ? message.Text! : ChannelText.Claim(message), [])
+            var words = new ChatMessage(message.ByThisPerson ? message.Text! : ChannelText.Claim(message), [])
             {
                 Channel = message, Level = level, Acknowledge = acknowledge, Went = () => acknowledge(ChannelAcks.Sent),
             };
             var reach = part.Inbox.ReachAt(level);
-            if (!(message.Person ? part.Inbox.Hold(words) : part.Inbox.HoldClaim(words)))
+            if (!(message.ByThisPerson ? part.Inbox.Hold(words) : part.Inbox.HoldClaim(words)))
             {
                 await doors.AcknowledgeAddressedAsync(part.Session, ChannelAcks.Released, [id], ct).ConfigureAwait(false);
                 continue;
             }
 
             var when = reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends";
-            var whose = message.Person ? "the person's message" : $"message `{id}` from session {message.Session}";
-            lines.Progress($"channel  {whose} to session {part.Session} alone reaches it {when}{(message.Person ? ", as their words" : ", as that agent's claim")}");
+            var whose = message.ByThisPerson ? "the person's message" : $"message `{id}` from session {message.Session}";
+            lines.Progress($"channel  {whose} to session {part.Session} alone reaches it {when}{(message.ByThisPerson ? ", as their words" : ", as that agent's claim")}");
         }
     }
 
@@ -331,26 +331,26 @@ public sealed class ChannelReach
         if (part.Inbox is { } inbox)
         {
             // 🔴 Trap 3: a part whose turn is over, or whose inbox closed, takes no claim; the person's words it may still hold.
-            if (!message.Person && !inbox.TakesClaims) return;
+            if (!message.ByThisPerson && !inbox.TakesClaims) return;
 
             // 🔴 Trap 21: claimed on the entry by its id before anything holds it, so one part of the entry takes it.
             var claimed = await doors.AcknowledgeAsync(part.Entry.Ask, part.Entry.Key, part.Session, ChannelAcks.Taking, [id], ct).ConfigureAwait(false);
             if (!claimed.Contains(id, StringComparer.Ordinal)) return;
 
             var acknowledge = Acknowledger(doors, part, id);
-            var words = new ChatMessage(message.Person ? message.Text! : ChannelText.Claim(message), [])
+            var words = new ChatMessage(message.ByThisPerson ? message.Text! : ChannelText.Claim(message), [])
             {
                 Channel = message, Level = level, Acknowledge = acknowledge, Went = () => acknowledge(ChannelAcks.Sent),
             };
             var reach = inbox.ReachAt(level);
-            if (!(message.Person ? inbox.Hold(words) : inbox.HoldClaim(words)))
+            if (!(message.ByThisPerson ? inbox.Hold(words) : inbox.HoldClaim(words)))
             {
                 await doors.AcknowledgeAsync(part.Entry.Ask, part.Entry.Key, part.Session, ChannelAcks.Released, [id], ct).ConfigureAwait(false);
                 return;
             }
 
             var when = reach == DrivenReach.NextStep ? "at its next step" : "when its turn ends";
-            lines.Progress(message.Person
+            lines.Progress(message.ByThisPerson
                 ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} reaches session {part.Session} {when}, as their words"
                 : level == MessageLevel.Urgent && reach == DrivenReach.NextStep
                     ? $"channel  message `{id}` on ask #{part.Entry.Ask} reaches session {part.Session} at its next step, as `{message.Repository}`'s claim"
@@ -360,7 +360,7 @@ public sealed class ChannelReach
         }
 
         // Only the person's words reopen a part, and only those addressed to its repository (design §2.3's third row).
-        if (!message.Person || message.To is null) return;
+        if (!message.ByThisPerson || message.To is null) return;
 
         var said = await doors.SayAsync(part.Session, message.Text!, id, null, ct).ConfigureAwait(false);
         if (said.Kept)
@@ -404,7 +404,7 @@ public sealed class ChannelReach
         }
 
         var part = new ChannelPart(entry, newest.Session, processes.InboxOf(newest.Session));
-        var text = message.Person ? message.Text! : ChannelText.Claim(message, passedOn: true);
+        var text = message.ByThisPerson ? message.Text! : ChannelText.Claim(message, passedOn: true);
         if (part.Inbox is { } inbox)
         {
             // A claim this part holds only to ride goes now as a turn of its own: the person is between.
@@ -425,7 +425,7 @@ public sealed class ChannelReach
             await doors.AcknowledgeAsync(entry.Ask, entry.Key, part.Session, ChannelAcks.Released, [messageId], ct).ConfigureAwait(false);
         }
 
-        var said = await doors.SayAsync(part.Session, text, messageId, message.Person ? null : ChannelFrom.Agent, ct).ConfigureAwait(false);
+        var said = await doors.SayAsync(part.Session, text, messageId, message.ByThisPerson ? null : ChannelFrom.Agent, ct).ConfigureAwait(false);
         if (!said.Kept) return new ChannelForwarded(false, said.Refusal ?? "refused", part.Session);
 
         await doors.AcknowledgeAsync(entry.Ask, entry.Key, part.Session, ChannelAcks.Sent, [messageId], ct).ConfigureAwait(false);

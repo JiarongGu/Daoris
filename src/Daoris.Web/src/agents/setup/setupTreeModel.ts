@@ -1,4 +1,5 @@
 import type { PlaceRow, PlacesRead } from '../../data/wiring';
+import { isComposing, type KeyPress } from '../../lib/composing';
 import { MACHINE, repositoryId, workspaceId } from '../modes';
 
 /** The place a row stands for, as the list's chosen item names it. */
@@ -69,13 +70,14 @@ export type TreeMove = { focus?: string; toggle?: string; choose?: string };
 /**
  * The tree's keys, the WAI tree pattern's: ↓ and ↑ walk the rows in view, Home and End go to either end, → opens a closed row and
  * then enters it, ← closes an open row and then leaves for its parent, and Enter or Space chooses (a fold toggles instead, since it is no
- * place). Null where the key is not the tree's.
+ * place). Null where the key is not the tree's, or is an input method's (IME1).
  */
-export function keyInTree(items: readonly TreeItem[], current: string, key: string): TreeMove | null {
+export function keyInTree(items: readonly TreeItem[], current: string, press: KeyPress & { key: string }): TreeMove | null {
+  if (isComposing(press)) return null;
   const at = items.findIndex((each) => each.id === current);
   const item = items[at];
   if (!item) return null;
-  switch (key) {
+  switch (press.key) {
     case 'ArrowDown': return at < items.length - 1 ? { focus: items[at + 1]!.id } : null;
     case 'ArrowUp': return at > 0 ? { focus: items[at - 1]!.id } : null;
     case 'Home': return { focus: items[0]!.id };

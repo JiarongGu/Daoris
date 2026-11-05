@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
-import type { Session } from '../data/api';
+import i18n from '../../locales/i18n';
+import type { Session } from '../../data/api';
 import { accessRow, startedFull } from './AccessFact';
-import { SessionHead } from './head/SessionHead';
-import { SessionPageHead } from './head/SessionPageHead';
+import { SessionHead } from './SessionHead';
+import { SessionPageHead } from './SessionPageHead';
 
 // SESSACCESS1 (D184 point 1; the UI/UX design §3.3 and §5, D185): a session says the access it started under, read from its
 // record's pause map as the driver resolved it at the start, never from today's settings. The fixture is that map.

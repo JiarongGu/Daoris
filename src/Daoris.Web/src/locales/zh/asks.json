@@ -146,8 +146,7 @@
   "asks.elsewhere.pill": "队友的",
   "asks.elsewhere.title": "队友的需求 #{{id}}",
   "asks.elsewhere.latest": "最近消息 {{ago}}",
-  "asks.elsewhere.note": "这个需求属于队友，所以这里只有对方的机器共享过来的频道。它的原文、委托和工作由对方展示。",
+  "asks.elsewhere.note": "这个需求属于队友，所以这里只有对方的机器共享过来的频道。它的原文、委托和工作由对方展示。你在这里发的消息会送到对方的机器，对方的智能体把它当作你说的，而不是对方本人说的。",
   "asks.elsewhere.from": "来自",
-  "asks.elsewhere.last": "最近消息",
-  "asks.elsewhere.readOnly": "这是队友的需求，保存在对方的机器上：你可以在这里阅读它的频道，但不能向它写入。"
+  "asks.elsewhere.last": "最近消息"
 }

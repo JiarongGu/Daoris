@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Integration, () => Say, () => Landing))!;
+        records, clock, _holdsLease, _graphRuns, _performer, () => Integration, () => Say, () => Landing, () => Pushing))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
         records, clock, () => Integration, () => Lines, () => Requests, () => _config, () => _quests, () => Integrated))!;
@@ -108,6 +108,9 @@ public sealed class NodeRuntime(
     /// and its node waits active. The watch sets it, so the landing goes on off the pass.
     /// </summary>
     public ILandingDoor? Landing { get; set; }
+
+    /// <summary>The door a run's <c>push</c> is performed through (G8): none by default, so a runtime nobody wired pushes nothing and its node waits active.</summary>
+    public IPushDoor? Pushing { get; set; }
 
     /// <summary>The door a run's <c>request</c> publishes its quest through: none by default, so a runtime nobody wired starts none and its node waits ready.</summary>
     public IRequestPort? Requests { get; set; }
@@ -517,7 +520,7 @@ public sealed class NodeRuntime(
                 // The doors read a run's record, so its opinion and look are begun as a unit's are, their gates read on its branch at the tip this
                 // pass read. A `land` is begun, and read from the landing record as `handed` is; its `review` too, which the door's Accept
                 // reaches in the press that lands it.
-                else if ((node.Reach == NodeReach.Observed && (NodeGoverning.Begins(node.Kind) || governed.Observable.Contains(node.Id))) || node.Kind is NodeKinds.Land or NodeKinds.Review
+                else if ((node.Reach == NodeReach.Observed && (NodeGoverning.Begins(node.Kind) || governed.Observable.Contains(node.Id))) || node.Kind is NodeKinds.Land or NodeKinds.Review or NodeKinds.Push
                          // A run's go-ahead is begun though it is pressed, since its answer is D135's record.
                          || (governed.Scope is not null && node.Kind == NodeKinds.GoAhead))
                 {
@@ -576,6 +579,7 @@ public sealed class NodeRuntime(
         {
             await Keeping.AcceptRepairsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.StartLandings(governed, run);
+            Keeping.StartPushes(governed, run);
             Keeping.End(governed, run, said);
         }
     }

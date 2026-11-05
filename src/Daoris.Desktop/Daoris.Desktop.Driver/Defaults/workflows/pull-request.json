@@ -2,10 +2,10 @@
   "id": "pull-request",
   "order": 5,
   "name": "Hosted merge workflow",
-  "for": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge.",
+  "for": "For a repository on GitHub: you review the work, Daoris pushes its branch, and the GitHub pull request plugin opens a pull request for you to merge.",
   "delivery": {
     "name": "A pull request",
-    "for": "For a repository on a code host: you review the work, and a plugin pushes its branch and opens a pull request for you to merge."
+    "for": "For a repository on GitHub: you review the work, Daoris pushes its branch, and the GitHub pull request plugin opens a pull request for you to merge."
   },
   "setUp": true,
   "graph": {
@@ -18,9 +18,9 @@
       { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
       { "id": "review", "kind": "review", "version": 1, "reach": "pressed" },
-      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "pull-request" } },
-      { "id": "pushed", "kind": "pushed", "version": 1, "reach": "observed" },
-      { "id": "pull-request", "kind": "pull-request", "version": 1, "reach": "observed" }
+      { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
+      { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
+      { "id": "pull-request", "kind": "github-pull-request/pull-request", "version": 1, "reach": "performed" }
     ],
     "wires": [
       { "id": "a", "kind": "after", "from": "work", "to": "requests" },
@@ -28,8 +28,8 @@
       { "id": "i", "kind": "after", "from": "holds", "to": "content" },
       { "id": "b", "kind": "after", "from": "content", "to": "review" },
       { "id": "e", "kind": "after", "from": "review", "to": "landing" },
-      { "id": "c", "kind": "after", "from": "landing", "to": "pushed" },
-      { "id": "d", "kind": "after", "from": "pushed", "to": "pull-request" }
+      { "id": "c", "kind": "after", "from": "landing", "to": "push" },
+      { "id": "d", "kind": "after", "from": "push", "to": "pull-request" }
     ]
   }
 }

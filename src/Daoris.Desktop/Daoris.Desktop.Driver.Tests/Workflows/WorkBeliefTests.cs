@@ -70,9 +70,9 @@ public sealed class WorkBeliefTests
         // The graph now has another plugin perform the node: the attempt's plugin is no longer the one its rule names.
         Assert.Equal(WorkRefusals.NotNamed, WorkBelief.Completion(Heard(), Attempt, 2, Deploy with { Kind = "other.plugin/deploy" }, Unit, Now));
 
-        // A pull request's state is Daoris's own reading (its ask, D148's checks), never a frame's word.
+        // A push is Daoris's own act, read against git's remote-tracking ref, never a frame's word.
         Assert.Equal(WorkRefusals.NotNamed,
-            WorkBelief.Completion(Heard(), Attempt, 2, new NodeDeclaration("deploy", NodeKinds.PullRequest, 1, NodeReach.Observed), Unit, Now));
+            WorkBelief.Completion(Heard(), Attempt, 2, new NodeDeclaration("deploy", NodeKinds.Push, 1, NodeReach.Performed), Unit, Now));
 
         // No longer declared by its plugin, or no longer included by the cycle governing its unit.
         Assert.Equal(WorkRefusals.NotDeclared, WorkBelief.Completion(Heard(), Attempt, 2, null, Unit, Now));
@@ -107,7 +107,7 @@ public sealed class WorkBeliefTests
     public void Only_a_plugins_own_node_is_reached_on_the_plugins_word()
     {
         Assert.True(NodeAuthorities.Of(Deploy)!.OnPluginWord);
-        foreach (var kind in new[] { NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Land, NodeKinds.Line, NodeKinds.Claimed, NodeKinds.Human, NodeKinds.WaitUnit, NodeKinds.QuestClose })
+        foreach (var kind in new[] { NodeKinds.Push, NodeKinds.Land, NodeKinds.Line, NodeKinds.Claimed, NodeKinds.Human, NodeKinds.WaitUnit, NodeKinds.QuestClose })
         {
             Assert.False(NodeAuthorities.BuiltIn[kind].OnPluginWord, kind);
         }

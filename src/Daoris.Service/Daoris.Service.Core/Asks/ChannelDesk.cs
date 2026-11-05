@@ -24,21 +24,36 @@ public sealed class ChannelDesk(
     /// <summary>A line's own channel and the messages to one part.</summary>
     public ChannelParts Parts => _parts ??= new(this, store, ledger, facts);
 
+    /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read (SESSONE2i).</summary>
+    private TeammateAskChannel Teammates => new(store);
+
+    /// <summary>A line's own channel as the person reads it (COMMS1k).</summary>
+    public LineChannel Line => new(this, store);
+
     /// <summary>Post as the session the connector names: its record gives the ask (through its entry), its repository and its adapter.</summary>
     /// <param name="urgent">
     /// The poster's level (COWORK1d, D188 point 2): urgent asks the session's next step, ordinary (the default) a natural point. Kept
     /// urgent for at most <see cref="ChannelBounds.UrgentPerPart"/> of the part's posts; the outcome's message says what was kept.
     /// </param>
-    /// <remarks>A line on no ask posts on its own channel, and a <paramref name="to"/> naming a session is to that part alone (<see cref="ChannelParts"/>).</remarks>
+    /// <remarks>
+    /// A line on no ask posts on its own channel, and a <paramref name="to"/> naming a session is to that part alone (<see cref="ChannelParts"/>).
+    /// A line on a teammate's ask posts on that ask's channel, which the sync carries to its holder (<see cref="TeammateAskChannel"/>).
+    /// </remarks>
     public async Task<ChannelOutcome> PostAsSessionAsync(
         string? sessionId, string? text, string? to, string? re, bool question, DateTimeOffset now, bool urgent = false,
         CancellationToken ct = default)
     {
         var (refusal, ask, session, entry, origin) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
-        if (refusal != ChannelRefusal.None) return new(refusal, null);
+        var elsewhere = TeammateAsk(refusal, origin);
+        if (refusal != ChannelRefusal.None && elsewhere is null) return new(refusal, null);
 
         var (part, partRefusal) = await Parts.NamedAsync(to, entry, session, ct).ConfigureAwait(false);
         if (partRefusal != ChannelRefusal.None) return new(partRefusal, null);
+        if (part is null && elsewhere is not null)
+        {
+            return await Teammates.PostAsSessionAsync(session!, entry!, elsewhere, text, to, re, question, urgent, now, ct).ConfigureAwait(false);
+        }
+
         if (part is not null || ask is null) return await Parts.PostAsync(session!, entry!, origin!, ask, part, text, to, re, question, urgent, now, ct).ConfigureAwait(false);
 
         var judged = await JudgeAsync(ask, text, to, re, ct).ConfigureAwait(false);
@@ -57,12 +72,17 @@ public sealed class ChannelDesk(
     /// which an older build passes over as it does any kind it does not know. A person has no cap.
     /// </summary>
     /// <param name="urgent">Their level (COWORK1d): urgent unless they asked ordinary, their default as their words' is (D188 point 2).</param>
+    /// <remarks>On a teammate's ask, one whose messages the sync mirrored here, the post is kept to travel to its holder (SESSONE2i).</remarks>
     public async Task<ChannelOutcome> PostAsPersonAsync(
         string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default, bool urgent = true)
     {
         if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask)
         {
-            return new(await IsMirroredAsync(askId, ct).ConfigureAwait(false) ? ChannelRefusal.HeldElsewhere : ChannelRefusal.NotFound, null);
+            var id = askId.TrimStart('#');
+            var (elsewhere, refused) = await Parts.NamedAsync(to, null, null, ct, SessionEntries.AskOrigin(id)).ConfigureAwait(false);
+            if (refused != ChannelRefusal.None) return new(refused, null);
+            if (elsewhere is not null) return new(ChannelRefusal.BadPart, null);
+            return await Teammates.PostAsPersonAsync(id, text, to, re, urgent, now, ct).ConfigureAwait(false);
         }
 
         var (part, partRefusal) = await Parts.NamedAsync(to, null, null, ct, SessionEntries.AskOrigin(ask.Id)).ConfigureAwait(false);
@@ -137,9 +157,6 @@ public sealed class ChannelDesk(
     private static bool Counts(ChannelMessage message, string entry) =>
         entry != PersonEntry || !message.ByPerson || message.Origin is not null;
 
-    private async Task<bool> IsMirroredAsync(string askId, CancellationToken ct) =>
-        (await store.OfAsync(askId.TrimStart('#'), ct).ConfigureAwait(false)).Count > 0;
-
     /// <summary>
     /// A session's read: what is new since its entry last read (or since <paramref name="since"/>, whatever the mark says), and the mark
     /// moves. The same speaker's rules as a post: a session on an ask, and no helper or reviewer.
@@ -154,10 +171,16 @@ public sealed class ChannelDesk(
         string? sessionId, DateTimeOffset? since, CancellationToken ct = default, DateTimeOffset? now = null)
     {
         var (refusal, ask, session, speaking, origin) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
-        if (refusal != ChannelRefusal.None) return new(refusal, null, null);
+        var elsewhere = TeammateAsk(refusal, origin);
+        if (refusal != ChannelRefusal.None && elsewhere is null) return new(refusal, null, null);
         var entry = speaking!;
 
         var mine = await Parts.ReadAsync(session!, entry, origin!, since, now ?? DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        if (elsewhere is not null)
+        {
+            return await Teammates.ReadAsSessionAsync(session!, entry, origin!, elsewhere, since, mine, now ?? DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        }
+
         if (ask is null) return new(ChannelRefusal.None, null, new ChannelRead(mine, [], mine.Count), entry) { Origin = origin };
 
         var mark = await store.MarkAsync(ask.Id, entry, ct).ConfigureAwait(false);
@@ -441,7 +464,6 @@ public sealed class ChannelDesk(
         ChannelRefusal.BadTo => "bad-to",
         ChannelRefusal.BadRe => "bad-re",
         ChannelRefusal.TooMany => "too-many",
-        ChannelRefusal.HeldElsewhere => "held-elsewhere",
         ChannelRefusal.BadPart => "bad-part",
         ChannelRefusal.PartElsewhere => "part-elsewhere",
         _ => refusal.ToString().ToLowerInvariant(),
@@ -490,7 +512,8 @@ public sealed class ChannelDesk(
 
     /// <summary>
     /// The session that speaks, its entry, the origin whose channel it speaks on, and the ask that origin names where it names one; or why it
-    /// may not. Every origin has a channel: only a helper and a reviewer have none, and one whose ask is not held here is refused.
+    /// may not. Every origin has a channel: only a helper and a reviewer have none. One whose ask is not held here is answered
+    /// <see cref="ChannelRefusal.NoAsk"/> with its origin, which the post and the read take as a teammate's ask (SESSONE2i).
     /// </summary>
     internal async Task<(ChannelRefusal Refusal, Ask? Ask, Session? Session, string? Entry, string? Origin)> SpeakerAsync(string? sessionId, CancellationToken ct)
     {
@@ -509,6 +532,10 @@ public sealed class ChannelDesk(
             ? (ChannelRefusal.None, ask, session, key, origin)
             : (ChannelRefusal.NoAsk, null, session, key, origin);
     }
+
+    /// <summary>The teammate's ask a speaker refused <see cref="ChannelRefusal.NoAsk"/> is on, its origin naming an ask not held here; else null.</summary>
+    private static string? TeammateAsk(ChannelRefusal refusal, string? origin) =>
+        refusal == ChannelRefusal.NoAsk && origin is not null ? AskOfOrigin(origin) : null;
 
     /// <summary>The ask an origin names (<c>ask:&lt;id&gt;</c>), or null for any other origin.</summary>
     public static string? AskOfOrigin(string origin)

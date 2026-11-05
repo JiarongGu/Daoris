@@ -211,7 +211,7 @@ describe('This machine\'s page, lit', () => {
   it('is named in Chinese', async () => {
     i18n.changeLanguage('zh');
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /^本机$/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /^本机$/ }));
     const all = await screen.findByRole('button', { name: '全部角色' });
     expect(all).toHaveAccessibleDescription('每个角色一次，按所在位置 · 列表或角色图');
     await userEvent.click(all);

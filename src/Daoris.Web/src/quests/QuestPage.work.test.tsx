@@ -274,7 +274,7 @@ describe("a quest's page words its session's note", () => {
   });
 
   it('shows a record from before parts as it was kept, marked', () => {
-    page({ quest: TAKEN, session: FAILED });
+    page({ quest: TAKEN, session: { ...FAILED, noteParts: [{ words: 'the first attempt died', by: 'before' }] } });
 
     const record = screen.getByRole('region', { name: 'Session' });
     expect(within(record).getByText('the first attempt died')).toBeInTheDocument();

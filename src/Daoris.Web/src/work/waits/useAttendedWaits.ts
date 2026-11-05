@@ -5,7 +5,7 @@ import {
   useDriver, useGitAnswer, usePermissionWaits, useRules, useSessionHandOverAsk, useSessionHelpers, useSessionPartners, type useSay,
   useTightenSessionGitAccess,
 } from '../../bridge/shell';
-import type { SessionGitAccessHold } from '../GitAccessFact';
+import type { SessionGitAccessHold } from '../head/GitAccessFact';
 import type { Session } from '../../data/api';
 import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';

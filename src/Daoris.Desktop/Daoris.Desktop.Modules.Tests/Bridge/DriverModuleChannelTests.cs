@@ -112,6 +112,35 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// COMMS1k: <c>CHANNEL_LINE</c> answers the channel of a line on no ask as the service reads it for the person, each message to one
+    /// part with its receipt, and a teammate's message with its machine; no origin where the line has none.
+    /// </summary>
+    [Fact]
+    public async Task CHANNEL_LINE_answers_a_lines_own_channel_and_no_origin_where_it_has_none()
+    {
+        var (module, service) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK, """
+            {"origin":"session:c1","items":[
+             {"kind":"message","at":"2026-11-05T09:01:00Z","id":"aaaaaaaaaa","person":false,"session":"c1","repository":"reports","entry":"session:c1/reports",
+              "text":"The schema moved to v4.","urgent":false,"channel":"session:c1"},
+             {"kind":"message","at":"2026-11-05T09:02:00Z","id":"bbbbbbbbbb","person":false,"session":"q1","repository":"checker","entry":"session:c1/checker",
+              "text":"Taken.","urgent":true,"channel":"session:c1","part":"c1","receipt":"read"}]}
+            """)));
+
+        var read = await AnswerAsync(module, "CHANNEL_LINE", new { session = "q1" });
+
+        Assert.Equal(["GET /api/channel/line?session=q1"], service.Requests.Distinct());
+        Assert.Equal("session:c1", read.GetProperty("origin").GetString());
+        var items = read.GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(2, items.Count);
+        Assert.Equal(("c1", "read"), (items[1].GetProperty("part").GetString(), items[1].GetProperty("receipt").GetString()));
+
+        var (none, _) = await UpAsync(new StandIn(_ => (HttpStatusCode.NotFound, """{"error":"none","code":"no-session"}""")));
+        var nothing = await AnswerAsync(none, "CHANNEL_LINE", new { session = "s2" });
+        Assert.Equal(JsonValueKind.Null, nothing.GetProperty("origin").ValueKind);
+        Assert.Equal(0, nothing.GetProperty("items").GetArrayLength());
+    }
+
+    /// <summary>
     /// 🔴 COWORK1d (the message-urgency design §8.4): each message answers the page its level, and what it reached in each repository it
     /// addresses, as the service read them for the person; a message from before says neither.
     /// </summary>

@@ -385,13 +385,20 @@ export function useAsksPart({
         />
       )
       : teammate
-        // A teammate's ask has no record here (SESSONE2h): its page is its channel, read-only, where reading moves the person's mark,
-        // which the service keeps on an ask its mirror holds (NOTIFY2g).
+        // A teammate's ask has no record here (SESSONE2h): its page is its channel, posted to as an ask's (SESSONE2i), where reading
+        // moves the person's mark, which the service keeps on an ask its mirror holds (NOTIFY2g).
         ? (
           <TeammateAskPage
             key={teammate.id}
             ask={teammate}
             channel={channel.channel}
+            onPost={(post, answered) => postChannel.mutate({ ask: teammate.id, post }, {
+              onSuccess: (posted) => {
+                if (posted.posted) answered.done();
+                else answered.refused(posted.code ?? 'other');
+              },
+              onError: (error) => answered.refused(sentence(error)),
+            })}
             onRead={(through) => markChannel.mutate({ ask: teammate.id, through })}
           />
         )

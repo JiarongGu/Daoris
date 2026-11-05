@@ -65,7 +65,7 @@ public static class WorkflowRunWords
         WorkflowKinds.PullRequest => "The pull request",
         NodeKinds.Human => "Your task",
         NodeKinds.Review => "Your Accept",
-        NodeKinds.Pushed => "The push",
+        NodeKinds.Push => "The push",
         NodeKinds.Line => "On the line",
         NodeKinds.QuestClose => "The quest's close",
         NodeKinds.All => "The join",

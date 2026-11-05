@@ -82,8 +82,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    (from D190, D227, D232)
 9. The holds, the opinion, the look and the `review` each come before every landing and are wired straight into it. No landing
    may start before a hold or a look has passed. The opinion need not come before the look. (from D157, D190)
-10. A `land` method brings its tail: `pull-request` brings `pushed` then `pull-request`; `push` brings `pushed`; `integrate`
-    brings one `integrate`; `merge` and `branch` bring nothing. (from D215, D227)
+10. A `land` method brings its tail only for `integrate`, which brings one `integrate`; `merge` and `branch` bring nothing. A `push`
+    (Daoris's, through the push act) stands after a `branch` landing, and a pull request is a plugin's performed step
+    (`<plugin>/pull-request`) after the `push`: steps a place composes, never a `land` method or a suggestion. (from D215, D227, D241)
 11. A workflow file marks its pipeline: development (absent) or verification. A verification version holds at least one `check`
     and no `claimed`, `opinion`, `look`, `go-ahead`, `land` or `quest.close`. (from D192)
 12. A change that lowers the person's part applies only by the person's press; an agent's stays a proposal. Editing the home
@@ -138,13 +139,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 28. For a graph run the runtime is the one performer of `land`. The pass that finds it active at its tip starts it once on the
     landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. A `land` whose
     subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. (from D227)
-29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}`, the remote platform's
-    plugin for `push` and `pull-request`, the default key where the pattern says `{ticket}`. A written option stands; no landing rule
+29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}` and the default key where the
+    pattern says `{ticket}`. A `land` names no plugin. A written option stands; no landing rule
     is read. The plan carries `squash` for the branch form, and a session or a conversation in a tree of its own is told once, after
     the branch line, that its commits land as one (`ProcessWords`). (from D164, D227, D232)
 30. `merge` lands into the line. `branch` makes a new branch from the session's branch, moves no checkout, and refuses a name that
-    exists. `push` and `pull-request` hand the branch to a plugin. `integrate` hands it to the line's integration. (from D87, D215)
-31. Daoris never pushes and never opens a pull request. A plugin speaking on `HookPoints.Land` does, for its platform. (from D87, D100)
+    exists. `integrate` hands it to the line's integration. (from D87, D215)
+31. Daoris pushes, as a `push` step or the person's press, through the one push act (`PushDoor`, off the pass, under the lease); the node
+    is reached when git's remote-tracking ref holds the commit and failed by the act's refusal. Daoris opens no pull request: a plugin's
+    performed step does, for its platform. A saved graph that landed by `push` or `pull-request` converted once
+    (`PushedGraphs`, the home's `push-steps` step; it ends when no home saved before G8's release can start, and G8-CONVERT1 deletes it). (from D241)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
@@ -175,8 +179,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 **Set up, conversion and Current**
 
 42. *Set up…* offers *Not driven* and the shipped deliveries marked `setUp`: merge after accept, a branch to push, a pull request,
-    integrated. It suggests integrated where the line declares integration, a pull request where a plugin serves the remote's
-    platform, else merge after accept. *Keep how it lands* writes no landing and no choice. (from D221, D227)
+    integrated. It suggests integrated where the line declares integration, else merge after accept; a pull request is only chosen,
+    and refused where no plugin performing steps serves the remote's platform. *Keep how it lands* writes no landing and no choice. (from D221, D227)
 43. `PLACE_APPLY` is the one adoption door. `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (from D227)
 44. The release's one migration converts the workflow records once through `WorkflowMigration.Convert`, its `workflows` step
     reading the repositories from the service's registry table: each steps, `handed` or `land`+`accept` newest gets the next

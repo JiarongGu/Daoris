@@ -35,7 +35,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitGrantRef.cs` | One verdict per act; a grant in `run/git/grants` bound to its address and its refs (ref, new commit, old commit where known) |
 | A push's updates | `GitPushUpdates.cs`, `GitPushJudge.cs`, `GitPushDoor.cs`, `GitHelperPush.cs` | Each update read and kinded (plain, force, delete, tag, mirror, prune); the batch judged by grant and Dangerous; the helper's remote refs and objects |
-| A session's record | `GitSessionAccess.cs`, `GitSessionAccessVerb.cs`, `Modules/Bridge/Routes/SessionGitAccessRoutes.cs`, `src/Daoris.Web/src/work/GitAccessFact.tsx` | The access a running session holds, tightened and read; `git access --session`; `TIGHTEN_SESSION_GIT_ACCESS`; the head's *Git access* fact |
+| A session's record | `GitSessionAccess.cs`, `GitSessionAccessVerb.cs`, `Modules/Bridge/Routes/SessionGitAccessRoutes.cs`, `src/Daoris.Web/src/work/head/GitAccessFact.tsx` | The access a running session holds, tightened and read; `git access --session`; `TIGHTEN_SESSION_GIT_ACCESS`; the head's *Git access* fact |
 | A session holds nothing | `GitSessionHolds.cs`, `AgentWorkplaceWiring.cs`, `Loop/Session/SessionRules.cs` | Token variables dropped, `gh` and `az` folders empty, the harness's deny on `profiles/git/` |
 | Harness rules | `GitAccessPolicy.cs` | `no-push`'s rules and classifier sentence composed from a session's Write |
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
@@ -157,9 +157,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Landing and pull requests**
 
-30. Daoris's one push is the push act (rule 36); it opens no pull request. A landing rule names a plugin that declares `work/land`; it
-    pushes and opens the pull request after Daoris made the branch, its `git push` still its own until the plugins move to their APIs
-    (G9). With no plugin named, the landing pushes nothing. (from D87, D100, D241)
+30. Daoris's one push is the push act (rule 36); it opens no pull request. A workflow's `push` node performs it (`PushDoor`) and a
+    plugin's performed step on `work/perform` opens the pull request. `work/land` and a landing's plugin remain only until the
+    landing-plugin wire (`LandingPlugins.LandAsync`/`HandAsync`, the hand-off verb, `HookPoints.Land`) is deleted. (from D87, D100, D241)
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
     yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
     because the plugin's start and its pull-request call pass no door. (from D198, D145)

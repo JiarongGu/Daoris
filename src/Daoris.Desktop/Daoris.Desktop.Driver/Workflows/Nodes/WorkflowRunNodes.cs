@@ -270,8 +270,7 @@ public static class WorkflowRunNodes
         WorkflowRunStates.Skipped => SkipBy(node, step) is null ? NodeStates.Active : NodeStates.Skipped,
         WorkflowRunStates.NotKnown => NodeStates.Unknown,
         WorkflowRunStates.Failed => NodeAuthorities.Of(node)?.FailureBy is null ? NodeStates.Active : NodeStates.Failed,
-        // A pull request abandoned is its plugin's answer, which fails the node as BuiltInNodes observes it; every other stop is the person's.
-        WorkflowRunStates.Stopped => node.Kind == NodeKinds.PullRequest ? NodeStates.Failed : NodeStates.Stopped,
+        WorkflowRunStates.Stopped => NodeStates.Stopped,
         WorkflowRunStates.WaitingOnAgent when node.Kind == NodeKinds.Look && step.Detail == WorkflowRunDetails.NotYet => NodeStates.Rejected,
         WorkflowRunStates.Working or WorkflowRunStates.WaitingOnYou or WorkflowRunStates.WaitingOnAgent => NodeStates.Active,
         _ => null,

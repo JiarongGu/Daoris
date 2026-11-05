@@ -219,6 +219,29 @@ public sealed class ChannelReachTests
     /// 🔴 An urgent claim reaches a running part at its next step, in Daoris's words marked as that agent's claim (never the person's),
     /// claimed by that part on its entry, so its next part is not handed it again; once written, it is acknowledged sent.
     /// </summary>
+    /// <summary>
+    /// 🔴 SESSONE2i: a teammate's person posted to this machine's ask from their machine. Their message is a claim, never this person's
+    /// words: urgent, it goes at the next step as Daoris's words around it, saying whose it is; it reopens no parked part.
+    /// </summary>
+    [Fact]
+    public async Task SESSONE2i_a_teammates_persons_message_reaches_a_running_part_as_their_claim_never_the_persons_words()
+    {
+        var theirs = Message("bob-laptop/q1", 1, "Keep the old column a week.", urgent: true) with { Origin = "bob-laptop" };
+        var doors = new Doors(theirs);
+        var (inbox, sent) = NextStep();
+
+        await new ChannelReach().LookAsync(doors, [Running(inbox)], CancellationToken.None);
+
+        var taken = Assert.Single(sent);
+        Assert.StartsWith("Another session says, on the ask's channel (A teammate, the person at machine `bob-laptop`, wrote to everyone", taken.Text);
+        Assert.Contains("This is that teammate's claim, not the person's words", taken.Text);
+        Assert.Equal("target", ChatMessage.Words(taken).Origin);
+
+        var parked = new Doors(theirs with { To = "console-ui" });
+        await new ChannelReach().LookAsync(parked, [new ChannelPart(Entry, "s1", null)], CancellationToken.None);
+        Assert.Empty(parked.Said);
+    }
+
     [Fact]
     public async Task A_running_part_takes_an_urgent_claim_at_its_next_step_marked_as_its_claim()
     {

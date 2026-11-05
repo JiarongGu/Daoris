@@ -6,7 +6,6 @@ import { workOf, type MilestoneUnit, type WorkState } from '../../work/head/mile
 
 const part = (repository: string, branch: string | null, extra: Record<string, unknown> = {}) => ({
   lines: [{ repository, workspace: 'default', branch, source: branch ? 'repository' : 'none', ...extra }],
-  landings: [{ repository, workspace: 'default' }],
   languages: [], reviews: [], opinions: [], helpers: [], commits: [],
   access: [{ repository, workspace: 'default', full: false, pauses: [{ pause: 'permissions', value: 'auto', source: 'default' }] }],
 });
@@ -17,11 +16,10 @@ describe('the lines slice (PUSH1b2)', () => {
     expect(linesSlice.key).toEqual(['driver', 'lines']);
   });
 
-  it("composes every repository's rows into the seven arrays, in the repositories' order", () => {
+  it("composes every repository's rows into its arrays, in the repositories' order", () => {
     const composed = linesSlice.compose(new Map([['zeta', part('zeta', 'main')], ['alpha', part('alpha', 'dev')]]), true) as
-      { lines: { repository: string }[]; landings: { repository: string }[]; commits: unknown[] };
+      { lines: { repository: string }[]; commits: unknown[] };
     expect(composed.lines.map((line) => line.repository)).toEqual(['alpha', 'zeta']);
-    expect(composed.landings.map((line) => line.repository)).toEqual(['alpha', 'zeta']);
     expect(composed.commits).toEqual([]);
   });
 

@@ -16,8 +16,6 @@ public sealed record PaletteKind(
     /// <summary>How the editor offers <paramref name="kind"/>: the steps a landing's method brings are its tail.</summary>
     public static string OfferedOf(string kind) => kind switch
     {
-        NodeKinds.Pushed => $"tail:{LandNodes.Push}",
-        NodeKinds.PullRequest => $"tail:{LandNodes.PullRequest}",
         NodeKinds.Integrate => $"tail:{LandNodes.Integrate}",
         _ => Alone,
     };

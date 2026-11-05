@@ -117,6 +117,20 @@ public sealed class AsksRoutes(DriverLoop loop)
         return new ElsewhereAnswer(await service.ElsewhereAsksAsync(cancellationToken).ConfigureAwait(false));
     }
 
+    /// <summary>
+    /// The channel of the line a session is a part of, where that line is on no ask held here (COMMS1k; a chat's, a quest session's, a
+    /// teammate's ask's): every message on it oldest first, each to one part with what it reached in that part's line. Moves nothing.
+    /// No origin where the line has none, or the host has no such door: the page then draws no channel for it.
+    /// </summary>
+    [DriverRoute("CHANNEL_LINE", PipeClass.Open)]
+    [ByEvent("CHANNEL_LINE", Untold = "the service's messages on a line's own channel, which a session's post moves and no scope or slice tells")]
+    private async Task<object?> ChannelLineAsync(LineChannelRead press, CancellationToken cancellationToken)
+    {
+        var session = ActField.Needs(press.Session, "session");
+        var service = _loop.Service ?? throw NotReady();
+        return ChannelAnswers.Line(await service.Addressed.LineAsync(session, cancellationToken).ConfigureAwait(false));
+    }
+
     /// <summary>The ask a route is about, as the service names it.</summary>
     /// <exception cref="DriverException">None named: the driver's sentence, said verbatim.</exception>
     private static string Asked(string? named) =>

@@ -37,18 +37,18 @@ public static class MigratedGraphs
         var form = rule?.Form ?? LandingForm.Merge;
         // A place whose access setup composed the switch landed with no press, and keeps landing so.
         var reviewed = !(rule?.AutoAccept == true || place.Composed);
+        // A rule that named a plugin landed a branch and had the plugin push it and open a pull request: a branch, a push and the plugin's step.
+        var plugin = form == LandingForm.Branch && rule!.Plugin is { } named && named != "none" ? named : null;
         var method = form != LandingForm.Branch ? LandNodes.Merge
-            : rule!.Plugin is not null ? LandNodes.PullRequest
+            : plugin is not null ? LandNodes.Branch
             : rule is { Integrate: not null, Squash: false } ? LandNodes.Integrate
             : LandNodes.Branch;
 
         var land = new JsonObject { ["method"] = method };
-        var pattern = method != LandNodes.Merge && rule?.Pattern is { } named && named != LandNodes.DefaultPattern ? named : null;
+        var pattern = method != LandNodes.Merge && rule?.Pattern is { } written && written != LandNodes.DefaultPattern ? written : null;
         if (pattern is not null) land["pattern"] = pattern;
-        if (method == LandNodes.PullRequest) land["plugin"] = rule!.Plugin;
-        if (method == LandNodes.Branch) land["plugin"] = LandNodes.NoPlugin;
         if (pattern?.Contains("{ticket}", StringComparison.Ordinal) == true && rule?.Key is { } key) land[LandNodes.KeyOption] = key;
-        if (rule?.Squash == true && method is LandNodes.Branch or LandNodes.PullRequest) land["squash"] = true;
+        if (rule?.Squash == true && method is LandNodes.Branch) land["squash"] = true;
 
         var work = new JsonObject();
         if (place.Checks is { } checks) work["checks"] = checks;
@@ -65,17 +65,19 @@ public static class MigratedGraphs
         nodes.Add(Node("landing", NodeKinds.Land, "performed", land));
         chain.Add("landing");
         var end = "landing";
+        if (plugin is not null)
+        {
+            nodes.Add(Node("push", NodeKinds.Push, "performed"));
+            nodes.Add(Node("pull-request", $"{plugin}/pull-request", "performed"));
+            chain.AddRange(["push", "pull-request"]);
+            end = "pull-request";
+        }
+
         switch (method)
         {
             case LandNodes.Merge:
                 nodes.Add(Node("line", NodeKinds.Line, "observed"));
                 chain.Add(end = "line");
-                break;
-            case LandNodes.PullRequest:
-                nodes.Add(Node("pushed", NodeKinds.Pushed, "observed"));
-                nodes.Add(Node("pull-request", NodeKinds.PullRequest, "observed"));
-                chain.AddRange(["pushed", "pull-request"]);
-                end = "pull-request";
                 break;
             case LandNodes.Integrate:
                 var integrate = (rule!.Integrate ?? new LandingIntegrate()).Resolved();
@@ -184,20 +186,19 @@ public static class MigratedGraphs
         }
 
         var method = form == LandingForm.Merge ? LandNodes.Merge
-            : plugin is not null && plugin != LandNodes.NoPlugin && nodes.Any(node => (string?)node!["kind"] == NodeKinds.PullRequest) ? LandNodes.PullRequest
             : nodes.Any(node => (string?)node!["kind"] == NodeKinds.Integrate) ? LandNodes.Integrate
             : LandNodes.Branch;
         var land = new JsonObject { ["method"] = method };
         if (method != LandNodes.Merge && pattern is not null) land["pattern"] = pattern;
-        if (method == LandNodes.PullRequest) land["plugin"] = plugin;
-        if (method == LandNodes.Branch) land["plugin"] = LandNodes.NoPlugin;
+        // The plugin the old tail named, written once more for the conversion (PushedGraphs) that makes its steps.
+        if (method == LandNodes.Branch && plugin is not null && plugin != "none") land["plugin"] = plugin;
         if (method != LandNodes.Merge && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true && resolution.Key is { } key) land[LandNodes.KeyOption] = key;
-        if (resolution.Squash && method is LandNodes.Branch or LandNodes.PullRequest) land["squash"] = true;
+        if (resolution.Squash && method is LandNodes.Branch) land["squash"] = true;
         handed["kind"] = NodeKinds.Land;
         handed["reach"] = "performed";
         handed["options"] = land;
         if (accept == "you") WithReview(graph, (string)handed["id"]!);
-        return graph;
+        return PushedGraphs.Convert(graph, out _) ?? graph;
     }
 
     /// <summary>A <c>land</c> saved with an <c>accept</c> (held, never landing): the option taken off, and the person's <c>review</c> before it.</summary>
@@ -221,7 +222,7 @@ public static class MigratedGraphs
         // An `automatic` one never landed, so the person's review lowers nothing.
         options.Remove(Accept);
         WithReview(graph, (string)land["id"]!);
-        return graph;
+        return PushedGraphs.Convert(graph, out _) ?? graph;
     }
 
     /// <summary>The person's <c>review</c> wired in before <paramref name="landId"/>, where none stands: from what led in, a gate keeping its own wire to the landing.</summary>

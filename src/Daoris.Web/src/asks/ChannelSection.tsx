@@ -30,7 +30,7 @@ const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent u
 
 /** Who wrote a message: the person, or a session by its repository and agent (the agent's adapter, never a model), else a session. */
 export const whoOf = (t: TFunction, item: ChannelItem) => item.person
-  ? t('asks.channel.who.you')
+  ? item.origin ? t('asks.channel.who.teammate', { machine: item.origin }) : t('asks.channel.who.you')
   : [item.repository, item.agent].filter(Boolean).join(' · ') || t('asks.channel.who.session');
 
 /** A message cut to the one line a choice and a quote have room for. */
@@ -53,9 +53,9 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  * heading, and the mark moves through the newest once (`onRead`), so the count falls in the rows and the list. The marks stay
  * until the page is left, so what was new is seen. A panel reads a part of the channel and moves no mark.
  *
- * **A teammate's ask's channel is read-only** (SESSONE2h): `readOnly` draws the messages and the unread count and no composer, no
- * *Reply*, and a sentence saying the ask is a teammate's, held on their machine. The unread count is drawn as the heading's, and the
- * mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds (NOTIFY2g).
+ * **A teammate's ask's channel** (SESSONE2h, SESSONE2i) is drawn and posted to as an ask's: the post travels to the machine that holds
+ * it. The mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds (NOTIFY2g).
+ * A message a teammate's person wrote names them, never *You*.
  *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
  * reader's language, the words kept.
@@ -63,18 +63,16 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  * **What a message reached** (COWORK1d, D188; the message-urgency design §7, §8.4): an urgent message names its level in a word, and
  * each says, per repository it addresses, what reached that line of work, never more than Daoris observed. Where it waits there, is
  * held for a turn's end, was handed only partly or never reached it, *Send to its session* sends it on (`onForward`), the person's own
- * press; a read-only channel offers none.
+ * press.
  */
 export function ChannelSection({
-  channel, onPost, onRead, onOpenQuest, onForward, repositories = [], only, readOnly = false,
+  channel, onPost, onRead, onOpenQuest, onForward, repositories = [], only,
 }: {
   /** Null while it is being read. */
   channel: Channel | null;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session* (COWORK1d). Absent where there is nowhere to send one from. */
+  /** *Send to its session* (COWORK1d). Absent where there is nowhere to send one from, as on a teammate's ask. */
   onForward?: ChannelForward;
-  /** A teammate's ask's channel (SESSONE2h): read here and posted nowhere from here, so no composer and no *Reply*. */
-  readOnly?: boolean;
   /** The person's mark moved through the newest item shown, once what was unread is on the page. Absent in a panel. */
   onRead?: (through: string) => void;
   /** A line opens its quest. Absent where there is nowhere to open it. */
@@ -88,14 +86,12 @@ export function ChannelSection({
   if (!channel) return <p className="m-0 text-small text-ink-faint">{t('asks.channel.loading')}</p>;
   return (
     <ChannelBody
-      channel={channel} onPost={onPost} onRead={onRead} onOpenQuest={onOpenQuest} repositories={repositories} only={only} readOnly={readOnly}
-      onForward={readOnly ? undefined : onForward}
+      channel={channel} onPost={onPost} onRead={onRead} onOpenQuest={onOpenQuest} repositories={repositories} only={only} onForward={onForward}
     />
   );
 }
 
-function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, repositories, only, readOnly }: {
-  readOnly: boolean;
+function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, repositories, only }: {
   channel: Channel;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
   onForward?: ChannelForward;
@@ -110,8 +106,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
   const newest = newestAt(channel.items);
   // What was unread when the page opened, held until it is left: the mark moves at once, and what was new is still seen.
   const [opened] = useState(() => ({ mark: channel.mark ?? null, unread: channel.unread }));
-  // A read-only channel counts and marks what is new as the ask's page does, though no mark moves from it.
-  const counted = onRead !== undefined || readOnly;
+  const counted = onRead !== undefined;
   const fresh = counted ? sinceMark(items, opened.mark) : [];
   const [to, setTo] = useState(only?.repository ?? NONE);
   const [reply, setReply] = useState(NONE);
@@ -188,7 +183,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
                     quoted={item.re ? repliesTo(channel.items, item.re) : null}
                     anchorOf={(id) => `${place}-${id}`}
                     isNew={isNew}
-                    onReply={readOnly ? undefined : () => answer(item)}
+                    onReply={() => answer(item)}
                     onForward={onForward && item.id ? (repository, answered) => onForward(item.id!, repository, answered) : undefined}
                   />
                 );
@@ -206,7 +201,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
         </section>
       )}
 
-      {readOnly ? <p className="m-0 text-small text-ink-faint">{t('asks.elsewhere.readOnly')}</p> : <div className="grid gap-2">
+      <div className="grid gap-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label className="flex items-center gap-2 text-small text-ink-soft">
             {t('asks.channel.compose.to')}
@@ -248,7 +243,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
           </span>
         </div>
         {refusalWords && <Refused sentence={refusalWords} />}
-      </div>}
+      </div>
     </div>
   );
 }

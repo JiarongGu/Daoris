@@ -76,7 +76,7 @@ public sealed class IntegrationPresetsGitTests : LandedFixture, IAsyncLifetime
             new WorkflowRunBinding(Run, "engine", "aurora", "made", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch)
             {
                 // The open options of its `land`, resolved as a run's bind resolves them.
-                Version = 1, Digest = version.Digest, Land = LandNodes.Resolve(version.Graph!.Nodes.First(node => node.Kind == NodeKinds.Land), null),
+                Version = 1, Digest = version.Digest, Land = LandNodes.Resolve(version.Graph!.Nodes.First(node => node.Kind == NodeKinds.Land)),
             }));
         var process = WorkflowProcesses.Read(Home, Config, "engine", "aurora", Run, new AcceptedGates(["unit"]));
         Assert.True(process is { Problem: null, Named: true }, process.Problem);
