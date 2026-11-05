@@ -14,8 +14,6 @@
   "nav.roles.working": "工作角色",
   "nav.roles.appointed": "任命的角色",
   "nav.roles.work": "工作",
-  "nav.roles.accounts": "账户",
-  "nav.roles.repository": "按仓库",
   "nav.plugins": "插件",
   "nav.settings": "设置",
   "nav.waiting": "{{count}} 个等你处理",

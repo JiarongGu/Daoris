@@ -16,18 +16,17 @@ import { appointedOf } from './appointedHold';
 import { type Editing, newRoleEditing, RolesCard, roleName, type RoleScope } from './Roles';
 import { DiagramSection } from './StructureCanvas';
 import type { RolesView } from './RoleSections';
-import { type RoleDoors, AccountsSection, DiagramDetail, RepositorySection, WorkSection } from './StructureSections';
+import { type RoleDoors, DiagramDetail } from './StructureSections';
 import {
-  buildStructure, NO_FILTERS, nodeOfRow, roleId, type StructureFilters, type WorkflowRead,
+  buildStructure, NO_FILTERS, nodeOfRow, roleId, type StructureFilters,
 } from './roleStructure';
 import { useStructureRead } from './structureRead';
 
 /** Where the application leads a press of these sections: the Agents mode at an agent, a repository's tab, a workspace's Setup, a plugin. */
 export type RoleOpeners = {
   agent?: (agent: string) => void;
-  repository?: (repository: string, tab: 'setup' | 'workflow' | 'integration') => void;
+  repository?: (repository: string, tab: 'setup' | 'workflow') => void;
   workspace?: (workspace: string) => void;
-  repositories?: () => void;
   plugin?: (plugin: string) => void;
 };
 
@@ -134,7 +133,7 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
     },
   };
 
-  // Work, Accounts and By repository (COMPANYVIEW1d) and the diagram (COMPANYVIEW1f): one read of the driver's structure, the shared
+  // The diagram (COMPANYVIEW1f): one read of the driver's structure, the shared
   // filters, the rows open, the chosen node and each opened repository's workflow, all held by the page; the sections draw and press.
   const asked = page.view === 'diagram';
   const { answer, read: structureRead } = useStructureRead(asked);
@@ -154,12 +153,11 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
   const plugins = usePlugins({ enabled: asked });
   const lines = useLines();
   const registryRows = registry.data ?? [];
-  const workflows: Record<string, WorkflowRead> = {};
   // The supervisor and the steward are catalogue roles (D233 point 2): the diagram's appointed half is drawn from their rows.
   const structure = answer
     ? buildStructure({
       structure: answer, registry: registryRows, tools: byTool(harnesses), accounts: accounts.data, plugins: plugins.data?.plugins, lines: lines.data,
-      driver: driver.data ? { drivable: driver.data.drivable ?? [], holds: driver.data.holds ?? [] } : null, workflows, filters,
+      driver: driver.data ? { drivable: driver.data.drivable ?? [], holds: driver.data.holds ?? [] } : null, filters,
       appointed: appointedOf(catalogue),
     })
     : null;
@@ -198,8 +196,7 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
   );
   const card = shown ? cardOf() : null;
 
-  // Where each press leads; "Open its setting" is the workspace's Setup under a workspace filter, Working roles for the two works whose
-  // *Off* is there, and Repositories otherwise.
+  // Where each press of a node's detail leads.
   const rowDoors: RoleDoors = {
     ...(doors.agent ? { agent: doors.agent } : {}),
     ...(doors.repository ? { repository: doors.repository } : {}),
@@ -211,14 +208,8 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
       page.onView('list');
     },
     // The page's state is the place's (RolesPage), so the selection, the scope and the filters are as they were on coming back.
-    setting: (work) => {
-      if (work === 'intake' || work === 'ask-daoris') return;
-      if (filters.workspace && doors.workspace) doors.workspace(filters.workspace);
-      else doors.repositories?.();
-    },
     diagram: toDiagram,
   };
-  const shared = { structure, read: structureRead, filters, onFilters: setFilters, open: opened, onToggle: toggle, doors: rowDoors };
   const selected = page.selected;
   const detail = selected && structure && (
     <DiagramDetail
@@ -228,9 +219,6 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
   );
   return {
     card,
-    work: <WorkSection {...shared} />,
-    accounts: <AccountsSection {...shared} />,
-    repository: <RepositorySection {...shared} />,
     diagram: (
       <DiagramSection
         structure={structure} read={structureRead} filters={filters} onFilters={setFilters} selected={selected} onSelect={choose} detail={detail}

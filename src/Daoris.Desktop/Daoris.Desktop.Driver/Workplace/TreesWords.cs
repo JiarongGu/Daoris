@@ -200,6 +200,19 @@ public static class TreesWords
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
 
+    /// <summary>
+    /// A tree's name given where the verb takes a session: the sentence naming the session that holds the tree, null where no record's
+    /// tree folder carries the name.
+    /// </summary>
+    public static TreesSaid? TreeNamedForSession(IReadOnlyList<SessionRecord> records, string name)
+    {
+        var owner = records.FirstOrDefault(record => !string.IsNullOrWhiteSpace(record.Tree)
+            && string.Equals(Path.GetFileName(record.Tree.TrimEnd('/', '\\')), name, StringComparison.OrdinalIgnoreCase));
+        return owner is null
+            ? null
+            : new([], [$"trees: `{name}` is a tree's name, and this verb takes the session: that tree is session `{owner.Id}`'s, so say `{owner.Id}`."], 1);
+    }
+
     /// <summary>A press on a run whose <c>land</c> the runtime performs, before Daoris judged the commit it would land (WORKFLOWCLEAN1 1c).</summary>
     public static TreesSaid NotJudged(string session) =>
         new([], [$"trees: Daoris has not judged session `{session}`'s work at its commit yet, so nothing was landed; its next pass does, and this asks for it."], 1);

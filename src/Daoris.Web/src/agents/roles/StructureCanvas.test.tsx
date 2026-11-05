@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { StructureCanvas } from './StructureCanvas';
 import { buildStructure, NO_FILTERS } from './roleStructure';
-import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
+import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS } from './structureFixtures';
 
 // COMPANYVIEW1f (the company-view design §4; the flowchart design §3.7's reader and keys), kept by CANVAS1c (D224): the structure is one list
 // in reading order with one tab stop; ↓ ↑ Home End move in reading order (each band's label, then its roles, then the agents), → along the
@@ -14,7 +14,7 @@ import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WOR
 
 const diagramOf = (large = false) => buildStructure({
   ...(large ? largeStructure() : { structure: STRUCTURE, registry: REGISTRY }), tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] },
-  plugins: PLUGINS, lines: large ? null : LINES, driver: large ? null : DRIVER, workflows: large ? {} : WORKFLOWS, filters: NO_FILTERS,
+  plugins: PLUGINS, lines: large ? null : LINES, driver: large ? null : DRIVER, filters: NO_FILTERS,
 }).diagram;
 
 const item = (name: string) => screen.getByRole('listitem', { name });

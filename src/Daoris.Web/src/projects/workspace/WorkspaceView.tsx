@@ -170,8 +170,9 @@ export function WorkspaceView({
       onTab={attached ? chooseTab : undefined}
       syncing={syncing}
       onSync={onSync}
-      onWire={attached && map && !wired
-        ? () => { setWireAsk((was) => was + 1); onTab('details'); }
+      // Details draws the press in its Remote row; the header reaches that row from every other tab, so the press is drawn once.
+      onWire={attached && map && !wired && tab !== 'details'
+        ?() => { setWireAsk((was) => was + 1); onTab('details'); }
         : undefined}
     >
       {body}

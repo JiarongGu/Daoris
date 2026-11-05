@@ -88,11 +88,8 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
     // The Roles mode's doors (COMPANYVIEW1d): each thing's home, the Agents mode at an agent's accounts among them.
     roleDoors: {
       agent: (agent) => open('agents', agent, { agentPart: 'accounts', agentsMode: 'agents' }),
-      repository: (repository, door) => door === 'integration'
-        ? open('projects', repository, { tab: 'integration' })
-        : open('agents', null, { placeOf: repository, ...(door === 'workflow' ? { placeSection: 'workflow' as const } : {}) }),
+      repository: (repository, door) => open('agents', null, { placeOf: repository, ...(door === 'workflow' ? { placeSection: 'workflow' as const } : {}) }),
       workspace: (workspace) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: 'defaults' }),
-      repositories: () => open('projects'),
       plugin: (plugin) => open('plugins', plugin),
     },
   });

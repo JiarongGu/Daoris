@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
 import { buildStructure, NO_FILTERS } from './roleStructure';
 import { readingOrder, structureBands } from './structureBands';
-import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS, largeStructure } from './structureFixtures';
+import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, largeStructure } from './structureFixtures';
 
 // CANVAS1c (D224; the canvas design §3.2): the structure as bands. One band per place in tree order, this machine, each workspace and its
 // repositories that set something of their own; in each the roles placed or appointed there; beside them the agents, once each, by the
@@ -10,7 +10,7 @@ import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS, largeStr
 
 const diagramOf = (appointed?: Parameters<typeof buildStructure>[0]['appointed']) => buildStructure({
   structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: LINES,
-  driver: DRIVER, workflows: WORKFLOWS, filters: NO_FILTERS, appointed,
+  driver: DRIVER, filters: NO_FILTERS, appointed,
 }).diagram;
 const SUPERVISED = {
   stewardOffered: true, supervisorOffered: true,
@@ -20,7 +20,7 @@ const SUPERVISED = {
   ],
 };
 const largeDiagram = () => buildStructure({
-  ...largeStructure(), tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: null, driver: null, workflows: {}, filters: NO_FILTERS,
+  ...largeStructure(), tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: null, driver: null, filters: NO_FILTERS,
 }).diagram;
 
 describe('the bands', () => {
