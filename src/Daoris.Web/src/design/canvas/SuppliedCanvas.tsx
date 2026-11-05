@@ -5,6 +5,7 @@ import { useRootRem, useWidth } from '../useWidth';
 import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './Canvas';
 import { CanvasFind } from './CanvasFind';
 import { FIND_FROM } from './findNodes';
+import { GoneNotice, useSelectionGone } from './GoneNotice';
 import { createWalk, type Stop, type WalkLine } from './suppliedWalk';
 import { type Tier, tierAt } from './tiers';
 import { useCanvasFind } from './useCanvasFind';
@@ -109,6 +110,7 @@ export function SuppliedCanvas({
   const [tier, setTier] = useState<Tier>('full');
   const [active, setActive] = useState<Stop | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const { gone, onGone } = useSelectionGone(selected);
   const onView = useCallback((view: View, _viewport: Size) => setTier(tierAt(view.k, rem)), [rem]);
 
   const stops = useMemo(() => world.order.filter((id) => !statics.has(id) && world.boxes.has(id)), [world, statics]);
@@ -230,7 +232,7 @@ export function SuppliedCanvas({
         remember={{
           feature, key: storeKey, identity, selected: selected !== null && world.boxes.has(selected) ? selected : null,
           ...(world.groupOf ? { groupOf: world.groupOf } : {}),
-          onGone: () => onSelect(null),
+          onGone: () => { onGone(); onSelect(null); },
         }}
         minimap={{ boxes: [...shifted.values()] }}
         onView={onView}
@@ -283,6 +285,7 @@ export function SuppliedCanvas({
           })}
         </div>
       </Canvas>
+      {gone && <GoneNotice />}
     </div>
   );
 }

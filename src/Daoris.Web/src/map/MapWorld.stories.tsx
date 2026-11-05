@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { memoryKey } from '../design/canvas/viewMemory';
 import { inDark } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
@@ -58,10 +59,24 @@ function blocks(): Topology {
   };
 }
 
-function MapStory({ topology, line = null }: { topology: Topology; line?: MapSelection | null }) {
+function MapStory({ topology, line = null, storeKey = 'story' }: { topology: Topology; line?: MapSelection | null; storeKey?: string }) {
   const [selected, setSelected] = useState<MapSelection | null>(line);
-  return <MapWorld topology={topology} selected={selected} onSelect={setSelected} storeKey="story" />;
+  return <MapWorld topology={topology} selected={selected} onSelect={setSelected} storeKey={storeKey} />;
 }
+
+/**
+ * A place kept by this viewer under the map as it was, with a repository selected that has since left it: written before the map
+ * opens, once per mount, and taken away after, so the canvas restores it and says the selection is gone.
+ */
+function KeptWithAGoneSelection({ children }: { children: ReactNode }) {
+  const at = memoryKey('map', 'gone');
+  useState(() => localStorage.setItem(at, JSON.stringify({
+    identity: 'the map before', view: { x: 0, y: 0, k: 1 }, anchor: { id: 'repo-00', group: null, screen: { x: 24, y: 24 } }, selected: 'repo-99',
+  })));
+  useLayoutEffect(() => () => localStorage.removeItem(at), [at]);
+  return <>{children}</>;
+}
+const keptWithAGoneSelection: Decorator = (Story) => <KeptWithAGoneSelection><Story /></KeptWithAGoneSelection>;
 
 const meta: Meta<typeof MapStory> = {
   title: 'Map/MapWorld',
@@ -96,3 +111,7 @@ export const WorkspacesChineseDark: Story = { args: { topology: blocks() }, deco
 /** A line chosen: it stands forward alone and the rest step back. */
 export const ALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } } };
 export const ALineChosenRing: Story = { args: { topology: RING, line: { kind: 'quests', from: 'game', to: 'engine' } }, decorators: [storyWidths.half] };
+
+/** The viewer's place restored under a changed map: the view kept by its anchor, and the repository once selected said to be gone. */
+export const ASelectionGone: Story = { args: { storeKey: 'gone' }, decorators: [keptWithAGoneSelection, storyWidths.wide] };
+export const ASelectionGoneChineseDark: Story = { args: { storeKey: 'gone' }, decorators: [keptWithAGoneSelection, storyWidths.wide, chinese, inDark] };

@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import { SuppliedCanvas, type SuppliedWorld } from './SuppliedCanvas';
+import { memoryKey } from './viewMemory';
 
 // CANVAS1e (D224; the canvas design §2.2, §3.3, trap 15): a positioned world the feature supplies. jsdom lays nothing out, so unless a
 // width is stood in for the canvas is below its floor and the world is drawn as a pane; the viewport is `Canvas.test.tsx`'s.
@@ -155,5 +156,15 @@ describe('a supplied world in the viewport', () => {
   it('offers no sizing to a world fitted with zoom off', () => {
     render(<Host zoom="off" />);
     expect(screen.queryByRole('button', { name: /^Sizing/ })).toBeNull();
+  });
+
+  it('says once that the selection kept under a changed graph is gone, until something is chosen again (trap 18)', async () => {
+    localStorage.setItem(memoryKey('test', 'world'), JSON.stringify({
+      identity: 'another graph', view: { x: 0, y: 0, k: 1 }, anchor: { id: 'a', group: null, screen: { x: 10, y: 10 } }, selected: 'gone',
+    }));
+    render(<Host />);
+    expect(screen.getByText('The item you had selected is no longer in the graph.')).toHaveAttribute('role', 'status');
+    await user.click(screen.getByRole('button', { name: 'card b' }));
+    expect(screen.queryByText('The item you had selected is no longer in the graph.')).toBeNull();
   });
 });

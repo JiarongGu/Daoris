@@ -7,6 +7,7 @@ import { CanvasFind } from './CanvasFind';
 import { CanvasList, type ListGroup } from './CanvasList';
 import { DotLayer } from './DotLayer';
 import { FIND_FROM } from './findNodes';
+import { GoneNotice, useSelectionGone } from './GoneNotice';
 import { useCanvasFind } from './useCanvasFind';
 import { createLayoutClient, spawnLayoutWorker } from './layoutClient';
 import type { Layout, Scene } from './layoutScene';
@@ -93,7 +94,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
   const identity = useMemo(() => graphIdentity(shape.nodes.map((node) => node.id), version), [shape, version]);
 
   const [listed, setListed] = useState(false);
-  const [gone, setGone] = useState(false);
+  const { gone, onGone } = useSelectionGone(selected);
   const [active, setActive] = useState<string | null>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const focusing = useRef<string | null>(null);
@@ -252,7 +253,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
         remember={{
           feature, key: storeKey, identity, selected,
           groupOf: (id) => (id.startsWith(GROUP) ? id.slice(GROUP.length) : model.groupOf.get(id) ?? null),
-          onGone: () => { setGone(true); onSelect(null); },
+          onGone: () => { onGone(); onSelect(null); },
         }}
         minimap={{ boxes: model.overview ? [...model.groupBoxes.values()] : [...display.boxes.values()] }}
         overlay={tier === 'dot' ? (view, viewport) => <DotLayer grid={grid} view={view} viewport={viewport} skip={drawn?.mounted ?? NONE} /> : undefined}
@@ -269,7 +270,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
           onFocus={onFocus}
         />
       </Canvas>
-      {gone && <p role="status" className="mt-1 text-small text-ink-soft">{t('canvas.selectionGone')}</p>}
+      {gone && <GoneNotice />}
     </div>
   );
 }
