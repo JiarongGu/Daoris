@@ -39,6 +39,7 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 /// <param name="Scale">What a full window reads as on this agent's scale: 1 for a fraction.</param>
 /// <param name="Credits">The field that says the request drew on usage credits, which are billed (C5, C6).</param>
 /// <param name="Recorded">The frames the entry was written against.</param>
+/// <param name="Shape">A window's length in minutes and scope as the agent's key names it, for the usage history; null reads neither.</param>
 public sealed record WindowWords(
     IReadOnlyDictionary<string, string> Windows,
     IReadOnlyList<string> Clear,
@@ -46,7 +47,8 @@ public sealed record WindowWords(
     IReadOnlyList<string> Refused,
     double Scale,
     string Credits,
-    IReadOnlyList<RecordedFrame> Recorded);
+    IReadOnlyList<RecordedFrame> Recorded,
+    Func<string, (int? Minutes, string? Scope)>? Shape = null);
 
 /// <summary>One window as an agent said it in one frame (TOOL6c): never the agent's words, only Daoris's.</summary>
 /// <param name="Window">Daoris's name for it: <c>session</c> or <c>weekly</c>.</param>
@@ -147,7 +149,7 @@ public static class AccountReadings
     /// <summary>
     /// What the usage history keeps of a frame (USAGECAP1a1, D179 point 2): a parse beside <see cref="Read"/>, which it leaves
     /// unchanged. Every window the frame says a use or a reset of, the named window (<c>rateLimitType</c>) from the frame's own
-    /// where its windows leave it out, each by the agent's key with its length and scope (<see cref="ClaudeWindows.Shape"/>),
+    /// where its windows leave it out, each by the agent's key with its length and scope (<see cref="WindowWords.Shape"/>),
     /// Daoris's name where the walk reads it, and the precision its number was written to. Never a standing or a credit: the
     /// history keeps numbers and times.
     /// </summary>
@@ -173,7 +175,7 @@ public static class AccountReadings
             var reset = Moment(at, "resetsAt");
             if (used is null && reset is null) return;
 
-            var (minutes, scope) = ClaudeWindows.Shape(key);
+            var (minutes, scope) = words.Shape?.Invoke(key) ?? (null, null);
             seen.RemoveAll(each => each.Window == key);
             seen.Add(new WindowSeen(
                 key, words.Windows.GetValueOrDefault(key), scope, minutes, used,
@@ -290,46 +292,4 @@ public enum NearBy
 
     /// <summary>A window's use over the scope's curve now (SWITCH1b-ii; the scope's <i>near</i> before it).</summary>
     Number,
-}
-
-/// <summary>
-/// Claude Code's words for its windows (TOOL6c, limit-signals evidence §1): the <c>rate_limit_event</c>'s
-/// <c>rate_limit_info</c>, which its protocol door forwards unchanged as <c>usage_update._meta["_claude/rateLimit"]</c> (§3).
-/// </summary>
-public static class ClaudeWindows
-{
-    private const string Declared =
-        "declared, not seen: the Agent SDK's SDKRateLimitInfo.status (sdk.d.ts:5584, 0.3.284 and 0.3.287), read by TOOL4b (limit-signals evidence §1.2); the CLI derives its warning itself (§1.3)";
-
-    public static WindowWords Words { get; } = new(
-        Windows: new Dictionary<string, string>(StringComparer.Ordinal) { ["five_hour"] = "session", ["seven_day"] = AccountWindows.Weekly },
-        Clear: ["allowed"],
-        Warned: ["allowed_warning"],
-        Refused: ["rejected"],
-        Scale: 1,
-        Credits: "isUsingOverage",
-        Recorded:
-        [
-            new(
-                """{"status":"allowed","resetsAt":<+2.0 h>,"rateLimitType":"five_hour","overageStatus":"rejected","overageDisabledReason":"member_zero_credit_limit","isUsingOverage":false,"unifiedWindows":{"five_hour":{"utilization":0.88,"resetsAt":<+2.0 h>},"seven_day":{"utilization":0.14,"resetsAt":<+105.3 h>}}}""",
-                "2026-10-02",
-                "the native door's binary and flags, one headless turn outside Daoris's driver, as rate_limit_event's rate_limit_info (limit-signals evidence §1.1); KNOW3's 116 frames that day share its keys",
-                "2.1.287"),
-            new("""{"status":"allowed_warning"}""", "2026-10-02", Declared),
-            new("""{"status":"rejected"}""", "2026-10-02", Declared),
-        ]);
-
-    /// <summary>
-    /// A window's length and scope as Claude Code's key names it, for the usage history (USAGECAP1a1): <c>five_hour</c> five
-    /// hours and <c>seven_day</c> a week, the whole plan's; <c>seven_day_&lt;scope&gt;</c> a week of what the rest names (a model
-    /// family: <c>seven_day_opus</c>, limit-signals evidence §1.2 and the usage-read evidence's field table); any other key
-    /// neither, never guessed.
-    /// </summary>
-    public static (int? Minutes, string? Scope) Shape(string key) => key switch
-    {
-        "five_hour" => (300, null),
-        "seven_day" => (10080, null),
-        _ when key.StartsWith("seven_day_", StringComparison.Ordinal) && key.Length > "seven_day_".Length => (10080, key["seven_day_".Length..]),
-        _ => (null, null),
-    };
 }
