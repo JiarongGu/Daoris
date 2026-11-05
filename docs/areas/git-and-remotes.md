@@ -196,13 +196,18 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 - **Quest conflicts:** `QuestLog` and `QuestExchange` (service), `Planner` (driver), the quest page.
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
-`GitSshdProcessTests` (needs `DAORIS_TEST_SSHD`), `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
+`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
 `SessionSyncTests`, `BroughtForwardLookTests`, `RemotesModuleTests`, `DriverModuleGitAccessTests`; on the page
 `Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`.
+
+**The remotes they reach** are stand-ins in the test process on free loopback ports, one per test class, with nothing installed
+(D241 point 8): `GitSshHost` (an SSH host from Microsoft's dev-tunnels library serving `git-upload-pack` and `git-receive-pack`,
+verifying RSA and ECDSA keys, never ed25519), `GitTlsHost` (`GitHttpBackendHost` behind TLS, its certificate trusted per command)
+and `PullRequestApiHost` (GitHub's and Azure DevOps' pull-request calls, admitting a test's token). Each counts what it was asked.
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
 `modules`, `service`, `web-unit`, `web-types`, and `deployment` (the rehearsal lays `--git-doors`). Visible words need both
@@ -231,11 +236,12 @@ catalogues (`i18n:check`).
 
 - **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
-- **GITAUTH1b:** the doors' measurements against a real sshd, MinGit, `gh`, `az` and git-lfs; then `--git-doors` becomes the default.
+- **GITAUTH1b:** the doors' classes run with the pinned MinGit beside the runner's git (G1's rest); then `--git-doors` becomes the
+  default (G6).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
 - **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts;
-  the doors passing a read-only identity; a running-Daoris check before a door waits on an ask; proofs against a real server.
+  the doors passing a read-only identity; a running-Daoris check before a door waits on an ask; proofs against the stand-in hosts.
 - **GITAUTH1g:** the rest of the transport judge: Dangerous settable on the page, tag, mirror and prune judged, a grant bound to its ref.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).

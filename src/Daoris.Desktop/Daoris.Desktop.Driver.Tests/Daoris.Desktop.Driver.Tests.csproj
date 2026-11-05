@@ -11,6 +11,8 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <!-- Read by StructureCheck alone (FOUNDATION1 mod-0): one compilation of the driver's sources, so each name binds to a symbol. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- The stand-in SSH host of the doors' process tests (GitSshHost): a loopback server in the test process, nothing installed. -->
+    <PackageReference Include="Microsoft.DevTunnels.Ssh.Tcp" />
   </ItemGroup>
 
   <ItemGroup>
