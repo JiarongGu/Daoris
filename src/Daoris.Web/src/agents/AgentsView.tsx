@@ -196,7 +196,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   useErrorNotify(active ? roster.error : null, notify);
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : null;
-  const tools = harnesses ? byTool(harnesses) : [];
+  const tools = harnesses ? byTool(harnesses, roster.data?.agents) : [];
   // Every agent this build knows, installed or not (AGENTS2): a fold for the ones not installed hid Codex.
   const rows = agentRows(tools, accounts.data);
   const chosenTool = tools.find((tool) => tool.name === chosen) ?? null;

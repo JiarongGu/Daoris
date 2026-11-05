@@ -63,6 +63,9 @@ public sealed class AgentsRoutes(DriverContext context)
             _loop.Harnesses.SettingsPath,
             Adapter = ActorChoices.BuildAgent(config),
             Harnesses = Doors(_loop.Harnesses, roster),
+            // The sheet's half (COAGENT1e, the agent-provider design §6): each agent once, from its registration, with its account
+            // acts and each door's sheet. The page reads every agent fact here, never a door standing for its agent.
+            Agents = _loop.Harnesses.Adapters.Registry.Facts.Agents.Where(agent => agent.Doors.Count > 0).ToArray(),
         };
     }
 
@@ -132,7 +135,8 @@ public sealed class AgentsRoutes(DriverContext context)
                     // to the owner until it said.
                     toolchain?.Product,
                     toolchain?.Maker,
-                    Wire = harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
+                    // Its transport in the page's word, as its sheet says it (COAGENT1e).
+                    Wire = harnesses.Adapters.Registry.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Wire: var wire } ? wire : null,
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = harnesses.Structured(report.Adapter),

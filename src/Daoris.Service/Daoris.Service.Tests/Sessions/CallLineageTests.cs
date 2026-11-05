@@ -141,4 +141,30 @@ public sealed class CallLineageTests
         Assert.Equal("""{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"daoris_me"}""", LineageFile.Line("daoris_me", null, at));
         Assert.Equal("""{"at":"2026-10-16T08:30:00.123Z","by":"call"}""", LineageFile.Line("a tool\\name", null, at));
     }
+
+    /// <summary>
+    /// AGENTPROVIDER1 row r (the agent-provider design §3.3, §6, O1-F17): the call keys are one file per agent read by one ordered list,
+    /// which the twin fixture the driver's census reads holds key for key, in order.
+    /// </summary>
+    [Fact]
+    public void The_call_keys_are_one_ordered_list_its_twin_fixture_holds()
+    {
+        var fixture = Path.Combine(
+            SourceFiles.WorkspaceFolder(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "provider-census.json");
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(fixture));
+        var twin = document.RootElement.GetProperty("service").GetProperty("callKeys").EnumerateArray()
+            .Select(row => (row[0].GetString(), row[1].GetString()));
+
+        Assert.Equal(twin, CallLineage.Readers.Select(reader => ((string?)reader.Harness, (string?)reader.Key)));
+    }
+
+    /// <summary>A call carrying both agents' keys is read as the first in the list's, Claude Code's (O1-F17).</summary>
+    [Fact]
+    public void A_call_carrying_both_keys_is_read_as_claude_code_s()
+    {
+        var meta = CodexMeta(Turn("t1", null), asText: true);
+        meta["claudecode/toolUseId"] = "toolu_both";
+
+        Assert.Equal(new CallLineage(ClaudeCallKeys.Agent) { ToolUse = "toolu_both" }, CallLineage.Read(meta));
+    }
 }

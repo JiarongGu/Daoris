@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Account, byTool, doorOf, toolOf, type ToolDoor } from './tools';
+import { type Account, type AgentSheet, byTool, doorOf, toolOf, type ToolDoor } from './tools';
 
 /**
  * The roster's grouping, after the owner read four adapter rows as four tools (2026-09-22).
@@ -234,5 +234,34 @@ describe('doorOf', () => {
     expect(doorOf('dsh', roster)).toBeNull();
     expect(doorOf('claude-code', [door({ harness: 'claude-code' })])).toBeNull();
     expect(doorOf('claude-code', [door({ harness: 'claude-code', wire: 'smoke-signal' })])).toBeNull();
+  });
+});
+
+describe("the roster's sheet half (COAGENT1e)", () => {
+  const acts = { signsIn: true, takesKey: false, deviceCode: true, installs: true };
+  const sheet = (id: string, doors: string[]): AgentSheet => ({
+    id, product: null, maker: null, mark: null, standIn: false, acts, lead: doors[0] ?? null,
+    doors: doors.map((each) => ({ door: each, wire: 'acp', rows: [] })),
+  });
+
+  it("gives each tool its agent's acts, lead and sheets, found by its id or by any of its doors", () => {
+    const tools = byTool(
+      [door({ harness: 'claude-code' }), door({ harness: 'claude-code-acp', accountOf: 'claude-code' }), door({ harness: 'codex-acp', accountOf: 'codex' })],
+      [sheet('claude-code', ['claude-code', 'claude-code-acp']), sheet('codex', ['codex-acp'])],
+    );
+
+    expect(tools.map((tool) => [tool.name, tool.lead, tool.sheet?.map((each) => each.door)])).toEqual([
+      ['claude-code', 'claude-code', ['claude-code', 'claude-code-acp']],
+      ['codex', 'codex-acp', ['codex-acp']],
+    ]);
+    expect(tools[1]!.acts).toEqual(acts);
+  });
+
+  it('says nothing of an agent the sheet does not name: its own name leads and no act is known', () => {
+    const [tool] = byTool([door({ harness: 'dsh' })], [sheet('claude-code', ['claude-code'])]);
+
+    expect(tool!.acts).toBeNull();
+    expect(tool!.lead).toBe('dsh');
+    expect(tool!.sheet).toEqual([]);
   });
 });
