@@ -263,6 +263,58 @@ public sealed class HomeMigrationTests : IDisposable
         Assert.Contains("workflows", migrated.Ran);
     }
 
+    /// <summary>
+    /// ONEWAY1x: closed six-character quests are cleared. One a remote numbered is tombstoned, its log kept with a <c>deleted</c> after the
+    /// machine's highest sequence; one never numbered goes whole; an open one, a closed twelve-character one and another quest's log stay.
+    /// </summary>
+    [Fact]
+    public void Closed_six_character_quests_are_cleared_and_the_ones_that_travelled_are_tombstoned()
+    {
+        var path = DaorisHome.Entry(_home, HomeEntry.Knowledge);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using (var connection = new SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                CREATE TABLE quests (id TEXT PRIMARY KEY, status TEXT NOT NULL);
+                CREATE TABLE quest_log (position INTEGER PRIMARY KEY, quest TEXT NOT NULL, kind TEXT NOT NULL, machine TEXT NOT NULL, sequence INTEGER NOT NULL, at TEXT NOT NULL, payload TEXT NOT NULL, remote INTEGER NULL, UNIQUE (machine, sequence));
+                CREATE TABLE quest_forwards (quest TEXT NOT NULL);
+                CREATE TABLE quest_machine (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL, sequence INTEGER NOT NULL DEFAULT 0);
+                INSERT INTO quest_machine (one, id, sequence) VALUES (1, 'm1', 4);
+                INSERT INTO quests VALUES ('aaaaaa', 'Done'), ('bbbbbb', 'Declined'), ('cccccc', 'Open'), ('dddddddddddd', 'Done');
+                INSERT INTO quest_forwards VALUES ('bbbbbb');
+                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload, remote) VALUES
+                  ('aaaaaa', 'published', 'm1', 1, '2026-01-01T00:00:00Z', '{}', 1),
+                  ('aaaaaa', 'done', 'm1', 2, '2026-01-02T00:00:00Z', '{}', 2),
+                  ('bbbbbb', 'published', 'm1', 3, '2026-01-01T00:00:00Z', '{}', NULL),
+                  ('cccccc', 'published', 'm1', 4, '2026-01-01T00:00:00Z', '{}', NULL);
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        var migrated = HomeMigration.Run(_home);
+
+        Assert.Null(migrated.Failed);
+        Assert.Contains("closed-quests", migrated.Ran);
+        using var read = new SqliteConnection($"Data Source={path};Pooling=False");
+        read.Open();
+        Assert.Equal(["cccccc", "dddddddddddd"], Column(read, "SELECT id FROM quests ORDER BY id"));
+        Assert.Equal(["aaaaaa:published", "aaaaaa:done", "aaaaaa:deleted", "cccccc:published"], Column(read, "SELECT quest || ':' || kind FROM quest_log ORDER BY position"));
+        Assert.Equal(["5"], Column(read, "SELECT sequence FROM quest_log WHERE kind = 'deleted'"));
+        Assert.Empty(Column(read, "SELECT quest FROM quest_forwards"));
+    }
+
+    private static List<string> Column(SqliteConnection connection, string sql)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        using var reader = command.ExecuteReader();
+        var found = new List<string>();
+        while (reader.Read()) found.Add(Convert.ToString(reader.GetValue(0), System.Globalization.CultureInfo.InvariantCulture)!);
+        return found;
+    }
+
     private sealed class Step(string name, List<string> ran, Func<bool> fails) : IHomeMigrationStep
     {
         public string Name => name;

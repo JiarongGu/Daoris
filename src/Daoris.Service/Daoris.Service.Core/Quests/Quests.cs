@@ -45,9 +45,6 @@ public sealed class QuestStore
     /// </summary>
     internal const int IdLength = 12;
 
-    /// <summary>What an id was before it widened — a quest published then keeps the id it was quoted by.</summary>
-    internal const int LegacyIdLength = 6;
-
     /// <summary>
     /// How long a graph named for a quest's take waits for it (FABRIC-CLOSE1o): the driver names it as the quest's first session
     /// opens, whose first act is the take, so a take later than this is not that start's, and goes unbound, saying so.
@@ -384,21 +381,15 @@ public sealed class QuestStore
         (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
     /// <summary>
-    /// The id these words would publish under, when this machine forgot that quest (HIST1b, D153 point 3), at either
-    /// width an id has had; null when it did not. The exchange asks it before a publish, so the same words asked again
-    /// are refused here rather than making a fresh quest the remote, which still holds the closed one, refuses for good (H5).
+    /// The id these words would publish under, when this machine forgot that quest (HIST1b, D153 point 3); null when it did
+    /// not. The exchange asks it before a publish, so the same words asked again are refused here rather than making a fresh
+    /// quest the remote, which still holds the closed one, refuses for good (H5).
     /// </summary>
     internal async Task<string?> ForgottenIdAsync(
         string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct, string? request = null)
     {
-        // A request's key widens the id as it did at its publish (INTEGRATE1p), and such an id never had the shorter width.
         var id = MakeId(from, to, title, lanes: Sorted(lanes), request: request);
-        foreach (var held in request is null ? new[] { id, id[..LegacyIdLength] } : [id])
-        {
-            if (await ForgottenAsync(held, ct).ConfigureAwait(false)) return held;
-        }
-
-        return null;
+        return await ForgottenAsync(id, ct).ConfigureAwait(false) ? id : null;
     }
 
     /// <summary>
@@ -578,6 +569,10 @@ public sealed class QuestStore
     /// </param>
     public Task<QuestDeletion> DeleteAsync(string id, DateTimeOffset now, bool travels, CancellationToken ct = default) =>
         WriteAsync(tx => Operations.Of<QuestDeleteOperation>().DeleteAsync(tx, id, now, travels), ct);
+
+    /// <summary>Remove a closed quest (<see cref="QuestClosedRemoval"/>): tombstoned where it may have travelled, simply gone otherwise.</summary>
+    public Task<QuestDeletion> RemoveClosedAsync(string id, DateTimeOffset now, bool travels, CancellationToken ct = default) =>
+        WriteAsync(tx => QuestClosedRemoval.RemoveAsync(tx, id, now, travels), ct);
 
     /// <summary>The columns <see cref="QuestRecordCodec.ReadOperation"/> reads, in its order.</summary>
     internal const string OperationColumns =

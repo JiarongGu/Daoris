@@ -115,10 +115,8 @@ internal sealed class QuestPublishOperation : IQuestOperation
         var sorted = QuestStore.Sorted(lanes);
         var id = QuestStore.MakeId(from, to, title, parent, sorted, request);
 
-        // The same ask already held is the answer, whichever width of id it was published under; a request's key had one width only.
-        var existing = await tx.FindAsync(id).ConfigureAwait(false)
-                       ?? (parent is null && request is null ? await tx.FindAsync(id[..QuestStore.LegacyIdLength]).ConfigureAwait(false) : null);
-        if (existing is not null) return existing;
+        // The same ask already held is the answer.
+        if (await tx.FindAsync(id).ConfigureAwait(false) is { } existing) return existing;
 
         var asked = new Quest(
             id, from, to, title, body, QuestStatus.Open, null, now, now,

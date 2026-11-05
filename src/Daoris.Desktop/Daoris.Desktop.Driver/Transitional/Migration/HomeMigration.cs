@@ -36,6 +36,7 @@ public static class HomeMigration
         new HeldWordsStep(),
         new EventLogsStep(),
         new SessionRecordsStep(),
+        new ClosedQuestsStep(),
     ];
 
     /// <summary>
