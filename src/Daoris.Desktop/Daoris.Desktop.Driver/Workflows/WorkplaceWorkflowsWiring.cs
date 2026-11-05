@@ -12,6 +12,9 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
         WorkplaceGateWorkflows.Current = operations;
     }
 
+    public PlaceIntegrate IntegrateOf(string home, DriverConfig config, string repository, string? workspace) =>
+        PlaceIntegrates.Of(WorkflowPorts.Store(home), config, repository, workspace);
+
     public string? AcceptedGates(DriverConfig config, string repository, string? workspace) =>
         WorkflowSelection.ResolveLanded(config, repository, workspace).Gates;
 

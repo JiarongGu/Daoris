@@ -67,6 +67,9 @@ internal interface IWorkplaceWorkflows
     /// Current (WORKFLOWCLEAN1 1c, the cleanup design §2.4): its landing is that workflow's, which the access setup's pauses do not compose into.
     /// </summary>
     bool FollowsSaved(DriverConfig config, string repository, string? workspace);
+
+    /// <summary>Who requests <paramref name="repository"/>'s integration and where a conflict goes, from the saved workflows under <paramref name="home"/> (see <c>PlaceIntegrates.Of</c>).</summary>
+    PlaceIntegrate IntegrateOf(string home, DriverConfig config, string repository, string? workspace);
 }
 
 /// <summary>What keeping the person's Accept as a run's review word came to (WORKFLOWCLEAN1 1c).</summary>

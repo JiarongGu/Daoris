@@ -96,7 +96,7 @@ public sealed class MeetingCommandTests : IDisposable
         var (code, said) = Run("ask", Question, "--agents", "claude");
 
         Assert.Equal(1, code);
-        Assert.Contains("daoris-driver: A meeting names 2 to 4 different agents", said, StringComparison.Ordinal);
+        Assert.Contains("daoris: A meeting names 2 to 4 different agents", said, StringComparison.Ordinal);
     }
 
     /// <summary>🔴 One writer: with no service the verb says so, and writes no file of its own.</summary>

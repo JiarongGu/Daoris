@@ -408,6 +408,8 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
 
         public bool FollowsSaved(DriverConfig config, string repository, string? workspace) => false;
 
+        public PlaceIntegrate IntegrateOf(string home, DriverConfig config, string repository, string? workspace) => PlaceIntegrate.None;
+
         public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null) => new(false, false, null, null, null);
 
         public void KeepRepair(string home, Func<bool>? holdsLease, string unit, string review, string tip, string turn, int carries, DateTimeOffset at)

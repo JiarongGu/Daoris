@@ -22,7 +22,7 @@ internal static class IntegrationPresses
         try
         {
             var store = new IntegrationStore(home);
-            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, WorkflowPorts.Store(home)).Press(repository, workspace, branch, tip, line, delivered);
+            var admitted = new IntegrationRequests(new HomeIntegrationRecords(home), store, () => config, home).Press(repository, workspace, branch, tip, line, delivered);
             if (admitted is not { Admitted: true, Request: { } request }) return (false, $"Nothing was merged: {admitted.Message}");
 
             var asks = new IntegrationSweepAsks(
