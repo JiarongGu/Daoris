@@ -105,7 +105,7 @@ export function typesIn(text) {
     type.methods = [];
     if (type.open < 0) continue;
     const body = code.slice(type.open, type.close);
-    // A fact attribute of the project's own (`SshdFact`, `GcmFact`: a FactAttribute that skips where a tool is absent) is a test as `Fact` is.
+    // A fact attribute of the project's own (`GcmFact`: a FactAttribute that skips where a tool is absent) is a test as `Fact` is.
     for (const fact of body.matchAll(/\b\w*(?:Fact|Theory)(?:Attribute)?\b/g)) {
       const at = type.open + fact.index;
       const prior = code.slice(0, at).trimEnd().at(-1);
