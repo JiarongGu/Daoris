@@ -127,7 +127,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 **Landing**
 
 28. For a graph run the runtime is the one performer of `land`. The pass that finds it active at its tip starts it once on the
-    landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. (from D227)
+    landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. A `land` whose
+    subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}`, the remote platform's
     plugin for `push` and `pull-request`, the default key where the pattern says `{ticket}`. A written option stands; no landing rule
     is read. (from D164, D227, D232)
@@ -139,7 +140,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
     A restart settles it phase by phase. (from D215, D227)
 34. A landing refused for work the session can clear carries the session on and keeps the Accept. A refusal nothing changed is not
-    tried again until the tip moves or the person presses. (from D145, D227)
+    tried again until the tip moves or the person presses; a try that closed at one tip says nothing of the next. (from D145, D227)
 35. In a session tree the agent commits on the tree's branch as it goes, and never switches or pushes. The commit rule
     (`commits`) may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (from D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which

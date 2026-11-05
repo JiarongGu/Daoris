@@ -8,7 +8,7 @@ public static class AutoLandingRules
 {
     /// <summary>
     /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
-    /// since it, so a pass never repeats one that nothing changed.
+    /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it was kept at.
     /// </summary>
     public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
     {
@@ -18,6 +18,8 @@ public static class AutoLandingRules
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
         // every look; so does a push held back after its branch was made (FABRIC-CLOSE1h2).
         { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion or AutoLandingCode.PushHeld } => true,
+        // A `land` is started once a node and tip, so a try that closed at its tip says nothing of a later one.
+        { Tip: { } at } when !string.Equals(at, tip, StringComparison.Ordinal) => true,
         _ => false,
     };
 
