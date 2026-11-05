@@ -621,7 +621,7 @@ public sealed class AccountCoolingTests : IDisposable
         var door = adapters.Resolve("acp-stub").Toolchain!;
         var stub = adapters.Resolve("stub").Toolchain!;
 
-        Assert.Equal("stub", door.Owner("acp-stub"));
+        Assert.Equal("stub", adapters.OwnerOf("acp-stub"));
         Assert.Equal(stub.ProfileVariable, door.ProfileVariable);
         Assert.True(door.ProbeByPresence);
         Assert.Equal((0, (LimitWords?)null, (LoginQuestion?)null), (door.Binary.Count, door.Limits, door.LoginCheck));

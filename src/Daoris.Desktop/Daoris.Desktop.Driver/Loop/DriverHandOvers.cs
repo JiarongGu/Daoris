@@ -435,7 +435,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         {
             var resolved = _context.Adapters.Resolve(agent);
             if (!resolved.Interactive) return null;
-            return resolved.Toolchain is { } toolchain ? HarnessSettings.Profiles(_context.Harnesses.Home, toolchain.Owner(resolved.Name)) : [];
+            return resolved.Toolchain is { } toolchain ? HarnessSettings.Profiles(_context.Harnesses.Home, _context.Adapters.OwnerOf(resolved.Name)) : [];
         }
         catch (DriverException)
         {

@@ -46,7 +46,7 @@ internal static class ProviderRegistration
         foreach (var name in doors.Where(name => Ids.Same(keyOf[name], name))) keyed[name] = new Group(name) { Doors = { name } };
         foreach (var name in set.Reserved.Where(name => !held.Contains(name)))
         {
-            if (set.Holder(name) is { } holder) keyed[name] = new Group(name) { Holder = holder };
+            if (set.ToolchainOf(name) is { } holder) keyed[name] = new Group(name) { Holder = holder };
         }
 
         var own = new Dictionary<string, Group>(StringComparer.OrdinalIgnoreCase);
@@ -85,7 +85,7 @@ internal static class ProviderRegistration
             .Concat(provider.Doors.Select(door => door.AccountOf?.Value).OfType<string>());
 
     private static string KeyOf(AdapterSet set, string name) =>
-        set.Resolve(name).Toolchain?.Owner(name) ?? name;
+        set.Resolve(name).Toolchain?.AccountOf is { Length: > 0 } accountOf ? accountOf : name;
 
     private static Provider Descriptor(string agent)
     {

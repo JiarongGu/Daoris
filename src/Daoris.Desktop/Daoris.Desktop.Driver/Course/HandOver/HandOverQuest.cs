@@ -78,7 +78,7 @@ public static class QuestHandOver
         {
             var resolved = adapters.Resolve(agent);
             IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
-                ? [.. HarnessSettings.Profiles(home, toolchain.Owner(resolved.Name))]
+                ? [.. HarnessSettings.Profiles(home, adapters.OwnerOf(resolved.Name))]
                 : [];
             return new HandOverAgent(accounts, resolved.Wire);
         }

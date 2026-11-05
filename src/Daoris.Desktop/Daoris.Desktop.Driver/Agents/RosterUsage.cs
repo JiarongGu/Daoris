@@ -24,7 +24,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     {
         var resolved = roster.Adapters.Resolve(adapter);
         if (resolved.Toolchain?.Usage is { } own) return own;
-        return HarnessRoster.CoolingAgent(resolved) is { } owner
+        return roster.CoolingAgent(resolved) is { } owner
                && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
                && roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
             ? roster.Adapters.Resolve(owner).Toolchain?.Usage

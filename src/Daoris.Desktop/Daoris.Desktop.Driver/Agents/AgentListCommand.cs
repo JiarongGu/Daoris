@@ -33,8 +33,8 @@ internal static class AgentListCommand
 
         foreach (var name in AgentsCommand.Named(world, path).Where(each => set.DeclaredBy(each) is null))
         {
-            var toolchain = ToolchainOf(set, name)!;
-            var report = await ProbeAsync(name, toolchain, settings, home, now, ct).ConfigureAwait(false);
+            var toolchain = set.ToolchainOf(name)!;
+            var report = await ProbeAsync(name, toolchain, settings, home, set.OwnerOf(name), now, ct).ConfigureAwait(false);
             Say("");
             // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
             var state = report.Present ? report.Version ?? "null" : $"absent — {report.Problem}";
@@ -67,7 +67,7 @@ internal static class AgentListCommand
 
             // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its owner
             // listed them with what the agent said of each.
-            if (toolchain.AccountOf is { Length: > 0 } owner && ToolchainOf(set, owner) is { } owned)
+            if (toolchain.AccountOf is { Length: > 0 } owner && set.ToolchainOf(owner) is { } owned)
             {
                 var whose = owned.Product ?? owner;
                 Say($"{Under}its accounts are {whose}'s, listed under `{owner}`: this is another way {whose} runs on them");
@@ -91,7 +91,7 @@ internal static class AgentListCommand
             }
             else
             {
-                var probed = await ProbeAsync(name, toolchain, settings, home, now, ct).ConfigureAwait(false);
+                var probed = await ProbeAsync(name, toolchain, settings, home, set.OwnerOf(name), now, ct).ConfigureAwait(false);
                 state = probed.Present ? probed.Version ?? "null" : $"absent — {probed.Problem}";
             }
 
@@ -106,21 +106,16 @@ internal static class AgentListCommand
         return 0;
     }
 
-    /// <summary>An agent's toolchain: its door's, or the agent a door runs as with no door here (<see cref="AdapterSet.Holder"/>).</summary>
-    private static HarnessToolchain? ToolchainOf(AdapterSet set, string agent) =>
-        set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? set.Resolve(agent).Toolchain : set.Holder(agent);
-
     /// <summary>
     /// One agent probed as the CLI's <c>probe</c> asked it: its version by the binary a start runs, each of its own accounts' sign-in (a
     /// door's are its owner's, and are asked under the owner), never the tool's own sign-in, which is the person's. Each reading is kept
     /// in <c>reads.json</c> at the answer's moment. A pin with nothing installed at it is absent, its accounts listed unknown.
     /// </summary>
     private static async Task<HarnessReport> ProbeAsync(
-        string name, HarnessToolchain toolchain, HarnessSettings settings, string home, DateTimeOffset now, CancellationToken ct)
+        string name, HarnessToolchain toolchain, HarnessSettings settings, string home, string owner, DateTimeOffset now, CancellationToken ct)
     {
-        var owner = toolchain.Owner(name);
         var report = await HarnessProbe.ProbeAsync(
-            name, toolchain, command: null, settings, home, ct,
+            name, toolchain, command: null, settings, home, ct, accountOf: owner,
             // A door asks no account: its list is its owner's, said under the owner.
             asks: owner == name ? null : _ => false,
             clock: () => now,
@@ -167,7 +162,7 @@ internal static class AgentListCommand
         string name, HarnessToolchain toolchain, HarnessReport report, HarnessSettings settings, string home, AdapterSet set,
         DateTimeOffset now, TimeZoneInfo zone)
     {
-        var owner = toolchain.Owner(name);
+        var owner = set.OwnerOf(name);
         var lines = new List<string>();
         // Each account by the person's name for it, else its id (ACCT2); the name column fits the longest (ACCTNAME1, floor 16).
         string Shown(string account) => AccountNames.Shown(home, owner, account);
@@ -202,7 +197,7 @@ internal static class AgentListCommand
         // The set (POOL1b, the account-pool design §5.1): its order, how it is used beneath it (TOOL6a) and its next start (TOOL6f), one
         // for every workspace.
         var says = AgentAccountsCommand.Says(set, owner);
-        var product = ToolchainOf(set, owner)?.Product ?? owner;
+        var product = set.ToolchainOf(owner)?.Product ?? owner;
         if (scope.List.Count > 0)
         {
             lines.Add($"{Under}{"order".PadRight(col)} {string.Join(", then ", scope.List.Select(Shown))}, for every workspace");

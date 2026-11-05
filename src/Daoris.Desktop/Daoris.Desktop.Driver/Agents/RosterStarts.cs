@@ -77,7 +77,7 @@ internal sealed class RosterStarts(HarnessRoster roster)
         try
         {
             return roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) && roster.Adapters.Resolve(adapter) is { } resolved
-                ? resolved.Toolchain?.Owner(resolved.Name) ?? resolved.Name
+                ? roster.Adapters.OwnerOf(resolved.Name)
                 : adapter;
         }
         catch (DriverException)
