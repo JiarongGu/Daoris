@@ -76,6 +76,23 @@ public sealed class SessionServersTests : IDisposable
     }
 
     [Fact]
+    public async Task A_server_that_drives_Daoris_browser_starts_under_the_keeper_and_another_does_not()
+    {
+        var script = Lay(_home, "@playwright/mcp", "0.0.82", bin: "playwright-mcp");
+        var other = Npx("-y", "@playwright/mcp@0.0.82", "--output-dir", "a folder") with { Name = "other" };
+
+        var (handed, _, drives, _) = await SessionServers.HandNotedAsync(
+            _home, [Npx("-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", InAppBrowserServers.Placeholder), other],
+            new InAppBrowserServersTests.LazyBrowser("http://127.0.0.1:9"), log: null, CancellationToken.None);
+
+        Assert.True(drives);
+        Assert.Equal(
+            [ServerKeeper.Install(_home), ServerKeeper.CeilingMb.ToString(), ServerKeeper.EveryMs.ToString(), script, "--cdp-endpoint", "http://127.0.0.1:9"],
+            handed[0].Arguments);
+        Assert.Equal([script, "--output-dir", "a folder"], handed[1].Arguments);
+    }
+
+    [Fact]
     public async Task The_pipe_doors_file_names_the_direct_command_so_the_harness_starts_one_node()
     {
         var script = Lay(_home, "@playwright/mcp", "0.0.82");

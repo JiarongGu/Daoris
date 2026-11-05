@@ -90,7 +90,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 24. A server goes to sessions by default. One handed to Ask Daoris reaches it only once the person approved its exact
     tools; a write only as an accepted write; a generic execution tool never. A server declared through `npx` names the
     package and its version; a session is handed node and that package's script, installed once into the toolchain, never
-    `npx` itself (agents area, rule 13). (from D170)
+    `npx` itself, and one that drives Daoris's browser stays under a 512 MB ceiling by a restart between calls (agents
+    area, rule 13). (from D170)
 25. What a plugin did is kept without its words: `plugin.*` lines hold names, counts, flags and times. Its words go
     to the console under `plugin:<id>` for this run. (from D119, D94)
 26. An icon is a path inside the folder to an SVG or PNG of at most 32 KiB. The page gets its bytes as a data URI,
