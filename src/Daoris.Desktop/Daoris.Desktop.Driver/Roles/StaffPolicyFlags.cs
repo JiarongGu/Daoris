@@ -47,15 +47,12 @@ internal static class StaffPolicyFlags
                 {
                     Takes = [.. number.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
                 }),
-                "--on" => On(policy, value, grammar),
-                "--most" => policy with { Most = Whole(value, flag, grammar) },
                 _ => throw new ChoiceWords($"`{flag}` is not a flag of `driver role policy`: {grammar}."),
             };
         }
 
-        // A preset named alone is carried by name too, so on a home whose rules are reached its moves are written as rules.
-        var alone = preset is not null && !words.Contains("--on", StringComparer.Ordinal) && !words.Contains("--most", StringComparer.Ordinal);
-        return new RolePolicyPress(policy, alone ? preset : null, Read: existing.Revision);
+        // A preset is carried by name too, so its limit move and bound are written as rules.
+        return new RolePolicyPress(policy, preset, Read: existing.Revision);
     }
 
     /// <summary>The flags that make <paramref name="policy"/> from a blank draft (<c>--preset first</c>), as the verb reads them back.</summary>
@@ -72,12 +69,10 @@ internal static class StaffPolicyFlags
             if (choice.Takes is { } takes) flags.Add($"--takes {n}={string.Join(",", takes)}");
         }
 
-        flags.AddRange(policy.Moves.Select(move => $"--on {move.Key}={move.Value.Do}" + (move.Value.After ?? move.Value.UpTo) switch { { } number => $":{number}", _ => "" }));
-        if (policy.Most is { } most) flags.Add($"--most {most}");
         return string.Join(" ", flags);
     }
 
-    /// <summary>The policy in a sentence: the rule, the weights as a proportion, and the moves set.</summary>
+    /// <summary>The policy in a sentence: the rule, the weights as a proportion, and the limits set.</summary>
     public static string Said(StaffPolicy policy, IReadOnlyList<ActorChoice> choices)
     {
         var rule = policy.Rule == StaffRules.Weight
@@ -92,13 +87,12 @@ internal static class StaffPolicyFlags
                 each.choice.Budget?.Tokens is { } tokens ? $"{tokens} reported tokens a day" : null,
                 each.choice.Takes is { } takes ? "takes " + string.Join("/", takes) : null,
             }.OfType<string>()));
-        var moves = policy.Moves.Select(move => $"{move.Key}={move.Value.Do}" + (move.Value.After is { } after ? $":{after}" : "") + (move.Value.UpTo is { } upTo ? $":{upTo}" : ""));
-        return string.Join("; ", new[] { rule }.Concat(limits).Concat(moves.Any() ? [$"moves {string.Join(" ", moves)}"] : []).Concat(policy.Bound is { } most ? [$"at most {most} moves a day"] : []));
+        return string.Join("; ", new[] { rule }.Concat(limits));
     }
 
     /// <summary>
     /// The policy in the fold's words (STAFFPOLICY1g, the staff policy design §6.5), as a card and the room say it: <i>Spread by weight (3:1);
-    /// on a limit: next by weight; at most 3 moves a day</i>. No policy, or one in use by order, is <i>First that can run</i>.
+    /// choice 2: at most 40%</i>. No policy, or one in use by order, is <i>First that can run</i>.
     /// </summary>
     public static string Fold(StaffPolicy? policy, IReadOnlyList<ActorChoice> choices)
     {
@@ -118,34 +112,8 @@ internal static class StaffPolicyFlags
                 each.choice.Budget?.Tokens is { } tokens ? $"{tokens} reported tokens a day" : null,
                 each.choice.Takes is { } takes ? "takes " + string.Join("/", takes) : null,
             }.OfType<string>())));
-        parts.AddRange(policy.Moves.OrderBy(each => each.Key, StringComparer.Ordinal).Select(move =>
-            $"on {Condition(move.Key)}: {Action(move.Value.Do)}" + (move.Value.After is { } after ? $" after {after}" : "") + (move.Value.UpTo is { } upTo ? $" for up to {upTo} minutes" : "")));
-        if (policy.Bound is { } most) parts.Add($"at most {most} moves a day");
         return string.Join("; ", parts);
     }
-
-    private static string Condition(string condition) => condition switch
-    {
-        StaffConditions.Limit => "a limit",
-        StaffConditions.SignedOut => "a signed-out account",
-        StaffConditions.ModelRefused => "a refused model",
-        StaffConditions.Transient => "a service that does not answer",
-        StaffConditions.Failed => "repeated errors",
-        StaffConditions.Quiet => "a quiet run",
-        StaffConditions.Budget => "a budget reached",
-        _ => condition,
-    };
-
-    private static string Action(string action) => action switch
-    {
-        StaffActions.Next => "next",
-        StaffActions.Weighted => "next by weight",
-        StaffActions.Wait => "wait for a reset",
-        StaffActions.Ask => "ask you",
-        StaffActions.Hold => "hold",
-        StaffActions.Retry => "try again",
-        _ => action,
-    };
 
     private static string Value(IReadOnlyList<string> words, int at, string grammar) =>
         at + 1 < words.Count ? words[at + 1] : throw new ChoiceWords($"`{words[at]}` needs its value: {grammar}.");
@@ -170,14 +138,4 @@ internal static class StaffPolicyFlags
         return policy with { Choices = [.. policy.Choices.Select(choice => choice.Key == key ? change(choice, given[(split + 1)..]) : choice)] };
     }
 
-    /// <summary><c>--on &lt;condition&gt;=&lt;action&gt;[:&lt;n&gt;]</c>: a wait's number is the minutes it holds at most, any other's the tries or strikes before it.</summary>
-    private static StaffPolicy On(StaffPolicy policy, string given, string grammar)
-    {
-        var split = given.IndexOf('=');
-        if (split < 1 || split == given.Length - 1) throw new ChoiceWords($"`{given}` is not `<condition>=<action>`: {grammar}.");
-        var parts = given[(split + 1)..].Split(':', 2);
-        int? number = parts.Length == 2 ? Whole(parts[1], "--on", grammar) : null;
-        var move = parts[0] == StaffActions.Wait ? new StaffMove(parts[0], UpTo: number) : new StaffMove(parts[0], After: number);
-        return policy with { Moves = new Dictionary<string, StaffMove>(policy.Moves, StringComparer.Ordinal) { [given[..split]] = move } };
-    }
 }
