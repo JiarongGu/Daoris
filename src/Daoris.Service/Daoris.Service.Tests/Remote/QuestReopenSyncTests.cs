@@ -50,7 +50,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var quest = await _a.PublishAsync("Asker", "Federated", "Close in a graph", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
         var submitted = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2), session: "s0a1b2c3");
         Assert.True(submitted.Moved);
         await SyncAsync(_a);
@@ -192,13 +192,13 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it."), new QuestStep("Federated", "Publish {parent}", "Put it live.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
         var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
         var step = built.FollowUp!;
         await SyncAsync(_a);
         await SyncAsync(_b);
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
-        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(3))).Moved);
+        Assert.True((await _b.SeedBoundAsync(step.Id, Graph, Now.AddHours(3))).Moved);
         var verified = await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(3));
         var next = verified.FollowUp!;
         var old = new QuestOperationRef(verified.Quest!.Submission!.Machine, verified.Quest.Submission.Sequence);
@@ -330,7 +330,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     {
         var (quest, step, submission) = await SealedOnBothAsync();
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
-        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(3))).Moved);
+        Assert.True((await _b.SeedBoundAsync(step.Id, Graph, Now.AddHours(3))).Moved);
         var verified = await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(3), session: "s7b8c9d0");
         Assert.True(verified.Moved);
         var old = verified.Quest!.Submission!;
@@ -639,7 +639,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it."), new QuestStep("Federated", "Publish {parent}", "Put it live.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
         var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
         var step = built.FollowUp!;
         var first = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
@@ -651,7 +651,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         if (!raced) await SyncAsync(_a);
 
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(5))).Moved);
-        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(5))).Moved);
+        Assert.True((await _b.SeedBoundAsync(step.Id, Graph, Now.AddHours(5))).Moved);
         var verified = await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(6), session: "s0b1c2d3");
         var next = verified.FollowUp!;
         Assert.Equal(step.Id, next.Parent);
@@ -686,7 +686,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Equal(QuestClaim.None, await _b.ClaimAsync(next.Id));
         // The step is A's chain's again: a fresh take of it binds, and its submission publishes the next step anew.
         Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(7))).Moved);
-        Assert.True((await _a.BindAsync(step.Id, Graph, Now.AddHours(7))).Moved);
+        Assert.True((await _a.SeedBoundAsync(step.Id, Graph, Now.AddHours(7))).Moved);
         var anew = await _a.SubmitAsync(step.Id, "Verified anew.", [], Now.AddHours(8));
         Assert.Equal(next.Id, anew.FollowUp!.Id);
         Assert.Empty((await SyncAsync(_a)).Refused);
@@ -709,7 +709,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var quest = await _a.PublishAsync("Asker", "Federated", "Close in a chain", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it."), new QuestStep("Federated", "Publish {parent}", "Put it live.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
         var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
         var step = built.FollowUp!;
         var first = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
@@ -720,7 +720,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         if (!raced) await SyncAsync(_a);
 
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's session.", Now.AddHours(5))).Moved);
-        Assert.True((await _b.BindAsync(step.Id, Graph, Now.AddHours(5))).Moved);
+        Assert.True((await _b.SeedBoundAsync(step.Id, Graph, Now.AddHours(5))).Moved);
         var next = (await _b.SubmitAsync(step.Id, "Verified.", [], Now.AddHours(6), session: "s0b1c2d3")).FollowUp!;
         Assert.True((await _b.MoveAsync(next.Id, QuestStatus.Taken, "B's next session.", Now.AddHours(6))).Moved);
         var report = raced
@@ -748,7 +748,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
 
         // The step is A's chain's again, and its submission publishes the next step anew under the same id: B's conflict goes up on it.
         Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(7))).Moved);
-        Assert.True((await _a.BindAsync(step.Id, Graph, Now.AddHours(7))).Moved);
+        Assert.True((await _a.SeedBoundAsync(step.Id, Graph, Now.AddHours(7))).Moved);
         Assert.Equal(next.Id, (await _a.SubmitAsync(step.Id, "Verified anew.", [], Now.AddHours(8))).FollowUp!.Id);
         await SyncAsync(_a);
         Assert.Empty((await SyncAsync(_b)).Refused);
@@ -777,7 +777,7 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         var quest = await _a.PublishAsync("Asker", "Local", "Close in a graph", "why", Now,
             then: [new QuestStep("Federated", "Verify {parent}", "Look at it.")]);
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, Graph, Now.AddHours(1))).Moved);
         var built = await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2));
         var grewFrom = new QuestOperationRef(built.Quest!.Submission!.Machine, built.Quest.Submission.Sequence);
 

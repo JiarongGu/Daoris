@@ -22,7 +22,6 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private StartsOutcome? _outcome;
     private IReadOnlyList<Consideration>? _starts;
     private IReadOnlyList<AskView>? _intakes;
-    private IReadOnlyList<Consideration>? _openedStarts;
     private IReadOnlyList<IJudgedOpinion>? _judgedOpinions;
 
     /// <summary>
@@ -109,13 +108,6 @@ internal sealed class LookState(List<SessionEnded> concluded)
     {
         get => _intakes ?? throw Unwritten(nameof(Intakes), "intakes");
         set => _intakes = value;
-    }
-
-    /// <summary>The starts whose session opened in this look or a look before it, written by the look's starts before the Begun phase.</summary>
-    public IReadOnlyList<Consideration> OpenedStarts
-    {
-        get => _openedStarts ?? throw Unwritten(nameof(OpenedStarts), "start");
-        set => _openedStarts = value;
     }
 
     /// <summary>What ended this look: a parked intake it ends, and every session that ended since the last look.</summary>

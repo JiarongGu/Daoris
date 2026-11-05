@@ -23,4 +23,8 @@
     <ProjectReference Include="..\Daoris.Service.Http\Daoris.Service.Http.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Daoris.Service.Tests\Quests\BoundSeed.cs" Link="BoundSeed.cs" />
+  </ItemGroup>
+
 </Project>

@@ -56,12 +56,12 @@ public static class SessionsStateSlice
 
     /// <summary>
     /// What the service answers of a record that is never pushed: the transcript's path, and what no view reads from the list
-    /// (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and why
-    /// its take's bind lapsed, which the driver's end line reads, CLOSETAKE1; and the downloaded versions its starts were handed,
-    /// which the downloads' rule reads, KEEP1b; and the part its line ends at, which the groups slice's entries carry for the page, LINESTOGETHER1a).
+    /// (whether its quest was taken by its connector, a stop's cause, its delete, its line of work, its mode, and the downloaded
+    /// versions its starts were handed, which the downloads' rule reads, KEEP1b; and the part its line ends at, which the groups
+    /// slice's entries carry for the page, LINESTOGETHER1a).
     /// </summary>
     public static readonly IReadOnlyList<string> PulledOnly =
-        ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "tookBind", "resolved", "head"];
+        ["transcript", "took", "interrupted", "deletable", "entry", "helpMode", "resolved", "head"];
 
     /// <summary>
     /// What wakes it on the kit's bus: a change declared to the sessions, a conversation's end and the service coming up. The

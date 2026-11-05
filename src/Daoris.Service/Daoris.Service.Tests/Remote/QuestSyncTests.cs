@@ -877,10 +877,10 @@ public sealed class QuestSyncTests : IAsyncLifetime
         await SyncAsync(_b);
         await SyncAsync(c);
         Assert.True((await c.MoveAsync(quest.Id, QuestStatus.Taken, "C's session.", Now.AddHours(1))).Moved);
-        Assert.True((await c.BindAsync(quest.Id, graph, Now.AddHours(1))).Moved);
+        Assert.True((await c.SeedBoundAsync(quest.Id, graph, Now.AddHours(1))).Moved);
         await SyncAsync(c);
         Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
-        Assert.True((await _b.BindAsync(quest.Id, graph, Now.AddHours(2))).Moved);
+        Assert.True((await _b.SeedBoundAsync(quest.Id, graph, Now.AddHours(2))).Moved);
         var step = (await _b.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(3))).FollowUp!;
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's step session.", Now.AddHours(3))).Moved);
         var anew = await c.SubmitAsync(quest.Id, "Built by C.", [], Now.AddHours(4));
@@ -1401,7 +1401,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
 
         // A works offline: it takes, binds and submits, nothing holds the submission, so its step is published, and A takes that.
         Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _a.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
+        Assert.True((await _a.SeedBoundAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now.AddHours(1))).Moved);
         var step = (await _a.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(2))).FollowUp!;
         Assert.True((await _a.MoveAsync(step.Id, QuestStatus.Taken, "A's step session.", Now.AddHours(3))).Moved);
         Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(4))).Moved);
@@ -1465,12 +1465,12 @@ public sealed class QuestSyncTests : IAsyncLifetime
 
         // C's take of the source reaches the remote first.
         Assert.True((await c.MoveAsync(quest.Id, QuestStatus.Taken, "C's session.", Now.AddHours(1))).Moved);
-        Assert.True((await c.BindAsync(quest.Id, graph, Now.AddHours(1))).Moved);
+        Assert.True((await c.SeedBoundAsync(quest.Id, graph, Now.AddHours(1))).Moved);
         await SyncAsync(c);
 
         // B works offline: it takes, binds and submits, and takes the step its submission published.
         Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
-        Assert.True((await _b.BindAsync(quest.Id, graph, Now.AddHours(2))).Moved);
+        Assert.True((await _b.SeedBoundAsync(quest.Id, graph, Now.AddHours(2))).Moved);
         var step = (await _b.SubmitAsync(quest.Id, "Built.", [], Now.AddHours(3))).FollowUp!;
         Assert.True((await _b.MoveAsync(step.Id, QuestStatus.Taken, "B's step session.", Now.AddHours(3))).Moved);
 

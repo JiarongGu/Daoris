@@ -37,6 +37,25 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Contains("Four rules collide", quest.Body);
     }
 
+    /// <summary>The tables an older build kept its graphs named for a take in are dropped when this build opens the store.</summary>
+    [Fact]
+    public async Task Opening_a_store_drops_the_tables_of_the_take_bind_an_older_build_kept()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = "CREATE TABLE quest_take_binds (id TEXT PRIMARY KEY); CREATE TABLE quest_owned_take_binds (id TEXT PRIMARY KEY);";
+            await create.ExecuteNonQueryAsync();
+        }
+
+        await QuestStore.OpenAsync(old);
+
+        await using var read = old.CreateCommand();
+        read.CommandText = "SELECT count(*) FROM sqlite_master WHERE name IN ('quest_take_binds', 'quest_owned_take_binds')";
+        Assert.Equal(0L, await read.ExecuteScalarAsync());
+    }
+
     /// <summary>An agent that retries should not produce a second copy of the same ask.</summary>
     [Fact]
     public async Task Publishing_the_same_quest_twice_returns_the_first()

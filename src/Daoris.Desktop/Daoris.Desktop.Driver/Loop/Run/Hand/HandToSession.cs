@@ -259,7 +259,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => context.Runs.Live.TryRemove(quest.Id, out var _));
 
-            var conclusion = new RunConclusion(wiring, run, endings, adapter, target, closure, transcript);
+            var conclusion = new RunConclusion(wiring, run, endings, adapter, target, transcript);
             return await wiring.Holds.HoldAsync(
                 "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.

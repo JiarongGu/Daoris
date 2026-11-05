@@ -46,14 +46,8 @@ public sealed class QuestStore
     internal const int IdLength = 12;
 
     /// <summary>
-    /// How long a graph named for a quest's take waits for it (FABRIC-CLOSE1o): the driver names it as the quest's first session
-    /// opens, whose first act is the take, so a take later than this is not that start's, and goes unbound, saying so.
-    /// </summary>
-    public static readonly TimeSpan TakeBindLife = TimeSpan.FromHours(1);
-
-    /// <summary>
-    /// The version of what this build keeps in the store (CLOSETAKE1, QUESTSTOREVER1), stamped in <c>quest_store_version</c>. 1 is the
-    /// build with owned take binds (FABRIC-CLOSE1w); raise it with any change to a table or a contract an older build would misread.
+    /// The version of what this build keeps in the store (CLOSETAKE1, QUESTSTOREVER1), stamped in <c>quest_store_version</c>;
+    /// raise it with any change to a table or a contract an older build would misread.
     /// </summary>
     public const int StoreVersion = 1;
 
@@ -299,7 +293,7 @@ public sealed class QuestStore
         _db.InTransactionAsync(work, ct);
 
     /// <summary>A registered operation's verb, run in a write transaction (<see cref="InTransactionAsync{T}"/>) handed to it as its <see cref="QuestTx"/>.</summary>
-    private Task<T> WriteAsync<T>(Func<QuestTx, Task<T>> write, CancellationToken ct) =>
+    internal Task<T> WriteAsync<T>(Func<QuestTx, Task<T>> write, CancellationToken ct = default) =>
         InTransactionAsync((transaction, inside) => write(new QuestTx(this, transaction, inside)), ct);
 
     /// <summary>The kinds of operation their modules register; a door reaches a module's verbs by its type.</summary>
@@ -477,23 +471,11 @@ public sealed class QuestStore
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null, bool byAgent = false,
-        QuestTaker? taker = null, string? session = null)
-    {
-        // FABRIC-CLOSE1w: `now` is the caller's, taken before this queued for the gate and the write, so the take measures that wait.
-        var asked = _time.GetTimestamp();
-        return WriteAsync(
+        string? session = null) =>
+        WriteAsync(
             tx => Operations.Of<QuestTakeOperation>().MoveAsync(
-                tx, id, status, note, now, asked, answers, whileOpen, noteParts, byAgent, taker, session),
+                tx, id, status, note, now, answers, whileOpen, noteParts, byAgent, session),
             ct);
-    }
-
-    /// <inheritdoc cref="QuestBindOperation.BindAsync"/>
-    public Task<QuestMove> BindAsync(string id, string graph, DateTimeOffset now, CancellationToken ct = default) =>
-        WriteAsync(tx => Operations.Of<QuestBindOperation>().BindAsync(tx, id, graph, now), ct);
-
-    /// <inheritdoc cref="QuestBindOperation.BindAtTakeAsync"/>
-    public Task<QuestMove> BindAtTakeAsync(string id, string graph, string session, DateTimeOffset now, CancellationToken ct = default) =>
-        WriteAsync(tx => Operations.Of<QuestBindOperation>().BindAtTakeAsync(tx, id, graph, session, now), ct);
 
     /// <inheritdoc cref="QuestSubmitOperation.SubmitAsync"/>
     public Task<QuestMove> SubmitAsync(

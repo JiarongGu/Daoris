@@ -90,12 +90,12 @@ public sealed class QuestClosureTests : IAsyncLifetime
         return published.Quest;
     }
 
-    /// <summary>A taken quest bound to the closure graph, as the driver binds one at its run's first start.</summary>
+    /// <summary>A taken quest bound to the closure graph.</summary>
     private async Task<Quest> Bound(bool chain = true, string title = "Write the bridge report", string next = "checker", string graph = Graph)
     {
         var quest = await Taken(chain, title, next);
-        var bound = await _exchange.BindAsync(quest.Id, graph, Now);
-        Assert.Equal(QuestRespondRefusal.None, bound.Refusal);
+        var bound = await _quests.SeedBoundAsync(quest.Id, graph, Now);
+        Assert.True(bound.Moved);
         return bound.Quest!;
     }
 
@@ -205,18 +205,13 @@ public sealed class QuestClosureTests : IAsyncLifetime
     [Fact]
     public async Task A_bind_applies_once_to_a_taken_quest_before_its_first_submission()
     {
-        var open = (await _desk.PublishAsync(
-            (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!.Id, "reports", Now,
-            draft: new AskDraft("Write the bridge report", "Through the bridge.") { Requirements = [Report, Bridge] })).Quest!;
-        Assert.Equal(QuestRespondRefusal.NotInGraph, (await _exchange.BindAsync(open.Id, Graph, Now)).Refusal);
+        var open = await Open();
+        Assert.False((await _quests.SeedBoundAsync(open.Id, Graph, Now)).Moved);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(open.Id, "take", null, Now)).Refusal);
-        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, "", Now)).Refusal);
 
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, Graph, Now)).Refusal);
-        // The same graph again is the same bind; another graph is refused, since a quest follows the graph bound at its start.
-        var again = await _exchange.BindAsync(open.Id, Graph, Now);
-        Assert.Equal(QuestRespondRefusal.None, again.Refusal);
-        Assert.Equal(QuestRespondRefusal.NotInGraph, (await _exchange.BindAsync(open.Id, "sha256:another", Now)).Refusal);
+        Assert.True((await _quests.SeedBoundAsync(open.Id, Graph, Now)).Moved);
+        // Another graph is refused, since a quest follows the graph bound at its start.
+        Assert.False((await _quests.SeedBoundAsync(open.Id, "sha256:another", Now)).Moved);
         Assert.Single(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
     }
 
@@ -226,38 +221,23 @@ public sealed class QuestClosureTests : IAsyncLifetime
         draft: new AskDraft("Write the bridge report", "Through the bridge.") { Requirements = [Report, Bridge] })).Quest!;
 
     [Fact]
-    public async Task A_take_the_driver_named_a_graph_for_binds_in_its_own_write_and_its_done_is_refused_naming_ready()
+    public async Task A_bound_quests_done_is_refused_naming_ready()
     {
-        // FABRIC-CLOSE1l (CLOSE1f): the driver names the graph as it opens the first session; nothing is bound until the take.
-        var open = await Open();
-        var named = await _exchange.BindAsync(open.Id, Graph, Now, atTake: true, session: "ses-first");
-        Assert.Equal(QuestRespondRefusal.None, named.Refusal);
-        Assert.Null((await Find(open.Id)).Closure);
+        var bound = await Bound(chain: false);
 
-        // FABRIC-CLOSE1o: the session it was named for takes it (QuestTakeBindTests holds every other taker).
-        var take = await _exchange.RespondAsync(open.Id, "take", null, Now, session: "ses-first");
+        var done = await _exchange.RespondAsync(bound.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
 
-        // The take answers bound, saying `ready`, with the bind appended in the take's own write: no done fits between them.
-        Assert.Equal(QuestRespondRefusal.None, take.Refusal);
-        Assert.Equal(Graph, take.Quest!.Closure);
-        Assert.Contains("`ready`", take.Message, StringComparison.Ordinal);
-        Assert.Equal([QuestOperationKind.Taken, QuestOperationKind.Bound], (await _quests.HistoryAsync(open.Id)).TakeLast(2).Select(op => op.Kind));
-        var done = await _exchange.RespondAsync(open.Id, "done", "Built.", Now, answers: [Met(1), Met(2)]);
         Assert.Equal(QuestRespondRefusal.ClosedByGraph, done.Refusal);
         Assert.Contains("`ready`", done.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task A_take_no_graph_was_named_for_is_unbound_and_says_nothing_of_ready_and_a_taken_quest_takes_no_bind_at_its_take()
+    public async Task A_take_is_unbound_and_says_nothing_of_ready_and_its_done_is_todays()
     {
-        // The owner's install: no closure graph, so no bind is named, and the take and its done are today's.
         var open = await Open();
         var take = await _exchange.RespondAsync(open.Id, "take", null, Now);
         Assert.Null(take.Quest!.Closure);
         Assert.DoesNotContain("ready", take.Message, StringComparison.OrdinalIgnoreCase);
-
-        // Already taken: its take has passed, so a graph named for it now is refused and nothing is bound (§E5's cutover).
-        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.BindAsync(open.Id, Graph, Now, atTake: true, session: "ses-first")).Refusal);
         Assert.DoesNotContain(await _quests.HistoryAsync(open.Id), op => op.Kind == QuestOperationKind.Bound);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(open.Id, "done", "Built.", Now, answers: [Met(1), Met(2)])).Refusal);
     }
@@ -467,7 +447,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         Assert.Equal(next, second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
+        Assert.True((await _quests.SeedBoundAsync(second.Id, Graph, Now)).Moved);
         Assert.Equal(QuestHold.EvidenceUnread, (await Ready(second)).Quest!.Hold);
         Assert.Equal(QuestRespondRefusal.None, (await Found(second)).Refusal);
         var submitted = await Find(second.Id);
@@ -487,7 +467,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         Assert.Equal("checker", second.To);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(second.Id, "take", null, Now)).Refusal);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(second.Id, Graph, Now)).Refusal);
+        Assert.True((await _quests.SeedBoundAsync(second.Id, Graph, Now)).Moved);
         var submitted = await Ready(second);
         Assert.Null(submitted.Quest!.Hold);
         return (await Find(first.Id), submitted.Quest);
@@ -772,7 +752,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         await Found(first);
         var second = Assert.Single(await _quests.ListAsync(), q => q.Parent == first.Id);
         await _exchange.RespondAsync(second.Id, "take", null, Now);
-        await _exchange.BindAsync(second.Id, Graph, Now);
+        await _quests.SeedBoundAsync(second.Id, Graph, Now);
         var held = (await Ready(second, new QuestAnswer(1, null, Departed: "Checked another way.", Quote: Report.Quote), Met(2))).Quest!;
         Assert.Equal(QuestHold.Departed, held.Hold);
 

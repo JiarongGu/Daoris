@@ -84,32 +84,6 @@ internal static class QuestSchema
                   quest   TEXT NULL,
                   at      TEXT NOT NULL
                 );
-                -- The closure graph each open quest binds at its take (FABRIC-CLOSE1l, §E5's cutover), as the driver named it
-                -- when it opened the quest's first session: the take on this machine binds it in the take's own write, and
-                -- the row goes with it. Never pushed or served. Its owner (FABRIC-CLOSE1o): the session it was named for, the
-                -- publication it was named on and when it lapses, nullable so a build before them still writes its three columns, and
-                -- a row without them owns nothing. Since FABRIC-CLOSE1w only builds before it write here, and no row here owns anything.
-                CREATE TABLE IF NOT EXISTS quest_take_binds (
-                  id    TEXT PRIMARY KEY,
-                  graph TEXT NOT NULL,
-                  at    TEXT NOT NULL,
-                  session            TEXT NULL,
-                  published_machine  TEXT NULL,
-                  published_sequence INTEGER NULL,
-                  expires            TEXT NULL
-                );
-                -- The binds this build names, owned (FABRIC-CLOSE1w): the compatible-build boundary. A build before it knows only
-                -- quest_take_binds, so its upsert there can never replace an owned bind's graph, nor its take bind one by the id alone.
-                -- Every column is required, since no build that writes here leaves an owner out. Never pushed or served.
-                CREATE TABLE IF NOT EXISTS quest_owned_take_binds (
-                  id                 TEXT PRIMARY KEY,
-                  graph              TEXT NOT NULL,
-                  at                 TEXT NOT NULL,
-                  session            TEXT NOT NULL,
-                  published_machine  TEXT NOT NULL,
-                  published_sequence INTEGER NOT NULL,
-                  expires            TEXT NOT NULL
-                );
                 -- Each bring-forward this machine made (SYNCMERGE1b0, D178 points 3 and 8): the conflict it was to settle and the take it
                 -- made, each by machine and sequence, and when. The log forgets one whose take lost, with its mark (D178 point 5), and this
                 -- still says that second loss was a bring-forward's. It goes with the quest's log. Never pushed or served to another machine.
@@ -256,13 +230,6 @@ internal static class QuestSchema
             ("quest_log", "remote", "remote INTEGER NULL"),
             // The remote's handshake as a circle's last pass heard it (FABRIC-CLOSE1i); a pass from before heard none, which binds nothing.
             ("quest_passes", "closure", "closure TEXT NULL"),
-            // A bind named for a take, owned (FABRIC-CLOSE1o): CLOSE1l's rows named only the quest. `CREATE TABLE IF NOT EXISTS`
-            // upgrades nothing, so the columns are added here, on a local store and a shared one alike. FABRIC-CLOSE1w keeps them for
-            // the builds between, which write them; this build reads no owner there.
-            ("quest_take_binds", "session", "session TEXT NULL"),
-            ("quest_take_binds", "published_machine", "published_machine TEXT NULL"),
-            ("quest_take_binds", "published_sequence", "published_sequence INTEGER NULL"),
-            ("quest_take_binds", "expires", "expires TEXT NULL"),
         })
         {
             await SchemaColumns.EnsureAsync(db, table, column, definition, ct).ConfigureAwait(false);
@@ -275,14 +242,11 @@ internal static class QuestSchema
             await steps.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // FABRIC-CLOSE1o: a pending bind whose owner cannot be shown is discarded, since no take can show it is the one it was named
-        // for. FABRIC-CLOSE1w: that is every row of quest_take_binds, since this build names its own in quest_owned_take_binds, and a
-        // row there, whatever owner it names, may be an older build's upsert over another's graph. The quest and its history are
-        // untouched: nothing is bound until a take, so its take is today's, closing by its done.
-        await using (var unowned = db.Command())
+        // No build names a graph for a take now: the two tables that held one are dropped, the quests and their history untouched.
+        await using (var binds = db.Command())
         {
-            unowned.CommandText = "DELETE FROM quest_take_binds";
-            await unowned.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            binds.CommandText = "DROP TABLE IF EXISTS quest_take_binds; DROP TABLE IF EXISTS quest_owned_take_binds;";
+            await binds.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
         // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are

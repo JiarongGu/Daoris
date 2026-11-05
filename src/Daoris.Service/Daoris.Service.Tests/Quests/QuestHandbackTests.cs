@@ -46,7 +46,7 @@ public sealed class QuestHandbackTests : McpToolsFixture
     {
         var exchange = Exchange();
         var quest = await TakenAsync(exchange);
-        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now)).Refusal);
+        Assert.True((await exchange.Store.SeedBoundAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now)).Moved);
 
         var refused = await exchange.RespondAsync(quest.Id, "ready", "See the commit.", Now, session: "s0a1b2c3", handback: true);
 
@@ -97,7 +97,7 @@ public sealed class QuestHandbackTests : McpToolsFixture
     {
         var exchange = Exchange();
         var quest = await TakenAsync(exchange);
-        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now)).Refusal);
+        Assert.True((await exchange.Store.SeedBoundAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", Now)).Moved);
         Assert.Equal(QuestRespondRefusal.None,
             (await exchange.RespondAsync(quest.Id, "ready", "Implemented the minimap in 4f3e2d1.", Now, session: "s0a1b2c3", handback: true)).Refusal);
         Assert.Equal(QuestRespondRefusal.None, (await exchange.RespondAsync(quest.Id, "decline", "The person stopped this work: the map moved.", Now)).Refusal);
