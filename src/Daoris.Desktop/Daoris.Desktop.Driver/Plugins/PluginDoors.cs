@@ -20,7 +20,9 @@ public static class PluginDoors
         harness.AccountOf,
         harness.Product,
         harness.Maker,
-        harness.OwnHome);
+        harness.OwnHome,
+        harness.FullPosture,
+        harness.AskingPosture);
 
     /// <summary>The door <paramref name="harness"/> makes for <paramref name="plugin"/>, as the adapter set carries it.</summary>
     public static ISessionAdapter Adapter(PluginHarness harness, string plugin) => DeclaredDoors.Adapter(Declare(harness, plugin));

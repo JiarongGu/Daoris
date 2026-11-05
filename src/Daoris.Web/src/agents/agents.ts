@@ -368,7 +368,7 @@ export function versionOnly(version: string): string {
 }
 
 /** The set's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
-export type NextStartSaid = { takes: string; held: string | null };
+export type NextStartSaid = { takes: string; held: string | null; doors: string[] };
 
 /**
  * Which account the set's next start takes and why, in any workspace, above the account list (ACCTUX4b; the second opinion's
@@ -385,11 +385,13 @@ export function nextStartSaid(
   scope: AccountScope | null | undefined, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
 ): NextStartSaid | null {
   const next = scope?.next;
-  if (!scope || !next || next.reason === 'own') return null;
+  // The card speaks for the account's own door; a door that answers *own home* differently is said in a line of its own.
+  const doors = (next?.doors ?? []).map((one) => i18n.t(one.startsInOwnHome ? 'harness.next.door.ownHome' : 'harness.next.door.owed', { door: one.door }));
+  if (!scope || !next || (next.reason === 'own' && doors.length === 0)) return null;
   const passed = next.reason !== 'waits' && next.account && scope.begins && next.account !== scope.begins
     && next.over !== scope.begins;
   const head = { ...next, others: next.others.filter((held) => held.account === scope.begins) };
-  return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey, scope.near) : null };
+  return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey, scope.near) : null, doors };
 }
 
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */

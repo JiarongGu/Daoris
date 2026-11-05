@@ -38,7 +38,7 @@ public sealed class HelpRoomWorkspacesTests
             var snapshot = new Snapshot(
                 [], [new RepoView("engine", true, null, "work"), new RepoView("game", true, null, "work"), new RepoView("tools", true, null, "work")], []);
 
-            var room = HelpRoom.Render(HelpRoom.Describe(config, snapshot, [], [], _ => null, asks: 0, workflows: WorkflowStore.List(home)));
+            var room = HelpRoom.Render(HelpRoom.Describe(config, snapshot, [], [], asks: 0, workflows: WorkflowStore.List(home)));
 
             Assert.Contains("| Second opinion before landing | Workflow |\n", room);
             Assert.Contains("| `docs-to-pr` v1, Documentation to a pull request (set for it) |\n", room);

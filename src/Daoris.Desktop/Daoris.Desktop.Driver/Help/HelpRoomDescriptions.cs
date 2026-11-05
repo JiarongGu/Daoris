@@ -26,7 +26,7 @@ internal static class HelpRoomDescriptions
             {
                 Agents = [.. sources.Roster.Select(report => new HelpAgent(report.Adapter)
                 {
-                    Product = sources.Product(report.Adapter),
+                    Product = sources.Facts?.Of(report.Adapter)?.Product,
                     Present = report.Present,
                     Version = report.Version,
                     Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],

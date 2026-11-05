@@ -19,7 +19,7 @@ public sealed class HelpRoomIntroTests
         Assert.Equal(HelpModes.Restricted, HelpRoomFixture.Machine.Mode);
         Assert.Equal(
             HelpModes.Full,
-            HelpRoom.Describe(DriverConfig.Empty.WithHelpMode(HelpModes.Full), new Snapshot([], [], []), [], [], _ => null, asks: 0).Mode);
+            HelpRoom.Describe(DriverConfig.Empty.WithHelpMode(HelpModes.Full), new Snapshot([], [], []), [], [], asks: 0).Mode);
     }
 
     /// <summary>

@@ -30,8 +30,8 @@ internal static class HelpRoomScopeFixture
     internal static HelpMachine Machine(IReadOnlyList<string>? unread = null) => Describe(unread ?? ["console"]);
 
     private static HelpMachine Describe(IReadOnlyList<string> unread) => HelpRoom.Describe(
-        Config, new Snapshot(Quests, Registry, Active), Lines(unread), Roster, _ => "Claude Code", asks: 2, Standing,
-        landed: Landed, parked: [new ParkedQuest("qa1", "engine"), new ParkedQuest("qb1", "console")],
+        Config, new Snapshot(Quests, Registry, Active), Lines(unread), Roster, asks: 2, Standing,
+        facts: ProviderRegistry.Of(AdapterSet.Built()).Facts, landed: Landed, parked: [new ParkedQuest("qa1", "engine"), new ParkedQuest("qb1", "console")],
         held: [new HeldQuest("qb2", "console", "sb9")], sessions: Sessions, history: History, work: Work,
         workUnread:
         [

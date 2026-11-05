@@ -344,6 +344,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(machine, labelOf)).toEqual({
       takes: "The next start takes account-3: it runs fewer of Daoris's sessions than account-2.",
       held: `account-1 is cooling until ${moment(machine.next!.others[0]!.until!)}.`,
+      doors: [],
     });
   });
 
@@ -365,7 +366,7 @@ describe('the next start, above the accounts', () => {
       next: { account: 'account-3', reason: 'near', over: 'account-1', others: [{ account: 'account-1', hold: 'near' }] },
     });
     expect(nextStartSaid(near, labelOf)).toEqual({
-      takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null,
+      takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null, doors: [],
     });
     // Passed while another reason names a third account: its hold says which of the three holds it (SWITCH1b-iii).
     const held = scopeOf({
@@ -386,7 +387,7 @@ describe('the next start, above the accounts', () => {
     });
     expect(nextStartSaid(scope, labelOf)).toEqual({
       takes: `None of Daoris's accounts is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
-      held: null,
+      held: null, doors: [],
     });
   });
 
@@ -399,8 +400,26 @@ describe('the next start, above the accounts', () => {
   /** OWNSPACE1b-A (D175 point 4): no Daoris account signed in is its own line, said apart from a wait. */
   it('says no Daoris account is signed in, once, where the reason arrives', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)).toEqual({
-      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null,
+      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null, doors: [],
     });
+  });
+
+  /** AGENTPROVIDER1 s-ix o1 to o3: the card speaks for the account's own door, and one line says each other door that answers differently. */
+  it('adds one line for each other door whose own-home answer differs, in English and 中文', async () => {
+    const owed = scopeOf({
+      next: { account: null, reason: 'noAccount', others: [], doors: [{ door: 'p-claude-bare', startsInOwnHome: true }] },
+    });
+    expect(nextStartSaid(owed, labelOf)).toEqual({
+      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null,
+      doors: ['A start on `p-claude-bare` runs in its own home, which is nobody\'s sign-in: it is owed no account.'],
+    });
+    // Where the card's own door starts in its own home it says so, since a door beside it is said to be owed one.
+    const own = scopeOf({ next: { account: null, reason: 'own', others: [], doors: [{ door: 'p-b', startsInOwnHome: false }] } });
+    expect(nextStartSaid(own, labelOf)?.doors).toEqual(['A start on `p-b` is owed a Daoris account, and waits until one is signed in.']);
+    await i18n.changeLanguage('zh');
+    expect(nextStartSaid(owed, labelOf)?.doors).toEqual(['在 `p-claude-bare` 上的启动运行在它自己的配置目录中，那里不是任何人的登录：它不需要账户。']);
+    // No other door, and the own-home reason said nothing, as before.
+    expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
   });
 
   it('says it in one sentence in 中文, with no space after a full-width mark', async () => {

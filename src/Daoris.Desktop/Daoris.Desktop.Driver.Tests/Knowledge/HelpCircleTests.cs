@@ -76,7 +76,7 @@ public sealed class HelpCircleTests : IDisposable
         Assert.DoesNotContain("/default/tools", room);
 
         var off = DriverConfig.Empty.WithReadAcross("engine", false).WithWorkspaceReadAcross("beta", false);
-        var narrowed = HelpRoom.Describe(off, new Snapshot([], HelpRoomScopeFixture.Registry, []), [], [], _ => null, asks: 0);
+        var narrowed = HelpRoom.Describe(off, new Snapshot([], HelpRoomScopeFixture.Registry, []), [], [], asks: 0);
         Assert.Empty(narrowed.Within("alpha").Reads);
         Assert.Empty(narrowed.Within("beta").Reads);
         Assert.Equal(["tools"], narrowed.Reads.Select(read => read.Name));

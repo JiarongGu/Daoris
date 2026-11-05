@@ -159,7 +159,7 @@ public sealed class HelpRoomMayDoTests
             }
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, plugins: PluginCatalog.Load(home));
 
             Assert.Equal(["acme.tickets:triage"], machine.PluginSkills);
         }
@@ -245,7 +245,7 @@ public sealed class HelpRoomMayDoTests
             var (manifest, _) = PluginCatalog.ReadAsWritten("in-app-browser", Path.Combine(shipped, PluginCatalog.ManifestName));
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, plugins: catalog,
                 offers: [new PluginOffer("in-app-browser", shipped, manifest!, null, [], Installed: true)],
                 grants: HelpGrants.Read(home, catalog));
 
@@ -285,7 +285,7 @@ public sealed class HelpRoomMayDoTests
             HelpGrants.Approve(home, catalog, "acme.tools", "tickets", readsOnly: false);
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0, plugins: catalog,
                 grants: HelpGrants.Read(home, catalog));
 
             var server = Assert.Single(machine.PluginServers);
@@ -367,7 +367,7 @@ public sealed class HelpRoomMayDoTests
             var catalog = PluginCatalog.Load(home);
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty.WithHelpMode(HelpModes.Full), new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                DriverConfig.Empty.WithHelpMode(HelpModes.Full), new Snapshot([], [], []), [], [], asks: 0, plugins: catalog,
                 grants: HelpGrants.Read(home, catalog));
 
             Assert.Equal(["tickets", "docs"], machine.PluginServers.Select(server => server.Server));
@@ -396,7 +396,7 @@ public sealed class HelpRoomMayDoTests
             ],
             []);
 
-        var machine = HelpRoom.Describe(config, snapshot, [], [], _ => null, asks: 0);
+        var machine = HelpRoom.Describe(config, snapshot, [], [], asks: 0);
 
         Assert.Equal(
             [new HelpRead("console-ui", "work", "/work/console-ui"), new HelpRead("notes", "home", "/srv/notes")],

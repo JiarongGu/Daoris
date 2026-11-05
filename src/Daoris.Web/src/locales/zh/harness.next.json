@@ -7,6 +7,8 @@
   "harness.next.takes": "下一次启动使用 {{account}}：{{why}}。",
   "harness.next.own": "下一次启动运行在工具自己的配置目录中，那里不是任何人的登录：这里没有指定任何账户。",
   "harness.next.noAccount": "没有为它登录任何 Daoris 账户；它的启动要等你登录后才会开始。",
+  "harness.next.door.ownHome": "在 `{{door}}` 上的启动运行在它自己的配置目录中，那里不是任何人的登录：它不需要账户。",
+  "harness.next.door.owed": "在 `{{door}}` 上的启动需要一个 Daoris 账户，要等到有账户登录后才会开始。",
   "harness.next.waitsUntil": "Daoris 的账户都没有就绪，所以下一次启动要等到 {{when}}。",
   "harness.next.waits": "Daoris 的账户都没有就绪，也不会自行就绪：下一次启动在等你处理。",
   "harness.next.signInSooner": "登录 {{accounts}}，它就能更早开始。",

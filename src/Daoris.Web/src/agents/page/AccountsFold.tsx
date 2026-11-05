@@ -140,6 +140,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
               <span>{nextSaid.takes}</span>
               {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
+              {nextSaid.doors.map((line) => <span key={line} className="block text-ink-soft">{line}</span>)}
             </p>
           )}
           <ul className={ACCOUNT_COLUMNS}>

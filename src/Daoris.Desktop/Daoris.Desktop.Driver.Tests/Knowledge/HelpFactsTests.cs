@@ -36,7 +36,7 @@ public sealed class HelpFactsTests : IDisposable
 
     /// <summary>The room as the module writes it from a reading, with nothing else of the machine.</summary>
     internal static HelpMachine Describe(HelpFactsRead read, DriverConfig config) => HelpRoom.Describe(
-        config, read.Whole.Snapshot, read.Lines, read.Whole.Roster, _ => null, asks: 0, standing: read.Whole.Standing,
+        config, read.Whole.Snapshot, read.Lines, read.Whole.Roster, asks: 0, standing: read.Whole.Standing,
         sessions: read.Sessions, history: read.History, work: read.Work?.Units, workUnread: read.Work?.Unread,
         workRecovery: read.Work?.Recovery, notReadYet: read.NotReadYet, waits: read.Waits);
 

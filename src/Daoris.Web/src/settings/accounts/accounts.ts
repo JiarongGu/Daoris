@@ -117,6 +117,12 @@ export type NextStart = {
   seen?: string | null;
   /** Every other account, in the order the walk tried them, then kept, missing and unused ones. */
   others: AccountHeld[];
+  /**
+   * The doors onto the agent's accounts whose answer to *does a start run in its own home* differs from the one this answer speaks
+   * for, the account's own door (AGENTPROVIDER1 row s-ix o1 to o3): each is said as its own line, never as the agent's. Absent from an
+   * older shell.
+   */
+  doors?: { door: string; startsInOwnHome: boolean }[] | null;
 };
 
 /**
