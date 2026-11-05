@@ -340,6 +340,7 @@ export const AHEAD_USE: AgentAccounts = {
 export const CURVE_USE: AgentAccounts = {
   ...READINGS_USE,
   reads: true,
+  readFloor: 60,
   accounts: READINGS_USE.accounts.map((account) => {
     if (account.name === 'Gmail') {
       return {

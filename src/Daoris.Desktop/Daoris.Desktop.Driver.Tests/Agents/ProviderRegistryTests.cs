@@ -595,6 +595,11 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.True(registry.Door("p-claude-bare").Home.StartsInOwnHome);
         Assert.True(registry.Door("p-dsh").Home.OwnHome);
         Assert.False(joined.Home.StartsInOwnHome);
+
+        // Its account words are its own door tables, and what it lends is the same table, never a second declaration.
+        Assert.Equal(joined.Lent.Tables.Limits, joined.Tables.Own.Limits);
+        Assert.Equal(joined.Lent.Tables.SignIn, joined.Tables.Own.SignIn);
+        Assert.Equal(joined.Lent.Tables.Windows, joined.Tables.Own.Windows);
     }
 
     /// <summary>
