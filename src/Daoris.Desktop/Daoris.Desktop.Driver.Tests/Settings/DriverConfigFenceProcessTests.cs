@@ -112,7 +112,7 @@ public sealed class DriverConfigFenceProcessTests : IDisposable
 
     /// <summary>
     /// The first window, named and not closed: an older save whose lock aged, taken as stale by a newer save that completed, renames
-    /// late over it, the older Intake showing in the file again until the next check.
+    /// late over it, the older text showing in the file again until the next check. The newer save keeps the key it does not read.
     /// </summary>
     [Fact]
     public async Task An_older_save_whose_lock_aged_and_was_taken_by_a_newer_save_renames_late_over_it_the_bound_stated()
@@ -136,7 +136,7 @@ public sealed class DriverConfigFenceProcessTests : IDisposable
         var aged = $"{{\"pid\":{older.Id},\"since\":\"{(DateTimeOffset.UtcNow - TimeSpan.FromMinutes(2)).UtcDateTime:yyyy-MM-dd'T'HH:mm:ss.fff'Z'}\"}}\n";
         File.WriteAllText(KeepLock.PathOf(_path), aged);
         DriverConfig.Load(_path).WithCap(5).Save(_path);
-        Assert.Equal("{\n  \"cap\": 5\n}\n", File.ReadAllText(_path));
+        Assert.Equal(Start.Replace("\"cap\": 3", "\"cap\": 5"), File.ReadAllText(_path));
 
         older.StandardInput.Close();
         await older.WaitForExitAsync();
