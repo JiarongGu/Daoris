@@ -36,6 +36,12 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
     public bool Stands { get; init; }
 
     /// <summary>
+    /// The branch form makes one commit of the tree's work on its branch, as the run's <c>land</c> option <c>squash</c> says (PROCESS1d-iii,
+    /// D164's amendment point 2): the session is told so at its start. False under a merge, and for a tree's own branch, which lands as it stands.
+    /// </summary>
+    public bool Squash { get; init; }
+
+    /// <summary>
     /// The tree's commits the line already holds, which the press would leave out, oldest first (LANDSYNC1, D87's 2026-10-15
     /// amendment point 4): judged against the line as last fetched, since the plan reaches no network. Empty where the line holds none
     /// of them but moved since the tree left it, and the press replays them all onto it first (LANDREBASE1, D87's note). Null where the

@@ -11,6 +11,7 @@ public interface IStartLanding
     bool AutoAccept { get; }
     bool Own { get; }
     bool Stands { get; }
+    bool Squash { get; }
     // Opaque reads preserve the public serialized properties without moving or interpreting the landing graph.
     object? LeftOut { get; }
     object? Lands { get; }

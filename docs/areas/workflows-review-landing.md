@@ -114,7 +114,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 22. The person's Accept is a `review` step before `land`. A flow with no `review` lands with no press, and the standing authority
     is judged again before the first effect. (from D145, D227)
 23. A press under a run whose `land` the runtime performs keeps the word, asks a pass and waits up to 20 seconds for the landing.
-    Past that it answers *accepted; landing*. The person's press is also the try again. (from D227)
+    Past that it answers *accepted; landing*. The person's press is also the try again. No door lands in place: the window's press,
+    a chat's press and the terminal's `trees land` keep the word for the run's `land` (the terminal with no loop keeps it for the next
+    pass), and work no run's `land` performs is held with the gate's refusal or why nothing lands it (`RunLandHolds`). A tree's name
+    given where a tree door takes a session (the plan, the press, the discard, the review) names the session whose tree it is
+    (`TreeNamedRefusals`), as the terminal's alone path does. (from D227, D228)
 24. An entry's or an ask's one Accept keeps each part's word where its run's `land` is the runtime's, and lands it at the pass. A
     part no `land` node performs is held, said. `TOGETHER_PRESS` brings sessions together and lands nothing. (from D167, D227, D232)
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
@@ -135,7 +139,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. (from D227)
 29. A `land`'s open options are resolved once at the bind and kept: the pattern `feature/{quest}-{slug}`, the remote platform's
     plugin for `push` and `pull-request`, the default key where the pattern says `{ticket}`. A written option stands; no landing rule
-    is read. (from D164, D227, D232)
+    is read. The plan carries `squash` for the branch form, and a session or a conversation in a tree of its own is told once, after
+    the branch line, that its commits land as one (`ProcessWords`). (from D164, D227, D232)
 30. `merge` lands into the line. `branch` makes a new branch from the session's branch, moves no checkout, and refuses a name that
     exists. `push` and `pull-request` hand the branch to a plugin. `integrate` hands it to the line's integration. (from D87, D215)
 31. Daoris never pushes and never opens a pull request. A plugin speaking on `HookPoints.Land` does, for its platform. (from D87, D100)
@@ -247,9 +252,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   other rows have a page; `AutoLandingWorld`, whose name still says the auto lander. The service holds no bind door: only its
   exchange's `BindAsync` writes a quest's closure bind, which service tests seed and the take reads, until a bound run's close no
   longer reads a bind recorded at the take.
-- **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
-- **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
-- **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.
+- **CHATFLOW1 (the rest):** the installed window. The in-place carry-on the doors made (`LandCarry.CarryAsync`, `CarryAnswer`,
+  `TreesWords.Carried`, the press answer's `carried`) is reached by no door now and goes with its tests; the performer's carry-on stays.
+- **PROCESS1d-iii:** a conversation told its process once before its first words, proven over a stand-in harness.
+- **INTEGRATE1 k, i, m, p:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's
+  installed proof; a `request` node under `start: you` waits for the person's *Send* (an act on the run's node door), which nothing offers yet.
+- **LANDHOLD2b:** the Accept press no longer waits behind a tree's hold (the performer does), so the cause and bound beside the button are
+  the pass's: *Daoris lands it at its pass*, within `GraphPasses.Bound`.
+- **FABRIC-SQUASHCHAIN1:** whether the plan and the performer's keeper agree on a squash chain's earlier part waits on the owner's choice.
 - **FABRIC-PIPELINE1d:** the verification run on a line has no view of its own yet.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof; the performer's combined-head landing has no test of its own.

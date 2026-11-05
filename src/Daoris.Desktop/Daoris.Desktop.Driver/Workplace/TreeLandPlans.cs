@@ -112,7 +112,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : context.Plugins.Problem(plugin);
-            return new(LandingForm.Branch, name, LandingSource.Default, plugin, problem, landing.AutoAccept);
+            return new(LandingForm.Branch, name, LandingSource.Default, plugin, problem, landing.AutoAccept) { Squash = landing.Squash };
         }
 
         var (code, commonDir, _) = Directory.Exists(full)

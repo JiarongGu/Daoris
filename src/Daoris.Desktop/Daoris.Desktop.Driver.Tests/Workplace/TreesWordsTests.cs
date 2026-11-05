@@ -336,7 +336,6 @@ public sealed class TreesWordsTests : IAsyncLifetime
     /// <summary>The alone path prints through the words the routes answer, so the two cannot drift (RPC1b3).</summary>
     [Theory]
     [InlineData("TreesWords.Remove(")]
-    [InlineData("TreesWords.Land(")]
     [InlineData("TreesWords.Clean(")]
     [InlineData("TreesWords.Sync(")]
     [InlineData("TreesWords.Hand(")]
@@ -354,10 +353,8 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("TreesPlanWords.LandedPlan(")]
     [InlineData("TreesPlanWords.HandPlan(")]
     [InlineData("TreesPlanWords.EntryPlanned(")]
-    // LANDBACK1 part 1 (after LANDREBASE2): a landing's conflict or uncommitted work carries the session on in Daoris's words and keeps the
-    // person's yes, as the window's press does.
-    [InlineData("LandCarry.CarryAsync(")]
-    [InlineData("LandCarry.WhyOf(")]
+    // CHATFLOW1g (D228): the press keeps the word for the run's `land`, or says what holds the work, in the words the routes say too.
+    [InlineData("TreesWords.AcceptedForPass(")]
     public void TreesConsoleUsesTheWords(string call)
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));

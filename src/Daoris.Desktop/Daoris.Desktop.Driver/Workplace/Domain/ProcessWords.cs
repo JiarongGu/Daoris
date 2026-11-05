@@ -39,6 +39,7 @@ public static class ProcessWords
             .Append(branch && !plan!.Own && plan.Target.Length > 0
                 ? $": Daoris makes the pull request's branch when {(auto ? "the work is accepted" : "the person accepts the work")}.\n"
                 : ".\n");
+        if (plan is { Form: LandingForm.Branch, Squash: true }) text.Append("- ").Append(Squashed).Append('\n');
         text.Append("- ").Append(Stash).Append('\n');
         if (auto) text.Append("- ").Append(BeforeDone(rule.Mode)).Append('\n');
         if (rule.Convention is { } convention)
@@ -84,6 +85,13 @@ public static class ProcessWords
     /// tree's entries sit on it beside this tree's, and a pop here could take another's. Said wherever the process is, which is only
     /// in a tree of its own; the person's checkout is handed no process.
     /// </summary>
+    /// <summary>
+    /// Where the run's <c>land</c> squashes (PROCESS1d-iii, its option <c>squash</c>): the branch gets one commit of the work, so the session's
+    /// commits are for the review, and their subjects do not reach the line.
+    /// </summary>
+    private const string Squashed = "When the work lands, Daoris squashes this tree's commits into one commit on its branch: commit as the work "
+        + "needs, and the line keeps that one commit.";
+
     private const string Stash = "The stash is shared with the repository's checkout and every other tree: set work aside with a commit on this tree's branch, and never use git stash.";
 
     /// <summary>How commits are made, by the rule's mode: under a rule that accepts automatically there is no Accept to wait for.</summary>
@@ -121,6 +129,7 @@ public static class ProcessWords
             .Append(":\n\n")
             .Append("- ").Append(Mode(rule.Mode, auto: false)).Append('\n')
             .Append("- Do not create, switch or push branches.\n")
+            .Append(plan is { Form: LandingForm.Branch, Squash: true } ? $"- {Squashed}\n" : "")
             .Append("- ").Append(Stash);
         if (rule.Convention is { } convention)
         {
