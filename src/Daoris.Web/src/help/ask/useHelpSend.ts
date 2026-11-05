@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { useHelpReadied } from '../../bridge/help';
 import { sentence } from '../../locales/format';
 import { workspaceOf } from '../../data/workspaces';
-import { useSessionEvents, stoppedWaiting, useGoOnBrief, logEvent } from '../../bridge/shell';
+import { useSessionEvents, stoppedWaiting, useHandOver, logEvent } from '../../bridge/shell';
 import { goOnBriefRefusal } from '../../work/say';
 import { SESSION_ACTIVE } from '../../design/ui';
 import { type ChatMessage, type Level } from '../../work/conversation/conversation';
@@ -466,7 +466,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   // SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): words that wait for the person on a
   // conversation in view go on in a new conversation of its room, handed Daoris's brief and the words, shown once it opens; a refusal is
   // said by its code in the composer's line.
-  const goOnBrief = useGoOnBrief();
+  const goOnBrief = useHandOver();
   const onGoOnBrief = (id: string) => {
     if (goOnBrief.isPending) return;
     setRefusal(null);

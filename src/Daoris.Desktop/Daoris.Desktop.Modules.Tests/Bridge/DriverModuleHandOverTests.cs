@@ -88,14 +88,64 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
         Assert.Equal("The hand-over to talk was not taken: it already runs on that agent. This session goes on with its own agent.", note.Text);
     }
 
-    private async Task<(DriverLoop Loop, DriverModule Module, DriverModuleStartFromTests.StandIn Service)> UpAsync()
+    /// <summary>Before the loop's conversations come up, a press naming no agent says so, as the named press does.</summary>
+    [Fact]
+    public async Task A_press_naming_no_agent_before_the_loop_is_up_says_so()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_HAND_OVER", new { id = "c1" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+    }
+
+    /// <summary>
+    /// ONEWAY1j: a conversation's press naming no agent is *Go on with Daoris's brief*, one answer <c>{sessionId, kept, why, message}</c>
+    /// with a refusal by its code and nothing opened: here no words wait on the record.
+    /// </summary>
+    [Fact]
+    public async Task A_press_naming_no_agent_on_a_conversation_with_no_words_is_refused_by_its_code()
+    {
+        var (_, module, service) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "c1" });
+
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("sessionId").ValueKind);
+        Assert.False(answer.GetProperty("kept").GetBoolean());
+        Assert.Equal(StartFrom.NoWords, answer.GetProperty("why").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(answer.GetProperty("message").GetString()));
+        Assert.Equal(1, service.Count);
+    }
+
+    /// <summary>
+    /// ONEWAY1j: the press opens the new part through the runner, and its end reaches the page as a start's does; one that failed at its
+    /// spawn leaves the words on the record they were said to, and the answer says why.
+    /// </summary>
+    [Fact]
+    public async Task A_press_naming_no_agent_opens_a_new_part_whose_end_reaches_the_page()
+    {
+        var (loop, module, service) = await UpAsync(words: true);
+
+        var answer = await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "c1" });
+
+        Assert.Equal(JsonValueKind.Null, answer.GetProperty("sessionId").ValueKind);
+        Assert.False(answer.GetProperty("kept").GetBoolean());
+        Assert.Contains("this test spawns nothing", answer.GetProperty("message").GetString());
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        Assert.Equal("""{"Session":"c2","State":"failed"}""", JsonSerializer.Serialize(Raised.Single(m => m.Type == "SESSION_ENDED").Payload));
+        Assert.Equal(["w1"], service.Said("c1"));
+        Assert.True(loop.Nudges >= 1);
+    }
+
+    private async Task<(DriverLoop Loop, DriverModule Module, DriverModuleStartFromTests.StandIn Service)> UpAsync(bool words = false)
     {
         var root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(root);
         File.WriteAllText(DriverConfigPath, """{ "adapter": "talk" }""");
         var service = new DriverModuleStartFromTests.StandIn(root);
-        service.Chat("c1", root, false);
+        service.Chat("c1", root, words);
         var loop = Loop();
+        // Its words already judged unable to go on, as a refused resume leaves them: the line the press stands under. The loop's own
+        // look as it comes up then leaves them waiting, so the press is judged alone (FLAKE2).
+        if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Refused), DateTimeOffset.UtcNow);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new NoSpawn() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(

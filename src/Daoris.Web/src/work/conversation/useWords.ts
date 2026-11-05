@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
-  logEvent, stoppedWaiting, type TurnStop, useCancelTurn, type useChatTurns, useEndChat, useGoOnBrief, useHandOver, useMoveQueued, useSay,
+  logEvent, stoppedWaiting, type TurnStop, useCancelTurn, type useChatTurns, useEndChat, useHandOver, useMoveQueued, useSay,
   useSendMessage, useStartFrom, type WordsAnswer,
 } from '../../bridge/shell';
 import type { Session } from '../../data/api';
@@ -209,8 +209,8 @@ export function useWords({
     });
   };
   // *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): the same session goes on in a new part of itself, handed Daoris's brief
-  // and then the words, attended once it opens. One act of the driver's; a refusal is said by its code, as the fresh start's is.
-  const goOnBrief = useGoOnBrief();
+  // and then the words, attended once it opens. The hand-over's press naming no agent; a refusal is said by its code, as the fresh start's is.
+  const goOnBrief = useHandOver();
   const onGoOnBrief = () => {
     if (!attended || goOnBrief.isPending) return;
     goOnBrief.mutate({ session: attended.id }, {
@@ -224,7 +224,7 @@ export function useWords({
           return;
         }
         attend(moved.sessionId);
-        if (!moved.sent) notify(t('work.say.notTaken'), 'error');
+        if (!moved.kept) notify(t('work.say.notTaken'), 'error');
       },
       onError: failure(notify),
     });
