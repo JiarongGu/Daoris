@@ -187,7 +187,7 @@ public sealed class DriverCommandTests
 
     /// <summary>
     /// LAND3: a failed or superseded attempt's branch is removed from a terminal by the session or the branch, a door the
-    /// usage names and the host reads; the clean-up's list offers it beside such a row, and a landing asks which sessions run.
+    /// usage names and the host reads; the clean-up's list offers it beside such a row.
     /// </summary>
     [Fact]
     public void The_usage_names_removing_a_sessions_branch_by_the_session_or_the_branch()
@@ -197,7 +197,6 @@ public sealed class DriverCommandTests
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
         Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
         Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
-        Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
     }
 
     /// <summary>
@@ -279,7 +278,7 @@ public sealed class DriverCommandTests
         Assert.Contains("await landing.OwnSubjectAsync(", console);
         Assert.Contains("await service.SessionRecordsAsync()", console);
         Assert.Contains("gate.Process", console[console.IndexOf("await landing.OwnSubjectAsync(", StringComparison.Ordinal)..]);
-        Assert.Contains("gate: gate, joins: subject.Joins,", console);
+        Assert.Contains("landing.PlanAsync(tree, subject, process: gate.Process)", console);
         Assert.DoesNotContain("LandingRules.SubjectAsync(", console);
         // The gate is read before the name, since the entry's branch is the gate's process's.
         Assert.True(console.IndexOf("await landing.GateAsync(tree, questId", StringComparison.Ordinal)
@@ -287,10 +286,9 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule): the page's press and the terminal's hold their landing to the result the press was
-    /// made on, by the driver's one code (<c>PressQuests</c>, <c>PressedResult</c>; <c>PressedResultTests</c> and <c>AutoLandingTests</c>
-    /// hold the act): the quest read once where the door names the landing, and both judgements handed to it. An entry's Accept holds
-    /// each part to its own quest in the library, judged under that part's own holds.
+    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule): each press reads the quest once where it names the work (<c>PressQuests</c>), and the
+    /// run's <c>land</c> holds the landing to the result it was made on (<c>AcceptDoorsTests</c>). An entry's Accept holds each part to its
+    /// own quest in the library, judged under that part's own holds.
     /// </summary>
     [Fact]
     public void Every_press_holds_its_landing_to_the_result_it_was_made_on()
@@ -303,8 +301,6 @@ public sealed class DriverCommandTests
         {
             Assert.Contains("new PressQuests(", door);
             Assert.Contains("quests.FindAsync", door[door.IndexOf("OwnSubjectAsync(", StringComparison.Ordinal)..]);
-            Assert.Contains("await quests.PressedAsync(", door);
-            Assert.Contains("judged: pressed?.Judged, beforePush: pressed?.BeforePush", door);
         }
 
         Assert.Contains("quests.FindAsync", accepts);

@@ -13,12 +13,14 @@ public sealed record ChatLandWorld(ServiceClient Service, string Home, SessionTr
 /// point 1, Codex's finding 11): bound first, as the window's press binds it, then the driver's one press operation
 /// (<see cref="ChatPresses.PressAsync"/>). A live conversation is held by the running Daoris's runner, so the press is sent there (the connected
 /// terminal), confirmed in its window and reserved there; with none to reach, it is refused, never landed beside a turn this terminal cannot
-/// see. An ended one no runner holds, and this terminal is its door (the standalone terminal). Its words are the press's, exit 1 where refused.
+/// see. An ended one no runner holds, and this terminal is its door (the standalone terminal), which lands nothing (CHATFLOW1g, D228): the
+/// run's <c>land</c> lands it at Daoris's next pass, so the press keeps the review's word, or says what holds the work. Its words are the
+/// press's, exit 1 where refused.
 /// </summary>
 public static class ChatLandCommand
 {
     /// <summary>The press, by the session's record as the service answered it and its chat run.</summary>
-    /// <param name="entered">The branch name the person entered, which lands as entered.</param>
+    /// <param name="entered">The branch name the person entered, which the running Daoris's press is sent with.</param>
     public static async Task<int> RunAsync(
         ChatLandWorld world, string session, string tree, string chatRun, string recordsJson, string? entered, CancellationToken ct = default)
     {
@@ -44,30 +46,18 @@ public static class ChatLandCommand
         var events = WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         var reviewWorld = new ServiceReviewWorld(service);
         var presses = new OpinionPresses(world.Home, service);
-        var quests = new PressQuests(service.FindQuestAsync);
-        var records = SessionRecords.Parse(recordsJson);
         TreesSaid? kept = null;
         var pressed = await ChatPresses.PressAsync(
             world.Home, new ChatPressAsk(session, tree, chatRun, repository, workspace, Live: false), holder: null,
             async (tip, token) => await presses.PressedAsync(
                 session, await landing.GateAsync(tree, null, reviewWorld, session, token, tip: tip, run: chatRun).ConfigureAwait(false), null, tree, null,
                 token, chatRun, ReviewDoors.Terminal).ConfigureAwait(false),
-            async (gate, token) =>
+            (gate, _) =>
             {
-                // WORKFLOWCLEAN1 1d: a graph-bound chat's `land` is the runtime's, so a terminal with no loop keeps the word and performs nothing.
-                if (TreesWords.AcceptedForPass(world.Home, gate) is { } accepted)
-                {
-                    kept = accepted;
-                    return new TreeLanding(false, "accepted; Daoris lands it at its next pass.");
-                }
-
-                var subject = await landing.OwnSubjectAsync(
-                    tree, session, null, records, quest => quests.FindAsync(quest, token), named => events.Openings([named]).GetValueOrDefault(named),
-                    gate.Process, token).ConfigureAwait(false) with { Entered = entered };
-                return await landing.LandAsync(tree, subject, token, inUse: async held => (await service.ActiveSessionsAsync(held).ConfigureAwait(false))
-                    .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins,
-                    beside: held => BranchTidying.BesideAsync(service, held)).ConfigureAwait(false);
+                // A run whose `land` the runtime performs keeps the word for its next pass; any other is held, and nothing lands it here.
+                if (gate.Process is not { LandsByRuntime: true }) return Task.FromResult(RunLandHolds.Of(gate));
+                kept = TreesWords.AcceptedForPass(world.Home, gate);
+                return Task.FromResult(new TreeLanding(false, "accepted; Daoris lands it at its next pass."));
             },
             () => ChatPresses.TurnsOf(events, line), ct).ConfigureAwait(false);
 
@@ -80,15 +70,6 @@ public static class ChatLandCommand
             && LandingGateWords.Held(session, (workspace, repository), judged, pressed.Landed, ReviewDoors.Terminal) is { } held)
         {
             SessionLog.WriteLanding(log, held);
-        }
-
-        if (pressed.Landed.Landed)
-        {
-            events.Keep(session, LandingNotes.Note(pressed.Landed), each => world.Error.WriteLine($"trees: {each}"));
-            var followed = await TreesWords.FollowMovedAsync(service, world.Home, () => DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Log, ct)
-                .ConfigureAwait(false);
-            foreach (var each in followed.Out) world.Output.WriteLine(each);
-            foreach (var each in followed.Error) world.Error.WriteLine(each);
         }
 
         return said.Code;

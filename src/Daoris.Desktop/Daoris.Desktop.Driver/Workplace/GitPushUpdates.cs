@@ -2,12 +2,19 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>What a push asks of one ref: a plain update, a force (it may move the ref off its history), or a delete.</summary>
+/// <summary>
+/// What a push asks of one ref. <see cref="Plain"/> is a branch made or fast-forwarded; every other kind is Dangerous: a force (it moves
+/// the ref off its history), a delete, a tag, a mirror (a ref outside <c>refs/heads/</c> and <c>refs/tags/</c>) and a prune (a delete
+/// beside updates in one push).
+/// </summary>
 public enum GitPushKind
 {
     Plain,
     Force,
     Delete,
+    Tag,
+    Mirror,
+    Prune,
 }
 
 /// <summary>One ref a push updates, as git's receive-pack commands name it: the ref's old and new object, and its name.</summary>
@@ -21,35 +28,54 @@ public sealed record GitPushUpdate(string Old, string New, string Ref)
 }
 
 /// <summary>
-/// The force-pushes and branch deletes a push holds (D233 choice 3), read at both doors so the doors judge them for every agent, whatever
-/// its harness's rules say. The remote helper reads git's <c>push</c> lines (<c>+src:dst</c> forces, <c>:dst</c> deletes); the ssh door
-/// reads receive-pack's commands from git's side before it forwards them, and asks git whether each update keeps the ref's history.
+/// The updates a push holds, each judged by its kind (D233 choice 3, D241 point 3) at both doors, for every agent, whatever its harness's
+/// rules say. The ssh door reads receive-pack's commands from git's side before it forwards them; the remote helper builds the same
+/// updates from the remote's refs and its sources' objects (<see cref="GitHelperPush"/>). Each asks git whether an update keeps its
+/// ref's history.
 /// </summary>
 /// <remarks>The base library alone: the doors compile it in (<c>Daoris.Desktop.GitDoor</c>).</remarks>
 public static class GitPushUpdates
 {
-    /// <summary>The line a refused force-push or branch delete says, where git prints it.</summary>
-    public const string DeniedLine =
-        "daoris: Daoris's git access refuses a force-push or a branch delete from here: it stays the person's, unless their git access allows it.";
+    /// <summary>The line a refused dangerous update says, where git prints it.</summary>
+    public static string DeniedLine(GitPushKind kind) =>
+        $"daoris: Daoris's git access refuses {Said(kind)} from here: Dangerous is the person's to allow, for the repository, the workspace or this machine.";
 
-    /// <summary>What a remote helper's <c>push &lt;refspec&gt;</c> line asks; null for any other line.</summary>
-    public static GitPushKind? OfHelperPush(string line)
+    private static string Said(GitPushKind kind) => kind switch
     {
-        if (!line.StartsWith("push ", StringComparison.Ordinal)) return null;
-        var spec = line["push ".Length..].Trim();
-        return spec.StartsWith(':') ? GitPushKind.Delete : spec.StartsWith('+') ? GitPushKind.Force : GitPushKind.Plain;
-    }
-
-    /// <summary>The most a push asks: a delete or a force over a plain update.</summary>
-    public static GitPushKind Most(IEnumerable<GitPushKind> kinds) =>
-        kinds.Aggregate(GitPushKind.Plain, (most, kind) => kind == GitPushKind.Plain ? most : most == GitPushKind.Plain ? kind : most);
+        GitPushKind.Force => "a force-push",
+        GitPushKind.Delete => "a delete of a ref",
+        GitPushKind.Tag => "a push of a tag",
+        GitPushKind.Mirror => "a mirror push",
+        GitPushKind.Prune => "a prune of refs",
+        _ => "this push",
+    };
 
     /// <summary>
-    /// What one receive-pack update asks: a delete where its new object is zeros; a force where it moves an existing ref to an object its
-    /// old one is not an ancestor of (<paramref name="keepsHistory"/>, asked of git where the push runs); else a plain update.
+    /// What one receive-pack update asks: a delete where its new object is zeros; a tag under <c>refs/tags/</c>; a mirror's ref outside
+    /// <c>refs/heads/</c>; a force where it moves an existing ref to an object its old one is not an ancestor of
+    /// (<paramref name="keepsHistory"/>, asked of git where the push runs); else a plain update.
     /// </summary>
     public static GitPushKind KindOf(GitPushUpdate update, Func<string, string, bool> keepsHistory) =>
-        update.Deletes ? GitPushKind.Delete : update.Makes || keepsHistory(update.Old, update.New) ? GitPushKind.Plain : GitPushKind.Force;
+        update.Deletes ? GitPushKind.Delete
+        : update.Ref.StartsWith("refs/tags/", StringComparison.Ordinal) ? GitPushKind.Tag
+        : !update.Ref.StartsWith("refs/heads/", StringComparison.Ordinal) ? GitPushKind.Mirror
+        : update.Makes || keepsHistory(update.Old, update.New) ? GitPushKind.Plain
+        : GitPushKind.Force;
+
+    /// <summary>The kind of each update in a batch: a delete beside any other update is a prune.</summary>
+    public static IReadOnlyList<GitPushKind> KindsOf(IReadOnlyList<GitPushUpdate> updates, Func<string, string, bool> keepsHistory)
+    {
+        var kinds = updates.Select(update => KindOf(update, keepsHistory)).ToList();
+        if (updates.Any(update => !update.Deletes))
+        {
+            for (var index = 0; index < kinds.Count; index++)
+            {
+                if (kinds[index] == GitPushKind.Delete) kinds[index] = GitPushKind.Prune;
+            }
+        }
+
+        return kinds;
+    }
 
     /// <summary>
     /// Read receive-pack's commands from git's side of an ssh push, as pkt-lines, up to the flush that ends them: every byte read, to be
@@ -81,7 +107,7 @@ public static class GitPushUpdates
         return words.Length == 3 && IsObject(words[0]) && IsObject(words[1]) && words[2].Length > 0 ? new GitPushUpdate(words[0], words[1], words[2]) : null;
     }
 
-    private static bool IsObject(string word) => word.Length is 40 or 64 && word.All(char.IsAsciiHexDigitLower);
+    internal static bool IsObject(string word) => word.Length is 40 or 64 && word.All(char.IsAsciiHexDigitLower);
 
     private static bool Fill(Stream input, byte[] buffer, MemoryStream read)
     {

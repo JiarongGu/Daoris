@@ -5,8 +5,9 @@ using static Daoris.Desktop.TreesRoutes;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// How a reviewed session's work lands behind the landing doors: what a press would do, said before it, and the press, which applies the
-/// repository's rule. A run the runtime lands is waited for, and a chat run's press is the driver's one reserved operation.
+/// How a reviewed session's work lands behind the landing doors: what a press would do, said before it, and the press, which is the
+/// person's Accept and lands nothing itself. A run the runtime lands is waited for, a chat run's press is the driver's one reserved
+/// operation, and work no run's <c>land</c> performs is held (D228).
 /// </summary>
 internal sealed class TreesLandDesk(DriverLoop loop)
 {
@@ -34,7 +35,10 @@ internal sealed class TreesLandDesk(DriverLoop loop)
                 return new { Session = id, Said = TreesPlanWords.LandedPlan(id, earlier).ToWire() };
             }
 
-            if (string.IsNullOrWhiteSpace(tree)) return new { Session = id, Said = TreesWords.NoTreeToLand(id).ToWire() };
+            if (string.IsNullOrWhiteSpace(tree))
+            {
+                return new { Session = id, Said = (await TreeNamedRefusals.SaidAsync(service, id, TreesWords.NoTreeToLand(id), cancellationToken)).ToWire() };
+            }
         }
 
         // the verb's two refusals are words on the press, exit 1, where the plan keeps the page's refusal. A landing the review
@@ -47,11 +51,9 @@ internal sealed class TreesLandDesk(DriverLoop loop)
 
         if (string.IsNullOrWhiteSpace(tree))
         {
-            if (press) return Refused(id, TreesWords.NoTreeToLand(id));
-            throw Refusals.Because(
-                Refusals.SessionNotReviewable,
-                "this session's record names no working tree on this machine, so there is nothing here to land.",
-                ("session", id));
+            if (press) return Refused(id, await TreeNamedRefusals.SaidAsync(service, id, TreesWords.NoTreeToLand(id), cancellationToken));
+            throw await TreeNamedRefusals.RefusalAsync(service, id,
+                "this session's record names no working tree on this machine, so there is nothing here to land.", cancellationToken);
         }
 
         var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
@@ -64,14 +66,9 @@ internal sealed class TreesLandDesk(DriverLoop loop)
             if (press || terminal) return Refused(id, partner);
             throw Refusals.Because(Refusals.SessionNotReviewable, partner.Error[0]["trees: ".Length..], ("session", id));
         }
-        // A rule's plugin says its lines on the console under its name, as a hook's do; what the
-        // landing did with it goes to the machine log and the loop's record of its health.
-        // the lines also go into the answer (`said`), so a terminal that sent the press prints them as the alone path does.
-        var pluginLines = new List<string>();
-        // WORKFLOWCLEAN1 1c: the gate, the plan and the press that is only a run's Accept read through trees with no plugin wire; the wire is built
-        // where a landing is made here (a chat run's press, or the transitional in-place landing), never for a run whose `land` Daoris performs.
+        // The gate, the plan and the press read through trees with no plugin wire: no landing is made here (CHATFLOW1g, D228), only a run's
+        // `land` lands, which Daoris performs at its pass.
         var trees = new SessionTrees(_loop.Home);
-        SessionTrees Landing() => new(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(_loop, pluginLines), log: _loop.Log, health: _loop.Health));
 
         // a chat in a tree of its own is gated by its chat run's process. A press on a run
         // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
@@ -82,7 +79,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         // every part at one captured tip, asks the opinion where it is not asked, and lands that tip pinned.
         if (press && chatRun is not null)
         {
-            return await ChatPressAsync(asked, service, id, tree, chatRun, records, recordsJson, Landing(), pluginLines, cancellationToken);
+            return await ChatPressAsync(asked, service, id, tree, chatRun, recordsJson, trees, cancellationToken);
         }
 
         // The landing gate: the second opinion, then the review. What holds the press says so before it,
@@ -108,7 +105,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
                 return new
                 {
                     Session = id,
-                    Said = (await TreesPlanWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, pluginLines, cancellationToken)).ToWire(),
+                    Said = (await TreesPlanWords.LandPlanAsync(trees, _loop.Home, id, tree, plan, gate, earlier, [], cancellationToken)).ToWire(),
                 };
             }
 
@@ -136,42 +133,14 @@ internal sealed class TreesLandDesk(DriverLoop loop)
             return await PerformedPressAsync(asked, id, gate, performed, cancellationToken);
         }
 
-        // FABRIC-CLOSE1h3: the result the press is made on, its quest as read for its name, judged again under the tree's
-        // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
-        var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);
-
-        // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds.
-        PressSteps.Reach(PressSteps.Landing);
-        // a landing of this tree still under way holds the press for up to five minutes; the page is told it waits.
-        using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-        var landed = await Landing().LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: subject.Joins, judged: pressed?.Judged, beforePush: pressed?.BeforePush, beside: token => BranchTidying.BesideAsync(service, token));
-        // Kept where the conversation is kept, so the landing and the plugin's word outlast the press.
-        if (landed.Landed) _loop.Events.Keep(id, LandingNotes.Note(landed), line => _loop.Output.Append(id, line));
-        if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
+        // CHATFLOW1g (D228): no run's `land` performs this work, so the press lands nothing: what holds it, or why nothing lands it.
+        var held = RunLandHolds.Of(gate);
+        if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, held, ReviewDoors.Screen) is { } line)
         {
-            SessionLog.WriteLanding(log, held);
+            SessionLog.WriteLanding(log, line);
         }
 
-        // LANDBACK1 part 1: uncommitted work or a conflict is the session's to clear and the press is the person's yes already,
-        // so the session is carried on in Daoris's own words through the say door (never the person's, never a card) and the yes kept
-        // on it; the press answers that it was carried on and lands when its tree is clean. Words the door keeps nothing of leave the refusal.
-        var carry = LandCarry.WhyOf(landed) is null ? null : await LandCarry.CarryAsync(
-            async (named, text, key, token) => (await WordsHead.FollowAsync(
-                named, at => service.SayAsync(at, text, null, token, from: DaorisWords.From, key: key)).ConfigureAwait(false)).Said,
-            _loop.Home, id, tree, landed, records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)),
-            DateTimeOffset.UtcNow, cancellationToken);
-
-        _loop.Nudge();
-        // the lines this landing moved are registered at once where the verb asks (`follow`), as the page's next look would
-        //; the lines it says ride in `followed` and after the sentence in `said`.
-        var followed = asked.Follow
-            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
-            : null;
-        return carry is null
-            ? Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [])
-            : Pressed(id, carry.Told ? landed with { Message = carry.Sentence } : landed, gate,
-                TreesWords.Carried(landed, carry, pluginLines).Followed(followed), followed?.Out ?? [], carried: carry);
+        return Pressed(id, held, gate, TreesWords.Land(held, []), []);
     }
 
     /// <summary>
@@ -222,18 +191,18 @@ internal sealed class TreesLandDesk(DriverLoop loop)
 
     /// <summary>
     /// The person's press on a chat run's work: <see cref="ChatPresses.PressAsync"/>, reserved in this
-    /// window's runner, its gate keyed by the run and read at the captured tip, a press's answer to what it showed kept by the run, and the
-    /// landing pinned to that tip. It answers as every press does.
+    /// window's runner, its gate keyed by the run and read at the captured tip, and a press's answer to what it showed kept by the run. Its
+    /// run's <c>land</c> lands it at the pass, which the press waits for; no run's land performing it, it is held (CHATFLOW1g, D228). It answers
+    /// as every press does.
     /// </summary>
     private async Task<object?> ChatPressAsync(
-        LandAsk asked, ServiceClient service, string id, string tree, string chatRun, IReadOnlyList<SessionRecord> records, string recordsJson,
-        SessionTrees trees, List<string> pluginLines, CancellationToken cancellationToken)
+        LandAsk asked, ServiceClient service, string id, string tree, string chatRun, string recordsJson, SessionTrees trees,
+        CancellationToken cancellationToken)
     {
         var (workspace, repository) = trees.Owner(tree);
         var (line, live) = ChatRuns.PressOf(id, recordsJson);
         var world = new ServiceReviewWorld(service);
         var presses = new OpinionPresses(_loop.Home, service) { Holder = _loop.Chat };
-        var quests = new PressQuests(service.FindQuestAsync);
         PressSteps.Reach(PressSteps.Gate);
         var pressed = await ChatPresses.PressAsync(
             _loop.Home, new ChatPressAsk(id, tree, chatRun, repository, workspace, live), _loop.Chat,
@@ -244,19 +213,10 @@ internal sealed class TreesLandDesk(DriverLoop loop)
                     id, await trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), asked.Answers, tree, null, held, chatRun),
                 held => trees.GateAsync(tree, null, world, id, held, tip: tip, run: chatRun), _loop.PassWholeAsync, token,
                 (review, _) => Task.FromResult(RunNodeWords.Word(new NodeRecordFiles(_loop.Home), review.Run, review.Node!, NodeWordActs.Accept, null).Done)),
-            async (gate, token) =>
-            {
-                // WORKFLOWCLEAN1 row 1d (the cleanup design §2.7): a run whose `land` the runtime performs is landed by that node, and this press waits.
-                if (gate.Process is WorkflowProcess { LandsByRuntime: true } performed) return await PerformedLandingAsync(id, gate, performed, token);
-                var subject = Entering(await trees.OwnSubjectAsync(
-                    tree, id, null, records, quest => quests.FindAsync(quest, token),
-                    named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), asked.Branch);
-                PressSteps.Reach(PressSteps.Landing);
-                // a landing of this tree still under way holds the press for up to five minutes, and the conversation with it.
-                using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
-                return await trees.LandAsync(tree, subject, token, async held => await LinesRoutes.InUseAsync(service, held), gate: gate, joins: subject.Joins,
-                    beside: held => BranchTidying.BesideAsync(service, held));
-            },
+            // WORKFLOWCLEAN1 row 1d (the cleanup design §2.7): a run whose `land` the runtime performs is landed by that node, and this press waits.
+            async (gate, token) => gate.Process is WorkflowProcess { LandsByRuntime: true } performed
+                ? await PerformedLandingAsync(id, gate, performed, token)
+                : RunLandHolds.Of(gate),
             () => ChatPresses.TurnsOf(_loop.Events, line), cancellationToken);
 
         var landed = pressed.Landed;
@@ -271,7 +231,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
         var followed = asked.Follow && landed.Landed
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
-        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [], pressed.Code);
+        return Pressed(id, landed, gate, TreesWords.Land(landed, []).Followed(followed), followed?.Out ?? [], pressed.Code);
     }
 
     /// <summary>

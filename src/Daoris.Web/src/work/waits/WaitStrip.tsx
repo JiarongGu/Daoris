@@ -20,6 +20,7 @@ import { GitAsk, gitAsksFor, type GitAskWaits } from './GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
+import { waitObligations } from './waitObligations';
 import type { ParkQuestion } from './parkQuestion';
 
 /**
@@ -42,6 +43,8 @@ export type WaitProps = {
   answerPick?: AnswerPick;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
+  /** The ask its go-aheads are on, by which the count keys each as *What needs you* does (COMMS1j). */
+  goAheadsOn?: string | null;
   onGoAhead?: GoAheadAnswer;
   /**
    * The park's question as its agent asked it (PARKVIEW1, the park's ask design §2): the head's card shows it, and the box below
@@ -166,11 +169,14 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   // would be a second place to answer the same ask. Neither is counted: the strip's count is what it draws (the look of 2026-10-22
   // read *2 waiting on you* over one). With nothing else to draw, no strip.
   const boxBelow = (wait: Wait) => (wait.kind === 'question' && wait.below) || (wait.kind === 'goAhead' && Boolean(props.parkBox));
-  const waits = waitsOf({ ...props, answerBelow }).filter((wait) => !boxBelow(wait));
+  const all = waitsOf({ ...props, answerBelow });
+  const waits = all.filter((wait) => !boxBelow(wait));
   if (waits.length === 0) return null;
   // Never from under the person (WAITFOOT2a): an ask open here, or the focus, a line a press led to's among it, holds it up.
   const held = inside || Boolean(workAsk?.open) || Boolean(ruleAsk?.open);
   const several = waits.length > 1;
+  // COMMS1j: the count is of obligations, keyed as the bell and *What needs you* key them, so a park on the go-ahead it asked is one.
+  const owed = waitObligations({ ...props, answerBelow }, waits, all).length;
   const shut = several && folded;
   const question = waits.find((wait) => wait.kind === 'question');
   const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
@@ -185,7 +191,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
   const discard = waits.some((wait) => wait.kind === 'discard');
   // Never pluralised by `count`: in Chinese one is `other` too, and one wait is said without its number.
-  const title = several ? t('work.wait.several', { n: waits.length }) : t('work.wait.title');
+  const title = owed > 1 ? t('work.wait.several', { n: owed }) : t('work.wait.title');
 
   return (
     <section

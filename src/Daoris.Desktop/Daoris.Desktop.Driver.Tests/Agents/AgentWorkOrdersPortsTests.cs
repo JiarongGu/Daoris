@@ -138,7 +138,7 @@ public sealed class AgentWorkOrdersPortsTests
         string? status, string started, string? awaits, string? before, bool submitted, bool took, bool wanted)
     {
         using var doors = new Doors(status, awaits, submitted, took);
-        using var client = new ServiceClient(doors);
+        using var client = new ServiceClient(new SessionChangesDoors(doors));
         Assert.Equal(wanted, await TransientRetries.WantedAsync(client, "q1", "s1", started, before, CancellationToken.None));
         var readsTake = status == "Taken" && started == "Open" && !submitted && (awaits is null || awaits == before);
         Assert.Equal(readsTake
@@ -150,7 +150,7 @@ public sealed class AgentWorkOrdersPortsTests
     public async Task A_query_refusal_is_still_a_yes_to_the_retry_but_its_own_cancellation_is_not()
     {
         using var doors = new Doors("Open", null, false, false) { Failure = new DriverException("query refused") };
-        using var client = new ServiceClient(doors);
+        using var client = new ServiceClient(new SessionChangesDoors(doors));
         var retry = new TransientRetry
         {
             Read = _ => throw new NotSupportedException(),

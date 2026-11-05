@@ -15,7 +15,7 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
 | Place | File | What goes there |
 |---|---|---|
 | The kind | `src/Daoris.Web/src/work/waits/waits.ts` | a member of the `Wait` union and its line in `waitsOf`, in the order the head draws them |
-| The foot | `work/waits/WaitStrip.tsx` | its folded name (`waitName`) and its section in the strip; a park's question and go-aheads where the box below answers the park are the box's (`work/waits/ParkAnswer.tsx` in `SessionBox`, PARKVIEW1), which the strip neither draws nor counts (`boxBelow`) |
+| The foot | `work/waits/WaitStrip.tsx`, `work/waits/waitObligations.ts` | its folded name (`waitName`) and its section in the strip, and its key (`waitObligation`), the one its row in *What needs you* carries, by which the strip counts it; a park's question and go-aheads where the box below answers the park are the box's (`work/waits/ParkAnswer.tsx` in `SessionBox`, PARKVIEW1), which the strip neither draws nor counts (`boxBelow`) |
 | The head | `work/head/SessionHead.tsx` | its section, `data-wait-section` where it can be answered from there |
 | The props | `work/WorkFrame.tsx` → `work/AttendedSession.tsx` → `SessionHead` | `WaitProps` built once in the frame, so the head and the foot press the same handlers |
 | *What needs you*'s judge | `Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` (the row: kind, id, since, the values it is worded from), `AttentionStateSlice.cs` (its input read from memory, `Fields` and `Holds`, its wake) | a row judged in .NET once for every window (PUSH1d4, D182 point 6); its cases in `AttentionStateSliceTests` |
@@ -49,7 +49,8 @@ is the row's, not its kind's: `attentionGroup` reads it, and the band, its order
 - **One row per obligation** (COMMS1j, D225). A row is keyed by the exchange it is (`obligationOf`: its `obligation` where .NET names
   one, a go-ahead's `go-ahead:<ask>/<n>`, else its kind and id), and the bell, the places and the band list each key once. A park on
   a request of its own session's (a go-ahead it asked, its agent's ask to hand it over) is that request's row, never a `parked` row
-  beside it (`NeedsAPerson.OwnAsks`). An unread channel message is no row and no count.
+  beside it (`NeedsAPerson.OwnAsks`). An unread channel message is no row and no count. The foot counts its waits by the same keys
+  (`waitObligation` in `work/waits/waitObligations.ts`, typed over every kind), so its *N waiting on you* is the bell's for that session.
 - **Several waits of one record can be one kind.** INTEGRATE1h's `integration` row names its wait in a field (`decide`, `superseded`,
   `card`, `declaration`): its label is picked by that field in `AttentionRow`, its words in `attentionWorded`, and its group by the row's `stands`, which
   `attentionGroup` and its twin `NoticesRead.Group` both read, so every place but the label and the words stays the kind's one entry.

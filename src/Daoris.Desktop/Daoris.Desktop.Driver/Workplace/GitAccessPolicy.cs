@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 /// The harness's rules composed from a session's git access (GITAUTH1f, D198 point 8; the git-auth design §6.8): <c>no-push</c> keeps its
 /// id, fixed on, and this is its one writer (ONEWAY1q). Write <i>deny</i> (and Daoris's default, which is deny for a session) leaves the four push
 /// forms denied, so a start reads exactly as before; Write <i>ask</i> or <i>allow</i> allows the plain push forms, so the harness lets
-/// the command start and the door asks (§6.6), and denies the force, delete and tag forms as before; the doors refuse a force and a
-/// delete themselves, for a harness that takes no rules (D233 choice 3). The option-first forms stay denied: an allow so written is the
+/// the command start and the door asks (§6.6), and denies the force, delete, tag, mirror and prune forms unless Dangerous is <i>allow</i>;
+/// the doors judge each dangerous update themselves, for a harness that takes no rules (D233 choice 3, D241 point 3). The option-first forms stay denied: an allow so written is the
 /// harness's own warning.
 /// </summary>
 public static class GitAccessPolicy
@@ -25,14 +25,18 @@ public static class GitAccessPolicy
     /// <summary>Whether a Write value lets the plain push forms start (the door then judges): <i>ask</i> and <i>allow</i>.</summary>
     public static bool Opens(string write) => write is GitAccessKeys.Ask or GitAccessKeys.Allow;
 
-    /// <summary>The rules for a session whose Write resolved to <paramref name="write"/>; unchanged where it is deny or Daoris's default.</summary>
-    public static RuleLists Compose(RuleLists rules, string write)
+    /// <summary>
+    /// The rules for a session whose Write resolved to <paramref name="write"/> and Dangerous to <paramref name="dangerous"/>; unchanged
+    /// where Write is deny or Daoris's default. Dangerous <c>allow</c> lets the dangerous forms start too, since the door judges each update.
+    /// </summary>
+    public static RuleLists Compose(RuleLists rules, string write, string dangerous = GitAccessKeys.Deny)
     {
         if (!Opens(write) || !Plain.Any(rules.Deny.Contains)) return rules;
+        var opened = dangerous == GitAccessKeys.Allow;
         return rules with
         {
-            Allow = [.. rules.Allow.Union(Plain, StringComparer.Ordinal)],
-            Deny = [.. rules.Deny.Where(rule => !Plain.Contains(rule)).Union(Dangerous, StringComparer.Ordinal)],
+            Allow = [.. rules.Allow.Union(opened ? [.. Plain, .. Dangerous] : Plain, StringComparer.Ordinal)],
+            Deny = [.. rules.Deny.Where(rule => !Plain.Contains(rule) && !(opened && Dangerous.Contains(rule))).Union(opened ? [] : Dangerous, StringComparer.Ordinal)],
         };
     }
 

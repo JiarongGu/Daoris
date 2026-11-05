@@ -439,7 +439,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread, chatTree, requests))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService(tree, askUnread, chatTree, requests)))));
         return (module, loop);
     }
 
@@ -447,9 +447,9 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     /// A stand-in service: `engine` in the `aurora` workspace, ask `a1`'s one quest done there by session `s1`, and a chat. Every
     /// other door answers an empty list. With <paramref name="chatTree"/>, a second chat, `c2`, works in that tree.
     /// </summary>
-    private sealed class StandInService(string? tree = null, bool askUnread = false, string? chatTree = null, bool requests = false) : SessionChangesHandler
+    private sealed class StandInService(string? tree = null, bool askUnread = false, string? chatTree = null, bool requests = false) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.PathAndQuery switch
             {

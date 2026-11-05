@@ -92,16 +92,11 @@ public static class GitDoors
         var verdict = Judge(home, act, key, variable, remote: null, host, folder, serves.Identity);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
-        // D233 choice 3: a push's force or delete is judged for every agent, whatever its harness's rules, before the remote hears it.
+        // D233 choice 3, D241 point 3: each update of a push is judged by its kind for every agent, whatever its harness's rules, and the
+        // grant by the refs it carries, before the remote hears any of them.
         var pushes = call.Program == "git-receive-pack"
             ? new SshPush(input ?? Console.OpenStandardInput(), updates =>
-            {
-                var git = Find("git", variable("PATH"));
-                var most = GitPushUpdates.Most(updates.Select(update => GitPushUpdates.KindOf(
-                    update, (old, now) => git is not null && Ask(git, folder, ["merge-base", "--is-ancestor", old, now]) is not null)));
-                return most == GitPushKind.Plain ? null
-                    : JudgeDangerous(home, verdict, key, variable, remote: null, host, folder) is { Allowed: false } refused ? refused.Line : null;
-            })
+                GitPushDoor.Refusal(home, verdict, updates, KeepsHistory(variable, folder), key, variable, remote: null, host, folder))
             : null;
 
         if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host, pushes);
@@ -320,6 +315,10 @@ public static class GitDoors
         return Ask(git, folder, ["config", "--get", "core.sshCommand"])?.Trim();
     }
 
+    /// <summary>Whether the first commit is an ancestor of the second where the push runs; false where git cannot say (an object the repository lacks).</summary>
+    private static Func<string, string, bool> KeepsHistory(Func<string, string?> variable, string folder) =>
+        (old, now) => Find("git", variable("PATH")) is { } git && Ask(git, folder, ["merge-base", "--is-ancestor", old, now]) is not null;
+
     /// <summary>What git answers in <paramref name="folder"/> on its standard output; null where it fails or cannot start.</summary>
     private static string? Ask(string git, string folder, IReadOnlyList<string> arguments)
     {
@@ -458,6 +457,7 @@ public static class GitDoors
         environment?.Invoke(info.Environment);
 
         var key = GitAddressKeys.Of(address);
+        var pushes = new GitHelperPush();
         using var process = Process.Start(info)!;
         string? refused = null;
         // git's side, on a thread of its own: the conversation ends when the transport's answers end, which may be before git closes
@@ -465,19 +465,43 @@ public static class GitDoors
         _ = Task.Run(() =>
         {
             var judged = new Dictionary<GitAct, GitVerdict>();
-            GitVerdict? dangerous = null;
+            var pending = new List<string>();
+            var where = folder ?? Environment.CurrentDirectory;
             var to = process.StandardInput.BaseStream;
             try
             {
                 while (ReadLine(input) is { } line)
                 {
                     var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
+                    // D241 point 3: a push's lines are held to the batch's end, judged together with the remote's refs and their objects, and
+                    // forwarded as the objects judged: a refused update stops the transport before it has been told of any.
+                    if (text.StartsWith("push ", StringComparison.Ordinal))
+                    {
+                        pending.Add(text);
+                        continue;
+                    }
+
+                    if (text.Length == 0 && pending.Count > 0)
+                    {
+                        if (!judged.TryGetValue(GitAct.Write, out var write)) judged[GitAct.Write] = write = Judge(home, GitAct.Write, key, variable, remote, host, where, identity);
+                        var (forward, said) = write.Allowed ? PushBatch(home, write, pending, pushes, key, variable, remote, host, where) : ([], write.Line);
+                        if (said is not null)
+                        {
+                            Volatile.Write(ref refused, said);
+                            Stop(process);
+                            return;
+                        }
+
+                        foreach (var each in forward) to.Write(Encoding.UTF8.GetBytes(each + "\n"));
+                        pending.Clear();
+                        to.Write(line);
+                        to.Flush();
+                        continue;
+                    }
+
                     if (ClassOfHelperCommand(text) is { } act)
                     {
-                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host, folder ?? Environment.CurrentDirectory, identity);
-                        // D233 choice 3: a push line's force (`+src:dst`) or delete (`:dst`) is judged for every agent, before the transport runs it.
-                        if (verdict.Allowed && GitPushUpdates.OfHelperPush(text) is GitPushKind.Force or GitPushKind.Delete)
-                            verdict = dangerous ??= JudgeDangerous(home, verdict, key, variable, remote, host, folder ?? Environment.CurrentDirectory);
+                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host, where, identity);
                         if (!verdict.Allowed)
                         {
                             Volatile.Write(ref refused, verdict.Line);
@@ -486,6 +510,7 @@ public static class GitDoors
                         }
                     }
 
+                    if (text == "list for-push") pushes.Listing();
                     to.Write(line);
                     to.Flush();
                     if (text.StartsWith("stateless-connect ", StringComparison.Ordinal) || text.StartsWith("connect ", StringComparison.Ordinal))
@@ -505,11 +530,31 @@ public static class GitDoors
             try { to.Close(); } catch (IOException) { }
         });
 
-        Relay(process.StandardOutput.BaseStream, output);
+        // The transport's answers pass through the tap first, so the remote's refs are known before git's push lines come.
+        Relay(process.StandardOutput.BaseStream, output, pushes.Feed);
         process.WaitForExit();
         if (Volatile.Read(ref refused) is { } line) return Refuse(error, line);
         output.Flush();
         return process.ExitCode;
+    }
+
+    /// <summary>
+    /// The batch of push lines judged (D241 point 3): the lines to forward, the objects judged in place of git's source names, or the line
+    /// that refuses the whole batch. Refused too where the remote's refs or a source could not be read, since an update unread is unjudged.
+    /// </summary>
+    private static (IReadOnlyList<string> Forward, string? Refusal) PushBatch(
+        string home, GitVerdict write, IReadOnlyList<string> lines, GitHelperPush pushes, string? key, Func<string, string?> variable,
+        string? remote, string? host, string folder)
+    {
+        const string Unread = "daoris: Daoris's door could not read what this push moves, so nothing was pushed.";
+        var git = Find("git", variable("PATH"));
+        if (git is null || pushes.Refs is not { } refs) return ([], Unread);
+        var batch = GitHelperPush.Build(lines, refs, source =>
+            source.StartsWith('-') ? null
+                : Ask(git, folder, ["rev-parse", "--verify", "--quiet", source])?.Trim() is { } oid && GitPushUpdates.IsObject(oid) ? oid : null);
+        if (batch is null) return ([], Unread);
+        var refusal = GitPushDoor.Refusal(home, write, batch.Updates, KeepsHistory(variable, folder), key, variable, remote, host, folder);
+        return refusal is null ? (batch.Lines, null) : ([], refusal);
     }
 
     /// <summary>The class of a remote-helper command git sends (§4.3 step 4); null for one that moves nothing (<c>capabilities</c>, <c>option</c>).</summary>
@@ -533,29 +578,14 @@ public static class GitDoors
     private static GitVerdict Judge(
         string home, GitAct act, string? key, Func<string, string?> variable, string? remote, string? host, string folder, GitIdentity? identity)
     {
-        var granted = act == GitAct.Write && GitGrants.Take(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow);
+        // A grant standing for this address lets the Write through to its updates, which it is taken for once, where it carries them (GitPushDoor).
+        var granted = act == GitAct.Write && GitGrants.Read(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow) is not null;
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
         var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitLog.ClassName(act)).Value;
         var verdict = GitAccessRules.Judge(act, value, granted, identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
-        if (granted) GitLog.GrantUsed(home, variable, remote, host);
         // Asked at the door while the act waits (§6.6), where Daoris runs to ask: the person's yes lets this one act through.
         if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitLog.ClassName(act), act, key, variable);
         if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, act, remote, host);
-        return verdict;
-    }
-
-    /// <summary>
-    /// The judge asked for a push's force or delete (D233 choice 3), once its Write passed as <paramref name="write"/>: Dangerous's value,
-    /// the landing's grant passing it, an ask held at the door as a Write's is; a refusal a coded line.
-    /// </summary>
-    private static GitVerdict JudgeDangerous(
-        string home, GitVerdict write, string? key, Func<string, string?> variable, string? remote, string? host, string folder)
-    {
-        var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
-        var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Dangerous).Value;
-        var verdict = GitAccessRules.JudgeDangerous(value, granted: write.Code == "granted");
-        if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitAccessKeys.Dangerous, GitAct.Write, key, variable);
-        if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, GitAct.Write, remote, host);
         return verdict;
     }
 
@@ -633,7 +663,7 @@ public static class GitDoors
     }
 
     /// <summary>Copy until <paramref name="from"/> ends, flushing each read on: either side may wait on what the last read held.</summary>
-    private static void Relay(Stream from, Stream to)
+    private static void Relay(Stream from, Stream to, Action<byte[], int>? tap = null)
     {
         var buffer = new byte[64 * 1024];
         try
@@ -641,6 +671,7 @@ public static class GitDoors
             int read;
             while ((read = from.Read(buffer, 0, buffer.Length)) > 0)
             {
+                tap?.Invoke(buffer, read);
                 to.Write(buffer, 0, read);
                 to.Flush();
             }

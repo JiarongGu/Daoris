@@ -1,5 +1,8 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { leftFor, SOUGHT } from '../waits/WaitAnchor';
+import { type ExchangeSeek, useSoughtExchange } from './exchangeSeek';
 import { cn } from '../../lib/cn';
 import { ago, clockOf } from '../../locales/format';
 import { whoOf } from '../../asks/ChannelSection';
@@ -48,6 +51,8 @@ export type AtWorkViewProps = {
   now?: Date;
   /** An agent's name as the person calls it, for its co-workers (COMMS1i); its word where none is given. */
   nameOf?: (agent: string) => string;
+  /** The request the head's *Waiting on* opened the view at (COMMS1i): its row is outlined and takes the focus. */
+  seek?: ExchangeSeek | null;
 };
 
 /**
@@ -55,8 +60,10 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel, nameOf }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel, nameOf, seek }: AtWorkViewProps) {
   const { t } = useTranslation();
+  const box = useRef<HTMLDivElement>(null);
+  const { sought, letGo } = useSoughtExchange(box, seek);
   if (!held || 'reading' in held) {
     if (!held && error) return <Failed why={error} onRetry={onRetry} />;
     return (
@@ -74,7 +81,7 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
   const stale = held.stale?.why ?? error ?? null;
   const { answer } = held;
   return (
-    <div className="grid min-w-0 gap-3 p-3">
+    <div ref={box} className="grid min-w-0 gap-3 p-3" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {stale !== null && (
         <p role="status" className="m-0 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
           {t('work.atWork.stale', { why: stale })}
@@ -84,9 +91,9 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
         <WaitingOn answer={answer} nameOf={nameOf} />
         <Parts answer={answer} onOpen={onOpen} channel={channel} />
-        <Coworkers answer={answer} nameOf={nameOf} onOpen={onOpen} />
+        <Coworkers answer={answer} nameOf={nameOf} onOpen={onOpen} sought={sought} />
         <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
-        <Quests answer={answer} considered={considered ?? []} onOpenQuest={onOpenQuest} />
+        <QuestRows quests={answer.quests} more={answer.moreQuests ?? 0} considered={considered ?? []} onOpenQuest={onOpenQuest} sought={sought} />
         <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
         {channel && <ChannelWords channel={channel} parts={listsParts(answer, t) ? answer.parts : []} />}
         <Hint answer={answer} />
@@ -113,23 +120,26 @@ export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) 
 function WaitingOn({ answer, nameOf }: { answer: AtWorkA; nameOf?: (agent: string) => string }) {
   const { t } = useTranslation();
   const line = waitingOnLine(t, answer.exchanges ?? [], nameOf);
-  if (line) return <p data-wait-line className="m-0 text-small text-ink">{line}</p>;
+  if (line) return <p data-wait-line tabIndex={-1} className="m-0 text-small text-ink outline-none">{line}</p>;
   if (!answer.published || answer.parts.some((part) => part.waits)) return null;
   return <p className="m-0 text-small text-ink-soft">{t('work.atWork.published', { count: answer.published })}</p>;
 }
 
 /**
  * The head's *Waiting on* (COMMS1i, the comms design §7): *At work*'s line, the same words from the same read, and a door that opens
- * *At work*. Nothing where the line waits on nothing it asked.
+ * *At work* at the first request it names. Nothing where the line waits on nothing it asked.
  */
-export function WaitingOnLine({ answer, nameOf, onOpen }: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: () => void }) {
+export function WaitingOnLine({ answer, nameOf, onOpen }: {
+  answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void;
+}) {
   const { t } = useTranslation();
   const line = waitingOnLine(t, answer.exchanges ?? [], nameOf);
-  if (!line) return null;
+  const first = (answer.exchanges ?? []).find((exchange) => exchange.holds);
+  if (!line || !first) return null;
   return (
     <p data-waiting-on className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
       <span className="min-w-0 wrap-anywhere">{line}</span>
-      {onOpen && <button type="button" className="text-accent underline" onClick={onOpen}>{t('work.atWork.openAtWork')}</button>}
+      {onOpen && <button type="button" className="text-accent underline" onClick={() => onOpen(first.id)}>{t('work.atWork.openAtWork')}</button>}
     </p>
   );
 }
@@ -138,7 +148,9 @@ export function WaitingOnLine({ answer, nameOf, onOpen }: { answer: AtWorkA; nam
  * Who the line asked to work with it (COMMS1i, the comms design §6, §7): each helper, partner and successor it asked, by whom and
  * where it stands, its door where one took it up. A quest is *Asked through quests*' row. A source not read is said, never drawn as none.
  */
-function Coworkers({ answer, nameOf, onOpen }: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (session: string) => void }) {
+function Coworkers({ answer, nameOf, onOpen, sought }: {
+  answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (session: string) => void; sought?: string | null;
+}) {
   const { t } = useTranslation();
   const rows = (answer.exchanges ?? []).filter((exchange) => exchangeSource(exchange) !== 'quest');
   const unread = answer.unread ?? [];
@@ -149,7 +161,13 @@ function Coworkers({ answer, nameOf, onOpen }: { answer: AtWorkA; nameOf?: (agen
       {rows.length > 0 && (
         <ul className="m-0 grid list-none gap-1 p-0">
           {rows.map((exchange) => (
-            <li key={exchange.id} data-coworker={exchange.id} className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
+            <li
+              key={exchange.id}
+              data-coworker={exchange.id}
+              data-exchange={exchange.id}
+              tabIndex={-1}
+              className={cn('flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink', sought === exchange.id ? SOUGHT : 'outline-none')}
+            >
               <span className="min-w-0 wrap-anywhere">{exchangeWhat(t, exchange, nameOf)}</span>
               <span className="text-ink-soft">{exchangeState(t, exchange)}</span>
               {exchange.part !== answer.attended && <span className="text-ink-faint">{t('work.atWork.coworker.earlierPart')}</span>}
@@ -333,15 +351,10 @@ function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
  * and what the taker waits on. An untaken quest says why beside it from the driver's last look, none before the first. A chain's step
  * is set in under the quest before it.
  */
-function Quests({ answer, considered, onOpenQuest }: {
-  answer: AtWorkA; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
-}) {
-  return <QuestRows quests={answer.quests} more={answer.moreQuests ?? 0} considered={considered} onOpenQuest={onOpenQuest} />;
-}
-
-/** The quest rows, as a session's view and an ask's section both draw them. */
-export function QuestRows({ quests, more, considered, onOpenQuest }: {
+/** The quest rows, as a session's view and an ask's section both draw them; the one a press sought outlined (`quest:<id>`). */
+export function QuestRows({ quests, more, considered, onOpenQuest, sought }: {
   quests: readonly AtWorkQuest[] | undefined; more: number; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
+  sought?: string | null;
 }) {
   const { t } = useTranslation();
   if (!quests?.length) return null;
@@ -350,7 +363,13 @@ export function QuestRows({ quests, more, considered, onOpenQuest }: {
       <SectionTitle level={3}>{t('work.atWork.group.quests')}</SectionTitle>
       <ol className="m-0 grid list-none gap-0.5 p-0">
         {quests.map((quest) => (
-          <li key={quest.id} style={quest.step ? { paddingInlineStart: '12px' } : undefined}>
+          <li
+            key={quest.id}
+            data-exchange={`quest:${quest.id}`}
+            tabIndex={-1}
+            className={sought === `quest:${quest.id}` ? SOUGHT : 'outline-none'}
+            style={quest.step ? { paddingInlineStart: '12px' } : undefined}
+          >
             <button
               type="button"
               onClick={() => onOpenQuest?.(quest.id)}

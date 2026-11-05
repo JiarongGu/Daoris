@@ -3,13 +3,13 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One request of the attended line as <i>At work</i> draws it (COMMS1i, the comms design §7): a co-worker asked, a quest waited on, a
-/// successor asked for. Plain values the layer above maps from the exchanges' read (<c>Exchanges.Of</c>), so the composition names no
-/// work order (design §13 point 9). Delivery, what Daoris saw, and outcome, the protocol's own word, stay apart.
+/// One request of the attended line as <i>At work</i> draws it (COMMS1i, the comms design §7): a co-worker asked, a reviewer reading its
+/// work, a quest waited on, a successor asked for. Plain values the layer above maps from the exchanges' read (<c>Exchanges.Of</c>), so the
+/// composition names no work order (design §13 point 9). Delivery, what Daoris saw, and outcome, the protocol's own word, stay apart.
 /// </summary>
-/// <param name="Id">The exchange's id: <c>helper:h7</c>, <c>piece:p1</c>, <c>quest:q9</c> or <c>hand-over:&lt;id&gt;</c>.</param>
+/// <param name="Id">The exchange's id: <c>helper:h7</c>, <c>piece:p1</c>, <c>quest:q9</c>, <c>hand-over:&lt;id&gt;</c> or <c>opinion:&lt;id&gt;</c>.</param>
 /// <param name="Part">The part of the line it belongs to: after a hand-over, a predecessor's open request is the line's.</param>
-/// <param name="Expects"><c>answer</c>, <c>piece</c>, <c>work</c> or <c>successor</c>.</param>
+/// <param name="Expects"><c>answer</c>, <c>piece</c>, <c>work</c>, <c>successor</c> or <c>opinion</c>.</param>
 /// <param name="To">The agent asked, the repository a quest went to, or the word the request names where none is known yet.</param>
 /// <param name="Holds">Whether the line waits on it: it has not come back.</param>
 public sealed record AtWorkExchange(string Id, string Part, string Expects, string To, string Delivery, string Outcome, bool Holds)

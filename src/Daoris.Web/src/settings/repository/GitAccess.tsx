@@ -27,16 +27,21 @@ export type GitAccessEdit = { access: Record<string, string | null> | null } | {
 /** The edit for a repository, a workspace or this machine, as `SET_GIT_ACCESS` takes it: exactly one of the three. */
 export type GitAccessChange = ({ repository: string } | { workspace: string } | { machine: true }) & GitAccessEdit;
 
-/** The classes a person sets, in the order every door says them. Dangerous has no control before the transport judge. */
-const CLASSES = ['read', 'write'] as const;
+/** The classes a person sets, in the order every door says them. */
+const CLASSES = ['read', 'write', 'dangerous'] as const;
+/** The classes *Use one value for both…* sets. */
+const PAIRED = ['read', 'write'] as const;
 const VALUES = ['allow', 'ask', 'deny'] as const;
+/** Dangerous is decided at the door and waits on no one (D241 point 3): it is allowed or refused, never asked. */
+const DANGEROUS_VALUES = ['allow', 'deny'] as const;
+const valuesOf = (cls: string) => (cls === 'dangerous' ? DANGEROUS_VALUES : VALUES);
 
 /** How loose a value is, as the driver's `GitAccessKeys.Looseness`: allow 0, ask 1, Daoris's default 2, deny 3. */
 const looseness = (value: string) => (value === 'allow' ? 0 : value === 'ask' ? 1 : value === 'deny' ? 3 : 2);
 
 /** Each class from the nearest level that sets it, nearest first; else Daoris's default. A repository's own resolution is the driver's answer. */
 export function resolveGitAccess(levels: readonly { classes?: GitAccessLevel | null; source: GitAccessSource }[]): ResolvedGitClass[] {
-  const defaults: Record<string, string> = { read: 'allow', write: 'as-today' };
+  const defaults: Record<string, string> = { read: 'allow', write: 'as-today', dangerous: 'deny' };
   return CLASSES.map((name) => {
     for (const { classes, source } of levels) {
       const set = classes?.find((each) => each.class === name);
@@ -49,7 +54,9 @@ export function resolveGitAccess(levels: readonly { classes?: GitAccessLevel | n
 /** What a loosening lets happen, in the confirmation's words; null where the change is no loosening. */
 export function wideningSays(t: TFunction, name: string, cls: string, now: string, next: string): string | null {
   if (looseness(next) >= looseness(now)) return null;
-  const key = cls === 'read' ? 'settings.git.access.confirm.read' : `settings.git.access.confirm.write.${next === 'allow' ? 'allow' : 'ask'}`;
+  const key = cls === 'read' ? 'settings.git.access.confirm.read'
+    : cls === 'dangerous' ? 'settings.git.access.confirm.dangerous'
+      : `settings.git.access.confirm.write.${next === 'allow' ? 'allow' : 'ask'}`;
   return t(key, { name });
 }
 
@@ -66,8 +73,8 @@ export function gitAccessSummary(t: TFunction, classes: readonly ResolvedGitClas
 }
 
 /**
- * **A level's git access rows** (GITAUTH1f, the git-auth design §7.3): Read and Write, each its value and where it came from, and
- * *Use one value for both…*. The same rows on a repository's Setup, a workspace's and Settings → Git for this machine.
+ * **A level's git access rows** (GITAUTH1f, the git-auth design §7.3): Read, Write and Dangerous (allow or deny, D241 point 3), each its
+ * value and where it came from, and *Use one value for both…* for Read and Write. The same rows on a repository's Setup, a workspace's and Settings → Git for this machine.
  *
  * @remarks
  * **A loosening is confirmed here** (§8): a choice looser than what stands opens an `InlineConfirm` in the warning tone naming what it
@@ -94,7 +101,7 @@ export function GitAccessRows({ owner, name, workspace, classes, above, busy = f
   const turns = useRef<Record<string, number>>({});
   const target = owner === 'machine' ? t('settings.git.access.confirm.name.machine') : name ?? '';
   const setHere = t(`settings.git.access.setHere.${owner}`);
-  const twin = (cls: string) => t(`settings.git.access.twin.${owner}`, {
+  const twin = (cls: string) => t(`settings.git.access.${cls === 'dangerous' ? 'twinDangerous' : 'twin'}.${owner}`, {
     class: cls,
     repository: owner === 'repository' && name ? shellWord(name, '<repository>') : undefined,
     workspace: owner === 'workspace' && name ? shellWord(name, '<workspace>') : undefined,
@@ -163,7 +170,7 @@ export function GitAccessRows({ owner, name, workspace, classes, above, busy = f
                 <Segmented
                   label={t('settings.git.access.field', { class: label, name: target })}
                   value={each.value}
-                  options={VALUES.map((value) => ({ value, label: t(`settings.git.access.value.${value}`) }))}
+                  options={valuesOf(cls).map((value) => ({ value, label: t(`settings.git.access.value.${value}`) }))}
                   onChange={(value) => !busy && choose(cls, cls, each.value, value, { access: { [cls]: value } })}
                 />
                 {asked(cls)}
@@ -183,7 +190,7 @@ export function GitAccessRows({ owner, name, workspace, classes, above, busy = f
               options={VALUES.map((value) => ({ value, label: t(`settings.git.access.value.${value}`) }))}
               onChange={(value) => {
                 if (busy) return;
-                const loosens = CLASSES.some((cls) => looseness(value) < looseness(resolved(cls)!.value));
+                const loosens = PAIRED.some((cls) => looseness(value) < looseness(resolved(cls)!.value));
                 const says = loosens ? wideningSays(t, target, 'write', write.value, value) ?? wideningSays(t, target, 'read', read.value, value) : null;
                 if (says) setAsking({ row: 'one', edit: { oneValue: value }, says });
                 else send('one', { oneValue: value });

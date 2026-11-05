@@ -9,7 +9,30 @@ describe('git access rows', () => {
     expect(resolveGitAccess([{ classes: [{ class: 'read', value: 'ask' }], source: 'machine' }])).toEqual([
       { class: 'read', value: 'ask', source: 'machine' },
       { class: 'write', value: 'as-today', source: 'default' },
+      { class: 'dangerous', value: 'deny', source: 'default' },
     ]);
+  });
+
+  it('offers Dangerous allow or deny alone, asks first to allow it, and sends a deny at once (GITAUTH1g)', async () => {
+    const onChange = vi.fn();
+    show(
+      <GitAccessRows
+        owner="machine"
+        classes={[{ class: 'dangerous', value: 'deny', source: 'default' }]}
+        above={resolveGitAccess([])}
+        onChange={onChange}
+      />,
+    );
+    const user = userEvent.setup();
+
+    expect(screen.getByText(/Force-pushes, deletes, tags, mirrors and prunes on a git remote: deny\./)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Set for this machine' }));
+    expect(screen.queryByRole('radio', { name: 'ask' })).toBeNull();
+    await user.click(screen.getByRole('radio', { name: 'allow' }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Sessions may force-push, delete refs, push tags, mirror and prune for this machine, with no one asked.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Loosen git access' }));
+    expect(onChange).toHaveBeenCalledWith({ access: { dangerous: 'allow' } }, expect.anything());
   });
 
   it('says what a loosening lets happen and nothing for a tightening', () => {

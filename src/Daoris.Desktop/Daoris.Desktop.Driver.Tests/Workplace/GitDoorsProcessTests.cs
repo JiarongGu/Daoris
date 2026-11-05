@@ -142,9 +142,8 @@ public sealed class GitDoorsProcessTests : IDisposable
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         var address = host.Address("org/engine.git");
         await Ok(_root, "clone", address, Work);
-        var grant = GitGrants.Write(Home, address, DateTimeOffset.UtcNow);
-
         var tip = await CommitAsync("landed");
+        var grant = GitGrants.Write(Home, address, [new GitGrantRef("refs/heads/main", tip)], DateTimeOffset.UtcNow);
         var push = Git(Work, Home, "push", "origin", "HEAD:refs/heads/main");
         push.Environment[GitRouting.GrantVariable] = grant;
         await Ok(push);
@@ -220,7 +219,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         await Ok(_root, "clone", host.Address("org/outer.git"), shaping);
         await Ok(Git(shaping, Home, "-c", "protocol.file.allow=never", "submodule", "add", host.Address("org/engine.git"), "engine"));
         await Ok(shaping, "commit", "-m", "with engine");
-        var grant = GitGrants.Write(Home, host.Address("org/outer.git"), DateTimeOffset.UtcNow);
+        var grant = GitGrants.Write(Home, host.Address("org/outer.git"), [new GitGrantRef("refs/heads/main", await Ok(shaping, "rev-parse", "HEAD"))], DateTimeOffset.UtcNow);
         var push = Git(shaping, Home, "push", "origin", "main");
         push.Environment[GitRouting.GrantVariable] = grant;
         await Ok(push);
@@ -244,7 +243,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         var tip = await CommitAsync("hooked");
         // A push the door allows: git runs pre-push after the remote's refs are listed, which a refused push never reaches.
         var push = Git(Work, Home, "push", "origin", "main");
-        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, host.Address("org/engine.git"), DateTimeOffset.UtcNow);
+        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, host.Address("org/engine.git"), [new GitGrantRef("refs/heads/main", tip)], DateTimeOffset.UtcNow);
 
         await Ok(push);
 
@@ -321,7 +320,7 @@ public sealed class GitDoorsProcessTests : IDisposable
         var address = await CloneOverSshAsync();
         var tip = await CommitAsync("landed over ssh");
         var push = Git(Work, Home, "push", "origin", "main");
-        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, address, DateTimeOffset.UtcNow);
+        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, address, [new GitGrantRef("refs/heads/main", tip)], DateTimeOffset.UtcNow);
 
         await Ok(push);
 

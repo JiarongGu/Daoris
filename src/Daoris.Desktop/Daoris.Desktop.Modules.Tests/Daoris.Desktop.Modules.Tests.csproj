@@ -33,7 +33,8 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\GitFixture.cs" Link="GitFixture.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\FixtureSpawns.cs" Link="FixtureSpawns.cs" />
     <!-- The sessions' change door answered in the contract's shape by a stand-in service, held once. -->
-    <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChangesHandler.cs" Link="SessionChangesHandler.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChanges.cs" Link="SessionChanges.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChangeShape.cs" Link="SessionChangeShape.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\GitSeed.cs" Link="GitSeed.cs" />
     <!-- The scan of every console start's window (CONSOLEWINDOWS1), with the named exemptions, held once. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\NoConsoleStarts.cs" Link="NoConsoleStarts.cs" />

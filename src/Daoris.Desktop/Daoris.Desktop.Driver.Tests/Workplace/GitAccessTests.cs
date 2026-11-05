@@ -152,7 +152,7 @@ public sealed class GitAccessTests : IDisposable
         Assert.Contains("name exactly one", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, new GitAccessEdit { Set = [new("read", "ask")] })).Message);
         Assert.Contains("name exactly one", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "a", Machine = true, Clear = true })).Message);
         Assert.Contains("one change at a time", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, new GitAccessEdit { Repository = "a", Clear = true, OneValue = "ask" })).Message);
-        Assert.Contains("dangerous-unavailable", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, Set("a", ("dangerous", "allow")))).Message);
+        Assert.Contains("dangerous-no-ask", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, Set("a", ("dangerous", "ask")))).Message);
         Assert.Contains("not a class", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, Set("a", ("push", "allow")))).Message);
         Assert.Contains("not `sometimes`", Assert.Throws<DriverException>(() => GitAccessActs.Apply(Home, Set("a", ("read", "sometimes")))).Message);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.DriverConfig)));
@@ -415,11 +415,14 @@ public sealed class GitAccessTests : IDisposable
     }
 
     [Fact]
-    public void Dangerous_is_refused_from_the_terminal_until_the_transport_judge()
+    public void Dangerous_is_set_from_the_terminal_to_allow_or_deny_and_never_to_ask()
     {
-        var (code, _, error) = Run(false, "", "access", "--machine", "dangerous=allow");
+        var (asked, _, error) = Run(false, "", "access", "--machine", "dangerous=ask");
+        Assert.Equal(1, asked);
+        Assert.Contains("dangerous-no-ask", error);
 
-        Assert.Equal(1, code);
-        Assert.Contains("dangerous-unavailable", error);
+        var (set, _, _) = Run(false, "", "access", "--machine", "dangerous=allow");
+        Assert.Equal(0, set);
+        Assert.Equal(GitAccessKeys.Allow, GitAccessKeys.Resolve(Home, "engine", null).Of(GitAccessKeys.Dangerous).Value);
     }
 }

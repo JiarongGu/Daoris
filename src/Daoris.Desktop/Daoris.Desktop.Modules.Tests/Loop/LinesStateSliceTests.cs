@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -53,7 +54,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        var client = new ServiceClient("http://stand-in", null, new HttpClient(_service));
+        var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(_service)));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
             _ => Task.FromResult<IKnowledgeSessionLook?>(null),
@@ -234,8 +235,6 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         var unread = Line(Pushed("alpha")[0]);
         Assert.Null(unread["branch"]);
         Assert.True(unread["notReadYet"]!.GetValue<bool>());
-        // Its rules are pushed beside it all the same.
-        Assert.Single(JsonSerializer.SerializeToNode(Pushed("alpha")[0].Data, IpcJson.Options)!["landings"]!.AsArray());
         // No checkout here leaves nothing to read: what is set, or none, is the line.
         Assert.False(Line(Pushed("beta")[0]).ContainsKey("notReadYet"));
 

@@ -39,8 +39,9 @@ internal static class SessionRules
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
         // `no-push`'s forms follow the session's git access, and the classifier is told as git access says it.
-        var gitWrite = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Write).Value;
-        composed = GitAccessPolicy.Compose(composed, gitWrite);
+        var gitAccess = GitAccessKeys.Resolve(home, repository, workspace);
+        var gitWrite = gitAccess.Of(GitAccessKeys.Write).Value;
+        composed = GitAccessPolicy.Compose(composed, gitWrite, gitAccess.Of(GitAccessKeys.Dangerous).Value);
         var pushTold = GitAccessPolicy.HardDeny(PermissionRules.HardDeny(rules), gitWrite);
         var folders = new[] { kept, said }.Concat(continued ?? []).OfType<string>().Where(folder => folder.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
