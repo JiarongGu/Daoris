@@ -423,8 +423,6 @@ internal static class ConformanceCases
             (transport.SteerAsync("go on", never), TransportRun.SteerAbility),
             (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
         };
-        // A native door's words go through the run's input; a protocol door's stay on its session.
-        if (Protocol(door)) refused.Add((transport.SendAsync(new DoorWord("w1", "go on"), never), TransportRun.WordsAbility));
         if (!Protocol(door))
         {
             refused.Add((transport.StopTurnAsync(never), "a stop that keeps the conversation"));
@@ -433,6 +431,7 @@ internal static class ConformanceCases
         else
         {
             refused.Add((transport.NextProcessAsync("c-1", never), "a go-on"));
+            refused.Add((transport.SendAsync(new DoorWord("w", "go"), never), TransportRun.WordsAbility));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
