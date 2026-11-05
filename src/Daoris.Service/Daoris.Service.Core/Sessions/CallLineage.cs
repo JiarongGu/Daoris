@@ -13,29 +13,27 @@ namespace Daoris.Knowledge;
 /// through a process started from the parent's entry. What tells calls apart is what the harness writes on each one. The
 /// arguments are the model's, so nothing there is read.</para>
 ///
-/// <para><b>What each harness writes.</b> Claude Code names the call, <c>claudecode/toolUseId</c>, which its
-/// <c>PreToolUse</c> hook names beside the <c>agent_id</c> that made it: the join is the driver's (<c>ChildLineage</c>).
-/// Codex names the thread, its parent, the spawn kind and the root's session in <c>x-codex-turn-metadata</c>, as JSON text
-/// or an object. Measured on Claude Code 2.1.299 and Codex 0.160.0; a harness that writes neither has no lineage here, which
-/// is said as none, never guessed (canary 9).</para>
+/// <para><b>What each harness writes</b> is its own file's (<see cref="ICallKeys"/>), read in <see cref="Readers"/>' order: the
+/// first key a call carries is the one read, so a call carrying both is read as the first agent's. A harness that writes none
+/// has no lineage here, which is said as none, never guessed (canary 9).</para>
 ///
-/// <para>🔴 <b>Ids only.</b> Codex's metadata also names the workspace's absolute path and commit: neither is read, and a value
-/// that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47), only named in <see cref="Malformed"/>.</para>
+/// <para>🔴 <b>Ids only.</b> A value that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47), only named
+/// in <see cref="Malformed"/>.</para>
 /// </remarks>
-/// <param name="Harness"><see cref="Claude"/> or <see cref="Codex"/>.</param>
+/// <param name="Harness">The agent whose key the call carried, one of <see cref="Readers"/>' <see cref="ICallKeys.Harness"/>.</param>
 public sealed record CallLineage(string Harness)
 {
     /// <summary>Claude Code, by the name the driver gives its harness.</summary>
-    public const string Claude = "claude-code";
+    public const string Claude = ClaudeCallKeys.Agent;
 
     /// <summary>Codex.</summary>
-    public const string Codex = "codex";
+    public const string Codex = CodexCallKeys.Agent;
 
-    /// <summary>Claude Code's id of the call, the hook's <c>tool_use_id</c>.</summary>
-    public const string ClaudeToolUse = "claudecode/toolUseId";
-
-    /// <summary>Codex's turn metadata.</summary>
-    public const string CodexTurn = "x-codex-turn-metadata";
+    /// <summary>
+    /// The service's one ordered list of call keys, one agent's each, held by the twin fixture the driver's census reads
+    /// (<c>provider-census.json</c>'s <c>service.callKeys</c>).
+    /// </summary>
+    public static IReadOnlyList<ICallKeys> Readers { get; } = [new ClaudeCallKeys(), new CodexCallKeys()];
 
     /// <summary>
     /// What an id is here: a letter or digit, then letters, digits and <c>_ . : -</c>, at most 128 in all. A harness's ids are
@@ -67,42 +65,17 @@ public sealed record CallLineage(string Harness)
     /// </summary>
     public string? Malformed { get; init; }
 
-    /// <summary>The lineage a call's <c>_meta</c> carries, or null when it names neither harness's.</summary>
+    /// <summary>The lineage a call's <c>_meta</c> carries under the first of <see cref="Readers"/>' keys it sent, or null for none.</summary>
     public static CallLineage? Read(JsonObject? meta)
     {
         if (meta is null) return null;
-        if (Sent(meta[ClaudeToolUse]))
+        foreach (var reader in Readers)
         {
-            return Id(meta[ClaudeToolUse]) is { } toolUse
-                ? new CallLineage(Claude) { ToolUse = toolUse }
-                : new CallLineage(Claude) { Malformed = "toolUse" };
+            if (meta[reader.Key] is { } value && value.GetValueKind() != JsonValueKind.Null) return reader.Read(value);
         }
 
-        if (!Sent(meta[CodexTurn])) return null;
-        if (Turn(meta[CodexTurn]) is not { } turn) return new CallLineage(Codex) { Malformed = "turn" };
-
-        var malformed = new List<string>();
-        string? Field(string name, string key)
-        {
-            var value = Id(turn[key]);
-            if (value is null && Sent(turn[key])) malformed.Add(name);
-            return value;
-        }
-
-        var lineage = new CallLineage(Codex)
-        {
-            Thread = Field("thread", "thread_id"),
-            Parent = Field("parent", "parent_thread_id"),
-            Kind = Field("kind", "subagent_kind"),
-            Source = Field("source", "thread_source"),
-            Root = Field("root", "session_id"),
-        };
-        if (malformed.Count > 0) return lineage with { Malformed = string.Join(',', malformed) };
-        return lineage.Thread is null && lineage.Root is null ? null : lineage;
+        return null;
     }
-
-    /// <summary>Whether the harness sent a value: a JSON null, like a key left out, sent nothing.</summary>
-    private static bool Sent(JsonNode? value) => value is not null && value.GetValueKind() != JsonValueKind.Null;
 
     /// <summary>A value kept only where it is a string shaped as an id.</summary>
     public static string? Id(JsonNode? value) =>
@@ -110,19 +83,4 @@ public sealed record CallLineage(string Harness)
 
     /// <summary>A string kept only where it is shaped as an id.</summary>
     public static string? Id(string? value) => value is not null && IdShape.IsMatch(value) ? value : null;
-
-    /// <summary>Codex's metadata, an object or JSON text holding one; anything else is none.</summary>
-    private static JsonObject? Turn(JsonNode? value)
-    {
-        if (value is JsonObject turn) return turn;
-        if (value is not JsonValue text || !text.TryGetValue<string>(out var json)) return null;
-        try
-        {
-            return JsonNode.Parse(json) as JsonObject;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
 }
