@@ -43,6 +43,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `daoris workflow` | `Workflows/DriverWorkflowsCommand.cs`, `WorkflowTerminal.cs`, `WorkflowListing.cs`, `WorkflowChoosing.cs`, `WorkflowWriting.cs` | The usage and the door; the terminal's flags, say and press; the reading, choosing and writing verbs |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
+| Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press, a hand-off and a part left out; whether a named plugin can land work (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
@@ -147,8 +148,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exists. `integrate` hands it to the line's integration. (from D87, D215)
 31. Daoris pushes, as a `push` step or the person's press, through the one push act (`PushDoor`, off the pass, under the lease); the node
     is reached when git's remote-tracking ref holds the commit and failed by the act's refusal. Daoris opens no pull request: a plugin's
-    performed step does, for its platform. A saved graph that landed by `push` or `pull-request` converted once
-    (`PushedGraphs`, the home's `push-steps` step; it ends when no home saved before G8's release can start, and G8-CONVERT1 deletes it). (from D241)
+    performed step does, for its platform, and the pass writes the address its completion's evidence gives (`evidence.url`) and its plugin on
+    the branch's landing record (`NodeRunKeeping.KeepPullRequests`, `PullRequestRecords`), so `work/state` has an address to ask about and the
+    page shows the pull request. A run whose graph holds a `<plugin>/pull-request` step no installed, switched-on plugin performs is refused at
+    its bind with its reason (`PullRequestSteps.Unserved`, the binding's `Problem`), never run to a step nothing performs. A saved graph that
+    landed by `push` or `pull-request` converted once (`PushedGraphs`, the home's `push-steps` step), and a delivery a pre-G8 build began
+    for a plugin (`plugin-dispatched`, `plugin-answered`, the `push` and `pull-request` methods) is read, said and never sent again
+    (`DeliveryReconciler`); both end when no home saved before G8's release can start, and G8-CONVERT1 deletes them. (from D241)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.

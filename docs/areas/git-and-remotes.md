@@ -46,7 +46,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO` |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
-| Landing plugin wire | `Plugins/LandingPlugins.cs` | `work/land` with origin's address, the judge before the plugin, `work/state` asks |
+| Landing plugin wire | `Plugins/LandingPlugins.cs` | `work/land` for the hand-off alone (origin's address, the judge before the plugin), and `work/state` asks |
 | Pull request state | `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestMoments.cs`, `PullRequestBounds.cs` | When a pull request is asked about, its minute, what a completed answer clears |
 | Window doors | `Modules/Bridge/Routes/GitRoutes.cs`, `ToolsRoutes.cs`, `LinesRoutes.cs`, `Modules/Platform/RemotesModule.cs` | Git reads and acts; `GIT_IDENTITY`, `GIT_USE`, `GIT_ANSWER`; `SET_GIT_ACCESS`; the Remotes screen |
 | Page | `src/Daoris.Web/src/settings/git/`, `settings/repository/GitAccess.tsx`, `work/waits/GitAsk.tsx`, `projects/git/RepositoryGitView.tsx` | Settings → Git, Setup's remote and access rows, the go-ahead, Git inside Repositories |
@@ -158,8 +158,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 **Landing and pull requests**
 
 30. Daoris's one push is the push act (rule 36); it opens no pull request. A workflow's `push` node performs it (`PushDoor`) and a
-    plugin's performed step on `work/perform` opens the pull request. `work/land` and a landing's plugin remain only until the
-    landing-plugin wire (`LandingPlugins.LandAsync`/`HandAsync`, the hand-off verb, `HookPoints.Land`) is deleted. (from D87, D100, D241)
+    plugin's performed step on `work/perform` opens the pull request. A landing names no plugin and its press and delivery tell none
+    (`Landing` has no plugin; `TreeDeliveries` holds no dispatch). What remains of `work/land` is the hand-off, the person's `trees hand` and
+    the automatic hand-on of a branch held back from its push (`LandingPlugins.HandAsync`, `TreeHandOffs`, `HookPoints.Land`), which a later
+    chunk deletes whole with the hand-off verb, its routes and its page. (from D87, D100, D241)
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
     yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
     because the plugin's start and its pull-request call pass no door. (from D198, D145)
