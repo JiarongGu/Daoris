@@ -32,13 +32,12 @@ const FROM_BRANCH = { session: 's1a2b3c4', base: '0123456789abcdef', truncated: 
 
 const asked = (type: string) => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === type);
 
-function answer(diff: unknown, handOff: unknown = { session: 's1a2b3c4', branch: null }) {
+function answer(diff: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
     if (type === 'SESSION_DIFF') {
       if (diff instanceof Error) throw diff;
       return diff;
     }
-    if (type === 'HANDOFF_PLAN') return handOff;
     if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix-the-api-gap', source: 'workspace' };
     return {};
   });
@@ -75,21 +74,10 @@ describe('the review of a landed session (REVIEW2)', () => {
     expect(note.textContent).toMatch(/landed on feature\/0fda18-fix-the-api-gap/);
     expect(note.textContent).toMatch(/read from that branch in engine's own checkout/);
     expect(screen.getByText(/since 01234567/)).toBeTruthy();
-    await waitFor(() => expect(asked('HANDOFF_PLAN')).toHaveLength(1));
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
-  });
-
-  /** The hand-off stays where one applies (WSR5b): the landed branch, handed to the rule's plugin. */
-  it('offers the hand-off of the landed branch, and only that', async () => {
-    answer(FROM_BRANCH, { session: 's1a2b3c4', branch: LANDED.branch, repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 });
-    pane();
-
-    expect(await screen.findByRole('button', { name: 'Hand to example.lands' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
   });
 
   /** The pull request a plugin opened is one press away, in the note. */

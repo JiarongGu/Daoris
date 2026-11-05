@@ -76,9 +76,7 @@ const diffs = () => invoke.mock.calls.filter(([module, route]) => module === 'DA
 
 function answering(diff: () => unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
-    if (type === 'SESSION_DIFF') return diff();
-    if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-    return {};
+    if (type === 'SESSION_DIFF') return diff();    return {};
   });
 }
 
@@ -316,9 +314,7 @@ describe('the review while git reads (REVIEW4)', () => {
   it.each(presses)('reads a kept review again after %s', async (_name, route, press) => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === route) return { results: [], lines: [], rebases: [], deletes: [], removed: 0, changed: 0 };
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      return {};
+      if (type === route) return { results: [], lines: [], rebases: [], deletes: [], removed: 0, changed: 0 };      return {};
     });
     const client = newClient();
     render(pane(client));
@@ -339,9 +335,7 @@ describe('the review while git reads (REVIEW4)', () => {
       if (type === 'SESSION_DIFF') return DIFF;
       if (type === 'DISCARD_SESSION_BRANCH') {
         return { repository: 'portal-ui', branch: 'daoris/s-2394e5d9', done: true, message: 'removed the session branch.' };
-      }
-      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-      return {};
+      }      return {};
     });
     const client = newClient();
     render(pane(client));
