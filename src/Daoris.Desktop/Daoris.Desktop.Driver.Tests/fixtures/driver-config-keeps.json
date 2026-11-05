@@ -12,8 +12,6 @@
     "  ],",
     "  \"cap\": 2,",
     "  \"theme\": \"dark\",",
-    "  \"adapter\": \"claude-code\",",
-    "  \"helperAdapter\": \"claude-code\",",
     "  \"helpMode\": \"full\",",
     "  \"notify\": true,",
     "  \"timeoutMinutes\": 30,",
@@ -178,17 +176,10 @@
       ]
     },
     {
-      "name": "the intake named where the file named none: in the writer's place, after the adapter",
-      "edit": { "op": "intake", "adapter": "codex" },
-      "changes": [
-        { "from": ["  \"adapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\",", "  \"intakeAdapter\": \"codex\","] }
-      ]
-    },
-    {
       "name": "Ask Daoris's mode back to restricted (HELPMODE1a1): the key goes, since neither twin writes the default",
       "edit": { "op": "help-mode", "mode": "restricted" },
       "changes": [
-        { "from": ["  \"helperAdapter\": \"claude-code\",", "  \"helpMode\": \"full\","], "to": ["  \"helperAdapter\": \"claude-code\","] }
+        { "from": ["  \"theme\": \"dark\",", "  \"helpMode\": \"full\","], "to": ["  \"theme\": \"dark\","] }
       ]
     },
     {
@@ -322,10 +313,10 @@
     },
     {
       "name": "a setting another writer took out stays out, though this writer read it",
-      "between": [{ "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] }],
+      "between": [{ "from": ["  \"theme\": \"dark\",", "  \"helpMode\": \"full\","], "to": ["  \"theme\": \"dark\","] }],
       "edit": { "op": "notify", "on": false },
       "changes": [
-        { "from": ["  \"adapter\": \"claude-code\",", "  \"helperAdapter\": \"claude-code\","], "to": ["  \"adapter\": \"claude-code\","] },
+        { "from": ["  \"theme\": \"dark\",", "  \"helpMode\": \"full\","], "to": ["  \"theme\": \"dark\","] },
         { "from": ["  \"notify\": true,"], "to": ["  \"notify\": false,"] }
       ]
     },

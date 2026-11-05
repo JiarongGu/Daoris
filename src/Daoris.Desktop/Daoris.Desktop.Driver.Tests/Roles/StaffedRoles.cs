@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The roles' orders a test's configuration runs by, as the home migration's staffing step writes them from the single-agent keys
 /// (<see cref="StaffingStep"/>): Build, Chat and Brainstorm on the machine's agent, Intake and Ask Daoris on theirs where named. A role
-/// runs by its stored order alone, so a configuration naming only <c>Adapter</c> leaves Build with no choice that can run.
+/// runs by its stored order alone.
 /// </summary>
 internal static class StaffedRoles
 {
@@ -22,8 +22,8 @@ internal static class StaffedRoles
         return orders;
     }
 
-    /// <summary>The empty configuration on <paramref name="agent"/>: the machine's key and the roles' orders <see cref="On"/> writes.</summary>
-    public static DriverConfig Config(string agent) => DriverConfig.Empty with { Adapter = agent, Actors = On(agent) };
+    /// <summary>The empty configuration on <paramref name="agent"/>: the roles' orders <see cref="On"/> writes.</summary>
+    public static DriverConfig Config(string agent) => DriverConfig.Empty with { Actors = On(agent) };
 
     /// <summary>Intake on <paramref name="agent"/> alone, as the role door writes it: the <c>intakeAdapter</c> key no longer turns it on.</summary>
     public static DriverConfig StaffIntake(this DriverConfig config, string agent) => ActorChoices.With(config, "intake", [new ActorChoice(agent)]);
