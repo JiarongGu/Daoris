@@ -20,7 +20,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Points and frames | `Knowledge/Domain/PluginVocabulary.cs` (`HookPoints`), `Plugins/Domain/HookPoints.cs` (`HookFrames`) | The point names, and the one builder of each point's frame |
 | Wire | `Plugins/IHookChannel.cs` (the port), `HookPeer.cs`, `HookChannels.cs`, `HookSet.cs`, `Plugins/HookProcess.cs` | Handshake and answer reading; the loop's running hooks, reconciled each look |
 | Landing and query | `Plugins/LandingPlugins.cs`, `Workplace/PullRequestAsks.cs`, `Workplace/PullRequestMoments.cs` | `work/land` for the hand-off alone, which a later chunk deletes; `work/state` at its occasions; a pull request's address is written from its `pull-request` step's evidence (`PullRequestRecords`) |
-| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
+| Work wire | `Plugins/WorkPlugins.cs`, `Plugins/PlacedWork.cs`, `Plugins/PlaceHostTokens.cs`, `Plugins/PluginCycles.cs`, `Plugins/Domain/WorkWire.cs` | Performer and observer processes, on the lease's loop only (the workflows area owns the meaning) |
 | Harness | `Plugins/DeclaredAcpAdapter.cs`, `Plugins/PluginAgentSkills.cs` | A declared harness on the ACP door; a plugin's skills handed at spawn |
 | Install | `Plugins/PluginInstall.cs` | Add, add an offer, plan and apply an update, replace, remove; every swap staged beside |
 | Source record | `Plugins/Domain/PluginSource.cs` | `.daoris-source.json` (folder, offer with digest, or package); an update's change rows |
@@ -79,7 +79,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
     service's REST API with `DAORIS_HOST_TOKEN`: the API token of the identity serving origin (`PluginHostToken`), set by `HookProcess`
     around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
     serves origin, the identity is read only, Write denies, no API token) is not started. They run no git, `gh` or `az`, and declare
-    node alone. The hand is read from a place's origin by a resolver the host gives `HookSet`; the loop gives none yet. (from D241)
+    node alone. A plugin that declares a `pull-request` step has one work process per place (repository and workspace) that awaits
+    it, never one shared: `PlacedWork` splits the awaited units by place under a key beneath the plugin's id, so each process's waits,
+    unsound mark and idle stop are its place's own, and `PlaceHostTokens` (given to `HookSet` by the loop and the headless host) reads
+    that place's origin and hands its token to that process alone. An attempt goes to the place its unit was told for; the runtime
+    sees the plugin's id, its generations unique across the places (`GenerationOf(plugin, held)` fences against the process that took
+    the attempt). A refused place has no process, and the others are served. (from D241, D242)
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
     unjudged. Newer: the person's, said nothing. (from D119)
