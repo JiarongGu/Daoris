@@ -33,7 +33,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
 | `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait and go-on; the start names its session, transcript, opening and preamble, and everything the door says leaves as readings to the sink its executor hands it |
 | `IResumeState` | `Contract/` | A native resume's state, which Course's `ResumeAsk` implements: the run marks it opened when its harness names the conversation, and its end tries a structured resume once more where the harness exited nonzero before naming it, never after a clean exit, a refusal, a stop asked or on the plain capture |
-| `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a failure), the one port it writes them to and its composition; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, the windows |
+| `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a failure), the one port it writes them to and its composition; each carries its run, the generation of the process that said it and its place in the run's order (`StampedSink`), the protocol door's windows and a conversation's failed turns among them; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, the windows |
 | `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
 | `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
 | `OpenPrompts`, `OpenPrompt`, `PromptPassage` | `Turn/` | The prompts on the wire and the run's door they pass, under one gate whose header names what it guards, the order of the locks and what a race would break: a prompt opens as it is admitted under the write lock, the door shuts between two writes, a word is taken once |
@@ -69,7 +69,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AccountWindows`, `UsageQuestion`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, the readers in `Providers/ClaudeCode/` and `Providers/Codex/`, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend: the question and its answer, each provider's own `UsageQuestion` (`ClaudeUsageQuestion`, `CodexUsageQuestion`) in its folder saying how it is asked, how long a reading stands and its source, so the roster switches on no kind; the capacity estimate |
 | `UsageHistory`, `UsageHistoryReads` | same names | The readings and turns history: kept, rotated and pruned; read back by month with the gaps and the unread counted; its records (`KeptReading`, `KeptTurn`, `HistoryGap`, and the rest) each in a file |
 | `HarnessProbe`, `HarnessKeys`, `HarnessSelection`, `StartWiring`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | same names | Version and sign-in questions, API-key accounts, a selection and the wiring a start is handed, one question per home at a time, no real sign-in under a scratch home |
-| `AgentSettings`, `AgentOffers` | same names | An account's model and effort in the tool's own file; what an agent offered per version and account |
+| `AgentSettings`, `AgentOffers`, `DoorOffers`, `SessionChoices`, `ISettingsFile` | same names; `Providers/ClaudeCode/ClaudeSettingsFile.cs` | An account's model and effort in the tool's own file (the provider's `Models` part states its aliases and efforts); what an agent offered per version and account, read by `AgentOffers.Offers` in two scopes (a session's, an account default's); `SessionChoices` is the session scope the page's actors offer per door, `max` only on Claude Code's native door |
+| `IChoiceReask` | `Contract/IChoiceReask.cs`; Loop's `ChoiceReask` | The open's answer to a refused choice, implemented in Loop where the executor is built, the refusal kept in the offers store before the walk: a later choice carried on the same session, or none |
 | `PermissionRules`, `RuleProposals`, `ClaudeTrust`, `Across` | `Permissions.cs`, `Providers/ClaudeCode/ClaudeTrust.cs` and same names | Rules in scopes and defaults, an agent's proposals, Claude Code's folder trust, reach into other checkouts |
 | `SpawnServers`, `SpawnSkills`, `DshProfile` | same names, the last in `Providers/Dsh/` | The pipe door's servers file, plugin skills per session, the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
@@ -314,13 +315,15 @@ Agents page, and `orient-index` and `code-map` once files move.
   shell reads, Platform's launcher starting and containing the completed recipe (D201), the identity names moved down from
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
-  the sink's rest (l: the protocol door's windows still on the driven door's callback, a conversation's word turns' failures and the
-  open's refused model as no reading yet, the lineage still a writer the run makes rather than Participants' part, the four `stream-json`
-  readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`, run, generation and sequence not yet on a reading),
+  the sink's rest (l: the open's refused model still a re-ask and no reading, the lineage still a writer the run makes rather than
+  Participants' part, the four `stream-json` readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`),
   m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
-  a start of its own rather than the run's; the protocol resume once for a driven run and a conversation; the hand-over's accounts once;
-  `IConversationHome`), the same-session re-ask of a refused choice
-  (n), one connector plan (p, with **CONNECTORS1**), the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
+  a start of its own rather than the run's, since the conversation's words go to the process its `NativeChat` holds; the protocol resume
+  once for a driven run and a conversation; the hand-over's accounts once; `IConversationHome`), n's rest (the doors' `Offers` part, the
+  actor run's asked choice read from the door's spawn, the offers store read by the start plan and the walk through `AgentOffers.Offers`
+  rather than `Read` and `Judge`), s-ii (the group's report of a resume against `ResumesOwn`, whose two reads agree on inspection and
+  want a planted disagreement), one connector plan (p, with **CONNECTORS1**), the provider sheet (r, with **COAGENT1e**), and the rest
+  of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling
@@ -331,9 +334,11 @@ Agents page, and `orient-index` and `code-map` once files move.
   again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
   kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes. The channel is built: a failed native `result` is one `WireReading.Failed`
-  (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, which nothing reads for the account yet; D210's row 1c adds the
-  part that reads it through `AgentErrors.Read` and Claude Code's limit words, composed beside the others in `SessionHold` and `ChatWatch`.
+  Waits on a recorded native limit, the owner's yes. The channel and the reader are built: a failed native `result` is one
+  `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
+  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and cools the account on a limit, saying it on the account's line.
+  What is not built: the conclusion still reads no native limit (the record ends as a failed or completed run, with no limit note and no
+  park), and a native conversation moves to no next account; those and the recorded limit are what remain of D210's row 1c.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
