@@ -17,8 +17,11 @@ internal sealed class BenchHome : IAsyncDisposable
     /// <summary>The repository the home registers.</summary>
     public const string Repository = "engine";
 
-    /// <summary>The folder the repository ignores, which the large tree's build fills.</summary>
-    public const string Ignored = "Build";
+    /// <summary>
+    /// The folder the repository ignores, which the large tree's build fills: an engine's intermediate files, a name no build tool's list
+    /// holds, so a read that looks into ignored folders looks into it.
+    /// </summary>
+    public const string Ignored = "Intermediate";
 
     private BenchHome(string scratch, RealServiceHost host, ServiceClient client, string root, string home)
     {
@@ -34,6 +37,9 @@ internal sealed class BenchHome : IAsyncDisposable
     public RealServiceHost Host { get; }
 
     public ServiceClient Client { get; }
+
+    /// <summary>The client's doors, which count what each read asks.</summary>
+    public required BenchDoors Doors { get; init; }
 
     /// <summary>The registered checkout.</summary>
     public string Root { get; }
@@ -58,14 +64,15 @@ internal sealed class BenchHome : IAsyncDisposable
     {
         var scratch = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "home-size", Guid.NewGuid().ToString("N")[..8]);
         var host = await RealServiceHost.StartAsync(Path.Combine(scratch, "service"));
-        var client = new ServiceClient(new ServiceHttp(host.Url, key: null));
+        var doors = new BenchDoors(new ServiceHttp(host.Url, key: null));
+        var client = new ServiceClient(doors);
         var root = await GitSeed.PlainAsync(Path.Combine(scratch, "checkouts", Repository), Repository);
         await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), $"/{Ignored}/\n");
         await GitAsync(root, "add", "-A");
         await GitAsync(root, "commit", "--quiet", "-m", "ignore the build");
         var home = Path.Combine(scratch, "home");
         Directory.CreateDirectory(home);
-        var made = new BenchHome(scratch, host, client, root, home);
+        var made = new BenchHome(scratch, host, client, root, home) { Doors = doors };
         var (ok, message) = await client.RegisterAsync(new JsonObject
         {
             ["repository"] = Repository,
@@ -86,8 +93,12 @@ internal sealed class BenchHome : IAsyncDisposable
             made.Trees.Add((await made.EndedAsync(tree.Path, baseCommit), tree.Path, baseCommit));
         }
 
+        // The large tree's work was landed by a squash, so the line holds it by content and every read asks what else the tree holds; the
+        // checkout and the tree each built the engine, so the ignored build is in both.
         made.Large = made.Trees[0];
         made.Built = built;
+        await GitAsync(root, "cherry-pick", "--allow-empty", (await GitAsync(made.Large.Tree, "rev-parse", "HEAD")).Trim());
+        Build(Path.Combine(root, Ignored), built);
         Build(Path.Combine(made.Large.Tree, Ignored), built);
         made.Copy(made.Trees[^1].Session, records - trees);
         return made;
@@ -120,7 +131,7 @@ internal sealed class BenchHome : IAsyncDisposable
     /// </summary>
     private void Copy(string template, int count)
     {
-        using var connection = new SqliteConnection($"Data Source={Path.Combine(Host.Home, "index", "knowledge.db")};Mode=ReadWrite;Pooling=False");
+        using var connection = new SqliteConnection($"Data Source={Path.Combine(Scratch, "service", "index", "knowledge.db")};Mode=ReadWrite;Pooling=False");
         connection.Open();
         var columns = new List<string>();
         using (var info = connection.CreateCommand())

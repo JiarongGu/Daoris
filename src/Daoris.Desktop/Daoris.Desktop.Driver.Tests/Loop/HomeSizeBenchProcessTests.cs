@@ -35,7 +35,14 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
 
     private BenchHome Home => _home!;
 
-    public async Task InitializeAsync() => _home = await BenchHome.MakeAsync(Records, TreeCount, Built);
+    private long _made;
+
+    public async Task InitializeAsync()
+    {
+        var watch = Stopwatch.StartNew();
+        _home = await BenchHome.MakeAsync(Records, TreeCount, Built);
+        _made = watch.ElapsedMilliseconds;
+    }
 
     public async Task DisposeAsync()
     {
@@ -45,32 +52,53 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
     [Fact]
     public async Task A_home_of_working_size_reads_within_its_budgets()
     {
-        var list = await TimedAsync(() => Home.Client.SessionList.ListedAsync(true, CancellationToken.None));
+        output.WriteLine($"the home made in {_made} ms");
+        var list = await MeasuredAsync("the service's list of every record (the service's own)", () => Home.Client.SessionList.ListedAsync(true, CancellationToken.None));
         var driver = new Daoris.Driver.Driver(Home.Client, DriverConfig.Empty with { Adapter = "stub" }, AdapterSet.Built(), Home.Home);
         await PassesAsync(driver);
-        var passes = await PassesAsync(driver);
-        var look = passes.Sum(each => each.Ms);
+        var look = await MeasuredAsync("look", async () =>
+        {
+            var passes = await PassesAsync(driver);
+            foreach (var (name, ms) in passes.Where(each => each.Ms >= 5).OrderByDescending(each => each.Ms)) output.WriteLine($"  {name}: {ms} ms");
+            return passes;
+        });
 
         var tidying = new BranchTidying(Home.Home);
         await tidying.LookAsync(Home.Client, null, CancellationToken.None);
-        var tidy = await TimedAsync(() => tidying.LookAsync(Home.Client, null, CancellationToken.None));
-        var nodes = await TimedAsync(() => WatchNodes.ReadNodeUnitsAsync(Home.Home, Home.Client, CancellationToken.None));
+        var tidy = await MeasuredAsync("tidy", () => tidying.LookAsync(Home.Client, null, CancellationToken.None));
+        var nodes = await MeasuredAsync("nodes' read", () => WatchNodes.ReadNodeUnitsAsync(Home.Home, Home.Client, CancellationToken.None));
 
         var trees = new SessionTrees(Home.Home);
+        // The help room's walk of a tree, first as a tree that moved is walked, then as its kept read answers.
+        var walk = await MeasuredAsync("the large tree's walk", () => TreeReadMemo.Of(Home.Home).Begin(trees).WorkAsync(Home.Large.Tree, CancellationToken.None));
+        await MeasuredAsync("its kept read", () => TreeReadMemo.Of(Home.Home).Begin(trees).WorkAsync(Home.Large.Tree, CancellationToken.None));
         await ReviewAsync(trees, Home.Large);
-        var large = await TimedAsync(() => ReviewAsync(trees, Home.Large));
-        var small = await TimedAsync(() => ReviewAsync(trees, Home.Trees[^1]));
+        var large = await MeasuredAsync($"the review of the tree with {Built} ignored files", () => ReviewAsync(trees, Home.Large));
+        await MeasuredAsync("a small tree's review", () => ReviewAsync(trees, Home.Trees[^1]));
 
-        output.WriteLine($"the service's list of {Records} records: {list} ms (the service's own, PERF1a)");
-        output.WriteLine($"look: {look} ms over {passes.Count} passes");
-        foreach (var (name, ms) in passes.Where(each => each.Ms >= 5).OrderByDescending(each => each.Ms)) output.WriteLine($"  {name}: {ms} ms");
-        output.WriteLine($"tidy: {tidy} ms; nodes' read: {nodes} ms");
-        output.WriteLine($"review of the tree with {Built} ignored files: {large} ms; of a small tree: {small} ms");
+        // Each read that reads the session list once is allowed that read: the rest is the driver's own.
+        Within("the look", look - list, LookBudget);
+        Within("the large tree's review", large, ReviewBudget);
+        Within("the large tree's walk", walk, ReviewBudget);
+        Within("the tidy", tidy - list, BesideBudget);
+        Within("the nodes' read", nodes - list, BesideBudget);
+    }
 
-        Assert.True(look - 4 * list <= LookBudget.TotalMilliseconds, $"the look took {look} ms past the service's reads, over its {LookBudget.TotalMilliseconds} ms");
-        Assert.True(large <= ReviewBudget.TotalMilliseconds, $"the large tree's review took {large} ms, over its {ReviewBudget.TotalMilliseconds} ms");
-        Assert.True(tidy <= BesideBudget.TotalMilliseconds, $"the tidy took {tidy} ms, over its {BesideBudget.TotalMilliseconds} ms");
-        Assert.True(nodes <= BesideBudget.TotalMilliseconds, $"the nodes' read took {nodes} ms, over its {BesideBudget.TotalMilliseconds} ms");
+    private static void Within(string what, long ms, TimeSpan budget) =>
+        Assert.True(ms <= budget.TotalMilliseconds, $"{what} took {ms} ms of its own, over its {budget.TotalMilliseconds} ms");
+
+    /// <summary>A read timed, with what it asked of the service and of git said beside it.</summary>
+    private async Task<long> MeasuredAsync<T>(string what, Func<Task<T>> read)
+    {
+        Home.Doors.Take();
+        using var starts = GitLaunch.Count();
+        var watch = Stopwatch.StartNew();
+        await read();
+        var ms = watch.ElapsedMilliseconds;
+        var git = starts.Starts.OrderByDescending(start => start.WholeTicks).Take(3)
+            .Select(start => $"git {string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(3))} {(long)GitLaunched.Ms(start.WholeTicks)} ms");
+        output.WriteLine($"{what}: {ms} ms; asked {Home.Doors.Take()}; {starts.Starts.Count} git starts, the longest {string.Join(", ", git)}");
+        return ms;
     }
 
     /// <summary>One look's passes in the driver's order, each timed by its name.</summary>
@@ -93,11 +121,4 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
 
     private Task<SessionReview?> ReviewAsync(SessionTrees trees, (string Session, string Tree, string BaseCommit) of) =>
         SessionReviews.ReadAsync(of.Session, of.Tree, of.BaseCommit, trees, (_, _) => Task.FromResult<string?>(Home.Root), null, CancellationToken.None);
-
-    private static async Task<long> TimedAsync<T>(Func<Task<T>> read)
-    {
-        var watch = Stopwatch.StartNew();
-        await read();
-        return watch.ElapsedMilliseconds;
-    }
 }
