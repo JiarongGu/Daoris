@@ -11,7 +11,6 @@ namespace Daoris.Driver;
 /// A hold, never a pause: a pause is an ask's or a quest's, and stops what runs.
 /// </param>
 /// <param name="Cap">Concurrent sessions across all repositories.</param>
-/// <param name="Adapter">Which adapter spawns sessions. The supported harness by default (D23).</param>
 /// <param name="PollSeconds">How often the watch loop ticks.</param>
 /// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
 /// <param name="Trees">Repositories whose sessions open their OWN worktree instead of the registered root (D51). Empty is the default.</param>
@@ -23,7 +22,6 @@ public sealed record DriverConfig(
     IReadOnlyList<string> Drivable,
     IReadOnlyList<string> Holds,
     int Cap,
-    string Adapter,
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
     IReadOnlyList<string> Trees,
@@ -52,7 +50,7 @@ public sealed record DriverConfig(
 
     /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
-        Drivable: [], Holds: [], Cap: 2, Adapter: "claude-code",
+        Drivable: [], Holds: [], Cap: 2,
         PollSeconds: 15,
         Commands: new Dictionary<string, IReadOnlyList<string>>(),
         Trees: []);
@@ -384,16 +382,8 @@ public sealed record DriverConfig(
     /// </summary>
     public KeepChoices Keep { get; init; } = KeepChoices.None;
 
-    /// <summary>The harness an ask's INTAKE session runs on (D65 §1b), or null and no intake runs.</summary>
-    /// <remarks>
-    /// 🔴 <b>Absent means OFF</b>, the opposite of `notify`: an intake spends a real login on every ask, and silently starting to spend
-    /// accounts on them after an upgrade is not a default anyone chose. <b>Named, never "the same as the adapter"</b>: which harness
-    /// answers asks and which does the work are two choices, and the second changing must not quietly move the first.
-    /// </remarks>
-    public string? IntakeAdapter { get; init; }
-
     /// <summary>
-    /// Each actor's order as the person set it, by its id; an actor absent is <i>as before</i> (<see cref="ActorChoices.Effective"/>).
+    /// Each actor's order as the person set it, by its id; an actor absent has no order of its own (<see cref="ActorChoices.Effective"/>).
     /// Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors { get; init; } =
@@ -401,9 +391,6 @@ public sealed record DriverConfig(
 
     /// <summary>Each stored actor that does not read, with why: its starts hold, never read as <i>as before</i>.</summary>
     public IReadOnlyDictionary<string, string> ActorErrors { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
-
-    /// <summary>The harness Ask Daoris runs on, or null for none. Off until named, and named apart from the intake: they are two jobs.</summary>
-    public string? HelperAdapter { get; init; }
 
     /// <summary>
     /// Ask Daoris's access mode: <see cref="HelpModeNames.Restricted"/>, the default, or <see cref="HelpModeNames.Full"/>. Read at each
@@ -561,7 +548,7 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// The staffing the file held where its fields were filled from the store (<see cref="RoleStaffingPort.Fill"/>), else null: a save
-    /// of any other key keeps its four paths as found, since they are written through the file step alone.
+    /// of any other key keeps its actors as found, since they are written through the file step alone.
     /// </summary>
     internal FileStaffing? AsFile { get; init; }
 

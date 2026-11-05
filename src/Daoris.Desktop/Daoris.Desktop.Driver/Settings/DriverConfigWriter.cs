@@ -22,12 +22,7 @@ internal static class DriverConfigWriter
             foreach (var name in config.Trees) writer.WriteStringValue(name);
             writer.WriteEndArray();
             writer.WriteNumber("cap", config.Cap);
-            // The staffing's four paths as the file held them where the store filled the record (AsFile).
-            writer.WriteString("adapter", asFile?.Adapter ?? config.Adapter);
-            // Written only when named: absent IS off, and the CLI twin writes it the same way.
-            if ((asFile is null ? config.IntakeAdapter : asFile.IntakeAdapter) is { } intakeKey) writer.WriteString("intakeAdapter", intakeKey);
-            if ((asFile is null ? config.HelperAdapter : asFile.HelperAdapter) is { } helperKey) writer.WriteString("helperAdapter", helperKey);
-            // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
+            // Written only when an actor is set (MODELROLE1c, D205 §9.1), as the file held it where the store filled the record (AsFile).
             ActorKey.Write(writer, asFile?.Actors ?? config.Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
             if (config.HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", config.HelpMode);

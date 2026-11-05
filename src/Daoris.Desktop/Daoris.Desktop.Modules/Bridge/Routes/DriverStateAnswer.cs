@@ -45,7 +45,6 @@ internal static class DriverStateAnswer
             StandingConfirmation = loop.Pipe?.StandingConfirmation.Now(),
             config.Trees,
             config.Cap,
-            config.Adapter,
             config.PollSeconds,
             config.Notify,
             config.Strikes,
@@ -57,9 +56,9 @@ internal static class DriverStateAnswer
             // 🔴 Reported so the page can show it, and modelled on the record so no toggle deletes it.
             // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
             // shell older than the intake by this field's absence (AGT6, seen on the window).
-            IntakeAdapter = config.IntakeAdapter ?? "",
+            IntakeAdapter = ActorKey.FirstAgent("intake", config) ?? "",
             // Off is "" on the wire for the intake's reason: a shell older than Ask Daoris sends no field.
-            HelperAdapter = config.HelperAdapter ?? "",
+            HelperAdapter = ActorKey.FirstAgent("ask-daoris", config) ?? "",
             // Ask Daoris's access mode as the person chose it (HELPMODE1a2): `restricted` or `full`, what its next start reads. A
             // conversation's own, the mode its start got, is its record's (`HELP_CONVERSATIONS`' `mode`).
             config.HelpMode,
@@ -122,9 +121,9 @@ internal static class DriverStateAnswer
             // The second-opinion rules as set (XAGENT1a), as rows for the same reason, each naming the working agent's family
             // over the loop's agents, a plugin's among them (XAGENT1b3).
             Opinions = config.Opinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, ActorChoices.BuildAgent(config), loop.Harnesses.Adapters) }).ToArray(),
             WorkspaceOpinions = config.WorkspaceOpinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, ActorChoices.BuildAgent(config), loop.Harnesses.Adapters) }).ToArray(),
             // The helpers and commit rules as set (DOORS1b), as rows for the same reason: a workspace's Defaults reads its own here.
             Helpers = config.Helpers.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.HelperWire(p.Value) }).ToArray(),

@@ -447,8 +447,8 @@ internal sealed class StartPlan
     /// <summary>
     /// The agent a start of <paramref name="work"/> is named for before its walk runs, for the look's report of a wait and a hold the walk
     /// has not yet answered (the design §2.4's second row): a hand-over's, else a continuation's (<see cref="ContinuedOn"/>), else its role's
-    /// first entry; the machine's own key only where that entry does not read or the role is off, which the walk then holds for itself.
-    /// A step's named <paramref name="role"/> is its first entry's, and the machine's own key where it holds, never another role's.
+    /// first entry; Build's first entry only where that entry does not read or the role is off, which the walk then holds for itself.
+    /// A step's named <paramref name="role"/> is its first entry's, and Build's where it holds, never another role's.
     /// </summary>
     public static string AgentFor(
         string work, DriverConfig config, PriorSession? record = null, string? handed = null, RoleCatalog? catalogue = null, RolePlace place = default,
@@ -460,11 +460,11 @@ internal sealed class StartPlan
             if (record is not null) return ContinuedOn(record, config, work, bound, catalogue, place);
             var taken = role is { Length: > 0 } ? (catalogue ?? RoleCatalog.Of([])).Named(role, work, place).Role?.Id
                 : catalogue is null ? RoleOf(work) : catalogue.RoleFor(work, place).Role?.Id ?? RoleOf(work);
-            return (taken is null ? null : ActorChoices.FirstAgent(taken, config)) ?? config.Adapter;
+            return (taken is null ? null : ActorChoices.FirstAgent(taken, config)) ?? ActorChoices.BuildAgent(config);
         }
         catch (DriverException)
         {
-            return config.Adapter;
+            return ActorChoices.BuildAgent(config);
         }
     }
 

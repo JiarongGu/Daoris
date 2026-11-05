@@ -3,13 +3,10 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The staffing the store holds, as the five fields of a loaded <see cref="DriverConfig"/> hold it (FOUNDATION1w-s part 3, the design §19.15):
-/// the three first-agent keys, none where the store holds none, and the actors' orders with the entries that do not read.
+/// The staffing the store holds, as the fields of a loaded <see cref="DriverConfig"/> hold it (FOUNDATION1w-s part 3, the design §19.15):
+/// the actors' orders with the entries that do not read.
 /// </summary>
 public sealed record StaffingHeld(
-    string? Adapter,
-    string? IntakeAdapter,
-    string? HelperAdapter,
     IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors,
     IReadOnlyDictionary<string, string> ActorErrors);
 
@@ -66,16 +63,12 @@ public static class RoleStaffingPort
         if (held is null) return config;
         return config with
         {
-            Adapter = held.Adapter ?? DriverConfig.Empty.Adapter,
-            IntakeAdapter = held.IntakeAdapter,
-            HelperAdapter = held.HelperAdapter,
             Actors = held.Actors,
             ActorErrors = held.ActorErrors,
-            AsFile = new FileStaffing(config.Adapter, config.IntakeAdapter, config.HelperAdapter, config.Actors),
+            AsFile = new FileStaffing(config.Actors),
         };
     }
 }
 
 /// <summary>The staffing a config's file held when it was read, which a save writes back untouched (<see cref="DriverConfig.AsFile"/>).</summary>
-internal sealed record FileStaffing(
-    string Adapter, string? IntakeAdapter, string? HelperAdapter, IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors);
+internal sealed record FileStaffing(IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> Actors);

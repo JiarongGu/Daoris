@@ -236,7 +236,7 @@ internal static class HelpRuleSettings
         // plugin's agent is judged by what its plugin declares (XAGENT1b2), as the terminal and the reviewer's choice judge it.
         var adapters = AdapterSet.Built().WithPlugins(facts.Plugins);
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
-            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter, adapters)), .. OpinionRules.Gate(standing)]
+            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, ActorChoices.BuildAgent(config), adapters)), .. OpinionRules.Gate(standing)]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
         return (null, (string.Join(" ", [head, .. said]), $"daoris place opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));

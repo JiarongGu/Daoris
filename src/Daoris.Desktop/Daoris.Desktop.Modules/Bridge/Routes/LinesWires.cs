@@ -67,7 +67,7 @@ internal static class LinesWires
                 {
                     pair.line.Repository,
                     pair.line.Workspace,
-                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter, adapters),
+                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, ActorChoices.BuildAgent(config), adapters),
                     pair.opinion?.Source,
                 })
                 .ToArray(),

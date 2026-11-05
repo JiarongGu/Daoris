@@ -47,7 +47,7 @@ public static class SetupPress
         var plan = new SetupPlan(row.Repository)
         {
             Workspace = row.Workspace,
-            Adapter = config.Adapter,
+            Adapter = ActorChoices.BuildAgent(config),
             Builds = builds,
             Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
         };
@@ -128,8 +128,8 @@ public static class SetupPress
         var plan = new SetupPlan(row.Repository)
         {
             Workspace = row.Workspace,
-            Adapter = config.Adapter,
-            Alone = !config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
+            Adapter = ActorChoices.BuildAgent(config),
+            Alone =!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase),
             Case = SetupCase.Reconcile,
         };
         var refusals = ConfigurationRefusals(config, door, row).ToList();
@@ -212,7 +212,7 @@ public static class SetupPress
         {
             refusals.Add(new(SetupRefusals.NotDriven,
                 $"`{row.Repository}` is not driven here: it has not adopted, so only a session on the protocol door is "
-                + $"handed the connector it takes the quest with, and this machine's sessions start on `{config.Adapter}`, "
+                + $"handed the connector it takes the quest with, and this machine's sessions start on `{ActorChoices.BuildAgent(config)}`, "
                 + "which rides the pipe. Choose an ACP agent for Build in Agents → Roles, or with `daoris role set build \"<agent>\"`."));
         }
 

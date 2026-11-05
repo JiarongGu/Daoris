@@ -25,7 +25,6 @@ internal static class DriverConfigReader
             Drivable: Json.Strings(root,"drivable"),
             Holds: Json.Strings(root,"holds"),
             Cap: Math.Max(1, Int(root, "cap") ?? empty.Cap),
-            Adapter: Json.NonEmpty(root,"adapter") ?? empty.Adapter,
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? empty.PollSeconds),
             Commands: CommandMap(root),
             Trees: Json.Strings(root,"trees"),
@@ -39,10 +38,6 @@ internal static class DriverConfigReader
             Source = json,
             // Read only to be said (SESSWATCH1a): no bound is ever read from it.
             KeptTimeoutMinutes = Int(root, "timeoutMinutes"),
-            // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
-            IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
-            // Absent means OFF, as the intake's does (D89).
-            HelperAdapter = Json.NonEmpty(root,"helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
             // Each actor's order (MODELROLE1c, D205 §9.1): an entry that does not read is kept as its error, and holds its starts.
             Actors = actors,
             ActorErrors = actorErrors,

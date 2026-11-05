@@ -19,18 +19,19 @@ public sealed class StaffingStep : IHomeMigrationStep
         run.Keep(staffing.Location);
         var imported = staffing.ImportFile();
         if (imported.How is StaffingImported.Unread or StaffingImported.Held) throw new DriverException($"the roles' staffing was not imported: {imported.Said}");
-        if (staffing.Read() is not { } read) return;
-
         var rows = staffing.Rows();
+        if (rows.Count == 0) return;
+
+        string? FirstOf(string role) => rows.FirstOrDefault(row => row.Role == role)?.First;
         var writes = new List<(string Role, StaffingRow? Row)>();
         foreach (var role in ActorChoices.Ordered)
         {
             if (rows.Any(row => row.Role == role && row.State is "set" or "unreadable")) continue;
             var key = role switch
             {
-                "build" or "chat" or "brainstorm" => read.Adapter,
-                "intake" => read.IntakeAdapter,
-                "ask-daoris" => read.HelperAdapter,
+                "build" or "chat" or "brainstorm" => FirstOf("build"),
+                "intake" => FirstOf("intake"),
+                "ask-daoris" => FirstOf("ask-daoris"),
                 _ => null,
             };
             IReadOnlyList<ActorChoice> order = key is { Length: > 0 } agent ? [new ActorChoice(agent)] : ActorChoices.Seed(role) ?? [];
