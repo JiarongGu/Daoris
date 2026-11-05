@@ -33,7 +33,7 @@ public sealed class ToolsCommandTests : IDisposable
 
     private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
-    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/gh.exe=gh", "");
+    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/pwsh.exe=pwsh", "");
 
     /// <summary>A host that answers the archive, once the test lets it where it holds.</summary>
     private sealed class Host : HttpMessageHandler
@@ -67,7 +67,7 @@ public sealed class ToolsCommandTests : IDisposable
             ["schema"] = 1,
             ["tools"] = new JsonObject
             {
-                ["gh"] = new JsonObject
+                ["pwsh"] = new JsonObject
                 {
                     ["versions"] = new JsonObject
                     {
@@ -77,11 +77,11 @@ public sealed class ToolsCommandTests : IDisposable
                             {
                                 ["win-x64"] = new JsonObject
                                 {
-                                    ["url"] = "https://maker.example/gh-2.62.0.zip",
+                                    ["url"] = "https://maker.example/pwsh-2.62.0.zip",
                                     ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Bytes)),
                                     ["size"] = Bytes.Length,
                                     ["archive"] = "zip",
-                                    ["exe"] = "bin/gh.exe",
+                                    ["exe"] = "bin/pwsh.exe",
                                 },
                             },
                         },
@@ -113,17 +113,17 @@ public sealed class ToolsCommandTests : IDisposable
 
     private IReadOnlyList<string> Stagings()
     {
-        var folder = DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh");
+        var folder = DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh");
         return Directory.Exists(folder) ? [.. Directory.EnumerateDirectories(folder, "*.part*").Select(Path.GetFileName).OfType<string>()] : [];
     }
 
     [Theory]
     [InlineData("use git system")]
     [InlineData("locations add https://lists.example/resources.json")]
-    [InlineData("delete gh 2.62.0")]
-    [InlineData("use gh managed")]
-    [InlineData("download gh 2.62.0")]
-    [InlineData("update gh")]
+    [InlineData("delete pwsh 2.62.0")]
+    [InlineData("use pwsh managed")]
+    [InlineData("download pwsh 2.62.0")]
+    [InlineData("update pwsh")]
     public async Task A_person_s_press_acting_alone_is_refused_from_a_session_s_terminal(string words)
     {
         Offered();
@@ -134,7 +134,7 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.Equal(1, exit);
         Assert.Equal($"daoris: {DriverChoicesCommand.SessionsTerminal}", _error.ToString().Trim());
         Assert.Equal(before, File.ReadAllText(ToolsFile));
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
     }
 
     [Fact]
@@ -177,20 +177,20 @@ public sealed class ToolsCommandTests : IDisposable
         // The clock moves past the thirty seconds once the wait began, so the hold is said; it is said once however long it lasts.
         var started = DateTimeOffset.UtcNow;
         var looks = 0;
-        var run = ToolsCommand.RunAsync(["use", "gh", "managed"], World(waiting: waiting.SetResult, now: () => started.AddSeconds(31 * looks++)),
+        var run = ToolsCommand.RunAsync(["use", "pwsh", "managed"], World(waiting: waiting.SetResult, now: () => started.AddSeconds(31 * looks++)),
             CancellationToken.None);
 
         await waiting.Task.WaitAsync(Poll.Patience);
         Assert.False(run.IsCompleted);
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
         Assert.Equal([$"2.62.0.part-{Environment.ProcessId}"], Stagings());
         Assert.DoesNotContain("managed", File.ReadAllText(ToolsFile), StringComparison.Ordinal);
 
         held.Dispose();
         Assert.Equal(0, await run.WaitAsync(Poll.Patience));
-        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "gh"));
+        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "pwsh"));
         Assert.Empty(Stagings());
-        Assert.Equal("2.62.0", Tools.Read(Home).Entries["gh"].Version);
+        Assert.Equal("2.62.0", Tools.Read(Home).Entries["pwsh"].Version);
         var told = _error.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(["daoris: waiting for a terminal's `daoris tree land`"], told.Select(line => line[..line.IndexOf(" (pid", StringComparison.Ordinal)]));
         Assert.False(File.Exists(HomeLease.PathIn(Home)), "the publication let the home go");
@@ -201,7 +201,7 @@ public sealed class ToolsCommandTests : IDisposable
     {
         Offered();
         var host = new Host(hold: true);
-        var run = ToolsCommand.RunAsync(["download", "gh", "2.62.0"], World(host), CancellationToken.None);
+        var run = ToolsCommand.RunAsync(["download", "pwsh", "2.62.0"], World(host), CancellationToken.None);
 
         await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Null(HomeLease.HeldBy(Home));
@@ -219,10 +219,10 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.NotNull(desktop);
         var lease = File.ReadAllText(HomeLease.PathIn(Home));
 
-        Assert.Equal(0, await ToolsCommand.RunAsync(["use", "gh", "managed"], World(), CancellationToken.None));
+        Assert.Equal(0, await ToolsCommand.RunAsync(["use", "pwsh", "managed"], World(), CancellationToken.None));
 
-        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "gh"));
-        Assert.Equal("2.62.0", Tools.Read(Home).Entries["gh"].Version);
+        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "pwsh"));
+        Assert.Equal("2.62.0", Tools.Read(Home).Entries["pwsh"].Version);
         Assert.Equal(lease, File.ReadAllText(HomeLease.PathIn(Home)));
         Assert.Equal("", _error.ToString());
     }
@@ -234,15 +234,15 @@ public sealed class ToolsCommandTests : IDisposable
         using var held = HomeLease.TryAcquire(Home, LeaseKind.Verb, out _, "daoris tree land");
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var stop = new CancellationTokenSource();
-        var run = ToolsCommand.RunAsync(["use", "gh", "managed"], World(waiting: waiting.SetResult), stop.Token);
+        var run = ToolsCommand.RunAsync(["use", "pwsh", "managed"], World(waiting: waiting.SetResult), stop.Token);
 
         await waiting.Task.WaitAsync(Poll.Patience);
         await stop.CancelAsync();
 
         Assert.Equal(2, await run.WaitAsync(Poll.Patience));
         Assert.Empty(Stagings());
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
-        Assert.Null(Tools.Read(Home).Entries["gh"].Version);
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
+        Assert.Null(Tools.Read(Home).Entries["pwsh"].Version);
         Assert.Equal("daoris: stopped at your Ctrl+C — nothing was kept, and nothing switched.", _error.ToString().Trim());
     }
 
@@ -252,7 +252,7 @@ public sealed class ToolsCommandTests : IDisposable
         Offered();
         var host = new Host(hold: true);
         using var stop = new CancellationTokenSource();
-        var run = ToolsCommand.RunAsync(["download", "gh", "2.62.0"], World(host), stop.Token);
+        var run = ToolsCommand.RunAsync(["download", "pwsh", "2.62.0"], World(host), stop.Token);
 
         await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Equal([$"2.62.0.part-{Environment.ProcessId}"], Stagings());
@@ -260,7 +260,7 @@ public sealed class ToolsCommandTests : IDisposable
 
         Assert.Equal(2, await run.WaitAsync(Poll.Patience));
         Assert.Empty(Stagings());
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
     }
 
     /// <summary>CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.</summary>
@@ -275,7 +275,7 @@ public sealed class ToolsCommandTests : IDisposable
     [Theory]
     [InlineData("use git system", true)]
     [InlineData("use git file C:/bin/git.exe", true)]
-    [InlineData("delete gh 2.62.0", true)]
+    [InlineData("delete pwsh 2.62.0", true)]
     [InlineData("locations add https://lists.example/r.json", true)]
     [InlineData("locations remove https://lists.example/r.json", true)]
     [InlineData("look", true)]
@@ -285,9 +285,9 @@ public sealed class ToolsCommandTests : IDisposable
     [InlineData("list", false)]
     [InlineData("path git", false)]
     [InlineData("locations", false)]
-    [InlineData("use gh managed", false)]
-    [InlineData("download gh 2.62.0", false)]
-    [InlineData("update gh", false)]
+    [InlineData("use pwsh managed", false)]
+    [InlineData("download pwsh 2.62.0", false)]
+    [InlineData("update pwsh", false)]
     [InlineData("use git system --help", false)]
     [InlineData("frobnicate", false)]
     public void A_short_change_is_read_off_the_words(string words, bool changes) =>

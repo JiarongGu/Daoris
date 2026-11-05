@@ -63,7 +63,7 @@ turning it on and Daoris can check them: `[]` until it runs one. Each is `{ "id"
 
 | Field | What it says |
 |---|---|
-| `id` | `git`, `node`, `pwsh`, `gh` or `az`, which Daoris knows and finds the way the person set; or any other name, found on the PATH and never downloaded |
+| `id` | `git`, `node` or `pwsh`, which Daoris knows and finds the way the person set; or any other name, found on the PATH and never downloaded |
 | `versions` | the versions it works with: `>=2.60`, `>=2.60 <3`, or one exact version. Absent is any |
 | `for` | one sentence: why the plugin runs it |
 | `ready` | at most four checks, each `{ "run": ["…"], "says": "…", "fix": "…" }`: a command whose exit 0 means ready, what that means, and the command a person runs when it is not |

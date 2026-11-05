@@ -18,16 +18,16 @@ public sealed class ToolDownloadsTests : IDisposable
 
     private string Home => Path.Combine(_root, "data");
 
-    private string Tool => DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh");
+    private string Tool => DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh");
 
     /// <summary>No session runs here: what a delete asks before it removes a version (KEEP1b).</summary>
     private static Task<LiveSessions> NoSessions(CancellationToken _) => Task.FromResult(LiveSessions.None);
 
-    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/gh.exe=gh", "");
+    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/pwsh.exe=pwsh", "");
 
     private static OfferedVersion Offered(string version) => new(
-        version, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Bytes)), Bytes.Length, "zip", "bin/gh.exe", ["bin"],
-        [$"https://maker.example/gh-{version}.zip"], [ToolResources.BuiltIn]);
+        version, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Bytes)), Bytes.Length, "zip", "bin/pwsh.exe", ["bin"],
+        [$"https://maker.example/pwsh-{version}.zip"], [ToolResources.BuiltIn]);
 
     /// <summary>A host that answers the archive at every address, or waits for the person's stop once asked.</summary>
     private sealed class Host(bool hold = false) : HttpMessageHandler
@@ -49,39 +49,39 @@ public sealed class ToolDownloadsTests : IDisposable
     public async Task A_run_stages_under_its_process_s_name_and_its_publication_is_the_version()
     {
         var lines = new List<string>();
-        var staged = await ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", lines.Add, CancellationToken.None, new Host(),
+        var staged = await ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", lines.Add, CancellationToken.None, new Host(),
             process: 1001, running: _ => true);
 
         Assert.NotNull(staged);
         Assert.Equal(["2.62.0.part-1001"], Under());
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
 
         var (exe, published) = ToolInstall.Publish(staged, lines.Add);
         Assert.True(published);
-        Assert.Equal(Path.Combine(ToolInstall.VersionFolder(Home, "gh", "2.62.0"), Tools.Package, "bin", "gh.exe"), exe);
+        Assert.Equal(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Package, "bin", "pwsh.exe"), exe);
         Assert.Equal(["2.62.0"], Under());
-        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "gh"));
+        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "pwsh"));
         Assert.Contains(lines, line => line.StartsWith("  unpacked into ", StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task Two_runs_of_one_version_each_stage_their_own_and_the_second_keeps_the_first_s()
     {
-        var first = await ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
+        var first = await ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
             process: 1001, running: _ => true);
-        var second = await ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
+        var second = await ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
             process: 1002, running: _ => true);
         Assert.Equal(["2.62.0.part-1001", "2.62.0.part-1002"], Under());
 
         Assert.True(ToolInstall.Publish(first!, _ => { }).Published);
-        var record = File.ReadAllText(Path.Combine(ToolInstall.VersionFolder(Home, "gh", "2.62.0"), Tools.Record));
+        var record = File.ReadAllText(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Record));
 
         var lines = new List<string>();
         var (exe, published) = ToolInstall.Publish(second!, lines.Add);
         Assert.False(published);
-        Assert.Equal(Path.Combine(ToolInstall.VersionFolder(Home, "gh", "2.62.0"), Tools.Package, "bin", "gh.exe"), exe);
+        Assert.Equal(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Package, "bin", "pwsh.exe"), exe);
         Assert.Equal(["2.62.0"], Under());
-        Assert.Equal(record, File.ReadAllText(Path.Combine(ToolInstall.VersionFolder(Home, "gh", "2.62.0"), Tools.Record)));
+        Assert.Equal(record, File.ReadAllText(Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Record)));
         Assert.Contains(lines, line => line.Contains("another run downloaded GitHub CLI 2.62.0 meanwhile", StringComparison.Ordinal));
     }
 
@@ -90,7 +90,7 @@ public sealed class ToolDownloadsTests : IDisposable
     {
         using var stop = new CancellationTokenSource();
         var host = new Host(hold: true);
-        var run = ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, stop.Token, host, process: 1001, running: _ => true);
+        var run = ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", _ => { }, stop.Token, host, process: 1001, running: _ => true);
 
         await host.Asked.Task.WaitAsync(Poll.Patience);
         Assert.Equal(["2.62.0.part-1001"], Under());
@@ -107,7 +107,7 @@ public sealed class ToolDownloadsTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Tool, "2.63.0.part-1002"));
         Directory.CreateDirectory(Path.Combine(Tool, "2.60.0.part"));
 
-        var staged = await ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
+        var staged = await ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
             process: 1001, running: process => process is 1001 or 1002);
 
         // The dead process's goes; the live one's stays; an older build's bare staging of another version waits for that version.
@@ -119,11 +119,11 @@ public sealed class ToolDownloadsTests : IDisposable
     [Fact]
     public async Task A_staging_is_never_a_version_a_reader_takes()
     {
-        await ToolInstall.StageAsync(Home, "gh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
+        await ToolInstall.StageAsync(Home, "pwsh", Offered("2.62.0"), "win-x64", _ => { }, CancellationToken.None, new Host(),
             process: 1001, running: _ => true);
 
-        Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
-        Assert.Equal("missing", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", "2.62.0", NoSessions))).Check);
-        Assert.Equal("version", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", "2.62.0.part-1001", NoSessions))).Check);
+        Assert.Empty(ToolInstall.Downloaded(Home, "pwsh"));
+        Assert.Equal("missing", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "pwsh", "2.62.0", NoSessions))).Check);
+        Assert.Equal("version", (await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "pwsh", "2.62.0.part-1001", NoSessions))).Check);
     }
 }

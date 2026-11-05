@@ -84,7 +84,7 @@ public sealed class VerbLeasesTests
     // The tools `daoris tool …` hands on (PUSH1f2c, D194 point 2): each short change, held from the top.
     [InlineData("tool use git system")]
     [InlineData("tool use git file C:/bin/git.exe")]
-    [InlineData("tool delete gh 2.62.0")]
+    [InlineData("tool delete pwsh 2.62.0")]
     [InlineData("tool locations add https://lists.example/r.json")]
     [InlineData("tool locations remove https://lists.example/r.json")]
     [InlineData("tool look")]
@@ -197,10 +197,10 @@ public sealed class VerbLeasesTests
     [InlineData("tool locations")]
     [InlineData("tool --help")]
     [InlineData("tool frobnicate")]
-    [InlineData("tool use gh managed")]
-    [InlineData("tool use gh managed 2.62.0")]
-    [InlineData("tool download gh")]
-    [InlineData("tool update gh")]
+    [InlineData("tool use pwsh managed")]
+    [InlineData("tool use pwsh managed 2.62.0")]
+    [InlineData("tool download pwsh")]
+    [InlineData("tool update pwsh")]
     // The agents' rules, proposals and settings read, a trust asked or dry-run, and the usage (PUSH1f2d).
     [InlineData("agent")]
     [InlineData("agent rules")]
