@@ -465,6 +465,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         session.LimitsSaid += windows => sink.Read(new WireReading.WindowsSaid(windows));
         Session = session;
         protocol.Configure?.Invoke(session);
+        // A model the open refuses is a reading before its re-ask walks on: the offers store's part keeps it.
+        session.ModelRefused = RefusalReading.Of(session.ModelRefused, sink);
         protocol.Ending?.Open(session);
 
         if (protocol.Run is not { } run)

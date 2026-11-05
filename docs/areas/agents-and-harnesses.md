@@ -330,14 +330,15 @@ Agents page, and `orient-index` and `code-map` once files move.
   shell reads, Platform's launcher starting and containing the completed recipe (D201), the identity names moved down from
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
-  the sink's rest (l: the open's refused model still a re-ask and no reading, the lineage still a writer the run makes rather than
-  Participants' part, the four `stream-json` readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`),
-  m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
-  a start of its own rather than the run's, since the conversation's words go to the process its `NativeChat` holds; the protocol resume
-  once for a driven run and a conversation; the hand-over's accounts once; `IConversationHome`), n's rest (the doors' `Offers` part, the
-  actor run's asked choice read from the door's spawn, the offers store read by the start plan and the walk through `AgentOffers.Offers`
-  rather than `Read` and `Judge`), s-ii (the group's report of a resume against `ResumesOwn`, whose two reads agree on inspection and
-  want a planted disagreement); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
+  the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
+  one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by
+  the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243: words
+  through the run by `DoorInput`, one queue of ids per run, and `GoOnAsync` gone with it; a conversation's native retry still
+  `ChatWatch`'s own, a start of its own rather than the run's, until `NativeChat` writes through `DoorInput` and the run replays the
+  words the ended process never acknowledged; the protocol resume once for a driven run and a conversation; the hand-over's accounts
+  once; `IConversationHome`), n's rest (the doors' `Offers` part, the actor run's asked choice read from the door's spawn, the offers
+  store read by the start plan and the walk through `AgentOffers.Offers` rather than `Read` and `Judge`); a start's words go on in its
+  record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
   home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one
   name, the five places of `Adoption` carry a bool, and a plugin's door is a contract door made from a `DeclaredDoor`, its provider
@@ -356,11 +357,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
   kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes. The channel and the reader are built: a failed native `result` is one
+  Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
-  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and cools the account on a limit, saying it on the account's line.
-  What is not built: the conclusion still reads no native limit (the record ends as a failed or completed run, with no limit note and no
-  park), and a native conversation moves to no next account; those and the recorded limit are what remain of D210's row 1c.
+  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
+  as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so
+  `AccountEndings.Limited` cools the account once, notes it and the record says `limit`, then parks or waits by its line's rules; a native
+  conversation's cooling line is recorded before its turn's end, which `LimitHeld` reads limited (a failed result's subtype, never
+  `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.

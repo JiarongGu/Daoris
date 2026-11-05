@@ -6,22 +6,11 @@ internal sealed class ContinuationLimits(LoopContext context)
     private readonly LoopContext _context = context;
 
     /// <summary>
-    /// The record a start goes on in with the person's words, where its resume asks for that record's own account (MSG1g, D137
-    /// §2.2): words the planner took up, on the adapter the record ran on. Null for every other start, and for a record that ran
-    /// on another adapter than <paramref name="agent"/>, whose conversation cannot go on here whichever account runs (D131 §2's
-    /// <c>adapter</c>), so its words are carried on by the walk's pick as before. Since FOUNDATION1j part ii the start's agent is the
-    /// record's own unless a hand-over named another, so a record that ran on Build's second choice goes on in its own conversation.
+    /// The record a start goes on in with the person's words, where its resume asks for that record's own account (MSG1g, D137 §2.2), by the
+    /// one rule the sessions' groups report it by (<see cref="OwnResume"/>), on the agent the start runs on.
     /// </summary>
-    /// <remarks>
-    /// 🔴 SAYHELD1: never judged by the quest's <c>awaits</c>. The planner plans words going on only where no question holds them, and
-    /// a quest resumed on its answer still names that question (Planner's <c>ResumedOnAnswer</c>), so its park's answer took the walk.
-    /// </remarks>
-    internal PriorSession? ResumesOwn(Consideration start, string agent)
-    {
-        if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } words) return null;
-        var ranOn = words.Adapter ?? _context.Conversations.Read(words.Session)?.Adapter;
-        return ranOn is not { Length: > 0 } || string.Equals(ranOn, agent, StringComparison.OrdinalIgnoreCase) ? words : null;
-    }
+    internal PriorSession? ResumesOwn(Consideration start, string agent) =>
+        OwnResume.Of(start, agent, session => _context.Conversations.Read(session)?.Adapter);
 
     /// <summary>
     /// Whether a record an account's limit ended could resume its own conversation on <paramref name="agent"/> (LIMITRESUME1b, D206; the

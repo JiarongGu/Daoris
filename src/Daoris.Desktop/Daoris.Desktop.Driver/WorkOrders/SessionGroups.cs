@@ -318,13 +318,12 @@ public static class SessionGroups
             var conversations = new HarnessConversations(home);
             foreach (var verdict in look.Considered)
             {
-                // The resume's own account, as the loop's start asks for it (MSG1g): words going on in the record they were said
-                // to, in its own conversation, on the agent the start goes on with: a hand-over's, else its record's own (FOUNDATION1j part ii).
-                // SAYHELD1: never by the quest's `awaits`, as the start's own ask does not (DriverContinuations.ResumesOwn).
-                if (verdict is not { Verdict: StartVerdict.Start, GoesOn: true, Resumes: { WordsWaiting: true } words }
-                    || (new HandedQuests(home).Read(verdict.Quest.Id)?.Agent ?? GoesOnWith(words, ParticipantWork.Build)) is not { } adapter
-                    || (words.Adapter ?? conversations.Read(words.Session)?.Adapter) is { Length: > 0 } ranOn
-                       && !string.Equals(ranOn, adapter, StringComparison.OrdinalIgnoreCase)
+                // The resume's own account, as the loop's start asks for it (MSG1g): words going on in the record they were said to, in its own
+                // conversation, by the continuation's one rule (OwnResume), on the agent the start goes on with: a hand-over's, else its record's
+                // own (FOUNDATION1j part ii).
+                if (verdict is not { Verdict: StartVerdict.Start, GoesOn: true, Resumes: { WordsWaiting: true } resumes }
+                    || (new HandedQuests(home).Read(verdict.Quest.Id)?.Agent ?? GoesOnWith(resumes, ParticipantWork.Build)) is not { } adapter
+                    || OwnResume.Of(verdict, adapter, session => conversations.Read(session)?.Adapter) is not { } words
                     || choices.Covers(words)
                     || Cooling(coolingOf, words) is not { } cooling)
                 {

@@ -172,7 +172,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                 ct: ct,
                 preamble: Driver.JoinNotices(preamble, opening),
                 handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
-                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 minutes: bound,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 noConnector: HelperPass.NoConnector,
