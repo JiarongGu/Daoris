@@ -8,8 +8,25 @@ namespace Daoris.Driver;
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<IIntegrationDoor?> integration, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<ILandingDoor?> landing,
-    Func<IPushDoor?> pushing)
+    Func<IPushDoor?> pushing, Func<IPullRequestRecords?> pullRequests)
 {
+    /// <summary>
+    /// A run's <c>&lt;plugin&gt;/pull-request</c> step that reached: the pull request its evidence names is written on the landing record with its
+    /// plugin, once, so the <c>work/state</c> asks have an address and the page shows the pull request.
+    /// </summary>
+    public void KeepPullRequests(GovernedUnit governed)
+    {
+        if (pullRequests() is not { } kept || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
+        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
+        foreach (var node in governed.Declared.Values)
+        {
+            if (PullRequestSteps.PluginOf(node.Kind) is not { } plugin) continue;
+            if (record.Statuses.GetValueOrDefault(node.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Ref: { } address }) continue;
+            if (!PullRequestSteps.IsAddress(address)) continue;
+            kept.Keep(governed.Watched.Repository, landed.Branch, plugin, address);
+        }
+    }
+
     /// <summary>
     /// A run's <c>push</c>, active at the tip the landing recorded, started once on the door: the branch the <c>land</c> made is pushed through
     /// the push act. The door is idempotent by node and tip, and the act is the person's press's own, so the two cannot push twice.

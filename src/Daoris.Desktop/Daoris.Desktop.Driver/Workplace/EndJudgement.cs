@@ -81,7 +81,7 @@ internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = 
     public static EndCycle Of(Landing landing, LandingWorkflow? workflow = null)
     {
         var branch = landing.Form == LandingForm.Branch;
-        return new(landing.Form, branch && landing.Plugin is not null, branch && landing.Squash, workflow);
+        return new(landing.Form, false, branch && landing.Squash, workflow);
     }
 
     /// <summary>
