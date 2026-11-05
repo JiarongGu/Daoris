@@ -401,7 +401,7 @@ internal static class EndJudgement
         // PROOF-UNREAD1: a proof git could not read (`Unread`) is never a hold, so it never ends the work by content; a later row
         // may carry it as the judgement's unknown.
         if (content.Hold is { } hold) facts = facts with { Content = Held.At(hold.Where) };
-        return facts with { OnPersonsBranch = await TreeFollows.UnlandedAsync(root, subject.Tip, ct).ConfigureAwait(false) is { } unlanded ? unlanded == 0 : null };
+        return facts with { OnPersonsBranch = await UnheldTips.HeldAsync(root, subject.Tip, refs, ct).ConfigureAwait(false) };
     }
 
     /// <summary>
@@ -433,13 +433,36 @@ internal static class EndJudgement
         var read = true;
         foreach (var form in forms)
         {
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Ref], ct).ConfigureAwait(false);
+            var code = await AncestorOfAsync(root, tip, form, ct).ConfigureAwait(false);
             if (code == 0) return Held.At(form.Name);
             if (code != 1) read = false;
         }
 
         return read ? Held.None : Held.Unread;
     }
+
+    /// <summary>
+    /// <c>merge-base --is-ancestor</c>'s code for <paramref name="tip"/> against a form of the line: 0 held, 1 not, else unread. Where both are
+    /// full commit ids it asks <c>merge-base</c> alone, which is the tip exactly when the line holds it, and which the content proof asks of the
+    /// same pair next (a judgement keeps it once), so a branch the line does not hold costs one start of the pair, not two.
+    /// </summary>
+    private static async Task<int> AncestorOfAsync(string root, string tip, LandedProofs.LineForm form, CancellationToken ct)
+    {
+        if (form.At is not { } at || !IsFullId(tip) || !IsFullId(at))
+        {
+            return (await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Rev], ct).ConfigureAwait(false)).Code;
+        }
+
+        var (code, shared, _) = await WorkingTree.GitAsync(root, ["merge-base", tip, at], ct).ConfigureAwait(false);
+        return code switch
+        {
+            0 => string.Equals(shared.Trim(), tip, StringComparison.OrdinalIgnoreCase) ? 0 : 1,
+            1 => 1,
+            _ => 2,
+        };
+    }
+
+    private static bool IsFullId(string id) => id.Length is 40 or 64 && id.All(Uri.IsHexDigit);
 
     /// <summary>
     /// FABRIC-END2d (D102's group, as <see cref="LandedCleanups.JudgeLandedAsync"/>'s <c>Inside</c> proves it): the first of <paramref name="hosts"/>
