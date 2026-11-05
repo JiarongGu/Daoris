@@ -48,7 +48,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         var doors = new List<(string Owner, string Door, HarnessToolchain Toolchain)>();
         foreach (var name in roster.Adapters.Names)
         {
-            if (Known(roster, name) is { } toolchain) doors.Add((roster.Adapters.OwnerOf(name), name, toolchain));
+            if (Known(roster, name) is { } toolchain) doors.Add((roster.Adapters.Registry.OwnerOfAgent(name).Value, name, toolchain));
         }
 
         return new
@@ -76,6 +76,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         // Whether its accounts' use is read by asking its agent (USAGEREAD2a, CODEXUSE1), which the screen's
                         // *Read now* and its read as it opens need (SWITCH1d).
                         Reads = owner.Any(door => roster.UsageOf(door.Door) is not null),
+                        // How long a reading of it stands, in seconds, its question's own (Claude's one minute, Codex's five): the
+                        // page reads an account again once its reading is older.
+                        ReadFloor = owner.Select(door => roster.UsageOf(door.Door)?.Fresh).FirstOrDefault(fresh => fresh is not null)?.TotalSeconds,
                         Own = new
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null), roster.Home),
@@ -325,7 +328,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     /// <summary>Each door's account owner (AGT7), the door itself where this build knows no toolchain for it.</summary>
-    public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter) is null ? adapter : roster.Adapters.OwnerOf(adapter);
+    public static Func<string, string> Owners(HarnessRoster roster) => adapter => Known(roster, adapter) is null ? adapter : roster.Adapters.Registry.OwnerOfAgent(adapter).Value;
 
     private static string Key(string agent, string account) => $"{agent}/{account}".ToLowerInvariant();
 
@@ -469,7 +472,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
         harnesses.Toolchain(harness) is null
             ? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.")
-            : harnesses.Adapters.OwnerOf(harness);
+            : harnesses.Adapters.Registry.OwnerOfAgent(harness).Value;
 
     /// <summary>
     /// A scope's list written whole (D125 §3.1, D130 §3.1, §4.6), as <c>daoris agent account order</c> writes it: each name an

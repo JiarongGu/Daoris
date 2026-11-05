@@ -115,7 +115,7 @@ internal static class AgentLongCommand
         }
 
         // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
-        var owner = roster.Adapters.OwnerOf(name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
         if (roster.KeyVariableOf(name) is null)
         {
             throw new AgentWords($"`{name}` takes no API key from Daoris — sign in with its own login instead.");

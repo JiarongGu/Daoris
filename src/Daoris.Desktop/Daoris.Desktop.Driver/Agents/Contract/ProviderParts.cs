@@ -107,8 +107,18 @@ public sealed record AbilitiesPart(
     Known<bool> TakesSettings,
     Known<bool> ServersInherit = default);
 
-/// <summary>A door's own words: its error words and its turn report's meaning (D179 point 8).</summary>
-public sealed record DoorTablesPart(ErrorWords? ErrorWords, string? TurnReport);
+/// <summary>
+/// A door's own words, beside its provider's <see cref="TablesPart"/>: its error words, its turn report's meaning (D179 point 8) and
+/// the limit, window, sign-in and refused words it says its accounts in where it is not keyed by its provider's name. What it
+/// declares here it reads itself; <see cref="LentPart"/> is what a harness naming it reads.
+/// </summary>
+public sealed record DoorTablesPart(
+    ErrorWords? ErrorWords, string? TurnReport,
+    LimitWords? Limits = null, WindowWords? Windows = null, SignInWords? SignIn = null, string? Refused = null)
+{
+    /// <summary>The account words alone, in the shape the provider's are read in.</summary>
+    public TablesPart Own => new(Limits, Windows, SignIn, Refused, null);
+}
 
 /// <summary>
 /// The variables, files and wire keys an agent names of its own, which the census reads (the design §9). Stated absent in row a:

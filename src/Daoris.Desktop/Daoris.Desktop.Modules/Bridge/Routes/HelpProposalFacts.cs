@@ -136,7 +136,7 @@ public sealed class HelpProposalFacts(DriverContext context)
                 {
                     var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
                     var pinned = settings.ResolveVersion(report.Adapter, null, null);
-                    var owner = _loop.Harnesses.Adapters.OwnerOf(report.Adapter);
+                    var owner = _loop.Harnesses.Adapters.Registry.OwnerOfAgent(report.Adapter).Value;
                     return new HelpDoorFacts(report.Adapter)
                     {
                         Present = report.Present,

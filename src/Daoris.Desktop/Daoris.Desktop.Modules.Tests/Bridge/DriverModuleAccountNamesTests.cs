@@ -101,7 +101,7 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         var loop = Loop();
         var running = AccountsRoutes.RunningOn(
             """[{"id":"s1a2b3c4","adapter":"claude-code-acp","profile":"account-1","state":"running"}]""",
-            adapter => loop.Harnesses.Adapters.OwnerOf(adapter));
+            adapter => loop.Harnesses.Adapters.Registry.OwnerOfAgent(adapter).Value);
 
         var answer = JsonSerializer.SerializeToElement(AccountsRoutes.AccountsAnswer(loop.Harnesses, running, DateTimeOffset.UtcNow));
 

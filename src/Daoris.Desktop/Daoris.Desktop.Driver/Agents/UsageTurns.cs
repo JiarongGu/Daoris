@@ -29,7 +29,7 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
     public static TurnBinding Of(AdapterSet adapters, ISessionAdapter adapter, string? profile)
     {
-        var owner = adapter.Toolchain is null ? null : adapters.OwnerOf(adapter.Name);
+        var owner = adapter.Toolchain is null ? null : adapters.Registry.OwnerOfAgent(adapter.Name).Value;
         return new(
             owner, owner is null ? null : profile ?? AccountWindows.Own, adapter.Name,
             adapter.Toolchain?.TurnReport ?? UsageHistory.MeaningUnknown);

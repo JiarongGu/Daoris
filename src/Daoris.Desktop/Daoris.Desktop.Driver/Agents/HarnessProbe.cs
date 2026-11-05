@@ -55,7 +55,7 @@ public static class HarnessProbe
         Action<string?, LoginRead, DateTimeOffset>? answered = null,
         string? accountOf = null)
     {
-        // Whose accounts it lists (AGT7): the key the registry answers (AdapterSet.OwnerOf), the agent itself where none is given.
+        // Whose accounts it lists (AGT7): the key the registry answers (<c>ProviderRegistry.OwnerOfAgent</c>), the agent itself where none is given.
         var owner = accountOf ?? adapter;
         var now = clock ?? (() => DateTimeOffset.UtcNow);
         // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
