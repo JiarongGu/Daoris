@@ -445,6 +445,7 @@ export function SessionHead({
             wait={alone}
             nameOf={answers?.nameOf}
             onAnswer={answers?.onAnswer}
+            onChangeRule={answers?.onChangeRule}
             busy={answers?.busy}
           />
         </section>
