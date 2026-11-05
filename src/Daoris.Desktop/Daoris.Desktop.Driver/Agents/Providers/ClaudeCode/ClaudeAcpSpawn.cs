@@ -18,5 +18,7 @@ internal sealed class ClaudeAcpSpawn : ISpawn
 
     public bool ClaudeSeam => true;
 
+    public SpawnChoiceVariables ChoiceVariables => ClaudeCodeSpawn.ChoiceVariablesOfClaude;
+
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) => command is { Count: > 0 } ? command : Program;
 }

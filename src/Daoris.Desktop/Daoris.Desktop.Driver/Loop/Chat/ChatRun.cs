@@ -204,7 +204,7 @@ internal sealed class ChatRun(
             if (overriding is null)
             {
                 using var startLog = new MachineLog(home, "driver");
-                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, info, actorAsked), ct: ct)
+                await service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(agent.Name, info, agent.ChoiceVariables, actorAsked), ct: ct)
                     .ConfigureAwait(false);
             }
             // Never once the driver is closing. The run's spawn passes the start gate, which a conversation's press may reach before its first

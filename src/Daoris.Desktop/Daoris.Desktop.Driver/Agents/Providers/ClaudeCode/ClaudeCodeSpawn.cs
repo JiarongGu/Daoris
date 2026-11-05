@@ -16,6 +16,11 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
 {
     private static readonly string[] Program = ["claude"];
 
+    /// <summary>Claude Code's variables for the model and the effort; both its doors read them.</summary>
+    public static SpawnChoiceVariables ChoiceVariablesOfClaude { get; } = new("ANTHROPIC_MODEL", "CLAUDE_CODE_EFFORT_LEVEL");
+
+    public SpawnChoiceVariables ChoiceVariables => ChoiceVariablesOfClaude;
+
     /// <summary>
     /// Its own structured output (D76, CONV3), checked against the binary before it was written (docs/2026-09-25-stream-json-evidence.md):
     /// <c>stream-json</c> needs <c>--verbose</c> beside it, and partial messages let the words stream as they are written.
