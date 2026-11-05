@@ -481,7 +481,8 @@ public sealed class TurnStopTests : IDisposable
         {
             var handed = file.RootElement.GetProperty("mcpServers");
             Assert.Equal(shell, handed.TryGetProperty("browser", out var browser));
-            if (shell) Assert.Equal([playwright, "--cdp-endpoint", "http://127.0.0.1:4810"], browser.GetProperty("args").EnumerateArray().Select(each => each.GetString()));
+            // The server keeper (MCPMEM1) wraps the server: its own script and bounds first, then the package's script and its endpoint.
+            if (shell) Assert.Equal([playwright, "--cdp-endpoint", "http://127.0.0.1:4810"], browser.GetProperty("args").EnumerateArray().Select(each => each.GetString()).TakeLast(3));
         }
         // BRW8: handed the browser, the conversation is named as driving it while it runs; withheld, it is not.
         string[] driving = shell ? [id] : [];
