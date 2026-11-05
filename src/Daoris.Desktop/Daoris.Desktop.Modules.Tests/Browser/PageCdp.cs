@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// One page of the engine, read over its own CDP socket: the page whose address is given, and what an
-/// expression evaluates to in it. What a test needs of a page the engine shows, and no more.
+/// expression evaluates to in it, and the page held shown. What a test needs of a page the engine shows, and no more.
 /// </summary>
 internal sealed class PageCdp : IDisposable
 {
@@ -33,8 +33,27 @@ internal sealed class PageCdp : IDisposable
     /// <summary>The value of <paramref name="expression"/> as JSON text, by value.</summary>
     public async Task<string> EvaluateAsync(string expression, CancellationToken ct)
     {
+        using var reply = await CallAsync("Runtime.evaluate", new { expression, returnByValue = true }, ct);
+        var result = reply.RootElement.GetProperty("result");
+        if (result.TryGetProperty("exceptionDetails", out var thrown)) throw new InvalidOperationException(thrown.ToString());
+        return result.GetProperty("result").GetProperty("value").GetRawText();
+    }
+
+    /// <summary>
+    /// The page counts as shown and focused for as long as this socket is open, whatever its window's state. Chrome
+    /// loads no media in a hidden page that has played none, and a window opened in the background is hidden whenever
+    /// it is covered, or the screen is locked or off: focus emulation holds the page visible, as DevTools' "Emulate a
+    /// focused page" does, without moving the window or taking the person's focus.
+    /// </summary>
+    public async Task ShowAsync(CancellationToken ct)
+    {
+        using var reply = await CallAsync("Emulation.setFocusEmulationEnabled", new { enabled = true }, ct);
+    }
+
+    private async Task<JsonDocument> CallAsync(string method, object parameters, CancellationToken ct)
+    {
         var id = ++_id;
-        var request = JsonSerializer.SerializeToUtf8Bytes(new { id, method = "Runtime.evaluate", @params = new { expression, returnByValue = true } });
+        var request = JsonSerializer.SerializeToUtf8Bytes(new { id, method, @params = parameters });
         await _socket.SendAsync(request, WebSocketMessageType.Text, endOfMessage: true, ct);
 
         var buffer = new byte[64 * 1024];
@@ -50,12 +69,21 @@ internal sealed class PageCdp : IDisposable
             }
             while (!received.EndOfMessage);
 
-            using var reply = JsonDocument.Parse(message.ToArray());
-            if (!reply.RootElement.TryGetProperty("id", out var answered) || answered.GetInt32() != id) continue;
-            if (reply.RootElement.TryGetProperty("error", out var error)) throw new InvalidOperationException(error.GetProperty("message").GetString());
-            var result = reply.RootElement.GetProperty("result");
-            if (result.TryGetProperty("exceptionDetails", out var thrown)) throw new InvalidOperationException(thrown.ToString());
-            return result.GetProperty("result").GetProperty("value").GetRawText();
+            var reply = JsonDocument.Parse(message.ToArray());
+            if (!reply.RootElement.TryGetProperty("id", out var answered) || answered.GetInt32() != id)
+            {
+                reply.Dispose();
+                continue;
+            }
+
+            if (reply.RootElement.TryGetProperty("error", out var error))
+            {
+                var said = $"{method}: {error.GetProperty("message").GetString()}";
+                reply.Dispose();
+                throw new InvalidOperationException(said);
+            }
+
+            return reply;
         }
     }
 

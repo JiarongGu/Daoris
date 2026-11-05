@@ -15,7 +15,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// Each wait is named, and fails saying what it waited for and the last it saw: the browser's port, the page's
 /// window, the page among the engine's targets, the clip. A clip the engine refuses fails at once with the media
-/// error, what the engine says it can play, and which engine it is.
+/// error, what the engine says it can play, and which engine it is. The page is held shown (<see cref="PageCdp.ShowAsync"/>):
+/// its window opens in the background, and Chrome loads no media in a hidden page.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class CodecPlaybackProcessTests : Bridge
@@ -61,6 +62,11 @@ public sealed class CodecPlaybackProcessTests : Bridge
 
             using var tab = await UntilAsync($"{page} among the engine's targets", browser, engineAt,
                 ct => PageCdp.OpenAsync(port, page, ct));
+            await UntilAsync("the page to be held shown", browser, engineAt, async ct =>
+            {
+                await tab.ShowAsync(ct);
+                return "";
+            });
 
             string seen = "nothing yet";
             string? plays = null;
