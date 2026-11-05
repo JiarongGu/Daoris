@@ -57,7 +57,8 @@ internal static class CodexProvider
             Known<TablesPart>.Declared(TablesPart.None with { Limits = CodexLimits.Words }, Evidence),
             Known<UsagePart>.Declared(new UsagePart(CodexUsage.Question), Evidence),
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
-            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Declared(CodexChildVocabulary.Vocabulary, Evidence),
+            Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

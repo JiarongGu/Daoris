@@ -375,6 +375,23 @@ public sealed class ProvidersBuiltTests
         Assert.Equal(typeof(IUsageQuestion), typeof(UsagePart).GetProperty("Question")!.PropertyType);
     }
 
+    /// <summary>Each provider that has children says them: Claude Code its hook, stream and calls with an end, Codex its thread calls and no end.</summary>
+    [Fact]
+    public void The_providers_that_have_children_declare_their_vocabulary()
+    {
+        var claude = Listed("claude-code").Children.Required;
+        Assert.True(claude.SaysEnd);
+        Assert.Contains("stream", claude.StreamSignals);
+        Assert.Contains("hook", claude.HookLines);
+
+        var codex = Listed("codex").Children.Required;
+        Assert.False(codex.SaysEnd);
+        Assert.Empty(codex.HookLines);
+        Assert.Contains("thread", codex.CallKeys);
+
+        Assert.All(["dsh", "stub", "alt-stub"], id => Assert.False(Listed(id).Children.IsKnown));
+    }
+
     /// <summary>Process starts compared by what a spawn would do: program, arguments, folder, redirections and variables.</summary>
     internal static string Shape(ProcessStartInfo info) =>
         $"{info.FileName} [{string.Join('|', info.ArgumentList)}] in {info.WorkingDirectory} in={info.RedirectStandardInput} out={info.RedirectStandardOutput} "

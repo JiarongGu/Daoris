@@ -93,6 +93,9 @@ internal sealed class LegacyDoor : ISessionAdapter
     /// <summary>Whether the door's program runs Claude Code's, so its spawn takes Claude Code's seam (<see cref="ISpawn.ClaudeSeam"/>).</summary>
     public bool ClaudeSeam => Spawn().ClaudeSeam;
 
+    /// <summary>The variables its program reads for the model and the effort (<see cref="ISpawn.ChoiceVariables"/>).</summary>
+    public SpawnChoiceVariables ChoiceVariables => Spawn().ChoiceVariables;
+
     public IReadOnlyDictionary<string, string> ToolsUpFront => Spawn().ToolsUpFront;
 
     public void HandServers(ProcessStartInfo info, string configFile) => Spawn().HandServers(info, configFile);

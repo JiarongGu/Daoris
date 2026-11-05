@@ -29,10 +29,10 @@ export function routeWords(t: TFunction, route: string, label: string | null): s
 }
 
 /**
- * Why a chart is not drawn, in the page's words: the driver's code and values worded from the catalogue in the language shown, and the
- * driver's own sentence where it sent no code, or one a newer driver names.
+ * Why a chart or a run is not drawn, in the page's words: the driver's code and values worded from the catalogue in the language shown,
+ * and the driver's own sentence where it sent no code, or one a newer driver names.
  */
-export function bindingProblemSaid(t: TFunction, effective: WorkflowEffective): string {
+export function bindingProblemSaid(t: TFunction, effective: Pick<WorkflowEffective, 'problemCoded'> & { problem?: string | null }): string {
   const coded = effective.problemCoded;
   const values = coded?.values ?? {};
   switch (coded?.code) {

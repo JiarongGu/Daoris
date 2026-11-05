@@ -69,6 +69,8 @@ public sealed class HelpRoomRolesTests : IDisposable
         var sonnet = new ActorChoice("claude-code", "sonnet", "high");
         var opus = new ActorChoice("claude-code", "opus", "high");
         staffing.Set("build", [sonnet, opus]);
+        // A preset's moves are merged into the machine's rules a home's first start seeded.
+        SeededRules.In(_home);
         RoleDoor.Apply(staffing, RoleChange.Set(RoleCatalog.Seed.Single(role => role.Id == "build")), null, null, new RolePolicyPress(Preset: "weighted"));
         var ledger = new StaffLedger(_home, () => StoreSettled.Yes);
         Assert.True(ledger.Record(new StaffStart("s1", "build", StaffKey.Of(sonnet), "weight")));
@@ -80,7 +82,8 @@ public sealed class HelpRoomRolesTests : IDisposable
         var build = roles.Single(role => role.Id == "build");
         Assert.Equal(["claude-code sonnet high", "claude-code opus high"], build.Choices);
         Assert.Equal((StaffPolicyRead.Set, 1L), (build.PolicyState, build.PolicyRevision));
-        Assert.Equal("Spread by weight (1:1); on a limit: next by weight; at most 3 moves a day", build.Policy);
+        // The policy's moves are the supervisor's rules (CONTEXTDRIVE1l), which the room's rules section says; the policy says its spread.
+        Assert.Equal("Spread by weight (1:1)", build.Policy);
         Assert.Equal("last 7 days: 2 starts (claude-code sonnet high ×1, claude-code opus high ×1), moved: limit ×1", build.Week);
         Assert.False(string.IsNullOrEmpty(build.Next));
         Assert.Equal(StaffPolicyRead.Default, roles.Single(role => role.Id == "intake").PolicyState);

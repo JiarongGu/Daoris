@@ -338,14 +338,21 @@ Agents page, and `orient-index` and `code-map` once files move.
   `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
-  one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by
+  one, `ChildBindings`' fold still branching by harness name beside the two providers' `IChildVocabulary` (Claude Code's and Codex's,
+  declared; the fold reads only `SaysEnd` from it: its unsaid end), the interleaved fold to be split into the mapper's child readings
+  first; the open's refused model is one `WireReading.ModelRefused`, said by
   the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243 is built
   for the native door: the words go through the run's `DoorInput`, the chat's retry is the run's own and replays what the ended
-  process never acknowledged, `GoOnAsync` is gone, Claude Code declares its `IConversationHome`; left: a protocol door's words and
-  steer still on its session (`TransportRun.Session`, `ProtocolChat`), the protocol resume once for a driven run and a conversation,
-  the hand-over's accounts once, `alt-stub`'s conversation home), n's rest (the doors' `Offers` part and the offers read through
-  `AgentOffers.Offers` are built; left: the actor run's asked choice read from the door's spawn, which waits on h's `ISpawn`, and the
-  asked, carried, acknowledged and reported kept apart); a start's words go on in its
+  process never acknowledged, `GoOnAsync` is gone, Claude Code and `alt-stub` declare their `IConversationHome`; a protocol door's
+  prompt, word into a running turn and steer are `TransportRun.Words` (`ProtocolWords`), which `ProtocolChat` says and the session
+  never is written through by; the protocol open or resume is `ProtocolOpen.BeginAsync`, read by the driven run and the conversation
+  alike; the hand-over's accounts are `HandOverAccounts.Of`, read by the chat runner, the curve and the loop; left: the protocol
+  words not yet through `DoorInput` itself (a prompt is a request the session answers, so `TransportRun.SendAsync` still refuses it
+  on a protocol door), `TransportRun.Session` kept for the options its agent lists), n's rest (the doors' `Offers` part and the offers
+  read through `AgentOffers.Offers` are built; the asked choice's environment is read through the door's spawn
+  (`ISpawn.ChoiceVariables`, `ActorAsked.ForSpawn`; a plugin's adapter keeps Claude Code's names until its spawn declares its own);
+  left: the actor run's asked choice read from the whole spawn (`ISpawn`'s `SpawnRequest`, row h), and the asked, carried,
+  acknowledged and reported kept apart); a start's words go on in its
   record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
   home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one

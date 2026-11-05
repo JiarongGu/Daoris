@@ -429,19 +429,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     /// The accounts the roster holds for an agent that holds conversations, or null where it has none such: the chat runner's own
     /// judge of a conversation's hand-over (<c>ChatHandOver.AccountsOf</c>), read over the loop's roster.
     /// </summary>
-    private IReadOnlyList<string>? AccountsOf(string agent)
-    {
-        try
-        {
-            var resolved = _context.Adapters.Resolve(agent);
-            if (!resolved.Interactive) return null;
-            return resolved.Toolchain is { } toolchain ? HarnessSettings.Profiles(_context.Harnesses.Home, _context.Adapters.OwnerOf(resolved.Name)) : [];
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
+    private IReadOnlyList<string>? AccountsOf(string agent) => HandOverAccounts.Of(_context.Adapters, _context.Harnesses.Home, agent);
 
     private static bool IsQuest(PriorSession record) => record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false };
 

@@ -78,10 +78,15 @@ public sealed class ProviderAccountReadsTests
     }
 
     [Fact]
-    public void Claude_Code_alone_declares_the_conversation_home_the_leftovers_read()
+    public void Claude_Code_alone_declares_the_project_layout_the_leftovers_read()
     {
         var declaring = Providers.Built().Where(provider => provider.Conversations.IsKnown).Select(provider => provider.Id.Value).ToList();
-        Assert.Equal(["claude-code"], declaring);
+        Assert.Equal(["claude-code", "alt-stub"], declaring.OrderByDescending(id => id == "claude-code").ToList());
+        Assert.Equal(["alt-sessions"], Providers.Built().Single(provider => provider.Id.Value == "alt-stub").Conversations.Required.Keeps(null));
+        Assert.Equal(
+            ["claude-code"],
+            Providers.Built().Where(provider => provider.Conversations.IsKnown && provider.Conversations.Required.Projects is not null)
+                .Select(provider => provider.Id.Value).ToList());
 
         var layout = Providers.Built().Single(provider => provider.Id.Value == "claude-code").Conversations.Required.Projects!;
         Assert.Equal(layout.Variable, ToolHomeLeftovers.Variable);

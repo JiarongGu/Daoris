@@ -124,6 +124,7 @@ public sealed class TransportRunTests : IDisposable
     public void The_conversations_session_is_the_runs_own_accessor_and_nothing_before_the_open(string door)
     {
         Assert.Null(Over(door).Session);
+        Assert.Null(Over(door).Words);
         Assert.Contains(
             typeof(TransportRun).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance),
             property => property.PropertyType == typeof(AcpSession));

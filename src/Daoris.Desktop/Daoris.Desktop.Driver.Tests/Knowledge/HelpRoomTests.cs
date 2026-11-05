@@ -78,7 +78,9 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("`housekeeping_clean_up`", granted);
         Assert.Contains("judged again", granted);
         Assert.Contains("Never offer to push, merge, sign in, or handle a key", granted);
-        Assert.Equal(HelpRoom.Render(Machine with { Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.DiscardBranch] }), granted);
+        // The room is written with the home's supervisor rules beside the access (CONTEXTDRIVE1k), so the render it is held to reads them too.
+        var rules = HelpRuleFacts.Read(_home);
+        Assert.Equal(HelpRoom.Render(Machine with { Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.DiscardBranch], Rules = rules }), granted);
     }
 
     /// <summary>
@@ -101,7 +103,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("no Apply", granted);
         Assert.Contains("`setting_propose`", granted);
         Assert.DoesNotContain("housekeeping_", granted);
-        Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language] }), granted);
+        Assert.Equal(HelpRoom.Render(Machine with { Settings = [ConfiguredAccess.Notify, ConfiguredAccess.Language], Rules = HelpRuleFacts.Read(_home) }), granted);
 
         File.WriteAllText(ConfiguredAccess.PathOf(_home), """{ "housekeeping": ["inspect"], "settings": ["cap"] }""");
         var both = File.ReadAllText(Path.Combine(HelpRoom.Prepare(_home, Machine), "AGENTS.md"));
