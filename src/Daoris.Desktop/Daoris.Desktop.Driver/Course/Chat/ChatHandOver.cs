@@ -346,21 +346,8 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// The accounts the roster holds for an agent, or null where it has no such agent or one that holds no conversations: what a
     /// hand-over's agent and account are judged by, the curve's move's too.
     /// </summary>
-    public IReadOnlyList<string>? AccountsOf(string agent)
-    {
-        try
-        {
-            var resolved = _context.Harnesses.Adapters.Resolve(agent);
-            if (!resolved.Interactive) return null;
-            return resolved.Toolchain is { } toolchain
-                ? HarnessSettings.Profiles(_context.Harnesses.Home, _context.Harnesses.Adapters.OwnerOf(resolved.Name))
-                : [];
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
+    public IReadOnlyList<string>? AccountsOf(string agent) =>
+        HandOverAccounts.Of(_context.Harnesses.Adapters, _context.Harnesses.Home, agent);
 
     /// <summary>
     /// The choice a hand-over was approved on (STAFFPOLICY1d, the staff policy design §11 point 4): its agent, model and effort as one entry

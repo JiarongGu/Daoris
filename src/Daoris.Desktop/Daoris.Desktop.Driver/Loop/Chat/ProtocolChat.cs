@@ -68,7 +68,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             changed,
             steer: Steer,
             steerNow: SteerNow,
-            nextStep: () => Session is { NextStep: true },
+            nextStep: () => Words is { NextStep: true },
             settled: SettleSteeredAsync);
     }
 
@@ -110,8 +110,11 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <summary>The ended chat's conversation this one goes on in, or null for a new conversation.</summary>
     public ResumeAsk? GoOn { get; }
 
-    /// <summary>The session, once it opened, as its run holds it; null while it opens, or when it could not.</summary>
+    /// <summary>The session, once it opened, as its run holds it; null while it opens, or when it could not. Read for its options alone.</summary>
     public AcpSession? Session => _open.Task.IsCompletedSuccessfully ? _open.Task.Result?.Session : null;
+
+    /// <summary>Its words and steer on the run, once its session opened; null while it opens, or when it could not.</summary>
+    public ProtocolWords? Words => _open.Task.IsCompletedSuccessfully ? _open.Task.Result?.Words : null;
 
     /// <summary>What its actor asked, set on the session the run made before its open.</summary>
     public void Configure(AcpSession session)
@@ -127,10 +130,10 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     {
         _line = line;
         _record = record;
-        if (run?.Session is { } session && Retry is { } retry)
+        if (run?.Words is { } wire && Retry is { } retry)
         {
             _retried = Retried(retry);
-            session.Retries(_retried, this);
+            wire.Retries(_retried, this);
         }
 
         _open.TrySetResult(run);
@@ -214,7 +217,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <remarks>Called under the turns' lock: nothing here calls back into them.</remarks>
     private Task? Steer(ChatMessage message)
     {
-        if (Session is not { NextStep: true } session) return null;
+        if (Words is not { NextStep: true } wire) return null;
 
         // Its own id, so the words shown while they wait pair with the same words where the session took them: the record's, where it kept
         // them first, never one of the door's own.
@@ -223,7 +226,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
         _record(ChatMessage.Words(words) with { Reaches = "next-step", Level = words.LevelSaid });
         // The session's own answer, kept for a transient episode to settle: the word's turn is the episode's to await.
-        var answer = session.SayAsync(words, CancellationToken.None);
+        var answer = wire.SayAsync(words);
         lock (_gate)
         {
             _onTheirWay.Add(words.Id!);
@@ -242,13 +245,13 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// <remarks>Called under the turns' lock: nothing here calls back into them.</remarks>
     private Task? SteerNow(ChatMessage message)
     {
-        if (Session is not { Steers: true } session) return null;
+        if (Words is not { Steers: true } wire) return null;
 
         var words = Identified(message);
         if (ChatRecorded.Told(words) is { } told) _record(told);
         _line($"— the person sent now, which the conversation takes at once: {words.Text}");
         _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered), Level = MessageLevels.Now });
-        return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(ChatMessage.FromAgent(back) with { Said = true }));
+        return wire.SteeredAsync(words, back => Turns.HandBack(ChatMessage.FromAgent(back) with { Said = true }));
     }
 
     /// <summary>A word handed to the turn on the wire under the record's id where it was kept there, or a fresh one of its own.</summary>
@@ -306,7 +309,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
 
     private async Task TurnAsync(ChatMessage message, Action sent)
     {
-        if (await _open.Task.ConfigureAwait(false) is not { Session: { } session }) return;
+        if (await _open.Task.ConfigureAwait(false) is not { Words: { } wire }) return;
 
         // This turn's own cut and stop, and the answers of words steered into an earlier turn, all over.
         CancellationToken cut;
@@ -333,7 +336,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
                 }
 
                 // The files said with the words, a link each after their blocks.
-                await PromptedAsync(session, cut, () => session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
+                await PromptedAsync(wire, cut, () => wire.PromptAsync(goOn.Blocks, () =>
                 {
                     sent();
                     _wentOn?.Invoke();
@@ -343,7 +346,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
 
             foreach (var recorded in ChatRecorded.Recorded(message, Shown?.Invoke(message))) _record(recorded);
             // Each attached file a `resource_link` to where it is kept.
-            await PromptedAsync(session, cut, () => session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files))
+            await PromptedAsync(wire, cut, () => wire.PromptAsync(message.Prompt, sent, message.Files))
                 .ConfigureAwait(false);
         }
         catch (Exception error)
@@ -364,7 +367,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// notified or moved until the turn does. Any other failure comes out as it came, and one past the bound as
     /// <see cref="AcpTransientExhausted"/>.
     /// </summary>
-    private async Task PromptedAsync(AcpSession session, CancellationToken cut, Func<Task<string>> prompt)
+    private async Task PromptedAsync(ProtocolWords wire, CancellationToken cut, Func<Task<string>> prompt)
     {
         if (Retry is null)
         {
@@ -372,7 +375,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             return;
         }
 
-        await session.RetriedAsync(prompt, cut).ConfigureAwait(false);
+        await wire.RetriedAsync(prompt, cut).ConfigureAwait(false);
         // The person's stop met the episode between tries: no prompt of the session's was open to answer it, so the turn ends here.
         if (_unwanted)
         {
@@ -388,7 +391,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// </summary>
     private async Task SettleSteeredAsync()
     {
-        if (Retry is null || Session is not { } session) return;
+        if (Retry is null || Words is not { } wire) return;
         CancellationToken cut;
         lock (_gate) cut = _cut.Token;
         while (true)
@@ -405,7 +408,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             {
                 try
                 {
-                    await session.RecoveredAsync(failed.Refusal, cut).ConfigureAwait(false);
+                    await wire.RecoveredAsync(failed.Refusal, cut).ConfigureAwait(false);
                 }
                 catch (Exception error)
                 {
@@ -498,7 +501,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
 
     private async Task CancelAsync()
     {
-        if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { Session: { } session } run) return;
+        if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { Words: { } wire } run) return;
 
         // A person's stop is never refused, even with a word on its way: the agent may still act on that word with its answer dropped,
         // and its record says so once the word is answered.
@@ -506,7 +509,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
         // A stop met between tries has no prompt of the session's to answer it: the wait it ends is the turn's, cut here, and the owner's
         // check refuses a try the stop met anywhere else. A try on the wire is stopped as any turn is.
         _stopAsked = true;
-        if (session.WaitsOnTransient)
+        if (wire.WaitsOnTransient)
         {
             CancellationTokenSource cut;
             lock (_gate) cut = _cut;

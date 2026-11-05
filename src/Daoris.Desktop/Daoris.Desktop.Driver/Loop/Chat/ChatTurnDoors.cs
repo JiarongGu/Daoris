@@ -27,7 +27,7 @@ internal sealed class ChatTurnDoors(ChatContext context, AttentionWatch answers)
     public TurnDoor? Door(string sessionId) =>
         context.Turned.TryGetValue(sessionId, out var chat)
             ? chat is ProtocolChat protocol
-                ? new TurnDoor(Steers: protocol.Session is { Steers: true }, KeepingStop: true)
+                ? new TurnDoor(Steers: protocol.Words is { Steers: true }, KeepingStop: true)
                 : new TurnDoor(Steers: false, KeepingStop: chat is NativeChat { Interrupts: true })
             : null;
 
