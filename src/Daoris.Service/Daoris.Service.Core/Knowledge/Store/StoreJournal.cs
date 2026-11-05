@@ -12,11 +12,18 @@ namespace Daoris.Knowledge;
 /// </remarks>
 internal static class StoreJournal
 {
-    /// <summary>Set the mode and the sync on <paramref name="connection"/>, open: a store in memory keeps its own journal.</summary>
-    internal static async Task SetAsync(SqliteConnection connection, CancellationToken ct)
+    /// <summary>
+    /// Set the mode and the sync on <paramref name="connection"/>, open: a store in memory keeps its own journal. Through the
+    /// connection's gate, as every command is, and outside a transaction, where alone SQLite changes the mode.
+    /// </summary>
+    internal static Task SetAsync(SqliteConnection connection, CancellationToken ct)
     {
-        await using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;";
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        var gate = ConnectionGate.For(connection);
+        return gate.RunAsync(async () =>
+        {
+            await using var command = gate.Command();
+            command.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;";
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }, ct);
     }
 }

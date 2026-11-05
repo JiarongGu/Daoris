@@ -5,11 +5,15 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// QUESTOPENLOCK1: a write with a <c>RETURNING</c> clause, run on its own, writes at its first step and commits when its reader ends,
-/// and the driver waits out a busy lock only at a statement's first step. The file keeps a rollback journal, so that commit needs every
-/// other host's read to have ended, and a read under way answered it at once as busy: eight sessions started at once on the install,
-/// and two of their connectors exited with <i>database is locked</i> at the quest store's version stamp. Each such write now runs in a
-/// write transaction of its own, taken at once, whose <c>COMMIT</c> the driver waits on as it does a first step.
+/// and the driver waits out a busy lock only at a statement's first step. In a rollback journal that commit needs every other host's
+/// read to have ended, and a read under way answered it at once as busy: eight sessions started at once on the install, and two of their
+/// connectors exited with <i>database is locked</i> at the quest store's version stamp. Each such write runs in a write transaction of
+/// its own, taken at once, whose <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> the driver waits on as first steps.
 /// </summary>
+/// <remarks>
+/// The store writes ahead (D236): another host's read holds no commit, so a write beside it is kept at once, and what a write still
+/// meets is another host's write, which it waits out and is kept.
+/// </remarks>
 public sealed class ReturningLockTests : IDisposable
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-21T09:00:00Z");
@@ -90,31 +94,48 @@ public sealed class ReturningLockTests : IDisposable
 
     /// <summary>
     /// 🔴 The install's failure: a connector opening the quest store while another host reads. Its version stamp, its first write once
-    /// an earlier start has made the tables, waits for the read and is kept, where it threw and the connector exited before it served.
+    /// an earlier start has made the tables, is kept beside the read, which is still under way, where it threw and the connector exited
+    /// before it served.
     /// </summary>
     [Fact]
-    public async Task A_quest_store_opening_while_another_host_reads_waits_and_stamps()
+    public async Task A_quest_store_opening_while_another_host_reads_stamps_beside_the_read()
     {
         await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
         await QuestStore.OpenAsync(mine.Connection);
         await using var theirs = await HostAsync();
-        Assert.Equal("delete", Scalar(theirs, "PRAGMA journal_mode"));
+        Assert.Equal("wal", Scalar(theirs, "PRAGMA journal_mode"));
         using var reading = Reading(theirs, "SELECT version FROM quest_store_version");
 
-        var opening = Task.Run(() => QuestStore.OpenAsync(mine.Connection));
-        await Task.Delay(Held);
-        var waited = !opening.IsCompleted;
+        var opened = await Task.Run(() => QuestStore.OpenAsync(mine.Connection)).WaitAsync(Poll.Patience);
         reading.Rollback();
 
-        var opened = await opening.WaitAsync(Poll.Patience);
-        Assert.True(waited, "the stamp did not wait for the other host's read");
         Assert.Null(opened.NewerVersion);
         Assert.Equal((long)QuestStore.StoreVersion, Scalar(theirs, "SELECT version FROM quest_store_version"));
     }
 
-    /// <summary>🔴 Several connectors starting at once, as the install's eight sessions did, while another host reads: every one opens.</summary>
+    /// <summary>A connector opening the quest store while another host writes: its stamp waits for that write and is kept.</summary>
     [Fact]
-    public async Task Several_hosts_opening_the_quest_store_at_once_while_another_reads_all_open()
+    public async Task A_quest_store_opening_while_another_host_writes_waits_and_stamps()
+    {
+        await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
+        await QuestStore.OpenAsync(mine.Connection);
+        await using var theirs = await HostAsync();
+        using var writing = Writing(theirs);
+
+        var opening = Task.Run(() => QuestStore.OpenAsync(mine.Connection));
+        await Task.Delay(Held);
+        var waited = !opening.IsCompleted;
+        writing.Rollback();
+
+        var opened = await opening.WaitAsync(Poll.Patience);
+        Assert.True(waited, "the stamp did not wait for the other host's write");
+        Assert.Null(opened.NewerVersion);
+        Assert.Equal((long)QuestStore.StoreVersion, Scalar(theirs, "SELECT version FROM quest_store_version"));
+    }
+
+    /// <summary>🔴 Several connectors starting at once, as the install's eight sessions did, while another host writes: every one opens.</summary>
+    [Fact]
+    public async Task Several_hosts_opening_the_quest_store_at_once_while_another_writes_all_open()
     {
         var hosts = new List<SqliteKnowledgeStore>();
         try
@@ -122,12 +143,12 @@ public sealed class ReturningLockTests : IDisposable
             for (var host = 0; host < 4; host++) hosts.Add(await SqliteKnowledgeStore.OpenAsync(Database));
             var first = await QuestStore.OpenAsync(hosts[0].Connection);
             await using var theirs = await HostAsync();
-            using var reading = Reading(theirs, "SELECT version FROM quest_store_version");
+            using var writing = Writing(theirs);
 
             var opening = hosts.Select(host => Task.Run(() => QuestStore.OpenAsync(host.Connection))).ToList();
             await Task.Delay(Held);
             var waited = opening.Count(open => !open.IsCompleted);
-            reading.Rollback();
+            writing.Rollback();
 
             var opened = await Task.WhenAll(opening).WaitAsync(Poll.Patience);
             Assert.Equal(hosts.Count, waited);
@@ -143,14 +164,14 @@ public sealed class ReturningLockTests : IDisposable
         }
     }
 
-    /// <summary>🔴 A session's post on its ask's channel (<c>RETURNING urgent</c>) while another host reads: it waits and is kept.</summary>
+    /// <summary>🔴 A session's post on its ask's channel (<c>RETURNING urgent</c>) while another host writes: it waits and is kept.</summary>
     [Fact]
-    public async Task A_channel_post_while_another_host_reads_waits_and_is_kept()
+    public async Task A_channel_post_while_another_host_writes_waits_and_is_kept()
     {
         await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
         var channel = await ChannelStore.OpenAsync(mine.Connection);
         await using var theirs = await HostAsync();
-        using var reading = Reading(theirs, "SELECT COUNT(*) FROM channel");
+        using var writing = Writing(theirs);
         var message = new ChannelMessage(
             "msg-waits", "ask-waits", "default", Now, "ses-waits", "reports", "stub", "ask:ask-waits/reports", null, null, false,
             "the bridge wants a column");
@@ -158,56 +179,53 @@ public sealed class ReturningLockTests : IDisposable
         var posting = Task.Run(() => channel.KeepAsync(message, perPart: 10));
         await Task.Delay(Held);
         var waited = !posting.IsCompleted;
-        reading.Rollback();
+        writing.Rollback();
 
         Assert.NotNull(await posting.WaitAsync(Poll.Patience));
-        Assert.True(waited, "the post did not wait for the other host's read");
+        Assert.True(waited, "the post did not wait for the other host's write");
         Assert.Equal(["msg-waits"], (await channel.OfAsync("ask-waits")).Select(kept => kept.Id));
     }
 
     /// <summary>
     /// 🔴 A repository's registration (<c>RETURNING workspace, default_branch, lanes</c>), which <c>daoris connect</c> sends on every
-    /// sync tick, while another host reads: it waits and is kept.
+    /// sync tick, while another host writes: it waits and is kept.
     /// </summary>
     [Fact]
-    public async Task A_registration_while_another_host_reads_waits_and_is_kept()
+    public async Task A_registration_while_another_host_writes_waits_and_is_kept()
     {
         await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
         var registrations = await RegistrationStore.OpenAsync(mine.Connection);
         await using var theirs = await HostAsync();
-        using var reading = Reading(theirs, "SELECT COUNT(*) FROM registrations");
+        using var writing = Writing(theirs);
 
         var registering = Task.Run(() => registrations.UpsertAsync(
             new Registration("reports", Adopted: true, "The reports.", [], [], [], 0), Now));
         await Task.Delay(Held);
         var waited = !registering.IsCompleted;
-        reading.Rollback();
+        writing.Rollback();
 
         var registered = await registering.WaitAsync(Poll.Patience);
-        Assert.True(waited, "the registration did not wait for the other host's read");
+        Assert.True(waited, "the registration did not wait for the other host's write");
         Assert.Equal(Workspaces.Default, registered.Workspace);
         Assert.NotNull((await registrations.AllAsync()).Named("reports"));
     }
 
-    /// <summary>
-    /// A quest's operations (<c>RETURNING sequence</c>) were already written inside the write's own transaction, taken at once, so a
-    /// publish while another host reads waited and was kept before this fix too; held here so a later change cannot lose it.
-    /// </summary>
+    /// <summary>A quest's operations (<c>RETURNING sequence</c>), written inside the publish's own transaction, while another host writes: it waits and is kept.</summary>
     [Fact]
-    public async Task A_quest_published_while_another_host_reads_waits_and_is_kept()
+    public async Task A_quest_published_while_another_host_writes_waits_and_is_kept()
     {
         await using var mine = await SqliteKnowledgeStore.OpenAsync(Database);
         var quests = await QuestStore.OpenAsync(mine.Connection);
         await using var theirs = await HostAsync();
-        using var reading = Reading(theirs, "SELECT COUNT(*) FROM quest_log");
+        using var writing = Writing(theirs);
 
-        var publishing = Task.Run(() => quests.PublishAsync("Asker", "Owner", "Wait for the read", "Another host is reading.", Now));
+        var publishing = Task.Run(() => quests.PublishAsync("Asker", "Owner", "Wait for the write", "Another host is writing.", Now));
         await Task.Delay(Held);
         var waited = !publishing.IsCompleted;
-        reading.Rollback();
+        writing.Rollback();
 
         var published = await publishing.WaitAsync(Poll.Patience);
-        Assert.True(waited, "the publish did not wait for the other host's read");
+        Assert.True(waited, "the publish did not wait for the other host's write");
         Assert.Single(await quests.HistoryAsync(published.Id));
     }
 
@@ -219,7 +237,7 @@ public sealed class ReturningLockTests : IDisposable
         return connection;
     }
 
-    /// <summary>Another host mid-read: a transaction that has read, so it holds the file's shared lock until it ends.</summary>
+    /// <summary>Another host mid-read: a transaction that has read, so it holds its read of the file until it ends.</summary>
     private static SqliteTransaction Reading(SqliteConnection theirs, string query)
     {
         var transaction = theirs.BeginTransaction(deferred: true);
@@ -228,6 +246,9 @@ public sealed class ReturningLockTests : IDisposable
         read.ExecuteScalar();
         return transaction;
     }
+
+    /// <summary>Another host mid-write: a write transaction taken at once, so it holds the file's write lock until it ends.</summary>
+    private static SqliteTransaction Writing(SqliteConnection theirs) => theirs.BeginTransaction(deferred: false);
 
     private static void Execute(SqliteConnection connection, string sql)
     {

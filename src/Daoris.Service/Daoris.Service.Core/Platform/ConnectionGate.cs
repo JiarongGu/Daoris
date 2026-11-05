@@ -121,10 +121,11 @@ internal sealed class ConnectionGate
     /// them, and the outer one commits or rolls back for both.</para>
     ///
     /// <para>🔴 A write with a <c>RETURNING</c> clause runs in one (QUESTOPENLOCK1). The driver waits out a lock another
-    /// host holds only at a statement's first step, and on its own such a write commits when its reader ends: the file
-    /// keeps a rollback journal, so a read under way in another host answered that commit as busy at once, and the write
-    /// threw <i>database is locked</i>. Here <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> are each a first step, and waited
-    /// on.</para>
+    /// host holds only at a statement's first step, and on its own such a write commits when its reader ends: where the file
+    /// keeps a rollback journal, a read under way in another host answers that commit as busy at once, and the write throws
+    /// <i>database is locked</i>. Here <c>BEGIN IMMEDIATE</c> and <c>COMMIT</c> are each a first step, and waited on. The
+    /// store writes ahead (D236), where a read holds no commit and a write meets another host's at its
+    /// <c>BEGIN IMMEDIATE</c>.</para>
     ///
     /// <para><paramref name="deferred"/> begins a read's transaction (<c>BEGIN</c>): its reads see one state of the file, and
     /// it takes no write lock a reader never needs.</para>
