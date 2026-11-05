@@ -116,7 +116,7 @@ public sealed class EntryPartsPlanTests
     [InlineData("Done", false)]
     public void A_request_whose_entrys_newest_part_waits_on_its_own_helper_starts_alongside(string status, bool held)
     {
-        var waiting = B1 with { NoteParts = [NoteCodes.EndedAwaitsHelper.Part("It asked a helper, and waits on its answer.")], Note = "It asked a helper." };
+        var waiting = B1 with { NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("It asked a helper, and waits on its answer.")], Note = "It asked a helper." };
         var snapshot = At0759() with
         {
             Quests =

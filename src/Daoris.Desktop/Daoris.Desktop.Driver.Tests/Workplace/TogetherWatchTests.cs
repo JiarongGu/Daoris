@@ -153,7 +153,7 @@ public sealed class TogetherWatchTests : IDisposable
         Assert.Equal(["s-member"], written.Brought.Select(each => each.Session));
         var (session, note) = Assert.Single(_kept);
         Assert.Equal("s-member", session);
-        Assert.Equal(NoteCodes.LandingBroughtInto.Code, Assert.Single(note.Parts!).Code);
+        Assert.Equal(ChatNoteCodes.LandingBroughtInto.Code, Assert.Single(note.Parts!).Code);
 
         await LookKeepingAsync(null, Record("s-head"), Record("s-member"));
         Assert.Single(_kept);
@@ -191,7 +191,7 @@ public sealed class TogetherWatchTests : IDisposable
 
         Assert.Equal((TogetherPhase.Landed, request.Id), (landed.Phase, landed.Attempt!.Request));
         var (session, note) = Assert.Single(_kept);
-        Assert.Equal(("s-member", NoteCodes.LandingBroughtIntoLine.Code), (session, Assert.Single(note.Parts!).Code));
+        Assert.Equal(("s-member", ChatNoteCodes.LandingBroughtIntoLine.Code), (session, Assert.Single(note.Parts!).Code));
         Assert.Empty(new LandedBranches(Home).All());
         Assert.Equal(operation.Id, TogetherInclusion.Of(Home, "s-member")!.Operation);
     }

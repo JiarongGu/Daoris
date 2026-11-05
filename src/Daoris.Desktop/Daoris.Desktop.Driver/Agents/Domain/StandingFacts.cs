@@ -72,5 +72,5 @@ public sealed record StandingBlockTold(string Text, HandedSection Account)
     /// What a conversation's record keeps of the block told with its first message (the note beside <c>chat.told-browser</c>): the
     /// lead by its code, then the block as the program's, so the person sees what the agent was told.
     /// </summary>
-    public Noted Note() => Noted.Of(NoteCodes.ChatToldBlock, "told the agent Daoris's standing block:").Then(" ", Noted.Said(Text, NoteBy.Program));
+    public Noted Note() => Noted.Of(ChatNoteCodes.ChatToldBlock, "told the agent Daoris's standing block:").Then(" ", Noted.Said(Text, NoteBy.Program));
 }

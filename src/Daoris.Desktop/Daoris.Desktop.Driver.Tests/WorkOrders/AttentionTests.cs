@@ -137,7 +137,7 @@ public sealed class AttentionTests
         const string Lead = "It stopped with its quest still taken, to ask you:";
         IReadOnlyList<NotePart> parts =
         [
-            new() { Code = NoteCodes.EndedParkedAsked.Code, Text = Lead },
+            new() { Code = EndNoteCodes.EndedParkedAsked.Code, Text = Lead },
             NotePart.Said("\n\n", NoteBy.Before),
             NotePart.Said("Which port?", NoteBy.Agent),
         ];

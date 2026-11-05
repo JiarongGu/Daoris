@@ -50,15 +50,15 @@ public static class RotationWords
 
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling);
         var lead = every
-            ? Noted.Of(NoteCodes.HeldWaitEvery, $"every `{agent}` account this start may use is cooling", ("agent", agent))
-            : ClausesOf(NoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, zone, names);
+            ? Noted.Of(HeldNoteCodes.HeldWaitEvery, $"every `{agent}` account this start may use is cooling", ("agent", agent))
+            : ClausesOf(HeldNoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, zone, names);
         if (lead is null) return null;
 
         var said = $"the first ready, `{AccountNames.Said(names, firstAccount)}`, at {CoolingWords.When(first.Until, zone)}, "
                    + $"{CoolingWords.Why(first)}. Daoris starts nothing on them until then.";
         var wait = lead.Then("; ", Noted.Of(
-            NoteCodes.HeldWaitFirst, said, ("account", firstAccount), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first))));
-        return SignInOf(wait, agent, SignedOut(states), "A sign-in starts it sooner", NoteCodes.HeldSignInSooner);
+            HeldNoteCodes.HeldWaitFirst, said, ("account", firstAccount), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first))));
+        return SignInOf(wait, agent, SignedOut(states), "A sign-in starts it sooner", HeldNoteCodes.HeldSignInSooner);
     }
 
     /// <summary>
@@ -73,8 +73,8 @@ public static class RotationWords
     /// <summary><see cref="NoneReady"/> by code (ROSTERREFUSE2), its English the same to the byte; null where an account has no id.</summary>
     public static Noted? NoneReadyOf(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null)
     {
-        var none = ClausesOf(NoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, TimeZoneInfo.Utc, names);
-        return none is null ? null : SignInOf(none.Then("."), agent, SignedOut(states), "A sign-in starts it", NoteCodes.HeldSignIn);
+        var none = ClausesOf(HeldNoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, TimeZoneInfo.Utc, names);
+        return none is null ? null : SignInOf(none.Then("."), agent, SignedOut(states), "A sign-in starts it", HeldNoteCodes.HeldSignIn);
     }
 
     /// <summary>The lead, then each account's clause joined as the English joins them; null where an account has no id.</summary>
@@ -89,10 +89,10 @@ public static class RotationWords
             var clause = Clause(states[at], zone, names);
             var line = states[at].Readiness switch
             {
-                AccountReadiness.Cooling => Noted.Of(NoteCodes.HeldClauseCooling, clause, ("account", id), ("until", NoteCodes.Moment(states[at].Cooling!.Until))),
-                AccountReadiness.Refused => Noted.Of(NoteCodes.HeldClauseRefused, clause, ("account", id)),
-                AccountReadiness.SignedOut => Noted.Of(NoteCodes.HeldClauseSignedOut, clause, ("account", id)),
-                _ => Noted.Of(NoteCodes.HeldClauseReady, clause, ("account", id)),
+                AccountReadiness.Cooling => Noted.Of(HeldNoteCodes.HeldClauseCooling, clause, ("account", id), ("until", NoteCodes.Moment(states[at].Cooling!.Until))),
+                AccountReadiness.Refused => Noted.Of(HeldNoteCodes.HeldClauseRefused, clause, ("account", id)),
+                AccountReadiness.SignedOut => Noted.Of(HeldNoteCodes.HeldClauseSignedOut, clause, ("account", id)),
+                _ => Noted.Of(HeldNoteCodes.HeldClauseReady, clause, ("account", id)),
             };
             noted = noted.Then(at == 0 ? " " : ", ", line);
         }
@@ -113,7 +113,7 @@ public static class RotationWords
     /// coded line, the agent its value; both doors to a sign-in named (D50), the window's and the terminal's.
     /// </summary>
     public static Noted NoAccountOf(string agent) => Noted.Of(
-        NoteCodes.HeldNoAccount,
+        HeldNoteCodes.HeldNoAccount,
         $"No `{agent}` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `{agent}` sign-in — "
         + $"sign one in for Daoris on the agent's page under Agents, or with `daoris agent login {agent} --new`. The start waits until then.",
         ("owner", agent));
@@ -145,9 +145,9 @@ public static class RotationWords
     public static Noted PickedOf(
         CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
         CoolingWords.HoldOf(cooling, zone, names).Then(" ", ready.Count == 0
-            ? Noted.Of(NoteCodes.HeldPickedNone, $"No other `{cooling.Agent}` account is ready.", ("agent", cooling.Agent))
+            ? Noted.Of(HeldNoteCodes.HeldPickedNone, $"No other `{cooling.Agent}` account is ready.", ("agent", cooling.Agent))
             : Noted.Of(
-                NoteCodes.HeldPickedReady, $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.",
+                HeldNoteCodes.HeldPickedReady, $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.",
                 ("accounts", (IReadOnlyList<string>)[.. ready])));
 
     /// <summary>Why an account was not ready, as a clause: the account named, and the time where it waits for one.</summary>
@@ -215,24 +215,24 @@ public static class RotationWords
     /// </summary>
     private static Noted Account(string name, AccountSaid? said, RotationUse use, DateTimeOffset now, AccountProjection? projected = null)
     {
-        if (said is null) return Noted.Of(NoteCodes.OpeningSaidNothing, $"`{name}` nothing yet", ("account", name));
+        if (said is null) return Noted.Of(StartNoteCodes.OpeningSaidNothing, $"`{name}` nothing yet", ("account", name));
 
         var parts = new List<Noted>();
         if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.RefusedWord) is { } reached)
         {
-            parts.Add(Noted.Of(NoteCodes.OpeningSaidReached, $"its {reached.Window} limit reached, by its own word", ("window", reached.Window)));
+            parts.Add(Noted.Of(StartNoteCodes.OpeningSaidReached, $"its {reached.Window} limit reached, by its own word", ("window", reached.Window)));
         }
         else if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.WarnedWord) is { } warned)
         {
             // Its own pace warning, in its own words, never near (USAGEREAD3a): `opening.said-near` said it so before.
             parts.Add(Noted.Of(
-                NoteCodes.OpeningSaidWarned, $"ahead of its pace on its {warned.Window} window, by its own word", ("window", warned.Window)));
+                StartNoteCodes.OpeningSaidWarned, $"ahead of its pace on its {warned.Window} window, by its own word", ("window", warned.Window)));
         }
 
-        if (said.Windows.Any(each => each.Credits)) parts.Add(Noted.Of(NoteCodes.OpeningSaidCredits, "drawing on usage credits"));
+        if (said.Windows.Any(each => each.Credits)) parts.Add(Noted.Of(StartNoteCodes.OpeningSaidCredits, "drawing on usage credits"));
         var used = Ordered(said).Where(each => each.Used is not null)
             .Select(each => Noted.Of(
-                NoteCodes.OpeningSaidUsed, $"{Percent(each.Used!.Value)} of its {each.Window} limit", ("used", Whole(each.Used!.Value)), ("window", each.Window)))
+                StartNoteCodes.OpeningSaidUsed, $"{Percent(each.Used!.Value)} of its {each.Window} limit", ("used", Whole(each.Used!.Value)), ("window", each.Window)))
             .ToList();
         if (used.Count > 0) parts.Add(Joined(used, " and ").Then(" used"));
         // Over its curve on its tightest window, and the curve's value there now (SWITCH1b-ii): `opening.said-near-at`,
@@ -240,19 +240,19 @@ public static class RotationWords
         if (UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over)
         {
             parts.Add(Noted.Of(
-                NoteCodes.OpeningSaidOver, $"over its {over.Window.Window} curve's {Points(over.Curve)}%", ("window", over.Window.Window), ("curve", Points(over.Curve))));
+                StartNoteCodes.OpeningSaidOver, $"over its {over.Window.Window} curve's {Points(over.Curve)}%", ("window", over.Window.Window), ("curve", Points(over.Curve))));
         }
         // What it is projected to have used by now, where Daoris's turns since moved it a whole percent (USAGEPROBE1).
         foreach (var window in (projected?.Windows ?? []).Where(each => each.How == ProjectedBy.Measured && Whole(each.Projected) > Whole(each.Read))
                      .OrderBy(each => each.Window.ToLowerInvariant() switch { "session" => 0, AccountWindows.Weekly => 1, _ => 2 }))
         {
             parts.Add(Noted.Of(
-                NoteCodes.OpeningSaidProjected, $"about {Percent(window.Projected)} of its {window.Window} limit by now, projected from Daoris's turns since",
+                StartNoteCodes.OpeningSaidProjected, $"about {Percent(window.Projected)} of its {window.Window} limit by now, projected from Daoris's turns since",
                 ("projected", Whole(window.Projected)), ("window", window.Window)));
         }
         // A reading with no number, no warning and no credits is its agent's clear word alone.
-        if (parts.Count == 0) parts.Add(Noted.Of(NoteCodes.OpeningSaidClear, "clear, by its own word"));
-        var who = Noted.Of(NoteCodes.OpeningSaidAt, $"`{name}` {Age(said.Seen, now)}", ("account", name), ("seen", NoteCodes.Moment(said.Seen)));
+        if (parts.Count == 0) parts.Add(Noted.Of(StartNoteCodes.OpeningSaidClear, "clear, by its own word"));
+        var who = Noted.Of(StartNoteCodes.OpeningSaidAt, $"`{name}` {Age(said.Seen, now)}", ("account", name), ("seen", NoteCodes.Moment(said.Seen)));
         return Joined([who, .. parts], ", ");
     }
 
@@ -455,7 +455,7 @@ public static class RotationWords
 
     /// <summary><see cref="KeptAside"/> by code (ROSTERREFUSE2): the account by its id, which the page names.</summary>
     public static Noted KeptAsideOf(string kept, IReadOnlyDictionary<string, string>? names = null) =>
-        Noted.Of(NoteCodes.HeldKeptAside, $"`{AccountNames.Said(names, kept)}` is kept for conversations.", ("account", kept));
+        Noted.Of(HeldNoteCodes.HeldKeptAside, $"`{AccountNames.Said(names, kept)}` is kept for conversations.", ("account", kept));
 
     /// <summary>
     /// What a wait adds where the scope names accounts of its own and others are ready (§3.3): the accounts it does not
@@ -488,8 +488,8 @@ public static class RotationWords
                    + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";
         var accounts = (IReadOnlyList<string>)[.. outside];
         return workspace is { } named
-            ? Noted.Of(NoteCodes.HeldOutsideWorkspace, said, ("workspace", named), ("accounts", accounts), ("first", outside[0]), ("door", door))
-            : Noted.Of(NoteCodes.HeldOutsideMachine, said, ("accounts", accounts), ("first", outside[0]), ("door", door));
+            ? Noted.Of(HeldNoteCodes.HeldOutsideWorkspace, said, ("workspace", named), ("accounts", accounts), ("first", outside[0]), ("door", door))
+            : Noted.Of(HeldNoteCodes.HeldOutsideMachine, said, ("accounts", accounts), ("first", outside[0]), ("door", door));
     }
 
     /// <summary>One account in a wait's list: its name and why, short.</summary>

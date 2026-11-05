@@ -119,7 +119,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Equal(("docs-to-pr", 1, WorkflowLevels.Repository, (string?)null), (bound.Binding!.Workflow, bound.Binding.Version, bound.Binding.Level, bound.Binding.Kind));
         Assert.Equal(bound.Binding, WorkflowRunBindings.Read(_home, "chat-c1a2b3c4"));
         Assert.Equal("This conversation's work follows `docs-to-pr` v1, the workflow `web-app` chose.", ChatRuns.Line(bound.Binding)!.Note);
-        Assert.Equal(NoteCodes.ChatWorkflow.Code, ChatRuns.Line(bound.Binding)!.Parts.Single().Code);
+        Assert.Equal(ChatNoteCodes.ChatWorkflow.Code, ChatRuns.Line(bound.Binding)!.Parts.Single().Code);
 
         var again = ChatRuns.Bind(config, _home, "chat-c1a2b3c4", "web-app", "work", [], At.AddHours(1));
         Assert.False(again.Wrote);
@@ -153,7 +153,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         var unread = ChatRuns.Bind(Config("""{"workflows":{"web-app":{"default":"release-train"}}}"""), _home, "chat-e1a2b3c4", "web-app", null, [], At);
         Assert.True(unread.Wrote);
         Assert.Equal("no workflow `release-train` is saved here.", unread.Binding!.Problem);
-        Assert.Equal(NoteCodes.ChatWorkflowUnread.Code, ChatRuns.Line(unread.Binding)!.Parts.Single().Code);
+        Assert.Equal(ChatNoteCodes.ChatWorkflowUnread.Code, ChatRuns.Line(unread.Binding)!.Parts.Single().Code);
 
         // The runs' folder is a file: the home cannot keep a binding there.
         var runs = WorkflowRunBindings.FolderOf(_home);
@@ -162,7 +162,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
         var failed = ChatRuns.Bind(Config("{}"), _home, "chat-d1a2b3c4", "web-app", null, [], At);
         Assert.Null(failed.Binding);
         Assert.NotNull(failed.Failed);
-        Assert.Equal(NoteCodes.ChatWorkflowFailed.Code, ChatRuns.FailedLine(failed.Failed!).Parts.Single().Code);
+        Assert.Equal(ChatNoteCodes.ChatWorkflowFailed.Code, ChatRuns.FailedLine(failed.Failed!).Parts.Single().Code);
     }
 
     [Fact]

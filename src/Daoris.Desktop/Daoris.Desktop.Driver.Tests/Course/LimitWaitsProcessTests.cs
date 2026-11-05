@@ -128,7 +128,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         events.Append(session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = words });
         events.Append(session, new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = NoteCodes.AccountCoolingWindow.Code }],
+            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append(session, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
     }
@@ -149,7 +149,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     {
         Assert.True(runner.Say(session, words));
         await Poll.Until(
-            () => events.After(session, 0).Events.Any(e => Coded(e, NoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, session));
+            () => events.After(session, 0).Events.Any(e => Coded(e, ChatNoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, session));
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var words = events.After(chat, 0).Events.Where(e => e.Kind == SessionEventKind.User).Select(e => e.Text).ToList();
         Assert.Equal(1, words.Count(text => text == "Make the port configurable."));
         Assert.Equal(1, words.Count(text => text == "And add a test."));
-        Assert.Single(events.After(chat, 0).Events, e => Coded(e, NoteCodes.LimitResumed.Code));
+        Assert.Single(events.After(chat, 0).Events, e => Coded(e, HeldNoteCodes.LimitResumed.Code));
         Assert.Equal(2, ledger.Count);
     }
 
@@ -255,8 +255,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
         // made, `failed` with the ledger's flag and the refused turn's cooling line, so every reader reads it limited; its events still hold it
         // waiting for an older build, which reads them alone.
         Assert.Equal(("failed", true), (ledger.State(chat), ledger.Flag(chat, "limit")));
-        Assert.Contains(ledger.Record(chat)["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingWindow.Code
-            || part?["code"]?.GetValue<string>() == NoteCodes.AccountCooling.Code || part?["code"]?.GetValue<string>() == NoteCodes.AccountCoolingNoWindow.Code);
+        Assert.Contains(ledger.Record(chat)["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == AccountNoteCodes.AccountCoolingWindow.Code
+            || part?["code"]?.GetValue<string>() == AccountNoteCodes.AccountCooling.Code || part?["code"]?.GetValue<string>() == AccountNoteCodes.AccountCoolingNoWindow.Code);
         var ended = SessionRecords.Parse(await client.SessionRecordsJsonAsync()).Single(each => each.Id == chat);
         Assert.Equal(ShownState.Limited, ShownState.Of(ended));
         Assert.NotNull(LimitHeld.Waiting(events.After(chat, 0).Events));
@@ -488,8 +488,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
 
         Said(ledger, events, "c1", "w1", "Also log the port.");
 
-        var waits = await NoteAsync(events, "c1", e => Coded(e, NoteCodes.WaitsAccount.Code));
-        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == NoteCodes.WaitsAccount.Code).Value("account"));
+        var waits = await NoteAsync(events, "c1", e => Coded(e, HeldNoteCodes.WaitsAccount.Code));
+        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == HeldNoteCodes.WaitsAccount.Code).Value("account"));
         Assert.StartsWith(ResumeWords.NotYet, waits.Text);
         Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
         Assert.Equal(["w1"], ledger.Said("c1"));
@@ -559,12 +559,12 @@ public sealed class LimitWaitsProcessTests : IDisposable
 
         Said(ledger, events, "c1", "w1", "Also log the port.");
 
-        var held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, NoteCodes.HeldLimitWaits.Code));
+        var held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, HeldNoteCodes.HeldLimitWaits.Code));
         await Poll.Until(
-            () => (held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, NoteCodes.HeldLimitWaits.Code))) is not null,
+            () => (held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, HeldNoteCodes.HeldLimitWaits.Code))) is not null,
             () => Seen(ledger, events, "c1"));
         Assert.StartsWith(ResumeWords.NotYet, held!.Text);
-        Assert.Equal("account-2", held.Parts!.Single(part => part.Code == NoteCodes.HeldLimitWaits.Code).Value("account"));
+        Assert.Equal("account-2", held.Parts!.Single(part => part.Code == HeldNoteCodes.HeldLimitWaits.Code).Value("account"));
         Assert.EndsWith("`daoris session start-from c1`.", held.Text);
         Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
         Assert.Equal(["w1"], ledger.Said("c1"));
@@ -613,8 +613,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Said(ledger, events, "h1", "w1", "how do I drive a repository?");
         Said(ledger, events, "c3", "w3", "Also log the port.");
 
-        var waits = await NoteAsync(events, "h1", e => Coded(e, NoteCodes.WaitsAccount.Code));
-        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == NoteCodes.WaitsAccount.Code).Value("account"));
+        var waits = await NoteAsync(events, "h1", e => Coded(e, HeldNoteCodes.WaitsAccount.Code));
+        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == HeldNoteCodes.WaitsAccount.Code).Value("account"));
         Assert.StartsWith(ResumeWords.NotYet, waits.Text);
         var cannot = await NoteAsync(events, "c3", e => e.Why is not null);
         Assert.Equal(ContinueWhy.Account, cannot.Why);
@@ -760,7 +760,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
 
         var old = events.After("c1", 0).Events;
         Assert.DoesNotContain(old, e => e.Kind == SessionEventKind.Note && e.Why is not null);
-        var refused = Assert.Single(old, e => Coded(e, NoteCodes.LimitResumeRefused.Code));
+        var refused = Assert.Single(old, e => Coded(e, HeldNoteCodes.LimitResumeRefused.Code));
         Assert.Equal(ContinueWhy.Gone, refused.Parts!.Single(part => part.Code is not null).Value("why"));
         Assert.Empty(ledger.Said("c1"));
         Assert.Contains(ledger.TakenBy, taken => taken.Session == "c1" && taken.By == "c1");
@@ -1102,7 +1102,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var mark = new GoOnMarks(_home).Read("c1")!;
         Assert.Equal(GoOnMarks.StoppedWaiting, mark.Why);
         Assert.Equal(["w1"], mark.Said);
-        Assert.Single(events.After("c1", 0).Events, e => Coded(e, NoteCodes.ChatLimitStoppedWaiting.Code));
+        Assert.Single(events.After("c1", 0).Events, e => Coded(e, ChatNoteCodes.ChatLimitStoppedWaiting.Code));
         Assert.NotNull(await runner.StopWaitingAsync("c1"));
 
         _now = _now.AddDays(2);

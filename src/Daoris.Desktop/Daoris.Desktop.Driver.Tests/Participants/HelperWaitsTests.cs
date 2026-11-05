@@ -55,11 +55,11 @@ public sealed class HelperWaitsTests
     [Fact]
     public void A_session_waits_on_its_helper_while_it_ended_so_and_nothing_waits_on_it()
     {
-        var waiting = new PriorSession("s1", "trees/s-1", "completed") { Quest = "q1", NoteParts = [Part(NoteCodes.EndedAwaitsHelper)], Said = [] };
+        var waiting = new PriorSession("s1", "trees/s-1", "completed") { Quest = "q1", NoteParts = [Part(EndNoteCodes.EndedAwaitsHelper)], Said = [] };
 
         Assert.True(HelperWaits.Waits(waiting));
         Assert.False(HelperWaits.Waits(waiting with { Said = [new SaidWordView("w1", "the answer", At, [], true) { Helper = "h1" }] }));
-        Assert.False(HelperWaits.Waits(waiting with { NoteParts = [Part(NoteCodes.EndedAwaits)] }));
+        Assert.False(HelperWaits.Waits(waiting with { NoteParts = [Part(EndNoteCodes.EndedAwaits)] }));
         Assert.False(HelperWaits.Waits(waiting with { State = "working" }));
         Assert.False(HelperWaits.Waits(waiting with { Session = "laptop/s1" }));
     }

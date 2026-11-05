@@ -54,7 +54,7 @@ internal static class RefusedAccounts
     {
         var reason = SignedOutReason(owner, profile);
         return Noted.Of(
-            profile is null ? NoteCodes.AccountSignedOutOwn : NoteCodes.AccountSignedOut,
+            profile is null ? AccountNoteCodes.AccountSignedOutOwn : AccountNoteCodes.AccountSignedOut,
             $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 
@@ -74,12 +74,12 @@ internal static class RefusedAccounts
     /// owner and id, never the name <paramref name="named"/> the English says, which the page words.
     /// </summary>
     internal static Noted RefusedHold(string owner, string? profile, string? named) => profile is { } account
-        ? Noted.Of(NoteCodes.HeldRefusedAccount, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner), ("account", account))
-        : Noted.Of(NoteCodes.HeldRefusedOwn, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner));
+        ? Noted.Of(HeldNoteCodes.HeldRefusedAccount, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner), ("account", account))
+        : Noted.Of(HeldNoteCodes.HeldRefusedOwn, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner));
 
     /// <summary>What a later start held on the tool's own sign-in, refused (ROSTER1b), says by code beside its English.</summary>
     internal static Noted SignedOutHold(string owner) =>
-        Noted.Of(NoteCodes.HeldSignInRefusedOwn, $"an earlier session found that {SignedOutReason(owner, null)}", ("owner", owner));
+        Noted.Of(HeldNoteCodes.HeldSignInRefusedOwn, $"an earlier session found that {SignedOutReason(owner, null)}", ("owner", owner));
 
     /// <summary>
     /// The refused credential's line on a record (LANG1a, the language design §4 rows 23–24): the English names the account,
@@ -89,7 +89,7 @@ internal static class RefusedAccounts
     {
         var reason = RefusedReason(owner, profile);
         return Noted.Of(
-            profile is null ? NoteCodes.AccountRefusedOwn : NoteCodes.AccountRefused,
+            profile is null ? AccountNoteCodes.AccountRefusedOwn : AccountNoteCodes.AccountRefused,
             $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 }

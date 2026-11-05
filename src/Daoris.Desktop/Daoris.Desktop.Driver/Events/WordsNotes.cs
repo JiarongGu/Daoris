@@ -10,27 +10,27 @@ public static class WordsNotes
     /// <param name="agentWords">The agent's own words.</param>
     /// <param name="who">What the English calls the one that refused: the chat runner has always said "conversation".</param>
     public static Noted Refused(string agentWords, string who = "session") =>
-        Noted.Of(NoteCodes.WordsRefused, $"— the {who} would not take what the person added:")
+        Noted.Of(ChatNoteCodes.WordsRefused, $"— the {who} would not take what the person added:")
             .Then(" ", Noted.Said(agentWords, NoteBy.Agent));
 
     /// <summary>Words that never reached a conversation, the program's own message beneath (it may hold a path).</summary>
     public static Noted NeverReached(string message) =>
-        Noted.Of(NoteCodes.WordsNotReached, "— what the person added never reached it:")
+        Noted.Of(ChatNoteCodes.WordsNotReached, "— what the person added never reached it:")
             .Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>A message the agent's process had gone before it could take.</summary>
-    public static Noted NotSent() => Noted.Of(NoteCodes.WordsNotSent, "the message could not be sent: the agent had gone.");
+    public static Noted NotSent() => Noted.Of(ChatNoteCodes.WordsNotSent, "the message could not be sent: the agent had gone.");
 
     /// <summary>The words a conversation started with that could not be taken off their session's record, the service's message beneath.</summary>
     public static Noted StartNotTaken(string session, string message) =>
         Noted.Of(
-                NoteCodes.WordsStartNotTaken, $"— the words this conversation started with could not be taken off session `{session}`:",
+                ChatNoteCodes.WordsStartNotTaken, $"— the words this conversation started with could not be taken off session `{session}`:",
                 ("session", session))
             .Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>Held words the record would not keep once it ended, the service's message beneath.</summary>
     public static Noted NotKept(string message) =>
-        Noted.Of(NoteCodes.WordsNotKept, "— what you said as it wound up was not kept for it to go on with:")
+        Noted.Of(ChatNoteCodes.WordsNotKept, "— what you said as it wound up was not kept for it to go on with:")
             .Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>
@@ -39,11 +39,11 @@ public static class WordsNotes
     /// </summary>
     public static Noted Unreached(int count, string never, string why) =>
         Noted.Of(
-            NoteCodes.WordsUnreached, $"— {count} message(s) the person sent {never}: {UnreachedWhy.English(why)}.",
+            ChatNoteCodes.WordsUnreached, $"— {count} message(s) the person sent {never}: {UnreachedWhy.English(why)}.",
             ("count", count), ("why", why));
 
     /// <summary>Words handed to a session that could not be taken off its record, the service's own message beneath.</summary>
     public static Noted NotTaken(string message) =>
-        Noted.Of(NoteCodes.WordsNotTaken, "— your words could not be taken off its record:")
+        Noted.Of(ChatNoteCodes.WordsNotTaken, "— your words could not be taken off its record:")
             .Then(" ", Noted.Said(message, NoteBy.Program));
 }

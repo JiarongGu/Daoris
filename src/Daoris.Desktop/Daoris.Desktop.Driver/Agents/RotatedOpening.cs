@@ -56,7 +56,7 @@ public static class RotatedOpening
         if (selection.Choice is { } choice)
         {
             (clause, steps) = (choice.Clause, selection.Steps);
-            said = selection.AccountsSaid ?? Noted.Of(NoteCodes.OpeningUnsaid, RotationWords.Unsaid);
+            said = selection.AccountsSaid ?? Noted.Of(StartNoteCodes.OpeningUnsaid, RotationWords.Unsaid);
         }
         else if (selection.Rotated is { } rotated)
         {
@@ -79,18 +79,18 @@ public static class RotatedOpening
 
         (string Name, object? Value)[] lead = [("account", to), ("why", steps[0].Why), .. steps[0].Values];
         var line = carried is { } from
-            ? Noted.Of(NoteCodes.OpeningCarriedOn, english, [("session", from.Session), .. lead])
-            : Noted.Of(NoteCodes.OpeningOpened, english, lead);
+            ? Noted.Of(StartNoteCodes.OpeningCarriedOn, english, [("session", from.Session), .. lead])
+            : Noted.Of(StartNoteCodes.OpeningOpened, english, lead);
         if (steps.Count > 1)
         {
-            line = line.Also(NoteCodes.OpeningRest.Part(RotationWords.Rest(steps[1].Text), [("why", steps[1].Why), .. steps[1].Values]));
+            line = line.Also(StartNoteCodes.OpeningRest.Part(RotationWords.Rest(steps[1].Text), [("why", steps[1].Why), .. steps[1].Values]));
         }
 
         if (carried?.Turn is { } turn)
         {
             line = line.Also(carried.Used is { } used
-                ? NoteCodes.OpeningTurnContext.Part(RotationWords.Refused(turn, used), ("turn", turn), ("tokens", used))
-                : NoteCodes.OpeningTurnRefused.Part(RotationWords.Refused(turn, null), ("turn", turn)));
+                ? StartNoteCodes.OpeningTurnContext.Part(RotationWords.Refused(turn, used), ("turn", turn), ("tokens", used))
+                : StartNoteCodes.OpeningTurnRefused.Part(RotationWords.Refused(turn, null), ("turn", turn)));
         }
 
         return said is null ? line : line.Then(" ", said);

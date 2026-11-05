@@ -575,7 +575,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(("stopped", "the sweep stopped it.", true, false), (back.State, back.Note.Note, back.Interrupted, back.Limit));
         Assert.Empty(back.Note.Parts);
 
-        var limited = Written("failed", Word) with { Note = "the quest reached done.", NoteParts = [NoteCodes.EndedDone.Part("the quest reached done.")], Limit = true };
+        var limited = Written("failed", Word) with { Note = "the quest reached done.", NoteParts = [EndNoteCodes.EndedDone.Part("the quest reached done.")], Limit = true };
         back = Continuations.PutBack(limited);
         Assert.Equal(("failed", "the quest reached done.", false, true), (back.State, back.Note.Note, back.Interrupted, back.Limit));
         Assert.Equal(["ended.done"], NoteAssert.Codes(back.Note.Parts));
@@ -651,7 +651,7 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal([null, "went.new-session"], NoteAssert.Codes(went.Parts));
 
         // A record whose note has parts keeps them, and the line follows them (LANG1a).
-        var coded = record with { NoteParts = [NoteCodes.EndedDone.Part("the quest reached done.")] };
+        var coded = record with { NoteParts = [EndNoteCodes.EndedDone.Part("the quest reached done.")] };
         var after = Continuations.CannotNote(coded, ContinueWhy.Of(ContinueWhy.Tree));
         Assert.Equal(cannot.Note, after.Note);
         NoteAssert.Holds(after);

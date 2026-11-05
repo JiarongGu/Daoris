@@ -189,11 +189,11 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.Equal("Done", service.Status("q1"));
         Assert.Contains("Port 8080.", Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>());
 
-        var on = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.MovedOn.Code) == true).Parts![0];
+        var on = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == StartNoteCodes.MovedOn.Code) == true).Parts![0];
         Assert.Equal(("s2", "retry"), ((string?)on.Value("session"), (string?)on.Value("why")));
         // A number reads back from the record as a long.
         Assert.True(on.Value("count") is long brief && brief > 0);
-        var from = Assert.Single(Events("s2"), e => e.Parts?.Any(part => part.Code == NoteCodes.MovedFrom.Code) == true).Parts![0];
+        var from = Assert.Single(Events("s2"), e => e.Parts?.Any(part => part.Code == StartNoteCodes.MovedFrom.Code) == true).Parts![0];
         Assert.Equal(("s1", "acp-stub"), ((string?)from.Value("session"), (string?)from.Value("agent")));
         AccountLine moved;
         lock (lines) moved = Assert.Single(lines, line => line.Event == "session.moved");
@@ -228,7 +228,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         Assert.True((park["state"]!.GetValue<string>(), SaidText(park)) == ("awaiting-person", "Port 8080."), seen);
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal(heard, Heard().Length);
-        var held = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.HeldAgentGone.Code) == true).Parts![0];
+        var held = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == HeldNoteCodes.HeldAgentGone.Code) == true).Parts![0];
         Assert.Equal(("acp-stub", "s1"), ((string?)held.Value("agent"), (string?)held.Value("session")));
         Assert.Contains(look.Considerations, c => c.Quest.Id == "q1" && c.Reason.Contains("daoris session hand-over s1", StringComparison.Ordinal));
     }

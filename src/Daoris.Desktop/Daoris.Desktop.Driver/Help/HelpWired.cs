@@ -427,13 +427,13 @@ public sealed class HelpWired(string home)
     {
         if (notice is null) return ([], BrowserFailed);
         var names = notice.Parts
-            .Where(part => part.Code == NoteCodes.BrowserWithheld.Code)
+            .Where(part => part.Code == ChatNoteCodes.BrowserWithheld.Code)
             .SelectMany(part => part.Values.Where(value => value.Key == "servers").Select(value => value.Value))
             .OfType<IEnumerable<string>>()
             .SelectMany(each => each)
             .ToList();
         var why = notice.Parts.Select(part => part.Code).FirstOrDefault(code =>
-            code == NoteCodes.BrowserNoHost.Code || code == NoteCodes.BrowserNoneUp.Code) ?? BrowserFailed;
+            code == ChatNoteCodes.BrowserNoHost.Code || code == ChatNoteCodes.BrowserNoneUp.Code) ?? BrowserFailed;
         return (names, why);
     }
 

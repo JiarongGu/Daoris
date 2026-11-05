@@ -74,7 +74,7 @@ public static class Continuations
     public const string Working = "resumes its own conversation with your answer, in the tree it worked in.";
 
     /// <summary><see cref="Working"/> with its code (LANG1a).</summary>
-    public static Noted WorkingNoted => Noted.Of(NoteCodes.WorkingResumesAnswer, Working);
+    public static Noted WorkingNoted => Noted.Of(StartNoteCodes.WorkingResumesAnswer, Working);
 
     /// <summary>The authors a word can have but the owner, in the order every sentence names them (SUPERVISOR1a-i, the design §6.1).</summary>
     public static readonly IReadOnlyList<(string Code, string Said)> Authors =
@@ -111,7 +111,7 @@ public static class Continuations
     /// design §6.1): the authors that are there, never "your answer", which they are not. A helper-only or Daoris-only park says so too.
     /// </summary>
     public static Noted WorkingWithOthersNoted(IReadOnlyList<string> authors) => Noted.Of(
-        NoteCodes.WorkingResumesOthers, $"resumes its own conversation with {AuthorsSaid(authors)}, in the tree it worked in.",
+        StartNoteCodes.WorkingResumesOthers, $"resumes its own conversation with {AuthorsSaid(authors)}, in the tree it worked in.",
         ("authors", authors));
 
     /// <summary>
@@ -213,14 +213,14 @@ public static class Continuations
     /// <param name="failure">Why its process did not start, in the program's own words.</param>
     internal static (Noted Note, WordsAfter Words) Unstarted(PriorSession record, string failure)
     {
-        var words = record.NoteParts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code || part.Code == NoteCodes.EndedWordsWaitYou.Code) == true
+        var words = record.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedWordsWait.Code || part.Code == EndNoteCodes.EndedWordsWaitYou.Code) == true
             ? WordsAfter.Held
             : WordsAfter.Wait;
         return (Observation.Failure(failure).Then("\n\n", FailedTurnWords.Line(words)!), words);
     }
 
     /// <summary><see cref="GoingOn"/> with its code (LANG1a).</summary>
-    public static Noted GoingOnNoted => Noted.Of(NoteCodes.WorkingGoesOn, GoingOn);
+    public static Noted GoingOnNoted => Noted.Of(StartNoteCodes.WorkingGoesOn, GoingOn);
 
     /// <summary>
     /// What an ended record's note gains as it goes on with another agent's findings alone (XAGENT1e, D155 point 7): never "your
@@ -301,14 +301,14 @@ public static class Continuations
         var lead = $"— {said} the next turn of its own conversation, resumed on `{adapter}`";
         if (now is not { Length: > 0 } || then is not { Length: > 0 } || string.Equals(now, then, StringComparison.Ordinal))
         {
-            return Noted.Of(NoteCodes.ResumedOpening, lead + ".", ("adapter", adapter), ("why", why));
+            return Noted.Of(StartNoteCodes.ResumedOpening, lead + ".", ("adapter", adapter), ("why", why));
         }
 
         // The lead's text stops where the English goes on, so each part's text is inside the note.
         var moved = $"{now}; it opened on {then}";
         return new Noted(
             $"{lead} {moved}.",
-            [NoteCodes.ResumedOpening.Part(lead, ("adapter", adapter), ("why", why)), NoteCodes.ResumedMoved.Part(moved, ("now", now), ("then", then))]);
+            [StartNoteCodes.ResumedOpening.Part(lead, ("adapter", adapter), ("why", why)), StartNoteCodes.ResumedMoved.Part(moved, ("now", now), ("then", then))]);
     }
 
     /// <summary>
@@ -318,7 +318,7 @@ public static class Continuations
     /// <remarks>Its line is a code after the record's earlier parts (LANG1a), the reason a value the page words.</remarks>
     public static Noted CannotNote(PriorSession record, ContinueReason why) =>
         After(record, Detailed(Noted.Of(
-            NoteCodes.WentCannot, $"It cannot go on in this session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
+            StartNoteCodes.WentCannot, $"It cannot go on in this session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
 
     /// <summary>
     /// The note an ended record keeps where its words went to a new session (MSG1b, D137 §2.2): a taken quest carried on, or
@@ -326,7 +326,7 @@ public static class Continuations
     /// </summary>
     public static Noted WentNote(PriorSession record, ContinueReason why) =>
         After(record, Detailed(Noted.Of(
-            NoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
+            StartNoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
 
     /// <summary>
     /// What a record's conversation says where the agent its words would go on with is no longer one this machine has (SESSCTX1c,
@@ -335,7 +335,7 @@ public static class Continuations
     /// </summary>
     public static Noted AgentGone(string agent, string session) =>
         Noted.Of(
-            NoteCodes.HeldAgentGone,
+            HeldNoteCodes.HeldAgentGone,
             $"It does not go on yet: `{agent}` is no longer an agent on this machine, so its words cannot go on with it. They wait on "
             + $"it: hand it over to another agent to go on with them, `daoris session hand-over {session} --agent <agent>`.",
             ("agent", agent), ("session", session));
@@ -392,14 +392,14 @@ public static class Continuations
 
     /// <summary>The note a fallback ends the park with: what it asked, as its record said, and why the answer went to a new session.</summary>
     public static Noted EndedNote(PriorSession park, ContinueReason why) =>
-        (park.Note is null ? Noted.Of(NoteCodes.EndedParkedShort, "It stopped to ask you.") : park.AsNoted())
+        (park.Note is null ? Noted.Of(EndNoteCodes.EndedParkedShort, "It stopped to ask you.") : park.AsNoted())
         .Then("\n\n", Detailed(Noted.Of(
-            NoteCodes.WentCarriedOn, $"Carried on in a new session, because {why.Sentence}.", NoteCodes.Reason(why, park.Adapter)), why));
+            StartNoteCodes.WentCarriedOn, $"Carried on in a new session, because {why.Sentence}.", NoteCodes.Reason(why, park.Adapter)), why));
 
     /// <summary>The sentence the carrying-on session's note ends with (D131 §2), after a space.</summary>
     /// <param name="ranOn">The adapter the record it carries on ran on, which <c>elsewhere</c> names.</param>
     public static Noted CarriedOn(ContinueReason why, string? ranOn = null) =>
-        Detailed(Noted.Of(NoteCodes.StartedFellBack, $"A new session, because {why.Sentence}.", NoteCodes.Reason(why, ranOn)), why);
+        Detailed(Noted.Of(StartNoteCodes.StartedFellBack, $"A new session, because {why.Sentence}.", NoteCodes.Reason(why, ranOn)), why);
 
     /// <summary>
     /// <c>session.answered</c> (D131 §2, D94 §4): once per answer the driver takes up, whether its own conversation resumed

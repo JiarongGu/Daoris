@@ -23,7 +23,7 @@ public sealed class LimitHeldTests
     private static SessionEvent NotTaken() => new() { Kind = SessionEventKind.Note, Text = "the turn could not be taken: …" };
 
     private static IReadOnlyList<SessionEvent> Refused(string text, NoteCode? code = null) =>
-        [Person(text), NotTaken(), Cooling(code ?? NoteCodes.AccountCooling), Turn("error")];
+        [Person(text), NotTaken(), Cooling(code ?? AccountNoteCodes.AccountCooling), Turn("error")];
 
     [Fact]
     public void The_words_of_every_turn_refused_by_the_limit_since_the_last_answered_one_are_held_oldest_first()
@@ -32,7 +32,7 @@ public sealed class LimitHeldTests
         [
             Person("Earlier, answered."), Agent("Done."), Turn("end_turn"),
             .. Refused("Make the port configurable."),
-            .. Refused("Did you hear me?", NoteCodes.AccountCoolingNoWindow),
+            .. Refused("Did you hear me?", AccountNoteCodes.AccountCoolingNoWindow),
         ];
 
         var held = LimitHeld.Of(events)!;
@@ -67,7 +67,7 @@ public sealed class LimitHeldTests
             new SessionEvent { Kind = SessionEventKind.User, Origin = "target", From = "daoris", Text = "A step's go-on." },
             new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = "h1", Text = "Another agent says five." },
             Person("The person's own."),
-            NotTaken(), Cooling(NoteCodes.AccountCoolingWindow), Turn("error"),
+            NotTaken(), Cooling(AccountNoteCodes.AccountCoolingWindow), Turn("error"),
         ];
 
         var held = LimitHeld.Of(events)!;
@@ -95,7 +95,7 @@ public sealed class LimitHeldTests
             // The failed turn's own words, then the episode: a wait, a try that carried a word the agent took before it failed, a wait, a try.
             Person("Make the port configurable."),
             Wait(), Try(1), Person("Use 9090."), Wait(), Try(2),
-            NotTaken(), Cooling(NoteCodes.AccountCooling), Turn("error"),
+            NotTaken(), Cooling(AccountNoteCodes.AccountCooling), Turn("error"),
         ];
 
         var held = LimitHeld.Of(events)!;
@@ -111,7 +111,7 @@ public sealed class LimitHeldTests
         IReadOnlyList<SessionEvent> events =
         [
             Person("Make the port configurable."), Wait(), Try(1), Wait(), Try(2),
-            Person("And add a test."), NotTaken(), Cooling(NoteCodes.AccountCooling), Turn("error"),
+            Person("And add a test."), NotTaken(), Cooling(AccountNoteCodes.AccountCooling), Turn("error"),
         ];
 
         var held = LimitHeld.Of(events)!;
@@ -129,7 +129,7 @@ public sealed class LimitHeldTests
     {
         IReadOnlyList<SessionEvent> events =
         [
-            Person("Make the port configurable."), Wait(), Try(1), Person("Use 9090."), NotTaken(), Cooling(NoteCodes.AccountCooling), Turn("error"),
+            Person("Make the port configurable."), Wait(), Try(1), Person("Use 9090."), NotTaken(), Cooling(AccountNoteCodes.AccountCooling), Turn("error"),
         ];
 
         var held = LimitHeld.Of(events)!;
@@ -158,7 +158,7 @@ public sealed class LimitHeldTests
     [Fact]
     public void A_refused_turn_with_no_words_of_the_person_s_still_says_the_limit_with_none_held()
     {
-        var held = LimitHeld.Of([NotTaken(), Cooling(NoteCodes.AccountCooling), Turn("error")])!;
+        var held = LimitHeld.Of([NotTaken(), Cooling(AccountNoteCodes.AccountCooling), Turn("error")])!;
 
         Assert.Empty(held.Words);
         Assert.Equal(3, held.Before);
@@ -207,8 +207,8 @@ public sealed class LimitHeldTests
     [Fact]
     public void The_last_refused_turn_s_cooling_line_is_held_for_the_end()
     {
-        var first = Cooling(NoteCodes.AccountCooling);
-        var last = Cooling(NoteCodes.AccountCoolingNoWindow);
+        var first = Cooling(AccountNoteCodes.AccountCooling);
+        var last = Cooling(AccountNoteCodes.AccountCoolingNoWindow);
 
         var held = LimitHeld.Of([Person("First."), NotTaken(), first, Turn("error"), Person("Second."), NotTaken(), last, Turn("error")])!;
 

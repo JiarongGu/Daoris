@@ -17,7 +17,7 @@ public static class SessionMoves
     /// </param>
     /// <param name="standing">
     /// That the stop runs under the person's standing confirmation (TERMTRUST1a, D201 point 7): each record it ends, a live one's or an
-    /// orphan's, keeps its own note and gains the coded part <see cref="NoteCodes.StandingTerminal"/> after it.
+    /// orphan's, keeps its own note and gains the coded part <see cref="EndNoteCodes.StandingTerminal"/> after it.
     /// </param>
     public static async Task<StopAnswer> StopAsync(
         SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, Noted? note = null,
@@ -86,11 +86,11 @@ public static class SessionMoves
     public static Task<string> FinishStandingAsync(ServiceClient service, string id, CancellationToken ct = default) =>
         service.AdvanceAsync(id, "completed", Standing(ByThePersonNoted("completed")), ct: ct, expected: "awaiting-person");
 
-    /// <summary>The English of <see cref="NoteCodes.StandingTerminal"/>, as the record keeps it.</summary>
+    /// <summary>The English of <see cref="EndNoteCodes.StandingTerminal"/>, as the record keeps it.</summary>
     public const string StandingText = "Sent from a terminal and run under the person's standing confirmation, without asking.";
 
     /// <summary>A move's own note, then the coded part that says it ran under the standing confirmation (the terminal-trust design §7.1).</summary>
-    public static Noted Standing(Noted move) => move.Then(" ", Noted.Of(NoteCodes.StandingTerminal, StandingText));
+    public static Noted Standing(Noted move) => move.Then(" ", Noted.Of(EndNoteCodes.StandingTerminal, StandingText));
 
     /// <summary>
     /// What the record says when the person wrote nothing — never translated: it is data. The store keeps an earlier note
@@ -101,9 +101,9 @@ public static class SessionMoves
     /// <summary><see cref="ByThePerson"/> with its code (LANG1a, the language design §4 rows 56–58).</summary>
     public static Noted ByThePersonNoted(string state) => state switch
     {
-        "completed" => Noted.Of(NoteCodes.StoppedCheckpointFinished, "The person finished this at a checkpoint."),
-        "stopped" => Noted.Of(NoteCodes.StoppedCheckpointStopped, "The person stopped this at a checkpoint."),
-        _ => Noted.Of(NoteCodes.StoppedCheckpointMoved, "The person moved this at a checkpoint."),
+        "completed" => Noted.Of(EndNoteCodes.StoppedCheckpointFinished, "The person finished this at a checkpoint."),
+        "stopped" => Noted.Of(EndNoteCodes.StoppedCheckpointStopped, "The person stopped this at a checkpoint."),
+        _ => Noted.Of(EndNoteCodes.StoppedCheckpointMoved, "The person moved this at a checkpoint."),
     };
 
     /// <summary>
@@ -112,8 +112,8 @@ public static class SessionMoves
     /// </summary>
     public static Noted ByTheStewardNoted(string state) => state switch
     {
-        "completed" => Noted.Of(NoteCodes.StoppedCheckpointFinishedSteward, "The steward finished this at a checkpoint."),
-        _ => Noted.Of(NoteCodes.StoppedCheckpointStoppedSteward, "The steward stopped this at a checkpoint."),
+        "completed" => Noted.Of(EndNoteCodes.StoppedCheckpointFinishedSteward, "The steward finished this at a checkpoint."),
+        _ => Noted.Of(EndNoteCodes.StoppedCheckpointStoppedSteward, "The steward stopped this at a checkpoint."),
     };
 
     /// <summary>

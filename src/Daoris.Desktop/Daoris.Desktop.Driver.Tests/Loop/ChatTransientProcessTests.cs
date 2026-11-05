@@ -199,7 +199,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         await Poll.Until(() => Waits(events, id).Count == 1 && clock.Pending.Count == 1, () => Seen(ledger, events, id, clock));
         var waiting = events.After(id, 0).Events;
         Assert.Equal(1, Turns(waiting));
-        Assert.Single(waiting, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(waiting, e => Coded(e, EndNoteCodes.AgentTransientRetrying.Code));
         Assert.Equal(1, Volatile.Read(ref answered));
         Assert.True(runner.Taking(id));
 
@@ -218,7 +218,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Single(StubFile.Lines(Heard), line => line == "session/new");
         Assert.Equal(1, ledger.Count);
         Assert.Equal("working", ledger.State(id));
-        Assert.Single(all, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(all, e => Coded(e, EndNoteCodes.AgentTransientRetrying.Code));
         Assert.Equal(["end_turn", "end_turn"], all.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason));
         Assert.DoesNotContain(all, e => e.Kind == SessionEventKind.Note && e.Text?.Contains("could not be taken", StringComparison.Ordinal) == true);
         Assert.Single(all, e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Make the port configurable." });
@@ -267,7 +267,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Single(Carrying(Prompts, "how do I drive a repository?"));
         Assert.StartsWith("prompt[account-1]: " + GoOn, Prompts[2], StringComparison.Ordinal);
         Assert.Single(StubFile.Lines(Heard), line => line == "session/new");
-        Assert.Single(all, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(all, e => Coded(e, EndNoteCodes.AgentTransientRetrying.Code));
         Assert.DoesNotContain(all, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
         Assert.Equal(1, ledger.Count);
     }
@@ -367,7 +367,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Single(part, e => e is { Kind: SessionEventKind.User, Origin: "target" } && e.Continues == old);
 
         // Said once on each part, and the old turn ended as a limit's does.
-        Assert.Single(events.After(old, 0).Events, e => Coded(e, NoteCodes.MovedOn.Code));
+        Assert.Single(events.After(old, 0).Events, e => Coded(e, StartNoteCodes.MovedOn.Code));
         Assert.Single(events.After(old, 0).Events, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
         Assert.Equal(2, ledger.Count);
     }
@@ -401,11 +401,11 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
 
         // No episode opened: the limit is no outage, so no wait, try or retry line is in the record, and the turn ended as a limit's does.
-        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, NoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, StartNoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
         var record = events.After(old, 0).Events;
         Assert.DoesNotContain(record, e => e.Kind == SessionEventKind.Transient);
-        Assert.DoesNotContain(record, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
-        Assert.Single(record, e => Coded(e, NoteCodes.MovedOn.Code));
+        Assert.DoesNotContain(record, e => Coded(e, EndNoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(record, e => Coded(e, StartNoteCodes.MovedOn.Code));
         Assert.Single(record, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
         Assert.Equal(2, ledger.Count);
     }
@@ -438,8 +438,8 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
         Assert.Equal((old, HandOverWhy.Limit, HandOverBy.Daoris), (next.From, next.FromWhy, next.FromBy));
         Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
-        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, NoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
-        Assert.Single(events.After(old, 0).Events, e => Coded(e, NoteCodes.MovedOn.Code));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => Coded(e, StartNoteCodes.MovedOn.Code)), () => Seen(ledger, events, old, clock));
+        Assert.Single(events.After(old, 0).Events, e => Coded(e, StartNoteCodes.MovedOn.Code));
         Assert.Equal(2, ledger.Count);
     }
 
@@ -468,7 +468,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.True(runner.Say(id, "Make the port configurable."));
         await PassAsync(clock, ledger, events, id, 1);
         await Poll.Until(
-            () => events.After(id, 0).Events.Any(e => Coded(e, NoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, id, clock));
+            () => events.After(id, 0).Events.Any(e => Coded(e, ChatNoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, id, clock));
         Assert.Equal(1, ledger.Count);
 
         // A word said while it waits for its limit: kept on its record once, queued, and sent nowhere.
@@ -531,7 +531,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var said = await runner.SayKeptAsync(id, "Use port 9090.", null, null, MessageLevel.Urgent, "press-1");
         Assert.Equal("turn-end", said!.Reaches);
         await Poll.Until(
-            () => events.After(id, 0).Events.Any(e => Coded(e, NoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, id, clock));
+            () => events.After(id, 0).Events.Any(e => Coded(e, ChatNoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, id, clock));
         Assert.Equal(1, ledger.Count);
         Assert.Single(Carrying(Prompts, "Use port 9090."));
         Assert.Empty(Carrying(Received, "Use port 9090."));
@@ -584,13 +584,13 @@ public sealed class ChatTransientProcessTests : IDisposable
         await Poll.Until(() => Turns(events.After(id, 0).Events) == 2 && !runner.Taking(id), () => Seen(ledger, events, id, clock));
 
         var all = events.After(id, 0).Events;
-        var stopped = Assert.Single(all, e => Coded(e, NoteCodes.ChatTransientStopped.Code));
+        var stopped = Assert.Single(all, e => Coded(e, ChatNoteCodes.ChatTransientStopped.Code));
         Assert.Contains("provider kept failing", stopped.Text);
         Assert.Contains("API Error: 529 Overloaded", stopped.Text);
-        Assert.Equal(NoteCodes.ChatTransientStopped.Code, stopped.Parts![0].Code);
+        Assert.Equal(ChatNoteCodes.ChatTransientStopped.Code, stopped.Parts![0].Code);
         Assert.Equal(["end_turn", "error"], all.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason));
         Assert.DoesNotContain(all, e => e.Kind == SessionEventKind.Note && e.Text?.Contains("could not be taken", StringComparison.Ordinal) == true);
-        Assert.DoesNotContain(all, e => Coded(e, NoteCodes.AccountCooling.Code) || Coded(e, NoteCodes.AccountCoolingWindow.Code));
+        Assert.DoesNotContain(all, e => Coded(e, AccountNoteCodes.AccountCooling.Code) || Coded(e, AccountNoteCodes.AccountCoolingWindow.Code));
         Assert.Equal(7, Prompts.Count);
         Assert.Equal("working", ledger.State(id));
         Assert.Equal(1, ledger.Count);
@@ -631,7 +631,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Equal(["end_turn", "cancelled"], events.After(id, 0).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason));
         // The warm exchange and the failed turn: no try followed the stop.
         Assert.Equal(2, Prompts.Count);
-        Assert.DoesNotContain(events.After(id, 0).Events, e => Coded(e, NoteCodes.ChatTransientStopped.Code));
+        Assert.DoesNotContain(events.After(id, 0).Events, e => Coded(e, ChatNoteCodes.ChatTransientStopped.Code));
         Overloaded(0);
         Assert.True(runner.Say(id, "Now the tests."));
         await Poll.Until(() => Turns(events.After(id, 0).Events) == 3 && !runner.Taking(id), () => Seen(ledger, events, id, clock));
@@ -684,7 +684,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Single(Carrying(prompts, "Hold on while I read the files."));
         Assert.Single(Carrying(prompts, "And add a test."));
         Assert.StartsWith("prompt[account-1]: " + GoOn, prompts[3], StringComparison.Ordinal);
-        Assert.Single(all, e => Coded(e, NoteCodes.AgentTransientRetrying.Code));
+        Assert.Single(all, e => Coded(e, EndNoteCodes.AgentTransientRetrying.Code));
         Assert.DoesNotContain(all, e => e is { Kind: SessionEventKind.Turn, StopReason: "error" });
         Assert.DoesNotContain(all, e => e.Kind == SessionEventKind.Note && e.Text?.Contains("would not take", StringComparison.OrdinalIgnoreCase) == true);
         Assert.Single(all, e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "And add a test.", Reaches: null });

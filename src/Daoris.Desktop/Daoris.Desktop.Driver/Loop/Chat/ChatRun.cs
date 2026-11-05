@@ -240,7 +240,7 @@ internal sealed class ChatRun(
             await conclusion.ConcludeAsync(
                 sessionId, "failed",
                 cancelled
-                    ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
+                    ? Noted.Of(ChatNoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
                     : Observation.Failure(error.Message),
                 onEnded).ConfigureAwait(false);
             if (cancelled) throw;

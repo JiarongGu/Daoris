@@ -12,21 +12,21 @@ public sealed class RecordNotesTests
     [Fact]
     public void Each_code_the_client_judges_by_is_the_vocabularys_declaration()
     {
-        Assert.Equal(NoteCodes.UpdateClosed.Code, RecordNotes.UpdateClosed);
-        Assert.Equal(NoteCodes.EndedTransient.Code, RecordNotes.EndedTransient);
-        Assert.Equal(NoteCodes.EndedChoiceNotOffered.Code, RecordNotes.EndedChoiceNotOffered);
-        Assert.Equal(NoteCodes.EndedStoppedSteward.Code, RecordNotes.EndedStoppedSteward);
-        Assert.Equal(NoteCodes.EndedAwaitsHelper.Code, RecordNotes.EndedAwaitsHelper);
-        Assert.Equal(NoteCodes.StoppedCheckpointStoppedSteward.Code, RecordNotes.StoppedCheckpointStoppedSteward);
-        Assert.Equal(NoteCodes.AccountsOwn.Select(code => code.Code), RecordNotes.AccountsOwn);
+        Assert.Equal(EndNoteCodes.UpdateClosed.Code, RecordNotes.UpdateClosed);
+        Assert.Equal(EndNoteCodes.EndedTransient.Code, RecordNotes.EndedTransient);
+        Assert.Equal(EndNoteCodes.EndedChoiceNotOffered.Code, RecordNotes.EndedChoiceNotOffered);
+        Assert.Equal(EndNoteCodes.EndedStoppedSteward.Code, RecordNotes.EndedStoppedSteward);
+        Assert.Equal(EndNoteCodes.EndedAwaitsHelper.Code, RecordNotes.EndedAwaitsHelper);
+        Assert.Equal(EndNoteCodes.StoppedCheckpointStoppedSteward.Code, RecordNotes.StoppedCheckpointStoppedSteward);
+        Assert.Equal(AccountNoteCodes.AccountsOwn.Select(code => code.Code), RecordNotes.AccountsOwn);
     }
 
     [Fact]
     public void A_coded_note_is_composed_from_a_code_as_it_was_and_a_conclusion_carries_it()
     {
-        var noted = Noted.Of(NoteCodes.EndedTransient, "its provider kept failing.", ("count", 3), ("minutes", 10));
+        var noted = Noted.Of(EndNoteCodes.EndedTransient, "its provider kept failing.", ("count", 3), ("minutes", 10));
         var part = Assert.Single(noted.Parts);
-        Assert.Equal(NoteCodes.EndedTransient.Code, part.Code);
+        Assert.Equal(EndNoteCodes.EndedTransient.Code, part.Code);
         Assert.Equal("its provider kept failing.", part.Text);
         Assert.Equal(3, part.Value("count"));
 

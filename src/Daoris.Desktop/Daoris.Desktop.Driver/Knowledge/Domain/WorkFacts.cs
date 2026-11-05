@@ -231,8 +231,8 @@ public sealed record PausedBy(WorkScope Scope, string Id)
 
     /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 52–53).</summary>
     public Noted Noted => Scope == WorkScope.Ask
-        ? Noted.Of(NoteCodes.StoppedPausedAsk, $"paused with ask `#{Id}`.", ("ask", Id))
-        : Noted.Of(NoteCodes.StoppedPausedQuest, $"paused with quest `#{Id}`.", ("quest", Id));
+        ? Noted.Of(EndNoteCodes.StoppedPausedAsk, $"paused with ask `#{Id}`.", ("ask", Id))
+        : Noted.Of(EndNoteCodes.StoppedPausedQuest, $"paused with quest `#{Id}`.", ("quest", Id));
 }
 
 

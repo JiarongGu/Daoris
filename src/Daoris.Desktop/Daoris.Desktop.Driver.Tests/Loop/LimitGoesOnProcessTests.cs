@@ -165,13 +165,13 @@ public sealed class LimitGoesOnProcessTests : IDisposable
 
         // The limit refuses its turn; it waits for its account, said as the limit's wait, with nothing opened beside it.
         await Poll.Until(
-            () => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitWaits.Code) == true),
+            () => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitWaits.Code) == true),
             () => Seen(ledger, events, old));
         Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
         Assert.Equal(1, ledger.Count);
         Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("prompt[account-2]", StringComparison.Ordinal));
         Assert.DoesNotContain(events.After(old, 0).Events, e => e.Parts?.Any(part => part.Code == "moved.on") == true);
-        var waits = events.After(old, 0).Events.Select(Coded).OfType<NotePart>().Single(part => part.Code == NoteCodes.ChatLimitWaits.Code);
+        var waits = events.After(old, 0).Events.Select(Coded).OfType<NotePart>().Single(part => part.Code == ChatNoteCodes.ChatLimitWaits.Code);
         Assert.NotNull(waits.Value("until"));
     }
 

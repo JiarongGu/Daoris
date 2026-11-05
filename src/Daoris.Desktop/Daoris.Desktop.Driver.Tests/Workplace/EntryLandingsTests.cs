@@ -143,7 +143,7 @@ public sealed class EntryLandingsTests
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.Equal("the person left this part out when its line of work landed on `feature/x`: its work did not land there.", note.Text);
         var part = Assert.Single(note.Parts!);
-        Assert.Equal((NoteCodes.LandingLeftOut.Code, "feature/x", note.Text), (part.Code, part.Value("branch"), part.Text));
+        Assert.Equal((ChatNoteCodes.LandingLeftOut.Code, "feature/x", note.Text), (part.Code, part.Value("branch"), part.Text));
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ internal static class HelperWaitTrees
     /// </summary>
     internal static bool HoldsTree(PriorSession record) =>
         !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
-        && Carries(record.NoteParts, NoteCodes.EndedAwaitsHelper);
+        && Carries(record.NoteParts, EndNoteCodes.EndedAwaitsHelper);
 
     /// <summary>Whether a note's parts carry a line of <paramref name="code"/>.</summary>
     internal static bool Carries(IReadOnlyList<NotePart>? parts, NoteCode code) =>

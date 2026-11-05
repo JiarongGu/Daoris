@@ -199,7 +199,7 @@ public sealed class RoleActTests : IDisposable
         Assert.Equal((false, StewardWhy.RunningElsewhere), Done(await served.ActAsync("stop", """{"id":"s2","said":true}""")));
 
         var (session, note) = Assert.Single(world.Stopped);
-        Assert.Equal(("s1", NoteCodes.EndedStoppedSteward.Code), (session, Assert.Single(note.Parts).Code));
+        Assert.Equal(("s1", EndNoteCodes.EndedStoppedSteward.Code), (session, Assert.Single(note.Parts).Code));
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Sessions)) && Directory.EnumerateFileSystemEntries(
             DaorisHome.Entry(_home, HomeEntry.Sessions), "*request*", SearchOption.AllDirectories).Any());
         var stop = Assert.Single(served.Judge.StewardActsNow());

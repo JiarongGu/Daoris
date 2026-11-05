@@ -112,12 +112,12 @@ internal static class AnswersAlone
 
     /// <summary>
     /// A word of the person's (a word with no origin, from a record kept before it was written, is theirs) or of Daoris's, taken; or the
-    /// person's press that let an answer go on (<see cref="NoteCodes.AnswersPassed"/>).
+    /// person's press that let an answer go on (<see cref="HeldNoteCodes.AnswersPassed"/>).
     /// </summary>
     private static bool Resets(SessionEvent e) =>
         e.Kind == SessionEventKind.User && e.Reaches is null && e.From != SupervisorHanded.From
             && (e.Origin is null or "person" || e.From == DaorisWords.From)
-        || e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == NoteCodes.AnswersPassed.Code) == true;
+        || e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersPassed.Code) == true;
 
     /// <summary>
     /// A solicited answer, taken: a helper's answer by its mark, the turn a second opinion's findings were handed in, or the supervisor's
@@ -172,17 +172,17 @@ internal static class AnswersAloneNotes
 {
     /// <summary>The answers wait for the person: going on with them would be the third time in a row with nobody between.</summary>
     public static SessionEvent Held(string agent, IReadOnlyList<string> words) => Note(Noted.Of(
-        NoteCodes.AnswersHeld,
+        HeldNoteCodes.AnswersHeld,
         $"{agent}'s answer waits for you: it would take this work on a third time with nobody between.",
         ("agent", agent)), words);
 
     /// <summary>The person let the answer go on (<em>Go on with this answer</em>): their word on the line.</summary>
     public static SessionEvent Passed(IReadOnlyList<string> words) =>
-        Note(Noted.Of(NoteCodes.AnswersPassed, "You let this answer go on."), words);
+        Note(Noted.Of(HeldNoteCodes.AnswersPassed, "You let this answer go on."), words);
 
     /// <summary>The person kept the answer (<em>Not now</em>): it goes on only beside words of theirs.</summary>
     public static SessionEvent Kept(IReadOnlyList<string> words) =>
-        Note(Noted.Of(NoteCodes.AnswersKept, "You kept this answer: it goes on only with your words."), words);
+        Note(Noted.Of(HeldNoteCodes.AnswersKept, "You kept this answer: it goes on only with your words."), words);
 
     private static SessionEvent Note(Noted noted, IReadOnlyList<string> words) => new()
     {

@@ -49,16 +49,16 @@ public sealed class WorkplaceParticipantsPortsTests : IDisposable
             Assert.Equal(PartnerReconcile.AfterRef(refCommit, kept), PieceKeptStates.AfterRef(refCommit, kept));
         }
 
-        var waiting = new PriorSession("s1", "trees/s-1", "completed") { Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [] };
+        var waiting = new PriorSession("s1", "trees/s-1", "completed") { Quest = "q1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [] };
         foreach (var record in new[]
                  {
                      waiting, waiting with { State = "COMPLETED" }, waiting with { State = "working" }, waiting with { Session = "laptop/s1" },
-                     waiting with { NoteParts = [NoteCodes.EndedAwaits.Part("a line.", [])] }, waiting with { NoteParts = null },
+                     waiting with { NoteParts = [EndNoteCodes.EndedAwaits.Part("a line.", [])] }, waiting with { NoteParts = null },
                  })
         {
             Assert.Equal(HelperWaits.HoldsTree(record), HelperWaitTrees.HoldsTree(record));
             Assert.Equal(HelperWaits.HoldsTree(record) && !record.WordsWaiting, HelperWaits.Waits(record));
-            Assert.Equal(HelperWaits.Ended(record.NoteParts), HelperWaitTrees.Carries(record.NoteParts, NoteCodes.EndedAwaitsHelper));
+            Assert.Equal(HelperWaits.Ended(record.NoteParts), HelperWaitTrees.Carries(record.NoteParts, EndNoteCodes.EndedAwaitsHelper));
         }
     }
 

@@ -213,7 +213,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                     < heard.LastIndexOf("Also log the port.", StringComparison.Ordinal), heard);
         await Poll.Until(() => events.After(next, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Origin == "person"), () => Seen(ledger, events, next));
         var opened = events.After(next, 0).Events;
-        Assert.Contains(opened, e => e.Kind == SessionEventKind.Note && e.Parts?.Any(p => p.Code == NoteCodes.MovedFrom.Code) == true);
+        Assert.Contains(opened, e => e.Kind == SessionEventKind.Note && e.Parts?.Any(p => p.Code == StartNoteCodes.MovedFrom.Code) == true);
         Assert.Contains(opened, e => e is { Kind: SessionEventKind.User, Origin: "target" } && e.Continues == id);
         Assert.Contains(opened, e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Also log the port." });
 
@@ -222,7 +222,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         var went = Assert.Single(left, e => e.To is not null);
         Assert.Equal((next, ContinueWhy.Gone), (went.To, went.Why));
         Assert.Equal(["w1"], went.Words!);
-        Assert.Contains(left, e => e.Parts?.Any(p => p.Code == NoteCodes.MovedOn.Code) == true);
+        Assert.Contains(left, e => e.Parts?.Any(p => p.Code == StartNoteCodes.MovedOn.Code) == true);
         lock (lines)
         {
             var moved = Assert.Single(lines, line => line.Event == "session.moved");

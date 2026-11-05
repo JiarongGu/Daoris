@@ -21,15 +21,15 @@ public static class DoorNotes
 {
     /// <summary>The protocol session could not open, the program's own message beneath (the chat runner's record).</summary>
     public static Noted NotOpen(string message) =>
-        Noted.Of(NoteCodes.DoorNotOpen, "the ACP session could not open:").Then(" ", Noted.Said(message, NoteBy.Program));
+        Noted.Of(ChatNoteCodes.DoorNotOpen, "the ACP session could not open:").Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>A conversation's turn that could not be taken, the program's own message beneath (the chat runner's record).</summary>
     public static Noted TurnNotTaken(string message) =>
-        Noted.Of(NoteCodes.DoorTurnNotTaken, "the turn could not be taken:").Then(" ", Noted.Said(message, NoteBy.Program));
+        Noted.Of(ChatNoteCodes.DoorTurnNotTaken, "the turn could not be taken:").Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>A driven session's protocol session that failed, the program's own message beneath.</summary>
     public static Noted Failed(string message) =>
-        Noted.Of(NoteCodes.DoorFailed, "— the ACP session failed:").Then(" ", Noted.Said(message, NoteBy.Program));
+        Noted.Of(ChatNoteCodes.DoorFailed, "— the ACP session failed:").Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>A conversation the agent would not resume: its refusal, as the chat runner has always said it.</summary>
     /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
@@ -39,7 +39,7 @@ public static class DoorNotes
     /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
     public static Noted AnswerCarriedOn(IResumeRefused refused, string? ranOn) =>
         Refusal(refused, ranOn)
-            .Then("; ", Noted.Of(NoteCodes.DoorAnswerCarriedOn, "your answer is carried on in a new session"))
+            .Then("; ", Noted.Of(ChatNoteCodes.DoorAnswerCarriedOn, "your answer is carried on in a new session"))
             .Then(".");
 
     /// <summary>
@@ -48,7 +48,7 @@ public static class DoorNotes
     /// </summary>
     private static Noted Refusal(IResumeRefused refused, string? ranOn)
     {
-        var said = new Noted("— ", []).Then("", Noted.Of(NoteCodes.DoorResumeRefused, refused.Why.Sentence, NoteCodes.Reason(refused.Why, ranOn)));
+        var said = new Noted("— ", []).Then("", Noted.Of(ChatNoteCodes.DoorResumeRefused, refused.Why.Sentence, NoteCodes.Reason(refused.Why, ranOn)));
         return refused.Words is { Length: > 0 } words ? said.Then(": ", Noted.Said(words, NoteBy.Agent)) : said;
     }
 }

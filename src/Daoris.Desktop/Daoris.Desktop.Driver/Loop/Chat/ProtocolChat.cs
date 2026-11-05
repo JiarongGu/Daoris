@@ -454,7 +454,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             // Every try failed, so the turn ends `error` and the next word is a turn of this same conversation. No limit, no sign-in and no
             // door note: the provider's outage is not the account's.
             var stopped = Noted.Of(
-                NoteCodes.ChatTransientStopped,
+                ChatNoteCodes.ChatTransientStopped,
                 $"{retry.Agent}'s provider kept failing, so this turn ends; your next words go on in this conversation:",
                 ("agent", retry.Agent));
             if (exhausted.Episode.Words is { Length: > 0 } words) stopped = stopped.Then(" ", Noted.Said(words, NoteBy.Program));
