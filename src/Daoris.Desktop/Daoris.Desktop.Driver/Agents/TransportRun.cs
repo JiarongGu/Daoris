@@ -24,8 +24,8 @@ namespace Daoris.Driver;
 /// <para><b>One channel out</b> (row l): what the run's door says, the record's events, the console's lines, the streams beside, the
 /// conversation named, the account's windows and every failure, is a <see cref="WireReading"/> written to the sink its executor composed;
 /// the run writes its own transcript and names no store above it.</para>
-/// <para><b>What is deleted later.</b> <see cref="Session"/> is the protocol conversation's runner's alone, until its words move behind
-/// the input too.</para>
+/// <para><b>A protocol door's words</b> are <see cref="Words"/>', which the conversation's turns say; the session is left to the options its
+/// agent lists.</para>
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
@@ -78,10 +78,25 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     private bool _goneOn;
 
     /// <summary>
-    /// The protocol door's session, once the run has opened one: the conversation's runner reaches it through this accessor alone (design §4.1,
-    /// round 5), for the words it frames and writes itself. Null before the open and on a native door. Deleted at m-ii.
+    /// The protocol door's session, once the run has opened one: what the conversation's runner reads of it beside its words, the options its
+    /// agent lists and the person's change of them. Null before the open and on a native door. Its words are <see cref="Words"/>'.
     /// </summary>
-    public AcpSession? Session { get; private set; }
+    public AcpSession? Session
+    {
+        get => _session;
+        private set
+        {
+            _session = value;
+            _words = value is null ? null : new ProtocolWords(value);
+        }
+    }
+
+    private AcpSession? _session;
+
+    private ProtocolWords? _words;
+
+    /// <summary>A protocol door's words and steer, once its session opened: the conversation's turns say them here and write nothing through the session (D243 point 1).</summary>
+    public ProtocolWords? Words => _words;
 
     /// <summary>The process the run started last, for the code that stops or reads it beside the run; null before the spawn.</summary>
     public Process? Process { get; private set; }
@@ -523,8 +538,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         {
             // 🔴 One going on goes on in its own conversation (MSG1c, D137 §2.2): resumed by the id kept for it, never a new session, which
             // would be a new conversation under the same record.
-            if (conversation is null) await session.OpenAsync(protocol.Cwd, ct, protocol.Connectors).ConfigureAwait(false);
-            else await session.ResumeAsync(protocol.Cwd, conversation, ct, protocol.Connectors).ConfigureAwait(false);
+            await ProtocolOpen.BeginAsync(session, protocol.Cwd, conversation, ct, protocol.Connectors).ConfigureAwait(false);
             protocol.Opened?.Invoke();
         }
         catch (Exception error)

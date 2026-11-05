@@ -297,7 +297,7 @@ public static class AgentsCommand
         var path = WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
         var (name, toolchain, known, roster) = Agent(args, "settings", "<agent>", world, path);
-        var owner = roster.Adapters.OwnerOf(name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var edit = SettingsEdit([.. Operands(args, Valued).Skip(2)], FlagValue(args, "--for"));
 

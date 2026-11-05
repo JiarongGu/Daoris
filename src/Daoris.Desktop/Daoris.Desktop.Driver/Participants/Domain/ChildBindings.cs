@@ -426,7 +426,7 @@ public sealed record ChildBindings
             child.Seen.Add(by!);
             Said(child, by!, line, key: id => announced.GetValueOrDefault(ReRun.Replace(id, "")) ?? id);
             if (by == "call") child.Calls++;
-            if (who == Codex && announced.Count == 0) child.Unsaid = true;
+            if (SaysNoEnd(who) && announced.Count == 0) child.Unsaid = true;
             Moved(child, generation, i, act, word, AtOf(line));
         }
 
@@ -665,6 +665,12 @@ public sealed record ChildBindings
 
     private static string Moment(DateTimeOffset at) =>
         at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
+
+    /// <summary>Whether the harness named by its provider's id declares a vocabulary that says no child's end (its provider's <c>IChildVocabulary</c>).</summary>
+    private static bool SaysNoEnd(string? harness) =>
+        harness is not null
+        && Providers.Built().FirstOrDefault(provider => string.Equals(provider.Id.Value, harness, StringComparison.Ordinal)) is { Children.IsKnown: true } provider
+        && !provider.Children.Required.SaysEnd;
 
     private static JsonObject? Parse(string line)
     {

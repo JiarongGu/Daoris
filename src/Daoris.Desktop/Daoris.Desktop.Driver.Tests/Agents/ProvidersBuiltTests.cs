@@ -173,6 +173,26 @@ public sealed class ProvidersBuiltTests
             Assert.Null(codex.Lent.Required.Usage.Question);
             Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Lent.Tables.Limits);
             Assert.Same(CodexUsage.Question, registry.Door("codex-acp").Lent.Usage.Question);
+            // The door's own words stand beside the provider's: the door says its limits as Codex does, and the lent words are the same.
+            Assert.Same(CodexLimits.Words, registry.Door("codex-acp").Tables.Limits);
+            Assert.Same(registry.Door("codex-acp").Tables.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
+        }
+    }
+
+    /// <summary>
+    /// A door keyed by its provider's name declares no words of its own (the provider holds them), and a door of Claude Code's
+    /// reads its provider's by its key, so neither carries a table beside the provider's.
+    /// </summary>
+    [Fact]
+    public void A_door_keyed_by_its_provider_or_by_its_key_declares_no_account_words_of_its_own()
+    {
+        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        foreach (var name in new[] { "claude-code", "claude-code-acp", "dsh" })
+        {
+            var own = registry.Door(name).Tables.Own;
+            Assert.Null(own.Limits);
+            Assert.Null(own.Windows);
+            Assert.Null(own.SignIn);
         }
     }
 
@@ -373,6 +393,23 @@ public sealed class ProvidersBuiltTests
         Assert.Equal(typeof(Known<IChildVocabulary>), typeof(Provider).GetProperty("Children")!.PropertyType);
         Assert.Equal(typeof(Known<IConversationHome>), typeof(Provider).GetProperty("Conversations")!.PropertyType);
         Assert.Equal(typeof(IUsageQuestion), typeof(UsagePart).GetProperty("Question")!.PropertyType);
+    }
+
+    /// <summary>Each provider that has children says them: Claude Code its hook, stream and calls with an end, Codex its thread calls and no end.</summary>
+    [Fact]
+    public void The_providers_that_have_children_declare_their_vocabulary()
+    {
+        var claude = Listed("claude-code").Children.Required;
+        Assert.True(claude.SaysEnd);
+        Assert.Contains("stream", claude.StreamSignals);
+        Assert.Contains("hook", claude.HookLines);
+
+        var codex = Listed("codex").Children.Required;
+        Assert.False(codex.SaysEnd);
+        Assert.Empty(codex.HookLines);
+        Assert.Contains("thread", codex.CallKeys);
+
+        Assert.All(["dsh", "stub", "alt-stub"], id => Assert.False(Listed(id).Children.IsKnown));
     }
 
     /// <summary>Process starts compared by what a spawn would do: program, arguments, folder, redirections and variables.</summary>

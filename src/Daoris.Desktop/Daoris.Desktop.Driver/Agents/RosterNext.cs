@@ -16,7 +16,7 @@ internal sealed class RosterNext(HarnessRoster roster)
     {
         var resolved = roster.Adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain) return null;
-        var owner = roster.Adapters.OwnerOf(resolved.Name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
         var settings = roster.Settings;
         var named = settings.Set(owner);
         // As the walk reads its scope: where the person named no account, the agent's Daoris accounts on this machine (OWNSPACE1a).
@@ -119,7 +119,7 @@ internal sealed class RosterNext(HarnessRoster roster)
                 continue;
             }
 
-            if (toolchain is null || !string.Equals(roster.Adapters.OwnerOf(name), owner, StringComparison.OrdinalIgnoreCase)) continue;
+            if (toolchain is null || !string.Equals(roster.Adapters.Registry.OwnerOfAgent(name).Value, owner, StringComparison.OrdinalIgnoreCase)) continue;
             if (string.Equals(name, owner, StringComparison.OrdinalIgnoreCase)) return toolchain;
             door ??= toolchain;
         }
@@ -149,7 +149,7 @@ internal sealed class RosterNext(HarnessRoster roster)
             }
 
             if (toolchain is null) continue;
-            var owner = roster.Adapters.OwnerOf(name);
+            var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
             IReadOnlyList<string> present;
             try
             {
@@ -250,7 +250,7 @@ internal sealed class RosterNext(HarnessRoster roster)
     internal async Task<IReadOnlyList<string>> ReadyAsync(
         string adapter, HarnessToolchain toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
     {
-        var owner = roster.Adapters.OwnerOf(adapter);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(adapter).Value;
         var others = HarnessSettings.Profiles(roster.Home, owner)
             .Where(name => !string.Equals(name, picked, StringComparison.OrdinalIgnoreCase))
             .Where(name => Before(owner, name, now).IsReady)
@@ -277,7 +277,7 @@ internal sealed class RosterNext(HarnessRoster roster)
     {
         var resolved = roster.Adapters.Resolve(adapter);
         var toolchain = resolved.Toolchain;
-        var owner = roster.Adapters.OwnerOf(resolved.Name);
+        var owner = roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
         var settings = roster.Settings;
 
         // The start's one set (POOL1a2, the account-pool design §2.4): where it begins, the order's first, read as the machine's

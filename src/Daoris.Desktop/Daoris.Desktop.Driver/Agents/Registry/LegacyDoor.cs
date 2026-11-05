@@ -93,6 +93,9 @@ internal sealed class LegacyDoor : ISessionAdapter
     /// <summary>Whether the door's program runs Claude Code's, so its spawn takes Claude Code's seam (<see cref="ISpawn.ClaudeSeam"/>).</summary>
     public bool ClaudeSeam => Spawn().ClaudeSeam;
 
+    /// <summary>The variables its program reads for the model and the effort (<see cref="ISpawn.ChoiceVariables"/>).</summary>
+    public SpawnChoiceVariables ChoiceVariables => Spawn().ChoiceVariables;
+
     public IReadOnlyDictionary<string, string> ToolsUpFront => Spawn().ToolsUpFront;
 
     public void HandServers(ProcessStartInfo info, string configFile) => Spawn().HandServers(info, configFile);
@@ -123,7 +126,7 @@ internal sealed class LegacyDoor : ISessionAdapter
 
         var facts = program.Required;
         var pool = keyedItself ? _provider.Accounts.Required.Facts : _door.Lent.Accounts;
-        var tables = keyedItself ? (_provider.Tables.IsKnown ? _provider.Tables.Required : TablesPart.None) : _door.Lent.Tables;
+        var tables = keyedItself ? (_provider.Tables.IsKnown ? _provider.Tables.Required : TablesPart.None) : _door.Tables.Own;
         var usage = keyedItself ? (_provider.Usage.IsKnown ? _provider.Usage.Required : UsagePart.None) : _door.Lent.Usage;
         var errors = keyedItself ? tables.ErrorWords : _door.Tables.ErrorWords;
         // A built-in door states no identity of its own: its provider's is its (claude-code-acp's is Claude Code's).

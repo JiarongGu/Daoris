@@ -34,7 +34,7 @@ internal static class AgentListCommand
         foreach (var name in AgentsCommand.Named(world, path).Where(each => set.DeclaredBy(each) is null))
         {
             var toolchain = set.ToolchainOf(name)!;
-            var report = await ProbeAsync(name, toolchain, settings, home, set.OwnerOf(name), now, ct).ConfigureAwait(false);
+            var report = await ProbeAsync(name, toolchain, settings, home, set.Registry.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
             Say("");
             // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
             var state = report.Present ? report.Version ?? "null" : $"absent — {report.Problem}";
@@ -91,7 +91,7 @@ internal static class AgentListCommand
             }
             else
             {
-                var probed = await ProbeAsync(name, toolchain, settings, home, set.OwnerOf(name), now, ct).ConfigureAwait(false);
+                var probed = await ProbeAsync(name, toolchain, settings, home, set.Registry.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
                 state = probed.Present ? probed.Version ?? "null" : $"absent — {probed.Problem}";
             }
 
@@ -162,7 +162,7 @@ internal static class AgentListCommand
         string name, HarnessToolchain toolchain, HarnessReport report, HarnessSettings settings, string home, AdapterSet set,
         DateTimeOffset now, TimeZoneInfo zone)
     {
-        var owner = set.OwnerOf(name);
+        var owner = set.Registry.OwnerOfAgent(name).Value;
         var lines = new List<string>();
         // Each account by the person's name for it, else its id (ACCT2); the name column fits the longest (ACCTNAME1, floor 16).
         string Shown(string account) => AccountNames.Shown(home, owner, account);

@@ -35,6 +35,12 @@ public interface ISpawn
     /// </summary>
     bool ClaudeSeam => false;
 
+    /// <summary>
+    /// The variables its program reads for the model and the effort it runs with, which a start's environment may carry beside the command's
+    /// flags; none by default. What a start's asked choice reads from its spawn is the command's flags and these.
+    /// </summary>
+    SpawnChoiceVariables ChoiceVariables => SpawnChoiceVariables.None;
+
     /// <summary>Hands a pipe-door spawn the servers Daoris offers, as the agent's own flag; nothing by default.</summary>
     void HandServers(ProcessStartInfo info, string configFile) { }
 

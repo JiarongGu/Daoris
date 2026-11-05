@@ -19,33 +19,26 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
     };
 
-    /// <summary>Run <c>q1</c>'s graph: the work landed on a branch the plugin pushes, then notifying once the pull request is reached.</summary>
+    /// <summary>Run <c>q1</c>'s graph: the work landed on a branch, pushed, then notifying once the push is reached.</summary>
     private const string Cycle = """
         {"schemaVersion":2,"entries":["claimed"],"end":"notify",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request","plugin":"acme.deploy","pattern":"feature/{quest}-{slug}"}},
-                  {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"},
+                  {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"feature/{quest}-{slug}"}},
+                  {"id":"push","kind":"push","version":1,"reach":"performed"},
                   {"id":"notify","kind":"acme.deploy/notify","version":1,"reach":"performed"}],
-         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"},{"id":"l>p","kind":"after","from":"landing","to":"pushed"},
-                  {"id":"p>pr","kind":"after","from":"pushed","to":"pull-request"},{"id":"w1","kind":"after","from":"pull-request","to":"notify"}]}
+         "wires":[{"id":"c>l","kind":"after","from":"claimed","to":"landing"},{"id":"l>p","kind":"after","from":"landing","to":"push"},
+                  {"id":"w1","kind":"after","from":"push","to":"notify"}]}
         """;
 
     [Fact]
-    public async Task Pushed_reads_the_remote_tracking_ref_and_an_ahead_pull_request_gits_ancestry_once_a_pass()
+    public async Task Push_reads_the_remote_tracking_ref_once_a_pass_and_git_reads_no_ancestry()
     {
         var root = await RepositoryAsync("engine");
         await GitAsync(root, "branch", Branch);
         var landed = (await GitAsync(root, "rev-parse", Branch)).Trim();
         await GitAsync(root, "branch", "daoris/s1", landed);
         await GitAsync(root, "update-ref", "refs/remotes/origin/" + Branch, landed);
-        await CommitAsync(root, "ahead.txt", "ahead\n", "the platform's merge took a newer commit");
-        var source = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
-
-        var completed = new PullRequestState(PullRequestStates.Completed) { MergeCommit = source, SourceCommit = source, Target = "main", Plugin = Plugin };
-        var landing = RunHome.Landing("unit-a", Branch, landed, DateTimeOffset.UtcNow, Run) with
-        {
-            Pushed = true, PushedTip = landed, Plugin = Plugin, PullRequestState = completed,
-        };
+        var landing = RunHome.Landing("unit-a", Branch, landed, DateTimeOffset.UtcNow, Run) with { Pushed = true, PushedTip = landed };
         var unit = RunHome.Branch("unit-a", "daoris/s1", DateTimeOffset.UtcNow.AddHours(-1), [Run], landing) with { Subject = new WorkSubject("daoris/s1", landed) };
         RunHome.Bind(Home, Run, RunHome.SaveGraph(Home, Cycle), DateTimeOffset.UtcNow);
 
@@ -76,12 +69,11 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         }
 
         var record = records.Read(RunUnits.IdOf(Run))!;
-        Assert.True(record.Statuses["pushed"].State == NodeStates.Reached, string.Join(", ", record.Statuses.Select(each => $"{each.Key}={each.Value.State}/{each.Value.Code}")));
-        Assert.Equal(NodeStates.Reached, record.Statuses["pull-request"].State);
+        Assert.True(record.Statuses["push"].State == NodeStates.Reached, string.Join(", ", record.Statuses.Select(each => $"{each.Key}={each.Value.State}/{each.Value.Code}")));
         Assert.Equal(landed, Assert.Single(port.Sent).SubjectRevision);
         // One read of the checkout's refs for the session branch's tip (the landing is judged on it) and one for the remote-tracking refs.
         Assert.Equal(2, started.Count(line => line.StartsWith("for-each-ref", StringComparison.Ordinal)));
-        Assert.Equal($"merge-base --is-ancestor {landed} {source}", Assert.Single(started, line => line.StartsWith("merge-base", StringComparison.Ordinal)));
-        Assert.Equal(3, started.Count);
+        Assert.DoesNotContain(started, line => line.StartsWith("merge-base", StringComparison.Ordinal));
+        Assert.Equal(2, started.Count);
     }
 }

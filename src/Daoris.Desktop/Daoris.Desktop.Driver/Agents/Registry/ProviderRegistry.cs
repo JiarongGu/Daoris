@@ -280,7 +280,7 @@ public sealed class ProviderRegistry
             && !provider.Doors.Any(each => Ids.Same(each.Id.Value, provider.Id.Value));
         return (
             programFacts, door.Lent.Accounts,
-            ofHolder ? provider.Tables.Required : door.Lent.Tables,
+            ofHolder ? provider.Tables.Required : door.Tables.Own,
             ofHolder && provider.Usage.IsKnown ? provider.Usage.Required : door.Lent.Usage);
     }
 

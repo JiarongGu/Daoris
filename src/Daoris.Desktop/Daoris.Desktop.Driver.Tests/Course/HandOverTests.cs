@@ -55,6 +55,16 @@ public sealed class HandOverTests : IDisposable
         return (await HandOver.AskAsync(client, moves, Roster, id, agent, account, HandOverWhy.Limit, HandOverBy.Person, T0.AddMinutes(30))).Answer;
     }
 
+    /// <summary>The hand-over's accounts are read once: a stand-in's agent that holds conversations answers its pool, an unknown agent null.</summary>
+    [Fact]
+    public void The_accounts_a_hand_over_is_judged_by_are_one_read_for_the_chat_the_curve_and_the_loop()
+    {
+        var adapters = ProvidersBuiltTests.Old();
+        Assert.Null(HandOverAccounts.Of(adapters, _home, "no-such-agent"));
+        Assert.Equal(HandOverAccounts.Of(adapters, _home, "claude-code"), HandOverAccounts.Of(adapters, _home, "claude-code"));
+        Assert.Empty(HandOverAccounts.Of(adapters, _home, "claude-code")!.Where(string.IsNullOrEmpty));
+    }
+
     /// <summary>🔴 A conversation handed to another agent keeps its move in the store, decided: the agent, the account, why and by whom; no box.</summary>
     [Fact]
     public async Task A_conversation_is_handed_over_by_deciding_its_move()

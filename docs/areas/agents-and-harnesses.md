@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `DoorAbilities`, `Adoption` | `Contract/DoorAbilities.cs`, `Domain/Adoption.cs` | What a door can do as its callers read it: interactive, resumes and takes settings as the door declares them, and the rest its transport's (servers and rules on the wire, set at the open, words at the next step, held on the wire, resumed by a restart), so no caller tests a door's wire. `Adoption` judges driving an unadopted repository over door ids: a door whose servers ride its wire may; `Drives` asks it of Build's candidates, and the five places that plan by it (the loop, set-up, the terminal's two consoles, the window's `DriverContext`) read the one answer, `BuildDoor.Drives` in Roles (any entry of Build's order that rides the protocol), and carry it as a bool (`unadopted`), never a `SessionWire`; an unknown id may not |
 | `AgentRun`, `Transport` | `Contract/AgentRun.cs`, `Contract/Transport.cs` | What an executor holds of a live run; the two transports, `Native` and `Protocol` |
 | `AgentCapabilities`, `IAgentFacts`, `Sheet`, `Measurement`, `ProviderFacts` | `Knowledge/AgentCapabilities.cs`, `Knowledge/IAgentFacts.cs`, `Domain/Sheet.cs`, `Domain/Measurement.cs`, `Registry/ProviderFacts.cs` | The provider sheet (COAGENT1 §3): `Sheet.Of` reads each door's capabilities from its registration, an opening's answers or the measurements table (each row's evidence document held to exist), else absent with its fallback; `ProviderRegistry.Facts` answers each agent once with its account acts and its doors' sheets, the door named for it first. The port and its values sit in Knowledge, below Agents, so the room may read them. The roster's `HARNESSES` answer carries them as `agents`, and each door's `wire` is its sheet's word (`acp`, `pipe`), as the help receipt's is |
-| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' doors, id resolution by kind. `AdapterSet.OwnerOf` (the registry's `OwnerOfAgent`) is the one reader of whose accounts a door runs as and `AdapterSet.ToolchainOf` of a door's or a holder's toolchain; the roster, the terminal's verbs, the window's routes and the hand-over read nothing else. Codex's limit words and usage question are provider `codex`'s: its built door reads them through it, a plugin's door naming `codex-acp` by its `Lent` part, one joined to `codex` neither |
+| `ProviderRegistry`, `ProviderRegistration`, `Providers` | `Registry/` | The registration list (Claude Code, Codex, dsh and the stand-ins), the registry made over the built set and the plugins' doors, id resolution by kind. The registry's `OwnerOfAgent` is the one reader of whose accounts a door runs as and `AdapterSet.ToolchainOf` of a door's or a holder's toolchain; the roster, the terminal's verbs, the window's routes and the hand-over read nothing else. Codex's limit words and usage question are provider `codex`'s: its built door reads them through it, a plugin's door naming `codex-acp` by its `Lent` part, one joined to `codex` neither |
 | `LegacyDoor`, `AdapterNativeDialect`, `AdapterProtocolDialect`, `AdapterAbilities`, `AdapterClaudeSeam`, `RegisteredVariables` | `Registry/` | Presents a contract door to today's readers as an adapter and a toolchain, its spawn the door's recipe completed by the shell; a real door's stream reader and session `_meta` as its adapter class makes them, until rows i and k move them into the provider's folder; `adapter.Abilities()`, a contract door's from its record and a plugin's or a test's adapter from its declarations and wire; whether a start takes Claude Code's seam (a contract door's spawn says, any other protocol adapter does); what every registration declared of a spawn's environment, and the refusal of a declared name of Daoris's list |
 | `ProcessRecipe`, `ISpawn`, `Shell`, `ISessionGit` | `Contract/ProcessRecipe.cs`, `Contract/Ports.cs`, `Transports/` | A door's spawn answers a recipe (program, arguments, input, its own variables); the transports' one shell completes it into every kind of session's process and holds the account half every probe and usage question takes too; the session's git a port the shell declares and Workplace installs, unset throwing |
 | `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider`, `AltStubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model, and `alt-stub` with `alt-acp-stub`, the second pair, whose limit, window and sign-in words (`AltStubWords`) and home variable are its own; each door's spawn its own there (`ClaudeCodeSpawn`, `ClaudeAcpSpawn` with `ClaudeAcp`'s seam, `CodexAcpSpawn`, `DshSpawn` with `DshProfile`, `StandInSpawn`) |
@@ -321,11 +321,15 @@ Agents page, and `orient-index` and `code-map` once files move.
 ## Open
 
 - **AGENTPROVIDER1d**'s rest: s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
-  page's own-home question reads the owner's first door and the walk the door's own) and built when the page's `Next` takes the door;
-  the toolchain classes `OwnerOf` and `ToolchainOf` still read go with rows h and t. The roster's `LimitsOf`, `SignInOf`, `WindowsOf`
-  and `UsageOf` read through the registry. **1e**'s rest: the provider and door tables are split for Claude Code's and Codex's words,
-  but no door's own table beside the provider's yet (`DoorTablesPart` holds the error words alone); a candidate's read floor is its
-  provider's (s-iii, `SwitchCandidate.Floor`), the page's floor per agent not yet. `alt-stub` (`Providers/AltStub/`) is built: its own
+  page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
+  card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen
+  (`RosterNext.OwnersToolchain` reads the owner's first door as before). `AdapterSet.OwnerOf` is retired, every read asks
+  `Registry.OwnerOfAgent`; `AdapterSet.ToolchainOf` stays, for it answers a `HarnessToolchain` (a holder's included) and the registry
+  has no such answer until rows h and t. The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read through the registry.
+  **1e**'s rest: a door's own limit, window, sign-in and refused words are its `DoorTablesPart` (`Own`), beside its provider's
+  `TablesPart` and its `Lent` words (a plugin's door states its toolchain's once in both; `codex-acp` says Codex's limits, as it
+  lends them); a candidate's read floor is its provider's (s-iii, `SwitchCandidate.Floor`), and the page's is the accounts answer's
+  `readFloor` per agent, its question's own, a minute only for a shell that names none. `alt-stub` (`Providers/AltStub/`) is built: its own
   limit, window and sign-in grammar and home variable, one line in `Providers.Built()`, its pending file beside its program.
 - **AGENTPROVIDER1** host rows (h, l, m-ii, n, o, p, q, r, s, u): every provider's and door's program is Install's `ToolSpec`
   (`Install/ToolSpec.cs`; the old toolchain's facts reach it through `ToolSpecs.Of` until row t), the pin's install is one decision,
@@ -338,14 +342,21 @@ Agents page, and `orient-index` and `code-map` once files move.
   `HolderTerminal`'s program and home variable read from the registration, its binary's hash and path D209's; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   the sink's rest (l: the lineage still a writer the run makes rather than Participants' part, the four `stream-json` readers not yet
-  one, `ChildBindings` not yet each provider's `IChildVocabulary`; the open's refused model is one `WireReading.ModelRefused`, said by
+  one, `ChildBindings`' fold still branching by harness name beside the two providers' `IChildVocabulary` (Claude Code's and Codex's,
+  declared; the fold reads only `SaysEnd` from it: its unsaid end), the interleaved fold to be split into the mapper's child readings
+  first; the open's refused model is one `WireReading.ModelRefused`, said by
   the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii's rest (D243 is built
   for the native door: the words go through the run's `DoorInput`, the chat's retry is the run's own and replays what the ended
-  process never acknowledged, `GoOnAsync` is gone, Claude Code declares its `IConversationHome`; left: a protocol door's words and
-  steer still on its session (`TransportRun.Session`, `ProtocolChat`), the protocol resume once for a driven run and a conversation,
-  the hand-over's accounts once, `alt-stub`'s conversation home), n's rest (the doors' `Offers` part and the offers read through
-  `AgentOffers.Offers` are built; left: the actor run's asked choice read from the door's spawn, which waits on h's `ISpawn`, and the
-  asked, carried, acknowledged and reported kept apart); a start's words go on in its
+  process never acknowledged, `GoOnAsync` is gone, Claude Code and `alt-stub` declare their `IConversationHome`; a protocol door's
+  prompt, word into a running turn and steer are `TransportRun.Words` (`ProtocolWords`), which `ProtocolChat` says and the session
+  never is written through by; the protocol open or resume is `ProtocolOpen.BeginAsync`, read by the driven run and the conversation
+  alike; the hand-over's accounts are `HandOverAccounts.Of`, read by the chat runner, the curve and the loop; left: the protocol
+  words not yet through `DoorInput` itself (a prompt is a request the session answers, so `TransportRun.SendAsync` still refuses it
+  on a protocol door), `TransportRun.Session` kept for the options its agent lists), n's rest (the doors' `Offers` part and the offers
+  read through `AgentOffers.Offers` are built; the asked choice's environment is read through the door's spawn
+  (`ISpawn.ChoiceVariables`, `ActorAsked.ForSpawn`; a plugin's adapter keeps Claude Code's names until its spawn declares its own);
+  left: the actor run's asked choice read from the whole spawn (`ISpawn`'s `SpawnRequest`, row h), and the asked, carried,
+  acknowledged and reported kept apart); a start's words go on in its
   record's own conversation by one rule, `OwnResume`, which the continuation's walk and the sessions' groups both read (s-ii); o and p are built (`PostureAsked`, the trust preflight through the door's `Home`, an unmapped full or asking start refused
   naming it, the questions pause's value read from its provider; one `ConnectorPlan` per workspace read by both doors, the session
   home's servers file named by its provider, the rules file too, `ClaudeRules.FileSuffix`); p and q are built but for what t removes: `ServerEntry` is Knowledge's one

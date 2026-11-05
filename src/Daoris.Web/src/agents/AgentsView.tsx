@@ -39,8 +39,8 @@ import type { ListPanes } from '../work/frame/listPanes';
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
-/** A reading older than this is read again as an agent's page opens (the switch design §1.2): Claude's read floor, a minute. */
-const STALE_AFTER = 60_000;
+/** A reading older than the agent's own floor is read again as its page opens (the switch design §1.2); a shell that names none is read at a minute. */
+const STALE_AFTER_SECONDS = 60;
 
 /**
  * The Agents place's mode as the application holds it (COMPANYVIEW1b): the one it was left in, remembered for the place, and a change of
@@ -417,7 +417,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const stale = Boolean(use?.reads) && tool.present && tool.accounts.some((account) => {
     if (account.key) return false;
     const seen = use?.accounts.find((facts) => facts.name === account.name)?.said?.seen;
-    return !seen || Date.now() - new Date(seen).getTime() > STALE_AFTER;
+    return !seen || Date.now() - new Date(seen).getTime() > (use?.readFloor ?? STALE_AFTER_SECONDS) * 1000;
   });
   const readOnOpen = useRef<string | null>(null);
   const mutateRead = readAccounts.mutate;

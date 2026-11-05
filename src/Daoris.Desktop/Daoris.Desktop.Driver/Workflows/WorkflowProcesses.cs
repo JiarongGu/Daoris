@@ -75,16 +75,16 @@ public static class WorkflowProcesses
 
         // Held before any step: no opinion is asked for a run whose workflow cannot be read.
         var held = declared with { Binding = binding, Opinion = null };
-        if (binding.Problem is { } problem) return held with { Problem = problem };
-        if (binding.Version is not { } number) return held with { Problem = $"its run names no version of `{binding.Workflow}`." };
+        if (binding.Problem is { } problem) return held with { Problem = problem, Coded = binding.Coded };
+        if (binding.Version is not { } number) return Held(held, BindingProblem.ForNoVersion(binding.Workflow));
         var found = WorkflowNamed.IsId(binding.Workflow) ? store.Load(binding.Workflow) : null;
-        if (found is null) return held with { Problem = $"no workflow `{binding.Workflow}` is saved here any more." };
-        if (found.Read.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` cannot be read: {unread}" };
+        if (found is null) return Held(held, BindingProblem.ForNotSaved(binding.Workflow));
+        if (found.Read.Problem is { } unread) return Held(held, BindingProblem.ForUnread(binding.Workflow, unread));
         var version = found.Read.Versions.FirstOrDefault(each => each.Version == number);
-        if (version is null) return held with { Problem = $"`{binding.Workflow}` v{number} is no longer saved here." };
+        if (version is null) return Held(held, BindingProblem.ForVersionUnread(binding.Workflow, number, "that version is no longer saved here."));
         if (version is not { Graph: { } graph, Digest: { } identity })
         {
-            return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem ?? "it is no graph"}" };
+            return Held(held, BindingProblem.ForVersionUnread(binding.Workflow, number, version.Problem ?? "it is no graph"));
         }
 
         if (!string.Equals(identity, binding.Digest, StringComparison.Ordinal))
@@ -97,6 +97,8 @@ public static class WorkflowProcesses
 
         return Graphed(config, repository, workspace, run, binding, number, graph, held, accepted);
     }
+
+    private static WorkflowProcess Held(WorkflowProcess held, BindingProblem problem) => held with { Problem = problem.Said, Coded = problem };
 
     /// <summary>
     /// A graph version read as a process (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): its <c>land</c> carried as the intent it binds

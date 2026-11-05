@@ -196,6 +196,24 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Equal(2, binding.Version);
         Assert.Null(binding.Digest);
         Assert.StartsWith("`docs-to-pr` v2 cannot be read here: ", binding.Problem);
+        Assert.Equal(BindingProblem.VersionUnread, binding.Coded!.Code);
+
+        // The process a run held on it is read from carries the same code for the page to word.
+        var process = WorkflowProcesses.Bound(_home, Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}"""), "web-app", null, "a1b2c3", binding);
+        Assert.Equal(BindingProblem.VersionUnread, process.Coded!.Code);
+        Assert.Equal(binding.Problem, process.Problem);
+    }
+
+    [Fact]
+    public void A_run_whose_workflow_is_no_longer_saved_is_held_on_a_coded_problem()
+    {
+        var binding = new WorkflowRunBinding("a1b2c3", "web-app", "default", "gone-flow", WorkflowLevels.Repository, At) { Version = 1, Digest = "gph-x" };
+
+        var process = WorkflowProcesses.Bound(_home, Config("{}"), "web-app", null, "a1b2c3", binding);
+
+        Assert.Equal(BindingProblem.NotSaved, process.Coded!.Code);
+        Assert.Equal("gone-flow", process.Coded.Values["workflow"]);
+        Assert.Equal(process.Coded.Said, process.Problem);
     }
 
     [Fact]
