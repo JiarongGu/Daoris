@@ -23242,3 +23242,10 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **TREENAME1 — a tree's name given for a session names its session** (driver): `trees land s-92ed2c8c`, the tree's name, answers that the session names no working tree here; it should say the tree is session `7ca1353a`'s. The console says so now (`62b4ccb3c`); left: the page's landing routes still answer the old sentence. → `docs/areas/git-and-remotes.md`
 
   **Outcome** 2026-11-05: the page's four tree doors (plan, press, discard, review) name the session a tree's name belongs to (BL16, `TreeNamedRefusals`), as the console already did.
+
+## PROCESS1d-iii and LANDHOLD2b (2026-11-05)
+
+- [x] **PROCESS1d-iii — a conversation's process proven** (driver; D164): a session is told its landing squashes, from the run's land options. Left: a conversation in its own tree shown to hear its process once before its first words, over a stand-in harness. → `docs/areas/workflows-review-landing.md`, Open
+- [x] **LANDHOLD2b — the wait's cause and bound beside the button** (web): the Accept no longer waits behind a tree's hold, so the cause and the bound shown are the pass's (`GraphPasses.Bound`). → `docs/2026-11-02-parked-triage.md`, WORKFLOWCLEAN1
+
+  **Outcome** 2026-11-05: BL16 and BL16b: a session is told its landing squashes from the run's land options, and a conversation in its own tree is shown to hear its process once over a stand-in harness (`ChatProcessToldProcessTests`); the Accept says the pass it waits for and its bound beside the button (`PassNote`, `GraphPasses.Bound` pinned at 20 s).
