@@ -64,7 +64,6 @@ public static class InstallUpdate
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Where(repository => !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase)),
         ],
-        IntakeAdapter = null,
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal) { ["intake"] = [] },
     };
 

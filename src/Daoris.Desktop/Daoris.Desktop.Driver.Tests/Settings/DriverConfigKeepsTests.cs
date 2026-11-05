@@ -132,7 +132,6 @@ public sealed class DriverConfigKeepsTests
             // CONFIGMERGE1: a target declared or taken back, through the door the terminal's `write-across` goes through.
             "write-across" => config.WithWriteAcross(Text("repository"), Text("to"), edit.GetProperty("on").GetBoolean()),
             "line" => config.WithLine(Text("repository"), Text("branch")),
-            "intake" => config.WithIntake(Text("adapter")),
             "help-mode" => config.WithHelpMode(Text("mode")),
             // AUTONOMY1a: the level the row names, through the access edit the route and the terminal make.
             "access" => config.WithAccess(Access(edit, new AccessEdit { Repository = Text("repository") })),

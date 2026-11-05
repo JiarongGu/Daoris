@@ -97,12 +97,10 @@ public sealed class InstallUpdateTests : IDisposable
     public void A_draining_look_holds_every_drivable_repository_and_answers_no_ask_and_keeps_the_cap()
     {
         var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Holds = ["Tools"], Cap = 4 };
-        config = config.WithIntake("claude-code");
 
         var drained = InstallUpdate.Drained(config);
 
         Assert.Equal(["Tools", "engine"], drained.Holds);
-        Assert.Null(drained.IntakeAdapter);
         Assert.Equal(4, drained.Cap);
         Assert.Equal(config.Drivable, drained.Drivable);
     }

@@ -71,7 +71,7 @@ public sealed class QuestDeleteNamedAskProcessTests : IAsyncLifetime, IDisposabl
     {
         var config = (DriverConfig.Empty with
         {
-            Adapter = "stub", Actors = StaffedRoles.On("stub"),
+            Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         }).StaffIntake("stub");

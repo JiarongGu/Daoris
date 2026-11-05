@@ -57,7 +57,7 @@ public sealed class CodexCreditsTickTests : IDisposable
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "codex-acp", Actors = StaffedRoles.On("codex-acp"),
+        Actors = StaffedRoles.On("codex-acp"),
         TestBound = 1,
         PollSeconds = 1,
         // One failure would park it: the limit must hold none.

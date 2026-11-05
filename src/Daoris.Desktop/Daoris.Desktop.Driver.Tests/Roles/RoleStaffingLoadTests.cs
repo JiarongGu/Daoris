@@ -53,17 +53,13 @@ public sealed class RoleStaffingLoadTests : IDisposable
     {
         Imports();
         var before = DriverConfig.Load(File_);
-        Assert.Equal("claude-code-acp", before.Adapter);
-        Assert.Equal("codex-acp", before.IntakeAdapter);
+        Assert.Equal(["claude-code-acp"], before.Actors["build"].Select(choice => choice.Agent));
         Assert.Contains("opinion", before.ActorErrors.Keys);
 
         Assert.Equal(StaffingImported.Done, new RoleStaffing(_home, () => StoreSettled.Yes).ImportFile().How);
         File.WriteAllText(File_, HandEdited);
 
         var after = DriverConfig.Load(File_);
-        Assert.Equal("claude-code-acp", after.Adapter);
-        Assert.Equal("codex-acp", after.IntakeAdapter);
-        Assert.Null(after.HelperAdapter);
         Assert.Equal(["claude-code-acp"], after.Actors["build"].Select(choice => choice.Agent));
         Assert.Equal(["codex-acp"], after.Actors["intake"].Select(choice => choice.Agent));
         Assert.Contains("opinion", after.ActorErrors.Keys);
@@ -80,7 +76,7 @@ public sealed class RoleStaffingLoadTests : IDisposable
 
         var named = DriverConfig.Load(other);
 
-        Assert.Equal("other-acp", named.Adapter);
+        Assert.Equal(["other-acp"], named.Actors["build"].Select(choice => choice.Agent));
         Assert.Empty(named.Actors["intake"]);
     }
 
@@ -95,8 +91,6 @@ public sealed class RoleStaffingLoadTests : IDisposable
 
         var saved = DriverConfig.Parse(File.ReadAllText(File_));
         Assert.Equal(7, saved.Cap);
-        Assert.Equal("other-acp", saved.Adapter);
-        Assert.Null(saved.IntakeAdapter);
         Assert.Empty(saved.Actors["intake"]);
         Assert.Equal(["other-acp"], saved.Actors["build"].Select(choice => choice.Agent));
     }

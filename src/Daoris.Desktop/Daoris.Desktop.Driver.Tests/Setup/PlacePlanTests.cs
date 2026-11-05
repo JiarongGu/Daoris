@@ -16,7 +16,7 @@ public sealed class PlacePlanTests
     private const string Declaring = """{ "gates": [ { "name": "verify", "run": "npm run verify" } ], "integration": {} }""";
     private const string Plugin = "example.github-pull-request";
 
-    private static readonly DriverConfig Config = (DriverConfig.Empty with { Adapter = "claude-code-acp" })
+    private static readonly DriverConfig Config = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
         .WithDrivable("engine", true).WithTrees("engine", true)
         .WithDrivable("web", true).WithTrees("web", true)
         .WithDrivable("docs", true).WithTrees("docs", true);

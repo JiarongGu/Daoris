@@ -129,7 +129,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         var script = new Script();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
-            DriverConfig.Empty with { Adapter = "stub", Cap = cap, Brainstorms = rule }, AdapterSet.Built(), _home)
+            DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap, Brainstorms = rule }, AdapterSet.Built(), _home)
         {
             BrainstormTurns = script.RunAsync,
             BrainstormMinute = Minute,

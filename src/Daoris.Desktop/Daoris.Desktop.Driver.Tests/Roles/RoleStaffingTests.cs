@@ -113,7 +113,6 @@ public sealed class RoleStaffingTests : IDisposable
         Assert.Equal([new ActorChoice("claude-code-acp", "opus"), new ActorChoice("codex-acp", null, "high")], read.Actors["build"]);
         Assert.Empty(read.Actors["intake"]);
         Assert.Equal([new ActorChoice("codex-acp")], read.Actors["chat"]);
-        Assert.Equal(("claude-code-acp", "codex-acp", null), (read.Adapter, read.IntakeAdapter, read.HelperAdapter));
         Assert.True(Staffing().InUse());
     }
 
@@ -167,7 +166,6 @@ public sealed class RoleStaffingTests : IDisposable
         var read = Staffing().Read()!;
         Assert.Equal(ActorChoices.Ordered.Order(), read.Actors.Keys.Order());
         Assert.Empty(read.Errors);
-        Assert.Equal(("claude-code", null, null), (read.Adapter, read.IntakeAdapter, read.HelperAdapter));
         Assert.Equal(new StaffingPaths(null, null, null, null), read.Written);
         Assert.True(Staffing().Seeded());
         Assert.Equal(["seeded"], Rows("SELECT class FROM imports WHERE family = 'role_staffing'", row => row.GetString(0)));
@@ -223,7 +221,7 @@ public sealed class RoleStaffingTests : IDisposable
 
         Assert.Equal(StaffingImported.Already, again.How);
         Assert.Equal(revision, Rows("SELECT revision FROM store_revisions WHERE family = 'role_staffing'", row => row.GetInt64(0))[0]);
-        Assert.Equal("claude-code-acp", Staffing().Read()!.Adapter);
+        Assert.Equal("claude-code-acp", Staffing().Read()!.Actors["build"][0].Agent);
         Assert.Equal(1, Rows("SELECT COUNT(*) FROM imports", row => row.GetInt32(0))[0]);
     }
 

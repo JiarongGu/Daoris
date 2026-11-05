@@ -82,6 +82,24 @@ public sealed class HomeMigrationTests : IDisposable
     }
 
     [Fact]
+    public void The_helper_key_is_converted_to_Ask_Daoris_s_order_and_taken_out_once()
+    {
+        var file = Put(HomeEntry.DriverConfig, """{"adapter":"codex","helperAdapter":"claude-code-acp","cap":3}""");
+
+        var migrated = HomeMigration.Run(_home);
+
+        Assert.Null(migrated.Failed);
+        var root = Read(file);
+        foreach (var key in new[] { "adapter", "intakeAdapter", "helperAdapter" }) Assert.False(root.ContainsKey(key), key);
+        Assert.Equal(3, (int)root["cap"]!);
+        var rows = new RoleStaffing(_home, () => StoreSettled.Yes).Read()!;
+        Assert.Equal("claude-code-acp", rows.Actors["ask-daoris"].Single().Agent);
+        Assert.Empty(rows.Actors["intake"]);
+
+        Assert.DoesNotContain("data/driver.json", HomeMigration.Run(_home).Changed);
+    }
+
+    [Fact]
     public void A_stopped_run_records_the_steps_before_it_and_the_next_start_runs_the_rest()
     {
         Directory.CreateDirectory(_home);

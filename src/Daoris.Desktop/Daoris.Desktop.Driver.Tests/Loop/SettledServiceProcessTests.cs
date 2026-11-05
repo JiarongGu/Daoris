@@ -258,7 +258,7 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
             ["id"] = "a1", ["helper"] = helper, ["answer"] = "The window is exclusive at report.md:1.", ["at"] = DateTimeOffset.UtcNow.ToString("O"),
         }.ToJsonString());
         files.WriteState(new HelperState("a1", HelperStates.Answered, null, helper, DateTimeOffset.UtcNow) { Agent = "stub" });
-        var driver = new Daoris.Driver.Driver(_client, DriverConfig.Empty with { Adapter = "stub" }, AdapterSet.Built(), home);
+        var driver = new Daoris.Driver.Driver(_client, DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, AdapterSet.Built(), home);
         async Task LookAsync()
         {
             await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);

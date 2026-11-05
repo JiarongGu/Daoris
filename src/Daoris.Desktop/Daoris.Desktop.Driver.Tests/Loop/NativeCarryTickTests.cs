@@ -148,7 +148,7 @@ public sealed class NativeCarryTickTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = "stub", Actors = StaffedRoles.On("stub"),
+            Actors = StaffedRoles.On("stub"),
             TestBound = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Stub(), Log] },
         };
@@ -173,7 +173,7 @@ public sealed class NativeCarryTickTests : IDisposable
     private DriverConfig NativeConfig(string mode) => DriverConfig.Empty with
     {
         Drivable = ["engine"],
-        Adapter = "claude-code", Actors = StaffedRoles.On("claude-code"),
+        Actors = StaffedRoles.On("claude-code"),
         TestBound = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, mode] },
     };

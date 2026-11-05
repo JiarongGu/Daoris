@@ -78,7 +78,7 @@ public sealed class StartPlanTests : IDisposable
 
     private StartPlan Plan(string work, Func<ActorEffective, ISessionAdapter, (string Code, string Why)?>? gate, params ActorChoice[] choices)
     {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, StartPlan.RoleOf(work), choices);
+        var config = ActorChoices.With(StaffedRoles.Config("cool"),StartPlan.RoleOf(work), choices);
         return new StartPlan(work, config, _roster, _adapters, _memory)
         {
             Workspace = "default", Subject = "quest:q1", Named = ("quest", "q1"), Log = _log, Gate = gate,
@@ -310,7 +310,7 @@ public sealed class StartPlanTests : IDisposable
     public void A_plan_walks_its_rule_s_fence_or_the_entries_its_caller_holds()
     {
         var config = ActorChoices.With(
-            DriverConfig.Empty with { Adapter = "cool" }, "opinion", [new ActorChoice("fine", "opus"), new ActorChoice("cool", "sonnet")]);
+            StaffedRoles.Config("cool"),"opinion", [new ActorChoice("fine", "opus"), new ActorChoice("cool", "sonnet")]);
 
         var fenced = new StartPlan(ParticipantWork.Review, config, _roster, _adapters, _memory, fence: ["cool", "gone"]) { Subject = "opinion" };
         IReadOnlyList<ActorEffective> held = [new ActorEffective("fine", "haiku", null, "rule-default")];
@@ -368,9 +368,9 @@ public sealed class StartPlanTests : IDisposable
     /// which a role read <i>as before</i> answers itself.
     /// </summary>
     [Fact]
-    public void A_continuation_goes_on_with_its_record_s_asked_choice_never_the_machine_s_adapter()
+    public void A_continuation_goes_on_with_its_record_s_asked_choice()
     {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [new ActorChoice("cool", "opus"), new ActorChoice("fine", "sonnet")]);
+        var config = ActorChoices.With(StaffedRoles.Config("cool"),"build", [new ActorChoice("cool", "opus"), new ActorChoice("fine", "sonnet")]);
         var second = new PriorSession("s1", null, "failed")
         {
             Actor = "build", Choice = "2", Asked = new ActorEffective("fine", "sonnet", null, "2").Asked, Adapter = "fine",
@@ -378,10 +378,10 @@ public sealed class StartPlanTests : IDisposable
 
         Assert.Equal("fine", StartPlan.ContinuedOn(second, config));
         Assert.Equal("fine", StartPlan.ContinuedOn(second with { Adapter = "cool" }, config));
-        Assert.Equal("fine", StartPlan.ContinuedOn(second with { Asked = null }, config with { Adapter = "piped" }));
+        Assert.Equal("fine", StartPlan.ContinuedOn(second with { Asked = null }, config));
         // A record from before the actors, naming no agent: its role's first entry, Build's own (`cool`), or Chat's for a conversation.
         var before = new PriorSession("s0", null, "failed");
-        Assert.Equal("cool", StartPlan.ContinuedOn(before, config with { Adapter = "piped" }));
+        Assert.Equal("cool", StartPlan.ContinuedOn(before, config));
         Assert.Equal("fine", StartPlan.ContinuedOn(before, ActorChoices.With(config, "chat", [new ActorChoice("fine")]), work: "chat"));
         Assert.Contains("is off on this machine", Assert.Throws<DriverException>(() => StartPlan.ContinuedOn(before with { Actor = "garden" }, DriverConfig.Empty)).Message);
     }
@@ -394,14 +394,13 @@ public sealed class StartPlanTests : IDisposable
     [Fact]
     public void A_start_is_named_for_the_hand_over_the_record_or_its_role_s_first_entry_before_its_walk()
     {
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "build", [new ActorChoice("fine", "opus"), new ActorChoice("cool")]);
-        config = config with { Adapter = "piped" };
+        var config = ActorChoices.With(StaffedRoles.Config("cool"),"build", [new ActorChoice("fine", "opus"), new ActorChoice("cool")]);
         Assert.Equal("fine", StartPlan.AgentFor("build", config));
         Assert.Equal("handed", StartPlan.AgentFor("build", config, handed: "handed"));
         Assert.Equal("fine", StartPlan.AgentFor("design", config));
         var second = new PriorSession("s1", null, "failed") { Actor = "build", Choice = "2", Adapter = "cool" };
         Assert.Equal("cool", StartPlan.AgentFor("build", config, record: second));
-        Assert.Equal("piped", StartPlan.AgentFor("build",DriverConfig.Empty with { Adapter = "piped", ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
+        Assert.Equal(ActorChoices.DefaultAgent, StartPlan.AgentFor("build", DriverConfig.Empty with { ActorErrors = new Dictionary<string, string> { ["build"] = "unreadable" } }));
     }
 
     /// <summary>A plan given a named role walks that role's order and keeps its revision; <c>Seeded</c> stays the work's (O2-3).</summary>
@@ -411,8 +410,7 @@ public sealed class StartPlanTests : IDisposable
         var catalogue = RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("checker", ParticipantWork.Review, new RoleScope(RoleScope.Workspace, "w1")) with { Name = AuthoredText.Of("Checker") }, 5)]);
         var config = DriverConfig.Empty with
         {
-            Adapter = "cool",
-            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["opinion"] = [new ActorChoice("piped")], ["checker"] = [new ActorChoice("gone"), new ActorChoice("fine", "opus")] },
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["build"] = [new ActorChoice("cool")], ["opinion"] = [new ActorChoice("piped")], ["checker"] = [new ActorChoice("gone"), new ActorChoice("fine", "opus")] },
         };
         StartPlan Named(string role, RolePlace place) =>
             new(ParticipantWork.Review, config, _roster, _adapters, _memory, catalogue: catalogue, place: place, role: role) { Workspace = "default", Subject = "quest:q1" };
@@ -445,7 +443,7 @@ public sealed class StartPlanTests : IDisposable
         _log = new MachineLog(_home, "driver", () => Now);
         Cooling("fine");
         StartPlan Intake(params ActorChoice[] choices) =>
-            new(ParticipantWork.Intake, ActorChoices.With(DriverConfig.Empty with { Adapter = "cool" }, "intake", choices), _roster, _adapters, _memory)
+            new(ParticipantWork.Intake, ActorChoices.With(StaffedRoles.Config("cool"),"intake", choices), _roster, _adapters, _memory)
             {
                 Workspace = "default", Subject = "ask:a1", Named = ("ask", "a1"), Log = _log,
             };

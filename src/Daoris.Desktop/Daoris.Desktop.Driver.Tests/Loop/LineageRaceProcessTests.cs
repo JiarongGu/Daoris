@@ -247,7 +247,7 @@ public sealed class LineageRaceProcessTests : IDisposable
     private Daoris.Driver.Driver Driver(SessionProcesses processes)
     {
         var adapters = AdapterSet.Built();
-        var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", PollSeconds = 1, TestBound = 3 };
+        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), PollSeconds = 1, TestBound = 3 };
         return new Daoris.Driver.Driver(
             _ledger.Client(), config, adapters, _home, processes: processes, output: new SessionOutput(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

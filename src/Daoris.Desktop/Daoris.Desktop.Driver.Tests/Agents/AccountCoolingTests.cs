@@ -362,7 +362,7 @@ public sealed class AccountCoolingTests : IDisposable
             Zone = Zone,
         };
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     [Fact]
     public async Task A_start_on_a_cooling_account_is_held_before_any_probe()
@@ -642,13 +642,13 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "stub", "account-1", _now));
         // One account, spent: neither way onto it starts it, and another account of the stub is not held. Rewritten by POOL1a2: the
         // set's starts pass it to account-2 (D197 point 1), so the hold is the pick's on each door.
-        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, "account-1");
-        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, "account-1");
+        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, "account-1");
+        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, null, "account-1");
         Assert.Equal(limited.Value.Entry, door.Cooling);
         // A pick's hold goes on to say what of the agent's other accounts, after the cool-off's own sentence.
         Assert.StartsWith(CoolingWords.Hold(limited.Value.Entry, Zone), door.Refusal);
         Assert.Equal(limited.Value.Entry, pipe.Cooling);
-        Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, "work", null)).Cooling);
+        Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, "work", null)).Cooling);
     }
 
     [Fact]
@@ -659,8 +659,8 @@ public sealed class AccountCoolingTests : IDisposable
         var limited = roster.Limited("acp-stub", null, Refusal, "s1");
 
         Assert.Equal(("stub", (string?)null), (limited!.Value.Entry.Agent, limited.Value.Entry.Account));
-        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
-        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
+        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, null);
+        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, null, null);
         Assert.Equal(CoolingWords.Hold(limited.Value.Entry, Zone), door.Refusal);
         Assert.Equal(limited.Value.Entry, pipe.Cooling);
     }

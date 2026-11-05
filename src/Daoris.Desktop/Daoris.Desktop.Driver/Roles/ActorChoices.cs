@@ -35,6 +35,15 @@ public static class ActorChoices
     /// <summary>Whether <paramref name="actor"/> may be <i>off</i>: Intake and Ask Daoris, whose absent key is off today.</summary>
     public static bool MayBeOff(string actor) => ActorKey.MayBeOff(actor);
 
+    /// <summary>The supported harness (D23): the agent a seeded Build, Chat or Brainstorm starts on, and where Build's order names none.</summary>
+    public const string DefaultAgent = "claude-code";
+
+    /// <summary>
+    /// The agent this machine's work runs on where nothing names one: Build's first entry, or <see cref="DefaultAgent"/> where Build's
+    /// order is unset or does not read. Never throws: the reports and plans that name it say the unread order by their own line.
+    /// </summary>
+    public static string BuildAgent(DriverConfig config) => ActorKey.FirstAgent("build", config) ?? DefaultAgent;
+
     /// <summary>The five roles with an order of their own (the oneway design §2): each holds a written order, never <i>as before</i>.</summary>
     public static IReadOnlyList<string> Ordered { get; } = ["build", "chat", "brainstorm", "intake", "ask-daoris"];
 
@@ -44,7 +53,7 @@ public static class ActorChoices
     /// </summary>
     public static IReadOnlyList<ActorChoice>? Seed(string role) => role switch
     {
-        "build" or "chat" or "brainstorm" => [new ActorChoice(DriverConfig.Empty.Adapter)],
+        "build" or "chat" or "brainstorm" => [new ActorChoice(DefaultAgent)],
         "intake" or "ask-daoris" => [],
         _ => null,
     };
@@ -131,59 +140,18 @@ public static class ActorChoices
     }
 
     /// <summary>
-    /// <paramref name="config"/> with <paramref name="actor"/>'s order set (or, null, back to <i>as before</i>), judged first, and written
-    /// through (§6.4): Build's first agent is <c>adapter</c>, Intake's <c>intakeAdapter</c> and Ask Daoris's <c>helperAdapter</c> (absent
-    /// while off). 🔴 Every write that changes <c>adapter</c> first makes Chat and Brainstorm explicit where they are <i>as before</i>, as
-    /// the one-entry list of <c>adapter</c>'s agent as it stood, at account default (§4.0, round 3): no actor follows <c>adapter</c> across
-    /// a change of it. <paramref name="kept"/> names the actors made explicit, for the write's sentence.
+    /// <paramref name="config"/> with <paramref name="actor"/>'s order set (or, null, back to no order of its own), judged first, and
+    /// written through (§6.4).
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal; nothing changed.</exception>
-    public static DriverConfig With(DriverConfig config, string actor, IReadOnlyList<ActorChoice>? choices, out IReadOnlyList<string> kept)
+    public static DriverConfig With(DriverConfig config, string actor, IReadOnlyList<ActorChoice>? choices)
     {
         Judged(actor, choices);
         var actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal);
         var errors = new Dictionary<string, string>(config.ActorErrors, StringComparer.Ordinal);
         errors.Remove(actor);
         if (choices is null) actors.Remove(actor); else actors[actor] = [.. choices];
-
-        var after = config with { Actors = actors, ActorErrors = errors };
-        if (choices is not null)
-        {
-            var first = choices.FirstOrDefault()?.Agent;
-            after = actor switch
-            {
-                "build" => after with { Adapter = first! },
-                "intake" => after with { IntakeAdapter = first },
-                "ask-daoris" => after with { HelperAdapter = first },
-                _ => after,
-            };
-        }
-
-        kept = Keep(config, ref after);
-        return after;
-    }
-
-    /// <summary><see cref="With(DriverConfig, string, IReadOnlyList{ActorChoice}?, out IReadOnlyList{string})"/>, the actors it kept unsaid.</summary>
-    public static DriverConfig With(DriverConfig config, string actor, IReadOnlyList<ActorChoice>? choices) => With(config, actor, choices, out _);
-
-    /// <summary>
-    /// Where <paramref name="after"/> changes <c>adapter</c> from <paramref name="before"/>'s, Chat and Brainstorm, each still <i>as
-    /// before</i>, written as <c>adapter</c>'s agent as it stood (§4.0); the actors written. Every writer of <c>adapter</c> calls it.
-    /// </summary>
-    public static IReadOnlyList<string> Keep(DriverConfig before, ref DriverConfig after)
-    {
-        if (string.Equals(before.Adapter, after.Adapter, StringComparison.Ordinal)) return [];
-        var actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(after.Actors, StringComparer.Ordinal);
-        var kept = new List<string>();
-        foreach (var follower in (string[])["chat", "brainstorm"])
-        {
-            if (actors.ContainsKey(follower) || after.ActorErrors.ContainsKey(follower)) continue;
-            actors[follower] = [new ActorChoice(before.Adapter)];
-            kept.Add(follower);
-        }
-
-        after = after with { Actors = actors };
-        return kept;
+        return config with { Actors = actors, ActorErrors = errors };
     }
 
     /// <summary>The stored actors, as <c>driver.json</c>'s <c>actors</c> holds them: each readable entry, and each that does not read with why.</summary>
@@ -224,17 +192,6 @@ public static class ActorChoices
 
     /// <summary>The stored actors written as <c>driver.json</c> keeps them, only where any is set, in the screen's order.</summary>
     public static void Write(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<ActorChoice>> actors) => ActorKey.Write(writer, actors);
-
-    /// <summary>
-    /// Which harness answers asks here, or null for none — the declarations tier alone. Intake's actor goes back to <i>as before</i>, so
-    /// the key this writes is what it reads (D205 §6.4); a test's way to the old key, every writer going through the role door.
-    /// </summary>
-    public static DriverConfig WithIntake(this DriverConfig config, string? adapter) =>
-        With(config, "intake", null) with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
-
-    /// <summary>Which harness Ask Daoris runs on here, or null for none; its actor back to <i>as before</i>, as <see cref="WithIntake"/>.</summary>
-    public static DriverConfig WithHelper(this DriverConfig config, string? adapter) =>
-        With(config, "ask-daoris", null) with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
 }
 
 /// <summary>

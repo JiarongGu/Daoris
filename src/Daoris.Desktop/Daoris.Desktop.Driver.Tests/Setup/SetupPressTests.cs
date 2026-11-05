@@ -22,7 +22,7 @@ public sealed class SetupPressTests : IDisposable
     }
 
     /// <summary>Drivable here, its sessions in trees of their own, on an agent that rides the protocol door.</summary>
-    private static readonly DriverConfig Driven = (DriverConfig.Empty with { Adapter = "claude-code-acp" })
+    private static readonly DriverConfig Driven = (DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") })
         .WithDrivable("reports", true).WithTrees("reports", true)
         .WithDrivable("billing", true).WithTrees("billing", true);
 

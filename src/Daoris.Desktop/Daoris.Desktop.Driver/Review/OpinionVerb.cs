@@ -102,7 +102,7 @@ public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
                 // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A plugin's
                 // agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
                 IReadOnlyList<string> same = rule.IsNone ? []
-                    : OpinionRules.SameAgent(rule, before.Adapter, adapters(DriverConfig.HomeOf(path)));
+                    : OpinionRules.SameAgent(rule, ActorChoices.BuildAgent(before), adapters(DriverConfig.HomeOf(path)));
                 foreach (var sentence in OpinionRules.Says(rule, [.. same]).Concat(OpinionRules.Gate(rule))) Say($"  {sentence}");
             }
 

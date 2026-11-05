@@ -395,7 +395,7 @@ public sealed class ResumeAccountTests : IDisposable
             Zone = TimeZoneInfo.Utc,
         };
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private void Accounts(params string[] names)
     {

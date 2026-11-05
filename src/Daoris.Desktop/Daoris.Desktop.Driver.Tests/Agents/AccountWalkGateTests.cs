@@ -62,7 +62,7 @@ public sealed class AccountWalkGateTests : IDisposable
         public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
     }
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     /// <summary>
     /// The fake agent, its status question answered by <paramref name="status"/> and, where its server is asked its windows

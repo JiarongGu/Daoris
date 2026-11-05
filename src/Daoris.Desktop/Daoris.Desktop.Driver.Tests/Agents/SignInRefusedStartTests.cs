@@ -495,7 +495,7 @@ public sealed class SignInRefusedStartTests : IDisposable
             conclusion.Note);
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
 
-        var held = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
+        var held = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, null);
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
         Assert.Equal(
             "an earlier session found that the agent refused `stub`'s own sign-in, so Daoris starts nothing more on it until you "
@@ -503,7 +503,7 @@ public sealed class SignInRefusedStartTests : IDisposable
             held.Refusal);
 
         roster.LookedAgain();
-        var looked = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
+        var looked = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, null);
         Assert.Null(looked.NotReady);
     }
 
@@ -524,7 +524,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal("account.refused", conclusion.Parts![^1].Code);
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("stub", "account-1"));
         Wire(s => s.WithDefault("stub", "account-1"));
-        var held = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
+        var held = await roster.SelectAsync("stub", DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, null, null);
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
     }
 
@@ -614,7 +614,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         Assert.Equal("account.signed-out-own", said!.Parts![^1].Code);
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
-        var held = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
+        var held = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Actors = StaffedRoles.On("acp-stub") }, null, null);
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
     }
 

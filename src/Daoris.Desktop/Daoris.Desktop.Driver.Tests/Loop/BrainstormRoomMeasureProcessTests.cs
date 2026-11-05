@@ -107,7 +107,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with
             {
-                Adapter = "acp-stub", Cap = 3, TestBound = 2,
+                Actors = StaffedRoles.On("acp-stub"), Cap = 3, TestBound = 2,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(mode)] },
             },
             adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), usage: new SessionUsage(_home))

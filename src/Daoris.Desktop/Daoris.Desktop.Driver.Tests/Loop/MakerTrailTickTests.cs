@@ -128,7 +128,6 @@ public sealed class MakerTrailTickTests : IDisposable
         {
             Drivable = ["engine"],
             Trees = ["engine"],
-            Adapter = adapter,
             Actors = StaffedRoles.On(adapter),
             TestBound = 1,
             PollSeconds = 1,

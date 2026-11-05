@@ -27,7 +27,7 @@ public sealed class RoleCatalogStartTests : IDisposable
 
     private static DriverConfig Staffed() =>
         ActorChoices.With(
-            ActorChoices.With(DriverConfig.Empty with { Adapter = "claude", IntakeAdapter = "codex" }, "build", [new ActorChoice("codex", "gpt"), new ActorChoice("claude")]),
+            ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("claude", "codex") }, "build", [new ActorChoice("codex", "gpt"), new ActorChoice("claude")]),
             "brainstorm", [new ActorChoice("claude"), new ActorChoice("codex")]);
 
     private static void SameAsToday(RoleCatalog catalog, RolePlace place, DriverConfig config)

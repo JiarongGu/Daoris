@@ -33,7 +33,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task On_a_wired_home_the_press_writes_the_store_alone_and_a_hand_edit_is_read_nowhere()
     {
-        var staffing = Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        var staffing = Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }], "intake": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -43,7 +43,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             Assert.Empty(staffing.Read()!.Actors["intake"]);
             File.WriteAllText(DriverConfigPath, File.ReadAllText(DriverConfigPath).Replace("\"claude-code\"", "\"codex-acp\""));
             Assert.Equal(StaffingChecks.Same, staffing.Check(StaffingCheckAt.Look).How);
-            Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Equal("claude-code", ActorChoices.FirstAgent("build", DriverConfig.Load(DriverConfigPath)));
         }
         finally
         {
@@ -54,7 +54,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task ONEWAY1a_an_order_set_by_the_role_door_is_read_back_and_written_through_with_chat_and_brainstorm_kept()
     {
-        Wired("""{ "adapter": "claude-code" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -63,7 +63,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
                 [new { agent = "codex-acp" }, new { agent = "claude-code", model = "opus", effort = "high" }]));
 
             var config = DriverConfig.Load(DriverConfigPath);
-            Assert.Equal("codex-acp", config.Adapter);
+            Assert.Equal("codex-acp", ActorChoices.FirstAgent("build", config));
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["chat"]);
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["brainstorm"]);
             var rows = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
@@ -87,7 +87,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task ONEWAY1a_off_for_intake_its_default_and_a_refused_order_writing_nothing_through_the_role_door()
     {
-        Wired("""{ "adapter": "claude-code", "intakeAdapter": "claude-code" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "claude-code" }], "chat": [{ "agent": "claude-code" }], "brainstorm": [{ "agent": "claude-code" }], "intake": [{ "agent": "claude-code" }] } }""");
         try
         {
             var module = Module();
@@ -114,7 +114,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     [Fact]
     public async Task The_staffing_read_is_the_role_reads_and_actors_is_no_route()
     {
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
+        File.WriteAllText(DriverConfigPath, """{ "actors": { "build": [{ "agent": "claude-code" }] } }""");
         var module = Module();
 
         await RefusalAsync(module, "ACTORS");
@@ -131,10 +131,10 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         var loop = Loop();
         var build = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("claude-code-acp")] };
 
-        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Adapter = "claude-code", Actors = build }));
+        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Actors = build }));
         Assert.Equal(SessionWire.Pipe, DriverContext.DoorOf(loop, DriverConfig.Empty with
         {
-            Adapter = "claude-code-acp", Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
         }));
     }
 
@@ -147,7 +147,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     {
         var root = Path.Combine(Home, "engine");
         Directory.CreateDirectory(root);
-        Wired("""{ "adapter": "talk" }""");
+        Wired("""{ "actors": { "build": [{ "agent": "talk" }], "chat": [{ "agent": "talk" }] } }""");
         try
         {
             var service = new DriverModuleStartFromTests.StandIn(root);
@@ -163,7 +163,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             var module = new DriverModule(Bus, loop);
 
             await AnswerAsync(module, "SET_ROLE", Staff("build", "build", [new { agent = "other" }]));
-            Assert.Equal("other", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Equal("other", ActorChoices.FirstAgent("build", DriverConfig.Load(DriverConfigPath)));
 
             var started = await AnswerAsync(module, "START_CHAT", new { repository = "engine", text = "Fix the build.", ownTree = false });
 

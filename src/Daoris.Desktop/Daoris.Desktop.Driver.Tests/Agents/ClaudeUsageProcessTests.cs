@@ -98,7 +98,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
     // The explicit command names the CLI's harness, as `driver.json`'s `commands` may name `claude-code`.
     private DriverConfig Config => DriverConfig.Empty with
     {
-        Adapter = "door",
+        Actors = StaffedRoles.On("door"),
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-stand-in"] = ["node", Script] },
     };
 

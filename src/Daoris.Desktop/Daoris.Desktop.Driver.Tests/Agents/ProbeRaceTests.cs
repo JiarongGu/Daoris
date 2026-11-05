@@ -117,7 +117,7 @@ public sealed class ProbeRaceTests : IDisposable
         return new HarnessRoster(new AdapterSet(adapters), Settings);
     }
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "agent" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("agent") };
 
     /// <summary>An account signed in with an access token that has expired, so the next status question refreshes it.</summary>
     private string Expired(string account)

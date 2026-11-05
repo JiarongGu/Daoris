@@ -77,13 +77,13 @@ public sealed class AccountNamesSaidTests : IDisposable
 
     private HarnessRoster Built() => new(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
-    private static DriverConfig FakeConfig => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig FakeConfig => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private static DriverConfig Config => DriverConfig.Empty with
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "acp-stub",
+        Actors = StaffedRoles.On("acp-stub"),
         Strikes = 1,
         PollSeconds = 1,
     };
@@ -265,7 +265,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         Assert.DoesNotContain("work", conclusion.Note);
         Assert.Equal(["owner"], conclusion.Parts![^1].Values.Select(value => value.Key));
         Wire(s => s.WithDefault("stub", "account-1"));
-        var held = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
+        var held = await roster.SelectAsync("stub", DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, null, null);
         Assert.Equal(
             "an earlier session found that its provider refused the `stub` account `work` (401). Replace the key or sign in again — "
             + "on Settings, or `daoris agent` — and Daoris will start sessions on it again.",

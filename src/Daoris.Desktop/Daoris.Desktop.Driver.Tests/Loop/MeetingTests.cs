@@ -119,7 +119,7 @@ public sealed class MeetingTests : IDisposable
         TimeSpan minute, int cap = 3, BrainstormRule? rule = null, bool scripted = true, bool drained = false, TimeProvider? clock = null)
     {
         var script = new Script();
-        var config = DriverConfig.Empty with { Adapter = "stub", Cap = cap, Brainstorms = rule };
+        var config = DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap, Brainstorms = rule };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
             drained ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), _home)
@@ -191,7 +191,7 @@ public sealed class MeetingTests : IDisposable
         var reading = new TaskCompletionSource<(string? Root, string? Revision)>(TaskCreationOptions.RunContinuationsAsynchronously);
         var read = 0;
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())), DriverConfig.Empty with { Adapter = "stub", Cap = 3 },
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
             AdapterSet.Built(), _home)
         {
             BrainstormSearches = (words, _, _) => Task.FromResult(new BrainstormSearch([], "words")),
@@ -659,7 +659,7 @@ public sealed class MeetingTests : IDisposable
         var script = new Script();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
-            DriverConfig.Empty with { Adapter = "stub", Cap = 3 }, AdapterSet.Built(), _home)
+            DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, AdapterSet.Built(), _home)
         {
             BrainstormTurns = script.RunAsync,
             BrainstormMinute = Second,

@@ -32,7 +32,8 @@ public sealed class HandOverAtTurnEndTests : IDisposable
 
     private DriverHandOvers HandOvers(string? mode)
     {
-        var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub" };
+        var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub") };
+        config = ActorChoices.With(config, "build", [new ActorChoice("stub"), new ActorChoice("codex-acp")]);
         if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
@@ -89,7 +90,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
 
     private DriverHandOvers HandOversOf(string? mode, params ActorChoice[] build)
     {
-        var config = ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub" }, "build", build);
+        var config = ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub") }, "build", build);
         if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
@@ -114,7 +115,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
 
         Assert.Equal("dsh", to);
         Assert.Equal("dsh", new HandedQuests(_home).Read("q1")!.Agent);
-        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "stub" }, "build", build);
+        var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, "build", build);
         Assert.Equal(new ActorEffective("dsh", "m1", null, "handed"), ActorChoices.Effective("build", config, handed: "dsh")[0]);
     }
 
@@ -138,7 +139,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("s1"));
 
         // The person's press, at the offer's choice (Build's next entry on another agent), is kept under either rule.
-        var next = HandOverOrder.Steps("stub", [new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)], ActorChoices.Effective("build", ActorChoices.With(DriverConfig.Empty with { Adapter = "stub" }, "build", build)))[0];
+        var next = HandOverOrder.Steps("stub", [new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)], ActorChoices.Effective("build", ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, "build", build)))[0];
         Assert.Equal(("dsh", "m1", "2"), (next.Harness, next.Model, next.From));
         var client = _ledger.Client();
         var moves = new ConversationMoves(

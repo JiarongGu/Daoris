@@ -73,7 +73,7 @@ public sealed class AccountRotationTests : IDisposable
 
     private HarnessRoster Present() => Roster(Command);
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     /// <summary>The agent's accounts on this machine: a directory each, as a sign-in leaves them.</summary>
     private void Accounts(params string[] names)
@@ -208,7 +208,7 @@ public sealed class AccountRotationTests : IDisposable
         AccountCooling.Cool(_home, cooling, _now);
         var config = DriverConfig.Empty with
         {
-            Adapter = "acp-stub",
+            Actors = StaffedRoles.On("acp-stub"),
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [Command] },
         };
 

@@ -63,7 +63,7 @@ public sealed class HelperProcessTests : IDisposable
         var service = HelperStandIn.Start(_repository.Root, _tip);
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             Cap = 3,
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", agent] },
@@ -147,7 +147,7 @@ public sealed class HelperProcessTests : IDisposable
         await using var _ = service;
         var config = DriverConfig.Empty with
         {
-            Adapter = adapter,
+            Actors = StaffedRoles.On(adapter),
             Cap = 3,
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
@@ -205,7 +205,7 @@ public sealed class HelperProcessTests : IDisposable
         var config = ActorChoices.With(
             DriverConfig.Empty with
             {
-                Adapter = "claude-code",
+                Actors = StaffedRoles.On("claude-code"),
                 Cap = 3,
                 TestBound = 4,
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingHelper(), "account-1:opus"] },
@@ -244,7 +244,7 @@ public sealed class HelperProcessTests : IDisposable
         await using var _ = service;
         var config = DriverConfig.Empty with
         {
-            Adapter = "claude-code",
+            Actors = StaffedRoles.On("claude-code"),
             Cap = 3,
             TestBound = 30,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },

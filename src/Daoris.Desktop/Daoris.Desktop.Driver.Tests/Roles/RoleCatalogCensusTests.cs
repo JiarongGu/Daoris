@@ -31,7 +31,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
     [
         ("the migration's staffing step", ["Daoris.Desktop.Driver/Transitional/Migration/StaffingStep.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
-        ("the judges themselves", ["Daoris.Desktop.Driver/Roles/ActorChoices.cs", "Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
+        ("the judges themselves", ["Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
         ("SET_ROLE", ["Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs"]),
         ("daoris role", ["Daoris.Desktop.Driver/Roles/RoleVerbs.cs"]),

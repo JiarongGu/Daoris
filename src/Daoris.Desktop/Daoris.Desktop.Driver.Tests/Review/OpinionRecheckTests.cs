@@ -69,7 +69,7 @@ public sealed class OpinionRecheckTests : IDisposable
     private Daoris.Driver.Driver Driver(OpinionStandIn host, StandInGit git, params string[] absent)
     {
         var (adapters, roster) = Machine(absent);
-        return new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, adapters, _home, harnesses: roster)
+        return new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
         {
             OpinionGit = git.Read,
             Passes = (ask, choice, _) =>

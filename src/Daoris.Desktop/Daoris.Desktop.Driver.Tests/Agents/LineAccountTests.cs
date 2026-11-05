@@ -228,7 +228,7 @@ public sealed class LineAccountTests : IDisposable
 
     // ——— A case's home.
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
     {

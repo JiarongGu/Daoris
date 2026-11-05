@@ -52,7 +52,7 @@ public sealed class AccountRotationHoldTests : IDisposable
     {
         Drivable = ["engine"],
         Trees = ["engine"],
-        Adapter = "stub",
+        Actors = StaffedRoles.On("stub"),
         // One failure would park it: a limit must not, and nor must a wait over an order.
         Strikes = 1,
         PollSeconds = 1,

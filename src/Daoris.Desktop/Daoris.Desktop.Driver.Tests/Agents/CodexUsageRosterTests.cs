@@ -79,7 +79,7 @@ public sealed class CodexUsageRosterTests : IDisposable
             },
         };
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake-door" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake-door") };
 
     private void Accounts(params string[] names)
     {
@@ -263,7 +263,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         roster.Next("fake");
         await roster.WiringAsync("fake-door", Config, null);
         await roster.SelectAsync("fake-door", Config, null, chosen: "account-2");
-        await roster.SelectAsync("quiet", DriverConfig.Empty with { Adapter = "quiet" }, null, null);
+        await roster.SelectAsync("quiet", DriverConfig.Empty with { Actors = StaffedRoles.On("quiet") }, null, null);
 
         Assert.Empty(Asked());
     }

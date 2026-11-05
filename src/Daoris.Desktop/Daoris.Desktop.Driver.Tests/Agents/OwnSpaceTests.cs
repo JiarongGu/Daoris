@@ -56,7 +56,7 @@ public sealed class OwnSpaceTests : IDisposable
         }),
         Settings);
 
-    private static DriverConfig Config => DriverConfig.Empty with { Adapter = "fake" };
+    private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     private string Account(string name)
     {
@@ -218,7 +218,7 @@ public sealed class OwnSpaceTests : IDisposable
     [Fact]
     public async Task A_test_double_whose_own_home_is_nobody_s_still_starts_there()
     {
-        var selection = await Roster().SelectAsync("double", Config with { Adapter = "double" }, "aurora", chosen: null);
+        var selection = await Roster().SelectAsync("double", Config with { Actors = StaffedRoles.On("double") }, "aurora", chosen: null);
 
         Assert.True(selection.Allowed, selection.Refusal);
         Assert.Null(selection.ProfileHome);

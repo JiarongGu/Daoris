@@ -86,7 +86,7 @@ public sealed class CodexUsageProcessTests : IDisposable
     // The explicit command names the server's harness, as `driver.json`'s `commands` may name `codex`.
     private DriverConfig Config => DriverConfig.Empty with
     {
-        Adapter = "door",
+        Actors = StaffedRoles.On("door"),
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["server-stand-in"] = ["node", Script] },
     };
 

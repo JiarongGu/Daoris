@@ -119,7 +119,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
     private Task Read(HarnessRoster roster, params string[] accounts)
     {
         foreach (var name in accounts) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", name));
-        return roster.ReadUsageAsync("fake", "fake", accounts, DriverConfig.Empty with { Adapter = "fake" });
+        return roster.ReadUsageAsync("fake", "fake", accounts, DriverConfig.Empty with { Actors = StaffedRoles.On("fake") });
     }
 
     private static string At(double hours) => (Seen + TimeSpan.FromHours(hours)).ToString("yyyy-MM-dd'T'HH:mm:ss.ffffffzzz", CultureInfo.InvariantCulture);
