@@ -53,7 +53,7 @@ internal static class StubProvider
             Known<ProgramFacts>.Absent,
             // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a).
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
-            LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
+            LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("stub", "agent.mjs", protocol: false), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
@@ -69,7 +69,7 @@ internal static class StubProvider
             new DoorHome(ConfigVariable, OwnHome: true, TrustFile: null),
             // A door onto the stand-in's accounts (TOOL4j): the sign-in, the login question and the limit words are the stub's.
             new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None),
-            Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
+            Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new StandInSpawn("acp-stub", "acp-agent.mjs", protocol: true), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(

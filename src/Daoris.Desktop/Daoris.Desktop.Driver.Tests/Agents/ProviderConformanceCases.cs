@@ -420,8 +420,7 @@ internal static class ConformanceCases
         // What this door's evidence does not admit: the words on every door, then by its wire and its resume.
         var refused = new List<(Task Operation, string Ability)>
         {
-            (transport.SendAsync("go on", never), TransportRun.WordsAbility),
-            (transport.SteerAsync("go on", never), TransportRun.WordsAbility),
+            (transport.SteerAsync("go on", never), TransportRun.SteerAbility),
             (transport.ApplyChoiceAsync(choice, never), TransportRun.ChoiceAbility),
         };
         if (!Protocol(door))
@@ -431,7 +430,8 @@ internal static class ConformanceCases
         }
         else
         {
-            refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
+            refused.Add((transport.NextProcessAsync("c-1", never), "a go-on"));
+            refused.Add((transport.SendAsync(new DoorWord("w", "go"), never), TransportRun.WordsAbility));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
@@ -763,7 +763,7 @@ internal static class ConformanceCases
     {
         var door = new AgentDoor(
             new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
-            new DoorHome(variable, true, null), LentPart.None, Known<PortRef>.Absent,
+            new DoorHome(variable, true, null), LentPart.None, Known<IDoorOffers>.Absent,
             new PosturesPart(null, null, null, null), Known<ISpawn>.Declared(new BareSpawn(), "a conformance case's provider"), Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(false, "a conformance case's provider"),

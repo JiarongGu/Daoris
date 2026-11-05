@@ -5,13 +5,12 @@ namespace Daoris.Driver;
 /// stop a turn or a task, and close, and beside those the four members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
 /// go to, the carriers, the run's end and the go-on; a native resume's one retry is the run's own (m-ii, <see cref="IResumeState"/>). Each
 /// operation is admitted by the run's own evidence (§2.4) and one it lacks is answered <see cref="Unsupported"/> naming the ability, before
-/// anything is written. Row b declares it; row m-i makes the executors hold it over <see cref="TransportRun"/>, and the rows after it add
-/// the parameters the design names there that no type holds yet (<c>DoorInput</c>, <c>IChoiceReask</c>).
+/// anything is written. Row b declares it; row m-i makes the executors hold it over <see cref="TransportRun"/>, and m-ii hands it the
+/// words through <see cref="DoorInput"/>.
 /// </summary>
 /// <remarks>
-/// The words' operations (<see cref="SendAsync"/>, <see cref="SteerAsync"/>) carry no id, while today's retry marks a word attempted
-/// before the wire and takes it off by its id once written, which is <c>DoorInput</c>'s (m-ii): no executor calls them before then, and
-/// the words' paths stay beneath the run, on the session and process it holds today.
+/// A protocol door's words stay on its session (<see cref="SendAsync"/> and <see cref="SteerAsync"/> refuse them there) until its
+/// own words move behind the input.
 /// </remarks>
 public abstract class AgentRun
 {
@@ -22,7 +21,8 @@ public abstract class AgentRun
     public abstract Task OpenAsync(CancellationToken ct);
 
     /// <summary>
-    /// Resume <paramref name="conversation"/>. A native resume handed its <paramref name="state"/> is tried once more by the run itself where
+    /// Resume <paramref name="conversation"/>; on a native run that ended, its next process under the carriers with the words held on the
+    /// input as one prompt (MSG1b, D137 §2.1), the run's end read again by <see cref="EndAsync"/>. A native resume handed its <paramref name="state"/> is tried once more by the run itself where
     /// its harness ended on a failed exit before it named the conversation (design §2.6, row m-ii): <see cref="EndAsync"/> answers that
     /// retry's end. Null hands none, and the run concludes on its first end.
     /// </summary>
@@ -31,7 +31,15 @@ public abstract class AgentRun
     /// <summary>A refused model's later choice, carried on the same session (O4-F5).</summary>
     public abstract Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct);
 
-    public abstract Task SendAsync(string text, CancellationToken ct);
+    /// <summary>
+    /// A word through the run's <see cref="DoorInput"/> (D243): the one way a process is handed words, its id kept until the harness names
+    /// its conversation, so the run's retry replays what that process never acknowledged. A go-on's words are held on the input and the
+    /// next process opened with <see cref="ResumeAsync"/>.
+    /// </summary>
+    internal abstract Task<Delivery> SendAsync(DoorWord word, CancellationToken ct);
+
+    /// <summary>The run's one queue of words (D243): nothing above the run writes to a process's stdin.</summary>
+    internal abstract DoorInput Input { get; }
 
     public abstract Task SteerAsync(string text, CancellationToken ct);
 
@@ -60,13 +68,6 @@ public abstract class AgentRun
     /// past the exit (SESSWATCH1a). Kept.
     /// </summary>
     public abstract Task<AgentRunEnd> EndAsync(CancellationToken ct);
-
-    /// <summary>
-    /// A native run's next process with the held words as one <paramref name="prompt"/>, resuming <paramref name="conversation"/> under the
-    /// carriers (MSG1b, D137 §2.1), its opening the events said first; the run's end is the one it answers. <b>Replaced at m-ii</b> by the
-    /// native retry and <c>DoorInput</c>.
-    /// </summary>
-    public abstract Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct);
 }
 
 /// <summary>

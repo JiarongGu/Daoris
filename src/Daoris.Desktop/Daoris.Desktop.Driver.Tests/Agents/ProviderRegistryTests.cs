@@ -612,7 +612,7 @@ public sealed class ProviderRegistryTests : IDisposable
 
     private static AgentDoor FakeDoor(string id) => new(
         new DoorId(id), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
-        new DoorHome(null, false, null), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
+        new DoorHome(null, false, null), LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
         Known<ISpawn>.Absent, Known<IDialect>.Absent,
         new AbilitiesPart(Known<bool>.Absent, Known<bool>.Absent, Known<bool>.Absent), new DoorTablesPart(null, null), null,
         InstructionsPart.None);

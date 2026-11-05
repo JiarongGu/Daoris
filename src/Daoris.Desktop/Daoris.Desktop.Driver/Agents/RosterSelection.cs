@@ -141,8 +141,8 @@ internal sealed class RosterSelection(HarnessRoster roster)
         // The own account's reading judged for the asked model before anything is asked of it (D205 §3.5(a)): one that refuses it is an
         // account that cannot carry the words, never ended or cooled.
         var unoffered = !string.IsNullOrWhiteSpace(account) && model is not null
-            && AgentOffers.Judge(AgentOffers.Read(roster.Home), resolved.Name, (await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false))?.Version,
-                account.Trim(), model, roster.Clock()) is not null;
+            && AgentOffers.Offers(roster.Home, resolved.Name, (await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false))?.Version,
+                account.Trim(), roster.Clock()).Session.Judge(model) is not null;
 
         var owner = roster.Adapters.OwnerOf(resolved.Name);
         // A record on a Daoris account is judged against the set a start walks (POOL1a2, the account-pool design §2.4), whatever its

@@ -19,7 +19,7 @@ internal static class DshProvider
             new DoorId("dsh"), Transport.Protocol, new DoorIdentity(null, null, null),
             Known<ProgramFacts>.Absent,
             new DoorHome("DSH_HOME", OwnHome: false, TrustFile: null),
-            LentPart.None, Known<PortRef>.Absent,
+            LentPart.None, Known<IDoorOffers>.Absent,
             // Its posture is its own mechanism, an environment variable its spawn sets, never a mode on the wire.
             new PosturesPart(null, null, null, null),
             Known<ISpawn>.Declared(new DshSpawn(), Evidence),

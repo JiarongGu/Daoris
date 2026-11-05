@@ -229,7 +229,7 @@ public sealed class HelperProcessTests : IDisposable
         Assert.Equal("h2", Files.ReadState(AskId)!.Helper);
         var hand = Assert.Single(service.Hands);
         Assert.Equal("h2", hand.Helper);
-        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Offers(_home, "acp-stub", null, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
     }
 
     /// <summary>

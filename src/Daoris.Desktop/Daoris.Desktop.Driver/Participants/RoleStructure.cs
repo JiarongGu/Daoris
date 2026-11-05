@@ -69,7 +69,6 @@ public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFail
         }
 
         var now = roster.Clock();
-        var offers = AgentOffers.Read(roster.Home);
         var known = new Dictionary<(string, string?, StartKind), AgentLastRead?>();
         AgentLastRead? Known(string agent, string? workspace, StartKind kind)
         {
@@ -116,7 +115,7 @@ public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFail
         {
             if (!roster.Adapters.Names.Contains(choice.Agent, StringComparer.OrdinalIgnoreCase)) return new(StartPasses.Unavailable);
             if (Known(choice.Agent, workspace, kind) is not { } agent) return new(ChoiceStates.Ready);
-            return Judged(choice, agent, offers, now);
+            return Judged(choice, agent, roster.Home, now);
         }
 
         var answered = places.Select(place => new StructurePlace(place, [.. works.Select(work => Work(work, place))])).ToList();
@@ -134,7 +133,7 @@ public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFail
     /// then the first account it may use, a signed-in one before an unknown one before one never read; else, as the walk's hold says it,
     /// a model every ready account refused, then the soonest cool-off, then a sign-out, then a refusal its provider gave.
     /// </summary>
-    private static ChoiceState Judged(ActorEffective choice, AgentLastRead agent, IReadOnlyList<OfferReading> offers, DateTimeOffset now)
+    private static ChoiceState Judged(ActorEffective choice, AgentLastRead agent, string home, DateTimeOffset now)
     {
         if (agent.Installed == false) return new(StartPasses.Unavailable);
         if (agent.Accounts.Count == 0) return new(StartPasses.SignedOut);
@@ -153,11 +152,10 @@ public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFail
             if (!account.State.IsReady) continue;
             // The agent's own home: the walk asks no sign-in there.
             if (account.Account is not { } id) return new(ChoiceStates.Ready);
-            if (AgentOffers.Judge(offers, agent.Agent, agent.Version, id, choice.Model, now) is not null)
+            var offered = AgentOffers.Offers(home, agent.Agent, agent.Version, id, now).Session;
+            if (offered.Judge(choice.Model) is not null)
             {
-                var reading = offers.FirstOrDefault(each => string.Equals(each.Agent, agent.Agent, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(each.Account, id, StringComparison.OrdinalIgnoreCase));
-                unoffered ??= new(StartPasses.NotOffered, reading?.RefusedAt, id);
+                unoffered ??= new(StartPasses.NotOffered, offered.RefusedAt, id);
                 continue;
             }
 

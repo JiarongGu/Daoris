@@ -167,11 +167,10 @@ internal sealed class RosterWalk(HarnessRoster roster)
         var walk = new WalkMemory();
         // Each account's offer reading, judged for the model this start asks (D205 §3.3, MODELROLE1c2): an account passed already, or
         // whose reading of this version, under a day old, lacks or refused it, is passed for this start, never cooled.
-        var readings = offer.Model is null ? [] : AgentOffers.Read(roster.Home);
         string? Offers(string account) =>
             offer.Passed?.Contains(account, StringComparer.OrdinalIgnoreCase) == true
                 ? AgentOffers.NotOffered
-                : AgentOffers.Judge(readings, resolved.Name, version, account, offer.Model, roster.Clock());
+                : offer.Model is null ? null : AgentOffers.Offers(roster.Home, resolved.Name, version, account, roster.Clock()).Session.Judge(offer.Model);
         WalkPass pass;
         while (true)
         {

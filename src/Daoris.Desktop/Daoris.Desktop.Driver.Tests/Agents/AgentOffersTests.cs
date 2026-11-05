@@ -18,8 +18,33 @@ public sealed class AgentOffersTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
+    /// <summary>
+    /// Row n: a door's offers part reads the provider's settings file, extended on the native door by the efforts only a session carries, and
+    /// where the door states nothing what its open last listed on an account of its own id.
+    /// </summary>
+    [Fact]
+    public void A_doors_offers_part_reads_the_settings_file_or_what_its_open_listed()
+    {
+        var file = new ClaudeSettingsFile();
+
+        var native = new SettingsOffers(SessionOnlyEfforts: true).Of(_home, "claude-code", file)!;
+        var protocol = new SettingsOffers(SessionOnlyEfforts: false).Of(_home, "claude-code-acp", file)!;
+
+        Assert.Equal(file.Models, native.Models);
+        Assert.Equal([.. file.Efforts, .. file.SessionOnly], native.Efforts);
+        Assert.Equal(file.Efforts, protocol.Efforts);
+        Assert.DoesNotContain(file.SessionOnly[0], protocol.Efforts);
+
+        Assert.Null(ListedOffers.Instance.Of(_home, "codex-acp", null));
+        Assert.Null(AgentOffers.Offered(_home, "codex-acp", "1.0.0", "acct-1", ["gpt"], ["low"], Now));
+        var listed = ListedOffers.Instance.Of(_home, "codex-acp", null)!;
+        Assert.Equal(["gpt"], listed.Models);
+        Assert.Equal(["low"], listed.Efforts);
+        Assert.Null(ListedOffers.Instance.Of(_home, "claude-code-acp", null));
+    }
+
     private string? Judge(string? account, string? model, string? version = "1.0.0", DateTimeOffset? at = null) =>
-        AgentOffers.Judge(AgentOffers.Read(_home), "claude-code-acp", version, account, model, at ?? Now);
+        AgentOffers.Offers(_home, "claude-code-acp", version, account, at ?? Now).Session.Judge(model);
 
     /// <summary>
     /// Row n: a door's offers are read in two scopes, a session's from the account's own reading at this version and the account defaults'

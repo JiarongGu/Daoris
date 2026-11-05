@@ -98,7 +98,7 @@ internal static class ProviderRegistration
             Known<VocabularyPart>.Absent, Unavailable: true);
     }
 
-    private static Known<PortRef> Absent() => Known<PortRef>.Absent;
+    private static Known<IDoorOffers> Absent() => Known<IDoorOffers>.Absent;
 
     private static Provider BuildProvider(AdapterSet set, Group group)
     {

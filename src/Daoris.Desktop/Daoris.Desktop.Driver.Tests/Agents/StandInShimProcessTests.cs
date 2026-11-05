@@ -158,7 +158,7 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private static AgentDoor ResumingDoor() => new(
         new DoorId("resuming"), Transport.Native, new DoorIdentity(null, null, null), Known<ProgramFacts>.Absent,
-        new DoorHome(null, true, null), LentPart.None, Known<PortRef>.Absent, new PosturesPart(null, null, null, null),
+        new DoorHome(null, true, null), LentPart.None, Known<IDoorOffers>.Absent, new PosturesPart(null, null, null, null),
         Known<ISpawn>.Declared(new ResumingSpawn(), "a test door"), Known<IDialect>.Absent,
         new AbilitiesPart(Known<bool>.Declared(true, "t"), Known<bool>.Declared(true, "a native resume"), Known<bool>.Declared(false, "t")),
         new DoorTablesPart(null, null), null, InstructionsPart.None);

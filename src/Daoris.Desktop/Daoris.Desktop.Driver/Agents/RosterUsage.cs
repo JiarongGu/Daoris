@@ -161,12 +161,10 @@ internal sealed class RosterUsage(HarnessRoster roster)
         var now = roster.Clock();
         IReadOnlyList<string> present;
         AgentReads reads;
-        IReadOnlyList<OfferReading> readings;
         try
         {
             present = HarnessSettings.Profiles(roster.Home, owner);
             reads = AccountReads.Of(roster.Home, owner);
-            readings = offer is null ? [] : AgentOffers.Read(roster.Home);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -178,7 +176,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
             account,
             SaidOf(owner, account, now),
             Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && roster.Before(owner, account, now).IsReady && !HarnessRoster.SaidOut(reads, account)
-                && (offer is not { } asked || AgentOffers.Judge(readings, asked.Agent, asked.Version, account, asked.Model, now) is null)))];
+                && (offer is not { } asked || AgentOffers.Offers(roster.Home, asked.Agent, asked.Version, account, now).Session.Judge(asked.Model) is null)))];
     }
 
     /// <summary>What an account last said of its windows, or null where nothing was or the file does not read.</summary>

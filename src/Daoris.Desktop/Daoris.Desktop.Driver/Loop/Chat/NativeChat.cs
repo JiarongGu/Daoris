@@ -24,34 +24,30 @@ internal sealed class NativeChat : ITurnedChat
     /// </summary>
     public Func<ChatMessage, IReadOnlyList<SessionEvent>?>? Shown { get; init; }
 
-    /// <param name="ready">
-    /// What a conversation going on waits for before its words go: its process tracked, so a send reaches it. Null for a new conversation,
-    /// whose first message comes from the person once it is running.
-    /// </param>
+    /// <param name="input">The run's one queue of words, which writes them and keeps them until the harness names the conversation (D243).</param>
     /// <param name="wentOn">Told once the words it goes on with are on stdin.</param>
     public NativeChat(
-        string sessionId, ChatAgent agent, SessionProcesses processes, Action<SessionEvent> record,
-        Action<ChatQueue> changed, Task<bool>? ready = null, Action? wentOn = null)
+        ChatAgent agent, DoorInput input, Action<SessionEvent> record,
+        Action<ChatQueue> changed, Action? wentOn = null)
     {
         Interrupts = agent.FrameInterrupt() is not null;
         Turns = new ChatTurns(
-            ready: () => ready ?? Task.FromResult(true),
-            take: (message, sent) =>
+            // A conversation going on waits for nothing here: its words wait on the run's input until its process is up.
+            ready: () => Task.FromResult(true),
+            take: async (message, sent) =>
             {
                 var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 lock (_gate) _turn = ended;
                 string line;
+                IReadOnlyList<string> ids;
                 if (message.GoesOn is { } goOn)
                 {
                     // The words an ended chat goes on with: the driver's first line, then each word under the id its record gave it, then
-                    // all of them as one message, joined by a blank line, each with where its files are kept. Said once, though a resume
-                    // tried once more takes them again.
-                    if (!goOn.Spoken)
-                    {
-                        foreach (var opening in goOn.Opening()) record(opening);
-                    }
-
+                    // all of them as one message, joined by a blank line, each with where its files are kept. Said once: the run's retry
+                    // replays the line, never the take.
+                    foreach (var opening in goOn.Opening()) record(opening);
                     line = agent.FrameMessage(goOn.Prompt);
+                    ids = goOn.Ids;
                 }
                 else
                 {
@@ -59,12 +55,20 @@ internal sealed class NativeChat : ITurnedChat
                     // Each attached file named by its path, which the agent reads with its own tool; the record keeps the person's
                     // words, not these lines.
                     line = agent.FrameMessage(message.PromptWithFiles);
+                    ids = message.Id is { } id ? [id] : [];
                 }
 
-                if (!processes.Send(sessionId, line))
+                // The run's input writes it, and keeps it until the harness names the conversation it went to, so a run that tries the same
+                // resume once more hands the next process the words the first never opened (D243). Written, or held for that process.
+                var delivery = await input.SayAsync(new DoorWord(ids, line, Written: () =>
+                {
+                    sent();
+                    if (message.GoesOn is not null) wentOn?.Invoke();
+                }), CancellationToken.None).ConfigureAwait(false);
+                if (delivery == Delivery.Refused)
                 {
                     // Nothing is listening: the process is going, and its watch concludes the record. The words a conversation goes on
-                    // with are said by its watch, which tries the same resume once more or says why it could not.
+                    // with are said by its watch, which says why they could not go.
                     if (message.GoesOn is null)
                     {
                         var gone = WordsNotes.NotSent();
@@ -72,17 +76,14 @@ internal sealed class NativeChat : ITurnedChat
                     }
 
                     Gone();
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                sent();
-                if (message.GoesOn is not null) wentOn?.Invoke();
-                return ended.Task;
+                await ended.Task.ConfigureAwait(false);
             },
-            interrupt: () =>
+            interrupt: async () =>
             {
-                if (agent.FrameInterrupt() is { } stop) processes.Send(sessionId, stop);
-                return Task.CompletedTask;
+                if (agent.FrameInterrupt() is { } stop) await input.ControlAsync(stop, CancellationToken.None).ConfigureAwait(false);
             },
             changed);
     }

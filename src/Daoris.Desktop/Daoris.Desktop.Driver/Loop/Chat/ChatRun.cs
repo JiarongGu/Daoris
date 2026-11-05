@@ -307,9 +307,6 @@ internal sealed class ChatRun(
             // A turn the person's words started has ended: judged last, so a listener's failure moves nothing above.
             if (answers.Turned(sessionId, place.Name, queue) is { } answered) onAnswered(answered);
         }
-        // A conversation going on hands its words to the native door only once its watch began, so a word the person says meanwhile goes after
-        // them; the protocol door waits for its session to open anyway.
-        var tracked = goOn is null ? null : new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (agent.Abilities.HeldOnWire)
         {
             chat = new ProtocolChat(
@@ -379,7 +376,7 @@ internal sealed class ChatRun(
         {
             // Turns are only visible where the wire says where one ends. A text-only pipe takes each line at once, as it always did.
             native = new NativeChat(
-                sessionId, agent, processes, e => Context.Record(sessionId, e), Changed, tracked?.Task,
+                agent, run!.Input, e => Context.Record(sessionId, e), Changed,
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
@@ -474,19 +471,14 @@ internal sealed class ChatRun(
         Context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => Context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
-        // Its watch began: the words it goes on with may reach it.
-        tracked?.TrySetResult(true);
         // Where its open was refused and the re-ask answered another session, the replacement opens once this run let its process, its files
         // and its turns go, in the same call as far as the person is concerned.
         if (pending is not null) _ = wiring.Of<ChatReplacement>().ReplaceAsync(watch, pending, sessionId, selection);
-        // A native go-on whose harness ended before naming its conversation is tried once more as the same resume, its record still working,
-        // once its watch let its process, its files and its turns go; never while closing.
+        // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go.
         if (goOn is not null)
         {
-            _ = AgainAsync(
+            _ = AfterAsync(
                 watch,
-                () => RunAsync(
-                    actor, sessionId, message, agent, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
                 () => goOn.Ask.Refused is { Lost: true } lost
                     ? goOnDoor.LostAsync(goOn.Record, lost, agent.Name, config, onEnded, held: false, CancellationToken.None)
                     : Task.FromResult(new ChatStart(null, "")));
@@ -496,16 +488,16 @@ internal sealed class ChatRun(
     }
 
     /// <summary>
-    /// The one retry of a native go-on, where its watch asked for it and the runner is not closing; else, where the wire refused the resume as
-    /// lost, the new part it goes on in, once this run let its process, files and turns go, since that part starts in the same tree.
+    /// Where the wire refused a go-on's resume as lost, the new part it goes on in, once this run let its process, files and turns go, since
+    /// that part starts in the same tree; never while the runner is closing.
     /// </summary>
-    private async Task AgainAsync(Task<bool> watch, Func<Task<ChatStart>> again, Func<Task<ChatStart>> lost)
+    private async Task AfterAsync(Task watch, Func<Task<ChatStart>> lost)
     {
         try
         {
-            var retry = await watch.ConfigureAwait(false);
+            await watch.ConfigureAwait(false);
             if (Context.Closing) return;
-            await (retry ? again() : lost()).ConfigureAwait(false);
+            await lost().ConfigureAwait(false);
         }
         catch (Exception)
         {

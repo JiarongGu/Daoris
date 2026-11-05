@@ -128,7 +128,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         // The refused record: `choice-not-offered`, its reading kept for the next start's walk.
         Assert.StartsWith("Not started: `acp-stub` did not offer `opus`", ledger.Note(issued), StringComparison.Ordinal);
         var version = ledger.Record(issued)["harnessVersion"]?.GetValue<string>();
-        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", version, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Offers(_home, "acp-stub", version, "account-1", DateTimeOffset.UtcNow).Session.Judge("opus"));
         // The replacement: the walk's answer, on the second account, continuing the refused one.
         var next = (await client.RecordAsync("c2"))!;
         Assert.Equal(("acp-stub", "account-2", issued, HandOverWhy.NotOffered, HandOverBy.Daoris), (next.Adapter, next.Profile, next.From, next.FromWhy, next.FromBy));
