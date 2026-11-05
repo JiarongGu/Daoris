@@ -29,7 +29,7 @@ public sealed class ParticipantPortsTests : IDisposable
         Assert.Equal(2, ChildLineage.Read(_home, "s2").Children.Count);
         await Capture("{\"type\":\"foreign\"}", "s3", _home);
         Assert.Empty(ChildLineage.Read(_home, "s3").Children);
-        Assert.Null(ChildLineage.HookFor(_home, "../unknown"));
+        Assert.Null(ClaudeLineageHook.For(_home, "../unknown", ChildLineage.PathOf(_home, "unknown")));
     }
 
     [Fact]

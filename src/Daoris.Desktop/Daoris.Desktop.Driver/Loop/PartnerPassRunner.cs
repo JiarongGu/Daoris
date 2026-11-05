@@ -136,11 +136,11 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
 
             string? handed = null;
             string? preamble = null;
-            if (!adapter.Abilities().ServersOnWire)
+            if (adapter.ServerHanding() is { } handing)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = PartnerPass.NoConnector;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
+                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? [] : [connector]));
             }
 
             // What it may do: the person's composition for its repository under the partner's rules (`PartnerPermissions`), held to its

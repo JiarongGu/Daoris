@@ -242,10 +242,10 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed one under
             // Daoris's home, and the file goes when the session does.
             context.Hooks?.Log.Served(context.Catalog, sessionId, servers);
-            var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
+            var handed = adapter.ServerHanding()?.Hand(info, home, new ConnectorPlan(sessionId, servers));
             // The skills plugins hand sessions, composed under the home, gone with the session.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
             // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block

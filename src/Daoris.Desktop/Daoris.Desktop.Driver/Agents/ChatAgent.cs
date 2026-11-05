@@ -50,9 +50,11 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
         ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to) =>
         SpawnSkills.Hand(adapter, info, home, sessionId, catalog, to);
 
-    /// <summary>The servers handed on the pipe as a file, or null on the protocol door, which carries them at its open.</summary>
-    public string? HandServers(ProcessStartInfo info, string home, string sessionId, IReadOnlyList<AcpMcpServer> servers) =>
-        SpawnServers.Hand(adapter, info, home, sessionId, servers);
+    /// <summary>How its door takes a start's servers at its spawn, or null where they ride its wire or it takes none there.</summary>
+    public IServerHanding? Servers => adapter.ServerHanding();
+
+    /// <summary>The language its rules are written in, or null where the person's rules reach none of its sessions.</summary>
+    public IRuleLanguage? Rules => adapter.RuleLanguage();
 
     /// <summary>A standing block bound to this agent in <paramref name="tree"/>.</summary>
     public StandingFacts OnHarness(StandingFacts facts, string tree) => AgentContext.Current.OnHarness(facts, adapter, tree);

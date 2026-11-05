@@ -131,17 +131,17 @@ internal sealed class ChatRun(
             // go-on alike: the tree locked in its id for `run-heavy` to find, the checks kept by it, each heavy gate's command denied under
             // `light`, and the conversation told only then.
             var heavy = await told.HeldChecksAsync(sessionId, workTree, place, config, agent, ct).ConfigureAwait(false);
-            if (agent.TakesSettings)
+            if (agent.Rules is { } language)
             {
                 var file = PermissionRules.Load(home);
                 composed = place.Rules(file, sessionId);
                 if (heavy is { Deny.Count: > 0 }) composed = composed with { Deny = [.. composed.Deny.Union(heavy.Deny, StringComparer.Ordinal)] };
                 var guard = PermissionRules.GuardsTree(file) && place.Guarded ? TreeGuard.For(home, workTree, place.Also) : null;
                 guarded = guard is not null;
-                rules = SpawnSettings.Write(
-                    home, sessionId, composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
+                rules = language.Write(home, sessionId, new HandedRules(
+                    composed, [.. PermissionRules.HardDeny(file), .. heavy.HardDeny is { } sentence ? [sentence] : (IEnumerable<string>)[]], guard,
                     // Which agent made each call, and each subagent's start and stop.
-                    ChildLineage.HookFor(home, sessionId));
+                    ChildLineage.PathOf(home, sessionId)));
                 if (!agent.Abilities.RulesOnWire) agent.HandSettings(info, rules);
                 else meta = agent.Meta(rules, skillPlugins);
             }
@@ -169,7 +169,7 @@ internal sealed class ChatRun(
             offered = onWire || place.ConnectorOnPipe
                 ? chatServers.For(sessionId, place.Circle, pluginServers, onWire ? proc : null)
                 : pluginServers;
-            if (!onWire) servers = agent.HandServers(info, home, sessionId, offered);
+            if (agent.Servers is { } handing) servers = handing.Hand(info, home, new ConnectorPlan(sessionId, offered));
 
             // What Ask Daoris's start handed, kept now its every input is composed and before its process starts, read from the spawn itself:
             // whether its command line or its protocol door's meta names each file.
@@ -211,9 +211,9 @@ internal sealed class ChatRun(
             {
                 // Let go before its spawn, the run lets its token go.
                 await run.DisposeAsync().ConfigureAwait(false);
-                SpawnSettings.Remove(rules);
-                SpawnServers.Remove(servers);
-                SpawnSkills.Remove(skills);
+                SpawnFiles.Remove(rules);
+                SpawnFiles.Remove(servers);
+                SpawnFiles.RemoveFolder(skills);
                 await conclusion.ConcludeAsync(sessionId, "stopped", ChatRunner.ClosedNoted, onEnded).ConfigureAwait(false);
                 if (processes.Close.Build is { } build) closing.KeepRestart(sessionId, build);
                 return new(sessionId, message);
@@ -233,9 +233,9 @@ internal sealed class ChatRun(
             // The record exists and must say what happened, or it sits at `queued` or `starting` forever holding the repository, the same rule
             // the driven path follows. Every failure: a client timeout is an OperationCanceledException too, and filtering those out left the
             // record stranded where no stop and no sweep reaches it.
-            SpawnSettings.Remove(rules);
-            SpawnServers.Remove(servers);
-            SpawnSkills.Remove(skills);
+            SpawnFiles.Remove(rules);
+            SpawnFiles.Remove(servers);
+            SpawnFiles.RemoveFolder(skills);
             told.LetGoChecks(sessionId);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await conclusion.ConcludeAsync(

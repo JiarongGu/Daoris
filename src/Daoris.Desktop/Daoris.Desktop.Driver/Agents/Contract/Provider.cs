@@ -16,8 +16,8 @@ namespace Daoris.Driver;
 /// <param name="Lent">What a harness whose <c>accountOf</c> names this provider's id reads of it, one level (O4-F1).</param>
 /// <param name="Models">The settings file port (a later row).</param>
 /// <param name="Children">The child vocabulary port (a later row).</param>
-/// <param name="Rules">The rule language port (a later row).</param>
-/// <param name="Skills">The skill layout port (a later row).</param>
+/// <param name="Rules">How it takes the product's rules; absent where it takes none, so the person's denies reach none of its sessions.</param>
+/// <param name="Skills">How it lays out the skills a start is handed; absent where it is handed none.</param>
 /// <param name="Conversations">The conversation home port (a later row).</param>
 /// <param name="Reach">Where it may work; required, never absent, since absent would read as the widest answer (O1-F12).</param>
 /// <param name="Vocabulary">The variables, files and wire keys it names, which the census reads.</param>
@@ -36,8 +36,8 @@ public sealed record Provider(
     Known<LentPart> Lent,
     Known<PortRef> Models,
     Known<IChildVocabulary> Children,
-    Known<PortRef> Rules,
-    Known<PortRef> Skills,
+    Known<IRuleLanguage> Rules,
+    Known<ISkillLayout> Skills,
     Known<IConversationHome> Conversations,
     Reach Reach,
     Known<VocabularyPart> Vocabulary,

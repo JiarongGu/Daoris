@@ -206,17 +206,17 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             // protocol door carries the connector on the wire; the pipe door takes a file under the home, as an intake's does.
             string? handed = null;
             string? preamble = null;
-            if (!adapter.Abilities().ServersOnWire)
+            if (adapter.ServerHanding() is { } handing)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = OpinionPass.NoConnector;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
+                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? [] : [connector]));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, though not their servers: a skill is words, and one that
             // allows itself tools is handed nowhere, so the reviewer's rules below stand. Gone with the pass.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What it may do (§5.2): the person's composition under the opinion's rules, held to its copy by the tree guard,
             // with a read of its folder outside it.

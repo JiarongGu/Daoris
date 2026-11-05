@@ -36,7 +36,10 @@ internal static class SessionRules
     {
         // The record of the git access this session holds, begun at its start for every harness; the doors judge by it.
         GitSessionAccess.Begin(home, sessionId, repository, workspace);
-        if (!adapter.TakesSettings) return (null, null, Handed(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
+        if (adapter.RuleLanguage() is not { } language)
+        {
+            return (null, null, Handed(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
+        }
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
@@ -79,8 +82,8 @@ internal static class SessionRules
         // What Daoris keeps for git is no session's to read (D241 point 7), whatever shape its rules took.
         composed = composed with { Deny = [.. composed.Deny.Union([GitSessionHolds.ProfileDeny(home)], StringComparer.Ordinal)] };
 
-        var file = SpawnSettings.Write(
-            home, sessionId, composed,
+        var file = language.Write(home, sessionId, new HandedRules(
+            composed,
             brainstorm is not null ? [.. pushTold, BrainstormPermissions.HardDeny]
             : partner ? [.. pushTold, PartnerPermissions.HardDeny]
             : helper ? [.. pushTold, OpinionPermissions.HelperHardDeny]
@@ -88,7 +91,7 @@ internal static class SessionRules
             // A partner is held to its copy whatever the person's defaults say.
             PermissionRules.GuardsTree(rules) || partner ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null,
             // Which agent made each call, and each subagent's start and stop: the part's children bound by its lineage.
-            ChildLineage.HookFor(home, sessionId));
+            ChildLineage.PathOf(home, sessionId)));
         var handed = Handed(takes: true, rules, composed, workspace, repository);
         if (!adapter.Abilities().RulesOnWire)
         {

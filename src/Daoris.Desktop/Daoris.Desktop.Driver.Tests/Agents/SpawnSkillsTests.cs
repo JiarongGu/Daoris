@@ -45,7 +45,7 @@ public sealed class SpawnSkillsTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "skills", "triage", "board.md"), "the board's columns");
         Plugin("acme.none", """{ "id": "acme.none" }""");
 
-        var (spawn, plugins) = SpawnSkills.Write(_home, "s1a2b3c4", PluginCatalog.Load(_home), PluginServerTo.Help);
+        var (spawn, plugins) = ClaudeSkills.Layout.Write(_home, "s1a2b3c4", Sources(PluginServerTo.Help));
 
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s1a2b3c4.plugins"), spawn);
         var handed = Assert.Single(plugins);
@@ -63,7 +63,7 @@ public sealed class SpawnSkillsTests : IDisposable
         // The plugin's own folder is read, never written.
         Assert.False(Directory.Exists(Path.Combine(folder, ".claude-plugin")));
 
-        var (_, forSessions) = SpawnSkills.Write(_home, "s5e6f7a8", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+        var (_, forSessions) = ClaudeSkills.Layout.Write(_home, "s5e6f7a8", Sources(PluginServerTo.Sessions));
         Assert.Equal(["sessions-only", "write-up"],
             Directory.GetDirectories(Path.Combine(Assert.Single(forSessions), "skills")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
@@ -81,7 +81,8 @@ public sealed class SpawnSkillsTests : IDisposable
             """, ("shell", "---\nname: shell\nallowed-tools: Bash(*)\n---\nRun anything.\n"));
 
         var catalog = PluginCatalog.Load(_home);
-        var (spawn, plugins) = SpawnSkills.Write(_home, "s1a2b3c4", catalog, PluginServerTo.Help);
+        Assert.Empty(((IAgentPlugins)catalog).Skills(PluginServerTo.Help));
+        var (spawn, plugins) = ClaudeSkills.Layout.Write(_home, "s1a2b3c4", ((IAgentPlugins)catalog).Skills(PluginServerTo.Help));
 
         Assert.Null(spawn);
         Assert.Empty(plugins);
@@ -131,9 +132,41 @@ public sealed class SpawnSkillsTests : IDisposable
             AdapterSet.Built().Resolve("claude-code"), info, _home, "s1a2b3c4", PluginCatalog.Load(_home), PluginServerTo.Sessions);
 
         Assert.Equal(["--plugin-dir", Assert.Single(plugins)], info.ArgumentList);
-        SpawnSkills.Remove(folder);
+        SpawnFiles.RemoveFolder(folder);
         Assert.False(Directory.Exists(folder));
-        SpawnSkills.Remove(folder);
-        SpawnSkills.Remove(null);
+        SpawnFiles.RemoveFolder(folder);
+        SpawnFiles.RemoveFolder(null);
     }
+
+    /// <summary>
+    /// AGENTPROVIDER1 row o: the skills are laid out by the door's provider. Claude Code's protocol door is handed the same copies
+    /// as its native door, carried in its meta and never on its command line; a door whose provider lays out none (Codex, dsh, the
+    /// stand-ins, none of whose doors read a plugin folder) is handed none, and nothing is written for it.
+    /// </summary>
+    [Fact]
+    public void Each_door_is_handed_its_providers_layout_and_a_door_whose_provider_lays_out_none_is_handed_none()
+    {
+        Plugin("acme.tickets", """{ "id": "acme.tickets", "skills": [ { "name": "triage" } ] }""", ("triage", Triage));
+
+        var acp = new ProcessStartInfo();
+        var (acpFolder, acpPlugins) = SpawnSkills.Hand(
+            AdapterSet.Built().Resolve("claude-code-acp"), acp, _home, "s2b3c4d5", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2b3c4d5.plugins"), acpFolder);
+        Assert.Equal("acme.tickets", Path.GetFileName(Assert.Single(acpPlugins)));
+        Assert.Empty(acp.ArgumentList);
+
+        foreach (var door in new[] { "codex-acp", "dsh", "stub", "acp-stub" })
+        {
+            var info = new ProcessStartInfo();
+            var (folder, plugins) = SpawnSkills.Hand(
+                AdapterSet.Built().Resolve(door), info, _home, "s3c4d5e6", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+            Assert.Null(folder);
+            Assert.Empty(plugins);
+            Assert.Empty(info.ArgumentList);
+        }
+
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn, "s3c4d5e6.plugins")));
+    }
+
+    private IReadOnlyList<SkillSource> Sources(string to) => ((IAgentPlugins)PluginCatalog.Load(_home)).Skills(to);
 }

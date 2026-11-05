@@ -147,16 +147,16 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             // Its connector and nothing else, as a reviewer's is: no plugin's server, which could write where a helper may not.
             string? handed = null;
             string? preamble = null;
-            if (!adapter.Abilities().ServersOnWire)
+            if (adapter.ServerHanding() is { } handing)
             {
                 var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = HelperPass.NoConnector;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
+                handed = handing.Hand(info, home, new ConnectorPlan(sessionId, connector is null ? [] : [connector]));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What it may do: the person's composition under the reviewer's read-only shape with `helper_answer`, held to its copy
             // by the tree guard.

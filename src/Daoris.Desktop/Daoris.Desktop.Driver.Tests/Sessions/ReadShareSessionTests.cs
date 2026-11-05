@@ -28,24 +28,24 @@ public sealed class ReadShareSessionTests : IDisposable
         return path;
     }
 
-    /// <summary>READSHARE1: <see cref="ChildLineage.Install"/> keeps a held script that is as shipped, reading it beside its move.</summary>
+    /// <summary>READSHARE1: <see cref="ClaudeLineageHook.Install"/> keeps a held script that is as shipped, reading it beside its move.</summary>
     [Fact]
     public void A_held_lineage_script_as_shipped_is_kept_while_its_move_into_place_still_holds_it()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var path = ChildLineage.Install(_home);
+        var path = ClaudeLineageHook.Install(_home);
         var written = File.GetLastWriteTimeUtc(path);
 
         string again;
         using (MoveHold.Take(path))
         {
             Assert.Throws<IOException>(() => File.ReadAllText(path));
-            again = ChildLineage.Install(_home);
+            again = ClaudeLineageHook.Install(_home);
         }
 
         Assert.Equal(path, again);
         Assert.Equal(written, File.GetLastWriteTimeUtc(path));
-        Assert.Equal(ChildLineage.Source, File.ReadAllText(path));
+        Assert.Equal(ClaudeLineageHook.Source, File.ReadAllText(path));
     }
 
     /// <summary>READSHARE1: <see cref="SessionProcesses.AnyAlive"/> reads a held marker, so one naming a process gone is none alive.</summary>

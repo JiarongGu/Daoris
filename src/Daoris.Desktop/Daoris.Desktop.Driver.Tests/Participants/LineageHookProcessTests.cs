@@ -45,7 +45,7 @@ public sealed class LineageHookProcessTests : IDisposable
     [Fact]
     public void Each_event_is_one_line_of_ids_with_no_path_and_no_decision()
     {
-        var hook = ChildLineage.HookFor(_home, "s1")!;
+        var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
         var common = new JsonObject
         {
             ["session_id"] = "858a71dc-99cf-4136-8787-da86714459d2", ["prompt_id"] = "b8e70889-02d3-4e8d-9e2e-535f0ee9f272",
@@ -99,7 +99,7 @@ public sealed class LineageHookProcessTests : IDisposable
     [Fact]
     public void An_agent_id_that_is_not_one_is_kept_as_unreadable()
     {
-        var hook = ChildLineage.HookFor(_home, "s1")!;
+        var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
 
         Run(hook, """{"hook_event_name":"PreToolUse","tool_use_id":"toolu_bad","agent_id":"a b","session_id":"c1"}""");
         Run(hook, """{"hook_event_name":"PreToolUse","tool_use_id":"toolu_null","agent_id":null,"session_id":"c1"}""");
@@ -115,7 +115,7 @@ public sealed class LineageHookProcessTests : IDisposable
     [Fact]
     public void Each_line_names_the_process_its_environment_handed_where_that_is_a_token()
     {
-        var hook = ChildLineage.HookFor(_home, "s1")!;
+        var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
 
         Run(hook, """{"hook_event_name":"SubagentStart","agent_id":"a1"}""", proc: "0123456789abcdef");
         Run(hook, """{"hook_event_name":"SubagentStart","agent_id":"a2"}""", proc: "not a token");
@@ -128,7 +128,7 @@ public sealed class LineageHookProcessTests : IDisposable
     [Fact]
     public void A_root_s_call_names_no_agent_and_the_part_s_root_is_its_session()
     {
-        var hook = ChildLineage.HookFor(_home, "s1")!;
+        var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
 
         Run(hook, """{"hook_event_name":"PreToolUse","tool_name":"mcp__daoris-knowledge__knowledge_search","tool_use_id":"toolu_r","session_id":"c1"}""");
         ChildLineage.Append(_home, "s1", """{"by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_r"}""");

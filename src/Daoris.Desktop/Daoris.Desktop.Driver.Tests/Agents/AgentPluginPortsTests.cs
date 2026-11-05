@@ -34,7 +34,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Equal("stand-command", set.Resolve("a-agent").Prepare(Target(), null).FileName);
         }
         Assert.Equal(built.WithPlugins(catalog).Agents, HarnessSettings.AgentsKnown(_home));
-        var (folder, plugins) = SpawnSkills.Write(_home, "s1", catalog, "sessions");
+        var (folder, plugins) = ClaudeSkills.Layout.Write(_home, "s1", catalog.Skills("sessions"));
         Assert.Equal(["acme.a", "acme.z"], plugins.Select(Path.GetFileName));
         foreach (var plugin in plugins)
         {
@@ -44,7 +44,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Equal(["name", "version", "description"], parsed.RootElement.EnumerateObject().Select(property => property.Name));
             Assert.Equal("1.0.0", parsed.RootElement.GetProperty("version").GetString());
         }
-        SpawnSkills.Remove(folder);
+        SpawnFiles.RemoveFolder(folder);
         Assert.False(Directory.Exists(folder));
         Assert.Equal(Skill, File.ReadAllText(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.a"), "skills", "read", "SKILL.md")));
     }
@@ -71,12 +71,16 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Same(built.Resolve("stub"), direct.Resolve("stub"));
             Assert.Null(direct.DeclaredBy("stub"));
             Assert.Equal("stand.plugin", direct.DeclaredBy("stand-agent"));
+            // A plugin's adapter declares no layout, so it is handed the copies every such adapter was: in the order the catalogue gave.
+            Plugin("acme.second", "second-agent", "second-owner");
+            Plugin("acme.first", "first-agent", "first-owner");
+            catalog.Sources = [Source("acme.second"), Source("acme.first")];
             var info = new ProcessStartInfo();
             var (folder, plugins) = SpawnSkills.Hand(new Adapter("stand-agent"), info, _home, "s2", catalog, "help");
-            Assert.Equal("stand-folder", folder);
-            Assert.Equal(["second", "first"], plugins);
+            Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2.plugins"), folder);
+            Assert.Equal(["acme.second", "acme.first"], plugins.Select(Path.GetFileName));
             Assert.Equal(plugins, info.ArgumentList);
-            Assert.Equal([(_home, "s2", "help")], catalog.Writes);
+            Assert.Equal(["help"], catalog.Asked);
         }
         finally { AgentPluginReads.Current = actual; }
         Assert.Same(actual, AgentPluginReads.Current);
@@ -100,7 +104,7 @@ public sealed class AgentPluginPortsTests : IDisposable
                 new Adapter("stand-agent"), info, _home, "s3", catalog, "sessions")));
             Assert.Empty(info.ArgumentList);
             catalog.Failure = refused;
-            Assert.Same(refused, Assert.Throws<IOException>(() => SpawnSkills.Write(_home, "s4", catalog, "help")));
+            Assert.Same(refused, Assert.Throws<IOException>(() => ClaudeSkills.Layout.Write(_home, "s4", catalog.Skills("help"))));
         }
         finally { AgentPluginReads.Current = actual; }
     }
@@ -133,15 +137,18 @@ public sealed class AgentPluginPortsTests : IDisposable
     {
         public IEnumerable<ISessionAdapter> Adapters => [new Adapter("stand-agent"), new Adapter("stub")];
         public IEnumerable<string> DeclaredAgents => ["stand-agent", "kept-off-owner"];
-        public List<(string, string, string)> Writes { get; } = [];
+        public List<string> Asked { get; } = [];
+        public IReadOnlyList<SkillSource> Sources { get; set; } = [];
         public Exception? Failure { get; set; }
-        public (string? Folder, IReadOnlyList<string> Plugins) WriteSkills(string home, string sessionId, string to)
+        public IReadOnlyList<SkillSource> Skills(string to)
         {
             if (Failure is { } failure) throw failure;
-            Writes.Add((home, sessionId, to));
-            return ("stand-folder", ["second", "first"]);
+            Asked.Add(to);
+            return Sources;
         }
     }
+
+    private SkillSource Source(string id) => new(id, "1.0.0", DaorisHome.Entry(_home, HomeEntry.Plugins, id), ["read"]);
 
     private sealed class Reads(IAgentPlugins catalog) : IAgentPluginReads
     {

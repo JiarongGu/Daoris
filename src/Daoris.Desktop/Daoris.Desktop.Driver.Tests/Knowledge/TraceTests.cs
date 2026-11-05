@@ -361,7 +361,7 @@ public sealed class TraceTests : IDisposable
     [Fact]
     public async Task A_running_sessions_rules_are_read_from_the_file_it_was_handed()
     {
-        SpawnSettings.Write(_home, "s3", new RuleLists(["Read", "Edit"], [], ["Bash(git push*)"]), ["Bash(rm -rf*)"]);
+        ClaudeRules.Render(_home, "s3", new RuleLists(["Read", "Edit"], [], ["Bash(git push*)"]), ["Bash(rm -rf*)"]);
         JsonArray sessions = [Record("s3", "working", "q1", 5, 6)];
 
         var (_, said, _) = await TraceAsync(new TraceAsk("s3"), sessions: sessions);
@@ -535,7 +535,7 @@ public sealed class TraceTests : IDisposable
     public async Task The_trace_writes_nothing_and_only_reads()
     {
         Machine();
-        SpawnSettings.Write(_home, "s2", new RuleLists(["Read"], [], []), []);
+        ClaudeRules.Render(_home, "s2", new RuleLists(["Read"], [], []), []);
         var before = Snapshot(_home);
 
         var (_, _, standIn) = await TraceAsync(new TraceAsk("q1"));
