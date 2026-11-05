@@ -37,5 +37,6 @@
   "code.detail.hint": "Choose a module to see what it depends on and what uses it.",
   "code.detail.none": "none",
   "code.detail.dependsOn": "Depends on",
-  "code.detail.usedBy": "Used by"
+  "code.detail.usedBy": "Used by",
+  "code.find.in": "in {{path}}"
 }

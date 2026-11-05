@@ -142,10 +142,13 @@ describe('folders', () => {
     render(<Host map={big} onChange={onChange} />);
     await userEvent.click(screen.getByRole('button', { name: 'Show as list' }));
     const list = document.querySelector('[data-canvas-list]')!;
-    expect(within(list as HTMLElement).getAllByRole('heading', { level: 3 }).length).toBeGreaterThan(1);
-    expect(within(list as HTMLElement).getAllByRole('listitem')).toHaveLength(100);
-    await userEvent.click(within(list as HTMLElement).getByRole('button', { name: 'module-0009' }));
-    expect(onChange).toHaveBeenCalledWith('module-0009');
+    const groups = within(list as HTMLElement).getAllByRole('treeitem', { expanded: false });
+    expect(groups.length).toBeGreaterThan(1);
+    // A hundred modules open their folders closed, as the drawing does; every folder's count says what it holds.
+    expect(groups.reduce((sum, group) => sum + Number(within(group).getByText(/ items$/).textContent!.split(' ')[0]), 0)).toBe(100);
+    await userEvent.click(groups[0]!);
+    await userEvent.click(screen.getAllByRole('treeitem', { name: /^module-\d{4} — / })[0]!);
+    expect(onChange).toHaveBeenCalledWith(expect.stringMatching(/^module-\d{4}$/));
     await userEvent.click(screen.getByRole('button', { name: 'Show as graph' }));
     expect(screen.getByRole('group', { name: 'the code map of engine' })).toBeInTheDocument();
   });

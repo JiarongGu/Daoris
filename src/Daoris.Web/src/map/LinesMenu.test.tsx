@@ -21,7 +21,7 @@ describe("the map's remembered lines", () => {
     expect(renderHook(() => useMapWhen()).result.current[0]).toBe('week');
   });
 
-  it('draws every kind and every quest where storage is refused, and still switches for the visit', () => {
+  it('draws every kind and the last 30 days of quests where storage is refused, and still switches for the visit', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new DOMException('refused', 'SecurityError'); });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
 
@@ -31,7 +31,7 @@ describe("the map's remembered lines", () => {
     expect(lines.result.current[0].has('asks')).toBe(false);
 
     const when = renderHook(() => useMapWhen());
-    expect(when.result.current[0]).toBe('all');
+    expect(when.result.current[0]).toBe('month');
     act(() => when.result.current[1]('open'));
     expect(when.result.current[0]).toBe('open');
   });

@@ -37,5 +37,6 @@
   "code.detail.hint": "选择一个模块，查看它依赖什么、被谁使用。",
   "code.detail.none": "无",
   "code.detail.dependsOn": "依赖",
-  "code.detail.usedBy": "被依赖"
+  "code.detail.usedBy": "被依赖",
+  "code.find.in": "位于 {{path}}"
 }

@@ -1,5 +1,4 @@
 import type { CodeDependency, CodeModule } from '../../data/api';
-import type { ListGroup } from '../../design/canvas/CanvasList';
 import type { SuppliedWorld } from '../../design/canvas/SuppliedCanvas';
 import type { Box } from '../../design/canvas/viewMath';
 import { layerModules } from './codeLayout';
@@ -76,7 +75,7 @@ export type CodeScene = {
 
 const byName = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-function dirOf(path: string): string {
+export function dirOf(path: string): string {
   const clean = path.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
   const cut = clean.lastIndexOf('/');
   return cut < 0 ? '' : clean.slice(0, cut);
@@ -380,17 +379,3 @@ export function layoutCode(tree: CodeTree, open: ReadonlySet<string>, words: { c
   };
 }
 
-/** Every module under its folder, in folder-path order: the list a reader, a narrow window and Show as list get. */
-export function listByFolder(tree: CodeTree): ListGroup[] {
-  const held = new Map<string, string[]>();
-  for (const [id, group] of tree.owner) {
-    let home = tree.groups.get(group)!;
-    if (home.kind === 'cycle') home = tree.groups.get(home.parent!)!;
-    const list = held.get(home.id);
-    if (list) list.push(id); else held.set(home.id, [id]);
-  }
-  const only = held.size === 1 && held.has(ROOT);
-  return [...held]
-    .map(([id, ids]) => ({ id: only ? '' : id, title: only ? '' : tree.groups.get(id)!.dir || '/', items: ids.sort(byName).map((each) => ({ id: each, title: each })) }))
-    .sort((a, b) => byName(a.title, b.title));
-}

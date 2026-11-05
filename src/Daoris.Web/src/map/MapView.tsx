@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CANVAS_FLOOR } from '../design/canvas/Canvas';
+import { useRootRem, useWidth } from '../design/useWidth';
 import { CodeMapDetail, CodeMapWorld } from './code/CodeMap';
 import { ChoiceLine } from './ChoiceLine';
-import { codeChoice, mapChoice } from './choiceWords';
+import { codeChoice, mapChoice, mapHint } from './choiceWords';
 import type { MapSelection } from './MapLines';
 import { MapWorld } from './MapWorld';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
@@ -27,7 +29,7 @@ const SHARED = 0.75;
  * convergence findings, the live sessions — so it adds no request shape the service does not serve,
  * and nothing machine-local: the same map in a browser and on the desktop (D47 §4).
  */
-export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest, onOpenRepository }: {
+export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest, onOpenRepository, onOpenRepositories }: {
   notify: Notify;
   /**
    * The repository whose code map it opens on, where a door named one: a repository's page (FRAME1e). The Map then
@@ -39,6 +41,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   onOpenQuest?: (id: string) => void;
   /** A repository named in a detail opens on its page, on Repositories (MAPUX1b). */
   onOpenRepository?: (repository: string) => void;
+  /** Where a workspace with no repository goes to add one: Repositories (MAPUX1f). */
+  onOpenRepositories?: () => void;
 }) {
   const { t } = useTranslation();
   const registry = useRegistry();
@@ -59,6 +63,11 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   const [arriving, setArriving] = useState<{ id: string; focus: boolean } | null>(null);
   const openCode = (repository: string) => { setByDoor(false); setCode(repository); };
   useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);
+  // Below the canvas floor the list is the reading, and a choice's detail opens in place under its row (MAPUX1e).
+  const holder = useRef<HTMLElement>(null);
+  const room = useWidth(holder);
+  const rem = useRootRem();
+  const inPlace = room !== undefined && room < CANVAS_FLOOR * rem;
 
   if (code !== null) {
     const back = () => {
@@ -78,8 +87,16 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
       setModule(null);
     };
     const answer = codeMap.data;
+    const detail = answer?.file ? (
+      <CodeMapDetail
+        modules={answer.modules} dependencies={answer.dependencies} selected={module}
+        file={answer.file} fed={answer.fed} onSelect={setModule}
+      />
+    ) : null;
+    // One module and no dependency: the card alone, said so (MAPUX1f).
+    const alone = answer?.modules.length === 1 && answer.dependencies.length === 0 ? t('code.said.alone', { id: answer.modules[0]!.id }) : t('code.detail.hint');
     return (
-      <section>
+      <section ref={holder}>
         <PageHeader
           title={t('code.title', { repository: code })}
           description={t('code.description')}
@@ -119,20 +136,12 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
                 selected={module}
                 onSelect={setModule}
                 version={answer.fed?.commit}
+                detail={inPlace && module !== null ? detail : undefined}
               />
-              <ChoiceLine choice={codeChoice(t, answer.dependencies, module)} hint={t('code.detail.hint')} />
+              <ChoiceLine choice={codeChoice(t, answer.dependencies, module)} hint={alone} />
               <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
             </Card>
-            <Card>
-              <CodeMapDetail
-                modules={answer.modules}
-                dependencies={answer.dependencies}
-                selected={module}
-                file={answer.file}
-                fed={answer.fed}
-                onSelect={setModule}
-              />
-            </Card>
+            {!(inPlace && module !== null) && <Card>{detail}</Card>}
           </div>
         )}
       </section>
@@ -164,35 +173,73 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   );
 
   if (registry.isPending || quests.isPending) {
-    return <section>{header}<SkeletonRows rows={4} /></section>;
+    return <section ref={holder}>{header}<SkeletonRows rows={4} /></section>;
+  }
+
+  // The service did not answer and nothing was read before: the error notice stands, and the map says it could not be drawn rather
+  // than that no repository is in scope.
+  const unread = registry.error ?? quests.error;
+  if (unread && registry.data === undefined) {
+    return (
+      <section ref={holder}>
+        {header}
+        <EmptyState icon="map" headline={t('map.failed.headline')} body={t('map.failed.body')} />
+      </section>
+    );
   }
 
   if (topology.nodes.length === 0) {
     return (
-      <section>
+      <section ref={holder}>
         {header}
         {/* Scoped to every circle there is no "this circle" to speak of, which it did on the window. */}
         <EmptyState
           icon="map"
           headline={t(workspace ? 'map.empty.headline' : 'map.empty.headlineAll')}
           body={t('map.empty.body')}
+          action={onOpenRepositories && <Button variant="ghost" onClick={onOpenRepositories}>{t('map.empty.door')}</Button>}
         />
       </section>
     );
   }
 
+  // What *All of them* would show, for the line that says *Which quests* left none.
+  const everything = when === 'all' ? 0 : (() => {
+    const counts = lineCounts(buildTopology(registry.data ?? [], quests.data ?? [], shared.data ?? [], sessions.data ?? [], keepQuests('all', Date.now())));
+    return counts.quests + counts.asks + counts.chains;
+  })();
+  const detail = (
+    <MapDetail
+      topology={all}
+      selected={selected}
+      onOpenConvergence={onOpenConvergence}
+      onOpenCode={openCode}
+      onOpenRepository={onOpenRepository}
+      onOpenQuest={onOpenQuest}
+    />
+  );
+  const inRow = inPlace && selected !== null;
+
   return (
-    <section>
+    <section ref={holder}>
       {header}
       {/* The detail beside the canvas by the main area's own width, never the viewport's (D118 §3b, audit
-          MA3), and under it in a narrow one, where the drawing shrinks only as a last resort (U44). It stays
-          in the main area: a view's own detail never goes to the side bar (§3c, §4). */}
+          MA3), and under it in a narrow one, where the drawing shrinks only as a last resort (U44); below 36rem
+          it opens in place under its row in the list. It stays in the main area: a view's own detail never
+          goes to the side bar (§3c, §4). */}
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4): one canvas either way. */}
-          <MapWorld topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} reveal={arriving} />
+          <MapWorld
+            topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} reveal={arriving}
+            detail={inRow ? detail : undefined}
+          />
           {/* The Map's one live region: the choice, said once per choice. */}
-          <ChoiceLine choice={mapChoice(t, all, selected)} hint={t('map.detail.hint')} />
+          <ChoiceLine
+            choice={mapChoice(t, all, selected)}
+            hint={mapHint(t, { topology: all, shown: shownLines, when, everything, hint: t('map.detail.hint') })}
+          />
+          {unread && <p className="m-0 mt-2 text-small text-warn">{t('map.stale')}</p>}
           {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
               number in a node, which no key named until the window showed it (POLISH4). A kind out of
               sight leaves the key with its lines. */}
@@ -210,16 +257,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
             <p className="m-0 mt-2 text-small text-ink-soft">{t('map.outside', { count: topology.outside })}</p>
           )}
         </Card>
-        <Card>
-          <MapDetail
-            topology={all}
-            selected={selected}
-            onOpenConvergence={onOpenConvergence}
-            onOpenCode={openCode}
-            onOpenRepository={onOpenRepository}
-            onOpenQuest={onOpenQuest}
-          />
-        </Card>
+        {!inRow && <Card>{detail}</Card>}
       </div>
     </section>
   );

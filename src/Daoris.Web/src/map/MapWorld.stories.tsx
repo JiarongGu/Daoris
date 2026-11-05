@@ -1,6 +1,8 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { keptAtZoom } from '../design/canvas/storyZoom';
+import { Button } from '../design/ui';
 import { memoryKey } from '../design/canvas/viewMemory';
 import { inDark } from '../design/flowFrames';
 import { chinese } from '../design/storyLanguage';
@@ -60,9 +62,12 @@ function blocks(): Topology {
   };
 }
 
-function MapStory({ topology, line = null, storeKey = 'story' }: { topology: Topology; line?: MapSelection | null; storeKey?: string }) {
+function MapStory({ topology, line = null, storeKey = 'story', inPlace = false }: { topology: Topology; line?: MapSelection | null; storeKey?: string; inPlace?: boolean }) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<MapSelection | null>(line);
-  return <MapWorld topology={topology} selected={selected} onSelect={setSelected} storeKey={storeKey} />;
+  // The choice's detail as the page gives it below the 36rem floor: under the chosen row, its doors after it in the tab order.
+  const detail = inPlace ? <Button variant="ghost">{t('map.detail.openRepository')}</Button> : undefined;
+  return <MapWorld topology={topology} selected={selected} onSelect={setSelected} storeKey={storeKey} detail={detail} />;
 }
 
 /**
@@ -141,6 +146,15 @@ export const AsList: Story = { play: asList };
 export const AsListNarrow: Story = { play: asList, decorators: [storyWidths.narrow] };
 export const AsListChineseDark: Story = { play: asList, decorators: [storyWidths.half, chinese, inDark] };
 export const AsListALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } }, play: asList };
+
+/**
+ * Below the 36rem floor the list is the reading (MAPUX1e): one tree, one row in the tab order, each row's count and state in words, and
+ * the chosen row's detail opening under it.
+ */
+export const ListNarrowDetailInPlace: Story = { args: { line: { kind: 'node', id: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow] };
+export const ListNarrowDetailInPlaceChinese: Story = { args: { line: { kind: 'node', id: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow, chinese] };
+export const ListNarrowDetailInPlaceChineseDark: Story = { args: { line: { kind: 'node', id: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow, chinese, inDark] };
+export const ListNarrowALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow] };
 
 /** The viewer's place restored under a changed map: the view kept by its anchor, and the repository once selected said to be gone. */
 export const ASelectionGone: Story = { args: { storeKey: 'gone' }, decorators: [keptWithAGoneSelection, storyWidths.wide] };

@@ -17,15 +17,21 @@ const FED: Provenance = {
   commit: 'c0ffee1234567890', shortCommit: 'c0ffee12', committedAt: '2026-09-24T08:00:00Z', branch: 'main', origin: 'person@machine-b',
 };
 
-function Both({ map, fed, initial = null }: { map: CodeFixture; fed?: Provenance; initial?: string | null }) {
+function Both({ map, fed, initial = null, inPlace = false }: { map: CodeFixture; fed?: Provenance; initial?: string | null; inPlace?: boolean }) {
   const [selected, setSelected] = useState<string | null>(initial);
+  const detail = <CodeMapDetail modules={map.modules} dependencies={map.dependencies} selected={selected} file="docs/code-map.json" fed={fed} onSelect={setSelected} />;
+  // Below the 36rem floor the detail opens in place under its row in the list, as MapView gives it (MAPUX1e).
+  const here = inPlace && selected !== null;
   return (
     // As MapView lays them out: beside each other by the main area's own width (D118 §3b), so the story
     // stands in for the main area as their container.
     <div className="@container/main">
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
-        <CodeMapWorld repository="daoris" modules={map.modules} dependencies={map.dependencies} selected={selected} onSelect={setSelected} version={fed?.commit} />
-        <CodeMapDetail modules={map.modules} dependencies={map.dependencies} selected={selected} file="docs/code-map.json" fed={fed} onSelect={setSelected} />
+        <CodeMapWorld
+          repository="daoris" modules={map.modules} dependencies={map.dependencies} selected={selected} onSelect={setSelected} version={fed?.commit}
+          detail={here ? detail : undefined}
+        />
+        {!here && detail}
       </div>
     </div>
   );
@@ -40,6 +46,12 @@ const meta: Meta<typeof Both> = {
 export default meta;
 
 type Story = StoryObj<typeof Both>;
+
+/** Narrow, the list is the reading, a folder to a group, a cycle a group under its folder, and the chosen module's detail under its row. */
+export const ListNarrowDetailInPlace: Story = { args: { initial: 'Daoris.Desktop.Driver', inPlace: true }, decorators: [storyWidths.narrow] };
+export const ListNarrowDetailInPlaceChinese: Story = { args: { initial: 'Daoris.Desktop.Driver', inPlace: true }, decorators: [storyWidths.narrow, chinese] };
+export const ListNarrowACycle: Story = { args: { map: WITH_A_CYCLE, initial: 'planner', inPlace: true }, decorators: [storyWidths.narrow] };
+export const ListNarrowACycleChinese: Story = { args: { map: WITH_A_CYCLE, initial: 'planner', inPlace: true }, decorators: [storyWidths.narrow, chinese] };
 
 /** This repository's twenty modules, in their folders, opened whole, a module chosen and its neighbourhood forward. */
 export const Layered: Story = { args: { initial: 'Daoris.Desktop.Driver' } };

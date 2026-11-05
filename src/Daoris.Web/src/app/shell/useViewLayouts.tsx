@@ -103,6 +103,7 @@ export function useViewLayouts({ notify, settingsSection, chooseSettings, settin
             onOpenConvergence={() => open('knowledge', null, { knowledge: 'convergence' })}
             onOpenQuest={openQuest}
             onOpenRepository={(repository) => open('projects', repository)}
+            onOpenRepositories={() => open('projects')}
           />
         )}
       </ViewMain>

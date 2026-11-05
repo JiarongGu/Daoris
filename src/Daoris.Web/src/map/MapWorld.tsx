@@ -1,14 +1,15 @@
 import { type ReactNode, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { CanvasList } from '../design/canvas/CanvasList';
 import { SuppliedCanvas } from '../design/canvas/SuppliedCanvas';
 import { useTall, useWidth } from '../design/useWidth';
 import { RING_MAX } from './layers';
+import { listLine, listNode } from './listWords';
 import { layeredGeometry, ringGeometry, START_LEAST } from './mapLayout';
 import { mapListGroups } from './mapList';
 import { LayerCard, RingNode } from './MapCards';
-import { lineName, MapEdges, type MapSelection, sameSelection } from './MapLines';
+import { MapEdges, type MapSelection, sameSelection } from './MapLines';
+import { MapTree } from './MapTree';
 import { fitRadius } from './ring';
 import { ASKS, type Topology } from './topology';
 
@@ -30,7 +31,7 @@ const ZOOM = { min: 0.25, max: 2.5 } as const;
  * beyond), named for what it holds. **The choice stands forward** (MAPUX1b): its lines and its neighbours at full ink, the rest
  * stepped back; hovering or focusing a card lights its lines without choosing it.
  */
-export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal }: {
+export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal, detail }: {
   topology: Topology;
   selected: MapSelection | null;
   /** A part chosen, or `null` when the choice is released. */
@@ -41,6 +42,8 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
   storeKey: string;
   /** A repository to show and, with `focus`, to give the focus: the way back from its code map. */
   reveal?: { id: string; focus: boolean } | null;
+  /** The choice's detail, where it opens in place under its row in the list (below the 36rem floor). */
+  detail?: ReactNode;
 }) {
   const { t } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
@@ -84,9 +87,25 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
   const titleOf = useCallback((id: string) => id, []);
   const ring = geometry.ring;
   const statics = geometry.world.statics;
-  const listed = mapListGroups(geometry.world.order.filter((id) => !statics?.has(id)), geometry.lines, {
-    repositories: t('map.listRepositories'), kind: (kind) => t(`map.kind.${kind}`), node: nodeLabel, line: (line) => lineName(t, line),
+  const stops = useMemo(() => geometry.world.order.filter((id) => !statics?.has(id)), [geometry.world, statics]);
+  const listed = mapListGroups(stops, geometry.lines, {
+    repositories: t('map.listRepositories'), kind: (kind) => t(`map.kind.${kind}`),
+    node: (id) => (id === ASKS ? nodeLabel(id) : listNode(t, nodes.get(id)!)), line: (line) => listLine(t, line),
   });
+  // Find reaches a repository by its name, then by what it says it owns and accepts, which a result says (MAPUX1d).
+  const findItems = useMemo(
+    () => stops.map((id) => {
+      const node = nodes.get(id);
+      return {
+        id, title: id,
+        also: node ? [
+          ...node.owns.map((text) => ({ text, said: t('map.find.owns', { text }) })),
+          ...node.accepts.map((text) => ({ text, said: t('map.find.accepts', { text }) })),
+        ] : [],
+      };
+    }),
+    [stops, nodes, t],
+  );
 
   return (
     <div ref={holder}>
@@ -96,7 +115,7 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
         feature="map" storeKey={storeKey}
         selected={chosen} onSelect={choose} reveal={reveal}
         zoom={ring ? 'off' : ZOOM} {...(ring ? {} : { opening: START_LEAST })}
-        nodeLabel={nodeLabel} titleOf={titleOf}
+        nodeLabel={nodeLabel} titleOf={titleOf} findItems={findItems}
         frameClass={(id) => (ring || id === ASKS ? 'rounded-full' : 'rounded-card')}
         renderNode={(id, state) => {
           const back = near !== null && !near.has(id);
@@ -122,7 +141,12 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
           </>
         )}
         tools={tools}
-        list={<CanvasList label={t('map.canvas')} groups={listed} selected={chosen} onPick={(id) => choose(id === chosen ? null : id)} />}
+        list={(
+          <MapTree
+            label={t('map.canvas')} groups={listed} selected={chosen} detail={detail}
+            onPick={(id) => choose(id === chosen ? null : id)} onRelease={() => choose(null)}
+          />
+        )}
       />
     </div>
   );

@@ -37,11 +37,14 @@ export function useShownLines(): [ReadonlySet<LineKind>, (kind: LineKind) => voi
   return [new Set(LINE_KINDS.filter((kind) => !hidden.includes(kind))), toggle];
 }
 
-/** Which quests the map draws, as this viewer last chose (MAP4c): all of them until they choose. */
+/**
+ * Which quests the map draws, as this viewer last chose (MAP4c): the last 30 days until they choose (MAPUX1f), since the Map's first
+ * question is what moves now and *All of them* grows with every closed quest. A choice already kept stays.
+ */
 export function useMapWhen(): [When, (when: When) => void] {
   const [when, setWhen] = useState<When>(() => {
     const kept = stored(WHEN_KEY);
-    return (WHENS as readonly string[]).includes(kept ?? '') ? kept as When : 'all';
+    return (WHENS as readonly string[]).includes(kept ?? '') ? kept as When : 'month';
   });
   const choose = (next: When) => {
     setWhen(next);

@@ -222,7 +222,15 @@ web paths are under `src/Daoris.Web/src/`.
     tier, and the chosen and the focused keep their name beside the card at every tier. One choice stands forward on
     both levels (its lines and neighbours at full ink, the rest at 40%), is said once in one polite line under the
     drawing, and a double press counts as one press. A repository's detail has a door to its page; *Back to the map*
-    from a code map chooses and reveals the repository and returns the focus. (from D150, D67, D224, D239)
+    from a code map chooses and reveals the repository and returns the focus. Find is offered from 13 items on both
+    levels: it matches a repository's name and then what it says it owns and accepts, or a module's id and then its
+    folder's path, says which in the result, and steps nothing while an input method composes. The list is one tree on
+    both levels (`map/MapTree.tsx`, the WAI pattern of the set-up tree): one row in the tab order, each row's count and
+    state in words, a code folder a group and a cycle a group under it. Below 36rem the list is the reading and the
+    detail opens in place under the chosen row. *Which quests* is first the last 30 days, a choice kept stays, and with
+    nothing chosen the line under the drawing says why no connection shows (all hidden, none in the window with what
+    *All of them* shows, no work yet); a service that does not answer leaves a drawn map saying so, or the failed
+    state, and a workspace with no repository has a door to Repositories. (from D150, D67, D224, D239)
 62. Doctrine is never written from the window; it shows the command to run. (from D31)
 
 ## Where a change goes
@@ -280,8 +288,9 @@ web paths are under `src/Daoris.Web/src/`.
 - **FLOWCHART2h**: the workflow editor seen in the installed window.
 - **COMPANYVIEW1**: the agents' structure configured and seen, as a list and as a diagram (remaining rows).
 - **MAPUX1**: the Map's UI and UX (`docs/2026-11-06-map-ux-design.md`). Built: the tiers' content, the choice forward, its
-  line and the detail's door to the repository's page, *Back to the map* choosing and revealing the repository. Open: find
-  on the level shown, the list as one tree, the empty and failing cases, and *Which quests* opening on all of them.
+  line and the detail's door to the repository's page, *Back to the map* choosing and revealing the repository, find on
+  the level shown, the list as one tree, the empty and failing cases, and *Which quests* opening on the last 30 days.
+  Open: the measured Tab order and the installed window (MAPUX1g).
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.

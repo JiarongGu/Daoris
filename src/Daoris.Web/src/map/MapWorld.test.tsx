@@ -199,14 +199,14 @@ describe('the map as a list', () => {
     const { rerender } = render(map(TOPOLOGY, null, onSelect));
     await userEvent.click(screen.getByRole('button', { name: 'Show as list' }));
     const list = document.querySelector<HTMLElement>('[data-canvas-list]')!;
-    expect(within(list).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+    expect(within(list).getAllByRole('treeitem', { expanded: true }).map((heading) => heading.textContent)).toEqual([
       expect.stringContaining('Repositories'), expect.stringContaining('Quests between repositories'), expect.stringContaining('The same thing learned twice'),
     ]);
-    expect(within(list).getAllByRole('listitem')).toHaveLength(TOPOLOGY.nodes.length + 2);
-    await userEvent.click(within(list).getByRole('button', { name: /from portal-ui to portals-db/ }));
+    expect(within(list).getAllByRole('treeitem')).toHaveLength(TOPOLOGY.nodes.length + 2 + 3);
+    await userEvent.click(within(list).getByRole('treeitem', { name: /portal-ui → portals-db/ }));
     expect(onSelect).toHaveBeenLastCalledWith({ kind: 'quests', from: 'portal-ui', to: 'portals-db' });
     rerender(<Tooltip.Provider>{map(TOPOLOGY, { kind: 'quests', from: 'portal-ui', to: 'portals-db' }, onSelect)}</Tooltip.Provider>);
-    await userEvent.click(within(document.querySelector<HTMLElement>('[data-canvas-list]')!).getByRole('button', { name: /from portal-ui to portals-db/ }));
+    await userEvent.click(within(document.querySelector<HTMLElement>('[data-canvas-list]')!).getByRole('treeitem', { name: /portal-ui → portals-db/ }));
     expect(onSelect).toHaveBeenLastCalledWith(null);
     await userEvent.click(screen.getByRole('button', { name: 'Show as graph' }));
     expect(screen.getByRole('group', { name: 'the workspace map' })).toBeInTheDocument();
