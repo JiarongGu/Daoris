@@ -278,6 +278,8 @@ internal sealed class ChatRun(
         // Whether a turn's refusal was read for its account's limit since the last turn's end was judged: set on the turn's own thread, taken
         // at its end.
         var limitedTurn = 0;
+        // Whether a turn ended past its transient episode since the last turn's end was judged: its line's rules judge that end.
+        var transientTurn = 0;
         // Only a repository's chat has a chat run; Ask Daoris, a helper and a reviewer have none, which the bind reads too.
         var bindsRun = actor == "chat";
         void Changed(ChatQueue queue)
@@ -295,6 +297,7 @@ internal sealed class ChatRun(
                 // A chat whose run is not bound yet (its tree grew before this build, or its bind failed) binds now.
                 if (bindsRun) _ = Context.ChatRuns.TurnEndedAsync(sessionId, workTree, config);
                 if (Interlocked.Exchange(ref limitedTurn, 0) == 1) wiring.Of<LimitMove>().Due(sessionId, config, onEnded);
+                else if (Interlocked.Exchange(ref transientTurn, 0) == 1) wiring.Of<TransientMove>().Due(sessionId, config, onEnded);
                 else wiring.Of<CurveMove>().Due(sessionId, config, onEnded);
             }
 
@@ -335,6 +338,9 @@ internal sealed class ChatRun(
                         return read;
                     })
                 {
+                    Limit = ConversationRules.Of(Context).Tries(
+                        actor is { Length: > 0 } ? actor : helpMode is not null ? RoleWork.AskDaoris : RoleWork.Chat, place.Name, place.Workspace, sessionId),
+                    PastBound = () => Interlocked.Exchange(ref transientTurn, 1),
                     Tried = (episode, number, next) =>
                     {
                         using var log = new MachineLog(home, "driver");

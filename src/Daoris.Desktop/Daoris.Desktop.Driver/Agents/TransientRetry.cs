@@ -84,15 +84,19 @@ public sealed class TransientRetry
         $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above. "
         + "Before you repeat a step whose result you did not see, check whether it already took effect.";
 
-    /// <summary>The conversation's one line (§8's <c>agent.transient-retrying</c>), the schedule's tries and minutes said as <i>up to</i>.</summary>
-    public static Noted Retrying(string agent, string? words, DateTimeOffset next)
+    /// <summary>
+    /// The conversation's one line (§8's <c>agent.transient-retrying</c>), the episode's tries and their minutes said as <i>up to</i>: the
+    /// line's tries rule's (CONTEXTDRIVE1n) where <paramref name="tries"/> names it, else the schedule's five.
+    /// </summary>
+    public static Noted Retrying(string agent, string? words, DateTimeOffset next, int? tries = null)
     {
-        var minutes = (int)TransientRetry.Delays.Sum(delay => delay.TotalMinutes);
+        var count = Math.Clamp(tries ?? Bound, 1, Bound);
+        var minutes = (int)Delays.Take(count).Sum(delay => delay.TotalMinutes);
         var line = Noted.Of(
             EndNoteCodes.AgentTransientRetrying,
-            $"{agent}'s provider failed. Daoris tries again in this conversation: up to {TransientRetry.Bound} times, after {minutes} "
+            $"{agent}'s provider failed. Daoris tries again in this conversation: up to {count} times, after {minutes} "
             + $"minutes of waits between them, the next at {next:yyyy-MM-dd HH:mm} UTC:",
-            ("agent", agent), ("count", TransientRetry.Bound), ("minutes", minutes),
+            ("agent", agent), ("count", count), ("minutes", minutes),
             ("at", next.UtcDateTime.ToString("o", System.Globalization.CultureInfo.InvariantCulture)));
         return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
     }

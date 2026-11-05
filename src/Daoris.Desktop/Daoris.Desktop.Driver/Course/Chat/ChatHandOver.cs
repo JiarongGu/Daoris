@@ -181,6 +181,14 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
         Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
         TakeCoreAsync(sessionId, ask, config, onEnded, moved, record, keeps: false, ct);
 
+    /// <summary>
+    /// A move the supervisor's rules made taken (CONTEXTDRIVE1n, <see cref="TransientMove"/>): handed the request its decision made, the curve's
+    /// sequence with no curve's lines; a word that started a turn meanwhile closes it <c>superseded</c>.
+    /// </summary>
+    internal Task<HandedOver> TakeRuledAsync(
+        string sessionId, HandOverRequest ask, ConversationMove record, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
+        TakeCoreAsync(sessionId, ask, config, onEnded, moved: null, record, keeps: false, ct);
+
     /// <param name="keeps">
     /// A hand-over's move (FOUNDATION1f-v part a) stands where the take cannot begin, the conversation being taken or talking, and goes on at
     /// its turn's end; the curve's is closed <c>superseded</c> and judged again at the next turn's end.
