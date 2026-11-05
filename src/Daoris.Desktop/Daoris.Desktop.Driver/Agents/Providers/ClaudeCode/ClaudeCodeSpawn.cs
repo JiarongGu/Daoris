@@ -41,11 +41,11 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront = new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
-    public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command)
+    public ProcessRecipe Start(SpawnRequest request)
     {
-        var resolved = Resolve(command);
+        var resolved = Resolve(request.Command);
         return PromptOnInput(ProcessRecipe.Of(
-            resolved, ["-p", "--permission-mode", DrivenMode(target), .. target.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
+            resolved, ["-p", "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
     }
 
     /// <summary>
@@ -53,12 +53,13 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// output a start has. The conversation already holds the target; its next turn goes on the input, never in the arguments
     /// (AGENTLYNTAI1s-i).
     /// </summary>
-    public ProcessRecipe Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation)
+    public ProcessRecipe? Resume(SpawnRequest request)
     {
-        var resolved = Resolve(command);
+        if (request.Resume is not { } conversation) return null;
+        var resolved = Resolve(request.Command);
         return PromptOnInput(ProcessRecipe.Of(
             resolved,
-            ["-p", "--resume", conversation, "--permission-mode", DrivenMode(target), .. target.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
+            ["-p", "--resume", conversation, "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
     }
 
     /// <summary>
@@ -66,15 +67,15 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// driven session's, for the same reason (D46 §5), or its mode that asks nothing where the person's own setting names it (D183, D184).
     /// One that goes on (MSG1c) resumes its own conversation by the id kept for its record, never <c>--continue</c> (D137 §4.2).
     /// </summary>
-    public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command)
+    public ProcessRecipe Chat(SpawnRequest request)
     {
-        var resolved = Resolve(command);
+        var resolved = Resolve(request.Command);
         return ProcessRecipe.Of(
             resolved,
             [
-                "-p", "--input-format", "stream-json", "--permission-mode", target.PermissionMode ?? "acceptEdits",
-                .. target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : Array.Empty<string>(),
-                .. target.Asked?.NativeArguments(resolved) ?? [],
+                "-p", "--input-format", "stream-json", "--permission-mode", Mode(request),
+                .. request.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : Array.Empty<string>(),
+                .. request.Asked?.NativeArguments(resolved) ?? [],
                 .. StreamJsonOut,
             ]);
     }
@@ -129,10 +130,11 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     private static ProcessRecipe PromptOnInput(ProcessRecipe recipe) => recipe with { Input = true, Utf8Input = true };
 
     /// <summary>
-    /// The permission mode a driven run names: its repository's permission prompts' (AUTONOMY1b, D184 point 3), <c>default</c> asking or
-    /// <c>bypassPermissions</c> unrestricted; <c>acceptEdits</c> under auto and for every target the setup does not reach (D81).
+    /// The permission mode the start names: its repository's permission prompts' (AUTONOMY1b, D184 point 3), <c>default</c> asking or
+    /// <c>bypassPermissions</c> unrestricted, or the person's own for a conversation; <c>acceptEdits</c> under auto and for every start
+    /// the setup does not reach (D81).
     /// </summary>
-    private static string DrivenMode(SessionTarget target) => target.Access?.PermissionMode ?? "acceptEdits";
+    private static string Mode(SpawnRequest request) => request.Mode ?? "acceptEdits";
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) => command is { Count: > 0 } ? command : Program;
 }

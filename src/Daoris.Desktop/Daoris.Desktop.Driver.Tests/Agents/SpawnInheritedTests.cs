@@ -60,7 +60,7 @@ public sealed class SpawnInheritedTests
     public void An_unmeasured_door_is_stripped_of_nothing() =>
         With(Planted, () =>
         {
-            var info = Shell.Start(new ProcessRecipe("plugin-agent", []) { Input = true }, Target());
+            var info = Shell.Start(new ProcessRecipe("plugin-agent", []) { Input = true }, SpawnRequests.Of(Target(), null));
             Assert.All(Planted, name => Assert.Equal(Sentinel(name), info.Environment[name]));
         });
 

@@ -19,25 +19,18 @@ internal static class Shell
 {
     /// <summary>A driven session's process: the recipe in the repository root, with whose work it serves on its environment.</summary>
     /// <param name="strip">Other providers' registered variables its environment must not inherit (s-vi); none for a door no registration made.</param>
-    public static ProcessStartInfo Start(ProcessRecipe recipe, SessionTarget target, IReadOnlyCollection<string>? strip = null)
+    public static ProcessStartInfo Start(ProcessRecipe recipe, SpawnRequest request, IReadOnlyCollection<string>? strip = null)
     {
-        var info = Base(recipe, target.Root, target.Repository, target.ServiceUrl, target.Home ?? DaorisHome.Resolve(), strip);
+        var info = Base(recipe, request, strip);
         if (recipe.Input) info.RedirectStandardInput = true;
-        Identity(info.Environment, target);
         return Own(info, recipe);
     }
 
-    /// <summary>
-    /// A conversation's process (D49 §3), its stdin open so the person's messages reach the agent. The quest variables are absent rather
-    /// than empty: a conversation serves no quest, and a blank <c>DAORIS_QUEST_ID</c> would read as an id it failed to parse.
-    /// </summary>
-    public static ProcessStartInfo Chat(ProcessRecipe recipe, ChatTarget target, IReadOnlyCollection<string>? strip = null)
+    /// <summary>A conversation's process (D49 §3), its stdin open so the person's messages reach the agent.</summary>
+    public static ProcessStartInfo Chat(ProcessRecipe recipe, SpawnRequest request, IReadOnlyCollection<string>? strip = null)
     {
-        var info = Base(recipe, target.Root, target.Repository, target.ServiceUrl, DaorisHome.Resolve(), strip);
+        var info = Base(recipe, request, strip);
         info.RedirectStandardInput = true;
-        // Its own record, as a driven session's is named (CHATTAKE1b): a connector its agent starts on the pipe door from the
-        // repository's own server list inherits it, so a take there marks this conversation's record.
-        if (target.Session is { } session) info.Environment[ChildMarks.SessionVariable] = session;
         return Own(info, recipe);
     }
 
@@ -96,13 +89,13 @@ internal static class Shell
         info.Environment[variable] = profileHome;
     }
 
-    private static ProcessStartInfo Base(
-        ProcessRecipe recipe, string root, string repository, string serviceUrl, string? home, IReadOnlyCollection<string>? strip)
+    private static ProcessStartInfo Base(ProcessRecipe recipe, SpawnRequest request, IReadOnlyCollection<string>? strip)
     {
+        var home = request.Home ?? DaorisHome.Resolve();
         var info = new ProcessStartInfo
         {
             FileName = recipe.Program,
-            WorkingDirectory = root,
+            WorkingDirectory = request.Root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -123,61 +116,21 @@ internal static class Shell
         Spawning.Unrole(info.Environment);
         // Other providers' credentials and homes the driver inherited (s-vi), taken before anything Daoris sets and the account's bound.
         foreach (var name in strip ?? []) info.Environment.Remove(name);
-        info.Environment["DAORIS_REPOSITORY"] = repository;
-        info.Environment["DAORIS_SERVICE_URL"] = serviceUrl;
+        info.Environment["DAORIS_REPOSITORY"] = request.Repository;
+        info.Environment["DAORIS_SERVICE_URL"] = request.ServiceUrl;
         // TOOLS5 (D121 §2.4): every session finds the tools the person chose first on its PATH, so its own `git push` is the git the
         // driver's fetch ran, and an agent npm put under a managed node is found the same way when the program is resolved (Equip). The
         // tools are the home's the start was handed (ENVSEAM1), this process's where it was handed none.
         Tools.Hand(info, home);
-        SessionGit.Current.Hand(info.Environment, home, root);
+        SessionGit.Current.Hand(info.Environment, home, request.Root);
+
+        // Whose work it serves, each name set by the start for its role and the rest absent (ENVLEAK1).
+        foreach (var (name, value) in request.Identity)
+        {
+            if (value is null) info.Environment.Remove(name);
+            else info.Environment[name] = value;
+        }
         return info;
-    }
-
-    /// <summary>Whose work a driven start serves (ENVLEAK1), each set by the start for its role and the rest absent.</summary>
-    private static void Identity(IDictionary<string, string?> environment, SessionTarget target)
-    {
-        // An intake (D65 §1b) serves an ask, not a quest: the ask and its own session, the quest variables absent rather than blank.
-        if (target.Ask is { } ask)
-        {
-            environment[AgentWorkVariables.Ask] = ask;
-            if (target.Session is { } session) environment[ChildMarks.SessionVariable] = session;
-            environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
-            return;
-        }
-
-        // A reviewer (XAGENT1d), a helper or a piece serves another session's work and no quest: its own record, so its connector says
-        // its opinion as that session, and its instruction.
-        if (target.Opinion is not null || target.Helper is not null || target.Piece is not null)
-        {
-            if (target.Session is { } reviewer) environment[ChildMarks.SessionVariable] = reviewer;
-            environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
-            return;
-        }
-
-        // A brainstorm's pass (BRAINSTORM1a, D176 point 2) serves no quest and no repository: the brainstorm, its turn and where its
-        // result tool writes, and its instruction; no repository named.
-        if (target.Brainstorm is { } brainstorm)
-        {
-            environment[AgentWorkVariables.Brainstorm] = brainstorm;
-            if (target.BrainstormTurn is { } turn) environment[AgentWorkVariables.Turn] = turn;
-            if (target.BrainstormAnswer is { } answer) environment[AgentWorkVariables.Answer] = answer;
-            if (target.Session is { } pass) environment[ChildMarks.SessionVariable] = pass;
-            environment.Remove("DAORIS_REPOSITORY");
-            environment.Remove("DAORIS_SERVICE_URL");
-            environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
-            return;
-        }
-
-        environment["DAORIS_QUEST_ID"] = target.QuestId;
-        environment["DAORIS_QUEST_TITLE"] = target.Title;
-        environment["DAORIS_QUEST_BODY"] = target.Body;
-        environment["DAORIS_QUEST_ASKER"] = target.Asker;
-        environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
-        // Its own record, as an intake's is named (SESS1): a connector the agent starts itself on the pipe door inherits it.
-        if (target.Session is { } own) environment[ChildMarks.SessionVariable] = own;
-
-        // The quest's files (D65 §2), absent rather than empty where this machine holds none: a blank directory reads as one emptied.
-        if (target.AttachmentsDirectory is { } attachments) environment["DAORIS_QUEST_ATTACHMENTS"] = attachments;
     }
 
     /// <summary>The recipe's own variables and its input's encoding, after Daoris's and before the account's.</summary>

@@ -33,7 +33,7 @@ public sealed class GitSessionHoldsTests : IDisposable
             foreach (var name in Credentials) Environment.SetEnvironmentVariable(name, "inherited-secret");
             foreach (var name in folders) Environment.SetEnvironmentVariable(name, Path.Combine(_home, "persons-own"));
 
-            var info = Shell.Start(new ProcessRecipe("stand-command", []), Target());
+            var info = Shell.Start(new ProcessRecipe("stand-command", []), SpawnRequests.Of(Target(), null));
 
             // No token, no grant.
             Assert.All(Credentials, name => Assert.False(info.Environment.ContainsKey(name), $"{name} reached a session's start"));
@@ -59,7 +59,7 @@ public sealed class GitSessionHoldsTests : IDisposable
         {
             Environment.SetEnvironmentVariable(GitSessionHolds.GhFolder, Path.Combine(_home, "persons-own"));
 
-            var info = Shell.Start(new ProcessRecipe("stand-command", []), Target());
+            var info = Shell.Start(new ProcessRecipe("stand-command", []), SpawnRequests.Of(Target(), null));
 
             var gh = info.Environment[GitSessionHolds.GhFolder]!;
             var az = info.Environment[GitSessionHolds.AzFolder]!;

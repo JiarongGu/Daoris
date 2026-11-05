@@ -8,9 +8,9 @@ internal sealed class CodexAcpSpawn : ISpawn
 {
     private static readonly string[] Program = ["codex-acp"];
 
-    public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(Resolve(command)) with { Input = true };
+    public ProcessRecipe Start(SpawnRequest request) => ProcessRecipe.Of(Resolve(request.Command)) with { Input = true };
 
-    public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(Resolve(command));
+    public ProcessRecipe Chat(SpawnRequest request) => ProcessRecipe.Of(Resolve(request.Command));
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) => command is { Count: > 0 } ? command : Program;
 }

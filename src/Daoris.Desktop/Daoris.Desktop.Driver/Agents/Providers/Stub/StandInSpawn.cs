@@ -8,9 +8,9 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class StandInSpawn(string id, string example, bool protocol) : ISpawn
 {
-    public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(Command(command)) with { Input = protocol };
+    public ProcessRecipe Start(SpawnRequest request) => ProcessRecipe.Of(Command(request.Command)) with { Input = protocol };
 
-    public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(Command(command));
+    public ProcessRecipe Chat(SpawnRequest request) => ProcessRecipe.Of(Command(request.Command));
 
     public bool ClaudeSeam => protocol;
 

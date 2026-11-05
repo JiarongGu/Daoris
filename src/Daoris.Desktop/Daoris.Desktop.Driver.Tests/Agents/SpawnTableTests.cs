@@ -93,14 +93,71 @@ public sealed class SpawnTableTests
         Assert.Contains("cannot hold a conversation", refused.Message);
     }
 
+    /// <summary>
+    /// The door's spawn reads the request alone (§4.6): the machine's command, the mode the start names, the choice its actor asked and the
+    /// conversation it goes on in; a request naming no conversation has no native resume.
+    /// </summary>
+    [Fact]
+    public void A_door_s_spawn_reads_its_command_mode_asked_choice_and_conversation_from_the_request()
+    {
+        var spawn = new ClaudeCodeSpawn();
+        var asked = ActorAsked.Before("claude-code") with { Model = new("entry", "opus", true) };
+        var request = new SpawnRequest("Game", "D:/fam/Game", "http://localhost:5177")
+        {
+            Command = ["claude-pinned"], Mode = "default", Asked = asked, Resume = "conversation-1",
+        };
+
+        Assert.Equal(["-p", "--permission-mode", "default", "--model", "opus", .. Stream], spawn.Start(request).Arguments);
+        Assert.Equal("claude-pinned", spawn.Start(request).Program);
+        Assert.Equal(
+            ["-p", "--resume", "conversation-1", "--permission-mode", "default", "--model", "opus", .. Stream],
+            spawn.Resume(request)!.Arguments);
+        Assert.Equal(
+            ["-p", "--input-format", "stream-json", "--permission-mode", "default", "--resume", "conversation-1", "--model", "opus", .. Stream],
+            spawn.Chat(request).Arguments);
+        Assert.Null(spawn.Resume(request with { Resume = null }));
+    }
+
+    /// <summary>
+    /// Whose work a start serves is the request's (ENVLEAK1): a quest's variables, a brainstorm's pass naming no repository and no
+    /// service, and a conversation naming its own record and no target, an inherited one cleared (C3-1.1).
+    /// </summary>
+    [Fact]
+    public void Whose_work_a_start_serves_is_its_request_s_and_a_conversation_s_names_no_target()
+    {
+        var quest = SpawnRequests.Of(Target() with { Session = "s-1" }, null);
+        Assert.Equal("abc123", quest.Identity["DAORIS_QUEST_ID"]);
+        Assert.Equal("s-1", quest.Identity[ChildMarks.SessionVariable]);
+
+        var pass = SpawnRequests.Of(Target() with { Brainstorm = "b-1", BrainstormTurn = "g1" }, null);
+        Assert.Null(pass.Identity["DAORIS_REPOSITORY"]);
+        var passInfo = Shell.Start(new ProcessRecipe("stand", []), pass);
+        Assert.False(passInfo.Environment.ContainsKey("DAORIS_REPOSITORY"));
+        Assert.False(passInfo.Environment.ContainsKey("DAORIS_SERVICE_URL"));
+        Assert.Equal("b-1", passInfo.Environment[AgentWorkVariables.Brainstorm]);
+
+        var before = Environment.GetEnvironmentVariable("DAORIS_TARGET");
+        try
+        {
+            Environment.SetEnvironmentVariable("DAORIS_TARGET", "inherited");
+            var chat = SpawnRequests.Of(Chat() with { Session = "c-1", PermissionMode = "bypassPermissions", Resume = "kept" }, null);
+            Assert.Equal(("bypassPermissions", "kept"), (chat.Mode, chat.Resume));
+            var info = Shell.Chat(new ProcessRecipe("stand", []), chat);
+            Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
+            Assert.Equal("c-1", info.Environment[ChildMarks.SessionVariable]);
+        }
+        finally { Environment.SetEnvironmentVariable("DAORIS_TARGET", before); }
+    }
+
     [Fact]
     public void A_door_s_recipe_names_none_of_Daoris_s_variables_and_the_carriers_are_its_own()
     {
         foreach (var name in AdapterSet.Built().Names)
         {
             var door = AdapterSet.Built().Registry.Door(name);
+            Assert.True(door.Spawn.IsKnown, $"{name} states no spawn");
             var command = name.EndsWith("stub", StringComparison.Ordinal) ? new[] { "node", "agent.mjs" } : null;
-            var recipe = door.Spawn.Required.Start(Target(), command);
+            var recipe = door.Spawn.Required.Start(SpawnRequests.Of(Target(), command));
             Assert.DoesNotContain(recipe.Variables.Keys, Spawning.Daoris);
         }
 

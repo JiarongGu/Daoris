@@ -171,11 +171,10 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private sealed class ResumingSpawn : ISpawn
     {
-        public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
+        public ProcessRecipe Start(SpawnRequest request) => ProcessRecipe.Of(request.Command!);
 
-        public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
+        public ProcessRecipe Chat(SpawnRequest request) => ProcessRecipe.Of(request.Command!);
 
-        public ProcessRecipe? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-            ProcessRecipe.Of(command!, [conversation]);
+        public ProcessRecipe? Resume(SpawnRequest request) => ProcessRecipe.Of(request.Command!, [request.Resume!]);
     }
 }
