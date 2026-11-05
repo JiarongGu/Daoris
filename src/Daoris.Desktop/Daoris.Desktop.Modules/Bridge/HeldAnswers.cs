@@ -209,6 +209,8 @@ public sealed class HeldAnswers
 
     private void Land(string key, Held entry, long begun, string? at, Task<object?> done)
     {
+        // A failed work superseded or ignored below is still read here, so it is never left to the finalizer as unobserved.
+        _ = done.Exception;
         if (Took(key, entry, begun, at, done) && done.IsCompletedSuccessfully) Landed?.Invoke(key, done.Result);
     }
 

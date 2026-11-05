@@ -241,7 +241,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
 
         Assert.Contains("Agents → Roles, Ask Daoris", await RefusalAsync(module, "HELP_START_FROM", new { id = "h1" }));
 
-        File.WriteAllText(loop.ConfigPath, """{ "helperAdapter": "claude-code-acp" }""");
+        File.WriteAllText(loop.ConfigPath, """{ "actors": { "ask-daoris": [{ "agent": "claude-code-acp" }] } }""");
         Assert.Contains("is no Ask Daoris conversation of this machine's", await RefusalAsync(module, "HELP_START_FROM", new { id = "c1" }));
     }
 
