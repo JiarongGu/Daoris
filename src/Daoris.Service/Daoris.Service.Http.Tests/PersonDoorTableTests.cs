@@ -42,6 +42,8 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/channel/elsewhere", Open),
         ("GET", "/api/channel/addressed", Open),
         ("GET", "/api/sessions", Open),
+        ("GET", "/api/sessions/{id}", Open),
+        ("GET", "/api/sessions/changes", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/sessions/{id}/record", Open),
         // KNOWCENTRAL2d: a session's memory changes for its record's page; a local host's read.
@@ -202,8 +204,9 @@ public sealed class PersonDoorTableTests
         // and the person's move of a held word to the head (LINESTOGETHER1b), and a session's memory changes, a read, and the person's
         // decision of a memory end and Keep or Drop of an ended session's staged changes (KNOWCENTRAL2d), and an asker's withdrawal of
         // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k); and what waits
-        // for one part on its line's channel, a read, and that part's acknowledgment, the driver's (COMMS1k).
-        Assert.Equal(36, Routes.Count(route => route.Class == Open));
+        // for one part on its line's channel, a read, and that part's acknowledgment, the driver's (COMMS1k); and one session's record
+        // as the list answers it, and the list's change since a mark, reads (PERF1).
+        Assert.Equal(38, Routes.Count(route => route.Class == Open));
         Assert.Equal(5, Routes.Count(route => route.Class == Agent));
         Assert.Equal(32, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));

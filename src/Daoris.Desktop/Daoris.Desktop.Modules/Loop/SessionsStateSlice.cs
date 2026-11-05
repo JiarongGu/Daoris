@@ -17,8 +17,9 @@ namespace Daoris.Desktop;
 /// <para><b>A partition per workspace, keyed by session</b> (<see cref="StateSlice.Keyed"/>): a record's move pushes that record alone,
 /// a delta on the number the window holds, never its workspace's history again; a record deleted is named among the keys gone.</para>
 ///
-/// <para><b>Its own read.</b> The service's answer of every record (<see cref="ServiceClient.SessionRecordsJsonAsync"/>), not the look's
-/// snapshot, which holds only the open ones; null before the service answers, which keeps the slice not judged.</para>
+/// <para><b>Its own read.</b> Every record as the list kept by its change holds it (<see cref="SessionListKept"/>), asking the service
+/// only what moved since its last mark, not the look's snapshot, which holds only the open ones; null before the service answers, which
+/// keeps the slice not judged.</para>
 ///
 /// <para><b>Its wakes.</b> A change a press or the driver declared to the sessions (the driver's own record moves among them), a
 /// conversation's end and the service coming up, on the kit's bus; and the change stream's <c>sessions</c> family, heard where the
@@ -75,7 +76,7 @@ public static class SessionsStateSlice
 
     /// <summary>The slice the shell's loop owns, reading <paramref name="loop"/>'s service once it answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false)) : null)
+        new(Name, bus, async ct => loop.Service is { } service ? Judge(await service.SessionList.Kept.ReadAsync(ct).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -88,13 +89,16 @@ public static class SessionsStateSlice
     /// One judgement of what the service answered: a partition per workspace, named by it, each record under its id with the fields
     /// the page reads. A record with no id is no record; one with no workspace is the default's, as the service names it.
     /// </summary>
-    public static IReadOnlyList<SliceJudged> Judge(string answered)
+    public static IReadOnlyList<SliceJudged> Judge(string answered) =>
+        Judge([.. (JsonNode.Parse(answered) as JsonArray ?? throw new JsonException("the service answered the sessions as no list")).OfType<JsonObject>()]);
+
+    /// <summary>One judgement of the records as the list kept by its change holds them (<see cref="SessionListKept"/>), which it only reads.</summary>
+    public static IReadOnlyList<SliceJudged> Judge(IReadOnlyList<JsonObject> records)
     {
-        var records = JsonNode.Parse(answered) as JsonArray ?? throw new JsonException("the service answered the sessions as no list");
         var parts = new SortedDictionary<string, JsonObject>(StringComparer.Ordinal);
-        foreach (var node in records)
+        foreach (var record in records)
         {
-            if (node is not JsonObject record || Text(record, "id") is not { } id) continue;
+            if (Text(record, "id") is not { } id) continue;
             var workspace = Text(record, "workspace") ?? "default";
             var picked = new JsonObject();
             foreach (var field in Fields)

@@ -11,7 +11,14 @@ public sealed class SessionListDoors
 {
     private readonly ServiceClient _service;
 
-    internal SessionListDoors(ServiceClient service) => _service = service;
+    internal SessionListDoors(ServiceClient service)
+    {
+        _service = service;
+        Kept = new SessionListKept(service);
+    }
+
+    /// <summary>The whole list held on this side and kept by its change since the last read, for the readers of every record.</summary>
+    public SessionListKept Kept { get; }
 
     /// <summary>
     /// The session list as the service wrote it, the active records or with <paramref name="includeClosed"/> every one: the text the
@@ -21,6 +28,19 @@ public sealed class SessionListDoors
     public async Task<string> JsonAsync(bool includeClosed, CancellationToken ct = default)
     {
         var sent = await _service.SendAsync(new ListSessions(IncludeClosed: includeClosed ? true : null), ct).ConfigureAwait(false);
+        sent.Answered();
+        return sent.Reply.Payload;
+    }
+
+    /// <summary>
+    /// One record as the list answers it, open or closed (<c>GET /api/sessions/{id}</c>), the text the readers read from; null where the
+    /// service has no record of that id.
+    /// </summary>
+    /// <exception cref="DriverException">A refused read other than none.</exception>
+    public async Task<string?> OneJsonAsync(string id, CancellationToken ct = default)
+    {
+        var sent = await _service.SendAsync(new ReadSession(id), ct).ConfigureAwait(false);
+        if (sent.Reply.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
         sent.Answered();
         return sent.Reply.Payload;
     }

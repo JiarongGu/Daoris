@@ -184,7 +184,6 @@ internal static class DriveConsole
             var attention = new AttentionWatch();
             // A quest's park is said with its last session's facts (SESSUX1i), read from the records when the parks change.
             var parks = new QuestParkReader();
-            var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
 
             // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
             // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
@@ -200,7 +199,7 @@ internal static class DriveConsole
                     // Observed either way, so turning notifications back on does not then announce
                     // everything that happened while they were off — the switch is about being TOLD.
                     var read = await parks.LookAsync(
-                        report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), closing.Token);
+                        report, ticked.ForgivenAt, token => service.SessionList.Kept.JsonAsync(token), closing.Token);
                     // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
                     var events = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
                     // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows

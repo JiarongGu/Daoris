@@ -27,7 +27,7 @@ public sealed class QuestParkReader
     /// they did not, or where the records could not be read.
     /// </summary>
     /// <param name="forgivenAt">RETRY1's mark for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts from it.</param>
-    /// <param name="records">The records door (<see cref="SessionRecords.ReadAsync"/>); a test hands in its own.</param>
+    /// <param name="records">Every record as the list's text (<see cref="SessionListKept.JsonAsync"/>); a test hands in its own.</param>
     public async Task<IReadOnlyList<QuestPark>?> LookAsync(
         TickReport report, Func<string, int> forgivenAt, Func<CancellationToken, Task<string>> records,
         CancellationToken ct = default)

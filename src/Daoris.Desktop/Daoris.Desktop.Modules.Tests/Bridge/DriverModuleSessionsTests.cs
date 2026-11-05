@@ -1049,11 +1049,10 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         static string Slashed(string path) => path.Replace('\\', '/');
         string Session(string id, string tree) =>
             $$"""{"id":"{{id}}","quest":"q1","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","tree":"{{Slashed(tree)}}","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}""";
-        var records = $"[{Session("own1", own)},{Session("gone1", gone)},{Session("root1", root)},{Session("elsewhere1", elsewhere)},{Session("machine-b/own1", own)}]";
-        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(records));
-        ledger.Serve("/api/sessions", System.Text.Encoding.UTF8.GetBytes("[]"));
-        ledger.Serve("/api/quests?includeClosed=true", System.Text.Encoding.UTF8.GetBytes("[]"));
-        ledger.Serve("/api/quests", System.Text.Encoding.UTF8.GetBytes("[]"));
+        foreach (var (id, tree) in new[] { ("own1", own), ("gone1", gone), ("root1", root), ("elsewhere1", elsewhere), ("machine-b/own1", own) })
+            ledger.Serve("/api/sessions/" + Uri.EscapeDataString(id), System.Text.Encoding.UTF8.GetBytes(Session(id, tree)));
+        foreach (var none in new[] { "/api/sessions?includeClosed=true", "/api/sessions", "/api/quests?includeClosed=true", "/api/quests" })
+            ledger.Serve(none, "[]"u8.ToArray());
         ledger.Serve("/api/registry", System.Text.Encoding.UTF8.GetBytes(
             $$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{Slashed(root)}}","workspace":"aurora"}]"""));
         return ledger;

@@ -10,7 +10,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>Called by the watch alone, one look at a time, so the signatures it keeps hold no lock.</remarks>
 internal sealed class LookTold(
-    DriverLoop loop, LoopState shared, IEventBus eventBus, ServiceClient service, string? key, ServiceHttp doors, News news,
+    DriverLoop loop, LoopState shared, IEventBus eventBus, ServiceClient service, ServiceHttp doors, News news,
     CancellationToken ct)
 {
     private readonly AttentionWatch _attention = new();
@@ -33,7 +33,7 @@ internal sealed class LookTold(
 
         // Observed either way, so turning notifications back on does not then announce everything that happened while they were off.
         var read = await _parks.LookAsync(
-            report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
+            report, ticked.ForgivenAt, token => service.SessionList.Kept.JsonAsync(token), ct)
             .ConfigureAwait(false);
         // Told once across restarts by the said-set, not by a first look's baseline.
         var attend = AttentionNews.Told(news, _attention.Observe(report, read), DateTimeOffset.UtcNow);
