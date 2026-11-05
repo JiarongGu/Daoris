@@ -156,35 +156,40 @@ public sealed class WireReadingsTests : IDisposable
         AgentErrorKind.Limit, DoorFailures.OfResult("You've hit your limit"), "own:words:limit",
         new LimitSeen("limit", null, DateTimeOffset.UnixEpoch.AddHours(5), Stated: true, AssumedZone: false));
 
-    /// <summary>The native door's failed result, read as a limit, cools the account; nothing else the sink hears does (D210 1c, TOOL4n).</summary>
+    private static readonly WireReading TurnEnded = new WireReading.Said(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "success" });
+
+    /// <summary>
+    /// The native door's failed result, read as a limit, is the limit its turn ended on, told once at that end; nothing else the sink hears is
+    /// (D210 1c, TOOL4n).
+    /// </summary>
     [Fact]
-    public void The_native_door_s_failed_result_read_as_a_limit_cools_its_account_once_and_a_protocol_failure_cools_none()
+    public void The_native_door_s_failed_result_read_as_a_limit_is_its_turn_s_limit_told_once_and_a_protocol_failure_is_none()
     {
-        var cooled = new List<DoorFailure>();
-        var part = new NativeLimits(failure => failure.Door == "pipe" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, (failure, _) =>
-        {
-            cooled.Add(failure);
-            return true;
-        });
+        var met = new List<AgentError>();
+        var part = new NativeLimits(failure => failure.Door == "pipe" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, met.Add);
 
         part.Read(new WireReading.Failed(DoorFailures.OfResult("You've hit your limit")));
         part.Read(new WireReading.Failed(DoorFailures.OfPrompt(new AcpRefusal("overloaded", errorKind: "overloaded", code: -32603, words: "overloaded"))));
         part.Read(new WireReading.Failed(new DoorFailure("pipe", null, null, null, "You've hit your limit", DoorWhere.Harness)));
         part.Read(new WireReading.Failed(DoorFailures.OfResult("replayed")) { Replayed = true });
         part.Read(new WireReading.Shown("You've hit your limit"));
+        Assert.Empty(met);
 
-        Assert.Equal(["You've hit your limit"], cooled.Select(failure => failure.Words));
-        Assert.Same(Limited, part.Cooled);
+        part.Read(TurnEnded);
+
+        Assert.Same(Limited, Assert.Single(met));
+        Assert.Same(Limited, part.Ended);
     }
 
     [Fact]
-    public void A_pipe_result_the_reader_does_not_read_as_a_limit_cools_nothing()
+    public void A_pipe_result_the_reader_does_not_read_as_a_limit_is_no_limit()
     {
-        var part = new NativeLimits(_ => Limited with { Kind = AgentErrorKind.Transient }, (_, _) => throw new InvalidOperationException("cooled"));
+        var part = new NativeLimits(_ => Limited with { Kind = AgentErrorKind.Transient }, _ => throw new InvalidOperationException("met"));
 
         part.Read(new WireReading.Failed(DoorFailures.OfResult("API Error: 500 overloaded")));
+        part.Read(TurnEnded);
 
-        Assert.Null(part.Cooled);
+        Assert.Null(part.Ended);
     }
 
     [Theory]

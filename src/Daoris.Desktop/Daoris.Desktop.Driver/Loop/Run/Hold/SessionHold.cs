@@ -342,7 +342,6 @@ internal sealed class SessionHold(IRunWiring wiring)
         // The exit, the capture bounded past it, the process's lineage end at its drain, and what it consumed where the door reported
         // it: a pipe with only text reports nothing, and a surface then says "not measured" rather than zero.
         var end = await run.EndAsync(ct).ConfigureAwait(false);
-        var turnFailed = protocol ? end.Ending.Failure : null;
         List<ChatMessage> left = [.. acpLeft];
 
         // 🔴 A session never concludes while words are held: on the native door its process has exited, so its own conversation is
@@ -351,6 +350,10 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             end = await wiring.GoOns.GoOnAsync(run, held, adapter, sessionId, end, resume, left, ct, own, setupChanged, carriesOn).ConfigureAwait(false);
         }
+
+        // The turn's failure the conclusion reads: the protocol door's refused turn, or the native door's last turn ended on its account's
+        // limit (D210 row 1c), so a native limit cools its account there, once, and its record says `limit`, as the protocol door's does.
+        var turnFailed = NativeLimits.TurnFailed(protocol, end.Ending, limits);
 
         // The run Daoris ended for a changed setup says so on its console as it ends; its record's note says it once concluded.
         if (swapped is not null && left.Count > 0)

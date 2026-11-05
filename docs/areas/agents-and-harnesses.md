@@ -351,11 +351,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
   kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes. The channel and the reader are built: a failed native `result` is one
+  Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
-  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and cools the account on a limit, saying it on the account's line.
-  What is not built: the conclusion still reads no native limit (the record ends as a failed or completed run, with no limit note and no
-  park), and a native conversation moves to no next account; those and the recorded limit are what remain of D210's row 1c.
+  `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
+  as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so
+  `AccountEndings.Limited` cools the account once, notes it and the record says `limit`, then parks or waits by its line's rules; a native
+  conversation's cooling line is recorded before its turn's end, which `LimitHeld` reads limited (a failed result's subtype, never
+  `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.

@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 /// What a conversation whose last turn its account's limit refused holds (LIMITGOON1, the limit-goes-on design §2): the person's words
 /// the refused turns took, in the order they were said, and where the first of them stands in the record. Read from the record's events
 /// alone, so a shell that comes up reads what the one before it saw: a turn is refused by a limit where its account's cooling line
-/// (<c>account.cooling</c>, CONVNOTE1b) was said before its end, which the door ends <c>error</c>.
+/// (<c>account.cooling</c>, CONVNOTE1b) was said before its end, which the door ends as a failure: <c>error</c> on the protocol door, the
+/// failed result's subtype on the native.
 /// </summary>
 /// <remarks>
 /// FOUNDATION1g part c (the foundation design §3.5): whether an ended conversation is limited is its record's <c>limited</c> flag, which its
@@ -59,7 +60,8 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
             }
             else if (e.Kind == SessionEventKind.Turn)
             {
-                var limited = cooled is not null && e.StopReason == "error";
+                // The protocol door ends a refused turn `error`; the native door ends a failed result with its subtype, never `end_turn`.
+                var limited = cooled is not null && e.StopReason is { } stop && stop is not ("end_turn" or "cancelled");
                 if (limited)
                 {
                     if (held.Count == 0 && asked.Count > 0) heldFrom = asked[0].At;

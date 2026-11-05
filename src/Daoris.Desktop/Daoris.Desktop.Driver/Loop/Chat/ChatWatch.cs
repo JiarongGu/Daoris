@@ -19,7 +19,10 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     /// <param name="said">Told what its door says about its account's windows, on either structured door.</param>
     /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with.</param>
-    /// <param name="limits">The account's part of its sink: the native door's failed result read for a limit, which cools the account.</param>
+    /// <param name="limits">
+    /// The account's part of its sink: the native door's failed result read for a limit, concluded at its turn's end as a protocol refused
+    /// turn is, its cooling line before that end and the end moving it to the next account.
+    /// </param>
     /// <returns>
     /// Whether the chat it goes on with is to be tried once more as the same resume: its native harness ended on a failed exit before it named
     /// its conversation, the first time. The record is left working, and nothing is concluded.
@@ -76,12 +79,13 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation resumed,
             // its id kept for its record the moment its door names it.
             run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, LineageHome = Context.Home, Preamble = watched.Preamble });
+            // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
             run.HandSink(ReadingSinks.Of(
+                limits,
                 new RecordReadings(sessionId, Context.Output, Context.Events),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
-                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
-                limits));
+                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows))));
             await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
                 .ConfigureAwait(false);
 

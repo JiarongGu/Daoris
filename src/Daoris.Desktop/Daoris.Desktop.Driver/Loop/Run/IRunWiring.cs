@@ -103,7 +103,7 @@ internal interface IRunWiring
     Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId);
 
     /// <summary>The account's part of a run's sink for the native door's limit (<see cref="NativeLimits"/>).</summary>
-    NativeLimits NativeLimit(ISessionAdapter adapter, HarnessSelection selection, string sessionId);
+    NativeLimits NativeLimit(ISessionAdapter adapter);
 
     /// <summary>Whether a driven run that ends holding its quest waits on its own helper.</summary>
     Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct);

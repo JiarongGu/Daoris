@@ -212,7 +212,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                 },
                 ct, scope: scope, handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly), minutes: turn.Minutes,
                 transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
-                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 // D205 §4.4: its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with
                 // it (above) for the pass's one bounded restart on the next account; a voice has no other entry to move to on this account.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
