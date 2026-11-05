@@ -75,7 +75,9 @@ public static class WorkBelief
     /// schema the plugin gave no reference of. A node declaring none takes the answer itself, its invocation, as the plugin's word.
     /// </summary>
     public static NodePort? Evidence(NodeDeclaration node, string invocation, string? revision, WorkEvidence? evidence) =>
-        evidence?.Ref is { } reference ? new NodePort(SchemaOf(reference) ?? node.Kind, reference, revision, null)
+        // A pull-request step's reference is the pull request's address, which the runtime writes on the landing (PullRequestSteps).
+        PullRequestSteps.PluginOf(node.Kind) is not null && PullRequestSteps.IsAddress(evidence?.Url) ? new NodePort(node.Evidence ?? node.Kind, evidence!.Url!, revision, null)
+        : evidence?.Ref is { } reference ? new NodePort(SchemaOf(reference) ?? node.Kind, reference, revision, null)
         : node.Evidence is null ? new NodePort(node.Kind, invocation, revision, null)
         : null;
 

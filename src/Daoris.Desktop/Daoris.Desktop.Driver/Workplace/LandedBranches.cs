@@ -111,6 +111,10 @@ public sealed class LandedBranches(string home)
             ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest ?? each.PullRequest, PushedTip = tip }
             : each)]);
 
+    /// <summary>The pull request a plugin's <c>pull-request</c> step opened for the branch (G8), kept on its entry beside the plugin that opened it.</summary>
+    public void PullRequested(string repository, string branch, string plugin, string address) => Edit(all =>
+        [.. all.Select(each => Standing(each, repository, branch) ? each with { Plugin = plugin, PullRequest = address } : each)]);
+
     /// <summary>The commit Daoris's own push act left on origin for the branch (G8, D241 point 2), kept on its entry for the <c>push</c> node to read.</summary>
     public void Pushed(string repository, string branch, string tip) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch) ? each with { Pushed = true, PushedTip = tip } : each)]);

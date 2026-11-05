@@ -34,12 +34,6 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
         (_, _, _) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
 
     /// <summary>
-    /// Whether one commit holds another in one checkout (<see cref="NodeTips.HoldsAsync"/>): an ahead <c>pull-request</c>'s check, asked only
-    /// where one waits on a completed answer from a newer commit; null where git could not say.
-    /// </summary>
-    public Func<string, string, string, CancellationToken, Task<bool?>> Holds { get; init; } = (_, _, _, _) => Task.FromResult<bool?>(null);
-
-    /// <summary>
     /// The second opinion's and the look's gates for a branch unit's work as a landing door reads them (<see cref="OpinionGate.JudgeAsync"/>
     /// and <see cref="ReviewGate"/>'s live read), what its <c>opinion</c> and <c>look</c> nodes observe: read once a pass for a unit, and only
     /// where one of them waits. Either is null where it was not read, and its node waits. Judged at the commit given, where one is (a run's

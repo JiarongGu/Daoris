@@ -238,17 +238,6 @@ public static class NodeTips
 
         return tips;
     }
-
-    /// <summary>
-    /// Whether <paramref name="holder"/> holds <paramref name="held"/> in <paramref name="root"/>, is it or descends from it (FABRIC-RUN1b: an ahead
-    /// <c>pull-request</c>'s check): <c>merge-base --is-ancestor</c>'s 0 or 1; null where git could not say, which establishes nothing.
-    /// </summary>
-    public static async Task<bool?> HoldsAsync(string root, string holder, string held, CancellationToken ct)
-    {
-        if (root.Length == 0 || !Directory.Exists(root)) return null;
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", held, holder], ct).ConfigureAwait(false);
-        return code switch { 0 => true, 1 => false, _ => null };
-    }
 }
 
 /// <summary>
@@ -257,16 +246,12 @@ public static class NodeTips
 /// one pass and dropped with it, so nothing git said is carried into the next (LANDGIT1).
 /// </summary>
 /// <param name="remotes">The look's read of one checkout's remote-tracking refs (<see cref="NodeRuntimeLook.Remotes"/>).</param>
-/// <param name="holds">The look's ancestry question (<see cref="NodeRuntimeLook.Holds"/>).</param>
 /// <param name="pushing">Each checkout's landed branches the pass may judge <c>pushed</c> on.</param>
 public sealed class PassGit(
     Func<string, IReadOnlyCollection<string>, CancellationToken, Task<IReadOnlyDictionary<string, string>>> remotes,
-    Func<string, string, string, CancellationToken, Task<bool?>> holds,
     IReadOnlyDictionary<string, IReadOnlyCollection<string>> pushing)
 {
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _remotes = new(StringComparer.Ordinal);
-
-    private readonly Dictionary<(string Root, string Holder, string Held), bool?> _holds = [];
 
     /// <summary>The commit <paramref name="branch"/>'s remote-tracking ref holds in <paramref name="root"/>: empty where it is not there, null where not read.</summary>
     public async Task<string?> RemoteAsync(string root, string branch, CancellationToken ct)
@@ -279,14 +264,6 @@ public sealed class PassGit(
         }
 
         return read.GetValueOrDefault(branch);
-    }
-
-    /// <summary>Whether <paramref name="holder"/> holds <paramref name="held"/> in <paramref name="root"/>, asked once a pass; null where git could not say.</summary>
-    public async Task<bool?> HoldsAsync(string root, string holder, string held, CancellationToken ct)
-    {
-        if (root.Length == 0) return null;
-        if (_holds.TryGetValue((root, holder, held), out var known)) return known;
-        return _holds[(root, holder, held)] = await holds(root, holder, held, ct).ConfigureAwait(false);
     }
 }
 
