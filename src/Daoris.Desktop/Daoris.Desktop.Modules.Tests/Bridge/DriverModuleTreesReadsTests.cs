@@ -116,19 +116,6 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task A_hand_off_plan_of_a_branch_no_landing_made_is_the_verbs_refusal_where_asked_and_the_pages_shape_where_not()
-    {
-        var module = await ComeUpAsync();
-
-        var verb = await AnswerAsync(module, "HANDOFF_PLAN", new { branch = "feature/x", repository = "engine", plugin = "example.lands", said = true });
-        var page = await AnswerAsync(module, "HANDOFF_PLAN", new { branch = "feature/x" });
-
-        Assert.Equal([$"trees: {TreeHand.NotLanded("feature/x")}"], Said(verb).Error);
-        Assert.Equal(1, Said(verb).Code);
-        Assert.Equal(["session", "branch"], page.EnumerateObject().Select(each => each.Name));
-    }
-
-    [Fact]
     public async Task An_entrys_and_an_asks_plan_say_there_is_no_work_where_asked_as_the_verb_does()
     {
         var module = await ComeUpAsync();

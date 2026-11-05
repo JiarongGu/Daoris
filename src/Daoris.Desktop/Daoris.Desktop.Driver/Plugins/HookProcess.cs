@@ -59,7 +59,7 @@ public sealed class HookProcess : IHookChannel
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>Its first word is resolved, never handed to the system bare</b> (TOOLS5, D121 §2.4): a name a tool
-    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>gh</c>, <c>az</c>…) is the file Tools resolves, and any
+    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>pwsh</c>) is the file Tools resolves, and any
     /// other is found on the child's <c>PATH</c> as an agent's is — both through the shim rule the agents' doors use,
     /// since a bare name started with no shell finds only an <c>.exe</c>. Its environment is the tools', so a landing
     /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
@@ -106,6 +106,9 @@ public sealed class HookProcess : IHookChannel
         Tools.Hand(info, tools, home);
         // GITAUTH1b (the git-auth design §6.7): the landing's grant goes to the one plugin process started for its push, and no other.
         if (Granting.Value is { } grant) info.Environment[GitRouting.GrantVariable] = grant;
+        // D241 point 5: the identity's API token goes to the one process started for a pull-request step; one the desktop inherited never does.
+        info.Environment.Remove(PluginHostToken.Variable);
+        if (HostToken.Value is { } hostToken) info.Environment[PluginHostToken.Variable] = hostToken;
         // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
         // is held to the shim rule about its arguments rather than started bare and not found (USE1f).
         info.FileName = HarnessActions.WindowsShim(
@@ -118,6 +121,9 @@ public sealed class HookProcess : IHookChannel
     /// <see cref="LandingPlugins"/> around that one start, so only its process carries <see cref="GitRouting.GrantVariable"/>.
     /// </summary>
     internal static readonly AsyncLocal<string?> Granting = new();
+
+    /// <summary>The API token for the plugin process one start makes (<see cref="PluginHostToken"/>), set by <see cref="HookSet"/> around that start alone.</summary>
+    internal static readonly AsyncLocal<string?> HostToken = new();
 
     /// <summary>
     /// The longest frame read from the plugin's stdout (FABRIC-PERFORM1a, round 2): a plugin that speaks a work point is held to the work
@@ -173,8 +179,6 @@ public sealed class HookProcess : IHookChannel
     public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => _peer.ConsiderAsync(payload, ct);
 
     public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
-
-    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
 
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 

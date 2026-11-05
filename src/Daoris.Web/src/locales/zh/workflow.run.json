@@ -308,5 +308,17 @@
   "workflow.run.check.said.notNow": "你暂时放下了它；不会再向它询问什么。",
   "workflow.run.check.said.waiting": "它还没有开始：正排在其他重型运行之后等待。",
   "workflow.run.check.again": "再运行一次",
-  "workflow.run.check.stop": "暂不处理"
+  "workflow.run.check.stop": "暂不处理",
+  "workflow.run.line.title": "验证",
+  "workflow.run.line.reading": "正在读取这个仓库的验证…",
+  "workflow.run.line.none": "这里还没有验证过什么。起始节点上的“验证…”会按已采纳的检查项验证一个分支或提交。",
+  "workflow.run.line.body": "最新的验证在前，每次都按你已采纳的检查项进行。",
+  "workflow.run.line.of": "{{branch}}，提交 {{commit}}",
+  "workflow.run.line.asked": "由你发起，{{when}}",
+  "workflow.run.line.started": "开始于 {{when}}",
+  "workflow.run.line.unread": "这里读不到它绑定的工作流版本。",
+  "workflow.run.line.gates": "它的检查项",
+  "workflow.run.line.exit": "退出码 {{exit}}",
+  "workflow.run.line.wall": "{{seconds}} 秒",
+  "workflow.run.line.join": " · "
 }

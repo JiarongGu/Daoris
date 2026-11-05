@@ -58,7 +58,7 @@ public sealed class NativeStreamsTests : IDisposable
         };
 
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(string.Join('\n', lines)), new StringReader(""), transcript, "s1", output, events: null,
+            new StringReader(string.Join('\n', lines)), new StringReader(""), transcript, new RecordReadings("s1", output, null),
             new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
         var streams = output.Streams("s1");
@@ -100,8 +100,8 @@ public sealed class NativeStreamsTests : IDisposable
         var own = new HarnessWords();
 
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(string.Join('\n', BackgroundCut)), new StringReader(""), Path.Combine(_root, "cut.log"), "cut1",
-            console ? new SessionOutput() : null, events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: own);
+            new StringReader(string.Join('\n', BackgroundCut)), new StringReader(""), Path.Combine(_root, "cut.log"),
+            new RecordReadings("cut1", console ? new SessionOutput() : null, null), new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: own);
 
         Assert.Equal(["npm run gates"], own.Ended(0).BackgroundCut);
     }
@@ -145,8 +145,8 @@ public sealed class NativeStreamsTests : IDisposable
         };
 
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(string.Join('\n', lines)), new StringReader(""), Path.Combine(_root, "s2.log"), "s2", output,
-            events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None);
+            new StringReader(string.Join('\n', lines)), new StringReader(""), Path.Combine(_root, "s2.log"), new RecordReadings("s2", output, null),
+            new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
         var stream = Assert.Single(output.Streams("s2"));
         Assert.Equal((false, SessionStream.SessionEnded), (stream.Live, stream.State));
@@ -166,7 +166,7 @@ public sealed class NativeStreamsTests : IDisposable
         });
 
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(child), new StringReader(""), transcript, "s3", output: null, events: null,
+            new StringReader(child), new StringReader(""), transcript, ReadingSinks.None,
             new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
         Assert.Contains("child words", File.ReadAllText(transcript));

@@ -19,6 +19,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     /// <param name="said">Told what its door says about its account's windows, on either structured door.</param>
     /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with.</param>
+    /// <param name="limits">The account's part of its sink: the native door's failed result read for a limit, which cools the account.</param>
     /// <returns>
     /// Whether the chat it goes on with is to be tried once more as the same resume: its native harness ended on a failed exit before it named
     /// its conversation, the first time. The record is left working, and nothing is concluded.
@@ -26,7 +27,8 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     public async Task<bool> WatchAsync(
         string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
-        string? servers, Action<JsonElement>? said, ChatWatched watched, ActorRun actorRun, MachineLog actorLog)
+        string? servers, Action<JsonElement>? said, ChatWatched watched, ActorRun actorRun, MachineLog actorLog,
+        NativeLimits limits)
     {
         var goOnDoor = wiring.Of<ChatGoOn>();
         var processes = Context.Processes;
@@ -73,9 +75,13 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The conversation's messages are recorded as the person sends them, so the capture opens with no composed prompt of its own, its
             // first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation resumed,
             // its id kept for its record the moment its door names it.
-            run.HandRecords(new RunRecords(
-                sessionId, transcript, Context.Output, Context.Events, LineageHome: Context.Home, KeepAs: watched.Keeps ? watched.Adapter : null,
-                Said: said, Preamble: watched.Preamble));
+            run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, LineageHome = Context.Home, Preamble = watched.Preamble });
+            run.HandSink(ReadingSinks.Of(
+                new RecordReadings(sessionId, Context.Output, Context.Events),
+                !watched.Keeps ? null
+                    : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
+                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
+                limits));
             await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
                 .ConfigureAwait(false);
 
@@ -155,9 +161,9 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
         finally
         {
             Context.Output?.Close(sessionId);
-            SpawnSettings.Remove(rules);
-            SpawnServers.Remove(servers);
-            SpawnSkills.Remove(watched.Skills);
+            SpawnFiles.Remove(rules);
+            SpawnFiles.Remove(servers);
+            SpawnFiles.RemoveFolder(watched.Skills);
         }
     }
 }

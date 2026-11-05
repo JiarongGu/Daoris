@@ -500,18 +500,15 @@ export const useOpinionMyself = () => useOpinionChange(
 export const useStopOpinion = () => useOpinionChange(
   ({ opinion }: { opinion: string }) => call('STOP_OPINION', { opinion }) as Promise<OpinionPressed>);
 
-/** What the rule's plugin answered once the branch was made (D100): whether it pushed, the pull request, its words. */
-export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string; message: string; failed?: boolean };
-
 /**
- * Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. A rule naming a
- * plugin hands the branch to it inside the press, so the page waits as long as that plugin may (`pluginBound`, LEFT3).
+ * Accept a session: its work lands as its repository's rule says — merged, or put on a branch. The push and the pull request
+ * are the workflow's own steps after it, never this press's.
  *
  * Where *Accept…* was drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`, XAGENT1f),
  * so the press answers what it showed; a gate that moved since answers nothing, and the door refuses in its sentence.
  *
  * What it moved is the route's to declare and the state hub's to ask again, in every window (STATEHUB1b, D169): every plan and
- * gate (the line moved, or a refusal fetched it), the sessions, its review, its hand-off and the clean-up's list. Asked here
+ * gate (the line moved, or a refusal fetched it), the sessions, its review and the clean-up's list. Asked here
  * alone, and never the plan after a done press, the plan read before it answered after a tab switch (STATEHUB1); the hook asks
  * nothing itself, a conflict's plan among it (STATEHUB1f).
  */
@@ -524,44 +521,14 @@ export const useLandSessionTree = () =>
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
       // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
-      // FABRIC-CLOSE1h9: why its push was held back, where it landed with no plugin told; a shell before it answers none.
       return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound }) as Promise<TreeAct & {
-        branch?: string; plugin?: PluginLanding; withheld?: string | null;
+        branch?: string;
         leftOut?: LeftOutCommit[] | null;
         /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
         press?: string | null;
         conflict?: LandingConflict | null;
       }>;
     },
-  });
-
-/**
- * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
- * branch, the plugin it would go to (the rule's), and the sentence a press would be refused with. A
- * session whose landing made no branch answers none. Shell-only: it reads this machine's record and checkout.
- */
-export const useHandOff = (id: string | null) => {
-  const { isAvailable } = useShenora();
-  return useQuery({
-    queryKey: keys.handOff(id ?? ''),
-    queryFn: () => call('HANDOFF_PLAN', { id }) as Promise<{
-      session: string; branch?: string | null; repository?: string; plugin?: string | null;
-      problem?: string | null; pullRequest?: string | null; commits?: number;
-    }>,
-    enabled: isAvailable && id !== null,
-  });
-};
-
-/**
- * Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an
- * answer. The page waits as long as the plugin may (`pluginBound`, LEFT3), not the bridge's 30 seconds. Its hand-off and the
- * clean-up's list are asked again by the state hub, as the route declares them (STATEHUB1b, D169).
- */
-export const useHandOffPress = () =>
-  useMutation({
-    mutationKey: ['HANDOFF'],
-    mutationFn: (id: string) =>
-      call('HANDOFF', { id }, { timeoutMs: pluginBound }) as Promise<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>,
   });
 
 /**

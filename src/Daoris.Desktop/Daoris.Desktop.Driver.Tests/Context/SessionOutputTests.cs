@@ -369,7 +369,7 @@ public sealed class CaptureTeeTests
         var file = new StringWriter();
 
         await HarnessCapture.PumpAsync(
-            new StringReader("first\nsecond\n"), file, "s1", output, CancellationToken.None);
+            new StringReader("first\nsecond\n"), file, new RecordReadings("s1", output, null), CancellationToken.None);
 
         Assert.Equal(["first", "second"], output.Tail("s1").Lines.Select(l => l.Text));
         Assert.Contains("first", file.ToString());
@@ -386,7 +386,7 @@ public sealed class CaptureTeeTests
         var file = new StringWriter();
 
         await HarnessCapture.PumpAsync(
-            new StringReader("alone\n"), file, "s1", output: null, CancellationToken.None);
+            new StringReader("alone\n"), file, ReadingSinks.None, CancellationToken.None);
 
         Assert.Contains("alone", file.ToString());
     }

@@ -29,37 +29,37 @@ public sealed class ToolInstallTests : IDisposable
     // ── An archive's refusals (§3.6). The CLI's `an archive unpacks, or is refused by its check…` ──────────────
 
     [Theory]
-    [InlineData("a zip that unpacks", "zip", "bin/gh.exe=gh; bin/README=read me; docs/", "", "bin/gh.exe", null)]
-    [InlineData("a zip of stored entries", "zip", "bin/gh.exe=gh!stored; docs/", "", "bin/gh.exe", null)]
-    [InlineData("a zip written as zip64", "zip", "bin/gh.exe=gh; docs/", "zip64", "bin/gh.exe", null)]
-    [InlineData("a zip name from the root", "zip", "bin/gh.exe=gh; /gh.exe=x", "", "bin/gh.exe", "absolute")]
-    [InlineData("a zip name on a drive", "zip", "C:/gh.exe=x", "", "bin/gh.exe", "absolute")]
-    [InlineData("a zip name that climbs out", "zip", "bin/gh.exe=gh; ../gh.exe=x", "", "bin/gh.exe", "outside")]
-    [InlineData("a zip name that climbs out partway", "zip", "bin/../../gh.exe=x", "", "bin/gh.exe", "outside")]
-    [InlineData("a zip name that climbs out by a backslash", "zip", "..\\gh.exe=x", "", "bin/gh.exe", "outside")]
-    [InlineData("a zip stream name", "zip", "bin/gh.exe:hidden=x", "", "bin/gh.exe", "stream")]
-    [InlineData("a zip symbolic link", "zip", "bin/gh.exe=/usr/bin/gh!symlink", "", "bin/gh.exe", "link")]
-    [InlineData("a zip entry encrypted", "zip", "bin/gh.exe=gh!encrypted", "", "bin/gh.exe", "encrypted")]
-    [InlineData("a zip method other than stored or deflate", "zip", "bin/gh.exe=gh!method12", "", "bin/gh.exe", "method")]
-    [InlineData("a zip entry that fails its checksum", "zip", "bin/gh.exe=gh!badcrc", "", "bin/gh.exe", "checksum")]
-    [InlineData("a zip with no end record", "zip", "bin/gh.exe=gh", "cut-end", "bin/gh.exe", "truncated")]
-    [InlineData("a zip cut in half", "zip", "bin/gh.exe=gh; bin/README=read me", "cut-data", "bin/gh.exe", "truncated")]
-    [InlineData("a zip without the executable", "zip", "bin/gh.exe=gh", "", "bin/gh2.exe", "exe")]
-    [InlineData("a zip whose executable is a folder", "zip", "bin/gh.exe/", "", "bin/gh.exe", "exe")]
-    [InlineData("a tar.gz that unpacks", "tar.gz", "bin/gh=gh; bin/README=read me; docs/", "", "bin/gh", null)]
-    [InlineData("a tar.gz whose names are in extended headers", "tar.gz", "bin/gh=gh; docs/", "pax", "bin/gh", null)]
-    [InlineData("a tar.gz name from the root", "tar.gz", "/gh=x", "", "bin/gh", "absolute")]
-    [InlineData("a tar.gz name that climbs out", "tar.gz", "bin/gh=gh; ../gh=x", "", "bin/gh", "outside")]
-    [InlineData("a tar.gz stream name", "tar.gz", "bin/gh:hidden=x", "", "bin/gh", "stream")]
-    [InlineData("a tar.gz symbolic link", "tar.gz", "bin/gh=/usr/bin/gh!symlink", "", "bin/gh", "link")]
-    [InlineData("a tar.gz hard link", "tar.gz", "bin/gh=bin/other!hardlink", "", "bin/gh", "link")]
-    [InlineData("a tar.gz entry neither file nor folder", "tar.gz", "bin/gh=x!fifo", "", "bin/gh", "entry")]
-    [InlineData("a tar.gz header that fails its checksum", "tar.gz", "bin/gh=gh!badcrc", "", "bin/gh", "checksum")]
-    [InlineData("a tar.gz with no end", "tar.gz", "bin/gh=gh", "cut-end", "bin/gh", "truncated")]
-    [InlineData("a tar.gz cut inside an entry", "tar.gz", "bin/gh=gh", "cut-data", "bin/gh", "truncated")]
-    [InlineData("a tar.gz whose gzip is cut before its trailer", "tar.gz", "bin/gh=gh", "cut-gzip", "bin/gh", "truncated")]
-    [InlineData("a tar.gz without the executable", "tar.gz", "bin/gh=gh", "", "bin/gh2", "exe")]
-    [InlineData("an archive kind nobody unpacks", "7z", "bin/gh.exe=gh", "", "bin/gh.exe", "archive")]
+    [InlineData("a zip that unpacks", "zip", "bin/pwsh.exe=pwsh; bin/README=read me; docs/", "", "bin/pwsh.exe", null)]
+    [InlineData("a zip of stored entries", "zip", "bin/pwsh.exe=pwsh!stored; docs/", "", "bin/pwsh.exe", null)]
+    [InlineData("a zip written as zip64", "zip", "bin/pwsh.exe=pwsh; docs/", "zip64", "bin/pwsh.exe", null)]
+    [InlineData("a zip name from the root", "zip", "bin/pwsh.exe=pwsh; /pwsh.exe=x", "", "bin/pwsh.exe", "absolute")]
+    [InlineData("a zip name on a drive", "zip", "C:/pwsh.exe=x", "", "bin/pwsh.exe", "absolute")]
+    [InlineData("a zip name that climbs out", "zip", "bin/pwsh.exe=pwsh; ../pwsh.exe=x", "", "bin/pwsh.exe", "outside")]
+    [InlineData("a zip name that climbs out partway", "zip", "bin/../../pwsh.exe=x", "", "bin/pwsh.exe", "outside")]
+    [InlineData("a zip name that climbs out by a backslash", "zip", "..\\pwsh.exe=x", "", "bin/pwsh.exe", "outside")]
+    [InlineData("a zip stream name", "zip", "bin/pwsh.exe:hidden=x", "", "bin/pwsh.exe", "stream")]
+    [InlineData("a zip symbolic link", "zip", "bin/pwsh.exe=/usr/bin/pwsh!symlink", "", "bin/pwsh.exe", "link")]
+    [InlineData("a zip entry encrypted", "zip", "bin/pwsh.exe=pwsh!encrypted", "", "bin/pwsh.exe", "encrypted")]
+    [InlineData("a zip method other than stored or deflate", "zip", "bin/pwsh.exe=pwsh!method12", "", "bin/pwsh.exe", "method")]
+    [InlineData("a zip entry that fails its checksum", "zip", "bin/pwsh.exe=pwsh!badcrc", "", "bin/pwsh.exe", "checksum")]
+    [InlineData("a zip with no end record", "zip", "bin/pwsh.exe=pwsh", "cut-end", "bin/pwsh.exe", "truncated")]
+    [InlineData("a zip cut in half", "zip", "bin/pwsh.exe=pwsh; bin/README=read me", "cut-data", "bin/pwsh.exe", "truncated")]
+    [InlineData("a zip without the executable", "zip", "bin/pwsh.exe=pwsh", "", "bin/pwsh2.exe", "exe")]
+    [InlineData("a zip whose executable is a folder", "zip", "bin/pwsh.exe/", "", "bin/pwsh.exe", "exe")]
+    [InlineData("a tar.gz that unpacks", "tar.gz", "bin/pwsh=pwsh; bin/README=read me; docs/", "", "bin/pwsh", null)]
+    [InlineData("a tar.gz whose names are in extended headers", "tar.gz", "bin/pwsh=pwsh; docs/", "pax", "bin/pwsh", null)]
+    [InlineData("a tar.gz name from the root", "tar.gz", "/pwsh=x", "", "bin/pwsh", "absolute")]
+    [InlineData("a tar.gz name that climbs out", "tar.gz", "bin/pwsh=pwsh; ../pwsh=x", "", "bin/pwsh", "outside")]
+    [InlineData("a tar.gz stream name", "tar.gz", "bin/pwsh:hidden=x", "", "bin/pwsh", "stream")]
+    [InlineData("a tar.gz symbolic link", "tar.gz", "bin/pwsh=/usr/bin/pwsh!symlink", "", "bin/pwsh", "link")]
+    [InlineData("a tar.gz hard link", "tar.gz", "bin/pwsh=bin/other!hardlink", "", "bin/pwsh", "link")]
+    [InlineData("a tar.gz entry neither file nor folder", "tar.gz", "bin/pwsh=x!fifo", "", "bin/pwsh", "entry")]
+    [InlineData("a tar.gz header that fails its checksum", "tar.gz", "bin/pwsh=pwsh!badcrc", "", "bin/pwsh", "checksum")]
+    [InlineData("a tar.gz with no end", "tar.gz", "bin/pwsh=pwsh", "cut-end", "bin/pwsh", "truncated")]
+    [InlineData("a tar.gz cut inside an entry", "tar.gz", "bin/pwsh=pwsh", "cut-data", "bin/pwsh", "truncated")]
+    [InlineData("a tar.gz whose gzip is cut before its trailer", "tar.gz", "bin/pwsh=pwsh", "cut-gzip", "bin/pwsh", "truncated")]
+    [InlineData("a tar.gz without the executable", "tar.gz", "bin/pwsh=pwsh", "", "bin/pwsh2", "exe")]
+    [InlineData("an archive kind nobody unpacks", "7z", "bin/pwsh.exe=pwsh", "", "bin/pwsh.exe", "archive")]
     public void An_archive_unpacks_as_the_cli_unpacks_it(string name, string kind, string entries, string shape, string exe, string? check)
     {
         var archive = Path.Combine(_root, "download");
@@ -71,7 +71,7 @@ public sealed class ToolInstallTests : IDisposable
         {
             var file = ToolArchives.Unpack(archive, kind, into, exe);
             Assert.Equal(Path.Combine([into, .. exe.Split('/')]), file);
-            Assert.Equal("gh", File.ReadAllText(file));
+            Assert.Equal("pwsh", File.ReadAllText(file));
         }
         else
         {
@@ -81,8 +81,8 @@ public sealed class ToolInstallTests : IDisposable
 
         foreach (var outside in new[]
         {
-            Path.Combine(_root, "gh.exe"), Path.Combine(_root, "a", "gh.exe"), Path.Combine(_root, "a", "b", "gh.exe"),
-            Path.Combine(_root, "a", "b", "gh"),
+            Path.Combine(_root, "pwsh.exe"), Path.Combine(_root, "a", "pwsh.exe"), Path.Combine(_root, "a", "b", "pwsh.exe"),
+            Path.Combine(_root, "a", "b", "pwsh"),
         })
         {
             Assert.False(File.Exists(outside), $"{name}: nothing lands outside the folder ({outside})");
@@ -93,12 +93,12 @@ public sealed class ToolInstallTests : IDisposable
     public void A_zip_unpacks_whole_top_folder_included_and_what_may_run_stays_runnable()
     {
         var archive = Path.Combine(_root, "download");
-        File.WriteAllBytes(archive, Archive.Build("zip", "gh_2.62.0/; gh_2.62.0/bin/gh.exe=gh; gh_2.62.0/LICENSE=MIT", ""));
+        File.WriteAllBytes(archive, Archive.Build("zip", "pwsh_2.62.0/; pwsh_2.62.0/bin/pwsh.exe=pwsh; pwsh_2.62.0/LICENSE=MIT", ""));
 
         var into = Path.Combine(_root, "package");
-        var file = ToolArchives.Unpack(archive, "zip", into, "gh_2.62.0/bin/gh.exe");
-        Assert.Equal(Path.Combine(into, "gh_2.62.0", "bin", "gh.exe"), file);
-        Assert.Equal("MIT", File.ReadAllText(Path.Combine(into, "gh_2.62.0", "LICENSE")));
+        var file = ToolArchives.Unpack(archive, "zip", into, "pwsh_2.62.0/bin/pwsh.exe");
+        Assert.Equal(Path.Combine(into, "pwsh_2.62.0", "bin", "pwsh.exe"), file);
+        Assert.Equal("MIT", File.ReadAllText(Path.Combine(into, "pwsh_2.62.0", "LICENSE")));
         if (!OperatingSystem.IsWindows()) Assert.True((File.GetUnixFileMode(file) & UnixFileMode.UserExecute) != 0);
     }
 
@@ -106,11 +106,11 @@ public sealed class ToolInstallTests : IDisposable
     public void A_refusal_says_what_it_found_in_a_sentence()
     {
         var archive = Path.Combine(_root, "download");
-        File.WriteAllBytes(archive, Archive.Build("zip", "bin/gh.exe=gh!badcrc", ""));
+        File.WriteAllBytes(archive, Archive.Build("zip", "bin/pwsh.exe=pwsh!badcrc", ""));
 
-        var crc = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "zip", Path.Combine(_root, "package"), "bin/gh.exe"));
-        Assert.Matches(@"^the archive's `bin/gh\.exe` fails its own check — 2 bytes with CRC-32 [0-9a-f]{8}, where it states 2 with [0-9a-f]{8}\z", crc.Message);
-        var kind = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "rar", Path.Combine(_root, "package"), "bin/gh.exe"));
+        var crc = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "zip", Path.Combine(_root, "package"), "bin/pwsh.exe"));
+        Assert.Matches(@"^the archive's `bin/pwsh\.exe` fails its own check — 4 bytes with CRC-32 [0-9a-f]{8}, where it states 4 with [0-9a-f]{8}\z", crc.Message);
+        var kind = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "rar", Path.Combine(_root, "package"), "bin/pwsh.exe"));
         Assert.Contains("`rar` is not an archive this build unpacks — zip or tar.gz", kind.Message);
     }
 
@@ -119,11 +119,11 @@ public sealed class ToolInstallTests : IDisposable
     /// <summary>The placeholder a row writes where a whole path goes; each side spells its own.</summary>
     private const string Whole = "WHOLE";
 
-    private const string Lists = "gh 2.62.0 win-x64 a m.example; gh 2.63.0 win-x64 b m.example";
+    private const string Lists = "pwsh 2.62.0 win-x64 a m.example; pwsh 2.63.0 win-x64 b m.example";
 
     private string Home => Path.Combine(_root, "data");
 
-    private string WholeFile => Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "gh.exe" : "gh");
+    private string WholeFile => Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh");
 
     private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
@@ -200,26 +200,26 @@ public sealed class ToolInstallTests : IDisposable
     [InlineData("download a version no list names", null, Lists, "", "download", "2.64.0", null, false, null, "unknown")]
     [InlineData("download a version that is not exact", null, Lists, "", "download", "latest", null, false, null, "version")]
     [InlineData("download with no list naming any", null, "", "", "download", null, null, false, null, "unknown")]
-    [InlineData("download a version two lists disagree on", null, "gh 2.62.0 win-x64 b o.example | gh 2.62.0 win-x64 a m.example", "", "download", "2.62.0", null, false, null, "conflict")]
+    [InlineData("download a version two lists disagree on", null, "pwsh 2.62.0 win-x64 b o.example | pwsh 2.62.0 win-x64 a m.example", "", "download", "2.62.0", null, false, null, "conflict")]
     [InlineData("use a version downloaded that no list names", null, "", "2.61.0", "use", "2.61.0", "2.61.0", false, null, null)]
     [InlineData("use the newest, not downloaded", null, Lists, "", "use", null, "2.63.0", true, null, null)]
-    [InlineData("update a managed tool to the newest", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", Lists, "2.62.0", "update", null, "2.63.0", true, null, null)]
-    [InlineData("update at the newest, downloaded", """{"tools":{"gh":{"use":"managed","version":"2.63.0"}}}""", Lists, "2.63.0", "update", null, null, false, "nothing to do", null)]
-    [InlineData("update at the newest, not downloaded", """{"tools":{"gh":{"use":"managed","version":"2.63.0"}}}""", Lists, "", "update", null, "2.63.0", true, null, null)]
-    [InlineData("update never moves a tool back", """{"tools":{"gh":{"use":"managed","version":"2.64.0"}}}""", Lists, "2.64.0", "update", null, null, false, "never moves a tool back", null)]
+    [InlineData("update a managed tool to the newest", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", Lists, "2.62.0", "update", null, "2.63.0", true, null, null)]
+    [InlineData("update at the newest, downloaded", """{"tools":{"pwsh":{"use":"managed","version":"2.63.0"}}}""", Lists, "2.63.0", "update", null, null, false, "nothing to do", null)]
+    [InlineData("update at the newest, not downloaded", """{"tools":{"pwsh":{"use":"managed","version":"2.63.0"}}}""", Lists, "", "update", null, "2.63.0", true, null, null)]
+    [InlineData("update never moves a tool back", """{"tools":{"pwsh":{"use":"managed","version":"2.64.0"}}}""", Lists, "2.64.0", "update", null, null, false, "never moves a tool back", null)]
     [InlineData("update the system’s", null, Lists, "", "update", null, null, false, null, "machine")]
-    [InlineData("update a file you name", """{"tools":{"gh":{"use":"file","file":"WHOLE"}}}""", Lists, "", "update", null, null, false, null, "machine")]
-    [InlineData("update an entry that does not read", """{"tools":{"gh":{"use":"managed"}}}""", Lists, "", "update", null, null, false, null, "file")]
-    [InlineData("update with no list naming any", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", "", "2.62.0", "update", null, null, false, null, "unknown")]
+    [InlineData("update a file you name", """{"tools":{"pwsh":{"use":"file","file":"WHOLE"}}}""", Lists, "", "update", null, null, false, null, "machine")]
+    [InlineData("update an entry that does not read", """{"tools":{"pwsh":{"use":"managed"}}}""", Lists, "", "update", null, null, false, null, "file")]
+    [InlineData("update with no list naming any", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", "", "2.62.0", "update", null, null, false, null, "unknown")]
     public void A_plan_is_made_as_the_cli_makes_it(
         string name, string? tools, string lists, string has, string action, string? version, string? planned, bool fetch, string? nothing,
         string? check)
     {
         Directory.CreateDirectory(Home);
         if (tools is not null) File.WriteAllText(ToolsFile, tools.Replace(Whole, System.Text.Json.JsonEncodedText.Encode(WholeFile).ToString()));
-        foreach (var each in has.Split(',', StringSplitOptions.RemoveEmptyEntries)) Downloaded("gh", each);
+        foreach (var each in has.Split(',', StringSplitOptions.RemoveEmptyEntries)) Downloaded("pwsh", each);
 
-        var plan = ToolInstall.Plan(Home, MergedOf(lists), "gh", action, version);
+        var plan = ToolInstall.Plan(Home, MergedOf(lists), "pwsh", action, version);
         Assert.True(planned == plan.Version, $"{name}: {plan.Version} — {plan.Problem ?? plan.Nothing}");
         Assert.True(fetch == plan.Fetch, name);
         Assert.True(fetch == (plan.Offered is not null), $"{name}: what is fetched is offered");
@@ -234,14 +234,14 @@ public sealed class ToolInstallTests : IDisposable
     {
         Directory.CreateDirectory(Home);
         Assert.Equal(
-            "no list names a version of GitHub CLI for win-x64 — `daoris tool look` fetches the locations, and "
+            "no list names a version of PowerShell for win-x64 — `daoris tool look` fetches the locations, and "
             + "`daoris tool locations add <address>` adds one",
-            ToolInstall.Plan(Home, MergedOf(""), "gh", "download", null).Problem);
+            ToolInstall.Plan(Home, MergedOf(""), "pwsh", "download", null).Problem);
         Assert.Equal(
-            "GitHub CLI runs the system's: its updates are the machine's, not Daoris's — `daoris tool use gh managed` keeps a "
+            "PowerShell runs the system's: its updates are the machine's, not Daoris's — `daoris tool use pwsh managed` keeps a "
             + "version in the home",
-            ToolInstall.Plan(Home, MergedOf(Lists), "gh", "update", null).Problem);
-        Assert.Equal("no list names GitHub CLI 2.64.0 for win-x64", ToolInstall.Plan(Home, MergedOf(Lists), "gh", "download", "2.64.0").Problem);
+            ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "update", null).Problem);
+        Assert.Equal("no list names PowerShell 2.64.0 for win-x64", ToolInstall.Plan(Home, MergedOf(Lists), "pwsh", "download", "2.64.0").Problem);
     }
 
     // ── A download (§3.6). The CLI's `a download is verified, staged and laid out…` ──────────────────────────────────
@@ -249,8 +249,8 @@ public sealed class ToolInstallTests : IDisposable
     /// <summary>The archive a download row serves, and the offer a list makes of it — the CLI's <c>offerOf</c>.</summary>
     private static (OfferedVersion Offered, Dictionary<string, object> Answers) OfferOf(string kind, string addresses)
     {
-        var bytes = Archive.Build(kind, kind == "tar.gz" ? "bin/gh=gh" : "bin/gh.exe=gh", "");
-        var file = $"gh.{kind}";
+        var bytes = Archive.Build(kind, kind == "tar.gz" ? "bin/pwsh=pwsh" : "bin/pwsh.exe=pwsh", "");
+        var file = $"pwsh.{kind}";
         var answers = new Dictionary<string, object>(StringComparer.Ordinal);
         var urls = new List<string>();
         foreach (var address in addresses.Split(' '))
@@ -275,7 +275,7 @@ public sealed class ToolInstallTests : IDisposable
         answers[$"http://elsewhere.example/{file}"] = bytes;
         var offered = new OfferedVersion(
             "2.62.0", Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)), bytes.Length, kind,
-            kind == "tar.gz" ? "bin/gh" : "bin/gh.exe", ["bin"], urls, [ToolResources.BuiltIn]);
+            kind == "tar.gz" ? "bin/pwsh" : "bin/pwsh.exe", ["bin"], urls, [ToolResources.BuiltIn]);
         return (offered, answers);
     }
 
@@ -297,23 +297,23 @@ public sealed class ToolInstallTests : IDisposable
     {
         var (offered, answers) = OfferOf(kind, addresses);
         var host = new Host(answers);
-        var folder = ToolInstall.VersionFolder(Home, "gh", "2.62.0");
+        var folder = ToolInstall.VersionFolder(Home, "pwsh", "2.62.0");
 
         if (check is null)
         {
-            await ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", _ => { }, CancellationToken.None, host);
+            await ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", _ => { }, CancellationToken.None, host);
             var record = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, Tools.Record)))!;
             Assert.True(servedBy == new Uri(record["url"]!.GetValue<string>()).Authority, name);
-            Assert.Equal("gh", File.ReadAllText(Path.Combine([folder, Tools.Package, .. offered.Exe.Split('/')])));
+            Assert.Equal("pwsh", File.ReadAllText(Path.Combine([folder, Tools.Package, .. offered.Exe.Split('/')])));
             Assert.False(File.Exists(ToolsFile), $"{name}: nothing switches");
         }
         else
         {
             var refused = await Assert.ThrowsAsync<ToolRefusal>(() =>
-                ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", _ => { }, CancellationToken.None, host));
+                ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", _ => { }, CancellationToken.None, host));
             Assert.True(check == refused.Check, $"{name}: {refused.Check} — {refused.Message}");
-            var tool = DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh");
-            Assert.True(!Directory.Exists(tool) || !Directory.EnumerateFileSystemEntries(tool).Any(), $"{name}: nothing under tools/gh");
+            var tool = DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh");
+            Assert.True(!Directory.Exists(tool) || !Directory.EnumerateFileSystemEntries(tool).Any(), $"{name}: nothing under tools/pwsh");
         }
 
         Assert.False(Directory.Exists(folder + ToolInstall.Staging), $"{name}: no staging is left");
@@ -327,49 +327,49 @@ public sealed class ToolInstallTests : IDisposable
         var (offered, answers) = OfferOf("zip", "https://mirror.example=missing https://maker.example=ok");
         offered = offered with { Lists = ["https://lists.example/r.json", ToolResources.BuiltIn] };
         var lines = new List<string>();
-        var exe = await ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", lines.Add, CancellationToken.None, new Host(answers));
+        var exe = await ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", lines.Add, CancellationToken.None, new Host(answers));
 
-        var folder = ToolInstall.VersionFolder(Home, "gh", "2.62.0");
-        Assert.Equal(Path.Combine(folder, Tools.Package, "bin", "gh.exe"), exe);
+        var folder = ToolInstall.VersionFolder(Home, "pwsh", "2.62.0");
+        Assert.Equal(Path.Combine(folder, Tools.Package, "bin", "pwsh.exe"), exe);
         var text = File.ReadAllText(Path.Combine(folder, Tools.Record));
         var record = System.Text.Json.Nodes.JsonNode.Parse(text)!.AsObject();
         Assert.Equal(keys.Split(','), record.Select(pair => pair.Key));
         Assert.Equal(keys.Split(','), ToolInstall.RecordKeys);
-        Assert.Equal("gh", record["tool"]!.GetValue<string>());
+        Assert.Equal("pwsh", record["tool"]!.GetValue<string>());
         Assert.Equal("2.62.0", record["version"]!.GetValue<string>());
         Assert.Equal("win-x64", record["platform"]!.GetValue<string>());
         Assert.Equal(offered.Sha256, record["sha256"]!.GetValue<string>());
         Assert.Equal(offered.Size, record["size"]!.GetValue<long>());
         Assert.Equal("zip", record["archive"]!.GetValue<string>());
-        Assert.Equal("https://maker.example/gh.zip", record["url"]!.GetValue<string>());
+        Assert.Equal("https://maker.example/pwsh.zip", record["url"]!.GetValue<string>());
         Assert.Equal(["https://lists.example/r.json", ToolResources.BuiltIn], record["lists"]!.AsArray().Select(each => each!.GetValue<string>()));
-        Assert.Equal("bin/gh.exe", record["exe"]!.GetValue<string>());
+        Assert.Equal("bin/pwsh.exe", record["exe"]!.GetValue<string>());
         Assert.Equal(["bin"], record["paths"]!.AsArray().Select(each => each!.GetValue<string>()));
         Assert.Matches(@"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\z", record["at"]!.GetValue<string>());
         Assert.True(text.EndsWith("}\n", StringComparison.Ordinal) && !text.Contains('\r'), "two-space JSON, LF, a final newline");
         Assert.Equal([Tools.Package, Tools.Record], Directory.EnumerateFileSystemEntries(folder).Select(each => Path.GetFileName(each)).Order(StringComparer.Ordinal));
-        Assert.Contains(lines, line => line.Contains("https://mirror.example/gh.zip", StringComparison.Ordinal) && line.Contains("nothing there", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("https://mirror.example/pwsh.zip", StringComparison.Ordinal) && line.Contains("nothing there", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains(offered.Sha256, StringComparison.Ordinal));
-        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "gh"));
+        Assert.Equal(["2.62.0"], ToolInstall.Downloaded(Home, "pwsh"));
     }
 
     [Fact]
     public async Task A_version_already_downloaded_fetches_nothing_and_one_that_runs_nothing_is_replaced()
     {
         var (offered, answers) = OfferOf("zip", "https://maker.example=ok");
-        await ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", _ => { }, CancellationToken.None, new Host(answers));
+        await ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", _ => { }, CancellationToken.None, new Host(answers));
 
         var silent = new Host(new Dictionary<string, object>());
         var lines = new List<string>();
-        await ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", lines.Add, CancellationToken.None, silent);
+        await ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", lines.Add, CancellationToken.None, silent);
         Assert.Empty(silent.Asked);
         Assert.Contains(lines, line => line.Contains("already downloaded", StringComparison.Ordinal));
 
         // A folder whose executable went is no proof: it is replaced by a verified one.
-        var folder = ToolInstall.VersionFolder(Home, "gh", "2.62.0");
+        var folder = ToolInstall.VersionFolder(Home, "pwsh", "2.62.0");
         File.WriteAllText(Path.Combine(folder, Tools.Record), """{"exe":"bin/missing.exe"}""");
-        await ToolInstall.DownloadAsync(Home, "gh", offered, "win-x64", _ => { }, CancellationToken.None, new Host(answers));
-        Assert.Equal("bin/gh.exe", System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, Tools.Record)))!["exe"]!.GetValue<string>());
+        await ToolInstall.DownloadAsync(Home, "pwsh", offered, "win-x64", _ => { }, CancellationToken.None, new Host(answers));
+        Assert.Equal("bin/pwsh.exe", System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, Tools.Record)))!["exe"]!.GetValue<string>());
     }
 
     [Theory]
@@ -386,27 +386,27 @@ public sealed class ToolInstallTests : IDisposable
     [Theory]
     [InlineData("a version nothing uses", null, true, "2.62.0", null)]
     [InlineData("a version not downloaded", null, false, "2.62.0", "missing")]
-    [InlineData("the version the tool runs", """{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""", true, "2.62.0", "in-use")]
-    [InlineData("another version than the one it runs", """{"tools":{"gh":{"use":"managed","version":"2.63.0"}}}""", true, "2.62.0", null)]
+    [InlineData("the version the tool runs", """{"tools":{"pwsh":{"use":"managed","version":"2.62.0"}}}""", true, "2.62.0", "in-use")]
+    [InlineData("another version than the one it runs", """{"tools":{"pwsh":{"use":"managed","version":"2.63.0"}}}""", true, "2.62.0", null)]
     [InlineData("beside a file that does not read", "not json", true, "2.62.0", "file")]
     [InlineData("a version that climbs out", null, false, "../2.62.0", "version")]
     public async Task A_version_is_deleted_as_the_cli_deletes_it(string name, string? tools, bool has, string version, string? check)
     {
         Directory.CreateDirectory(Home);
         if (tools is not null) File.WriteAllText(ToolsFile, tools);
-        if (has) Downloaded("gh", "2.62.0");
+        if (has) Downloaded("pwsh", "2.62.0");
         static Task<LiveSessions> none(CancellationToken _) => Task.FromResult(LiveSessions.None);
 
         if (check is null)
         {
-            await ToolInstall.DeleteAsync(Home, "gh", version, none);
-            Assert.False(Directory.Exists(ToolInstall.VersionFolder(Home, "gh", version)), name);
+            await ToolInstall.DeleteAsync(Home, "pwsh", version, none);
+            Assert.False(Directory.Exists(ToolInstall.VersionFolder(Home, "pwsh", version)), name);
         }
         else
         {
-            var refused = await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "gh", version, none));
+            var refused = await Assert.ThrowsAsync<ToolRefusal>(() => ToolInstall.DeleteAsync(Home, "pwsh", version, none));
             Assert.True(check == refused.Check, $"{name}: {refused.Check} — {refused.Message}");
-            if (has) Assert.True(Directory.Exists(ToolInstall.VersionFolder(Home, "gh", "2.62.0")), $"{name}: the version stays");
+            if (has) Assert.True(Directory.Exists(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0")), $"{name}: the version stays");
         }
     }
 
@@ -414,9 +414,9 @@ public sealed class ToolInstallTests : IDisposable
 
     private const string Location = "https://lists.example/resources.json";
 
-    private static readonly string OldList = ListText("gh 2.62.0 win-x64 a m.example");
+    private static readonly string OldList = ListText("pwsh 2.62.0 win-x64 a m.example");
 
-    private static readonly string NewList = ListText("gh 2.63.0 win-x64 b m.example");
+    private static readonly string NewList = ListText("pwsh 2.63.0 win-x64 b m.example");
 
     [Theory]
     [InlineData("a list, never fetched before", "list", false, "fetched", "new")]
@@ -469,9 +469,9 @@ public sealed class ToolInstallTests : IDisposable
         File.WriteAllText(copy, OldList);
 
         var fetched = (await ToolInstall.LookAsync(Home, "win-x64", CancellationToken.None, new Host(new() { [Location] = Encoding.UTF8.GetBytes(NewList) })))[0];
-        Assert.Equal(["gh 2.63.0"], fetched.Added);
-        Assert.Equal(["gh 2.62.0"], fetched.Dropped);
-        Assert.Equal("https://lists.example/resources.json: fetched — 1 version for win-x64; added gh 2.63.0; dropped gh 2.62.0", fetched.Sentence);
+        Assert.Equal(["pwsh 2.63.0"], fetched.Added);
+        Assert.Equal(["pwsh 2.62.0"], fetched.Dropped);
+        Assert.Equal("https://lists.example/resources.json: fetched — 1 version for win-x64; added pwsh 2.63.0; dropped pwsh 2.62.0", fetched.Sentence);
 
         var failed = (await ToolInstall.LookAsync(Home, "win-x64", CancellationToken.None, new Host(new Dictionary<string, object>())))[0];
         Assert.Matches(@"^https://lists\.example/resources\.json could not be fetched \(nothing there\); its copy from .+ ago is kept\z", failed.Sentence);

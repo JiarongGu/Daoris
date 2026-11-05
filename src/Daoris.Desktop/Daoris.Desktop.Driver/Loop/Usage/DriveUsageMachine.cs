@@ -82,9 +82,10 @@ internal static class DriveUsageMachine
               defaults; which one a place's work follows, or a kind of task's; and the kinds of task a workspace
               declares. Each change saved as the next version, said step by step and your part first (--plan: say
               it, save nothing).
-          workflow run --session <id> | --quest <id> | --ask <id>
+          workflow run --session <id> | --quest <id> | --ask <id> | --line <repository>
               where a piece of work stands in its workflow, as the session's Workflow view draws it: each step with its
-              state and what it says, the step the run stands at marked. A session's run is its quest's. Reads only.
+              state and what it says, the step the run stands at marked. A session's run is its quest's; a line's, the
+              repository's newest verifications with their verdicts. Reads only.
           workflow keep <session> ["…"]
               keep the workflow a kind of task chose for a session's work that changed paths outside the kind's, where
               it asks less of you than the one it would follow without the kind: your say-so, with your words.

@@ -23,14 +23,11 @@ vi.mock('@shenora/react', () => ({
 import { keys } from '../../data/queries';
 import { useHarnesses } from '../agents/agents';
 import { useBrowserSettings } from '../browser';
-import { useDriver } from '../driver';
 import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED, useHelpConversations } from '../help';
 import { historyKey, useHistoryPlan } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { usePlugins } from '../plugins';
-import { useRules } from '../agents/rules';
 import { useSessionAtWork } from '../sessions/atWork';
-import { useSessionGroups } from '../sessions/sessions';
 import { useLandEntry } from '../sessions/entries';
 import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
 import { useSystemSpace, useSystemWiring } from '../system';
@@ -75,27 +72,26 @@ describe('the state hub (STATE_CHANGED)', () => {
     expect(invalid(keys.sweep)).toBe(false);
   });
 
-  it("each scope asks its own family again, and a named session narrows the reviews and hand-offs to its own", () => {
+  it("each scope asks its own family again, and a named session narrows the reviews to its own", () => {
     const { invalid } = holding(
-      keys.allSessions, keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2'), keys.sweep, treesSyncScopeKey,
+      keys.allSessions, keys.diff('s1'), keys.diff('s2'), keys.sweep, treesSyncScopeKey,
       keys.lines, keys.workflow('repository', 'engine'));
 
-    changed({ scopes: ['sessions', 'diff', 'handOff', 'sweep', 'treesSync', 'lines'], sessions: ['s1'] });
+    changed({ scopes: ['sessions', 'diff', 'sweep', 'treesSync', 'lines'], sessions: ['s1'] });
 
-    for (const key of [keys.allSessions, keys.diff('s1'), keys.handOff('s1'), keys.sweep, treesSyncScopeKey, keys.lines,
+    for (const key of [keys.allSessions, keys.diff('s1'), keys.sweep, treesSyncScopeKey, keys.lines,
       keys.workflow('repository', 'engine')]) {
       expect(invalid(key)).toBe(true);
     }
     expect(invalid(keys.diff('s2'))).toBe(false);
-    expect(invalid(keys.handOff('s2'))).toBe(false);
   });
 
-  it("a change about no one session asks every session's review and hand-off again", () => {
-    const { invalid } = holding(keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2'));
+  it("a change about no one session asks every session's review again", () => {
+    const { invalid } = holding(keys.diff('s1'), keys.diff('s2'));
 
-    changed({ scopes: ['diff', 'handOff'] });
+    changed({ scopes: ['diff'] });
 
-    for (const key of [keys.diff('s1'), keys.diff('s2'), keys.handOff('s1'), keys.handOff('s2')]) expect(invalid(key)).toBe(true);
+    for (const key of [keys.diff('s1'), keys.diff('s2')]) expect(invalid(key)).toBe(true);
   });
 
   /**
@@ -167,13 +163,11 @@ describe('the state hub (STATE_CHANGED)', () => {
 
   /**
    * The proof the row asks of each domain: an event alone, with no press in this window (a second window's, or another
-   * view's), asks the view's own data again, through the query the view already holds.
+   * view's), asks the view's own data again, through the query the view already holds. A pushed slice's view (the sessions, the
+   * driver's state, the rules) is moved by its push alone and asks no route, which `pushedState.test.tsx` holds.
    */
   const views: [scope: string, what: string, useView: () => unknown, route: string][] = [
-    ['sessions', 'the session list', () => useSessionGroups(), 'SESSION_GROUPS'],
     ['quests', 'a quest’s work', () => useWorkPlan({ scope: 'quest', id: 'q1' }), 'WORK_PLAN'],
-    ['driver', 'the driver’s state', () => useDriver(), 'STATE'],
-    ['rules', 'the rules', () => useRules(), 'RULES'],
     ['history', 'a workspace’s history', () => useHistoryPlan({ scope: 'workspace', id: 'aurora' }), 'HISTORY_PLAN'],
     ['plugins', 'the plugins', () => usePlugins(), 'PLUGINS'],
     ['harnesses', 'the agents', () => useHarnesses(), 'HARNESSES'],
@@ -211,7 +205,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     let reads = 0;
     invoke.mockReset();
     invoke.mockImplementation(async (_module: string, route: string) => {
-      if (route !== 'RULES') return {};
+      if (route !== 'PLUGINS') return {};
       reads += 1;
       if (reads === 1) return new Promise((resolve) => { first = resolve; });
       return { reads };
@@ -219,17 +213,17 @@ describe('the state hub (STATE_CHANGED)', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     function View() {
       useStateHub();
-      useRules();
+      usePlugins();
       return null;
     }
     render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
     await waitFor(() => expect(reads).toBe(1));
 
-    act(() => changed({ scopes: ['rules'] }));
+    act(() => changed({ scopes: ['plugins'] }));
     await act(async () => first({ reads: 'stale' }));
 
     await waitFor(() => expect(reads).toBe(2));
-    await waitFor(() => expect(client.getQueryData(keys.rules)).toEqual({ reads: 2 }));
+    await waitFor(() => expect(client.getQueryData(keys.plugins)).toEqual({ reads: 2 }));
   });
 });
 
@@ -414,7 +408,6 @@ describe('the state hub (UNDER_WAY)', () => {
         <Hub />
         <Step route="LAND_SESSION_TREE" session="s1" />
         <Step route="LAND_SESSION_TREE" session="s2" />
-        <Step route="HANDOFF" session="s1" />
         <Step route="LAND_SESSION_TREE" session={null} />
       </QueryClientProvider>,
     );
@@ -429,7 +422,6 @@ describe('the state hub (UNDER_WAY)', () => {
     await settled();
     expect(read('LAND_SESSION_TREE', 's1')).toBe('gate');
     expect(read('LAND_SESSION_TREE', 's2')).toBe('none');
-    expect(read('HANDOFF', 's1')).toBe('none');
     expect(read('LAND_SESSION_TREE', null)).toBe('none');
 
     told({ seq: 3, presses: [{ ...LANDING_S1, step: 'landing' }] });

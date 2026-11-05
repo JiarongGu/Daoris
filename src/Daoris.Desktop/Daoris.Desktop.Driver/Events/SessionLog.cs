@@ -99,7 +99,7 @@ public sealed class SessionLog : IDisposable
 
     /// <summary>
     /// A landing at done's try (LAND2b, design §8): <c>landing.auto</c>, with the fields <see cref="LandingLine"/> gives it —
-    /// codes, counts and a plugin's id, never a sentence, a branch or a path.
+    /// codes and counts, never a sentence, a branch or a path.
     /// </summary>
     public static void WriteLanding(MachineLog log, LandingLine line) => log.Write("info", line.Event, line.Data);
 

@@ -45,13 +45,11 @@ public static class ChatNoteCodes
 
     // ——— A landing at the quest's done, under a rule that accepts automatically: said in the conversation's record.
     public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
+
+    // Notes of the retired plugin push (D241 point 4): written once, so the page still words them; nothing writes them now. G8-CONVERT1 deletes them.
     public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
     public static readonly NoteCode LandingPluginFailed = new("landing.plugin-failed", ["branch", "plugin"]);
-
-    // Its push held back after the branch was made, handed on at the look after the release.
     public static readonly NoteCode LandingPushHeld = new("landing.push-held", ["branch", "plugin"]);
-
-    // Held back there by its landing's gate: a code of its own so it never leads with its quest; a note written before it keeps `landing.push-held`.
     public static readonly NoteCode LandingPushGated = new("landing.push-gated", ["branch", "plugin"]);
     public static readonly NoteCode LandingNothing = new("landing.nothing", []);
     public static readonly NoteCode LandingHeld = new("landing.held", []);

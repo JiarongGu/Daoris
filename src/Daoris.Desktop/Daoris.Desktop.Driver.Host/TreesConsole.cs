@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | hand | state | sync]`.
+/// The session trees, from a terminal: `daoris tree [list | remove &lt;path&gt; [--force] | clean | land | state | sync]`.
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
@@ -38,11 +38,11 @@ internal static class TreesConsole
         }
     }
 
-    /// <summary>What a `trees land` or `trees hand` says once before it waits behind another landing or push (LANDHOLD2).</summary>
+    /// <summary>What a `trees land` says once before it waits behind another landing or push (LANDHOLD2).</summary>
     internal const string WaitingBehind = "trees: waiting for another landing of this work to end…";
 
     /// <summary>
-    /// What a `trees land` or `trees hand` says while it waits (LANDHOLD2): naming the session and branch it waits behind where that
+    /// What a `trees land` says while it waits (LANDHOLD2): naming the session and branch it waits behind where that
     /// one said who it is (LANDHOLD3), else <see cref="WaitingBehind"/>.
     /// </summary>
     internal static string WaitingLine(LandingHolder? behind) => behind is null
@@ -51,7 +51,7 @@ internal static class TreesConsole
 
     /// <summary>
     /// Says <see cref="WaitingLine"/> to <paramref name="write"/> once a wait begins, and again only where it comes to name a holder it
-    /// had not named, for the landings and hand-offs this call makes, until disposed.
+    /// had not named, for the landings this call makes, until disposed.
     /// </summary>
     internal static IDisposable SayWaiting(Action<string> write)
     {
@@ -290,9 +290,6 @@ internal static class TreesConsole
 
                 return accepted.Code;
             }
-
-            case ["hand", var named, ..]:
-                return await TreesHandVerb.RunAsync(args, named, home, trees, log).ConfigureAwait(false);
 
             // The milestone of every unit before the plugin's ask below, which takes a name.
             case ["state"] or ["state", "--entries"]:

@@ -316,17 +316,19 @@ describe('Ask Daoris’s mode and what it was handed', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('sets the mode over SET_HELP_MODE and keeps the state it answered', async () => {
+  it('sets the mode over SET_HELP_MODE and answers the state, the driver’s entry left to its push', async () => {
     invoke.mockReset();
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SET_HELP_MODE' ? { drivable: [], holds: [], trees: [], helpMode: 'full' } : undefined));
     const { client, wrapper } = wrapped();
     const { result } = renderHook(() => useSetHelpMode(), { wrapper });
 
-    await act(async () => { await result.current.mutateAsync({ mode: 'full' }); });
+    let answered: { helpMode?: string } | undefined;
+    await act(async () => { answered = await result.current.mutateAsync({ mode: 'full' }); });
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_MODE', { payload: { mode: 'full' } });
-    expect(client.getQueryData<{ helpMode?: string }>(keys.driver)?.helpMode).toBe('full');
+    expect(answered?.helpMode).toBe('full');
+    expect(client.getQueryData(keys.driver)).toBeUndefined();
   });
 });
 

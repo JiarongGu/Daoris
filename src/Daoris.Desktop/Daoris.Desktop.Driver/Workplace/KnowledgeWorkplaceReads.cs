@@ -10,7 +10,7 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     public string TreeGuardMatcher => TreeGuard.Matcher;
     public string TreeGuardEditMatcher => TreeGuard.EditMatcher;
     public IReadOnlyList<string> AcceptanceNotes =>
-        [LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.HandNote(new TreeHand(true, "")).Text!];
+        [LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.PersonHanded];
     public string LandingsFileName => LandedBranches.FileName;
 
     public (IReadOnlyList<LandedBranch> Entries, string Path) Landings(string home)

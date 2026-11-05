@@ -247,7 +247,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
 
         Offer("github-pull-request",
             """{ "id": "github-pull-request", "name": "GitHub pull request", "version": "1.0.0", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""",
-            "# x\n\n## What it needs\n\n- **gh**, signed in: `gh auth login`.\n");
+            "# x\n\n## What it needs\n\n- **pwsh**, signed in: `pwsh login`.\n");
         Offer("future", """{ "id": "future", "apiVersion": 99 }""");
         Offer("example.lands", """{ "id": "example.lands" }""");
         return facts with { OffersFolder = OffersFolder, Offers = PluginOffers.Load(OffersFolder, _home, AdapterSet.Built().Names) };
@@ -262,10 +262,10 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         Assert.Equal("daoris plugin add --offer github-pull-request", plan.Terminal);
         Assert.Contains("Install Daoris's own plugin `github-pull-request` (GitHub pull request 1.0.0), which this install offers", plan.Describe);
         Assert.Contains("It runs `node ${plugin}/land.mjs`, speaking on `work/land`.", plan.Describe);
-        Assert.Contains("It needs: gh, signed in: `gh auth login`.", plan.Describe);
+        Assert.Contains("It needs: pwsh, signed in: `pwsh login`.", plan.Describe);
         // An offer is named by its id: the sentence the conversation is told names no path on this machine.
         Assert.DoesNotContain(OffersFolder, plan.Describe);
-        Assert.Equal(["gh, signed in: `gh auth login`."], plan.Plugin!.Needs);
+        Assert.Equal(["pwsh, signed in: `pwsh login`."], plan.Plugin!.Needs);
         Assert.True(plan.Plugin.Copied);
     }
 

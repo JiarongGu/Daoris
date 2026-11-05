@@ -29,7 +29,7 @@ public sealed class ParticipantPortsTests : IDisposable
         Assert.Equal(2, ChildLineage.Read(_home, "s2").Children.Count);
         await Capture("{\"type\":\"foreign\"}", "s3", _home);
         Assert.Empty(ChildLineage.Read(_home, "s3").Children);
-        Assert.Null(ChildLineage.HookFor(_home, "../unknown"));
+        Assert.Null(ClaudeLineageHook.For(_home, "../unknown", ChildLineage.PathOf(_home, "unknown")));
     }
 
     [Fact]
@@ -68,8 +68,8 @@ public sealed class ParticipantPortsTests : IDisposable
     }
 
     private Task Capture(string lines, string session, string? home) => HarnessCapture.CaptureStructuredAsync(
-        new StringReader(lines), new StringReader(""), Path.Combine(_home, session + ".log"), session,
-        output: null, events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None,
+        new StringReader(lines), new StringReader(""), Path.Combine(_home, session + ".log"),
+        ReadingSinks.None, new ClaudeStreamJson(), prompt: null, CancellationToken.None,
         lineage: home is null ? null : LineageStreams.Current.Writer(home, session));
 
     private sealed class Streams : ILineageStreams, ILineageWriter

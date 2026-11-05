@@ -25,7 +25,7 @@ internal static class TransientRetries
             Deadline = deadline,
             Read = refused =>
             {
-                var read = AgentErrors.Read(adapters, adapter, DoorFailure.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
+                var read = AgentErrors.Read(adapters, adapter, DoorFailures.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
                 log?.Write("info", "agent.error", [
                     ("session", sessionId), ("adapter", adapter.Name), ("account", profile), ("kind", read.Spelled), ("by", read.By),
                 ]);

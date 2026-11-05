@@ -244,8 +244,7 @@ public sealed class LandDeliveryGitTests : IDisposable
     }
 
     /// <summary>
-    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's. A push
-    /// and a pull request go on to their plugin's phases (<see cref="DeliveryPluginPhasesTests"/>).
+    /// An integrate prepares and records the branch and stops there, no plugin told, delivered, its line's admission the next node's.
     /// </summary>
     [Theory]
     [InlineData(DeliveryMethods.Integrate)]
@@ -257,7 +256,6 @@ public sealed class LandDeliveryGitTests : IDisposable
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
 
         Assert.True(landed.Landed, landed.Message);
-        Assert.Null(landed.Plugin);
         Assert.Equal(tip, await RevAsync(root, $"refs/heads/{Named}"));
         Assert.Equal(tip, trees.Recorded.Of("engine", Named)?.Tip);
         Assert.Equal([DeliveryPhases.Prepared, DeliveryPhases.RefWritten, DeliveryPhases.Recorded], Reopened().Phases(claim.Key).Select(each => each.Phase));

@@ -15,6 +15,24 @@ namespace Daoris.Driver;
 /// </param>
 internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
 {
+    /// <summary>The session record the run is, which its process is tracked, waited and bracketed under; required by the open.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>Where the run's own transcript is written: the text of its wire a person reads; required by the open.</summary>
+    public string? Transcript { get; init; }
+
+    /// <summary>The events the record opens with, said once: a start's target or a resume's answer, never said again by a restart.</summary>
+    public IReadOnlyList<SessionEvent>? Opening { get; init; }
+
+    /// <summary>A fact about how the run was set up, written ahead of anything the process says; null says none.</summary>
+    public string? Preamble { get; init; }
+
+    /// <summary>The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</summary>
+    public string? LineageHome { get; init; }
+
+    /// <summary>Where the harness's own words are kept for its ending (AGT3c), which its executor reads after; null keeps the run's own.</summary>
+    public HarnessWords? Own { get; init; }
+
     /// <summary>The target the spawn was prepared for, which a go-on prepares its resume from.</summary>
     public SessionTarget? Target { get; init; }
 
@@ -75,12 +93,6 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// </summary>
     public Action<SessionEvent>? Observed { get; init; }
 
-    /// <summary>
-    /// Told as the same start is made once more (SESSCTX1c): the resume's retry mark. Null where the run is no resume, which
-    /// <see cref="AgentRun.RestartAsync"/> refuses.
-    /// </summary>
-    public Action? Again { get; init; }
-
     /// <summary>The protocol door's session over the process: what its open is handed. Null on a native door.</summary>
     public TransportProtocol? Protocol { get; init; }
 }
@@ -102,8 +114,8 @@ internal sealed record TransportProtocol(string Cwd)
     /// <summary>What <c>session/new</c> carries for the rules composed for this session (PERM1).</summary>
     public object? Meta { get; init; }
 
-    /// <summary>The servers the session is offered (ACP4, D65 §1f).</summary>
-    public IReadOnlyList<AcpMcpServer>? Servers { get; init; }
+    /// <summary>The connectors the session is offered, the plan its open reads (ACP4, D65 §1f, CONNECTORS1).</summary>
+    public ConnectorPlan? Connectors { get; init; }
 
     /// <summary>Where the run's wait says the timeout before its kill, handed the session once it is made (BGWAIT2, DONEEND1).</summary>
     public AcpEnding? Ending { get; init; }
@@ -139,11 +151,11 @@ internal sealed record TransportProtocol(string Cwd)
     public Action<Exception>? Unopened { get; init; }
 
     /// <summary>The driven shape: the session opened, prompted with <paramref name="prompt"/> and closed, as <c>AcpSession.RunAsync</c> does.</summary>
-    public static TransportProtocol Driven(string cwd, string prompt, IReadOnlyList<AcpMcpServer>? servers = null) =>
+    public static TransportProtocol Driven(string cwd, string prompt, ConnectorPlan? plan = null) =>
         new(cwd)
         {
-            Servers = servers,
-            Run = (session, conversation, ct) => session.RunAsync(cwd, prompt, ct, servers, resume: conversation),
+            Connectors = plan,
+            Run = (session, conversation, ct) => session.RunAsync(cwd, prompt, ct, plan, resume: conversation),
         };
 }
 
@@ -200,9 +212,6 @@ internal interface ITransportHost
 
     /// <summary>The downloads a start is handed, kept on its record before it is spawned (KEEP1b).</summary>
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
-
-    /// <summary>The conversation the harness named, kept for the record under the adapter (ANSWER1a).</summary>
-    void KeepConversation(string sessionId, string adapter, string conversation);
 
     /// <summary>The command configured for a door, or null for its own.</summary>
     IReadOnlyList<string>? Command(string adapter);

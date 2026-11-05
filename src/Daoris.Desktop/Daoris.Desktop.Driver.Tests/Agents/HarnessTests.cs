@@ -1143,7 +1143,7 @@ public sealed class HarnessSelectionTests : IDisposable
         var info = new System.Diagnostics.ProcessStartInfo();
         var home = Path.Combine(_home, "somewhere");
 
-        HarnessProbe.Apply(info, Toolchain("x"), home);
+        Shell.Equip(info, Toolchain("x"), home);
 
         Assert.Equal(home, info.Environment["FAKE_HOME"]);
         // Created as part of selecting it: at least one supported harness refuses to start when its
@@ -1158,7 +1158,7 @@ public sealed class HarnessSelectionTests : IDisposable
         var toolchain = new HarnessToolchain(Binary: ["x"], VersionArguments: ["--version"]);
 
         var error = Assert.Throws<DriverException>(
-            () => HarnessProbe.Apply(new System.Diagnostics.ProcessStartInfo(), toolchain, "somewhere"));
+            () => Shell.Equip(new System.Diagnostics.ProcessStartInfo(), toolchain, "somewhere"));
 
         Assert.Contains("configuration-home variable", error.Message);
     }

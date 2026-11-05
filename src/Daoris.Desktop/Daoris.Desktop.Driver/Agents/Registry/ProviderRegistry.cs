@@ -70,6 +70,7 @@ public sealed class ProviderRegistry
         Providers = [.. _providers.Values.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)];
         Reserved = reserved;
         Known = [.. Providers.SelectMany(ProviderRegistration.Names).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.Ordinal)];
+        RegisteredVariables.Register(this);
     }
 
     /// <summary>The registry over today's adapters: doors grouped by the account key each declares (see <see cref="ProviderRegistration"/>).</summary>
@@ -193,6 +194,13 @@ public sealed class ProviderRegistry
     /// <summary>The door whose report says this door's accounts (<c>HarnessRoster</c>'s reporting door): its account agent's where that is a door, else itself.</summary>
     public DoorId ReportingDoorOf(DoorId door) =>
         AccountAgentOf(door) is { } agent && _doors.TryGetValue(agent.Name, out var named) ? named.Door.Id : door;
+
+    /// <summary>The settings file port of the agent whose account <paramref name="agent"/> runs as (its <c>Models</c> part), or null where its provider states none.</summary>
+    public ISettingsFile? SettingsOf(string agent) =>
+        (_doors.TryGetValue(agent, out var door) ? AccountAgentOf(door.Door.Id)?.Name : agent) is { } owner
+        && _providers.TryGetValue(owner, out var holder) && holder.Models.IsKnown
+            ? holder.Models.Required
+            : null;
 
     /// <summary>The tool's settings file an agent's account keeps its model and effort in (<c>AgentsCommand</c>): a door's account agent's, a holder's own.</summary>
     public string? SettingsFileOf(string agent) =>

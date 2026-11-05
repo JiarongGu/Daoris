@@ -165,17 +165,17 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private static Provider Provider() => new(
         new ProviderId("resuming"), new ProviderIdentity(null, null, null, false, []), [ResumingDoor()], Known<ProgramFacts>.Absent,
-        Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
-        Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
+        Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
+        Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
         Known<VocabularyPart>.Absent);
 
     private sealed class ResumingSpawn : ISpawn
     {
-        public ProcessStartInfo Start(SessionTarget target, IReadOnlyList<string>? command) => Spawning.InRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
 
-        public ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command) => Spawning.ChatInRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
 
-        public ProcessStartInfo? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-            Spawning.InRoot(target, command![0], command.Skip(1).Append(conversation));
+        public ProcessRecipe? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+            ProcessRecipe.Of(command!, [conversation]);
     }
 }

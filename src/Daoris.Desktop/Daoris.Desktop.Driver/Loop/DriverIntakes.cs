@@ -209,10 +209,10 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // The same trust question a driven spawn asks (DEPLOY1): in a room the harness has not been
         // told to trust, the room's allow-list is inert — so it is asked only where the rules handed
         // over at spawn would not let the intake publish (D73), exactly as for a quest's session.
-        if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile }
-            && !_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
+        if (adapter.Home() is { TrustFile: { Length: > 0 } trustFile } doorHome
+            &&!_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
-            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, adapter.Toolchain.ProfileVariable);
+            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, doorHome.Variable);
             if (ClaudeTrust.Accepted(trustPath, room) == false)
             {
                 // The room is Daoris's own folder under the home, and trusting it is still the person's
@@ -282,16 +282,16 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             string? handed = null;
             string? preamble = null;
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
-            if (!adapter.Abilities().ServersOnWire)
+            if (adapter.ServerHanding() is { } handing)
             {
                 var connector = _driver.Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? servers : [connector, .. servers]);
+                handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? servers : [connector, .. servers]));
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
             // ask, and belongs to no repository. Its tree is its room, which the guard holds it to.
@@ -308,13 +308,13 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 ct: ct,
                 scope: scope,
                 preamble: Driver.JoinNotices(preamble, browserNotice),
-                handedServers: servers,
+                handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, servers),
                 drivesBrowser: drivesBrowser,
                 // The intake's own check (§5.5): no try once the person stopped it, or its ask gained quests or went away meanwhile.
                 transientWanted: async retryCt =>
                     !_context.Processes.WasStopRequested(sessionId)
                     && await service.FindAskAsync(ask.Id, retryCt).ConfigureAwait(false) is { } now && now.Quests.Count == ask.Quests.Count,
-                said: _driver.Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
                 stopMade: stop => stoppedFirst = stop,
                 // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
                 // re-asked within this start, the order read once: a later entry of the same agent on the same account is set on this

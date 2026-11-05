@@ -270,6 +270,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     internal static string? WordRefused(NodeAttempt held, string word) => WorkPersonWord.WordRefused(held, word);
 
 
+    /// <summary>The current generation of the process that acknowledged the attempt: its place's, where its plugin is placed.</summary>
+    private int? Held(NodeAttempt attempt) =>
+        attempt.Generation is { } held ? port.GenerationOf(attempt.Plugin, held) : port.GenerationOf(attempt.Plugin);
+
     private static bool Retrying(NodeStatus status) => status is { State: NodeStates.Failed, Transient: true };
 
     /// <summary>Whether Daoris asks after an attempt now: one never acknowledged, unknown, or sent by a loop since ended, to a process since
@@ -279,7 +283,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         AttemptStates.Recorded or AttemptStates.Unknown => attempt.AskAt is not { } ask || ask <= now,
         // FABRIC-PIPELINE1d: the executor owns a check's bound, so it is asked once it says it has an answer, or after a restart; never at its deadline.
         AttemptStates.Sent when IsCheck(attempt) => !SentHere(attempt.Call.Invocation) || Checks?.Answered(attempt.Call.Invocation) == true,
-        AttemptStates.Sent => !SentHere(attempt.Call.Invocation) || port.GenerationOf(attempt.Plugin) != attempt.Generation
+        AttemptStates.Sent => !SentHere(attempt.Call.Invocation) || Held(attempt) != attempt.Generation
             || (attempt.AskAt ?? attempt.Call.DeadlineAt) <= now,
         _ => false,
     };

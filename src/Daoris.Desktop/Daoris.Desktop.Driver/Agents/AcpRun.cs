@@ -10,7 +10,7 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
 {
     /// <summary>The run, end to end; its parameters are <see cref="AcpSession.RunAsync"/>'s.</summary>
     public async Task<AcpOutcome> RunAsync(
-        string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers,
+        string cwd, string prompt, CancellationToken ct, ConnectorPlan? plan,
         IAgentInbox? inbox, Action<IAgentWord>? asked, string? resume,
         IReadOnlyList<string>? blocks, Action? prompted, IReadOnlyList<KeptFile>? files,
         Func<CancellationToken, Task<bool>>? waitsOnBackground,
@@ -21,8 +21,8 @@ internal sealed class AcpRun(ITurnRunWiring wiring, AcpPrompting prompting, AcpS
         {
             try
             {
-                if (resume is null) await wiring.OpenAsync(cwd, ct, servers).ConfigureAwait(false);
-                else await wiring.ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
+                if (resume is null) await wiring.OpenAsync(cwd, ct, plan).ConfigureAwait(false);
+                else await wiring.ResumeAsync(cwd, resume, ct, plan).ConfigureAwait(false);
             }
             catch (AcpChoiceNotOffered refused)
             {

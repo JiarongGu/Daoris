@@ -13,11 +13,10 @@ import { NotificationsView } from './NotificationsView';
 const PRESS: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'STOP_SESSION',
   fields: [{ name: '/id', type: 'string', value: '9b1e0d2a' }], named: [{ role: 'session', name: '/id', value: '9b1e0d2a' }],
-  asker: { process: 'bash', pid: 4120 }, expires: '2026-10-21T09:10:00Z',
+  asker: { process: 'bash', pid: 4120 },
 };
 const SERVICE: Confirmation = {
   source: 'service', id: 'h1', route: 'POST /api/quests/{id}/review', act: "a review's verdict", fields: [], asker: null,
-  expires: '2026-10-21T09:04:00Z',
 };
 
 const view = (props: Partial<Parameters<typeof NotificationsView>[0]> = {}) => {

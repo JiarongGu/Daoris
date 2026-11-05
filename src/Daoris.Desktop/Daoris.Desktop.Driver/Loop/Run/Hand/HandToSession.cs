@@ -242,10 +242,11 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed one under
             // Daoris's home, and the file goes when the session does.
             context.Hooks?.Log.Served(context.Catalog, sessionId, servers);
-            var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
+            var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
+            var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // The skills plugins hand sessions, composed under the home, gone with the session.
             var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
             // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block
@@ -268,9 +269,9 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 refusesInput: Driver.TakesNoMessages(quest),
                 ct: ct,
                 preamble: browserNotice,
-                handedServers: servers,
+                handedPlan: connectors,
                 drivesBrowser: drivesBrowser,
-                said: wiring.Said(adapter, selection, sessionId),
+                said: wiring.Said(adapter, selection, sessionId), limits: wiring.NativeLimit(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.
                 goesOnAs: selection,
                 stopMade: stop => endings.StoppedFirst = stop,

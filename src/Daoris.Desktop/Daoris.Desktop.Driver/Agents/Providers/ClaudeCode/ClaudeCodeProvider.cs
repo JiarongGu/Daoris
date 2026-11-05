@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
 /// </summary>
 /// <remarks>
-/// Each door's spawn and dialect are its class's (<see cref="AdapterSpawn"/>), until rows h, i and k make them the door's own. The
+/// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's until rows i and k. The
 /// protocol door's home variable and trust file are its own <see cref="DoorHome"/>, the same values as the pipe door's (O2-F2).
 /// </remarks>
 internal static class ClaudeCodeProvider
@@ -22,7 +22,10 @@ internal static class ClaudeCodeProvider
         Org: @"""orgName""\s*:\s*""([^""]+)""",
         Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
 
-    private const string Evidence = "Claude Code's declaration";
+    /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking (D184 point 4).</summary>
+    public const string Id = "claude-code";
+
+    private const string Evidence ="Claude Code's declaration";
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
 
@@ -32,7 +35,7 @@ internal static class ClaudeCodeProvider
             ["claude"], ["--version"], ["npm", "install", "-g", "@anthropic-ai/claude-code"], ["update"], Package: null,
             // A pin comes from the release bucket, against its signed manifest (AGT2b).
             Channel: ClaudeReleases.Channel,
-            PinnedEnvironment: ClaudeCodeAdapter.StayPinned,
+            PinnedEnvironment: ClaudeCodeSpawn.StayPinned,
             ProbeByPresence: false);
         var pool = new PoolFacts(
             // An account that is an API key (AGT3), measured on 2.1.280.
@@ -60,13 +63,17 @@ internal static class ClaudeCodeProvider
             new DoorId("claude-code"), Transport.Native, new DoorIdentity(null, null, null),
             Known<ProgramFacts>.Absent, home, LentPart.None, Known<PortRef>.Absent,
             new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new ClaudeCodeAdapter()), Evidence),
+            Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
             Known<IDialect>.Declared(new AdapterNativeDialect(new ClaudeCodeAdapter()), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
                 Known<bool>.Declared(true, Evidence),
-                Known<bool>.Declared(true, Evidence)),
+                Known<bool>.Declared(true, Evidence),
+                // Its servers inherit its environment (D70's driven path through the repository's own `.mcp.json`), and
+                // `--strict-mcp-config` leaves the agent's own out (the holder's terminal).
+                ServersInherit: Known<bool>.Declared(true, Evidence),
+                OwnServersLeftOut: Known<bool>.Declared(true, "`--strict-mcp-config`")),
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
             new DoorId("claude-code-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
@@ -77,7 +84,7 @@ internal static class ClaudeCodeProvider
                 Evidence),
             home, LentPart.None, Known<PortRef>.Absent,
             new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions", Reading: null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new ClaudeAcpAdapter()), Evidence),
+            Known<ISpawn>.Declared(new ClaudeAcpSpawn(), Evidence),
             Known<IDialect>.Declared(new AdapterProtocolDialect(new ClaudeAcpAdapter()), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
@@ -87,7 +94,7 @@ internal static class ClaudeCodeProvider
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 
         return new Provider(
-            new ProviderId("claude-code"),
+            new ProviderId(Id),
             new ProviderIdentity("Claude Code", "Anthropic", "CC", StandIn: false, DeclaredBy: []),
             [native, protocol],
             Known<ProgramFacts>.Declared(program, Evidence),
@@ -95,7 +102,9 @@ internal static class ClaudeCodeProvider
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Declared(usage, Evidence),
             Known<LentPart>.Declared(new LentPart(pool, tables with { ErrorWords = null }, usage), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Declared(new ClaudeSettingsFile(), Evidence), Known<IChildVocabulary>.Absent,
+            Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence),
+            Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

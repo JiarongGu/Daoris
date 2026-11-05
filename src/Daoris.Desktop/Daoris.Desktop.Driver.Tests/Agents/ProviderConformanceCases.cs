@@ -268,10 +268,11 @@ internal static class ConformanceCases
 
     private static void RecipeNamesNoDaorisVariable(ConformanceRun run)
     {
-        var info = run.Adapter.Prepare(run.Target(), run.Command());
-        var named = Spawning.Roles.Where(name => info.Environment.TryGetValue(name, out var value) && value is not null).ToList();
+        Assert.True(run.TheDoor.Spawn.IsKnown, $"{run.TheDoor.Id} states no spawn, so no recipe of its own");
+        var recipe = run.TheDoor.Spawn.Required.Start(run.Target(), run.Command());
+        var named = recipe.Variables.Keys.Where(Spawning.Daoris).ToList();
 
-        Assert.True(named.Count == 0, $"the door's own spawn sets Daoris's {string.Join(", ", named)}: the transports' shell sets them after the recipe (§4.6)");
+        Assert.True(named.Count == 0, $"the door's own recipe sets Daoris's {string.Join(", ", named)}: the transports' shell sets them (§4.6)");
     }
 
     private static void RecipeOwnVariablesPass(ConformanceRun run)
@@ -282,7 +283,7 @@ internal static class ConformanceCases
 
         var info = run.Adapter.Prepare(run.Target(), run.Command());
         var profile = Path.Combine(run.Home(), "profile");
-        HarnessProbe.Apply(info, toolchain, profile);
+        Shell.Equip(info, toolchain, profile);
 
         Assert.Equal(profile, info.Environment[variable]);
     }
@@ -307,7 +308,7 @@ internal static class ConformanceCases
             var adapter = run.Subject.Adapters.Resolve(door.Id.Value);
             if (adapter.Toolchain is not { } toolchain) continue;
             var info = adapter.Prepare(run.Target(), run.Command());
-            HarnessProbe.Apply(info, toolchain, profileHome: null, account: new Dictionary<string, string> { [token] = "conformance-key" });
+            Shell.Equip(info, toolchain, profileHome: null, account: new Dictionary<string, string> { [token] = "conformance-key" });
             Assert.Equal("conformance-key", info.Environment[token]);
         }
     }
@@ -431,7 +432,6 @@ internal static class ConformanceCases
         else
         {
             refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
-            refused.Add((transport.RestartAsync(never), "a restart"));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));
@@ -758,7 +758,7 @@ internal static class ConformanceCases
     private static ProcessStartInfo Prepared(ConformanceRun run, Provider provider) =>
         new LegacyDoor(provider, provider.Doors[0]).Prepare(run.Target(), run.Command());
 
-    /// <summary>A provider of one native door, declaring at most a home variable: the cases' second and third providers.</summary>
+    /// <summary>A provider of one native door, at most a home variable: the cases' other providers.</summary>
     private static Provider Bare(string id, string? variable)
     {
         var door = new AgentDoor(
@@ -772,17 +772,15 @@ internal static class ConformanceCases
             new DoorTablesPart(null, null), null, InstructionsPart.None);
         return new Provider(
             new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ProgramFacts>.Absent,
-            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
-            Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
+            Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
+            Known<IChildVocabulary>.Absent, Rules: default, Skills: default, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }
 
     private sealed class BareSpawn : ISpawn
     {
-        public ProcessStartInfo Start(SessionTarget target, IReadOnlyList<string>? command) =>
-            Spawning.InRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
 
-        public ProcessStartInfo Chat(ChatTarget target, IReadOnlyList<string>? command) =>
-            Spawning.ChatInRoot(target, command![0], command.Skip(1));
+        public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
     }
 }

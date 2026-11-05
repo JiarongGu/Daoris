@@ -155,7 +155,7 @@ public sealed class AcpTransientTests
     private static TransientRetry Retry(MovedClock clock, Told told, Func<CancellationToken, Task<bool>>? wanted = null) => new()
     {
         Read = refused => AgentErrors.Read(
-            Built, Built.Resolve("claude-code-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Built, Built.Resolve("claude-code-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
         Clock = clock,
         Wanted = wanted,
         Began = (_, next) => told.Add($"began:{(next - clock.GetUtcNow()).TotalMinutes:0}"),
@@ -1059,7 +1059,7 @@ public sealed class AcpTransientTests
         var settled = new List<string>();
         var retry = new TransientRetry
         {
-            Read = refused => AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Read = refused => AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
             Clock = clock,
             Began = (_, _) => told.Add("began"),
             Waits = waiting => told.Add(waiting ? "wait" : "waited"),

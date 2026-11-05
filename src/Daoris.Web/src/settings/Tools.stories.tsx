@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { choiceOf, GitSwitch, ToolCard, ToolLocations } from './Tools';
-import { BUILT_IN, GH, GIT, MIRROR, NODE, PWSH } from './toolsFixtures';
+import { BUILT_IN, GIT, MIRROR, NODE, PWSH, PWSH_FILE_GONE } from './toolsFixtures';
 
 // Settings → Tools (TOOLS7, D121 §4.1), in the shape the shell's TOOLS_LIST answers: a tool run as the system's, one
 // managed with versions to choose, one about to download, a named file that is gone, one PATH does not find, git's
@@ -27,17 +27,17 @@ export const ManagedANewerOffered: Story = { args: { tool: NODE, choice: { ...ch
 
 export const Downloading: Story = {
   args: {
-    tool: { ...GH, running: { action: 'download', version: '2.63.0' } },
-    choice: { ...choiceOf(GH), way: 'managed' },
-    console: <pre className="m-0 font-mono text-meta text-ink-soft">  downloading https://github.com/cli/cli/releases/… (11.8 MB)</pre>,
+    tool: { ...PWSH, running: { action: 'download', version: '7.4.6' } },
+    choice: { ...choiceOf(PWSH), way: 'managed' },
+    console: <pre className="m-0 font-mono text-meta text-ink-soft">  downloading https://github.com/PowerShell/PowerShell/releases/… (11.8 MB)</pre>,
   },
 };
 
-export const ANamedFileThatIsGone: Story = { args: { tool: PWSH, choice: choiceOf(PWSH), onBrowse: () => {} } };
+export const ANamedFileThatIsGone: Story = { args: { tool: PWSH_FILE_GONE, choice: choiceOf(PWSH_FILE_GONE), onBrowse: () => {} } };
 
-export const NotOnPath: Story = { args: { tool: GH, choice: choiceOf(GH) } };
+export const NotOnPath: Story = { args: { tool: PWSH, choice: choiceOf(PWSH) } };
 
-export const NoVersionNamed: Story = { args: { tool: { ...GH, offered: [] }, choice: { way: 'managed', version: '', file: '' } } };
+export const NoVersionNamed: Story = { args: { tool: { ...PWSH, offered: [] }, choice: { way: 'managed', version: '', file: '' } } };
 
 export const GitNotYetDownloaded: Story = {
   args: { choice: { ...choiceOf(GIT), way: 'managed', version: '2.50.1' }, onAsk: () => {} },

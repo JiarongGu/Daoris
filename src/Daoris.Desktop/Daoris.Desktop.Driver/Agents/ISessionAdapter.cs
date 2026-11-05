@@ -41,7 +41,7 @@ public interface ISessionAdapter
     /// The harness's own mode that asks nothing, in <b>its own vocabulary</b>, for Ask Daoris's full access (HELPMODE1a1, D183
     /// point 1) and a driven session whose repository's permission prompts are unrestricted (AUTONOMY1b, D184 point 2): a
     /// <c>--permission-mode</c> on the native door (<see cref="ChatTarget.PermissionMode"/>, <see cref="DrivenAccess.PermissionMode"/>),
-    /// a mode on the protocol door, which the session must set or fail (<see cref="HelpModes.Required"/>).
+    /// a mode on the protocol door, which the session must set or fail (<see cref="PostureAsked.Required"/>).
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>Only by the person's own setting</b>: Ask Daoris's full access, or a repository's setup set to unrestricted. A
@@ -55,7 +55,7 @@ public interface ISessionAdapter
     /// <summary>
     /// The harness's own asking mode, in <b>its own vocabulary</b>, for a driven session whose repository's permission prompts are
     /// asking (AUTONOMY1b, D184 point 3): a <c>--permission-mode</c> on the native door, a mode on the protocol door, which the session
-    /// must set or fail (<see cref="HelpModes.Required"/>). On the protocol door each request is held for the person to allow once or
+    /// must set or fail (<see cref="PostureAsked.Required"/>). On the protocol door each request is held for the person to allow once or
     /// refuse (AUTONOMY1b3a, <see cref="HeldPermissions"/>); over the native door nothing can hold one, so a tool its rules do not allow
     /// is refused there.
     /// </summary>

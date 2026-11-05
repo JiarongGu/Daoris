@@ -87,7 +87,7 @@ public static class LandNodes
         var pattern = Written(land, "pattern") ?? resolved?.GetValueOrDefault("pattern");
         var key = resolved?.GetValueOrDefault(KeyOption);
         var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch;
-        return new Landing(LandingForm.Branch, pattern, Plugin: null, AutoAccept: !reviewed, key, squash);
+        return new Landing(LandingForm.Branch, pattern, AutoAccept: !reviewed, key, squash);
     }
 
     /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>

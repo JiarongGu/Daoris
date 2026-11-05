@@ -219,38 +219,10 @@ public static class HarnessActions
         Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport,
         IReadOnlyList<string>? npm)
     {
-        string newest;
-        if (toolchain.Channel is { Length: > 0 } channel)
-        {
-            write($"{harness} is pinned at {pinned}. Asking {toolchain.Maker ?? "its maker"}'s own release channel "
-                + "which release is newest.");
-            // No process asks the pointer, so stopping it is cancelling the request.
-            using var asking = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            started?.Invoke(new HarnessRun(asking));
-            try
-            {
-                newest = await ReleaseChannels.LatestAsync(channel, asking.Token, transport).ConfigureAwait(false);
-            }
-            catch (DriverException error)
-            {
-                throw new DriverException($"{error.Message} The pin stays at {pinned}.");
-            }
-        }
-        else
-        {
-            write($"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
-            IReadOnlyList<string> asking;
-            try
-            {
-                asking = ThroughTools(home, npm ?? Npm);
-            }
-            catch (DriverException error)
-            {
-                throw new DriverException($"{error.Message} The pin stays at {pinned}.");
-            }
-
-            newest = await NewestOnNpmAsync(toolchain, asking, pinned, write, ct, started).ConfigureAwait(false);
-        }
+        write(toolchain.Channel is { Length: > 0 }
+            ? $"{harness} is pinned at {pinned}. Asking {toolchain.Maker ?? "its maker"}'s own release channel which release is newest."
+            : $"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
+        var newest = await PinNewest.AskAsync(toolchain, home, pinned, npm, write, ct, started, transport).ConfigureAwait(false);
 
         if (newest == pinned && HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null)
         {
@@ -271,48 +243,6 @@ public static class HarnessActions
         if (code == 0) pin(newest);
         else write($"nothing was pinned: the pin stays at {pinned}.");
         return code;
-    }
-
-    /// <summary>
-    /// The newest version npm publishes of a door's package, asked with <c>npm view &lt;package&gt;
-    /// version</c> — a spawn of the same kind the pin's <c>npm install</c> is, streamed the same way.
-    /// Anything but one version is a refusal that says so.
-    /// </summary>
-    private static async Task<string> NewestOnNpmAsync(
-        HarnessToolchain toolchain, IReadOnlyList<string> npm, string pinned, Action<string> write,
-        CancellationToken ct, Action<HarnessRun>? started)
-    {
-        var package = toolchain.Package!;
-        var stays = $"Nothing was fetched or pinned, and the pin stays at {pinned}.";
-        var heard = new List<string>();
-
-        int code;
-        try
-        {
-            code = await RunAsync(
-                [.. npm, "view", package, "version"], toolchain, profileHome: null,
-                line =>
-                {
-                    // RunAsync echoes the command first; that line is Daoris's, not npm's answer.
-                    if (!line.StartsWith("$ ", StringComparison.Ordinal)) heard.Add(line);
-                    write(line);
-                },
-                ct, started).ConfigureAwait(false);
-        }
-        catch (DriverException error)
-        {
-            throw new DriverException($"{error.Message} {stays}");
-        }
-
-        var said = heard.Select(line => line.Trim()).FirstOrDefault(line => line.Length > 0);
-        var shown = said is null ? "" : $" ({TextBounds.Clip(said, 160)})";
-        if (code != 0)
-        {
-            throw new DriverException($"npm could not say which release of {package} is newest — it exited {code}{shown}. {stays}");
-        }
-
-        return VersionFromNpm(heard)
-            ?? throw new DriverException($"npm answered no single version of {package}{shown}. {stays}");
     }
 
     /// <summary>One exact release, as npm and the channels write it — a prerelease or build suffix included.</summary>
@@ -459,7 +389,7 @@ public static class HarnessActions
     /// An agent's own command at a terminal (PUSH1f2e5, the alone-path design §1.1, <i>The second hop</i>): its installer, as the CLI's
     /// <c>relay</c> started it, said first as <c>$ command</c> and a blank line, then started with the console's three streams left as
     /// the host's and no window flag, so the person answers its prompts, it finds a terminal, and Ctrl+C reaches it. The same facts as
-    /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="HarnessProbe.Apply"/>,
+    /// the window's start (<see cref="Tools.Hand(ProcessStartInfo, string?)"/> from <paramref name="home"/>, <see cref="Shell.Equip"/>,
     /// the account's variable, the pin's environment) through the same start gate. Its exit code, once it ended: the person's Ctrl+C,
     /// which <paramref name="ct"/> carries, reached the agent too, so the host waits for it to end by its own rule.
     /// </summary>
@@ -495,7 +425,7 @@ public static class HarnessActions
 
     /// <summary>
     /// A harness action's start: its streams redirected as UTF-8, the tools' environment, and the account and binary
-    /// through the one seam every spawn takes (<see cref="HarnessProbe.Apply"/>), with the pin's environment where
+    /// through the one seam every spawn takes (<see cref="Shell.Equip"/>), with the pin's environment where
     /// <paramref name="managed"/> is the pin's executable (AGT2). At a <paramref name="terminal"/> its streams are the host's
     /// console's and it may have a window, the tools read from <paramref name="home"/>'s file (<see cref="TerminalRunAsync"/>).
     /// </summary>
@@ -528,7 +458,7 @@ public static class HarnessActions
         if (terminal) Tools.Hand(info, home);
         else Tools.Hand(info);
         // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
-        HarnessProbe.Apply(info, toolchain, profileHome, binary: managed);
+        Shell.Equip(info, toolchain, profileHome, binary: managed);
         return info;
     }
 
@@ -572,7 +502,7 @@ public static class HarnessActions
     /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
     /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
     /// the twin, fixed 2026-09-22). An agent npm installed globally is the same shape (USE1f), so every
-    /// spawn of a harness comes through here, by <see cref="HarnessProbe.Apply"/>. A shim is then run by
+    /// spawn of a harness comes through here, by <see cref="Shell.Equip"/>. A shim is then run by
     /// `cmd.exe`, which parses its arguments again and stops at a line break — so an argument it would
     /// reinterpret is refused rather than escaped. An installer's are paths and `package@version`s, and
     /// never carry one; the pipe door's prompt does, and is refused on a shim rather than cut short.

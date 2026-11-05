@@ -55,7 +55,7 @@ public sealed class HandedRecordTests : IDisposable
         var account = Account();
 
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(""), new StringReader(""), Path.Combine(_home, "s1.log"), "s1", output: null, events,
+            new StringReader(""), new StringReader(""), Path.Combine(_home, "s1.log"), new RecordReadings("s1", null, events),
             new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None, account: account);
 
         var opening = Assert.Single(events.Page("s1").Events);

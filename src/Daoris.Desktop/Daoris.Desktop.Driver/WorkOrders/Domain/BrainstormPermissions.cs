@@ -31,11 +31,11 @@ public static class BrainstormPermissions
 
     /// <summary>
     /// The protocol-door posture a pass asks of <paramref name="adapter"/> (BRAINSTORM1c): its mode that changes nothing, marked required
-    /// (<see cref="AgentPostures.Required"/>), where it takes no rules to narrow it with (<see cref="ISessionAdapter.ReadingPosture"/>);
+    /// (<see cref="PostureAsked.Required"/>), where it takes no rules to narrow it with (<see cref="ISessionAdapter.ReadingPosture"/>);
     /// null otherwise, which keeps the adapter's own posture and leaves a rule-taking harness to <see cref="Shape"/>.
     /// </summary>
     public static string? Posture(ISessionAdapter adapter) =>
-        !adapter.TakesSettings && adapter.ReadingPosture is { Length: > 0 } mode ? $"{AgentPostures.Required}{mode}" : null;
+        !adapter.TakesSettings && adapter.ReadingPosture is { Length: > 0 } mode ? new PostureAsked(mode, Required: true).Wire() : null;
 
     /// <summary>
     /// What a pass's open says where its agent does not offer the mode <see cref="Posture"/> asked: the mode and what the agent offers, and

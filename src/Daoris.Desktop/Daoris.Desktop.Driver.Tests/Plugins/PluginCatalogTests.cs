@@ -765,9 +765,9 @@ public sealed class PluginCatalogTests : IDisposable
             "browser", "npx", ["-y", "@playwright/mcp@latest"],
             new Dictionary<string, string> { ["HEADLESS"] = "1" });
 
-        Assert.Null(SpawnServers.Write(_home, "s1", []));
+        Assert.Null(ClaudeServers.Write(_home, new ConnectorPlan("s1", [])));
 
-        var path = SpawnServers.Write(_home, "s1", [server]);
+        var path = ClaudeServers.Write(_home, new ConnectorPlan("s1", [server]));
         Assert.NotNull(path);
         Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Spawn), path);
 
@@ -787,8 +787,8 @@ public sealed class PluginCatalogTests : IDisposable
         AdapterSet.Built().Resolve("stub").HandServers(stub, path);
         Assert.Empty(stub.ArgumentList);
 
-        SpawnServers.Remove(path);
+        SpawnFiles.Remove(path);
         Assert.False(File.Exists(path));
-        SpawnServers.Remove(path); // gone is fine; gone twice is fine
+        SpawnFiles.Remove(path); // gone is fine; gone twice is fine
     }
 }

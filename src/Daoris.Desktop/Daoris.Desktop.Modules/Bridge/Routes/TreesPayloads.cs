@@ -20,12 +20,6 @@ public sealed record OpinionMyself(string Id, string? Words, bool Said = false);
 
 public sealed record StopOpinion(string Opinion, bool Said = false);
 
-/// <summary>A session by its <c>Id</c>, or a landed <c>Branch</c> as <c>trees hand</c> names it, with its <c>Repository</c> where two hold one.</summary>
-public sealed record HandOffPlan(string? Id, string? Branch, string? Repository, string? Plugin, bool Said = false);
-
-/// <summary>As <see cref="HandOffPlan"/>, the press.</summary>
-public sealed record HandOff(string? Id, string? Branch, string? Repository, string? Plugin);
-
 /// <summary>The <c>Read</c> is the token the call waits under, which the module reads off any request so a later <c>READ_LEAVE</c> can stop it.</summary>
 public sealed record SessionDiff(string Id, string? Read);
 

@@ -71,14 +71,8 @@ public sealed class AcpSession(
     public ILineageWriter? Lineage { get; init; }
 
     /// <summary>
-    /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests
-    /// (<see cref="DrivenAccess"/>). Never set on the wire.
-    /// </summary>
-    public const char PersonAnswers = '?';
-
-    /// <summary>
-    /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture carries
-    /// <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
+    /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
+    /// <see cref="PostureAsked.PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
     /// </summary>
     public PermissionHolds? Permissions { get; set; }
 
@@ -143,7 +137,7 @@ public sealed class AcpSession(
     /// </summary>
     public IReadOnlyList<string> LeftRunning { get; private set; } = [];
 
-    private readonly bool _personAnswers = AcpPosture.Marks(posture).PersonAnswers;
+    private readonly bool _personAnswers = PostureAsked.Parse(posture).PersonAnswers;
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
@@ -258,7 +252,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Asked where the agent refuses <see cref="Carry"/>'s model at the open: a later choice for this session, or null to end it (<see cref="AcpChoiceNotOffered"/>).</summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused
+    public IChoiceReask? ModelRefused
     {
         get => Options.ModelRefused;
         set => Options.ModelRefused = value;
@@ -284,7 +278,7 @@ public sealed class AcpSession(
     /// <summary>A driven session's whole life on this wire (<see cref="AcpRun"/>): the open, the target as a prompt, and the person's words after it.</summary>
     /// <param name="cwd">The working tree this session runs in.</param>
     /// <param name="prompt">The composed target, exactly as the pipe door delivers it.</param>
-    /// <param name="servers">The MCP servers this session is handed: what lets the composed target's tools be called at all.</param>
+    /// <param name="plan">The connectors this session is handed: the servers that let the composed target's tools be called at all.</param>
     /// <param name="inbox">
     /// What the person tells the session while it works: each word sent at once where the agent takes a prompt during a turn, else the
     /// next prompt at the turn's end. Null for a session nobody may tell anything.
@@ -301,12 +295,12 @@ public sealed class AcpSession(
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
     public Task<AcpOutcome> RunAsync(
-        string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
+        string cwd, string prompt, CancellationToken ct, ConnectorPlan? plan = null,
         IAgentInbox? inbox = null, Action<IAgentWord>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null,
         Func<Task<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>>? attempting = null, TransientRetry? retry = null) =>
-        Run.RunAsync(cwd, prompt, ct, servers, inbox, asked, resume, blocks, prompted, files, waitsOnBackground, attempting, retry);
+        Run.RunAsync(cwd, prompt, ct, plan, inbox, asked, resume, blocks, prompted, files, waitsOnBackground, attempting, retry);
 
     private AcpRun Run => LazyInitializer.EnsureInitialized(ref _run, () => new AcpRun(this, Prompting, Steering, Ends));
     private AcpRun? _run;
@@ -367,8 +361,8 @@ public sealed class AcpSession(
     /// The reader runs until the agent's stream ends or <see cref="Release"/>, never until <paramref name="ct"/>, which bounds only the
     /// opening: a conversation outlives the request that started it, and every later turn's updates arrive on this same reader.
     /// </remarks>
-    public Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
-        Opening.OpenAsync(cwd, ct, servers);
+    public Task OpenAsync(string cwd, CancellationToken ct, ConnectorPlan? plan = null) =>
+        Opening.OpenAsync(cwd, ct, plan);
 
     private AcpOpening Opening => LazyInitializer.EnsureInitialized(ref _opening, () => new AcpOpening(
         meta, Options, HandshakeAsync, OpeningAsync, (method, args, ct) => RequestAsync(method, args, ct), SetPostureAsync,
@@ -712,8 +706,8 @@ public sealed class AcpSession(
 
     /// <summary>Resume a conversation instead of opening one: <c>session/resume</c> where the agent advertises it, else <c>session/load</c>.</summary>
     /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
-    public Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null) =>
-        Opening.ResumeAsync(cwd, conversation, ct, servers);
+    public Task ResumeAsync(string cwd, string conversation, CancellationToken ct, ConnectorPlan? plan = null) =>
+        Opening.ResumeAsync(cwd, conversation, ct, plan);
 
     /// <summary>Whether an update is a load's replay of the conversation being resumed.</summary>
     private bool Replayed(JsonElement parameters) =>

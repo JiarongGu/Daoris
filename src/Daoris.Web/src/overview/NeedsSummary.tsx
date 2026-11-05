@@ -3,7 +3,7 @@ import type { AttentionRead } from '../bridge/attention';
 import type { AskMessages, Notice } from '../bridge/notices';
 import { Icon, SectionTitle, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
-import { elapsed, span } from '../locales/format';
+import { elapsed } from '../locales/format';
 import { messagesCount } from '../notifications/Messages';
 import type { NotificationsGroup } from '../notifications/NotificationsView';
 import type { Confirmation } from '../person/Confirmations';
@@ -63,13 +63,8 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   const rows = needsListed(attention.rows);
   const lines: Line[] = [];
   if (presses.length > 0) {
-    // Only the service door's presses end by a time; a terminal's waits until the person answers (CONFIRMWAIT1a-i), so a summary of
-    // terminals' presses alone says that, and never a time they no longer have.
-    const timed = presses.flatMap((each) => (each.expires ? [new Date(each.expires).getTime()] : []));
-    lines.push({
-      id: 'presses', label: t('person.label'), count: presses.length, opens: 'presses',
-      detail: timed.length > 0 ? t('person.left', { time: span(Math.max(0, Math.min(...timed) - now)) }) : t('person.waits'),
-    });
+    // No request ends by a time (CONFIRMWAIT1a-i, ONEWAY1n-i): each waits until the person answers.
+    lines.push({ id: 'presses', label: t('person.label'), count: presses.length, opens: 'presses', detail: t('person.waits') });
   }
   for (const group of GROUP_ORDER) {
     const held = rows.filter((row) => attentionGroup(row) === group);

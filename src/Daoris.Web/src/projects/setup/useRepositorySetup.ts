@@ -178,7 +178,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
         : t('settings.lines.policyCleared', { name: registration.repository })),
       onError: onDriverError,
     }),
-    // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
+    // Where its work is reviewed before it lands (REVIEWENV1a); where the answer holds no reviews, and no row is offered.
     review: Array.isArray(lines.data?.reviews) ? resolved<NonNullable<RepositorySetupProps['work']>['review'] & object>(lines.data.reviews) ?? { repository, workspace } : undefined,
     onReview: Array.isArray(lines.data?.reviews)
       ? (edit: ReviewEdit) => setReview.mutate({ repository, ...edit }, {
@@ -186,7 +186,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // Which other agent reads its work before it lands (XAGENT1a); a shell older than it answers no opinions, and no row is offered.
+    // Which other agent reads its work before it lands (XAGENT1a); where the answer holds no opinions, and no row is offered.
     opinion: Array.isArray(lines.data?.opinions) ? resolved<NonNullable<RepositorySetupProps['work']>['opinion'] & object>(lines.data.opinions) ?? { repository, workspace } : undefined,
     onOpinion: Array.isArray(lines.data?.opinions)
       ? (edit: OpinionEdit) => setOpinion.mutate({ repository, ...edit }, {
@@ -194,7 +194,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // How its work is committed (DOORS1b); a shell older than it answers no commits, and no row is offered.
+    // How its work is committed (DOORS1b); where the answer holds no commits, and no row is offered.
     commits: Array.isArray(lines.data?.commits) ? resolved<NonNullable<RepositorySetupProps['work']>['commits'] & object>(lines.data.commits) ?? { repository, workspace } : undefined,
     onCommits: Array.isArray(lines.data?.commits)
       ? (edit: CommitEdit) => setCommits.mutate({ repository, ...edit }, {
@@ -204,7 +204,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       : undefined,
   };
 
-  // Its sessions' access (AUTONOMY1d), where it can be driven; a shell older than it answers no access, and no section is drawn. What stands
+  // Its sessions' access (AUTONOMY1d), where it can be driven; where the answer holds no access, and no section is drawn. What stands
   // above it is its workspace's over this machine's, as set, so turning off a full access from above sets today's pauses here rather than
   // clearing back into it. Full access answers its ask: done, or refused in the driver's sentence.
   const resolvedAccess = resolved<Row<'access'>>(lines.data?.access);
@@ -238,7 +238,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
       },
       onError: (error) => answered.refused(sentence(error)),
     }),
-    // Which checks its sessions run (FABRIC-PIPELINE1b), matched without case as the driver keys them; a shell older than it answers none, and
+    // Which checks its sessions run (FABRIC-PIPELINE1b), matched without case as the driver keys them; where the answer holds none, and
     // no row is drawn. A press goes out at once, and a refusal is said in the row.
     checks: Array.isArray(state.sessionChecks) ? {
       set: (state.sessionChecks.find((row) => same(row.repository))?.checks as SessionChecksValue | undefined) ?? null,
@@ -252,11 +252,11 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     } : null,
   } : null;
 
-  // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no `standing`, and nothing is
+  // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; where the answer holds no `standing`, and nothing is
   // offered rather than a field whose save would be refused.
   const sessions: RepositorySetupProps['sessions'] = driving && {
     language: languageOfPage(),
-    // What a helper its agent asks for does (DOORS1b); a shell older than it answers no helpers, and no row is offered.
+    // What a helper its agent asks for does (DOORS1b); where the answer holds no helpers, and no row is offered.
     helpers: Array.isArray(lines.data?.helpers) ? resolved<NonNullable<NonNullable<RepositorySetupProps['sessions']>['helpers']>>(lines.data.helpers) ?? { repository, workspace } : undefined,
     onHelpers: Array.isArray(lines.data?.helpers)
       ? (edit: HelperEdit) => setHelpers.mutate({ repository, ...edit }, {
@@ -264,7 +264,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
           onError: onDriverError,
         })
       : undefined,
-    // What an agent's ask to hand its session over does (MIXAGENT1c); a shell older than it answers none, and no row is offered.
+    // What an agent's ask to hand its session over does (MIXAGENT1c); where the answer holds none, and no row is offered.
     handOver: Array.isArray(lines.data?.handOver) ? resolved<NonNullable<NonNullable<RepositorySetupProps['sessions']>['handOver']>>(lines.data.handOver) ?? { repository, workspace } : undefined,
     onHandOver: Array.isArray(lines.data?.handOver)
       ? (edit: HandOverEdit) => setHandOver.mutate({ repository, ...edit }, {

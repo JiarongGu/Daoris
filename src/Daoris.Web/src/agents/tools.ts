@@ -26,10 +26,10 @@ export interface ToolDoor {
   problem?: string | null;
   wire?: string | null;
   accountOf?: string | null;
-  /** What a person calls the tool this door runs, and who makes it (AGT1). Absent from an older shell. */
+  /** What a person calls the tool this door runs, and who makes it (AGT1). Left out where it has none. */
   product?: string | null;
   maker?: string | null;
-  /** The agent's declared two-letter mark on the Agents strip (ACCTUX2), or null where none is declared. Absent from an older shell. */
+  /** The agent's declared two-letter mark on the Agents strip (ACCTUX2), or null where none is declared. Left out where it has none. */
   mark?: string | null;
   /**
    * Whether this harness can be pinned at all — false where it declares no package for Daoris to
@@ -37,11 +37,11 @@ export interface ToolDoor {
    * worse than none, which is the same rule the palette and the parked session's moves follow.
    */
   pinnable?: boolean;
-  /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
+  /** Whether this door can run the tool's sign-in — false where it declares no login flow. Left out where it has none. */
   signsIn?: boolean;
   /**
    * Whether its agent signs in by a device code beside its own sign-in (CODEXLOGIN1): Codex's browser first, its device code
-   * offered beside it. Absent from an older shell, read as no.
+   * offered beside it. Left out where it has none, read as no.
    */
   deviceCode?: boolean;
   /**
@@ -52,7 +52,7 @@ export interface ToolDoor {
   updates?: 'pin' | 'tool' | null;
   /**
    * Whether Daoris has an installer for this agent (INSTALLDOOR1). False means it is installed with its maker's own tooling,
-   * so no Install is offered, only how to install it. Absent from an older shell, read as true: today's Install.
+   * so no Install is offered, only how to install it. Left out where it has none, read as true: today's Install.
    */
   installs?: boolean;
   /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
@@ -73,7 +73,7 @@ export interface ToolDoor {
   structured?: boolean;
   /**
    * Whether a session on this door is handed Daoris's rules file (PERM1, D72): an agent's page has *What it may do* only
-   * where a door onto it is (UX6e, D150 §5.1). Absent from an older shell.
+   * where a door onto it is (UX6e, D150 §5.1). Left out where it has none.
    */
   takesRules?: boolean;
   profiles?: Account[];
@@ -81,7 +81,7 @@ export interface ToolDoor {
   ownLogin?: string | null;
   /** Who is signed in to that home, when the tool says (D66 §3). */
   ownAccount?: string | null;
-  /** The organisation and the plan the tool names beside who (ACCOUNTID1), as an account's; absent from an older shell. */
+  /** The organisation and the plan the tool names beside who (ACCOUNTID1), as an account's; left out where it has none. */
   ownOrg?: string | null;
   ownPlan?: string | null;
   /** When that home's state was last read (UX6e): only at a person's press (TOOL6g), so null before one. */
@@ -91,9 +91,15 @@ export interface ToolDoor {
   /**
    * What the tool itself offers for an account's model and effort (AGT6, D98): its own aliases and the
    * efforts its settings keep. Null where Daoris does not know the tool's settings, and nothing is then
-   * offered. Absent from an older shell.
+   * offered. Left out where it has none.
    */
   settingsChoices?: SettingsChoices | null;
+  /**
+   * What a session on this door may carry for a model and an effort, in the tool's own words: the scope the actors offer, apart from
+   * the account's settings above. `max` is among the efforts only where a session may carry it (Claude Code's pipe door) and is never
+   * an account's default. Null where the door lists none yet; left out where it has none.
+   */
+  sessionChoices?: SettingsChoices | null;
 }
 
 /** The choices a tool offers for an account's own settings, in its own words (AGT6). */
@@ -149,7 +155,7 @@ export interface AccountSettingsChange {
 export interface Account {
   /** Its stable id (ACCT2): its folder's name, an old `account-N` or a fresh `acct-` and eight hex characters. */
   name: string;
-  /** The person's name for it (ACCT2), null where they gave none; absent from a shell older than that. */
+  /** The person's name for it (ACCT2), null where they gave none; left out where it has none. */
   displayName?: string | null;
   home: string;
   /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
@@ -157,7 +163,7 @@ export interface Account {
   account?: string | null;
   /**
    * The organisation and the plan the tool names beside who (ACCOUNTID1, D125's note of 2026-10-19), read fresh and kept
-   * nowhere: what tells two sign-ins of one email apart. Null where it names none; absent from an older shell.
+   * nowhere: what tells two sign-ins of one email apart. Null where it names none; left out where it has none.
    */
   org?: string | null;
   plan?: string | null;
@@ -165,7 +171,7 @@ export interface Account {
   key?: string | null;
   /** Its own model and effort (AGT6), where the tool's settings are known; absent or null otherwise. */
   settings?: AccountSettings | null;
-  /** When its state was last read (UX6e, D150 §5.3); null where it never was, and absent from an older shell. */
+  /** When its state was last read (UX6e, D150 §5.3); null where it never was, and left out where it has none. */
   read?: string | null;
 }
 

@@ -13,10 +13,8 @@ const { invoke, notifyReady } = vi.hoisted(() => ({
   notifyReady: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../../test/sliceShell')).mockedShell(invoke, { notifyReady }),
   useShenoraEvent: () => {},
 }));
 
@@ -106,7 +104,8 @@ describe('the monitor window', () => {
   it('shows what is running, and leaves what has finished to the views that review it', async () => {
     show();
 
-    expect(await screen.findByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
+    // Named by the rail's row and by the session's tile.
+    expect(await screen.findAllByText('Expose a streaming budget on the chunk API')).toHaveLength(2);
     // Two live sessions plus one on another machine; the completed one is not a tile.
     expect(screen.getAllByText('engine').length).toBeGreaterThan(0);
     expect(screen.queryByText(/4h 60m/)).not.toBeInTheDocument();
@@ -136,7 +135,7 @@ describe('the monitor window', () => {
     widen(600);
     show();
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
     // Each running session this machine or another holds, by its mark; what ended is not one.
     await waitFor(() => expect(within(railPane()).getAllByRole('button', { name: / · engine · / })).toHaveLength(3));
@@ -173,7 +172,7 @@ describe('the monitor window', () => {
     widen(1400);
     show();
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
   });
 
@@ -182,7 +181,7 @@ describe('the monitor window', () => {
     widen(1400);
     show();
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     expect(railPane()).toHaveAttribute('data-list-mode', 'open');
     await userEvent.keyboard('{Control>}b{/Control}');
     expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
@@ -203,7 +202,7 @@ describe('the monitor window', () => {
   it('puts what is waiting on a person at the top', async () => {
     show();
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     const headings = screen.getAllByTitle(/Chat|Expose a streaming budget/);
     expect(headings[0]!.textContent).toBe('Chat');
   });
@@ -237,7 +236,7 @@ describe('the monitor window', () => {
   it('asks the shell for a window of its own, by the name the shell opens', async () => {
     show();
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     const [detach] = screen.getAllByRole('button', { name: /own window/i });
     await userEvent.click(detach!);
 
@@ -250,7 +249,7 @@ describe('the monitor window', () => {
     SESSIONS = LIVE.map((row) => (row.id === 'b2c3d4e5' ? { ...row, workspace: 'studio' } : row));
     show(true);
 
-    await screen.findByText('Expose a streaming budget on the chunk API');
+    await screen.findAllByText('Expose a streaming budget on the chunk API');
     const [detach] = screen.getAllByRole('button', { name: /own window/i });
     await userEvent.click(detach!);
 
@@ -305,6 +304,7 @@ describe('the monitor window', () => {
     SESSIONS = [];
     show();
 
-    expect(await screen.findByText('Nothing is running')).toBeInTheDocument();
+    // Said by the rail (`work.rail.empty.headline`) and by the grid (`work.monitor.empty.headline`).
+    expect(await screen.findAllByText('Nothing is running')).toHaveLength(2);
   });
 });

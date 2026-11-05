@@ -80,7 +80,6 @@ public sealed class ProviderCensusTests
             new("id", "StartsWith(agent)", new Regex(@"\.StartsWith\(\s*""(?:claude|codex|dsh)"), Scan.Text, ""),
             // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider.
             new("id", "id in a sentence", new Regex(@"(?<![\w@/.\-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w""\-])"), Scan.Text, ""),
-            new("id", "AccessKey.ClaudeCode", new Regex(@"\b(?:AccessKey|AccessRules)\.ClaudeCode\b"), Scan.Code, "claude-code"),
         };
         foreach (var (owner, types) in ProviderTypes)
         {

@@ -67,18 +67,12 @@ public sealed record DeliveryReconciled(string Key, string Standing, string Said
 /// <remarks>
 /// <para><b>A merge</b> keeps no landing record: the line holding its commit is its record. One whose press left its request waiting was
 /// withdrawn by its landing; the line may take it later, so it waits while the request does, and is reached once the line holds the commit.</para>
-/// <para><b>The plugin's phases</b> are the plugin frame's (row 1e), through <see cref="Plugin"/>: without it, a delivery whose git phases are
-/// done is left as it stands.</para>
+/// <para><b>A plugin's phases</b> (<c>plugin-dispatched</c>, <c>plugin-answered</c>) are a delivery the retired <c>work/land</c> wire wrote before G8: they are
+/// read, never sent again, and a delivery whose git phases are done is left as it stands, said. G8-CONVERT1 deletes the reading.</para>
 /// </remarks>
 /// <param name="checkout">The checkout of a delivery's repository, which its refs are read in; null where it is not here.</param>
 public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<DeliveryRecord, string?> checkout)
 {
-    /// <summary>The plugin frame's settlement of a delivery's plugin phases (row 1e), told the delivery and this run's claim; null leaves them.</summary>
-    public Func<DeliveryRecord, DeliveryClaim, CancellationToken, Task<DeliveryReconciled>>? Plugin { get; init; }
-
-    /// <summary>The reconciler production builds (LANDNODE1c3): its plugin phases settled through <paramref name="wire"/>'s frame.</summary>
-    public static DeliveryReconciler Of(DeliveryStore store, string home, IWorkplacePluginWire wire, Func<DeliveryRecord, string?> checkout) =>
-        new(store, home, checkout) { Plugin = TreeDelivering.PluginSettlement(store, home, wire, checkout) };
 
     /// <summary>A delivery's checkout among those the registry last kept for <paramref name="home"/> (<see cref="GitFolders"/>), or null.</summary>
     public static Func<DeliveryRecord, string?> Checkouts(string home) => record =>
@@ -324,10 +318,9 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
             $"`{reference}` stands at {stands}, neither at {commit}, which its delivery wrote ahead, nor where it stood: Daoris cannot tell what made it");
     }
 
-    private async Task<DeliveryReconciled> PluginAsync(DeliveryRecord delivery, DeliveryClaim claim, CancellationToken ct) =>
-        Plugin is { } plugin
-            ? await plugin(delivery, claim, ct).ConfigureAwait(false)
-            : Said(delivery, DeliveryStandings.Plugin, "its branch is made and recorded, and what follows is its plugin's, which the plugin frame settles", claim);
+    private Task<DeliveryReconciled> PluginAsync(DeliveryRecord delivery, DeliveryClaim claim, CancellationToken ct) =>
+        Task.FromResult(Said(delivery, DeliveryStandings.Plugin,
+            "its branch is made and recorded, and what followed was a landing plugin's, a wire Daoris no longer has: the branch is pushed by a workflow's `push` step or the person's press", claim));
 
     private DeliveryReconciled Delivered(DeliveryRecord delivery, DeliveryClaim claim)
     {

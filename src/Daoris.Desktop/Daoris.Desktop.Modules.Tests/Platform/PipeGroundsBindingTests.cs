@@ -65,12 +65,6 @@ public sealed class PipeGroundsBindingTests
             """{"all":true}""", "Lyntai:quest/x"
         },
         {
-            // An id-only hand-off names no branch in its payload: the branch its plan resolved is the one bound.
-            "HANDOFF", "HANDOFF_PLAN",
-            """{"session":"s1","branch":"quest/x","repository":"Lyntai","plugin":"github","commits":2}""",
-            """{"id":"s1"}""", "Lyntai:quest/x"
-        },
-        {
             "LAND_SESSION_TREE", "LANDING",
             """{"session":"s1","form":"merge","target":"main","source":"quest/x","own":true,"stands":true,"uncommitted":0}""",
             """{"id":"s1"}""", "s1:main"
@@ -214,7 +208,6 @@ public sealed class PipeGroundsBindingTests
                  {
                      ("SESSION_ARCHIVE", new { ids = new[] { "s1", "s2" }, archived = true }),
                      ("LAND_SESSION_TREE", new { id = "s1" }),
-                     ("HANDOFF", new { repository = "Lyntai", branch = "quest/x" }),
                      ("WORK_ABANDON", new { ask = "a1", pieces = new[] { "quest:q1" } }),
                      ("DISCARD_SESSION_TREE", new { path = "C:\\t", force = true }),
                      ("SESSION_INPUT", new { id = "s1", text = "x", question = "q" }),

@@ -40,7 +40,7 @@ public sealed class PinnedUpdatesTests : IDisposable
     {
         var info = new ProcessStartInfo("claude");
 
-        HarnessProbe.Apply(info, ClaudeCode, profileHome: null, binary: "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd");
+        Shell.Equip(info, ClaudeCode, profileHome: null, binary: "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd");
 
         Assert.Equal("1", info.Environment["DISABLE_UPDATES"]);
     }
@@ -52,7 +52,7 @@ public sealed class PinnedUpdatesTests : IDisposable
         var info = new ProcessStartInfo("claude");
         info.Environment.Remove("DISABLE_UPDATES");
 
-        HarnessProbe.Apply(info, ClaudeCode, profileHome: null, binary: null);
+        Shell.Equip(info, ClaudeCode, profileHome: null, binary: null);
 
         Assert.False(info.Environment.ContainsKey("DISABLE_UPDATES"));
     }
@@ -70,9 +70,9 @@ public sealed class PinnedUpdatesTests : IDisposable
         var unpointed = new ProcessStartInfo("claude-agent-acp");
         unpointed.Environment.Remove("DISABLE_UPDATES");
 
-        HarnessProbe.Apply(pointed, acp, profileHome: null, binary: null,
+        Shell.Equip(pointed, acp, profileHome: null, binary: null,
             claudeExecutable: "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd");
-        HarnessProbe.Apply(unpointed, acp, profileHome: null, binary: null, claudeExecutable: null);
+        Shell.Equip(unpointed, acp, profileHome: null, binary: null, claudeExecutable: null);
 
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
         Assert.False(unpointed.Environment.ContainsKey("DISABLE_UPDATES"));

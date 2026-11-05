@@ -18,9 +18,7 @@ vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
   return {
     ...actual,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
     // The newest handler for each event: what the shell's pump would deliver to.
     useShenoraEvent: (_module: string, type: string, handler: (payload: unknown) => void) => { heard.set(type, handler); },
     useWindowMaximized: () => false,
@@ -118,7 +116,7 @@ describe('an idle window', () => {
    * What one forwarded tick costs: every list the window holds is asked again, the driver's git-backed ones among them (LINES and
    * SWEEP_PLAN ask git of every checkout). So the shell forwards a tick only when the look's report changed (`TickLinesTests`).
    */
-  it('asks its lists again at a tick, which is why the shell sends one only when something moved', async () => {
+  it('asks none of its pushed lists again at a tick, which the shell sends only when something moved', async () => {
     await open();
     const before = asked();
     await act(async () => {
@@ -126,6 +124,6 @@ describe('an idle window', () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });
     const tick = since(before, asked());
-    expect(tick).toMatchObject({ 'DAORIS.DRIVER.LINES': 1, 'DAORIS.DRIVER.SWEEP_PLAN': 1, 'DAORIS.DRIVER.SESSION_GROUPS': 1 });
+    for (const route of ['LINES', 'SWEEP_PLAN', 'SESSION_GROUPS']) expect(tick[`DAORIS.DRIVER.${route}`]).toBeUndefined();
   });
 });

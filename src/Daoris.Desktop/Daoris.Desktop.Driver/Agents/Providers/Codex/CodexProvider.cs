@@ -34,7 +34,7 @@ internal static class CodexProvider
             new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
             Known<PortRef>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
-            Known<ISpawn>.Declared(new AdapterSpawn(new CodexAcpAdapter()), Evidence),
+            Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
@@ -57,7 +57,7 @@ internal static class CodexProvider
             Known<TablesPart>.Declared(TablesPart.None with { Limits = CodexLimits.Words }, Evidence),
             Known<UsagePart>.Declared(new UsagePart(CodexUsage.Question), Evidence),
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

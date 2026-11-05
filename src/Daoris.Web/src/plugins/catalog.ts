@@ -81,7 +81,7 @@ export type ToolShown = {
 /**
  * One of Daoris's own plugins the install carries (PLUG9 d, D103), as the driver's `PLUGINS` answers it:
  * what it declares, what its README says it needs, and whether this machine has installed it. The
- * bridge leaves a null out, so an older shell's offer may carry no `problem`. The page draws an offer as
+ * bridge leaves a null out, so an offer may carry no `problem`. The page draws an offer as
  * `OfferShown` below; this is the bridge's wire shape (PLUGUI1c2a moved it here from Settings).
  */
 export type PluginOfferShown = {
@@ -93,11 +93,11 @@ export type PluginOfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
-  /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
+  /** The servers it would hand Ask Daoris (HELPPLUG1a); left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  /** The skills it would hand (HELPPLUG1b); left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
   needs: string[];
@@ -110,7 +110,7 @@ export type PluginOfferShown = {
 /**
  * An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it (LANDPIN3).
  * `changed` at an older version is a copy edited since its install from the offer; `unjudged` is an older one with no record of
- * the files its install copied (LANDPIN3b), absent from an older shell.
+ * the files its install copied (LANDPIN3b), left out where it is judged.
  */
 export type PluginShippedShown = {
   state: 'older' | 'changed'; installed: string; shipped: string; changes?: string | null; unjudged?: boolean;
@@ -139,30 +139,30 @@ export type PluginShown = {
   folder: string;
   /** Where what it keeps lives, which an update never touches and a removal leaves. */
   data: string;
-  /** Where it came from (D103). An older shell sends none. */
+  /** Where it came from (D103). Left out where there is none. */
   source?: PluginSourceShown;
   /**
    * Whether an update waits (D119 §2, PLUGUI1e): `waits` when its source declares something different, `current` when
-   * the same, null with no record that reads. An older shell sends none.
+   * the same, null with no record that reads. Left out where there is none.
    */
   update?: 'waits' | 'current' | null;
   /**
    * Against the install's own plugin of its id (LANDPIN3): `older` with both versions and what the newer brings, or `changed`
-   * where its files are not the shipped ones; null where it needs no word. An older shell sends none.
+   * where its files are not the shipped ones; null where it needs no word. Left out where there is none.
    */
   shipped?: PluginShippedShown | null;
-  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none from a shell older than PLUGUI2b. */
+  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none where it declares none. */
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
-  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a); an older shell sends none. */
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a); left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); an older shell sends none. */
+  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
-  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. An older shell sends none. */
+  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. Left out where there is none. */
   tools?: ToolShown[];
 };
 
@@ -177,16 +177,16 @@ export type OfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
-  /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
+  /** The servers it would hand Ask Daoris (HELPPLUG1a); left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  /** The skills it would hand (HELPPLUG1b); left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); an older shell sends none. */
+  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
   needs: string[];
   installed: boolean;
-  /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */
+  /** Its declared icon as its bytes (D140 §3.2); none where it declares none. */
   icon?: string | null;
   iconProblem?: string | null;
 };

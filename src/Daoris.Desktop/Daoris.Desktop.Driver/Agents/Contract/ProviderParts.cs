@@ -124,7 +124,12 @@ public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full, string? Reading);
 
 /// <summary>What a door declares it can do, a <see cref="Known{T}"/> each (the design §2.3).</summary>
-public sealed record AbilitiesPart(Known<bool> Interactive, Known<bool> Resumes, Known<bool> TakesSettings);
+public sealed record AbilitiesPart(
+    Known<bool> Interactive,
+    Known<bool> Resumes,
+    Known<bool> TakesSettings,
+    Known<bool> ServersInherit = default,
+    Known<bool> OwnServersLeftOut = default);
 
 /// <summary>A door's own words: its error words and its turn report's meaning (D179 point 8).</summary>
 public sealed record DoorTablesPart(ErrorWords? ErrorWords, string? TurnReport);

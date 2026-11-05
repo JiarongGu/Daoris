@@ -19,11 +19,11 @@ const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
 
 vi.mock('@shenora/react', async () => {
   const { publishing } = await import('../../test/publishing');
-  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  const { mockedShell } = await import('../../test/sliceShell');
   return {
-    isShenoraAvailable: () => bridge.available,
-    getBridge: () => ({ isAvailable: bridge.available, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
+    ...mockedShell(invoke, {
+      notifyReady, available: () => bridge.available, through: publishing(invoke, (type, payload) => heard.get(type)?.(payload)),
+    }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       if (module === 'DAORIS') heard.set(type, handler);
     },

@@ -53,18 +53,17 @@ internal static class HarnessCapture
     /// door's form of the protocol door's first transcript lines.
     /// </param>
     internal static async Task CaptureAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, ISessionOutput? output,
-        CancellationToken ct, string? preamble = null)
+        TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, CancellationToken ct, string? preamble = null)
     {
         await using var file = AgentContext.Current.OpenTranscript(transcript, append: false);
         if (preamble is { Length: > 0 })
         {
             lock (file) file.WriteLine(preamble);
-            output?.Append(sessionId, preamble);
+            sink.Read(new WireReading.Shown(preamble));
         }
 
-        var said = PumpAsync(stdout, file, sessionId, output, ct);
-        var errors = PumpAsync(stderr, file, sessionId, output, ct);
+        var said = PumpAsync(stdout, file, sink, ct);
+        var errors = PumpAsync(stderr, file, sink, ct);
         await Task.WhenAll(said, errors).ConfigureAwait(false);
     }
 
@@ -91,7 +90,11 @@ internal static class HarnessCapture
     /// After the record, never before: its next message must land behind the ending it waited for.
     /// </param>
     /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
-    /// <param name="said">Told what a line says about the account's windows (TOOL6c), apart from the agent's words.</param>
+    /// <param name="sink">
+    /// Where the run's readings go (row l): each event the record keeps, each line the console shows, the streams beside, the conversation
+    /// the stream names, what a line says of the account's windows (TOOL6c) and a failed turn's one <see cref="WireReading.Failed"/>.
+    /// </param>
+    /// <param name="named">Told once the stream named its conversation and the sink was told it: where the run learns its words went.</param>
     /// <param name="opened">
     /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
     /// </param>
@@ -103,12 +106,10 @@ internal static class HarnessCapture
     /// bound to this run's process; null tells none.
     /// </param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, ISessionOutput? output,
-        ISessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
-        Action<SessionEvent>? observed = null, string? personSaid = null,
-        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null, ILineageWriter? lineage = null,
-        IReadOnlyList<SaidWordView>? handed = null)
+        TextReader stdout, TextReader stderr, string transcript, IReadingSink sink, IStreamMapper mapper, string? prompt,
+        CancellationToken ct, string? preamble = null, Action<SessionEvent>? observed = null, string? personSaid = null,
+        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action? named = null, InstructionAccount? account = null,
+        HarnessWords? own = null, ILineageWriter? lineage = null, IReadOnlyList<SaidWordView>? handed = null)
     {
         own?.Begin();
         await using var file = AgentContext.Current.OpenTranscript(transcript, append);
@@ -119,10 +120,10 @@ internal static class HarnessCapture
         void Line(string text)
         {
             lock (file) file.WriteLine(text);
-            output?.Append(sessionId, text);
+            sink.Read(new WireReading.Shown(text));
         }
 
-        void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
+        void Event(SessionEvent e) => sink.Read(new WireReading.Said(e));
 
         if (preamble is { Length: > 0 }) Line(preamble);
         foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account, handed)))
@@ -132,10 +133,10 @@ internal static class HarnessCapture
             Event(opening);
         }
 
-        var errors = PumpAsync(stderr, file, sessionId, output, ct, also: own is null ? null : own.Said);
-        // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever the
-        // session's own console is; a line that is a stream's never reaches the session's reader.
-        var beside = output is null ? null : mapper.Beside(output.ForSession(sessionId), Line);
+        var errors = PumpAsync(stderr, file, sink, ct, also: own is null ? null : own.Said);
+        // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever someone watches the session's own console;
+        // a line that is a stream's never reaches the session's reader.
+        var beside = ReadingStreams.Of(sink) is { } streams ? mapper.Beside(streams, Line) : null;
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a). And the
@@ -151,12 +152,17 @@ internal static class HarnessCapture
                 if (mapped.ModelRefused) own.ModelRefused();
             }
 
-            if (named is not null && !told && mapper.Conversation is { } conversation)
+            // A failed turn is one reading on either door (row l): the result's own words, which nothing reads for the account until
+            // the pipe door's failure reader does (D210 row 1c).
+            if (mapped.Failed is { } failed) sink.Read(new WireReading.Failed(DoorFailures.OfResult(failed)));
+
+            if (!told && mapper.Conversation is { } conversation)
             {
                 told = true;
                 try
                 {
-                    named(conversation);
+                    sink.Read(new WireReading.ConversationNamed(conversation));
+                    named?.Invoke();
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
@@ -172,11 +178,11 @@ internal static class HarnessCapture
                 observed?.Invoke(e);
             }
 
-            if (mapped.Limits is { } limits && said is not null)
+            if (mapped.Limits is { } limits)
             {
                 try
                 {
-                    said(limits);
+                    sink.Read(new WireReading.WindowsSaid(limits));
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
@@ -198,13 +204,12 @@ internal static class HarnessCapture
     /// </summary>
     /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words (AGT3c).</param>
     internal static async Task PumpAsync(
-        TextReader reader, TextWriter file, string sessionId, ISessionOutput? output, CancellationToken ct,
-        Action<string>? also = null)
+        TextReader reader, TextWriter file, IReadingSink sink, CancellationToken ct, Action<string>? also = null)
     {
         while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             lock (file) file.WriteLine(line);
-            output?.Append(sessionId, line);
+            sink.Read(new WireReading.Shown(line));
             also?.Invoke(line);
         }
     }

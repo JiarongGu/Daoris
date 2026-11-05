@@ -24,13 +24,9 @@ const ROWS: PushedAttention[] = [
   { kind: 'confirmation', id: 'c1', since: ago(1), where: '' },
 ];
 const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
-const PRESS: Confirmation = {
-  source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: null,
-};
-// A press at the service's door, which keeps its two minutes (CONFIRMWAIT1a-i leaves it as it was).
-const SERVICE: Confirmation = {
-  source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [], expires: new Date(NOW.getTime() + 100_000).toISOString(),
-};
+const PRESS: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true };
+// A request at the service's door, which waits as a terminal's does (ONEWAY1n).
+const SERVICE: Confirmation = { source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [] };
 
 describe("Overview's summary of what needs you", () => {
   beforeEach(() => {
@@ -42,12 +38,12 @@ describe("Overview's summary of what needs you", () => {
     await i18n.changeLanguage('en');
   });
 
-  // CONFIRMWAIT1a-i: only the service door's presses end by a time, so only they give the line one; a terminal's never does.
-  it("says the service's nearest time where one waits, and no time for a terminal's press", () => {
+  // ONEWAY1n-ii: no request ends by a time, the service's no more than a terminal's, so the line says they wait.
+  it("says the requests wait, the service's and a terminal's alike, with no time", () => {
     render(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[PRESS, SERVICE]} onNotifications={() => {}} />);
 
     const summary = screen.getByRole('region', { name: 'What needs you' });
-    expect(within(summary).getAllByRole('button')[0]).toHaveTextContent('Waiting for your confirmation2refused by itself in 1m 40s');
+    expect(within(summary).getAllByRole('button')[0]).toHaveTextContent('Waiting for your confirmation2It waits until you answer.');
   });
 
   it('says a line per group with its count and its oldest wait, and lists no row', () => {

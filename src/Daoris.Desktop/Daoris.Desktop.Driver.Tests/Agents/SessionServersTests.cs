@@ -99,7 +99,7 @@ public sealed class SessionServersTests : IDisposable
         var (handed, _, _, _) = await SessionServers.HandNotedAsync(
             _home, [Npx("-y", "@playwright/mcp@0.0.82")], browser: null, log: null, CancellationToken.None);
 
-        var file = SpawnServers.Write(_home, "s1", handed)!;
+        var file = ClaudeServers.Write(_home, new ConnectorPlan("s1", handed))!;
 
         using var written = JsonDocument.Parse(File.ReadAllText(file));
         var server = written.RootElement.GetProperty("mcpServers").GetProperty("browser");
@@ -212,7 +212,7 @@ public sealed class SessionServersTests : IDisposable
 
         var info = new ProcessStartInfo("claude-agent-acp") { UseShellExecute = false, CreateNoWindow = true };
         info.ArgumentList.Add("a \"quoted\" & piped word");
-        HarnessProbe.Apply(info, toolchain, profileHome: null, binary: shim);
+        Shell.Equip(info, toolchain, profileHome: null, binary: shim);
 
         Assert.Equal("node", Path.GetFileNameWithoutExtension(info.FileName), ignoreCase: true);
         Assert.True(Path.IsPathFullyQualified(info.FileName));

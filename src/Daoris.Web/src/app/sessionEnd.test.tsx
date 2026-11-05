@@ -28,8 +28,7 @@ vi.mock('@shenora/react', async () => {
   const React = await import('react');
   return {
     ...actual,
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, holds: false }),
     useShenora: () => shenora,
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       const latest = React.useRef(handler);

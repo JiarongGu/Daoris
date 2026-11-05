@@ -20,11 +20,9 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
 vi.mock('@shenora/react', async () => {
   // What a press moved reaches the state hub as the shell publishes it (STATEHUB1f, D169), where a test mounts the hub.
   const { publishing } = await import('../test/publishing');
-  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  const { mockedShell } = await import('../test/sliceShell');
   return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...mockedShell(invoke, { notifyReady, through: publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload)) }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       eventHandlers.set(`${module}.${type}`, handler);
     },
@@ -652,26 +650,6 @@ describe("a workspace's page (UX6g)", () => {
     expect(branches.getByText('daoris/s-three')).toBeInTheDocument();
     expect(branches.queryByText('daoris/s-one')).toBeNull();
     expect(plans()).toBe(1);
-  });
-
-  /** PUSH1c4b: on a host older than the push, *Look again* is still one read of the list, and the rows are its answer. */
-  it('reads the list again at Look again on a host older than the push, and shows its answer (PUSH1c4b)', async () => {
-    machine({ STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }) });
-    show(<><Pushes /><Hub /><ProjectsView notify={() => {}} /></>);
-    await chooseWorkspace('aurora');
-    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
-    const branches = within(repositoryMain());
-    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
-    const opened = plans();
-    expect(opened).toBeGreaterThan(0);
-
-    machine({
-      STATE_SLICE: Object.assign(new Error('NO_ROUTE'), { code: 'NO_ROUTE' }),
-      SWEEP_PLAN: { branches: [{ ...SWEEP.branches[0], branch: 'daoris/s-three' }], landed: [] },
-    });
-    await userEvent.click(branches.getByRole('button', { name: 'Look again' }));
-    expect(await branches.findByText('daoris/s-three')).toBeInTheDocument();
-    expect(plans()).toBe(opened + 1);
   });
 
   /**

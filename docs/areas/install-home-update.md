@@ -5,7 +5,7 @@
 Daoris ships as an install: a folder with one program to run, `Daoris.exe`, the build in `app/`, and the person's files in
 category folders beside it. The install's `data/` is the Daoris home. Every machine-local path is derived from `DAORIS_HOME`
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
-Node, PowerShell, gh, az), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
+Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
 new build, or rolls back. A release that changes a stored shape carries one migration, which converts the home once at its
 first start; nothing reads an older shape after it.

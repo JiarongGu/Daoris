@@ -37,26 +37,25 @@ export type SessionGrouping = {
   awaitsOf?: string | null;
   work?: {
     commits: number | null; uncommitted: number | null;
-    /** The branch the tree is on where the agent moved it onto one of its own (TREEFOLLOW1, TREEFOLLOWWEB2); absent from an older host. */
+    /** The branch the tree is on where the agent moved it onto one of its own (TREEFOLLOW1, TREEFOLLOWWEB2). */
     branch?: string | null;
   } | null;
   /**
    * Whether this session holds its quest on this machine for the person (SESSUX1b, D126 §3.3): the person stopped it, or
-   * (AGENTERRORS1a2) it ended past its transient bound, and nothing starts the quest here until *Try again* releases it. Its row says so, and offers *Try again* (SESSUX1d). Absent on a
-   * host older than the fact.
+   * (AGENTERRORS1a2) it ended past its transient bound, and nothing starts the quest here until *Try again* releases it. Its row says so, and offers *Try again* (SESSUX1d).
    */
   holdsQuest?: boolean;
   /**
    * Whose pause holds this session's quest on this machine (PAUSE1b, D132 §6.1): an ask's or a quest's own. Its row says so,
-   * and offers *Resume* in *Try again*'s place (PAUSE1e). Absent where none does, and on a host older than the fact.
+   * and offers *Resume* in *Try again*'s place (PAUSE1e). Absent where none does.
    */
   pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
   /**
    * What holds the person's words on an ended record that resumes later (MSG1f2, D137 §3.2), by the planner's verdict: the
    * work's pause (`paused`), the person's hold on its repository (`hold`), the cap (`cap`), its account cooling until
    * `until` (`cooling`), a session in its way (`busy`), or anything else (`waits`), with the planner's sentence. Its row
-   * says so. Absent where nothing holds words, and on a host older than the fact. A `cooling` hold names the account that resets
-   * first at `until` (LIMITSWITCH1): `account` its id, null for the agent's own sign-in, absent on a host older than the fact, and
+   * says so. Absent where nothing holds words. A `cooling` hold names the account that resets
+   * first at `until` (LIMITSWITCH1): `account` its id, null for the agent's own sign-in, and
    * `accountName` the name the person gave it, where it has one.
    */
   holds?: {
@@ -64,30 +63,28 @@ export type SessionGrouping = {
   } | null;
   /**
    * Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): a conversation that served no quest, whose record the ledger
-   * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way. Absent on a
-   * host older than the fact, which offers none.
-   */
+   * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way.   */
   deletable?: boolean;
   /**
    * What its own tree offers to land (LAND4, D102's LAND4 note), whatever group it rests in bar Working: the commits on it no
    * branch of the person's holds, by the clean-up's proof, on its branch in its tree (the tree's name, never its path), with
    * its uncommitted paths, null where git could not say. Its page offers *Accept…* beside it. Absent where it offers none,
-   * and on a host older than the fact.
+   * and where the tree holds none.
    */
   lands?: LandOffer | null;
   /**
    * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b, D102's note): a squash merge or a
    * cherry-pick put its work elsewhere, so its page offers no *Accept…* but says where the work is and offers the review's
-   * *Discard*, unforced. Never beside `lands`. Absent where it offers none, and on a host older than the fact.
+   * *Discard*, unforced. Never beside `lands`. Absent where it offers none.
    */
   discards?: DiscardOffer | null;
   /**
    * The call a working session's agent is inside, as the driver heard it from the session's events (WAITSAY1b, D152's UX7c
    * amendment): its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
    * row and its head say *running … for …*. Held in the driver's memory, never the record; null where none is open, and
-   * absent on a host older than the fact. `waiting` (AUTONOMY1b3b): its permission request is held for the person's answer,
-   * timed from the hold, its title empty where the agent named none; absent on a host older than the mark. `told`
-   * (FABRIC-PIPELINE1c): Daoris told the session this call ran past its pipeline's bound; absent on a host older than the mark.
+   * absent otherwise. `waiting` (AUTONOMY1b3b): its permission request is held for the person's answer,
+   * timed from the hold, its title empty where the agent named none. `told`
+   * (FABRIC-PIPELINE1c): Daoris told the session this call ran past its pipeline's bound.
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; heard?: string } | null;
 };

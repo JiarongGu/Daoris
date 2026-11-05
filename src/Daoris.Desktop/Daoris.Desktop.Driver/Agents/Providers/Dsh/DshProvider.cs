@@ -22,7 +22,7 @@ internal static class DshProvider
             LentPart.None, Known<PortRef>.Absent,
             // Its posture is its own mechanism, an environment variable its spawn sets, never a mode on the wire.
             new PosturesPart(null, null, null, null),
-            Known<ISpawn>.Declared(new AdapterSpawn(new DshAdapter()), Evidence),
+            Known<ISpawn>.Declared(new DshSpawn(), Evidence),
             Known<IDialect>.Absent,
             new AbilitiesPart(
                 Known<bool>.Declared(false, Evidence),
@@ -40,7 +40,7 @@ internal static class DshProvider
             Known<TablesPart>.Absent,
             Known<UsagePart>.Absent,
             Known<LentPart>.Declared(new LentPart(PoolFacts.None, TablesPart.None, UsagePart.None), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent, Known<PortRef>.Absent, Known<PortRef>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

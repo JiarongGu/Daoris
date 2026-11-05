@@ -71,13 +71,13 @@ internal sealed class SessionHold(IRunWiring wiring)
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
-        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
+        ConnectorPlan? handedPlan = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, HarnessSelection? goesOnAs = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
         string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null, Action? written = null, (string Role, long Revision)? taken = null,
-        string? moved = null)
+        string? moved = null, NativeLimits? limits = null)
     {
         var context = wiring.Context;
         var (service, home, output, log) = (context.Service, context.Home, context.Output, context.Log);
@@ -133,8 +133,8 @@ internal sealed class SessionHold(IRunWiring wiring)
                     Tree = cwd,
                 })
             : null;
-        using var servers = new Disposer(() => SpawnServers.Remove(handed));
-        using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
+        using var servers = new Disposer(() => SpawnFiles.Remove(handed));
+        using var ruled = new Disposer(() => SpawnFiles.Remove(rules.File));
 
         // 🔴 The stop made of it, told as the run lets go, whatever ends it: disposed before the run above untracks its processes, its
         // go-ons' among them, so it is read while they still are, for a close that cuts the conclusion off to record that stop.
@@ -212,7 +212,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 IReadOnlyList<string>? Values(string category) =>
                     options.FirstOrDefault(option => option.Category == category) is { } option ? [.. option.Choices.Select(each => each.Value)] : null;
             };
-        Func<ModelRefusal, Task<ActorAsked?>>? refusedAt = offers?.Refused is not { } reask
+        var refusedAt = ChoiceReask.Of(offers?.Refused is not { } reask
             ? null
             : async refusal =>
             {
@@ -244,7 +244,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                         chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))
                     .ConfigureAwait(false);
                 return later.Asked;
-            };
+            });
 
         // Every run on the protocol door handed its owner's check takes the one transient retry (D210 point 8), its waits on the driver's
         // clock: a driven session, an intake, a helper, an opinion, a partner and a brainstorm voice. Its bound is its line's tries rule, and a
@@ -260,7 +260,6 @@ internal sealed class SessionHold(IRunWiring wiring)
 
         // What the native door's harness says in its own words, apart from its agent's, for its ending.
         var own = new HarnessWords();
-        var structured = !protocol && adapter.StructuredOutput() is not null;
 
         // The person's words the protocol door handed back or never delivered, as its session's run said them.
         IReadOnlyList<ChatMessage> acpLeft = [];
@@ -275,16 +274,13 @@ internal sealed class SessionHold(IRunWiring wiring)
             Quiet = watched?.Ending ?? default,
             QuietEnding = ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0)),
 
-            // A native resume is told once its harness named its conversation, so its words went; its one retry marked on the resume.
-            Named = resume is null ? null : () => resume.Named = resume.Prompted = true,
-            Again = resume is null ? null : resume.Again,
             Protocol = !protocol ? null : _door.For(
                 run, sessionId, cwd, prompt,
 
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.
                 target.Access?.Posture ?? SessionRules.PassPosture(target, adapter) ?? adapter.AcpPosture, scope, rules.Meta,
-                handedServers ?? context.Servers, inbox, said, resume, keepAs, waitsOnBackground, noConnector, ending,
+                handedPlan ?? ConnectorPlans.For(sessionId, null, context.Servers), inbox, resume, keepAs, waitsOnBackground, noConnector, ending,
                 unoffered: target.Access is { } access ? access.Unoffered : SessionRules.PassPosture(target, adapter) is not null ? BrainstormPermissions.Unoffered : null,
                 setupChanged: setupChanged,
 
@@ -299,17 +295,31 @@ internal sealed class SessionHold(IRunWiring wiring)
         // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first
         // line and the answer, the target already in the conversation above.
         IReadOnlyList<SessionEvent> opening = resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed);
-        run.HandRecords(new RunRecords(
-            sessionId, transcript, output, context.Events, LineageHome: home, KeepAs: keepAs, Own: own, Said: said,
+        run.HandStart(run.Start with
+        {
+            Session = sessionId,
+            Transcript = transcript,
+            LineageHome = home,
+            Own = own,
 
             // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note; the
             // native door's transcript opens with how its run was set up.
-            Opening: protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
-            Preamble: protocol ? null : preamble));
+            Opening = protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
+            Preamble = protocol ? null : preamble,
+        });
+
+        // The run's readings, each kept by its owner: the record and its console, the conversation the harness named under the adapter a
+        // quest's session keeps it as (ANSWER1a), and what the stream says of the account's windows (TOOL6c).
+        run.HandSink(ReadingSinks.Of(
+            new RecordReadings(sessionId, output, context.Events),
+            keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
+            said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
+            limits));
 
         // The rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
-        await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct)).ConfigureAwait(false);
+        // A native resume's state goes with it: its harness naming the conversation marks its words gone, and the run's one retry reads it.
+        await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct, resume)).ConfigureAwait(false);
 
         if (!movedFirst)
         {
@@ -334,15 +344,6 @@ internal sealed class SessionHold(IRunWiring wiring)
         var end = await run.EndAsync(ct).ConfigureAwait(false);
         var turnFailed = protocol ? end.Ending.Failure : null;
         List<ChatMessage> left = [.. acpLeft];
-
-        // 🔴 A native resume whose harness ended on a failed exit before it named its conversation proves nothing of its loss, so it is
-        // tried once more as the same resume, conversation, account and access, before its conclusion reads a second such end as
-        // `exited`. Never after a stop.
-        if (structured && resume is { Named: false, Refused: null, Retried: false } && end.Exit is int early && early != 0
-            && !context.Processes.WasStopRequested(sessionId))
-        {
-            end = await run.RestartAsync(ct).ConfigureAwait(false);
-        }
 
         // 🔴 A session never concludes while words are held: on the native door its process has exited, so its own conversation is
         // resumed with them through the run, under the same record, which stays working, until a run ends with none.

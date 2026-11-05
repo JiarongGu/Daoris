@@ -97,7 +97,8 @@ public sealed class LandedRecordTests : IDisposable
         landings.Record(Entry("feature/q1-fix", "s2"));
 
         landings.Moved("engine", "feature/q1-fix", "tip00009", "from0009");
-        landings.Pushed("engine", "feature/q1-fix", new PluginLanding("example.lands", true, "https://example.test/pr/7", "pushed it.", false), "tip00009");
+        landings.Pushed("engine", "feature/q1-fix", "tip00009");
+        landings.PullRequested("engine", "feature/q1-fix", "example.lands", "https://example.test/pr/7");
 
         var trace = landings.Landing("s1")!;
         Assert.Equal("tip00001", trace.Tip);

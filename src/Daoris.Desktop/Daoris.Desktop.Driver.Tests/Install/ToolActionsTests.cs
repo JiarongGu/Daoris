@@ -16,7 +16,7 @@ public sealed class ToolActionsTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-toolactions-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/gh.exe=gh", "");
+    private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/pwsh.exe=pwsh", "");
 
     private string Home => Path.Combine(_root, "data");
 
@@ -47,11 +47,11 @@ public sealed class ToolActionsTests : IDisposable
                 {
                     [Platform] = new JsonObject
                     {
-                        ["url"] = $"https://maker.example/gh-{version}.zip",
+                        ["url"] = $"https://maker.example/pwsh-{version}.zip",
                         ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Bytes)),
                         ["size"] = Bytes.Length,
                         ["archive"] = "zip",
-                        ["exe"] = "bin/gh.exe",
+                        ["exe"] = "bin/pwsh.exe",
                     },
                 },
             };
@@ -59,7 +59,7 @@ public sealed class ToolActionsTests : IDisposable
 
         File.WriteAllText(
             ToolResources.BesideApplication(App),
-            new JsonObject { ["schema"] = 1, ["tools"] = new JsonObject { ["gh"] = new JsonObject { ["versions"] = listed } } }.ToJsonString());
+            new JsonObject { ["schema"] = 1, ["tools"] = new JsonObject { ["pwsh"] = new JsonObject { ["versions"] = listed } } }.ToJsonString());
     }
 
     private sealed class Host(Func<string, HttpResponseMessage> answer) : HttpMessageHandler
@@ -115,23 +115,23 @@ public sealed class ToolActionsTests : IDisposable
         var actions = new ToolActions(Home, App, new Host(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(body) }));
         var lines = new List<string>();
 
-        var run = actions.Start("gh", "download", null, line => { lock (lines) lines.Add(line); });
-        Assert.Equal(("gh", "download", "2.62.0"), (run.Tool, run.Action, run.Version));
+        var run = actions.Start("pwsh", "download", null, line => { lock (lines) lines.Add(line); });
+        Assert.Equal(("pwsh", "download", "2.62.0"), (run.Tool, run.Action, run.Version));
         await body.Waiting.Task.WaitAsync(Poll.Patience);
         Assert.False(run.Ended.IsCompleted, "a download is followed, never waited on");
-        Assert.Same(run, actions.Running("gh"));
+        Assert.Same(run, actions.Running("pwsh"));
 
-        var busy = Assert.Throws<ToolRefusal>(() => actions.Start("gh", "use", "2.62.0", _ => { }));
+        var busy = Assert.Throws<ToolRefusal>(() => actions.Start("pwsh", "use", "2.62.0", _ => { }));
         Assert.Equal("busy", busy.Check);
-        Assert.Contains("GitHub CLI's download is still running", busy.Message);
+        Assert.Contains("PowerShell's download is still running", busy.Message);
 
-        Assert.True(actions.Cancel("gh"));
+        Assert.True(actions.Cancel("pwsh"));
         var end = await run.Ended.WaitAsync(Poll.Patience);
         Assert.True(end.Stopped);
         Assert.Equal(-1, end.ExitCode);
-        Assert.Null(actions.Running("gh"));
-        Assert.False(actions.Cancel("gh"), "nothing runs to stop");
-        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "gh")), "a stop leaves nothing under tools/gh");
+        Assert.Null(actions.Running("pwsh"));
+        Assert.False(actions.Cancel("pwsh"), "nothing runs to stop");
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions, "pwsh")), "a stop leaves nothing under tools/pwsh");
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)), "nothing switches");
     }
 
@@ -142,15 +142,15 @@ public sealed class ToolActionsTests : IDisposable
         var actions = new ToolActions(Home, App, new Host(_ => Served()));
         var lines = new List<string>();
 
-        var run = actions.Start("gh", "use", null, line => { lock (lines) lines.Add(line); });
+        var run = actions.Start("pwsh", "use", null, line => { lock (lines) lines.Add(line); });
         var end = await run.Ended.WaitAsync(Poll.Patience);
 
-        Assert.Equal(new ToolEnd("gh", "use", "2.62.0", 0, null, null, false, null), end);
+        Assert.Equal(new ToolEnd("pwsh", "use", "2.62.0", 0, null, null, false, null), end);
         Assert.Equal(
-            Path.Combine(ToolInstall.VersionFolder(Home, "gh", "2.62.0"), Tools.Package, "bin", "gh.exe"),
-            Tools.Resolve(Home, "gh", path: "").File);
+            Path.Combine(ToolInstall.VersionFolder(Home, "pwsh", "2.62.0"), Tools.Package, "bin", "pwsh.exe"),
+            Tools.Resolve(Home, "pwsh", path: "").File);
         Assert.Contains(lines, line => line.Contains("its size and SHA-256 match the list", StringComparison.Ordinal));
-        Assert.Null(actions.Running("gh"));
+        Assert.Null(actions.Running("pwsh"));
     }
 
     [Fact]
@@ -158,16 +158,16 @@ public sealed class ToolActionsTests : IDisposable
     {
         BuiltIn("2.62.0");
         var actions = new ToolActions(Home, App, new Host(_ => Served()));
-        await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
+        await actions.Start("pwsh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
 
-        var nothing = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
+        var nothing = await actions.Start("pwsh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal(0, nothing.ExitCode);
-        Assert.Equal("GitHub CLI 2.62.0 is the newest the lists name, and it is downloaded — nothing to do", nothing.Nothing);
+        Assert.Equal("PowerShell 2.62.0 is the newest the lists name, and it is downloaded — nothing to do", nothing.Nothing);
 
         BuiltIn("2.62.0", "2.63.0");
-        var moved = await actions.Start("gh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
+        var moved = await actions.Start("pwsh", "update", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal(("2.63.0", 0), (moved.Version, moved.ExitCode));
-        Assert.Equal("2.63.0", Tools.Read(Home).Entries["gh"].Version);
+        Assert.Equal("2.63.0", Tools.Read(Home).Entries["pwsh"].Version);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public sealed class ToolActionsTests : IDisposable
             Content = new ByteArrayContent(Encoding.UTF8.GetBytes(new string('x', Bytes.Length))),
         }));
 
-        var end = await actions.Start("gh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
+        var end = await actions.Start("pwsh", "use", "2.62.0", _ => { }).Ended.WaitAsync(Poll.Patience);
         Assert.Equal((1, "hash", false), (end.ExitCode, end.Check, end.Stopped));
         Assert.Contains("served bytes whose SHA-256 is", end.Problem);
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Tools)));
@@ -190,12 +190,12 @@ public sealed class ToolActionsTests : IDisposable
     {
         var actions = new ToolActions(Home, App, new Host(_ => throw new InvalidOperationException("nothing is fetched")));
 
-        var unknown = Assert.Throws<ToolRefusal>(() => actions.Start("gh", "download", null, _ => { }));
+        var unknown = Assert.Throws<ToolRefusal>(() => actions.Start("pwsh", "download", null, _ => { }));
         Assert.Equal("unknown", unknown.Check);
-        var machine = Assert.Throws<ToolRefusal>(() => actions.Start("gh", "update", null, _ => { }));
+        var machine = Assert.Throws<ToolRefusal>(() => actions.Start("pwsh", "update", null, _ => { }));
         Assert.Equal("machine", machine.Check);
-        Assert.Throws<DriverException>(() => actions.Start("gh", "install", null, _ => { }));
-        Assert.Null(actions.Running("gh"));
+        Assert.Throws<DriverException>(() => actions.Start("pwsh", "install", null, _ => { }));
+        Assert.Null(actions.Running("pwsh"));
     }
 
     [Fact]
@@ -204,13 +204,13 @@ public sealed class ToolActionsTests : IDisposable
         BuiltIn("2.62.0");
         using var log = new MachineLog(Home, "driver");
         var actions = new ToolActions(Home, App, new Host(_ => Served()), log);
-        await actions.Start("gh", "download", null, _ => { }).Ended.WaitAsync(Poll.Patience);
+        await actions.Start("pwsh", "download", null, _ => { }).Ended.WaitAsync(Poll.Patience);
         log.Dispose();
 
         var text = string.Concat(Directory.EnumerateFiles(DaorisHome.Entry(Home, HomeEntry.Logs)).Select(File.ReadAllText));
         Assert.Contains("\"tool.download.started\"", text);
         Assert.Contains("\"tool.download.verified\"", text);
-        Assert.Contains("\"gh\"", text);
+        Assert.Contains("\"pwsh\"", text);
         Assert.Contains("\"2.62.0\"", text);
         Assert.DoesNotContain("maker.example", text);
     }

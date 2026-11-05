@@ -487,7 +487,10 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return TextBounds.Clip(title, 160);
     }
 
-    /// <summary>A tool's name as ACP's kind vocabulary, so both doors' cards wear the same glyphs.</summary>
+    /// <summary>
+    /// A tool's name as ACP's kind vocabulary, so both doors' cards wear the same glyphs: a subagent's call, <c>Agent</c> or <c>Task</c>,
+    /// wears the protocol door's <c>think</c>, as its adapter gives the call it replaces (AGENTPROVIDER1 s-viii).
+    /// </summary>
     private static string KindOf(string name) => name switch
     {
         "Read" or "NotebookRead" => "read",
@@ -495,7 +498,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         "Bash" or "BashOutput" or "KillShell" => "execute",
         "Grep" or "Glob" => "search",
         "WebFetch" or "WebSearch" => "fetch",
-        "TodoWrite" => "think",
+        "TodoWrite" or "Agent" or "Task" => "think",
         _ => "other",
     };
 

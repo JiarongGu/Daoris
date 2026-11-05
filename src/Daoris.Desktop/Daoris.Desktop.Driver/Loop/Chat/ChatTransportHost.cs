@@ -58,8 +58,6 @@ internal sealed class ChatTransportHost(
     public Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct) =>
         DownloadKeeping.KeepHandedAsync(service, home, sessionId, info, ct);
 
-    public void KeepConversation(string sessionId, string adapter, string conversation) => conversations.Keep(sessionId, adapter, conversation);
-
     public IReadOnlyList<string>? Command(string adapter) => config.Commands.GetValueOrDefault(adapter);
 
     public TimeSpan LingerBound => SessionWaits.LingerBound;

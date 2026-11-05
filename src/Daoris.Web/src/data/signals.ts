@@ -28,43 +28,43 @@ export interface Consideration {
   /**
    * For a quest held at spawn because every account its start may use is cooling (TOOL4g, D125 §4): whose account, which
    * (null for the tool's own sign-in), until when, and whether the agent named the time. It waits for an account: not
-   * parked, no Retry, and it starts by itself at the reset. Absent for every other hold, and on an older shell.
+   * parked, no Retry, and it starts by itself at the reset. Absent for every other hold.
    */
   waitsFor?: {
     agent: string; account?: string | null;
-    /** The name the person gave the account (ACCT2b), read as the look said it; null where none, absent on an older shell. */
+    /** The name the person gave the account (ACCT2b), read as the look said it; null where none, left out where there is none. */
     name?: string | null;
     until: string; stated: boolean;
   };
   /**
    * For a start held at spawn that passed accounts not signed in (TOOL6g): whose, and which, so the page names each with
-   * its sign-in, beside a wait on a cooling account or with none cooling. Absent where it passed none, and on an older shell.
-   * `names` (ACCT2b) is the name the person gave each, in the same order, null where one has none; absent on an older shell.
+   * its sign-in, beside a wait on a cooling account or with none cooling. Absent where it passed none.
+   * `names` (ACCT2b) is the name the person gave each, in the same order, null where one has none; left out where there is none.
    * `noAccount` (OWNSPACE1b-B, D175) is true where the hold is the one for no Daoris account signed in: the page says it from
    * this fact, never from `accounts` being empty.
    */
   signedOut?: { agent: string; accounts: string[]; names?: (string | null)[] | null; noAccount?: boolean } | null;
   /**
    * For a quest a pause holds (verdict `Paused`, PAUSE1b): whose pause, an ask's or a quest's, which the sentence names and
-   * whose *Resume* moves it (D132 §2.3). Absent for every other verdict, and on an older shell.
+   * whose *Resume* moves it (D132 §2.3). Absent for every other verdict.
    */
   pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
   /**
    * For a quest an update's drain holds (verdict `Blocked`, UPDATE1, D139 §2): true, so the sentence is said from the fact.
-   * Absent for every other hold, and on an older shell.
+   * Absent for every other hold.
    */
   forUpdate?: boolean | null;
   /**
    * For a quest whose take is not this machine's (verdict `TakenElsewhere`, CARRY2b): whose it is (CARRY2c), the machine that
    * took it and its session where a teammate's record named them, else null; `here` where it was taken on this machine after
    * its session ended, by a chat or by work outside Daoris; and `last`, the session here not carried on over it. Absent for
-   * every other verdict, and on an older shell.
+   * every other verdict.
    */
   takenBy?: { machine?: string | null; session?: string | null; here?: boolean; reopened?: boolean; last: string } | null;
   /**
    * For a set-up step the planner cannot show (verdict `CannotShow`, CANNOTSHOW1a): why, as a code (`unnamed`: no review rule
    * here names the environment; `no-address`: a local environment declares no address; `no-window`: a local environment and no
-   * window to show it in), the environment's name and its address where it has one. Null or absent otherwise, and on an older shell.
+   * window to show it in), the environment's name and its address where it has one. Null or absent otherwise.
    */
   cannotShow?: { code: string; environment: string; address: string | null } | null;
   /**
@@ -72,12 +72,12 @@ export interface Consideration {
    * `SourceReopened`, OVERVIEWNOISE1c): which of the planner's sentences `reason` is, as a code, with the facts its words are said
    * from — the cap as a number, the session, the other quest (one queued ahead, the question waited on, the step before, the
    * reopened source), the repository a question was asked of, a review's environment and the second opinion's state (null where
-   * it is not judged yet). Each fact is null where the code names none. Null or absent otherwise, and on an older shell.
+   * it is not judged yet). Each fact is null where the code names none. Null or absent otherwise.
    */
   said?: {
     code: string; cap?: number | null; session?: string | null; quest?: string | null; repository?: string | null;
     environment?: string | null; state?: string | null;
-    /** INTEGRATE1l: its declared paths that meet the earlier quest's work, under `overlaps`. Absent on an older shell. */
+    /** INTEGRATE1l: its declared paths that meet the earlier quest's work, under `overlaps`. Left out where there is none. */
     paths?: readonly string[] | null;
   } | null;
 }

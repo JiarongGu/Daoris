@@ -43,8 +43,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `daoris workflow` | `Workflows/DriverWorkflowsCommand.cs`, `WorkflowTerminal.cs`, `WorkflowListing.cs`, `WorkflowChoosing.cs`, `WorkflowWriting.cs` | The usage and the door; the terminal's flags, say and press; the reading, choosing and writing verbs |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
+| Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
-| Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press, a hand-off and a part left out; whether a named plugin can land work (`LandingPlugins.ProblemOf`) |
+| Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs` | The merge, the branch and the squash; the plan and its refusals, each read from the run's bound `land`. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
@@ -53,7 +54,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
-| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`) | The `check` node performed by Daoris, off the pass, under the heavy slots |
+| Verification check | `Workflows/Nodes/CheckPort.cs`, `Workflows/VerifyRuns.cs`, `Workflows/VerifyCommand.cs`, `Review/Heavy/HeavyExecutor.cs` (with `VerifySend.cs`, `VerifyWorld.cs`, `VerifyAnswer.cs`, `VerifySlot.cs`, `VerifyExecution.cs`); `Workflows/LineRunReader.cs`, `CheckResults.cs`, `Domain/WorkflowRunLine.cs`, `Domain/LineRunWords.cs`; web `workflow/VerifyRuns.tsx`, `lineSaid.ts` | The `check` node performed by Daoris, off the pass, under the heavy slots; a person's verification of a branch or a commit bound as a run of its own; a line's runs read with their verdicts (`workflow run --line`, `WORKFLOW_RUN {line}`) and drawn under *Verifications* on the repository's Workflow tab |
 | Chat runs | `Workflows/ChatRuns.cs`, `Workflows/ChatCandidates.cs`, `Review/ChatPresses.cs` | A conversation's run bound to its graph; its subject the submitted candidate |
 | Place set-up | `Setup/PlacePlan.cs`, `Setup/PlaceApply.cs`, `Workflows/PlaceProjection.cs` | *Set up…*'s plan and receipt-kept Apply; the `PLACES` read |
 | Workflow migration | `Workflows/Migration/WorkflowMigration.cs`, `MigratedPlaces.cs`, `MigratedGraphs.cs`; `Transitional/Migration/WorkflowsStep.cs` | The release migration's workflow step: old versions and the places on the rules converted to saved graphs once |
@@ -103,7 +104,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     nodes and a plugin's nodes the run's branch at its tip; a `go-ahead` the run's ask. (from D190)
 18. The runtime is the record's one writer. A door keeps the person's word (skip, stop, send, ask again, go on, accept, changes) on the
     record, and the next pass applies it. An Accept waits for that pass, within `GraphPasses.Bound` (20 seconds), saying so beside the
-    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold, which only a hand-off does. A quest bound to a closure graph is closed by that graph. (from D190)
+    button (`PassNote`, the press step `pass`); it never waits behind a tree's hold. A quest bound to a closure graph is closed by that graph. (from D190)
 19. A `go-ahead` holds the landing until the person's yes or their skip with words. (from D190)
 20. A conversation's run binds its graph. Its subject is the candidate the person submits; a newer submission lapses it. A graph
     holding `quest.close` holds a conversation's press. (from D227)
@@ -147,8 +148,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exists. `integrate` hands it to the line's integration. (from D87, D215)
 31. Daoris pushes, as a `push` step or the person's press, through the one push act (`PushDoor`, off the pass, under the lease); the node
     is reached when git's remote-tracking ref holds the commit and failed by the act's refusal. Daoris opens no pull request: a plugin's
-    performed step does, for its platform. A saved graph that landed by `push` or `pull-request` converted once
-    (`PushedGraphs`, the home's `push-steps` step; it ends when no home saved before G8's release can start, and G8-CONVERT1 deletes it). (from D241)
+    performed step does, for its platform, and the pass writes the address its completion's evidence gives (`evidence.url`) and its plugin on
+    the branch's landing record (`NodeRunKeeping.KeepPullRequests`, `PullRequestRecords`), so `work/state` has an address to ask about and the
+    page shows the pull request. A run whose graph holds a `<plugin>/pull-request` step no installed, switched-on plugin performs is refused at
+    its bind with its reason (`PullRequestSteps.Unserved`, the binding's `Problem`), never run to a step nothing performs. A saved graph that
+    landed by `push` or `pull-request` converted once (`PushedGraphs`, the home's `push-steps` step), and a delivery a pre-G8 build began
+    for a plugin (`plugin-dispatched`, `plugin-answered`, the `push` and `pull-request` methods) is read, said and never sent again
+    (`DeliveryReconciler`); both end when no home saved before G8's release can start, and G8-CONVERT1 deletes them. (from D241)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
@@ -170,7 +176,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     card's wait), the newest version of the place's default workflow (`PlaceIntegrate`), the owner's where it has none. A failure is
     confirmed once before it is blamed. (from D215, D227, D232)
 40. A verification pipeline's `check` is Daoris's, with no agent session, never skipped. One run per line at a time, each batch
-    run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. (from D192)
+    run to its verdict. A failure becomes a fix ask, by the person's press or a standing `ask`. A person's verification of a branch
+    or a commit (`daoris gate verify`, *Verify…*) is a run of its own under the accepted gates; its check's outcome is recorded on
+    `run:<run>` under the `gates` source, and the line's read says each run's verdict (verified, failed naming its gate, not known
+    with why, not now, running, waiting) with each gate from the check's newest result. (from D192)
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (from D184, D227)
 
 **Set up, conversion and Current**
@@ -187,7 +196,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 45. There is no landing rule: no type, reader or writer of `landings` or `workspaceLandings` outside the migration, which reads them raw
     (`MigratedPlaces`) and takes them out of `driver.json` once. Every door that lands, plans, names a branch or says how work lands reads
     the run's bound `land`; work no version governs lands as the declared merge and is held by its gate. A line's integration reads
-    the line's policy. A hand-off pushes to the plugin its card names, and a pull request is asked of the plugin that pushed it. `LINES`
+    the line's policy. A pull request is asked of the plugin whose step opened it. `LINES`
     answers no `landings` and `SESSION_PROCESS` no landing. (from D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
     no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. What a landing try
@@ -261,7 +270,6 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   installed proof. A `request` under `start: you` waits for the person's *Send*, the `send` act of the run's node door (`WORKFLOW_NODE`, `daoris
   workflow send`), which keeps a mark on the record (`RunNodeWords.SendKey`) that the next pass reads as the start's say-so.
 - **FABRIC-SQUASHCHAIN1:** whether the plan and the performer's keeper agree on a squash chain's earlier part waits on the owner's choice.
-- **FABRIC-PIPELINE1d:** the verification run on a line has no view of its own yet.
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.

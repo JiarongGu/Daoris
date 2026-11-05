@@ -62,7 +62,7 @@ public sealed class CommandShimTests : IDisposable
         var info = new ProcessStartInfo("use1f-nowhere");
         info.Environment["PATH"] = _folder;
 
-        HarnessProbe.Apply(info, Plain, profileHome: null);
+        Shell.Equip(info, Plain, profileHome: null);
 
         Assert.Null(CommandPresence.Resolve("use1f-nowhere", _folder, startable: true));
         Assert.Equal("use1f-nowhere", info.FileName);
@@ -86,7 +86,7 @@ public sealed class CommandShimTests : IDisposable
         foreach (var (info, adapter) in new[] { (driven, acp), (chat, pipe) })
         {
             info.Environment["PATH"] = _folder;
-            HarnessProbe.Apply(info, adapter.Toolchain!, profileHome: null);
+            Shell.Equip(info, adapter.Toolchain!, profileHome: null);
         }
 
         Assert.Equal(Path.Combine(_folder, "claude-agent-acp.cmd"), driven.FileName, ignoreCase: true);
@@ -108,7 +108,7 @@ public sealed class CommandShimTests : IDisposable
         var info = pipe.Prepare(Target(), command: null);
         info.Environment["PATH"] = _folder;
 
-        HarnessProbe.Apply(info, pipe.Toolchain!, profileHome: null);
+        Shell.Equip(info, pipe.Toolchain!, profileHome: null);
 
         Assert.Equal(Path.Combine(_folder, "claude.cmd"), info.FileName, ignoreCase: true);
         Assert.True(info.RedirectStandardInput);

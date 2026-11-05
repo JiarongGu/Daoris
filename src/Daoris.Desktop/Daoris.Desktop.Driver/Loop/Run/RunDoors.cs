@@ -94,6 +94,8 @@ internal sealed class RunDoors(Driver driver) : IRunWiring
 
     Action<JsonElement> IRunWiring.Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => driver.Said(adapter, selection, sessionId);
 
+    NativeLimits IRunWiring.NativeLimit(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => driver.NativeLimit(adapter, selection, sessionId);
+
     Task<bool> IRunWiring.WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
         driver.WaitsOnOwnHelperAsync(session, quest, openedAt, ct);
 

@@ -22,7 +22,7 @@ namespace Daoris.Driver;
 /// future harness's right.</para>
 ///
 /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-/// full access, <see cref="AgentPostures.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
+/// full access, a <see cref="PostureAsked.Required"/> posture of the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
 /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
 /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
 /// person's two ways on (<see cref="AcpSession.Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
@@ -34,23 +34,6 @@ internal sealed class AcpPosture(
     Func<string, object, CancellationToken, Task<JsonElement>> request,
     Func<string?> sessionId)
 {
-    /// <summary>
-    /// A posture's marks and the modes it names: <see cref="AgentPostures.Required"/> (set, or the session does not open) and
-    /// <see cref="AcpSession.PersonAnswers"/> (its permission requests held for the person), in either order, before the modes.
-    /// </summary>
-    public static (bool Required, bool PersonAnswers, string Named) Marks(string? posture)
-    {
-        var (required, held, at) = (false, false, 0);
-        while (posture is not null && at < posture.Length && posture[at] is AgentPostures.Required or AcpSession.PersonAnswers)
-        {
-            required |= posture[at] == AgentPostures.Required;
-            held |= posture[at] == AcpSession.PersonAnswers;
-            at++;
-        }
-
-        return (required, held, posture?[at..] ?? "");
-    }
-
     /// <param name="created">The answer to the open: the modes it offers.</param>
     /// <param name="again">Whether a value was set on the session since it answered, which may have moved its mode: set it whatever it said.</param>
     public async Task SetAsync(JsonElement created, CancellationToken ct, bool again = false)
@@ -59,7 +42,7 @@ internal sealed class AcpPosture(
         // stub, whose permissions are its own business (ACP3).
         if (posture is not { Length: > 0 }) return;
 
-        var (required, _, named) = Marks(posture);
+        var (named, required, _) = PostureAsked.Parse(posture);
         DriverException Refused(IReadOnlyCollection<string> offers)
         {
             var offered = offers.Count > 0

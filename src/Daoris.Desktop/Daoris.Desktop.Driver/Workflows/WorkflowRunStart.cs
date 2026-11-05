@@ -18,12 +18,6 @@ public interface IWorkflowStartWorld
 
     /// <summary>The machine log's line for a run bound (<see cref="WorkflowLines.Chosen"/>).</summary>
     void Chosen(LandingLine line);
-
-    /// <summary>
-    /// The host of the repository's <c>origin</c> here, which names the platform whose plugin a <c>land</c> left open resolves to at the bind
-    /// (WORKFLOWCLEAN1 1a); null where it has none or this world reads none.
-    /// </summary>
-    Task<string?> RemoteHostAsync(string repository, CancellationToken ct) => Task.FromResult<string?>(null);
 }
 
 /// <summary>What a run's bind at a start came to (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8).</summary>

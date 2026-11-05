@@ -13,10 +13,10 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
         { "id": "acme.land", "name": "Acme land", "version": "1.0.0",
           "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] },
           "tools": [
-            { "id": "az", "install": { "windows": "winget install -e --id Microsoft.AzureCLI" },
+            { "id": "pwsh", "install": { "windows": "winget install -e --id Microsoft.PowerShell" },
               "ready": [
-                { "run": ["az", "account", "show"], "says": "Signed in", "fix": "az login", "signin": true },
-                { "run": ["az", "extension", "show"], "says": "Extension added", "fix": "rm -rf /" } ] } ] }
+                { "run": ["pwsh", "account", "show"], "says": "Signed in", "fix": "pwsh login", "signin": true },
+                { "run": ["pwsh", "extension", "show"], "says": "Extension added", "fix": "rm -rf /" } ] } ] }
         """;
 
     private void Install()
@@ -32,7 +32,7 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
         {
             asked.Add("check");
             return Task.FromResult<IReadOnlyList<PluginToolFound>>(
-                [.. tools.Select(tool => new PluginToolFound(tool, true, "az", ToolWay.System, "2.70.0", "Azure CLI 2.70.0, the system's.",
+                [.. tools.Select(tool => new PluginToolFound(tool, true, "pwsh", ToolWay.System, "2.70.0", "PowerShell 2.70.0, the system's.",
                     [.. tool.Ready.Select(check => new ReadyAnswer(check, false, $"not ready: {check.Says}."))]))]);
         },
         ToolSetUps = (_, tools, tool, check, _) =>
@@ -42,7 +42,7 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
             var (words, problem) = PluginTools.FixWords(tools, declared.Ready[check - 1]);
             if (words is null) return Task.FromResult(new ToolSetUp("fix_not_declared", problem!, null, null, null));
             return Task.FromResult(new ToolSetUp(null, "ready: Signed in.", 0, null,
-                new PluginToolFound(declared, true, "az", ToolWay.System, "2.70.0", "Azure CLI 2.70.0, the system's.",
+                new PluginToolFound(declared, true, "pwsh", ToolWay.System, "2.70.0", "PowerShell 2.70.0, the system's.",
                     [.. declared.Ready.Select(each => new ReadyAnswer(each, signedIn, signedIn ? $"ready: {each.Says}." : $"not ready: {each.Says}."))])));
         },
     };
@@ -55,13 +55,13 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
 
         var module = Standin(asked);
         var listed = (await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray().Single();
-        Assert.Equal("az", listed.GetProperty("tools")[0].GetProperty("id").GetString());
+        Assert.Equal("pwsh", listed.GetProperty("tools")[0].GetProperty("id").GetString());
         Assert.Equal(JsonValueKind.Null, listed.GetProperty("tools")[0].GetProperty("found").ValueKind);
 
         var page = await AnswerAsync(module, "PLUGIN", new { id = "acme.land" });
 
         var tool = Assert.Single(page.GetProperty("tools").EnumerateArray());
-        Assert.Equal("az", tool.GetProperty("id").GetString());
+        Assert.Equal("pwsh", tool.GetProperty("id").GetString());
         Assert.Equal(JsonValueKind.Null, tool.GetProperty("found").ValueKind);
         var checks = tool.GetProperty("checks").EnumerateArray().ToList();
         Assert.Equal([true, false], checks.Select(check => check.GetProperty("press").GetBoolean()));
@@ -81,12 +81,12 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
         Assert.True(checked_.GetProperty("tools")[0].GetProperty("found").GetBoolean());
         Assert.False(checked_.GetProperty("tools")[0].GetProperty("checks")[0].GetProperty("ready").GetBoolean());
 
-        var fixed_ = await AnswerAsync(module, "PLUGIN_TOOL_FIX", new { id = "acme.land", tool = "az", check = 1 });
+        var fixed_ = await AnswerAsync(module, "PLUGIN_TOOL_FIX", new { id = "acme.land", tool = "pwsh", check = 1 });
 
         Assert.True(fixed_.GetProperty("ran").GetBoolean());
         Assert.Equal(0, fixed_.GetProperty("exitCode").GetInt32());
         Assert.True(fixed_.GetProperty("standing").GetProperty("checks")[0].GetProperty("ready").GetBoolean());
-        Assert.Equal(["check", "fix az 1"], asked);
+        Assert.Equal(["check", "fix pwsh 1"], asked);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
     {
         Install();
 
-        var answer = await AnswerAsync(Standin([]), "PLUGIN_TOOL_FIX", new { id = "acme.land", tool = "az", check = 2 });
+        var answer = await AnswerAsync(Standin([]), "PLUGIN_TOOL_FIX", new { id = "acme.land", tool = "pwsh", check = 2 });
 
         Assert.False(answer.GetProperty("ran").GetBoolean());
         Assert.Equal("fix_not_declared", answer.GetProperty("why").GetString());
@@ -105,6 +105,6 @@ public sealed class DriverModulePluginToolsTests : DriverModuleBridge
     public async Task A_plugin_that_is_not_here_is_refused_for_both_presses()
     {
         Assert.Contains("no plugin `acme.gone`", await RefusalAsync(Module(), "PLUGIN_TOOLS", new { id = "acme.gone" }));
-        Assert.Contains("no plugin `acme.gone`", await RefusalAsync(Module(), "PLUGIN_TOOL_FIX", new { id = "acme.gone", tool = "az", check = 1 }));
+        Assert.Contains("no plugin `acme.gone`", await RefusalAsync(Module(), "PLUGIN_TOOL_FIX", new { id = "acme.gone", tool = "pwsh", check = 1 }));
     }
 }

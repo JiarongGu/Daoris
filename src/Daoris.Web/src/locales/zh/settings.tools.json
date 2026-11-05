@@ -5,8 +5,6 @@
   "settings.tools.why.git": "Daoris 自己的 Git：会话工作树、落地、审阅和更新到最新。会话里的 Git 也是同一个。",
   "settings.tools.why.node": "插件和它们交给会话的服务器、对会话写入的检查，以及 npm 安装的智能体。它的 npm 和 npx 随它一起。",
   "settings.tools.why.pwsh": "终端的首选 shell。",
-  "settings.tools.why.gh": "GitHub 插件的拉取请求。",
-  "settings.tools.why.az": "Azure DevOps 插件的拉取请求。",
   "settings.tools.program": "程序",
   "settings.tools.programOf": "{{name}} 的运行方式",
   "settings.tools.use.system": "系统",

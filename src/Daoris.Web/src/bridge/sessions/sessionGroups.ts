@@ -4,9 +4,8 @@ import { useShenora } from '@shenora/react';
 import { GROUPS_SLICE } from '../../data/queries';
 import type { SessionEntry } from '../../work/entries';
 import { GROUP_ORDER, type SessionGrouping } from '../../work/groups';
-import { call } from '../call';
 import { readSlice } from '../driver';
-import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { mergeKeyed, readPushed, type SliceSpec } from '../state/slices';
 
 /**
  * The session list's groups, under the sessions' key, so whatever asks the listing again (a stop, a landing, a tick)
@@ -14,7 +13,7 @@ import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/
  */
 export const groupsKey = (ids?: readonly string[]) => ['sessions', 'groups', ...(ids ? [...new Set(ids)].sort() : ['*'])] as const;
 
-/** One `SESSION_GROUPS` answer: the rows, and the entries beside them where the host is new enough to answer them (D167). */
+/** One `SESSION_GROUPS` answer: the rows, and the entries beside them (D167); undefined where the partition held none. */
 export type GroupsAnswer = { sessions: SessionGrouping[]; entries: SessionEntry[] | undefined };
 
 /** A row as the slice pushes it: the answer's, with the sort inputs its group is ordered by (`GroupsStateSlice.OrderFields`). */
@@ -109,8 +108,8 @@ function composeGroups(rows: unknown, entries: unknown): GroupsAnswer {
 /**
  * The session list's groups as the shell pushes them (D182's PUSH1c3a note): two keyed partitions, `rows` by session and
  * `entries` by key, a session's move a delta of its row and its entry (`mergeKeyed`; a whole push or `{}` taken as well), composed
- * into `SESSION_GROUPS`' widest answer in the reader's order. Nothing judged, or no rows held yet, composes nothing, which keeps
- * the pull. `calling` is never pushed here: the `calls` slice's is laid over the rows as before (`withCall`).
+ * into `SESSION_GROUPS`' widest answer in the reader's order. Nothing judged, or no rows held yet, composes nothing, which is
+ * waited for. `calling` is never pushed here: the `calls` slice's is laid over the rows (`withCall`).
  */
 export const groupsSlice: SliceSpec = {
   name: GROUPS_SLICE,
@@ -134,39 +133,22 @@ export function groupsIn(answer: GroupsAnswer, ids: readonly string[] | undefine
   };
 }
 
-const askGroups = async (ids?: readonly string[]): Promise<GroupsAnswer> => {
-  const answer = (await call('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : {})) as { sessions?: SessionGrouping[]; entries?: unknown };
-  return { sessions: Array.isArray(answer?.sessions) ? answer.sessions : [], entries: readEntries(answer?.entries) };
-};
-
 /**
- * Where the shell pushes the groups, every reader reads the one entry its pushes write, from memory, and some sessions'
- * variant is selected from it (`groupsIn`): never stale, never asked on a focus, and no tick reaches it (`notPushed`). Elsewhere (a
- * plain browser, an older shell) each variant is the pull it always was, under its own key; and while a window's first snapshot is on
- * its way, a variant asked then waits for it and is read from it, never pulled beside it.
+ * Every reader reads the one entry the shell's pushes write, from memory, and some sessions' variant is selected from it
+ * (`groupsIn`): never stale, never asked on a focus, and no tick reaches it (`notPushed`).
  */
 function useGroupsRead<T>(ids: readonly string[] | undefined, pick: (answer: GroupsAnswer) => T)
   : UseQueryOptions<GroupsAnswer, Error, T, readonly string[]> {
   const client = useQueryClient();
-  const pushed = usePushedLive(GROUPS_SLICE);
   const asked = ids ? [...new Set(ids)].sort() : undefined;
   // By the sessions' names, so a caller's new array of the same ids keeps what the cache selected.
   const named = asked?.join('\n');
-  const select = useCallback((answer: GroupsAnswer) => pick(pushed ? groupsIn(answer, asked) : answer), [pick, pushed, named]);
-  return pushed
-    ? {
-      queryKey: groupsKey(),
-      queryFn: () => readPushed(client, GROUPS_SLICE, () => askGroups()),
-      select, staleTime: Infinity, refetchOnWindowFocus: false,
-    }
-    : {
-      queryKey: groupsKey(ids),
-      queryFn: async () => {
-        const all = await readPushed<GroupsAnswer | null>(client, GROUPS_SLICE, async () => null);
-        return all === null ? askGroups(ids) : groupsIn(all, ids);
-      },
-      select, refetchOnWindowFocus: false,
-    };
+  const select = useCallback((answer: GroupsAnswer) => pick(groupsIn(answer, asked)), [pick, named]);
+  return {
+    queryKey: groupsKey(),
+    queryFn: () => readPushed<GroupsAnswer>(client, GROUPS_SLICE),
+    select, staleTime: Infinity, refetchOnWindowFocus: false,
+  };
 }
 
 const rowsOf = (answer: GroupsAnswer) => answer.sessions;

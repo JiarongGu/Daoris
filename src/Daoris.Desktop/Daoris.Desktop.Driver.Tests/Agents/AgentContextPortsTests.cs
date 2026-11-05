@@ -75,7 +75,7 @@ public sealed class AgentContextPortsTests
         var target = Target();
         var output = new Output(calls);
         var events = new Events(calls);
-        var mapper = new Mapper(calls, output.Streams);
+        var mapper = new Mapper(calls);
         try
         {
             AgentContext.Current = port;
@@ -87,10 +87,11 @@ public sealed class AgentContextPortsTests
             Assert.Same(intake, port.Target);
             Assert.Equal("verbatim intake", port.Prompt);
             calls.Clear();
-            await HarnessCapture.CaptureStructuredAsync(new StringReader("wire\n"), new StringReader(""), "stand", "s1",
-                output, events, mapper, null, CancellationToken.None,
+            await HarnessCapture.CaptureStructuredAsync(new StringReader("wire\n"), new StringReader(""), "stand",
+                new RecordReadings("s1", output, events), mapper, null, CancellationToken.None,
                 observed: e => { Assert.Same(mapper.Event, e); calls.Add("observed"); });
-            Assert.Equal(["open:stand:False", "streams:s1", "beside", "take:wire", "read:wire", "write:rendered",
+            // The console's streams are asked once a stream beside is read (row l), never for a line of the run's own.
+            Assert.Equal(["open:stand:False", "beside", "take:wire", "read:wire", "write:rendered",
                 "output:s1:rendered", "event:s1", "observed", "end", "dispose"], calls);
             Assert.Same(mapper.Event, events.Kept);
         }
@@ -105,7 +106,7 @@ public sealed class AgentContextPortsTests
         {
             AgentContext.Current = null!;
             Assert.Throws<InvalidOperationException>(() => TargetPrompt.Composed(Target()));
-            await Assert.ThrowsAsync<InvalidOperationException>(() => HarnessCapture.CaptureAsync(new StringReader(""), new StringReader(""), "stand", "s1", null, default));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => HarnessCapture.CaptureAsync(new StringReader(""), new StringReader(""), "stand", ReadingSinks.None, default));
             foreach (var failure in new Exception[] { new IOException("refused"), new OperationCanceledException(new CancellationToken(true)) })
             {
                 AgentContext.Current = new ContextPort([]) { Failure = failure };
@@ -117,7 +118,7 @@ public sealed class AgentContextPortsTests
             }
             var calls = new List<string>();
             AgentContext.Current = new ContextPort(calls);
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => HarnessCapture.CaptureAsync(new CancelledReader(), new StringReader(""), "stand", "s1", null, new CancellationToken(true)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => HarnessCapture.CaptureAsync(new CancelledReader(), new StringReader(""), "stand", ReadingSinks.None, new CancellationToken(true)));
             Assert.Equal(["open:stand:False", "dispose"], calls);
         }
         finally { AgentContext.Current = actual; }
@@ -211,12 +212,12 @@ public sealed class AgentContextPortsTests
         public void Keep(string sessionId, SessionEvent e, Action<string>? say) => throw new IOException("refused");
         public IReadOnlyList<SessionEvent> ReadAll(string sessionId) => [new() { Kind = SessionEventKind.Usage, Used = 456 }];
     }
-    private sealed class Mapper(List<string> calls, ISessionStreams streams) : IStreamMapper, IStreamsReader
+    private sealed class Mapper(List<string> calls) : IStreamMapper, IStreamsReader
     {
         public readonly SessionEvent Event = new() { Kind = SessionEventKind.Note, Text = "kept" };
         public AcpUsage? Usage => null;
         public StreamMapped Read(string line) { calls.Add($"read:{line}"); return new(["rendered"], [Event]); }
-        public IStreamsReader Beside(ISessionStreams supplied, Action<string> say) { Assert.Same(streams, supplied); calls.Add("beside"); return this; }
+        public IStreamsReader Beside(ISessionStreams supplied, Action<string> say) { Assert.IsType<ReadingStreams>(supplied); calls.Add("beside"); return this; }
         public bool Take(string line) { calls.Add($"take:{line}"); return false; }
         public Task EndAllAsync() { calls.Add("end"); return Task.CompletedTask; }
     }

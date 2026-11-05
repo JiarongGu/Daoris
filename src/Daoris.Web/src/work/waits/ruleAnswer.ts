@@ -48,7 +48,7 @@ export function ruleHearing(
  * refusal is the driver's own, raised for the door that pressed it to say where it was pressed (UXFIX2).
  *
  * **The session that proposed it is told, once it is allowed** (`answer`, D74's PROPOSEHERE1b note): words to it after the rule
- * is kept, so the turn they start is composed with it (`SpawnSettings.Write` composes the rules at each spawn). Where nothing
+ * is kept, so the turn they start is composed with it (the door's rule language writes the rules at each spawn). Where nothing
  * took them, the person is told to say it themselves.
  */
 export function useRuleAnswer({ notify }: { notify: Notify }) {

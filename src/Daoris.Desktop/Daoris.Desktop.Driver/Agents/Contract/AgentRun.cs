@@ -2,11 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an executor holds of a live run (the design §2.5, §4.1): open or resume, apply a refused choice's later one, take words, steer,
-/// stop a turn or a task, and close, and beside those the five members every executor uses today (AGENTPROVIDER1m-i): the records handed
-/// at the open, the carriers, the run's end, the go-on and the restart. Each operation is admitted by the run's own evidence (§2.4) and
-/// one it lacks is answered <see cref="Unsupported"/> naming the ability, before anything is written. Row b declares it; row m-i makes the
-/// executors hold it over <see cref="TransportRun"/>, and m-ii and the rows after it add the parameters the design names there
-/// (<c>DoorInput</c>, <c>IChoiceReask</c>, <c>IResumeState</c>) that no type holds yet.
+/// stop a turn or a task, and close, and beside those the four members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
+/// go to, the carriers, the run's end and the go-on; a native resume's one retry is the run's own (m-ii, <see cref="IResumeState"/>). Each
+/// operation is admitted by the run's own evidence (§2.4) and one it lacks is answered <see cref="Unsupported"/> naming the ability, before
+/// anything is written. Row b declares it; row m-i makes the executors hold it over <see cref="TransportRun"/>, and the rows after it add
+/// the parameters the design names there that no type holds yet (<c>DoorInput</c>, <c>IChoiceReask</c>).
 /// </summary>
 /// <remarks>
 /// The words' operations (<see cref="SendAsync"/>, <see cref="SteerAsync"/>) carry no id, while today's retry marks a word attempted
@@ -21,7 +21,12 @@ public abstract class AgentRun
 
     public abstract Task OpenAsync(CancellationToken ct);
 
-    public abstract Task ResumeAsync(string conversation, CancellationToken ct);
+    /// <summary>
+    /// Resume <paramref name="conversation"/>. A native resume handed its <paramref name="state"/> is tried once more by the run itself where
+    /// its harness ended on a failed exit before it named the conversation (design §2.6, row m-ii): <see cref="EndAsync"/> answers that
+    /// retry's end. Null hands none, and the run concludes on its first end.
+    /// </summary>
+    public abstract Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null);
 
     /// <summary>A refused model's later choice, carried on the same session (O4-F5).</summary>
     public abstract Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct);
@@ -37,11 +42,11 @@ public abstract class AgentRun
     public abstract Task CloseAsync(CancellationToken ct);
 
     /// <summary>
-    /// The records the run is handed at its open, as today's capture is handed them (design §4.1): the transcript, the session's events,
-    /// the lineage hook, the streams beside, the conversation named and the window readings. Handed before <see cref="OpenAsync"/> or
-    /// <see cref="ResumeAsync"/>. <b>Replaced at row l</b> by the sink, which the run writes its readings to itself.
+    /// The sink the run writes its readings to (design §3.1, row l), composed by its executor of its owners' parts: the record's events, the
+    /// console's lines and the streams beside, the conversation named, the account's windows and every failure, one <see cref="WireReading"/>
+    /// each. Handed before <see cref="OpenAsync"/> or <see cref="ResumeAsync"/>.
     /// </summary>
-    public abstract void HandRecords(RunRecords records);
+    public abstract void HandSink(IReadingSink sink);
 
     /// <summary>
     /// The carriers handed to the start and to each go-on (design §4.1): the settings and the servers files the run before it was handed, so
@@ -62,12 +67,6 @@ public abstract class AgentRun
     /// native retry and <c>DoorInput</c>.
     /// </summary>
     public abstract Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct);
-
-    /// <summary>
-    /// The same start once more, its transcript appended and its opening not said again (SESSCTX1c, design §4.1): the native resume's one
-    /// retry, whose rule stays the executor's, reading the end's named and exit. <b>Replaced at m-ii</b> with the retry it serves.
-    /// </summary>
-    public abstract Task<AgentRunEnd> RestartAsync(CancellationToken ct);
 }
 
 /// <summary>
@@ -76,24 +75,6 @@ public abstract class AgentRun
 /// the native resume's one retry reads.
 /// </summary>
 public sealed record AgentRunEnd(int? Exit, AcpUsage? Usage, HarnessEnding Ending, bool Named);
-
-/// <summary>
-/// The records a run is handed at its open (design §4.1), until row l replaces them with the sink: where its transcript is, the events
-/// and the console its lines reach, the home whose lineage file hears each subagent, the adapter its conversation is kept under, the
-/// harness's own words, what the stream says of the account's windows, and what the transcript opens with.
-/// </summary>
-/// <param name="Output">The live console a run's lines reach, and the streams beside; null where nobody watches.</param>
-/// <param name="Events">The session's record, which each event is kept on; null keeps none.</param>
-/// <param name="LineageHome">The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</param>
-/// <param name="KeepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
-/// <param name="Own">Where the harness's own words are kept for its ending (AGT3c); null keeps none.</param>
-/// <param name="Said">Told what the stream says of the account's windows (TOOL6c); null tells none.</param>
-/// <param name="Opening">The events the record opens with, said once: a start's target or a resume's answer, never said again by a restart.</param>
-/// <param name="Preamble">A fact about how the run was set up, written ahead of anything the process says; null says none.</param>
-public sealed record RunRecords(
-    string SessionId, string Transcript, ISessionOutput? Output = null, ISessionEvents? Events = null, string? LineageHome = null,
-    string? KeepAs = null, HarnessWords? Own = null, Action<System.Text.Json.JsonElement>? Said = null,
-    IReadOnlyList<SessionEvent>? Opening = null, string? Preamble = null);
 
 /// <summary>
 /// The carriers of a run (design §4.1): the settings file and the servers file its start was handed, handed again to each go-on so it runs
