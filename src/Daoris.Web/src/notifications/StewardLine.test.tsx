@@ -11,10 +11,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
+vi.mock('@shenora/react', async () => ({
+  ...(await import('../test/sliceShell')).mockedShell(invoke),
   useShenoraEvent: () => undefined,
 }));
 
@@ -221,7 +219,7 @@ describe("Notifications' steward line", () => {
     for (const [row, press] of [[7, 'Stop driving'], [6, 'Drive'], [5, 'Trees off'], [3, 'Hold'], [2, 'Try again']] as const) {
       await userEvent.click(within(rows[row]!).getByRole('button', { name: press }));
     }
-    const sent = () => invoke.mock.calls.filter(([, type]) => type !== 'STATE').map(([, type, request]) => [type, request?.payload]);
+    const sent = () => invoke.mock.calls.filter(([, type]) => type !== 'STATE_SLICE').map(([, type, request]) => [type, request?.payload]);
     await vi.waitFor(() => expect(sent()).toEqual([
       ['SET_DRIVABLE', { repository: 'engine', drivable: false }],
       ['SET_DRIVABLE', { repository: 'atlas', drivable: true }],

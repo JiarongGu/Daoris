@@ -242,7 +242,34 @@ export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceS
     const partitions = await judge(slice);
     return snapshotOf(slice, partitions, numbered(slice, partitions).seq);
   };
-  return Object.assign(shell, { moved, hold });
+  const answering = Object.assign(shell, { moved, hold });
+  shells.add(answering);
+  return answering;
+}
+
+/** Every mocked shell of this test file: one, unless a file stands up more. */
+const shells = new Set<SliceShell>();
+
+/** The shell pushes what moved in the answers a test changed without a press, as its owner does when a record moves. */
+export async function moved() {
+  for (const shell of shells) await shell.moved();
+}
+
+/**
+ * A mocked `@shenora/react`'s shell, for a test's `vi.mock` factory to spread: the page's calls go to `invoke` (or `through`, a
+ * wrapper of it such as `publishing`), its slices are answered from `invoke`'s answers, and each window holds them. `available` says
+ * whether a shell is here.
+ */
+export function mockedShell(invoke: Invoke, { available = () => true, notifyReady, through = invoke }: {
+  available?: () => boolean; notifyReady?: () => Promise<void>; through?: Invoke;
+} = {}) {
+  const shell = answeringSlices(through, invoke);
+  const bridge = notifyReady ? { notifyReady } : {};
+  return {
+    isShenoraAvailable: available,
+    getBridge: () => ({ isAvailable: available(), invoke: shell, ...bridge }),
+    useShenora: () => holdingSlices(shell, { isAvailable: available(), bridge }),
+  };
 }
 
 /**

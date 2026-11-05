@@ -17,11 +17,9 @@ const { invoke, notifyReady, heard } = vi.hoisted(() => ({
 
 vi.mock('@shenora/react', async () => {
   const { publishing } = await import('../test/publishing');
-  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  const through = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
   return {
-    isShenoraAvailable: () => true,
-    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady, through }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       if (module === 'DAORIS') heard.set(type, handler);
     },
@@ -38,6 +36,7 @@ import { sessionsSlice } from '../bridge/sessions/sessions';
 /** ASKQUESTS1: the slices a go card's standings are read from, pushed as `ShellSignals` mounts them. */
 const PUSHED_HERE = [questsSlice, asksSlice, sessionsSlice];
 import { code } from '../test/code';
+import { moved } from '../test/sliceShell';
 import { RELEASE_CARD } from '../workflow/edit/proposalFixtures';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
@@ -140,8 +139,9 @@ describe('Ask Daoris, with an agent named', () => {
       payload: { id: HELP.id, text: 'how do I drive a repository?' },
     }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', { payload: {} });
-    // Its conversations are read across every workspace, and the panel keeps the window's own (ASKSCOPE1d).
-    expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
+    // Its conversations are read from the sessions the shell pushes, every workspace's, and the panel keeps the window's own
+    // (ASKSCOPE1d).
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'sessions' } });
   });
 
   /** QUEUEEDIT1b: words waiting behind Ask Daoris's turn can be taken back out by their id. */
@@ -1047,7 +1047,9 @@ describe('Ask Daoris, with an agent named', () => {
 
     await waitFor(() => expect(invoke.mock.calls.map(([, type]) => type)).toContain('HELP_PUBLISHED'));
     expect(screen.queryByRole('button', { name: /Published from this conversation/ })).not.toBeInTheDocument();
-    expect(asked.some((url) => url.startsWith('/api/quests') || url.startsWith('/api/asks'))).toBe(false);
+    // The page fetches neither: the quests and the asks are the shell's to push.
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).startsWith('/api/quests') || String(url).startsWith('/api/asks')))
+      .toBe(false);
   });
 
   /**
@@ -1969,6 +1971,7 @@ describe('Ask Daoris’s access and what it has', () => {
     SESSIONS = [{ ...HELP, state: 'completed' }];
     ROWS = [row({ live: false, mode: 'restricted' })];
     SWAPPING = [];
+    await act(() => moved());
     act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
 
     expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
@@ -1990,6 +1993,7 @@ describe('Ask Daoris’s access and what it has', () => {
 
     SESSIONS = [{ ...HELP, state: 'completed' }];
     ROWS = [row({ live: false, mode: 'restricted' })];
+    await act(() => moved());
     act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions', 'driver', 'help'] }));
 
     expect(await screen.findByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
