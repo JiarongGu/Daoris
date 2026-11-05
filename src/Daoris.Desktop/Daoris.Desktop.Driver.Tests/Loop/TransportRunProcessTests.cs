@@ -252,7 +252,7 @@ public sealed class TransportRunProcessTests : IDisposable
     /// transcript appended, its opening not said again, said as the retry it is, and the resume told it was tried again.
     /// </summary>
     [Fact]
-    public async Task A_restart_is_the_same_start_once_more_appended_with_its_opening_said_once()
+    public async Task A_resume_that_failed_before_naming_its_conversation_is_tried_once_more_by_the_run_with_its_opening_said_once()
     {
         var resume = new ResumeAsk(
             "conv-1", [new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true)],
@@ -267,23 +267,18 @@ public sealed class TransportRunProcessTests : IDisposable
         };
         File.WriteAllText(Transcript, "the record's earlier lines\n");
         await using var run = Over(
-            adapter, adapter.Prepare(Target(), null).WithArguments("again", Path.Combine(_home, "marker")),
-            start => start with { Named = () => resume.Named = resume.Prompted = true, Again = resume.Again });
+            adapter, adapter.Prepare(Target(), null).WithArguments("again", Path.Combine(_home, "marker")));
         Hand(run, output, keepAs: "scripted", own: new HarnessWords(), opening: opening);
 
-        await run.ResumeAsync("conv-1", Bound);
-        var first = await run.EndAsync(Bound);
-
-        Assert.Equal(1, first.Exit);
-        Assert.False(first.Named);
-        Assert.False(resume.Retried);
-
-        var again = await run.RestartAsync(Bound);
+        // The first process exits 1 before its `init`; the run tries the same resume once more on its own, and its end is the retry's.
+        await run.ResumeAsync("conv-1", Bound, resume);
+        var again = await run.EndAsync(Bound);
 
         Assert.Equal(0, again.Exit);
         Assert.True(again.Named);
         Assert.True(resume.Retried);
         Assert.True(resume.Named);
+        Assert.True(resume.Prompted);
         var transcript = File.ReadAllText(Transcript);
         Assert.StartsWith("the record's earlier lines", transcript, StringComparison.Ordinal);
         Assert.Contains("not a frame", transcript);

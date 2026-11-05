@@ -93,12 +93,6 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// </summary>
     public Action<SessionEvent>? Observed { get; init; }
 
-    /// <summary>
-    /// Told as the same start is made once more (SESSCTX1c): the resume's retry mark. Null where the run is no resume, which
-    /// <see cref="AgentRun.RestartAsync"/> refuses.
-    /// </summary>
-    public Action? Again { get; init; }
-
     /// <summary>The protocol door's session over the process: what its open is handed. Null on a native door.</summary>
     public TransportProtocol? Protocol { get; init; }
 }

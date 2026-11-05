@@ -31,7 +31,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `SessionTarget`, `ChatTarget`, `EarlierMaker` | same names | What a spawn carries |
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
-| `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart; the start names its session, transcript, opening and preamble, and everything the door says leaves as readings to the sink its executor hands it |
+| `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait and go-on; the start names its session, transcript, opening and preamble, and everything the door says leaves as readings to the sink its executor hands it |
+| `IResumeState` | `Contract/` | A native resume's state, which Course's `ResumeAsk` implements: the run marks it opened when its harness names the conversation, and its end tries a structured resume once more where the harness exited nonzero before naming it, never after a clean exit, a refusal, a stop asked or on the plain capture |
 | `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a failure), the one port it writes them to and its composition; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, the windows |
 | `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
 | `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
@@ -316,7 +317,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   the sink's rest (l: the protocol door's windows still on the driven door's callback, a conversation's word turns' failures and the
   open's refused model as no reading yet, the lineage still a writer the run makes rather than Participants' part, the four `stream-json`
   readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`, run, generation and sequence not yet on a reading),
-  words through the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice
+  m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
+  a start of its own rather than the run's; the protocol resume once for a driven run and a conversation; the hand-over's accounts once;
+  `IConversationHome`), the same-session re-ask of a refused choice
   (n), one connector plan (p, with **CONNECTORS1**), the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.

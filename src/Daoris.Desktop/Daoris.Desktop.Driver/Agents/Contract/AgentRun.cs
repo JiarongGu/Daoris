@@ -2,11 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an executor holds of a live run (the design §2.5, §4.1): open or resume, apply a refused choice's later one, take words, steer,
-/// stop a turn or a task, and close, and beside those the five members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
-/// go to, the carriers, the run's end, the go-on and the restart. Each operation is admitted by the run's own evidence (§2.4) and
-/// one it lacks is answered <see cref="Unsupported"/> naming the ability, before anything is written. Row b declares it; row m-i makes the
-/// executors hold it over <see cref="TransportRun"/>, and m-ii and the rows after it add the parameters the design names there
-/// (<c>DoorInput</c>, <c>IChoiceReask</c>, <c>IResumeState</c>) that no type holds yet.
+/// stop a turn or a task, and close, and beside those the four members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
+/// go to, the carriers, the run's end and the go-on; a native resume's one retry is the run's own (m-ii, <see cref="IResumeState"/>). Each
+/// operation is admitted by the run's own evidence (§2.4) and one it lacks is answered <see cref="Unsupported"/> naming the ability, before
+/// anything is written. Row b declares it; row m-i makes the executors hold it over <see cref="TransportRun"/>, and the rows after it add
+/// the parameters the design names there that no type holds yet (<c>DoorInput</c>, <c>IChoiceReask</c>).
 /// </summary>
 /// <remarks>
 /// The words' operations (<see cref="SendAsync"/>, <see cref="SteerAsync"/>) carry no id, while today's retry marks a word attempted
@@ -21,7 +21,12 @@ public abstract class AgentRun
 
     public abstract Task OpenAsync(CancellationToken ct);
 
-    public abstract Task ResumeAsync(string conversation, CancellationToken ct);
+    /// <summary>
+    /// Resume <paramref name="conversation"/>. A native resume handed its <paramref name="state"/> is tried once more by the run itself where
+    /// its harness ended on a failed exit before it named the conversation (design §2.6, row m-ii): <see cref="EndAsync"/> answers that
+    /// retry's end. Null hands none, and the run concludes on its first end.
+    /// </summary>
+    public abstract Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null);
 
     /// <summary>A refused model's later choice, carried on the same session (O4-F5).</summary>
     public abstract Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct);
@@ -62,12 +67,6 @@ public abstract class AgentRun
     /// native retry and <c>DoorInput</c>.
     /// </summary>
     public abstract Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct);
-
-    /// <summary>
-    /// The same start once more, its transcript appended and its opening not said again (SESSCTX1c, design §4.1): the native resume's one
-    /// retry, whose rule stays the executor's, reading the end's named and exit. <b>Replaced at m-ii</b> with the retry it serves.
-    /// </summary>
-    public abstract Task<AgentRunEnd> RestartAsync(CancellationToken ct);
 }
 
 /// <summary>

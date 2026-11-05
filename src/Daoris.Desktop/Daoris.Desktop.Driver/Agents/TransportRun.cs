@@ -8,9 +8,9 @@ namespace Daoris.Driver;
 /// unit a start is: the downloads it is handed kept, the process bracketed by its own lineage token, started through the agents' route and
 /// tracked, a reaper beside it, the capture, a native prompt on its input, the wait for the exit and the capture bounded past it, written once
 /// beneath the contract so each executor holds the run and none prepares a process itself. Every executor's run holds it (ONEWAY1h-i,
-/// through <see cref="SessionHold.HoldAsync{T}"/>), a native run's go-on with held words and its resume's one retry too (ONEWAY1h-ii, <see cref="GoOnAsync"/>
-/// and <see cref="RestartAsync"/>), and a conversation's, its session held open for the person's words (ONEWAY1h-iii, the conversation's
-/// runner).
+/// through <see cref="SessionHold.HoldAsync{T}"/>), a native run's go-on with held words (ONEWAY1h-ii, <see cref="GoOnAsync"/>) and its
+/// resume's one retry, the run's own behind <see cref="IResumeState"/> (m-ii), and a conversation's, its session held open for the person's
+/// words (ONEWAY1h-iii, the conversation's runner).
 /// </summary>
 /// <remarks>
 /// <para><b>Admitted by the run's own evidence</b> (design §2.4): its door's wire and its resume. An operation the door's evidence does not
@@ -25,7 +25,7 @@ namespace Daoris.Driver;
 /// conversation named, the account's windows and every failure, is a <see cref="WireReading"/> written to the sink its executor composed;
 /// the run writes its own transcript and names no store above it.</para>
 /// <para><b>What is deleted later.</b> <see cref="Session"/> is the conversation's runner's alone, until m-ii moves its words behind
-/// <c>DoorInput</c>; <c>LayerRun</c> refuses a conversation before then. <see cref="GoOnAsync"/> and <see cref="RestartAsync"/> go at m-ii.</para>
+/// <c>DoorInput</c>; <c>LayerRun</c> refuses a conversation before then. <see cref="GoOnAsync"/> goes with <c>DoorInput</c>.</para>
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
@@ -45,6 +45,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     private readonly List<Task> _captures = [];
 
     private IReadingSink? _sink;
+
+    // The native resume's state its one retry reads and marks (row m-ii); null for a start and for a resume handed none.
+    private IResumeState? _resume;
 
     private RunCarriers _carriers = new();
 
@@ -118,8 +121,12 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task OpenAsync(CancellationToken ct) => BeginAsync(conversation: null, ct);
 
-    public override Task ResumeAsync(string conversation, CancellationToken ct) =>
-        adapter.Resumes ? BeginAsync(conversation, ct) : Refused("a resume");
+    public override Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null)
+    {
+        if (!adapter.Resumes) return Refused("a resume");
+        _resume = state;
+        return BeginAsync(conversation, ct);
+    }
 
     public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Refused(ChoiceAbility);
 
@@ -161,7 +168,18 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         var leg = _opened ?? throw new InvalidOperationException("the run is not open: nothing started its process.");
         var exit = await host.WaitAsync(SessionOf(), leg.Proc, leg.Process, ct, _start.Minutes, _start.TimingOut, _start.Quiet, _start.QuietEnding)
             .ConfigureAwait(false);
-        return await ConcludedAsync(leg, exit, first: true).ConfigureAwait(false);
+        var end = await ConcludedAsync(leg, exit, first: true).ConfigureAwait(false);
+
+        // 🔴 The native resume's one retry (design §2.6, row m-ii): a structured resume whose harness ended on a failed exit before it named
+        // its conversation proves nothing of its loss, so it is tried once more as the same resume, conversation, account and access, and a
+        // second such end is the conclusion's. Never after a clean exit, a fresh start, a refusal, a stop asked, or on the plain capture.
+        if (leg.Mapper is not null && _resume is { Named: false, Refused: false, Retried: false } resume && end.Exit is int early && early != 0
+            && !host.Processes.WasStopRequested(SessionOf()))
+        {
+            end = await RetriedAsync(resume, ct).ConfigureAwait(false);
+        }
+
+        return end;
     }
 
     public override Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct) =>
@@ -195,22 +213,25 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
     }
 
-    public override async Task<AgentRunEnd> RestartAsync(CancellationToken ct)
+    /// <summary>
+    /// The same start once more, its transcript appended and its opening not said again (SESSCTX1c): the native resume's one retry, said on
+    /// the console and marked on the resume's state before its process starts.
+    /// </summary>
+    private async Task<AgentRunEnd> RetriedAsync(IResumeState resume, CancellationToken ct)
     {
-        if (IsProtocol || _start.Again is not { } again) throw Unsupported("a restart");
         var sessionId = SessionOf();
 
         Sink().Read(new WireReading.Shown("— its harness ended before it reopened its conversation, so the same resume is tried once more.")
         {
             By = ReadingBy.Observed,
         });
-        again();
+        resume.Again();
         // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again, under a token of
         // its own (COWORKVIEW1a).
         var (process, proc) = await StartProcessAsync(
                 sessionId, _start.Info, host.Bracketed(sessionId, _start.Info, moved: null), StartClass.Person, piece: null, ct)
             .ConfigureAwait(false);
-        var leg = Captured(process, proc, append: true, opening: null, preamble: null, _start.Named, ct);
+        var leg = Captured(process, proc, append: true, opening: null, preamble: null, Told, ct);
         if (_start.Prompt is { } prompt) await PromptedAsync(process, prompt, ct).ConfigureAwait(false);
         var exit = await host.WaitAsync(sessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
@@ -314,6 +335,13 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     private static Task Refused(string ability) => Task.FromException(Unsupported(ability));
 
+    /// <summary>The first run's and its retry's harness named its conversation: the resume's state marked, then the executor told.</summary>
+    private void Told()
+    {
+        _resume?.Opened();
+        _start.Named?.Invoke();
+    }
+
     private async Task BeginAsync(string? conversation, CancellationToken ct)
     {
         var sessionId = SessionOf();
@@ -325,7 +353,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
         _opened = IsProtocol
             ? OpenedProtocol(process, proc, conversation, ct)
-            : Captured(process, proc, append: conversation is not null, _start.Opening, _start.Preamble, _start.Named, ct);
+            : Captured(process, proc, append: conversation is not null, _start.Opening, _start.Preamble, Told, ct);
         // FOUNDATION1f-iv part b: the write's return is where a carry-on's moved words are `sent`, never the process's start.
         if (_start.Prompt is { } prompt && await PromptedAsync(process, prompt, ct).ConfigureAwait(false)) _start.Written?.Invoke();
     }

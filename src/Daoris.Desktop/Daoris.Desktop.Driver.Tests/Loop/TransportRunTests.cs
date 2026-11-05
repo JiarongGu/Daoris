@@ -92,27 +92,25 @@ public sealed class TransportRunTests : IDisposable
         Assert.False(run.Started);
     }
 
-    /// <summary>A door that resumes nothing has no conversation to go on in, so a resume, a go-on and a restart are refused for it.</summary>
+    /// <summary>A door that resumes nothing has no conversation to go on in, so a resume and a go-on are refused for it.</summary>
     [Fact]
-    public async Task A_door_that_cannot_resume_refuses_a_resume_a_go_on_and_a_restart()
+    public async Task A_door_that_cannot_resume_refuses_a_resume_and_a_go_on()
     {
         var run = Over("stub");
 
         await Refused(run.ResumeAsync("c-1", CancellationToken.None), "a resume");
         await Refused(run.GoOnAsync("c-1", "go on", [], CancellationToken.None), "a go-on");
-        await Refused(run.RestartAsync(CancellationToken.None), "a restart");
 
         Assert.False(run.Started);
     }
 
-    /// <summary>A protocol door resumes on its wire and goes on in its own session, so the native go-on and the native retry are refused for it.</summary>
+    /// <summary>A protocol door resumes on its wire and goes on in its own session, so the native go-on is refused for it.</summary>
     [Fact]
-    public async Task A_protocol_door_refuses_the_native_go_on_and_the_native_retry()
+    public async Task A_protocol_door_refuses_the_native_go_on()
     {
         var run = Over("acp-stub");
 
         await Refused(run.GoOnAsync("c-1", "go on", [], CancellationToken.None), "a go-on");
-        await Refused(run.RestartAsync(CancellationToken.None), "a restart");
 
         Assert.False(run.Started);
     }
@@ -232,11 +230,11 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// The contract holds the five members every executor uses (design §4.1, round 5): the sink its readings go to (row l), the carriers,
-    /// the end, the go-on and the restart, and no word operation beyond the two it already had.
+    /// The contract holds the four members every executor uses (design §4.1, round 5): the sink its readings go to (row l), the carriers,
+    /// the end and the go-on, the native retry being the run's own (row m-ii), and no word operation beyond the two it already had.
     /// </summary>
     [Fact]
-    public void The_contract_gains_the_five_members_and_no_word_operation()
+    public void The_contract_gains_the_four_members_and_no_word_operation()
     {
         var methods = typeof(AgentRun).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
             .Where(method => method.IsAbstract)
@@ -246,7 +244,7 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.Equal(
             [
-                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandSink", "OpenAsync", "RestartAsync",
+                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandSink", "OpenAsync",
                 "ResumeAsync", "SendAsync", "SteerAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);
