@@ -96,7 +96,7 @@ public sealed class ProcessStartsCensusTests
     [InlineData("Daoris.Desktop.Driver/Plugins/HookProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
     [InlineData("Daoris.Desktop.Driver/Agents/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
-    [InlineData("Daoris.Desktop.Driver/Agents/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
+    [InlineData("Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Modules/Loop/HostSupervisor.cs", "ProcessStarts.Shared.StartAsync(")]
@@ -125,7 +125,7 @@ public sealed class ProcessStartsCensusTests
         // git's own streams, a plugin's hook program, and the usage probe.
         ["Daoris.Desktop.Driver/Workplace/GitRuns.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
-        ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = StartClass.Background,
         // npm installing a session's server's package, once, before the session's start (LAUNCHCHAIN1).
         ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] = StartClass.Background,
         // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
@@ -201,7 +201,7 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Platform/ChildProcess.cs"] = "the one runner of Daoris's own questions read to their end: git, and the harness probes' --version",
         ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
-        ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
+        ["Daoris.Desktop.Driver/Agents/Providers/Codex/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
         ["Daoris.Desktop.Driver/Agents/ServerPackages.cs"] =
             "npm installing a session's server's package into the toolchain, once, before any session starts it: never a session (LAUNCHCHAIN1)",
         ["Daoris.Desktop.Driver/Plugins/PluginToolSetUp.cs"] =
