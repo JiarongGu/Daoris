@@ -259,7 +259,6 @@ export type RoleRow = {
 export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number };
 
 /** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
-export type SuggestedRole = { id: string; name: Authored; takes: string[]; scopeKind: string; choices: RoleChoice[] };
 
 /**
  * One role's last seven days as `ROLES` answers it (MODELROLE1f): starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
@@ -267,6 +266,8 @@ export type SuggestedRole = { id: string; name: Authored; takes: string[]; scope
  */
 export type RoleUse = {
   role: string; starts: number; choices: { choice: string; starts: number }[]; fell: number; why: { code: string; starts: number }[];
+  /** The lines the course moved to another choice, by the condition that moved them (STAFFPOLICY1f); a driver before it leaves it out. */
+  moved?: { condition: string; moves: number }[];
 };
 
 /** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
@@ -299,7 +300,7 @@ export type RolePolicyRow = {
 
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
 export type RoleCatalogue = {
-  roles: RoleRow[]; works: string[]; kept: boolean; suggested: SuggestedRole[]; use?: RoleUseRead;
+  roles: RoleRow[]; works: string[]; kept: boolean; use?: RoleUseRead;
   /** Each role's policy, the fields this build enforces and the presets the doors take (STAFFPOLICY1b); absent from a driver before them. */
   policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
   /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */

@@ -21,7 +21,6 @@ const CATALOGUE: RoleCatalogue = {
   ],
   works: ['build', 'review', 'intake'],
   kept: true,
-  suggested: [],
   suggestedChoices: [
     { role: 'build', choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }, OPUS] },
     { role: 'opinion', choices: [OPUS, { agent: 'codex-acp' }] },

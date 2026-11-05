@@ -6,6 +6,7 @@ public static class ActorWords
     public static string Name(string actor) => actor switch
     {
         "build" => "Build",
+        "design" => "Design",
         "intake" => "Intake",
         "opinion" => "Second opinion",
         "helper" => "Helper",

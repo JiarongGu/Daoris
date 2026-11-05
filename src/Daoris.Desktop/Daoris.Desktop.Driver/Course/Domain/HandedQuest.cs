@@ -21,4 +21,10 @@ public sealed record HandedQuest(string Agent, string? Account, string From, str
     /// Null for every other hand-over, and in a file from before, which keeps its shape.
     /// </summary>
     public string? Note { get; init; }
+
+    /// <summary>The model of the choice the hand-over was offered and approved on, which the next start takes while its role still lists it; null for the agent's first entry.</summary>
+    public string? Model { get; init; }
+
+    /// <summary>The effort of that choice, likewise.</summary>
+    public string? Effort { get; init; }
 }

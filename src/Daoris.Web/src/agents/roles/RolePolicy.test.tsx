@@ -26,7 +26,7 @@ const POLICY: RolePolicyRow = {
 
 const catalogue = (policy: RolePolicyRow | null = POLICY, over: Partial<RoleCatalogue> = {}): RoleCatalogue => ({
   roles: [{ id: 'build', state: 'seed', seeded: true, name: { en: 'Build', zh: '开发' }, takes: ['build'], scopeKind: 'machine', revision: 0 }],
-  works: ['build', 'design'], kept: true, suggested: [], ...(policy ? { policies: [policy] } : {}), ...over,
+  works: ['build', 'design'], kept: true, ...(policy ? { policies: [policy] } : {}), ...over,
 });
 
 const build: ActorRow = {

@@ -63,7 +63,7 @@ beforeEach(() => {
       case 'WORKFLOW_LIST': return LIST;
       case 'WORKFLOW_PALETTE': return PALETTE;
       case 'ROLE_STRUCTURE': return { works: [], places: [], agents: [], roles };
-      case 'ROLES': return { roles, works: ['build', 'design', 'review'], kept: true, suggested: [] };
+      case 'ROLES': return { roles, works: ['build', 'design', 'review'], kept: true };
       case 'HARNESSES': return ROSTER;
       case 'SET_ROLE': {
         if (gate) await gate;

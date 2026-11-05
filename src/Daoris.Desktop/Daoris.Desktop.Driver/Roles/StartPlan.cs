@@ -242,7 +242,8 @@ internal sealed class StartPlan
     /// <exception cref="ArgumentOutOfRangeException">No work of that name.</exception>
     public static string RoleOf(string work) => work switch
     {
-        "build" or "design" => "build",
+        "build" => "build",
+        "design" => "design",
         "chat" => "chat",
         "ask-daoris" => "ask-daoris",
         "intake" => "intake",

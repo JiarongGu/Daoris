@@ -411,7 +411,7 @@ export type { ActorEntry, ActorRow } from '../data/wiring';
 export const useActors = ({ enabled = true }: { enabled?: boolean } = {}) =>
   useRolesAs((catalogue) => catalogue?.roles.flatMap((row) => (row.staffing ? [row.staffing] : [])) ?? [], enabled);
 
-export type { RoleCatalogue, RoleChangePress, RoleRow, SuggestedRole } from '../data/wiring';
+export type { RoleCatalogue, RoleChangePress, RoleRow } from '../data/wiring';
 
 /**
  * The role catalogue (FOUNDATION1y-i, the foundation design §2.7): every role with its work, place and choices, the works a role may
@@ -422,7 +422,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
   const answer = raw as Partial<RoleCatalogue> | null;
   if (!answer || !Array.isArray(answer.roles)) return null;
   return {
-    roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true, suggested: answer.suggested ?? [],
+    roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true,
     ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
     ...(Array.isArray(answer.policies) ? { policies: answer.policies } : {}),
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),

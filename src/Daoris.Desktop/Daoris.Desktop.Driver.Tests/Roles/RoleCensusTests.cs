@@ -63,6 +63,8 @@ public sealed class RoleCensusTests : IDisposable
     public void The_store_gives_each_revision_a_role_held_and_the_seed_at_revision_0()
     {
         var location = DesktopStore.LocationIn(_home);
+        // The seeded Design role takes design machine-wide, so an added one waits until it is removed.
+        RoleCatalog.Write(location, RoleChange.Remove("design"), () => StoreSettled.Yes);
         RoleCatalog.Write(location, new RoleChange.SetRole(RoleCatalogTests.Working("designer", ParticipantWork.Design)), () => StoreSettled.Yes);
         RoleCatalog.Write(location, new RoleChange.SetRole(RoleCatalogTests.Working("designer", ParticipantWork.Design, new RoleScope(RoleScope.Workspace, "w1"))), () => StoreSettled.Yes);
 

@@ -89,7 +89,7 @@ export function CHAIN(ask: StructurePlaceAsk): RoleStructure {
 }
 
 /** The catalogue those roles are from: this machine's seeds and the engine's own building role. */
-export const CATALOGUE: RoleCatalogue = { roles: STRUCTURE.roles, works: WORKS, kept: true, suggested: [] };
+export const CATALOGUE: RoleCatalogue = { roles: STRUCTURE.roles, works: WORKS, kept: true };
 
 /** The agents this machine has, as the editor names them. */
 export const AGENTS = STRUCTURE.agents.filter((each) => each.installed).map((each) => ({ value: each.agent, label: each.agent }));

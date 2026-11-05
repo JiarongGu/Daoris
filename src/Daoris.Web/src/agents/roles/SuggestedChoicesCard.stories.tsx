@@ -20,7 +20,6 @@ const CATALOGUE: RoleCatalogue = {
   ],
   works: ['build', 'design', 'chat', 'ask-daoris', 'intake', 'help', 'partner', 'review', 'brainstorm'],
   kept: true,
-  suggested: [],
   suggestedChoices: [
     { role: 'build', choices: [{ agent: 'claude-code', model: 'sonnet', effort: 'high' }, OPUS] },
     { role: 'opinion', choices: [OPUS] }, { role: 'helper', choices: [OPUS] }, { role: 'partner', choices: [OPUS] }, { role: 'brainstorm', choices: [OPUS] },

@@ -19,6 +19,8 @@ public sealed class RoleDoorTests : IDisposable
         File.WriteAllText(file, """{ "adapter": "claude", "intakeAdapter": "codex", "actors": { "build": [ { "agent": "claude", "model": "sonnet" } ] } }""");
         Staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.Equal(StaffingImported.Done, Staffing.ImportFile().How);
+        // The seeded Design role takes design machine-wide; these cases add a role taking it, so it is removed first.
+        RoleCatalog.Write(Staffing.Location, RoleChange.Remove("design"), () => StoreSettled.Yes);
     }
 
     public void Dispose()
@@ -185,24 +187,6 @@ public sealed class RoleDoorTests : IDisposable
         var after = Catalogue();
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config(), RoleWork.Design, bound: "designer", catalogue: after));
         Assert.Equal("claude", StartPlan.ContinuedOn(record with { Asked = null, Adapter = null }, Config(), RoleWork.Design, bound: "designer", catalogue: after));
-    }
-
-    [Fact]
-    public void The_Designer_is_suggested_while_no_role_takes_design_and_its_table_is_the_reference_s_judgement_row()
-    {
-        Assert.Equal([RoleSuggestion.Designer], RoleSuggestion.For(Catalogue()));
-
-        var suggested = RoleSuggestion.Designer;
-        RoleDoor.Apply(Staffing, RoleChange.Set(suggested.Role), suggested.Choices);
-        Assert.Empty(RoleSuggestion.For(Catalogue()));
-        Assert.Equal("designer", Catalogue().RoleFor(RoleWork.Design, new RolePlace()).Role!.Id);
-
-        // The census, both ways: the reference's build-judgement row names the model and effort the table suggests, and nothing else.
-        var row = File.ReadLines(Path.Combine(WorkspaceRoot.Folder, "docs", "model-roles.md")).Single(line => line.StartsWith("| **build-judgement** |", StringComparison.Ordinal));
-        var cells = row.Split('|', StringSplitOptions.TrimEntries);
-        Assert.Equal(("Claude Opus 5.5", "high"), (cells[3], cells[4]));
-        Assert.Equal([new ActorChoice(RoleSuggestion.ClaudeCode, "opus", "high")], suggested.Choices);
-        Assert.Equal([RoleWork.Design], suggested.Role.Takes);
     }
 
     [Fact]
