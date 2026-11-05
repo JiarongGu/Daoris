@@ -176,8 +176,6 @@ const workspaceLanding: Pick<PlaceWorkflowProps, 'name' | 'page' | 'doors' | 'la
     <WorkspaceLandingFolds
       workspace="aurora"
       hand={{ ...hand, asked: 'landing' }}
-      landing={{ repository: '', workspace: 'aurora', source: 'workspace', form: 'branch', pattern: 'feature/{quest}-{slug}' }}
-      unread={null}
     />
   ),
 };

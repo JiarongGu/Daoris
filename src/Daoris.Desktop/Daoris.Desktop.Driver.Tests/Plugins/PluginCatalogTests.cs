@@ -145,7 +145,7 @@ public sealed class PluginCatalogTests : IDisposable
     /// CASEFOLD1e: an id's shape holds to its very end. .NET's <c>$</c> also matches before a final line break, where the
     /// CLI's shape does not, so <c>acme.gate</c> and a line break was an id here and none there: a door's argument, a source
     /// folder's manifest and a landing rule's plugin alike. The shape ends at <c>\z</c>, and since REFAC1
-    /// <see cref="LandingRules"/> and <see cref="PluginTools"/> ask <see cref="PluginCatalog.IsId"/> rather than keep a copy.
+    /// <see cref="PluginTools"/> ask <see cref="PluginCatalog.IsId"/> rather than keep a copy.
     /// </summary>
     [Fact]
     public void An_id_followed_by_a_line_break_is_no_id_as_the_cli_reads_it()
@@ -155,13 +155,10 @@ public sealed class PluginCatalogTests : IDisposable
         File.WriteAllText(Path.Combine(source, PluginCatalog.ManifestName), """{ "id": "acme.gate\n" }""");
 
         var (_, problem) = PluginCatalog.ReadFolder(source);
-        var landing = LandingRules.Problem(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.gate\n"));
 
         Assert.True(PluginCatalog.IsId("acme.gate"));
         Assert.False(PluginCatalog.IsId("acme.gate\n"));
         Assert.Equal("`id` must be lowercase letters, digits, dots and dashes — `acme.gate\n` is not.", problem);
-        Assert.Null(LandingRules.Problem(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.gate")));
-        Assert.StartsWith("`acme.gate\n` is not a plugin id", landing);
     }
 
     /// <summary>

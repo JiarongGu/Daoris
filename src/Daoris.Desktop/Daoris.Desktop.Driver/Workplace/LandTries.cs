@@ -4,13 +4,13 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>The performer's rules for its tries: pure, so the tables hold them without a process.</summary>
-public static class AutoLandingRules
+public static class LandTries
 {
     /// <summary>
     /// Whether a run's work is worth a try now: its first, and a hold's at every pass; a refusal only once its tree's tip or status moved
     /// since it, so a pass never repeats one that nothing changed; and a try that closed, only at a tip other than the one it was kept at.
     /// </summary>
-    public static bool ShouldTry(AutoLanding entry, string? tip, string status) => entry.Last switch
+    public static bool ShouldTry(LandEntry entry, string? tip, string status) => entry.Last switch
     {
         null => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
@@ -53,7 +53,7 @@ public static class AutoLandingRules
 /// What the conversation's record keeps of each try it is told of (LAND2b, design §2, D100): a note whose lead-in is a code
 /// (LANG1a), so the page words it in the reader's language, and the landing's own sentence beneath it as a part of its own.
 /// </summary>
-public static class AutoLandingNotes
+public static class LandTryNotes
 {
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
     public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
@@ -108,21 +108,21 @@ public static class AutoLandingNotes
                 $"accepted by your press once its tree was clean: its work is on `{named}`.", ("branch", named)),
             // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
             AutoLandingCode.Landed or AutoLandingCode.Advanced => Noted.Of(ChatNoteCodes.LandingAccepted,
-                $"{LandingRules.AutoAccepted} its work is on `{named}`.", ("branch", named)),
+                $"{LandingNotes.AutoAccepted} its work is on `{named}`.", ("branch", named)),
             AutoLandingCode.PluginUnready => Noted.Of(ChatNoteCodes.LandingUnready,
-                $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` cannot land work here, so nothing was pushed; "
+                $"{LandingNotes.AutoAccepted} its work is on `{named}`, and `{plugin}` cannot land work here, so nothing was pushed; "
                 + "`trees hand` gives it the branch once it can.",
                 ("branch", named), ("plugin", plugin)),
             AutoLandingCode.PluginFailed => Noted.Of(ChatNoteCodes.LandingPluginFailed,
-                $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
+                $"{LandingNotes.AutoAccepted} its work is on `{named}`, and `{plugin}` did not push it.", ("branch", named), ("plugin", plugin)),
             // FABRIC-CLOSE1h14: held there by its landing's gate (CLOSE1h12), whose words lead, so it is never said as its quest's.
             AutoLandingCode.PushHeld when ByGate(landed?.Withheld) => Noted.Of(ChatNoteCodes.LandingPushGated,
-                $"{LandingRules.AutoAccepted} its work is on `{named}`, but its landing's gate held it before `{plugin}` was told, "
+                $"{LandingNotes.AutoAccepted} its work is on `{named}`, but its landing's gate held it before `{plugin}` was told, "
                 + "so nothing was pushed. The first look once the gate lets it go hands the branch on.",
                 ("branch", named), ("plugin", plugin)),
             // FABRIC-CLOSE1h2: judged once more just before its plugin was told, and held there; its own sentence beneath says why.
             AutoLandingCode.PushHeld =>Noted.Of(ChatNoteCodes.LandingPushHeld,
-                $"{LandingRules.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
+                $"{LandingNotes.AutoAccepted} its work is on `{named}`, but its quest was held or taken back before `{plugin}` was told, "
                 + "so nothing was pushed. The first look once it stands again hands the branch on.",
                 ("branch", named), ("plugin", plugin)),
             AutoLandingCode.Nothing => Noted.Of(ChatNoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),

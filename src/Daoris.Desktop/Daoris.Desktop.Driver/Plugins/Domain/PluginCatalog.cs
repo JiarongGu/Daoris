@@ -50,7 +50,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
 
     IReadOnlyList<string> IKnowledgePlugins.LandingPlugins() =>
         [.. Plugins.Select(plugin => plugin.Manifest.Id)
-            .Where(id => LandingRules.PluginProblem(id, this) is null)
+            .Where(id => LandingPlugins.ProblemOf(id, this) is null)
             .Order(StringComparer.Ordinal)];
 
     string? IKnowledgePlugins.SourceKind(string folder) => PluginSource.Read(folder).Source switch

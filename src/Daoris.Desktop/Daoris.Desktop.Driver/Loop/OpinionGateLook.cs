@@ -236,7 +236,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var kept = review is null
             ? null
             : new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
-                run is null && process.Landing?.Rule.AutoAccept == true, gate);
+                run is null && process.Landing?.AutoAccept == true, gate);
 
         // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
         OpinionAct? act = null;

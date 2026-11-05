@@ -81,7 +81,7 @@ public sealed class HomeDefaultTests : IDisposable
     {
         var config = DriverConfig.Empty.WithLinePolicy("engine", new LandingIntegrate(Batch: 4, Gates: LandingIntegrate.Declared));
 
-        Assert.Equal(4, LandingRules.Line(config, "engine", null).Rule.Integrate!.Batch);
+        Assert.Equal(4, config.LinePolicyOf("engine", null)!.Batch);
         Assert.Throws<DriverException>(() => config.WithLinePolicy("engine", new LandingIntegrate(Batch: 99)));
         Assert.Throws<DriverException>(() => config.WithLinePolicy("engine", new LandingIntegrate(Request: "owner")));
         Assert.Null(config.WithLinePolicy("engine", null).LinePolicyOf("engine", null));

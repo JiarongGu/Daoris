@@ -16,7 +16,6 @@ internal interface IKnowledgeWorkplace
     Task<IKnowledgeSweep> ReadSweepAsync(string home, HelpSweepPart part, CancellationToken ct);
     Task<string?> GuessAsync(string root, CancellationToken ct);
     Line? JudgedLine(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed);
-    Landing ChooseLanding(DriverConfig config, string repository, string? workspace);
     string PullRequestRow(PullRequestState? kept, PullRequestAskFailed? failed);
     string? HistoryCount(int count, string noun, string? nouns = null);
     string? HistoryCopies(int count);

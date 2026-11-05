@@ -44,7 +44,7 @@ public sealed class ChatRunnerTests : IDisposable
 
         Assert.Equal(("chat-steps", 1), (WorkflowRunBindings.Read(_home, "chat-c1a2b3c4")!.Workflow, WorkflowRunBindings.Read(_home, "chat-c1a2b3c4")!.Version));
         Assert.True(process.Named);
-        Assert.Equal((LandingForm.Branch, "chat/{session}-{slug}"), (process.Landing.Rule.Form, process.Landing.Rule.Pattern));
+        Assert.Equal((LandingForm.Branch, "chat/{session}-{slug}"), (process.Landing.Form, process.Landing.Pattern));
         var note = Assert.Single(events.After("c1a2b3c4", 0).Events, each => each.Kind == SessionEventKind.Note);
         Assert.Equal("This conversation's work follows `chat-steps` v1, the workflow `engine` chose.", note.Text);
         Assert.Equal(ChatNoteCodes.ChatWorkflow.Code, Assert.Single(note.Parts!).Code);

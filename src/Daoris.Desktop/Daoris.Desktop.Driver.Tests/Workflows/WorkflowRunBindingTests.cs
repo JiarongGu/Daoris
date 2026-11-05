@@ -474,7 +474,7 @@ public sealed class WorkflowRunBindingTests : IDisposable
             """)), kept: []);
         var ticketed = Config("""{"workflows":{"api":{"default":"ticketed"}}}""");
         var keyed = WorkflowRunBindings.Plan(ticketed, WorkflowPorts.Store(_home), "d4e5f6", "api", null, null, null, Plugins, At, remoteHost: "github.com");
-        Assert.Equal(LandingKey.DefaultKey, keyed.Land["key"]);
+        Assert.Equal(BranchPatterns.DefaultKey, keyed.Land["key"]);
         Assert.False(keyed.Land.ContainsKey("pattern"));
     }
 

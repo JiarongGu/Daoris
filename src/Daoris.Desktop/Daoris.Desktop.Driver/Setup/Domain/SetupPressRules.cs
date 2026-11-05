@@ -72,8 +72,8 @@ public static partial class SetupPressRules
 
     /// <summary>How the work will land, in the words the press says it in before it is pressed.</summary>
     public static string LandsAs(Landing landing) =>
-        landing.Rule.Form == LandingForm.Branch
-            ? "as a branch, for your review" + (landing.Rule.Plugin is { } plugin ? $", which `{plugin}` pushes and opens the pull request for" : "")
+        landing.Form == LandingForm.Branch
+            ? "as a branch, for your review" + (landing.Plugin is { } plugin ? $", which `{plugin}` pushes and opens the pull request for" : "")
             : "merged into its line, where the landed history is the review";
 
     /// <summary>The <c>node</c> a child finds, refused where it is missing, does not answer, or is older than <see cref="NodeFloor"/>.</summary>

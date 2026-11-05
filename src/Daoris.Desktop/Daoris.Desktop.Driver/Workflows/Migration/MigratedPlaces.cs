@@ -27,8 +27,8 @@ public sealed class MigratedPlaces
     public const string Current = "current";
 
     private readonly DriverConfig _config;
-    private readonly IReadOnlyDictionary<string, LandingRule> _landings;
-    private readonly IReadOnlyDictionary<string, LandingRule> _shared;
+    private readonly IReadOnlyDictionary<string, MigratedRule> _landings;
+    private readonly IReadOnlyDictionary<string, MigratedRule> _shared;
 
     public MigratedPlaces(DriverConfig config)
     {
@@ -36,14 +36,43 @@ public sealed class MigratedPlaces
         if (config.Source is { } source)
         {
             using var document = JsonDocument.Parse(source);
-            _landings = LandingKey.RuleMap(document.RootElement, "landings");
-            _shared = LandingKey.RuleMap(document.RootElement, "workspaceLandings");
+            _landings = RuleMap(document.RootElement, "landings");
+            _shared = RuleMap(document.RootElement, "workspaceLandings");
         }
         else
         {
-            _landings = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
-            _shared = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
+            _landings = new Dictionary<string, MigratedRule>(StringComparer.OrdinalIgnoreCase);
+            _shared = new Dictionary<string, MigratedRule>(StringComparer.OrdinalIgnoreCase);
         }
+    }
+
+    /// <summary>
+    /// The old rules under <paramref name="name"/>, the first spelling of a name in any case kept: a rule whose form is neither merge nor
+    /// branch, or whose branch pattern names no branch, is passed over; a merge keeps no pattern; an <c>integrate</c> that does not read is
+    /// none.
+    /// </summary>
+    private static Dictionary<string, MigratedRule> RuleMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, MigratedRule>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
+        foreach (var property in element.EnumerateObject())
+        {
+            var value = property.Value;
+            if (map.ContainsKey(property.Name) || value.ValueKind != JsonValueKind.Object) continue;
+            var form = Json.NonEmpty(value, "form");
+            var pattern = Json.NonEmpty(value, "pattern");
+            if (form == LandingForm.Merge) pattern = null;
+            else if (form != LandingForm.Branch || BranchPatterns.Problem(pattern ?? "") is not null) continue;
+            var cycle = value.TryGetProperty("cycle", out var written) && written.ValueKind != JsonValueKind.Null ? CycleText.Compact(written) : null;
+            var integrate = value.TryGetProperty("integrate", out var policy) && policy.ValueKind == JsonValueKind.Object
+                ? LinePolicyKey.IntegrateOf(policy, out _)
+                : null;
+            map[property.Name] = new MigratedRule(form, pattern, Json.NonEmpty(value, "plugin"),
+                value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True, Json.NonEmpty(value, "key"),
+                value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True, cycle, integrate);
+        }
+
+        return map;
     }
 
     /// <summary>Whether the file holds any old landing rule.</summary>
@@ -64,9 +93,6 @@ public sealed class MigratedPlaces
         return ([.. repositories.OrderBy(each => each.Repository, StringComparer.OrdinalIgnoreCase)], workspaces);
     }
 
-    private static MigratedRule? Copy(LandingRule? rule) =>
-        rule is null ? null : new(rule.Form, rule.Pattern, rule.Plugin, rule.AutoAccept, rule.Key, rule.Squash, rule.Cycle, rule.Integrate);
-
     /// <summary>The facts of repository <paramref name="repository"/> in <paramref name="workspace"/>.</summary>
     public MigratedPlace Repository(string repository, string? workspace)
     {
@@ -77,7 +103,7 @@ public sealed class MigratedPlaces
         var opinion = OpinionRules.Resolve(_config, repository, workspace) is { Rule.IsNone: false };
         var look = ReviewRules.Resolve(_config, repository, workspace) is { Rule: { IsNone: false, Required: true } };
         var checks = SessionChecks.For(_config, repository);
-        return new(repository, false, circle, Copy(rule), own, Composes(_config, repository, circle, rule), opinion, look, checks, checks is not null,
+        return new(repository, false, circle, rule, own, Composes(_config, repository, circle, rule), opinion, look, checks, checks is not null,
             ExplicitAccess(_config, repository, circle), Follows(_config, repository, workspace));
     }
 
@@ -94,7 +120,7 @@ public sealed class MigratedPlaces
         var has = _shared.TryGetValue(circle, out var rule);
         var opinion = OpinionRules.Resolve(bare, "", circle) is { Rule.IsNone: false };
         var look = ReviewRules.Resolve(bare, "", circle) is { Rule: { IsNone: false, Required: true } };
-        return new(circle, true, circle, Copy(rule), has, Composes(bare, "", circle, rule), opinion, look, null, false,
+        return new(circle, true, circle, rule, has, Composes(bare, "", circle, rule), opinion, look, null, false,
             _config.WorkspaceAccess.TryGetValue(circle, out var access) && Names(access), Follows(_config, null, circle));
     }
 
@@ -111,7 +137,7 @@ public sealed class MigratedPlaces
     /// Whether the access setup composed the automatic switch for the place: its <c>landing</c> resolves to <c>rule</c> (full access among them),
     /// over a branch rule not already accepting automatically. A merge kept no switch whatever the setup.
     /// </summary>
-    private static bool Composes(DriverConfig config, string repository, string circle, LandingRule? rule)
+    private static bool Composes(DriverConfig config, string repository, string circle, MigratedRule? rule)
     {
         if (rule is { AutoAccept: true } || (rule is not null && rule.Form != LandingForm.Branch)) return false;
         var levels = new List<AccessSetting?>();

@@ -405,8 +405,8 @@ s5f6a7b8 (engine): #q9 of core · asked · delivery kept
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |
 |---|---|---|---|---|---|---|
-| `engine` | not driven, no checkout here | none git can name | merged into the line (the old landing rule, set for it) | no review environment (set for it) | no second opinion (set for it) | Current (the default) |
-| `tools` | driven | `develop` (set for its workspace) | merged into the line (the old landing rule, the default) | no review environment | no second opinion | Current (the default) |
+| `engine` | not driven, no checkout here | none git can name | not landed: no saved workflow is chosen for it, so its work is held | no review environment (set for it) | no second opinion (set for it) | Current (the default) |
+| `tools` | driven | `develop` (set for its workspace) | not landed: no saved workflow is chosen for it, so its work is held | no review environment | no second opinion | Current (the default) |
 
 ### Workspace `work`
 

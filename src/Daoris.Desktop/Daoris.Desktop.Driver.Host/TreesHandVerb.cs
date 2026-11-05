@@ -69,7 +69,7 @@ internal static class TreesHandVerb
         if (handed.Plugin is not null)
         {
             new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))
-                .Keep(entry.Session, LandingRules.HandNote(handed), line => Console.Error.WriteLine($"trees: {line}"));
+                .Keep(entry.Session, LandingNotes.HandNote(handed), line => Console.Error.WriteLine($"trees: {line}"));
         }
 
         // 1 where the branch was not pushed: refused, or the plugin's step did not complete.

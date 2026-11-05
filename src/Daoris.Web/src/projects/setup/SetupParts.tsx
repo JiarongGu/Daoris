@@ -1,53 +1,11 @@
-import type { TFunction } from 'i18next';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LandingRule } from '../../settings/repository/Landings';
 import { Button, Icon, Inline, SettingList, SettingRow } from '../../design/ui';
 import { Refused } from '../../work/InlineConfirm';
 
 // The parts a Setup tab is made of (UX6f, UX6g; D150 §1 rule 4, §4.2, §4.3): a section that folds to the line naming its
 // values, and a value that is the thing's own or stands from above. A repository's Setup and a workspace's share them, so
 // the two read and fold alike. Molecules: every state is reached by props, and every press goes out.
-
-/**
- * How a rule lands, in a folded line's words: into its line, or on a branch, who pushes it, with no press, and squashed to one
- * commit (DOORS1b).
- */
-export function landingSays(t: TFunction, landing: LandingRule): string {
-  if (landing.form !== 'branch') return t('projects.setup.summary.landsMerge');
-  return [
-    t('projects.setup.summary.landsBranch', { pattern: landing.pattern }),
-    ...(landing.plugin ? [t('projects.setup.summary.pushedBy', { plugin: landing.plugin })] : []),
-    ...(landing.autoAccept ? [t('projects.setup.summary.automatic')] : []),
-    ...(landing.squash ? [t('projects.setup.summary.squashed')] : []),
-  ].join(t('projects.setup.summary.clauseJoin'));
-}
-
-const PLUGIN_MARK = '\u0001';
-
-/**
- * A landing rule's sentence for the row: its clauses joined, and, given `onOpenPlugin`, the plugin it names a door to that
- * plugin's page (PLUGUI1c2c, plugins-screen design §5). The name is cut out of `settings.landing.byPlugin` where it sits,
- * so the catalogue keeps one key; absent the opener, or a catalogue that does not hold it as code, it stays words. `after`
- * is what the rule says last: what finds its ticket and what its squash makes (DOORS1b, `landingProcessSays`).
- */
-export function landingRowSays(
-  t: TFunction, said: string, plugin: string | undefined, auto: boolean, onOpenPlugin?: (plugin: string) => void, after: string[] = [],
-): ReactNode {
-  const join = t('projects.setup.sentenceJoin');
-  const autoSays = [...(auto ? [t('settings.landing.byAuto')] : []), ...after];
-  if (!plugin) return [said, ...autoSays].join(join);
-  const byPlugin = t('settings.landing.byPlugin', { plugin: PLUGIN_MARK });
-  const parts = byPlugin.split(`\`${PLUGIN_MARK}\``);
-  if (!onOpenPlugin || parts.length !== 2) return [said, t('settings.landing.byPlugin', { plugin }), ...autoSays].join(join);
-  return (
-    <>
-      <Inline text={`${said}${join}${parts[0]}`} />
-      <Button variant="ghost" className="text-small" onClick={() => onOpenPlugin(plugin)}>{plugin}</Button>
-      <Inline text={[parts[1]!, ...autoSays].join(join)} />
-    </>
-  );
-}
 
 /**
  * One section of a Setup: its name and, folded, the line naming its values; a press opens it to its rows. Its name is
@@ -102,27 +60,6 @@ export function SetupSection({ title, summary, startsOpen, open: held, onOpenCha
       {/* The section's rows on one label track (R1): each value beside its words, the values one column. */}
       {open && <SettingList id={`${id}-body`} className="pb-3 pl-3">{children}</SettingList>}
     </section>
-  );
-}
-
-/**
- * A landing rule `driver.json` keeps that reads as no rule (FABRIC-GRAPH1d), as the driver's state answers it: why, `object` (no
- * rule's object), `form` (no `form`) or `refused` (a rule that could not land work), and the driver's sentence.
- */
-export type UnreadLanding = { why: string; said: string };
-
-/**
- * An unread landing rule said under the landing's row (FABRIC-GRAPH1d): both readers skip it, so the work there lands as though it
- * set none, and Setup says so rather than passing over it. `name` is the repository or workspace it is written under; a refused
- * rule, or a reason a later driver adds, is said in the driver's own sentence.
- */
-export function UnreadLandingNote({ name, unread }: { name: string; unread: UnreadLanding }) {
-  const { t } = useTranslation();
-  const why = unread.why === 'object' || unread.why === 'form' ? unread.why : 'refused';
-  return (
-    <p className="m-0 mt-2 text-small text-warn" role="note">
-      <Inline text={t(`projects.setup.unreadLanding.${why}`, { name, said: unread.said })} />
-    </p>
   );
 }
 

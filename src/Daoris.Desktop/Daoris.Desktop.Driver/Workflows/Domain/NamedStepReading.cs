@@ -155,7 +155,7 @@ internal static class NamedStepReading
     /// <param name="landing">The landing rule a <c>handed</c> that leaves its form or its press out lands by: the declared rule, composed.</param>
     /// <param name="bound">The open options a <c>land</c> node's run resolved at its bind (<see cref="WorkflowRunBinding.Land"/>), which stand for the rule's.</param>
     public static (IReadOnlyList<NamedStep>? Steps, string? Problem) GateSteps(
-        NodeGraph graph, int number, LandingRule landing, IReadOnlyDictionary<string, string>? bound = null)
+        NodeGraph graph, int number, Landing landing, IReadOnlyDictionary<string, string>? bound = null)
     {
         var steps = new List<NamedStep>();
         foreach (var node in graph.Nodes)
@@ -244,7 +244,7 @@ internal static class NamedStepReading
             case WorkflowFieldTypes.Pattern:
                 if (text is null) return wrong;
                 // The landing twin's own check, asked of its one owner, so a step and a rule refuse one pattern in the same words.
-                return LandingRules.Problem(text) is { } problem ? (null, $"its `pattern` will not do: {problem}") : (text, null);
+                return BranchPatterns.Problem(text) is { } problem ? (null, $"its `pattern` will not do: {problem}") : (text, null);
             case WorkflowFieldTypes.Members:
                 return value.ValueKind == JsonValueKind.Array && value.GetArrayLength() > 0 ? (new List<NamedStep>(), null) : wrong;
             default:

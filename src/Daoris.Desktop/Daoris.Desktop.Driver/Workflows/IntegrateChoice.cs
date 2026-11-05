@@ -41,7 +41,7 @@ public static class IntegrateChoice
         if (gates.Problem is not null) return new(repository, [], false);
         var landing = WorkflowProcess.Of(
             config, repository, workspace, binding, gates,
-            LandNodes.RuleOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null))).Landing.Rule;
+            LandNodes.LandingOf(landNode, LandNodes.Reviewed(graph), LandNodes.Resolve(landNode, platformPlugin: null))).Landing;
         var policy = config.LinePolicyOf(repository, workspace);
         var integrates = graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate);
         return new(repository, IntegrateCarry.Cannots(repository, graph, policy, landing, accepted), integrates && IntegrateCarry.NoGates(policy));

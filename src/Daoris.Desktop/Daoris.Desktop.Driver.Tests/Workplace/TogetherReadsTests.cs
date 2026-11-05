@@ -41,12 +41,12 @@ public sealed class TogetherReadsTests
     [Fact]
     public void A_brought_in_member_keeps_a_coded_note_naming_where_its_work_went()
     {
-        var onto = LandingRules.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "feature/x", false, DateTimeOffset.UnixEpoch));
+        var onto = LandingNotes.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "feature/x", false, DateTimeOffset.UnixEpoch));
         var part = Assert.Single(onto.Parts!);
         Assert.Equal(SessionEventKind.Note, onto.Kind);
         Assert.Equal((ChatNoteCodes.LandingBroughtInto.Code, "feature/x", "tg1"), (part.Code, part.Value("branch"), part.Value("operation")));
 
-        var line = LandingRules.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "main", true, DateTimeOffset.UnixEpoch));
+        var line = LandingNotes.BroughtIntoNote(new TogetherBrought("tg1", "s-member", "trees/m", "abc1234def", "main", true, DateTimeOffset.UnixEpoch));
         Assert.Equal(ChatNoteCodes.LandingBroughtIntoLine.Code, Assert.Single(line.Parts!).Code);
         Assert.Contains("the line `main`", line.Text);
     }

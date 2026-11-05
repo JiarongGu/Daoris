@@ -60,7 +60,7 @@ public static class LandNodes
         }
 
         // The key rides with the binding whether written or defaulted, since the landing reads it from there.
-        if (pattern.Contains("{ticket}", StringComparison.Ordinal)) resolved[KeyOption] = Written(land, KeyOption) ?? LandingKey.DefaultKey;
+        if (pattern.Contains("{ticket}", StringComparison.Ordinal)) resolved[KeyOption] = Written(land, KeyOption) ?? BranchPatterns.DefaultKey;
         return resolved.Count == 0 ? NoResolved : resolved;
     }
 
@@ -88,10 +88,10 @@ public static class LandNodes
     /// written options, the open ones the bind resolved (<paramref name="resolved"/>), and its press from the graph. A squash is the node's own,
     /// and the ticket key is the bind's.
     /// </summary>
-    public static LandingRule RuleOf(NodeDeclaration land, bool reviewed, IReadOnlyDictionary<string, string>? resolved)
+    public static Landing LandingOf(NodeDeclaration land, bool reviewed, IReadOnlyDictionary<string, string>? resolved)
     {
         var method = Written(land, "method") ?? Merge;
-        if (method == Merge) return new LandingRule(LandingForm.Merge, AutoAccept: !reviewed);
+        if (method == Merge) return new Landing(LandingForm.Merge, AutoAccept: !reviewed);
 
         var pattern = Written(land, "pattern") ?? resolved?.GetValueOrDefault("pattern");
         var plugin = Written(land, "plugin") switch
@@ -102,7 +102,7 @@ public static class LandNodes
         };
         var key = resolved?.GetValueOrDefault(KeyOption);
         var squash = land.Options.TryGetValue("squash", out var written) && NodeOptions.Value(written) is true && method is Branch or Push or PullRequest;
-        return new LandingRule(LandingForm.Branch, pattern, plugin, AutoAccept: !reviewed, key, squash);
+        return new Landing(LandingForm.Branch, pattern, plugin, AutoAccept: !reviewed, key, squash);
     }
 
     /// <summary>Whether the person's Accept comes before the graph's landing: a <see cref="NodeKinds.Review"/>, which the graph rules hold before every landing.</summary>
@@ -122,7 +122,7 @@ public static class LandNodes
         if (node.Options.ContainsKey("pattern"))
         {
             // A merge makes no branch to name.
-            if (method == Merge || Written(node, "pattern") is not { } pattern || LandingKey.Problem(pattern) is not null) return "pattern";
+            if (method == Merge || Written(node, "pattern") is not { } pattern || BranchPatterns.Problem(pattern) is not null) return "pattern";
         }
 
         // A pull request and a push are a plugin's to do; an integrate is the line's, and no plugin lands it (D87, D215).
@@ -137,7 +137,7 @@ public static class LandNodes
         // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.
         if (node.Options.ContainsKey(KeyOption))
         {
-            if (Written(node, KeyOption) is not { } key || LandingKey.KeyProblem(key) is not null) return KeyOption;
+            if (Written(node, KeyOption) is not { } key || BranchPatterns.KeyProblem(key) is not null) return KeyOption;
             if (method == Merge || (Written(node, "pattern") is { } written && !written.Contains("{ticket}", StringComparison.Ordinal))) return KeyOption;
         }
 

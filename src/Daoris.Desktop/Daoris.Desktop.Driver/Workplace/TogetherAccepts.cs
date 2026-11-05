@@ -134,8 +134,8 @@ internal sealed class TogetherAccepts(TreeContext context, TreeLands lands)
         TogetherOperation operation, LandingSubject subject, IWorkplaceGate? gate, string repository, string workspace, CancellationToken ct)
     {
         var plan = await lands.PlanAsync(operation.Head.Tree, subject, ct, gate?.Process).ConfigureAwait(false);
-        var rule = gate?.Process is { Named: true } named ? named.Landing.Rule : LandingRules.Line(context.Config(), repository, workspace).Rule;
-        return (plan.Form == LandingForm.Merge ? TogetherForms.Merge : rule.Squash ? TogetherForms.Squash : TogetherForms.Branch, plan.Target);
+        var squash = gate?.Process is { Named: true } named && named.Landing.Squash;
+        return (plan.Form == LandingForm.Merge ? TogetherForms.Merge : squash ? TogetherForms.Squash : TogetherForms.Branch, plan.Target);
     }
 
     /// <summary>The form and the target a delivery's intent lands the head by: its line for a merge, else its branch, squashed as its options say.</summary>

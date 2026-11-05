@@ -44,7 +44,7 @@ public sealed class LandCarryTests : LandedFixture
         Assert.True(carried!.Told, carried.Sentence);
         Assert.Equal(LandCarry.Uncommitted, carried.Why);
         var said = Assert.Single(_said);
-        var status = AutoLandingRules.Fingerprint(await GitAsync(tree.Path, "status", "--porcelain"));
+        var status = LandTries.Fingerprint(await GitAsync(tree.Path, "status", "--porcelain"));
         Assert.Equal(DaorisKeys.Carry(Subject.Session, status, 1), said.Key);
         Assert.Equal(Subject.Session, said.Session);
         Assert.Contains("uncommitted", said.Text);
