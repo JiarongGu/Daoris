@@ -187,8 +187,7 @@ public sealed class DriverCommandTests
 
     /// <summary>
     /// LAND3: a failed or superseded attempt's branch is removed from a terminal by the session or the branch, a door the
-    /// usage names and the host reads; the clean-up's list offers it beside such a row. The terminal's Accept lands nothing
-    /// itself (CHATFLOW1g, D228): only a run's `land` lands.
+    /// usage names and the host reads; the clean-up's list offers it beside such a row.
     /// </summary>
     [Fact]
     public void The_usage_names_removing_a_sessions_branch_by_the_session_or_the_branch()
@@ -198,8 +197,6 @@ public sealed class DriverCommandTests
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
         Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
         Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
-        Assert.DoesNotContain(".LandAsync(tree, subject", program);
-        Assert.Contains("TreesWords.AcceptedForPass(home, gate)", program);
     }
 
     /// <summary>
@@ -289,29 +286,21 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule), CHATFLOW1g (D228): the page's press and the terminal's land nothing themselves, so
-    /// only the run's <c>land</c> holds a landing to the result it was made on (<c>PressQuests</c>, <c>PressedResult</c>;
-    /// <c>PressedResultTests</c> holds the act); each door still reads the quest once where it names the work. An entry's Accept holds
-    /// each part to its own quest in the library, judged under that part's own holds.
+    /// FABRIC-CLOSE1h3 (D173's note; D50's twin rule): each press reads the quest once where it names the work (<c>PressQuests</c>), and the
+    /// run's <c>land</c> holds the landing to the result it was made on (<c>AcceptDoorsTests</c>). An entry's Accept holds each part to its
+    /// own quest in the library, judged under that part's own holds.
     /// </summary>
     [Fact]
     public void Every_press_holds_its_landing_to_the_result_it_was_made_on()
     {
         var console = TreesConsoleSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesLandDesk.cs"));
-        var chat = File.ReadAllText(SourceFiles.Driver("ChatLandCommand.cs"));
         var accepts = File.ReadAllText(SourceFiles.Driver("EntryAccepts.cs"));
 
         foreach (var door in new[] { console, route })
         {
             Assert.Contains("new PressQuests(", door);
             Assert.Contains("quests.FindAsync", door[door.IndexOf("OwnSubjectAsync(", StringComparison.Ordinal)..]);
-        }
-
-        foreach (var door in new[] { console, route, chat })
-        {
-            Assert.DoesNotContain(".LandAsync(tree, subject", door);
-            Assert.DoesNotContain("quests.PressedAsync(", door);
         }
 
         Assert.Contains("quests.FindAsync", accepts);
