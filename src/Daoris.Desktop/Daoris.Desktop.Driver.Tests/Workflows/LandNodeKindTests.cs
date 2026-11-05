@@ -121,24 +121,16 @@ public sealed class LandNodeKindTests
     }
 
     [Theory]
-    [InlineData("merge", "pushed")]
-    [InlineData("merge", "pull-request")]
+    [InlineData("merge", "push")]
     [InlineData("merge", "integrate")]
-    [InlineData("branch", "pushed")]
     [InlineData("branch", "integrate")]
-    [InlineData("push", "integrate")]
-    [InlineData("pull-request", "integrate")]
-    [InlineData("integrate", "pushed")]
-    [InlineData("integrate", "pull-request")]
+    [InlineData("integrate", "push")]
     public void A_land_refuses_a_tail_its_method_does_not_bring(string method, string tail)
     {
-        var plugin = method is "push" or "pull-request" ? ",\"plugin\":\"acme.pr\"" : "";
-        var land = Land($$"""{"method":"{{method}}"{{plugin}}}""");
+        var land = Land($$"""{"method":"{{method}}"}""");
         // The method's own tail first, so the only fault is the extra node.
         NodeDeclaration[] own = method switch
         {
-            "push" => [Node("p0", NodeKinds.Pushed)],
-            "pull-request" => [Node("p0", NodeKinds.Pushed), Node("r0", NodeKinds.PullRequest)],
             "integrate" => [Node("i0", NodeKinds.Integrate)],
             _ => [],
         };
@@ -150,41 +142,36 @@ public sealed class LandNodeKindTests
     }
 
     [Theory]
-    [InlineData("push", "pushed")]
-    [InlineData("pull-request", "pushed")]
-    [InlineData("pull-request", "pull-request")]
     [InlineData("integrate", "integrate")]
     public void A_land_refuses_a_method_whose_tail_is_missing(string method, string missing)
     {
-        var plugin = method is "push" or "pull-request" ? ",\"plugin\":\"acme.pr\"" : "";
-        NodeDeclaration[] tail = method switch
-        {
-            "push" => [Node("p0", NodeKinds.Pushed)],
-            "pull-request" => [Node("p0", NodeKinds.Pushed), Node("r0", NodeKinds.PullRequest)],
-            _ => [Node("i0", NodeKinds.Integrate)],
-        };
-        var graph = Chain([Claimed(), Land($$"""{"method":"{{method}}"{{plugin}}}"""), .. tail.Where(node => node.Kind != missing), Node("done", NodeKinds.Line)]);
+        NodeDeclaration[] tail = [Node("i0", NodeKinds.Integrate)];
+        var graph = Chain([Claimed(), Land($$"""{"method":"{{method}}"}"""), .. tail.Where(node => node.Kind != missing), Node("done", NodeKinds.Line)]);
 
         var said = NodeGraphs.Problems(graph).Where(problem => problem.Code == GraphRefusal.LandTail).ToList();
         Assert.Equal("land", Assert.Single(said).Node);
     }
 
+    /// <summary>G8: a pull request is a branch, then a push, then a plugin's performed step; a push stands after the land that made its branch.</summary>
     [Fact]
-    public void A_pull_request_comes_after_the_push_and_both_after_the_land()
+    public void A_push_and_a_plugins_pull_request_follow_a_branch_landing_in_order()
     {
-        var land = Land("""{"method":"pull-request","plugin":"acme.pr"}""");
-        var right = Chain(Claimed(), land, Node("push", NodeKinds.Pushed), Node("pr", NodeKinds.PullRequest), Line());
-        var swapped = Chain(Claimed(), land, Node("pr", NodeKinds.PullRequest), Node("push", NodeKinds.Pushed), Line());
-
-        Assert.Empty(Codes(right));
-        Assert.Contains(GraphRefusal.LandTail, Codes(swapped));
+        var land = Land("""{"method":"branch"}""");
+        var pr = Node("pr", "acme-pr/pull-request");
+        Assert.Empty(Codes(Chain(Claimed(), land, Node("push", NodeKinds.Push), pr, Line())));
+        Assert.Empty(Codes(Chain(Claimed(), Land("""{"method":"branch","pattern":"x/{quest}"}"""), Line())));
+        Assert.Contains(GraphRefusal.LandTail, Codes(Chain(Claimed(), Land("""{"method":"merge"}"""), Node("push", NodeKinds.Push), Line())));
     }
 
-    [Fact]
-    public void A_push_and_a_branch_hold_with_their_tails()
+    /// <summary>G8: a land names no plugin, and no method of it pushes or opens a pull request.</summary>
+    [Theory]
+    [InlineData("""{"method":"push"}""")]
+    [InlineData("""{"method":"pull-request"}""")]
+    [InlineData("""{"method":"branch","plugin":"none"}""")]
+    [InlineData("""{"method":"branch","plugin":"acme.pr"}""")]
+    public void A_land_refuses_the_old_methods_and_its_plugin_option(string options)
     {
-        Assert.Empty(Codes(Chain(Claimed(), Land("""{"method":"push","plugin":"acme.pr"}"""), Node("push", NodeKinds.Pushed), Line())));
-        Assert.Empty(Codes(Chain(Claimed(), Land("""{"method":"branch","pattern":"x/{quest}"}"""), Line())));
+        Assert.NotNull(NodeDeclarations.Problem(Land(options)));
     }
 
     /// <summary>
@@ -194,7 +181,6 @@ public sealed class LandNodeKindTests
     [Theory]
     [InlineData("""{"method":"merge"}""", null)]
     [InlineData("""{"method":"branch","pattern":"x/{quest}"}""", null)]
-    [InlineData("""{"method":"pull-request","plugin":"acme.pr"}""", null)]
     [InlineData("""{"method":"integrate"}""", """{"request":"owner"}""")]
     [InlineData("""{"method":"integrate"}""", """{"request":"steward"}""")]
     [InlineData("""{"method":"integrate"}""", """{"request":"done"}""")]
@@ -203,7 +189,6 @@ public sealed class LandNodeKindTests
         NodeDeclaration[] tail = JsonDocument.Parse(land).RootElement.GetProperty("method").GetString() switch
         {
             "integrate" => [Node("merge", NodeKinds.Integrate, integrate), Line()],
-            "pull-request" => [Node("push", NodeKinds.Pushed), Node("pr", NodeKinds.PullRequest), Line()],
             _ => [Line()],
         };
 

@@ -103,9 +103,7 @@ public sealed class SavesRefusedTests : IDisposable
         var palette = WorkflowPalette.Build([]);
         string Offered(string kind) => palette.Kinds.Single(each => each.Kind == kind).Offered;
 
-        Assert.Equal("tail:push", Offered(NodeKinds.Pushed));
-        Assert.Equal("tail:pull-request", Offered(NodeKinds.PullRequest));
         Assert.Equal("tail:integrate", Offered(NodeKinds.Integrate));
-        Assert.All(new[] { NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Line, NodeKinds.Review, NodeKinds.Look }, kind => Assert.Equal(PaletteKind.Alone, Offered(kind)));
+        Assert.All(new[] { NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Line, NodeKinds.Push, NodeKinds.Review, NodeKinds.Look }, kind => Assert.Equal(PaletteKind.Alone, Offered(kind)));
     }
 }

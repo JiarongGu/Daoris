@@ -355,7 +355,7 @@ public sealed class NodeLifecycleTests
 
         // The person's skip of the same node still needs their words.
         Assert.Equal(NodeRefusal.NoWords, NodeLifecycle.Apply(opinion, active, new NodeMove(NodeStates.Skipped, NodeCause.Person) { Scope = Run }).Refused);
-        foreach (var kind in new[] { NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human, NodeKinds.Stop, NodeKinds.Pushed, "acme.deploy/deploy" })
+        foreach (var kind in new[] { NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human, NodeKinds.Stop, "acme.deploy/deploy" })
         {
             var source = NodeAuthorities.Of(Declared(kind))!.ReachBy;
             Assert.Equal((kind, NodeRefusal.NotAuthority), (kind, NodeLifecycle.Apply(Declared(kind), active, skip with { Source = source }).Refused));
@@ -369,7 +369,6 @@ public sealed class NodeLifecycleTests
     /// </summary>
     [Theory]
     [InlineData(NodeKinds.Look, NodeSource.Review, NodeSource.Landing)]
-    [InlineData(NodeKinds.PullRequest, NodeSource.Landing, NodeSource.Review)]
     public void Each_kinds_record_passes_its_attempt_over_by_its_own_source_alone(string kind, string own, string other)
     {
         var node = Declared(kind);
@@ -517,7 +516,7 @@ public sealed class NodeLifecycleTests
 
         var running = NodeLifecycle.Apply(node, unknown.Status, new NodeMove(NodeStates.Active, NodeCause.Daoris));
         Assert.Equal((NodeStates.Active, 2, (int?)2), (running.Status.State, running.Status.Attempt, running.Status.Unreconciled));
-        var observed = NodeLifecycle.Apply(Declared(NodeKinds.Pushed), unknown.Status, new NodeMove(NodeStates.Active, NodeCause.Daoris));
+        var observed = NodeLifecycle.Apply(Declared(NodeKinds.Line), unknown.Status, new NodeMove(NodeStates.Active, NodeCause.Daoris));
         Assert.Equal((NodeStates.Active, (int?)null), (observed.Status.State, observed.Status.Unreconciled));
     }
 
@@ -526,8 +525,6 @@ public sealed class NodeLifecycleTests
     /// clears it and the node is offered a start on the new one, where it once stayed Unreconciled and was skipped by the start loop for good.
     /// </summary>
     [Theory]
-    [InlineData(NodeKinds.Pushed)]
-    [InlineData(NodeKinds.PullRequest)]
     [InlineData(NodeKinds.Line)]
     [InlineData(NodeKinds.Claimed)]
     public void An_observed_node_s_unknown_never_holds_its_next_attempt(string kind)
@@ -559,7 +556,7 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void An_unarmed_node_starts_as_before()
     {
-        var node = Declared(NodeKinds.Pushed);
+        var node = Declared(NodeKinds.Line);
         var ready = Moved(node, Moved(node, At(NodeStates.Active, attempt: 1), new NodeMove(NodeStates.Invalidated, NodeCause.Daoris)), new NodeMove(NodeStates.Ready, NodeCause.Daoris));
         Assert.Null(ready.Unreconciled);
         Assert.Equal(NodeStates.Active, NodeLifecycle.Apply(node, ready, Start(2)).Status.State);

@@ -90,18 +90,16 @@ public sealed class SetupPresetsTests
         var land = NodeGraphs.Read(WorkflowDefaults.Of("pull-request")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land);
         var written = land with { Options = new Dictionary<string, string>(land.Options) { ["pattern"] = "\"work/{ticket}\"" } };
 
-        var open = LandNodes.Resolve(land, Plugin);
-        var named = LandNodes.Resolve(written, Plugin);
+        var open = LandNodes.Resolve(land);
+        var named = LandNodes.Resolve(written);
 
         Assert.Equal(LandNodes.DefaultPattern, open["pattern"]);
-        Assert.Equal(Plugin, open["plugin"]);
+        Assert.False(open.ContainsKey("plugin"));
         Assert.False(open.ContainsKey("key"));
         // A written pattern stands, and one that says {ticket} resolves the default key.
         Assert.False(named.ContainsKey("pattern"));
         Assert.Equal(BranchPatterns.DefaultKey, named["key"]);
-        Assert.Empty(LandNodes.Resolve(NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land), Plugin));
-        // No plugin serves the remote: none is resolved, and the bind holds the run.
-        Assert.False(LandNodes.Resolve(land, platformPlugin: null).ContainsKey("plugin"));
+        Assert.Empty(LandNodes.Resolve(NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson).Graph!.Nodes.First(node => node.Kind == NodeKinds.Land)));
     }
 
     [Theory]
@@ -116,26 +114,28 @@ public sealed class SetupPresetsTests
     public void A_remote_s_platform_is_read_from_its_host(string? host, string? platform) => Assert.Equal(platform, SetupPresets.PlatformOf(host));
 
     [Fact]
-    public void A_pull_request_is_opened_by_the_rule_s_own_plugin_else_the_one_named_for_the_remote_s_platform()
+    public void A_pull_request_is_opened_by_the_plugin_named_for_the_remote_s_platform_that_performs_steps()
     {
-        var catalog = new Catalog(new Entry(Plugin, [HookPoints.Land]), new Entry("example.notes", ["quest/consider"]), new Entry("other.lands", [HookPoints.Land]));
+        var catalog = new Catalog(new Entry(Plugin, [HookPoints.Perform]), new Entry("example.notes", ["quest/consider"]), new Entry("other.lands", [HookPoints.Land]));
 
-        Assert.Equal(Plugin, SetupPresets.PluginFor("github.com", named: null, catalog));
-        Assert.Equal("other.lands", SetupPresets.PluginFor("github.com", named: "other.lands", catalog));
-        Assert.Null(SetupPresets.PluginFor("gitlab.com", named: null, catalog));
-        Assert.Null(SetupPresets.PluginFor(null, named: null, catalog));
-        Assert.Null(SetupPresets.PluginFor("github.com", named: null, new Catalog(new Entry(Plugin, [HookPoints.Land]) { Enabled = false })));
+        Assert.Equal(Plugin, SetupPresets.PluginFor("github.com", catalog));
+        Assert.Null(SetupPresets.PluginFor("gitlab.com", catalog));
+        Assert.Null(SetupPresets.PluginFor(null, catalog));
+        Assert.Null(SetupPresets.PluginFor("github.com", new Catalog(new Entry(Plugin, [HookPoints.Perform]) { Enabled = false })));
     }
 
+    /// <summary>G8, D240 point 5: the delivery is preselected from a match and the declaration alone; a plugin serving the platform suggests nothing.</summary>
     [Fact]
-    public void The_delivery_preselected_keeps_a_match_else_reads_the_declaration_then_the_remote()
+    public void The_delivery_preselected_keeps_a_match_else_reads_the_declaration_and_never_suggests_a_pull_request()
     {
         var merge = new SetupMatch("merge-after-accept", []);
-        Assert.Equal("merge-after-accept", SetupPresets.Suggest(merge, chosen: true, declaresIntegration: true, plugin: Plugin));
-        Assert.Equal("integrated", SetupPresets.Suggest(merge, chosen: false, declaresIntegration: true, plugin: Plugin));
-        Assert.Equal("pull-request", SetupPresets.Suggest(new SetupMatch("not-driven", []), chosen: false, declaresIntegration: false, plugin: Plugin));
-        Assert.Equal("branch-to-push", SetupPresets.Suggest(new SetupMatch("branch-to-push", ["accept `automatic`"]), chosen: true, declaresIntegration: true, plugin: Plugin));
-        Assert.Equal("merge-after-accept", SetupPresets.Suggest(new SetupMatch(null, ["method `push`"]), chosen: true, declaresIntegration: false, plugin: null));
+        Assert.Equal("merge-after-accept", SetupPresets.Suggest(merge, chosen: true, declaresIntegration: true));
+        Assert.Equal("integrated", SetupPresets.Suggest(merge, chosen: false, declaresIntegration: true));
+        Assert.Equal("merge-after-accept", SetupPresets.Suggest(new SetupMatch("not-driven", []), chosen: false, declaresIntegration: false));
+        Assert.Equal("branch-to-push", SetupPresets.Suggest(new SetupMatch("branch-to-push", ["accept `automatic`"]), chosen: true, declaresIntegration: true));
+        Assert.Equal("merge-after-accept", SetupPresets.Suggest(new SetupMatch(null, ["method `push`"]), chosen: true, declaresIntegration: false));
+        Assert.DoesNotContain(SetupPresets.PullRequest, new[] { true, false }.SelectMany(chosen => new[] { true, false }
+            .Select(declares => SetupPresets.Suggest(new SetupMatch("not-driven", []), chosen, declares))));
     }
 
     /// <summary>SETUPUX1a: the suggestion says why by a code the page words, with the driver's sentence beside it.</summary>
@@ -143,17 +143,16 @@ public sealed class SetupPresetsTests
     public void The_suggestion_says_why_by_a_code_with_the_drivers_sentence()
     {
         var merge = new SetupMatch("merge-after-accept", []);
-        (string Preset, string Code) Said(SetupMatch match, bool chosen, bool declares, string? plugin)
+        (string Preset, string Code) Said(SetupMatch match, bool chosen, bool declares)
         {
-            var (preset, why) = SetupPresets.Suggestion(match, chosen, declares, plugin);
+            var (preset, why) = SetupPresets.Suggestion(match, chosen, declares);
             return (preset, why.Code);
         }
 
-        Assert.Equal(("merge-after-accept", SuggestionWhy.Kept), Said(merge, chosen: true, declares: true, Plugin));
-        Assert.Equal(("integrated", SuggestionWhy.Integration), Said(merge, chosen: false, declares: true, Plugin));
-        Assert.Equal(("pull-request", SuggestionWhy.Plugin), Said(merge, chosen: false, declares: false, Plugin));
-        Assert.Equal(("merge-after-accept", SuggestionWhy.Default), Said(merge, chosen: false, declares: false, plugin: null));
-        Assert.All(new[] { SuggestionWhy.Kept, SuggestionWhy.Integration, SuggestionWhy.Plugin, SuggestionWhy.Default },
+        Assert.Equal(("merge-after-accept", SuggestionWhy.Kept), Said(merge, chosen: true, declares: true));
+        Assert.Equal(("integrated", SuggestionWhy.Integration), Said(merge, chosen: false, declares: true));
+        Assert.Equal(("merge-after-accept", SuggestionWhy.Default), Said(merge, chosen: false, declares: false));
+        Assert.All(new[] { SuggestionWhy.Kept, SuggestionWhy.Integration, SuggestionWhy.Default },
             code => Assert.False(string.IsNullOrWhiteSpace(SuggestionWhy.Of(code).Said), code));
     }
 
