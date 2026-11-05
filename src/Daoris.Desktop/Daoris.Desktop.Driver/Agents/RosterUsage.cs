@@ -20,16 +20,10 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// How this adapter's accounts' windows are asked (CODEXUSE1): its own question, else its owner's, since a door's readings
     /// are its owner's as its accounts are (AGT7). Null asks nothing.
     /// </summary>
-    public UsageQuestion? UsageOf(string adapter)
-    {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain?.Usage is { } own) return own;
-        return roster.CoolingAgent(resolved) is { } owner
-               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
-               && roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.Resolve(owner).Toolchain?.Usage
+    public UsageQuestion? UsageOf(string adapter) =>
+        roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
+            ? roster.Adapters.Registry.UsageOf(new DoorId(roster.Adapters.Resolve(adapter).Name)) as UsageQuestion
             : null;
-    }
 
     /// <summary>
     /// Whether this adapter's accounts say what they have left (D130 §6): its door carries the agent's frame

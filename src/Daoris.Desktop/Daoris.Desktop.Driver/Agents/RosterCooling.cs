@@ -44,31 +44,17 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a
     /// door's limits are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
     /// </summary>
-    public LimitWords? LimitsOf(string adapter)
-    {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain?.Limits is { } own) return own;
-        return CoolingAgent(resolved) is { } owner
-               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
-               && roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.Resolve(owner).Toolchain?.Limits
-            : null;
-    }
+    public LimitWords? LimitsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.LimitsOf(door) : null;
+
+    /// <summary>The registry's door for a name this set carries, else null (an unknown name reads no words).</summary>
+    private DoorId? Held(string adapter) =>
+        roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? new DoorId(roster.Adapters.Resolve(adapter).Name) : null;
 
     /// <summary>
     /// The words this adapter's agent refuses a start for its sign-in in (ROSTER1b): its own entry, else its owner's, since a
     /// door's refusals are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
     /// </summary>
-    public SignInWords? SignInOf(string adapter)
-    {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain?.SignIn is { } own) return own;
-        return CoolingAgent(resolved) is { } owner
-               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
-               && roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.Resolve(owner).Toolchain?.SignIn
-            : null;
-    }
+    public SignInWords? SignInOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.SignInOf(door) : null;
 
     /// <summary>
     /// A start on this adapter as <paramref name="profile"/> was refused for its sign-in (ROSTER1b, D150 §5.3): that account,
@@ -103,16 +89,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// How this adapter says an account's windows (TOOL6c, D130 §5.2): its own entry, else its owner's, since a door's readings
     /// are its owner's as its accounts are (AGT7). Null says nothing.
     /// </summary>
-    public WindowWords? WindowsOf(string adapter)
-    {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain?.Windows is { } own) return own;
-        return CoolingAgent(resolved) is { } owner
-               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
-               && roster.Adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.Resolve(owner).Toolchain?.Windows
-            : null;
-    }
+    public WindowWords? WindowsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.WindowsOf(door) : null;
 
     /// <summary>
     /// What a session's door said about the windows of the account it runs as (TOOL6c, D130 §5.2): read by the adapter's

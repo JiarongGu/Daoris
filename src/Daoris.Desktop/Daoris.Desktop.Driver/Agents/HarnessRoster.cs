@@ -245,6 +245,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <inheritdoc cref="RosterReport.AccountToolchain"/>
     public HarnessToolchain? AccountToolchain(string adapter) => Reporting.AccountToolchain(adapter);
 
+    /// <summary>
+    /// The variable a key for this adapter's accounts is handed to the tool in, or null where its accounts take no key from Daoris: the
+    /// one reader, the window's key actions and the terminal's <c>agent key</c> alike, through the registry's account agent.
+    /// </summary>
+    public string? KeyVariableOf(string adapter) =>
+        Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
+            ? Adapters.Registry.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null
+            : null;
+
+    /// <summary>Whether this adapter's agent carries a window a week at a time once it passes (<c>WeekFixed</c>), read from its account agent's pool through the registry.</summary>
+    public bool WeekFixedOf(string adapter) =>
+        Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
+        && Adapters.Registry.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.WeekFixed == true;
+
     /// <inheritdoc cref="RosterReport.AccountAgentOf"/>
     public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) => Reporting.AccountAgentOf(adapter);
 

@@ -103,7 +103,7 @@ internal static class ClaudeCodeProvider
             Known<ISettingsFile>.Declared(new ClaudeSettingsFile(), Evidence), Known<IChildVocabulary>.Absent,
             Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence),
             Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
-            Known<IConversationHome>.Absent,
+            Known<IConversationHome>.Declared(ClaudeConversationHome.Home, Evidence),
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }

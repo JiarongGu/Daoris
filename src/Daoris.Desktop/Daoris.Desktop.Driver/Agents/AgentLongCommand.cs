@@ -105,7 +105,7 @@ internal static class AgentLongCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        var (name, toolchain, _, roster) = AgentsCommand.Agent(args, "key", "<agent>", world, path);
+        var (name, _, _, roster) = AgentsCommand.Agent(args, "key", "<agent>", world, path);
         var replacing = AgentsCommand.FlagValue(args, "--account");
         if (AgentsCommand.Operands(args, AgentsCommand.Valued).Count > 2)
         {
@@ -116,7 +116,7 @@ internal static class AgentLongCommand
 
         // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
         var owner = roster.Adapters.OwnerOf(name);
-        if ((toolchain.AccountOf is null ? toolchain : roster.AccountToolchain(name))?.KeyVariable is not { Length: > 0 })
+        if (roster.KeyVariableOf(name) is null)
         {
             throw new AgentWords($"`{name}` takes no API key from Daoris — sign in with its own login instead.");
         }

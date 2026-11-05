@@ -59,7 +59,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
                 .Select(owner =>
                 {
                     var agent = owner.Key;
-                    var fixedWeek = owner.Any(door => door.Toolchain.WeekFixed);
+                    var fixedWeek = owner.Any(door => roster.WeekFixedOf(door.Door));
                     var said = new Dictionary<string, AccountSaid?>(StringComparer.OrdinalIgnoreCase);
                     var accounts = Accounts(roster.Home, agent);
                     foreach (var account in accounts) said[account] = Safe(() => AccountWindows.SaidOf(roster.Home, agent, account, now));

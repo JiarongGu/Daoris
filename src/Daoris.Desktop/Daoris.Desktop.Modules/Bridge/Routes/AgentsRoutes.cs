@@ -368,7 +368,7 @@ public sealed class AgentsRoutes(DriverContext context)
         // inward, and is answered only by its handle — here, on the roster, and in any event.
         if (action == "key-add")
         {
-            if (_loop.Harnesses.AccountToolchain(harness)?.KeyVariable is not { Length: > 0 })
+            if (_loop.Harnesses.KeyVariableOf(harness) is null)
             {
                 throw new DriverException(
                     $"`{harness}` takes no API key from Daoris — sign it in instead.");
@@ -390,7 +390,7 @@ public sealed class AgentsRoutes(DriverContext context)
         // handle only, as `key-add` is. The terminal's twin is `agent key <agent> --account`.
         if (action == "key-replace")
         {
-            if (_loop.Harnesses.AccountToolchain(harness)?.KeyVariable is not { Length: > 0 })
+            if (_loop.Harnesses.KeyVariableOf(harness) is null)
             {
                 throw new DriverException(
                     $"`{harness}` takes no API key from Daoris — sign it in instead.");

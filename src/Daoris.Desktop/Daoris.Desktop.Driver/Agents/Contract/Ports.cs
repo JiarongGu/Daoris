@@ -128,7 +128,23 @@ public interface IConversationHome
 {
     /// <summary>The paths under an account's home a conversation keeps, for this version of the agent (null: any).</summary>
     IReadOnlyList<string> Keeps(string? version);
+
+    /// <summary>
+    /// Where the agent files a session by the working directory it ran in, under the person's own home for it (a folder named by the
+    /// directory, as <see cref="ProjectFolders"/> says); null for an agent that files its sessions another way (Codex, by date).
+    /// </summary>
+    ProjectFolders? Projects => null;
 }
+
+/// <summary>
+/// An agent's own home laid out by project folders: the variable naming it, its place where none is set, the folder the projects are in, and
+/// how a working directory becomes a folder's name. What the workspace's wiring page lists as Daoris's leftovers is read through it.
+/// </summary>
+/// <param name="Variable">The environment variable naming the person's own home for the agent.</param>
+/// <param name="DefaultFolder">The home's folder under the user profile where no variable names one.</param>
+/// <param name="Folder">The folder of the home the projects are filed in.</param>
+/// <param name="Flatten">A working directory's name, as the agent names the folder it files that directory's sessions in.</param>
+public sealed record ProjectFolders(string Variable, string DefaultFolder, string Folder, Func<string, string> Flatten);
 
 /// <summary>
 /// How a provider takes the product's rules for one session (the design §4.5): its own settings file, its hooks among them, and the
