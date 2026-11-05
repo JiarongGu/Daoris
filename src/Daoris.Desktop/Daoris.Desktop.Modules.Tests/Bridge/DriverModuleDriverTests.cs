@@ -172,11 +172,11 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
             Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
 
             await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
-            Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+            Assert.Equal("claude-code-acp", ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("intake", []));
             Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
-            Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+            Assert.Null(ActorChoices.FirstAgent("intake", DriverConfig.Load(DriverConfigPath)));
             Assert.Empty(DriverConfig.Load(DriverConfigPath).Actors["intake"]);
         }
         finally
@@ -202,7 +202,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
             var off = await AnswerAsync(module, "SET_ROLE", Staff("ask-daoris", []));
             Assert.Equal("", off.GetProperty("helperAdapter").GetString());
-            Assert.Null(DriverConfig.Load(DriverConfigPath).HelperAdapter);
+            Assert.Null(ActorChoices.FirstAgent("ask-daoris", DriverConfig.Load(DriverConfigPath)));
         }
         finally
         {
@@ -341,7 +341,6 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
         var config = DriverConfig.Load(DriverConfigPath);
         Assert.Equal(4, config.Cap);
-        Assert.Equal("stub", config.Adapter);
         Assert.Equal(45, config.KeptTimeoutMinutes);
         Assert.Equal(["node", "agent.mjs"], config.Commands["stub"]);
     }

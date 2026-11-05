@@ -43,7 +43,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             Assert.Empty(staffing.Read()!.Actors["intake"]);
             File.WriteAllText(DriverConfigPath, File.ReadAllText(DriverConfigPath).Replace("\"claude-code\"", "\"codex-acp\""));
             Assert.Equal(StaffingChecks.Same, staffing.Check(StaffingCheckAt.Look).How);
-            Assert.Equal("claude-code", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Equal("claude-code", ActorChoices.FirstAgent("build", DriverConfig.Load(DriverConfigPath)));
         }
         finally
         {
@@ -63,7 +63,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
                 [new { agent = "codex-acp" }, new { agent = "claude-code", model = "opus", effort = "high" }]));
 
             var config = DriverConfig.Load(DriverConfigPath);
-            Assert.Equal("codex-acp", config.Adapter);
+            Assert.Equal("codex-acp", ActorChoices.FirstAgent("build", config));
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["chat"]);
             Assert.Equal([new ActorChoice("claude-code")], config.Actors["brainstorm"]);
             var rows = (await AnswerAsync(module, "ROLES")).GetProperty("roles").EnumerateArray().ToList();
@@ -131,10 +131,10 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         var loop = Loop();
         var build = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("claude-code-acp")] };
 
-        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Adapter = "claude-code", Actors = build }));
+        Assert.Equal(SessionWire.Acp, DriverContext.DoorOf(loop, DriverConfig.Empty with { Actors = build }));
         Assert.Equal(SessionWire.Pipe, DriverContext.DoorOf(loop, DriverConfig.Empty with
         {
-            Adapter = "claude-code-acp", Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
         }));
     }
 
@@ -163,7 +163,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             var module = new DriverModule(Bus, loop);
 
             await AnswerAsync(module, "SET_ROLE", Staff("build", "build", [new { agent = "other" }]));
-            Assert.Equal("other", DriverConfig.Load(DriverConfigPath).Adapter);
+            Assert.Equal("other", ActorChoices.FirstAgent("build", DriverConfig.Load(DriverConfigPath)));
 
             var started = await AnswerAsync(module, "START_CHAT", new { repository = "engine", text = "Fix the build.", ownTree = false });
 

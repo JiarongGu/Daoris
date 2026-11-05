@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -16,7 +17,7 @@ public sealed class HelpSetupDoorTests : DriverModuleBridge
     [Fact]
     public async Task The_setup_door_is_refused_naming_the_place_door()
     {
-        (DriverConfig.Empty with { Adapter = "claude-code-acp" }).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
+        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
         var module = await UpAsync();
         Proposal(Setup);
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -120,7 +121,7 @@ public sealed class DriverModuleReconcileTests : DriverModuleBridge
 
     private async Task<DriverModule> UpAsync()
     {
-        (DriverConfig.Empty with { Adapter = "claude-code-acp" }).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
+        (StaffedRoles.Config("claude-code-acp")).WithDrivable("atlas", true).WithTrees("atlas", true).Save(DriverConfigPath);
         var loop = Loop();
         var module = new DriverModule(Bus, loop) { SetupWorlds = _ => _world, Patience = TimeSpan.FromMinutes(1) };
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SetupStandIn.EmptyHost())));

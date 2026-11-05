@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -99,7 +100,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     public async Task A_new_conversation_starts_on_Chat_s_order_never_the_machine_s_adapter()
     {
         var (_, module, _) = await UpAsync(words: true);
-        ActorChoices.With(DriverConfig.Empty with { Adapter = "ghost" }, "chat", [new ActorChoice("talk", null)]).Save(DriverConfigPath);
+        ActorChoices.With(DriverConfig.Empty, "chat", [new ActorChoice("talk", null)]).Save(DriverConfigPath);
 
         var started = await AnswerAsync(module, "START_CHAT", new { repository = "engine" });
         var from = await AnswerAsync(module, "SESSION_START_FROM", new { id = "c1" });

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Desktop.Modules;
 using Daoris.Driver;
 
@@ -81,7 +82,7 @@ public sealed class StartWiringRouteTests : Bridge
         new HarnessSettings().WithDefault("stub", "work").WithWorkspaceDefault("aurora", "stub", "office")
             .Save(HarnessSettingsPath);
         var module = Module();
-        DriverConfig.Load(DriverConfigPath).WithIntake("stub").Save(DriverConfigPath);
+        DriverConfig.Load(DriverConfigPath).StaffIntake("stub").Save(DriverConfigPath);
 
         var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default", "aurora" } });
 
@@ -110,7 +111,7 @@ public sealed class StartWiringRouteTests : Bridge
     public async Task An_intake_agent_the_driver_does_not_know_is_held_in_its_own_words()
     {
         var module = Module();
-        DriverConfig.Load(DriverConfigPath).WithIntake("nobody-knows").Save(DriverConfigPath);
+        DriverConfig.Load(DriverConfigPath).StaffIntake("nobody-knows").Save(DriverConfigPath);
 
         var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default" } });
 
