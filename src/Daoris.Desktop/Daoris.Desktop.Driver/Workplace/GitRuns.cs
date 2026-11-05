@@ -132,7 +132,7 @@ internal static class GitRuns
         // that writes git's input (END4a's `update-ref --stdin`) and a test's stand-in answer are always asked as written.
         var run = () => RunGitAsync(root, arguments, environment, timeout, input, ct);
         return environment is null && timeout is null && input is null && Answered.Value is null
-            ? GitFacts.Asked(root, arguments, run) ?? RefSnapshot.Asked(root, arguments, run) ?? run()
+            ? GitFacts.Asked(root, arguments, run) ?? RefSnapshot.Asked(root, arguments, run) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run()
             : run();
     }
 
@@ -348,7 +348,7 @@ internal static class GitRuns
     internal static Task<int> ReadGitAsync(
         string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct) =>
         // GITAPP1a-i: through the one seam, which raises Started for this runner too (once RunGitAsync's alone).
-        GitLaunch.LaunchAsync(
+        (Runs.Value is null && Answered.Value is null ? GitReadOnce.Streamed(root, arguments, take, ct) : null) ?? GitLaunch.LaunchAsync(
             GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, GitRunner.Streamed, () => ReadLaunchedAsync(root, arguments, take, ct));
 
     private static async Task<int> ReadLaunchedAsync(

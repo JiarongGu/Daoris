@@ -8,8 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// once through today's chain (<see cref="SessionReviews.ChainReadAsync"/>, the oracle) and once through the graph the route reads
 /// through (<see cref="SessionReviews.TimedAsync"/>), and the two outcomes are held equal: an answer field by field, its patches byte for
 /// byte, or a refusal (none answered) or a fault by its type and words. The commands each ran are held equal too: the Π reads (every
-/// diff, <c>status</c> and <c>merge-tree</c>) in the same order, and every other start alike but for the graph's wasted speculative
-/// starts and the <c>--show-toplevel</c>s it shares. Nothing moves the tree between the two reads.
+/// diff, <c>status</c> and <c>merge-tree</c>) in the same order, each once, and every other start ran or answered by one the graph ran
+/// (<see cref="GitReadOnce"/>), but for the graph's wasted speculative starts. Nothing moves the tree between the two reads.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -72,25 +72,39 @@ public sealed class ReviewGraphTodayTests : LandedFixture
         static string Spelled(GitLaunched start) => string.Join(' ', start.Arguments);
         static bool Program(GitLaunched start) => GitLaunch.Command(start.Arguments) is [var verb, ..] && Programs.Contains(verb);
 
-        // Π: the same reads in the same order (P1.1: one chain in today's order). The offer's and the landed review's own reads are its.
-        Assert.Equal(chain.Where(Program).Select(Spelled), graph.Where(Program).Select(Spelled));
+        // Π: the same reads in the same order (P1.1: one chain in today's order), each asked once (GitReadOnce). The offer's and the
+        // landed review's own reads are its.
+        Assert.Equal(chain.Where(Program).Select(Spelled).Distinct(), graph.Where(Program).Select(Spelled));
 
-        // The rest: the chain's starts all ran in the graph but the shared --show-toplevel; the graph's extras are speculative ones.
+        // The rest: each of the chain's starts ran in the graph, or is answered by one it ran: the same question asked before, a part
+        // of the layout's one rev-parse, or a branch's commit from the listing of the refs. The graph's extras are speculative ones,
+        // the layout's rev-parse and the listing.
+        var ran = graph.Select(Asked).ToHashSet(StringComparer.Ordinal);
         var left = graph.Select(Spelled).ToList();
         foreach (var start in chain)
         {
             if (left.Remove(Spelled(start))) continue;
-            Assert.True(start.Arguments is ["rev-parse", "--show-toplevel"], $"today's chain ran `git {Spelled(start)}`, which the graph did not");
+            var asked = Asked(start);
+            var answered = ran.Contains(asked)
+                || Layout.Contains(asked) && ran.Contains(string.Join(' ', GitReadOnce.Layout))
+                || asked.StartsWith("rev-parse --verify --quiet refs/", StringComparison.Ordinal) && ran.Any(each => each.StartsWith("for-each-ref ", StringComparison.Ordinal));
+            Assert.True(answered, $"today's chain ran `git {Spelled(start)}`, which the graph neither ran nor answered");
         }
 
-        foreach (var extra in left)
+        foreach (var extra in left.Select(each => Asked(graph.First(start => Spelled(start) == each))))
         {
             Assert.True(
                 extra.StartsWith("rev-parse ", StringComparison.Ordinal) || extra.StartsWith("merge-base ", StringComparison.Ordinal)
-                || extra.StartsWith("rev-list ", StringComparison.Ordinal) || extra.StartsWith("symbolic-ref ", StringComparison.Ordinal),
+                || extra.StartsWith("rev-list ", StringComparison.Ordinal) || extra.StartsWith("symbolic-ref ", StringComparison.Ordinal)
+                || extra.StartsWith("for-each-ref ", StringComparison.Ordinal),
                 $"the graph ran `git {extra}`, which today's chain did not, and which no speculative node of the graph runs");
         }
+
+        // A start's command past git's own options.
+        static string Asked(GitLaunched start) => string.Join(' ', GitLaunch.Command(start.Arguments));
     }
+
+    private static readonly string[] Layout = ["rev-parse --show-toplevel", "rev-parse --path-format=absolute --git-common-dir", "rev-parse --abbrev-ref HEAD"];
 
     // 1-2. The tree gone: no folder, an empty one; with no landing the refusal, with one the landed review.
     [Fact]

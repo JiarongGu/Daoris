@@ -121,8 +121,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it disputes is answered by the person's *Reviewed* or *Accept…*. Under a saved graph the `opinion` node says whether one is
     asked, and chooses among the reviewers the place declares; with none declared it cannot start, said on its node. `SET_OPINION none` on a saved-graph place is refused.
     (from D155, D190, D227)
-27. Review's diff is a dependency graph of today's git reads, uncached, taking no lock and refreshing no index in a tree Daoris does
-    not own. Leaving the page stops its git. (from D202)
+27. Review's diff is a dependency graph of today's git reads, kept by no later open, taking no lock and refreshing no index in a tree
+    Daoris does not own. Within one open each question is asked of git once (`GitReadOnce`): a question asked again is handed the
+    first answer, a tree's layout is one `rev-parse`, and a branch's commit comes from one listing of the folder's refs. Leaving the
+    page stops its git. (from D202)
 
 **Landing**
 
