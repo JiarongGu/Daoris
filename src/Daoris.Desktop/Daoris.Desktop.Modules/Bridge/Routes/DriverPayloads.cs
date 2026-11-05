@@ -22,6 +22,9 @@ public sealed record SetNotify(bool Notify);
 /// <summary>No minutes, or none whole, is the driver's refusal, as less than one is.</summary>
 public sealed record SetCoolOff(long? Minutes);
 
+/// <summary>No minutes, or none whole, is the driver's refusal, as a value out of its bounds is.</summary>
+public sealed record SetQuiet(long? Minutes);
+
 /// <summary>No count, or none whole, is the driver's refusal, as less than one is.</summary>
 public sealed record SetCap(long? Cap);
 
