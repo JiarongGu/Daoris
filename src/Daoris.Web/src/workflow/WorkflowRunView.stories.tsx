@@ -61,6 +61,11 @@ export const BindingUnread: Story = { args: { answer: answerOf({ ...IN_REVIEW, s
   problem: 'Its stored run binding could not be read. Restore the binding to continue.' }) } };
 export const BindingUnreadChineseDark: Story = { ...BindingUnread, decorators: [chinese, dark] };
 
+/** A binding problem as a code and its values, worded from the catalogue: the driver's English beside it is never shown. */
+export const BindingProblemCoded: Story = { args: { answer: answerOf({ ...IN_REVIEW, steps: [], at: null,
+  problem: 'the driver’s English, not shown', problemCoded: { code: 'not-saved', values: { workflow: 'docs-to-pr' } } }) } };
+export const BindingProblemCodedChinese: Story = { ...BindingProblemCoded, decorators: [chinese] };
+
 /** **Waiting on you**: a go-ahead its session asked, in open's hue, with the door to the ask where it is answered. */
 export const WaitingOnYou: Story = { args: { answer: answerOf(WAITING_ON_YOU) } };
 

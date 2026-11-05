@@ -250,7 +250,7 @@ public static class WorkflowRunReader
 
         return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
         {
-            Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository),
+            Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded,
             Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
         };
     }
@@ -276,7 +276,7 @@ public static class WorkflowRunReader
         {
             return new WorkflowRun(repository, workspace, current, [], [])
             {
-                Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Session = newest.Id, ChatRun = run,
+                Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded, Session = newest.Id, ChatRun = run,
                 ChatChecks = checks,
             };
         }

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { GraphRun, RunStep } from './run';
+import { bindingProblemSaid } from './place/effective';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { WORKING } from './runFixtures';
 
@@ -111,5 +112,20 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runShort(t, goOn)).toBe('waits for your go-on');
     expect(runShort(i18n.getFixedT('zh'), goOn)).toBe('等你继续或放弃');
     expect(runSaid(i18n.getFixedT('zh'), goOn.steps[0])).toBe('你重新打开的工作已再次交付：它的下一步委托 #q2 等你选择在新的工作上继续它，或放弃它。');
+  });
+});
+
+// A run's binding problem is worded from the catalogue by its code, the driver's English only where it sent none.
+describe('a run held on a binding problem', () => {
+  const coded = { problem: 'the driver’s English', problemCoded: { code: 'no-version', values: { workflow: 'docs-to-pr' } } };
+
+  it('says its code in English and Chinese, never the driver’s sentence', () => {
+    expect(bindingProblemSaid(t, coded)).toBe('`docs-to-pr` keeps no version that reads here.');
+    expect(bindingProblemSaid(i18n.getFixedT('zh'), coded)).toBe('`docs-to-pr` 在这里没有可读取的版本。');
+  });
+
+  it('says the driver’s sentence where it sent no code, or one this page does not know', () => {
+    expect(bindingProblemSaid(t, { problem: 'its graph changed.' })).toBe('its graph changed.');
+    expect(bindingProblemSaid(t, { problem: 'newer', problemCoded: { code: 'later', values: {} } })).toBe('newer');
   });
 });

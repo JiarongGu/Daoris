@@ -86,6 +86,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 10. A `land` method brings its tail only for `integrate`, which brings one `integrate`; `merge` and `branch` bring nothing. A `push`
     (Daoris's, through the push act) stands after a `branch` landing, and a pull request is a plugin's performed step
     (`<plugin>/pull-request`) after the `push`: steps a place composes, never a `land` method or a suggestion. (from D215, D227, D241)
+    A saved workflow that cannot bind or be drawn holds on a `BindingProblem` (a code and its values, `Said` its English): the chart
+    (`problemCoded` on `WorkflowEffective`) and the run page (`problemCoded` on a run, from `WorkflowProcess.Coded`) word it from the
+    catalogue in each language, the driver's sentence showing only where it sent no code. (from D241)
 11. A workflow file marks its pipeline: development (absent) or verification. A verification version holds at least one `check`
     and no `claimed`, `opinion`, `look`, `go-ahead`, `land` or `quest.close`. (from D192)
 12. A change that lowers the person's part applies only by the person's press; an agent's stays a proposal. Editing the home

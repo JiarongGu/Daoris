@@ -9,6 +9,7 @@ import {
   type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
   type WorkflowRun, type WorkflowRunAnswer,
 } from './run';
+import { bindingProblemSaid } from './place/effective';
 import { whySaid } from './routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
@@ -397,7 +398,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       {/* CHATFLOW1c: a chat run's checks are not yet enforced for a conversation, so they are never shown as a limit its tree holds. */}
       {checks && <p className="m-0 text-small text-ink-soft"><Inline text={checks} /></p>}
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
-      {run.problem ? <Prose className="text-small"><Inline text={run.problem} /></Prose> : <WorkflowChart
+      {run.problem ? <Prose className="text-small"><Inline text={bindingProblemSaid(t, run)} /></Prose> : <WorkflowChart
         workflow={runWorkflow(run)}
         page="repository"
         name={run.repository}

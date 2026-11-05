@@ -208,6 +208,8 @@ export interface WorkflowRun {
   at?: string | null;
   /** The driver's explanation where the bound process could not be read; an empty graph here is never a finished run. */
   problem?: string | null;
+  /** The problem as a code and its values, which the page words from its catalogue; absent or null where the driver has none. */
+  problemCoded?: { code: string; values: Record<string, string> } | null;
   workflowGate?: import('./gate').WorkflowGateState | null;
   /**
    * Its graph digest, bound identity when named, start plugins and each limit's sentence; and the route that chose its workflow, as its
