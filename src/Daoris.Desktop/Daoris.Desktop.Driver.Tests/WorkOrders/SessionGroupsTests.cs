@@ -1081,34 +1081,6 @@ public sealed class SessionGroupsTests
         Assert.Empty(kept.Latest!);
     }
 
-    /// <summary>The records are asked of the service's own door, closed ones included; a refusal is the driver's sentence.</summary>
-    [Fact]
-    public async Task The_records_are_asked_of_the_services_door_with_the_closed_ones()
-    {
-        var handler = new Answering("""[{"id":"s1","repository":"engine","state":"completed"}]""");
-
-        var json = await SessionRecords.ReadAsync("http://ledger.test/", null, handler);
-
-        Assert.Equal("http://ledger.test/api/sessions?includeClosed=true", handler.Asked);
-        Assert.Contains("\"s1\"", json);
-        await Assert.ThrowsAsync<DriverException>(() =>
-            SessionRecords.ReadAsync("http://ledger.test", null, new Answering("""{"error":"no"}""", HttpStatusCode.ServiceUnavailable)));
-    }
-
-    private sealed class Answering(string body, HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
-    {
-        public string? Asked { get; private set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            Asked = request.RequestUri!.ToString();
-            return Task.FromResult(new HttpResponseMessage(status)
-            {
-                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
-            });
-        }
-    }
-
     // ——— SESSONE1b (D167, the co-working design §1.6, §3): the reader groups by the entry the service answers. An entry's group is
     // the first of D126's groups any of its parts qualifies for, its leading part is the one that put it there, its parts go
     // newest last each with how it began, and an ended intake whose ask became quests leaves the list.

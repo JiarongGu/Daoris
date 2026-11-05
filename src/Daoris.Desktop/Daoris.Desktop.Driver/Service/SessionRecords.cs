@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// <summary>The service's session records, closed ones included (SESSUX1a): asked of its door, and read.</summary>
 public static class SessionRecords
 {
-    /// <summary>The door the records are read by: every record, closed ones included, as the page reads them.</summary>
+    /// <summary>The list's door for every record, closed ones included, as the page reads them.</summary>
     public const string Door = "/api/sessions?includeClosed=true";
 
     /// <summary>Every record the answer holds, in its order; one with no id is skipped.</summary>
@@ -91,23 +91,6 @@ public static class SessionRecords
     private static bool Carries(JsonElement session, string code) =>
         session.TryGetProperty("noteParts", out var parts) && parts.ValueKind == JsonValueKind.Array
         && parts.EnumerateArray().Any(part => part.ValueKind == JsonValueKind.Object && Text(part, "code") == code);
-
-    /// <summary>
-    /// The records as the service answers them, over a client of this reader's own. A refusal is the driver's sentence
-    /// (<see cref="DriverException"/>), as every read through <see cref="DriverHttp"/> says it.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="ServiceClient"/> reads these records for the strikes and each quest's last run and keeps them to itself;
-    /// its file is another branch's while this one is built (TOOL4d), so the reader asks the same door with the same key
-    /// rather than growing that class. Moving it onto the client later changes no answer.
-    /// </remarks>
-    /// <param name="handler">The test seam, as <see cref="DriverHttp.Client"/>'s; production passes none.</param>
-    public static async Task<string> ReadAsync(
-        string baseUrl, string? key, HttpMessageHandler? handler = null, CancellationToken ct = default)
-    {
-        using var http = DriverHttp.Client(key, handler);
-        return await DriverHttp.GetAsync(http, baseUrl.TrimEnd('/') + Door, ct).ConfigureAwait(false);
-    }
 
     private static DateTimeOffset Time(JsonElement element, string name) =>
         Moments.Read(element, name) ?? DateTimeOffset.MinValue;

@@ -13,9 +13,15 @@ public sealed class SessionRoutes(HostWiring host) : IRouteModule
 
     private readonly SessionListAnswers _list = new(host);
 
+    private SessionListChanges? _changes;
+
+    private SessionListChanges Changes => LazyInitializer.EnsureInitialized(ref _changes, () => new(_list));
+
     public void Map(RouteMap routes)
     {
         routes.Map<ListSessions, SessionResponse[]>(ListAsync);
+        routes.Map<ListSessionChanges, SessionChangesResponse>(async (request, http, ct) =>
+            await Changes.SinceAsync(request.Since, host.MachineLocal(http), ct));
         // A teammate's record is named `machine/id`, whose slash travels escaped and stays so in the address's value.
         routes.Map<ReadSession, SessionResponse>(async (request, http, ct) =>
             await _list.OneAsync(Uri.UnescapeDataString(request.Id), host.MachineLocal(http), ct) is { } one

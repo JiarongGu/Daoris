@@ -28,6 +28,17 @@ public sealed record ReadSession(string Id) : IRoute<SessionResponse>
 }
 
 /// <summary>
+/// The widest list (every repository, closed included, every workspace) as its change since a mark this door answered: a reader that
+/// keeps the records lays the change over them and reads the list whole no more.
+/// </summary>
+/// <param name="Since">The mark of the answer the reader holds; none, or one this host no longer holds, is answered every record.</param>
+public sealed record ListSessionChanges(string? Since = null) : IRoute<SessionChangesResponse>
+{
+    public static string Method => "GET";
+    public static string Path => "/api/sessions/changes";
+}
+
+/// <summary>
 /// The move of the ledger's state machine. Not found for an unknown record; a conflict for a terminal record, an illegal move, a tree
 /// another session holds, or words that changed; a bad request for an unknown state name.
 /// </summary>
@@ -179,6 +190,8 @@ public sealed record MoveSaid(string Id, string? Word, string? To = null) : IRou
 [JsonSerializable(typeof(ListSessions))]
 [JsonSerializable(typeof(ReadSession))]
 [JsonSerializable(typeof(SessionResponse))]
+[JsonSerializable(typeof(ListSessionChanges))]
+[JsonSerializable(typeof(SessionChangesResponse))]
 [JsonSerializable(typeof(AdvanceSession))]
 [JsonSerializable(typeof(OpenSession))]
 [JsonSerializable(typeof(OpenChat))]

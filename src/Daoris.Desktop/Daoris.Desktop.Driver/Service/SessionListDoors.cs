@@ -11,7 +11,14 @@ public sealed class SessionListDoors
 {
     private readonly ServiceClient _service;
 
-    internal SessionListDoors(ServiceClient service) => _service = service;
+    internal SessionListDoors(ServiceClient service)
+    {
+        _service = service;
+        Kept = new SessionListKept(service);
+    }
+
+    /// <summary>The whole list held on this side and kept by its change since the last read, for the readers of every record.</summary>
+    public SessionListKept Kept { get; }
 
     /// <summary>
     /// The session list as the service wrote it, the active records or with <paramref name="includeClosed"/> every one: the text the

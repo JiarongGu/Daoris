@@ -194,6 +194,7 @@ public static class PersonDoors
         new("GET", "/api/channel/addressed", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}", DoorClass.Open),
+        new("GET", "/api/sessions/changes", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
         new("GET", "/api/sessions/{id}/memory", DoorClass.Open),
