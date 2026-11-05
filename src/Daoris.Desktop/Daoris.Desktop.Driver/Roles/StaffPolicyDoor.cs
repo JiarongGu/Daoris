@@ -33,28 +33,11 @@ public static class StaffCapabilities
         [StaffConditions.Quiet] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Retry],
     };
 
-    /// <summary>The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none.</summary>
-    public static RoleRefusal? Unenforced(RoleRecord record, StaffPolicy policy)
-    {
-        // A conversation's limit move is its own path (LimitMove), which reads neither a wait, an ask nor the bound of moves yet: nothing is
-        // offered before it is enforced (design §11 point 6), so a role that takes a conversation's work is refused those fields.
-        if (record.Takes.Any(work => work is RoleWork.Chat or RoleWork.AskDaoris))
-        {
-            var unread = policy.Moves.TryGetValue(StaffConditions.Limit, out var limit) && limit.Do is StaffActions.Wait or StaffActions.Ask
-                ? $"moves.limit` as `{limit.Do}"
-                : policy.Most is not null ? "most" : null;
-            if (unread is not null)
-            {
-                return new RoleRefusal(StaffPolicy.Code,
-                    $"`{record.Id}` takes a conversation's work, whose limit this build moves by its own order only, so its policy's `{unread}` is not enforced there yet and nothing was saved: "
-                    + "it enforces the rule, weights, shares, budgets and works.");
-            }
-        }
-
-        return Unenforced(record.Id, policy);
-    }
-
-    /// <inheritdoc cref="Unenforced(RoleRecord, StaffPolicy)"/>
+    /// <summary>
+    /// The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none. A
+    /// conversation's line reads its limit's wait and ask and the bound of its moves as a driven line does (CONTEXTDRIVE1n), so a role taking a
+    /// conversation's work is judged as every role is.
+    /// </summary>
     public static RoleRefusal? Unenforced(string role, StaffPolicy policy)
     {
         var field = policy.Moves.FirstOrDefault(move => !Enforced.TryGetValue(move.Key, out var actions) || !actions.Contains(move.Value.Do, StringComparer.Ordinal)) is { Key: { } key } unenforced
@@ -172,7 +155,7 @@ public static class StaffPolicyDoor
         if (staffed is not { Count: > 0 }) return (null, Refused($"`{role.Id}` has no choices of its own, so it keeps no policy: give it its choices first."));
         var (policy, refused) = press.Resolved(staffed, existing.Policy);
         if (refused is not null || policy is null) return (null, refused);
-        var judged = StaffCapabilities.Unenforced(role, policy) ?? StaffPolicy.Judge(role, staffed, policy);
+        var judged = StaffCapabilities.Unenforced(role.Id, policy) ?? StaffPolicy.Judge(role, staffed, policy);
         return judged is null ? (policy, null) : (null, judged);
     }
 

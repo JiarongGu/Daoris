@@ -225,14 +225,16 @@ public sealed class StaffPolicyDoorTests : IDisposable
     [InlineData("""{"limit":"ask"}""", "")]
     [InlineData("""{"limit":{"do":"wait"}}""", "")]
     [InlineData("""{"limit":"next"}""", ",\"most\":2")]
-    public void A_role_taking_a_conversations_work_is_refused_the_limit_waits_asks_and_bound_its_conversation_does_not_read(string moves, string rest)
+    public void A_role_taking_a_conversations_work_is_refused_its_moves_as_every_role_is_naming_the_rules_door(string moves, string rest)
     {
         var night = Role("build") with { Id = "night", Takes = [RoleWork.Chat], Scope = new RoleScope(RoleScope.Workspace, "w2") };
         var policy = Policy("order", [(Sonnet, ""), (Opus, "")], $",\"moves\":{moves}{rest}");
 
         var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(policy)));
 
-        Assert.Contains("takes a conversation's work", refused.Message);
+        // A conversation reads its limit's wait and ask and its moves' bound from the rules (CONTEXTDRIVE1n): no refusal of its own is left.
+        Assert.DoesNotContain("takes a conversation's work", refused.Message);
+        Assert.Contains("supervisor's rules", refused.Message);
         Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
     }
 

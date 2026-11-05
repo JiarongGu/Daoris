@@ -266,7 +266,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   `SupervisorRuleActs`; *Details*' Supervisor line and the supervisor's print reading them.
 - **CONTEXTDRIVE1g, h, k:** the rules' editors on the page (no page code reads them yet); a rule's hold on the head and
   *What needs you*; the room's and glossary's words.
-- **CONTEXTDRIVE1n, j:** a conversation's course reads the rules; `refer`, the agent supervisor's *course* act.
+- **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
 - **CONTEXTDRIVE1l, m:** `DriverConfig.Strikes` still parses `strikes`, which the migration takes out, so its readers
   (`QuestRetry`, `WorkspaceSetupRules`, the setting proposals, `driver list`, the seed) see the default, and about thirty
   tests set it; the policy record's `moves` and `most` are still parsed only to be refused; the installed proof.

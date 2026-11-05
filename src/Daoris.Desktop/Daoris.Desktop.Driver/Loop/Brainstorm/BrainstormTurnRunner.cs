@@ -202,13 +202,16 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
                         return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, AgentOffers.NotOffered, $"{AgentOffers.NotOffered}  brainstorm turn {turn.Turn}"));
                     }
 
+                    // A voice's provider that kept failing within its minutes drops it with that reason, never timed out (AGENTERRORS1d).
                     var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId, ended.Refusal) ? Limit
+                        : TransientEnded.Of(ended, timedOut: exitCode is null) is not null ? TransientEnded.Voice + "-transient"
                         : turnFailed is { Length: > 0 } ? "turn-failed"
                         : exitCode is null ? TimedOut
                         : exitCode != 0 ? "exited" : null;
                     return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, code, $"{code ?? "completed"}  brainstorm turn {turn.Turn}"));
                 },
                 ct, scope: scope, handedServers: [], minutes: turn.Minutes,
+                transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 said: _driver.Said(adapter, selection, sessionId),
                 // D205 §4.4: its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with
                 // it (above) for the pass's one bounded restart on the next account; a voice has no other entry to move to on this account.

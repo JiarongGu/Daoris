@@ -66,7 +66,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
             return await owner.RefuseAsync(ask, run.Code ?? HelperWhy.NotStarted, agent, files, ct).ConfigureAwait(false);
         }
 
-        return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct, run.Limit).ConfigureAwait(false);
+        return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct, run.Limit, run.Transient).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -75,8 +75,9 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     /// reset (LIMITRESUME1h), else <c>refused</c> with <c>no-answer</c>; then delivered.
     /// </summary>
     /// <param name="limited">An account's limit ended the helper's turn: its record's flag.</param>
+    /// <param name="transient">Its provider kept failing past the retry's bound (AGENTERRORS1d): refused <see cref="HelperWhy.Transient"/>.</param>
     private async Task<LookLine> SettleHelperAsync(
-        HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct, bool limited = false)
+        HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct, bool limited = false, bool transient = false)
     {
         var state = files.ReadState(ask.Id);
         if (state is not { State: HelperStates.Started, Helper: { } helper }) return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is not started: nothing to settle.");
@@ -101,7 +102,7 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         }
         else
         {
-            return await owner.RefuseAsync(ask, HelperWhy.NoAnswer, state.Agent, files, ct).ConfigureAwait(false);
+            return await owner.RefuseAsync(ask, transient ? HelperWhy.Transient : HelperWhy.NoAnswer, state.Agent, files, ct).ConfigureAwait(false);
         }
 
         files.WriteState(state);

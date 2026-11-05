@@ -310,6 +310,10 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 preamble: Driver.JoinNotices(preamble, browserNotice),
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
+                // The intake's own check (§5.5): no try once the person stopped it, or its ask gained quests or went away meanwhile.
+                transientWanted: async retryCt =>
+                    !_context.Processes.WasStopRequested(sessionId)
+                    && await service.FindAskAsync(ask.Id, retryCt).ConfigureAwait(false) is { } now && now.Quests.Count == ask.Quests.Count,
                 said: _driver.Said(adapter, selection, sessionId),
                 stopMade: stop => stoppedFirst = stop,
                 // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
@@ -356,12 +360,15 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    // AGENTERRORS1d: past its transient bound the intake ends `intake.transient` and lets the ask go, as a limit's end does.
+                    var transient = !byPerson && !limited && TransientEnded.Of(ended) is not null;
+                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Intake, adapter.Name);
 
                     // LIMITRESUME1h (D206 design §3.8): a limit's end lets the ask go in the same step, so the look picks it again and its
                     // start is held by the cool-off as any start's is, never a strike; its record stays, naming the ask.
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts,
-                        unbindAsk: limited).ConfigureAwait(false);
+                        unbindAsk: limited || transient).ConfigureAwait(false);
 
                     return new StartRun(
                         $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
