@@ -162,9 +162,13 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     }
 
     [Fact]
-    public void The_required_posture_mark_is_the_bang_the_protocol_door_reads()
+    public void The_required_posture_is_the_one_value_the_protocol_door_reads()
     {
-        Assert.Equal('!', AgentPostures.Required);
-        Assert.Equal(AgentPostures.Required, HelpModes.Required);
+        Assert.Equal("!auto", new PostureAsked("auto", Required: true).Wire());
+        Assert.Equal("!?auto", new PostureAsked("auto", Required: true, PersonAnswers: true).Wire());
+        Assert.Equal(new PostureAsked("auto|acceptEdits", true, true), PostureAsked.Parse("?!auto|acceptEdits"));
+        Assert.Equal(new PostureAsked("auto"), PostureAsked.Parse("auto"));
+        Assert.Equal(new PostureAsked(""), PostureAsked.Parse(null));
+        Assert.Equal("`auto` or `acceptEdits`", new PostureAsked("auto|acceptEdits").Spelled());
     }
 }

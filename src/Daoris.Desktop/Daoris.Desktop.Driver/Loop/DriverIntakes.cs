@@ -209,10 +209,10 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // The same trust question a driven spawn asks (DEPLOY1): in a room the harness has not been
         // told to trust, the room's allow-list is inert — so it is asked only where the rules handed
         // over at spawn would not let the intake publish (D73), exactly as for a quest's session.
-        if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile }
-            && !_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
+        if (adapter.Home() is { TrustFile: { Length: > 0 } trustFile } doorHome
+            &&!_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
-            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, adapter.Toolchain.ProfileVariable);
+            var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, doorHome.Variable);
             if (ClaudeTrust.Accepted(trustPath, room) == false)
             {
                 // The room is Daoris's own folder under the home, and trusting it is still the person's

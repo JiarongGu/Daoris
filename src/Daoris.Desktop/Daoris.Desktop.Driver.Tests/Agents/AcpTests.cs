@@ -1621,8 +1621,7 @@ public sealed class AcpTests
     [InlineData("?!")]
     public async Task A_required_posture_is_set_where_the_agent_offers_it(string marks)
     {
-        Assert.Equal('!', AgentPostures.Required);
-        Assert.Equal(AgentPostures.Required, HelpModes.Required);
+        Assert.True(PostureAsked.Parse($"{marks}auto").Required);
         var agent = PostureAgent("""
             {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
@@ -1655,7 +1654,7 @@ public sealed class AcpTests
                 _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
             };
         });
-        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}bypassPermissions");
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, new PostureAsked("bypassPermissions", Required: true).Wire());
         try
         {
             var refused = await Assert.ThrowsAsync<DriverException>(() => session.OpenAsync("D:/fam/Game", CancellationToken.None));

@@ -71,14 +71,8 @@ public sealed class AcpSession(
     public ILineageWriter? Lineage { get; init; }
 
     /// <summary>
-    /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests
-    /// (<see cref="DrivenAccess"/>). Never set on the wire.
-    /// </summary>
-    public const char PersonAnswers = '?';
-
-    /// <summary>
-    /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture carries
-    /// <see cref="PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
+    /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
+    /// <see cref="PostureAsked.PersonAnswers"/>. Null, or a posture without the mark, refuses each as it comes.
     /// </summary>
     public PermissionHolds? Permissions { get; set; }
 
@@ -143,7 +137,7 @@ public sealed class AcpSession(
     /// </summary>
     public IReadOnlyList<string> LeftRunning { get; private set; } = [];
 
-    private readonly bool _personAnswers = AcpPosture.Marks(posture).PersonAnswers;
+    private readonly bool _personAnswers = PostureAsked.Parse(posture).PersonAnswers;
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 

@@ -13,13 +13,14 @@ internal static class TrustAsk
     {
         var quest = run.Quest;
         var workTree = run.State.WorkTree;
-        if (run.State.Preflight is not { Toolchain.TrustFile: { Length: > 0 } trustFile } preflight
+        if (run.State.Preflight is not { } preflight
+            || preflight.Home() is not { TrustFile: { Length: > 0 } trustFile } home
             || wiring.HandedConnector(preflight, run.Start.Workspace, quest.To, "quest_respond"))
         {
             return null;
         }
 
-        var trustPath = ClaudeTrust.PathFor(trustFile, chosen.ProfileHome, preflight.Toolchain!.ProfileVariable);
+        var trustPath = ClaudeTrust.PathFor(trustFile, chosen.ProfileHome, home.Variable);
         if (ClaudeTrust.Accepted(trustPath, workTree) != false) return null;
 
         // With no account home its file is the own sign-in's, which Daoris never writes: the screen offers no grant of it.

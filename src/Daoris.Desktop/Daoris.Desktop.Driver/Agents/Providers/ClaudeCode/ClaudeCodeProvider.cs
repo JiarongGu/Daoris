@@ -22,7 +22,10 @@ internal static class ClaudeCodeProvider
         Org: @"""orgName""\s*:\s*""([^""]+)""",
         Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
 
-    private const string Evidence = "Claude Code's declaration";
+    /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking (D184 point 4).</summary>
+    public const string Id = "claude-code";
+
+    private const string Evidence ="Claude Code's declaration";
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
 
@@ -87,7 +90,7 @@ internal static class ClaudeCodeProvider
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 
         return new Provider(
-            new ProviderId("claude-code"),
+            new ProviderId(Id),
             new ProviderIdentity("Claude Code", "Anthropic", "CC", StandIn: false, DeclaredBy: []),
             [native, protocol],
             Known<ProgramFacts>.Declared(program, Evidence),

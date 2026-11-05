@@ -13,6 +13,11 @@ public static class AdapterParts
         ? legacy.Provider.Rules.TryGet(out var language) ? language : null
         : adapter.TakesSettings ? ClaudeRules.Language : null;
 
+    /// <summary>The door's own home: the variable naming it, whether it starts in the person's own, and the trust file it keeps.</summary>
+    public static DoorHome Home(this ISessionAdapter adapter) => adapter is LegacyDoor legacy
+        ? legacy.Door.Home
+        : DoorHome.Of(adapter.Toolchain);
+
     /// <summary>The layout the door's skills are copied in, or null where it is handed none.</summary>
     public static ISkillLayout? SkillLayout(this ISessionAdapter adapter) => adapter is LegacyDoor legacy
         ? legacy.Provider.Skills.TryGet(out var layout) ? layout : null
