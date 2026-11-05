@@ -2110,7 +2110,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new ConnectorPlan("s-1", [Knowledge]));
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var servers = agent.Frame(1).GetProperty("params").GetProperty("mcpServers");
         var server = Assert.Single(servers.EnumerateArray());
@@ -2151,7 +2151,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, meta: new { claudeCode = new { options = new { settings = "s.json" } } })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new ConnectorPlan("s-1", [Knowledge]));
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal((int)AcpProtocol.McpStartupAwait.TotalMilliseconds, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
@@ -2164,7 +2164,7 @@ public sealed class AcpTests
         var agent = Simple();
 
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
-            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new ConnectorPlan("s-1", [Knowledge]));
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, new("s", [Knowledge]));
 
         var meta = agent.Frame(1).GetProperty("params").GetProperty("_meta");
         Assert.Equal(15000, meta.GetProperty("mcpStartupAwaitTimeoutMs").GetInt32());
