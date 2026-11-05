@@ -613,7 +613,7 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         if (decision.Approve is not null) _loop.Nudge();
-        return State(_loop, new { Quest = quest, decision.Did, decision.Session });
+        return State(_loop, new { Quest = quest, decision.Did, decision.Session }, parksAt: decision.ParksAt);
     }
 
     /// <summary>
@@ -660,6 +660,6 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     /// <summary>The driver's state as every standing choice answers it (<see cref="DriverStateAnswer.State"/>).</summary>
-    internal static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null) =>
-        DriverStateAnswer.State(loop, retried, reviewed, shownAgain);
+    internal static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null, int? parksAt = null) =>
+        DriverStateAnswer.State(loop, retried, reviewed, shownAgain, parksAt);
 }

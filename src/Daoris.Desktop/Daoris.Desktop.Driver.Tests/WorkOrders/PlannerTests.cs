@@ -442,10 +442,12 @@ public sealed class PlannerTests
     {
         var plan = Planner.Plan(
             With([Quest()], new Dictionary<string, int> { ["q1"] = 3 }),
-            Config() with { Strikes = 3 });
+            Config());
 
         var only = Assert.Single(plan);
         Assert.Equal(StartVerdict.Exhausted, only.Verdict);
+        // The rule's number it parked at, which a retry's words say park it again.
+        Assert.Equal(3, only.ParksAt);
         // The reason a person reads has to carry the COUNT and the verb that clears it — a park with
         // neither is a quest that has silently stopped moving (`autonomous-development`: a step
         // needing a human choice surfaces as a decision, not a pause).
@@ -459,21 +461,21 @@ public sealed class PlannerTests
     {
         var plan = Planner.Plan(
             With([Quest()], new Dictionary<string, int> { ["q1"] = 2 }),
-            Config() with { Strikes = 3 });
+            Config());
 
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
     }
 
     /// <summary>
-    /// 🔴 The additive escape hatch, and the one that must never regress: <c>strikes: 0</c> is
-    /// today's behaviour byte for byte, for a person who wants the loop to keep trying.
+    /// 🔴 The escape hatch, and the one that must never regress: a line no failures rule watches never parks, for a person who wants
+    /// the loop to keep trying.
     /// </summary>
     [Fact]
-    public void A_limit_of_zero_never_parks_anything()
+    public void A_line_no_failures_rule_watches_never_parks_anything()
     {
         var plan = Planner.Plan(
             With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }, parks: false),
-            Config() with { Strikes = 0 });
+            Config());
 
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
     }
@@ -486,7 +488,7 @@ public sealed class PlannerTests
     [Fact]
     public void Forgiving_a_quest_lets_it_run_again_without_rewriting_what_happened()
     {
-        var config = (Config() with { Strikes = 3 })
+        var config = (Config())
             .WithForgiven("q1", 3);
 
         Assert.Equal(
@@ -509,13 +511,13 @@ public sealed class PlannerTests
     public void A_second_park_carries_the_quests_failures_and_a_mark_at_them_starts_it()
     {
         var snapshot = With([Quest()], new Dictionary<string, int> { ["q1"] = 6 });
-        var config = (Config() with { Strikes = 3 }).WithForgiven("q1", 3);
+        var config = (Config()).WithForgiven("q1", 3);
 
         var parked = Assert.Single(Planner.Plan(snapshot, config));
         Assert.Equal(StartVerdict.Exhausted, parked.Verdict);
         Assert.Equal(6, parked.Failures);
 
-        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, config.WithForgiven("q1", config.Strikes))).Verdict);
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, config.WithForgiven("q1", parked.ParksAt!.Value))).Verdict);
         var started = Assert.Single(Planner.Plan(snapshot, config.WithForgiven("q1", parked.Failures!.Value)));
         Assert.Equal(StartVerdict.Start, started.Verdict);
         Assert.Null(started.Failures);
@@ -534,7 +536,7 @@ public sealed class PlannerTests
     {
         var plan = Planner.Plan(
             With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }),
-            Config(holds: ["Game"]) with { Strikes = 3 });
+            Config(holds: ["Game"]));
 
         Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
     }
@@ -711,7 +713,7 @@ public sealed class PlannerTests
         var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "failed", "timed out.")))
             with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
-        Assert.Equal(StartVerdict.Exhausted,Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Exhausted,Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>
@@ -792,7 +794,7 @@ public sealed class PlannerTests
         var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "stopped", Orphans.Note, Interrupted: true)))
             with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
-        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     // ── a failed session's committed work is carried on (RETRYWORK1) ──────────────────────────────
@@ -854,7 +856,7 @@ public sealed class PlannerTests
     {
         var snapshot = Committed(FailedBeforeTake, 1) with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
 
-        var only = Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 }));
+        var only = Assert.Single(Planner.Plan(snapshot, Config()));
 
         Assert.Equal(StartVerdict.Exhausted, only.Verdict);
         Assert.Equal(1, only.CarriesWork);
@@ -1545,7 +1547,7 @@ public sealed class PlannerTests
 
         Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config(holds: ["Game"]))).Verdict);
         Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config(drivable: []))).Verdict);
-        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>A stop the sweep or a shutdown made is not the person's (D104): an open quest so stopped is planned as before.</summary>
@@ -1622,7 +1624,7 @@ public sealed class PlannerTests
         });
 
         Assert.Equal(1, snapshot.Strikes["q1"]);
-        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 2 })).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>Released, an open quest is planned as a first start: its stopped session never took it, so there is no tree to go back into.</summary>
@@ -1669,8 +1671,8 @@ public sealed class PlannerTests
     {
         var parked = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", "D:/trees/s1", "failed", "timed out.")))
             with { Strikes = new Dictionary<string, int> { ["q1"] = 3 }, FailuresAt = ParkAtThree };
-        var forgiven = (Config() with { Strikes = 3 }).WithForgiven("q1", 3);
-        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(parked, Config() with { Strikes = 3 })).Verdict);
+        var forgiven = (Config()).WithForgiven("q1", 3);
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(parked, Config())).Verdict);
         Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(parked, forgiven)).Verdict);
 
         var stopped = parked with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = PersonStop with { Session = "s4" } } };
@@ -1678,7 +1680,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(stopped, forgiven.WithReleased("q1", "s4"))).Verdict);
         Assert.Equal(
             StartVerdict.Exhausted,
-            Assert.Single(Planner.Plan(stopped, (Config() with { Strikes = 3 }).WithReleased("q1", "s4"))).Verdict);
+            Assert.Single(Planner.Plan(stopped, (Config()).WithReleased("q1", "s4"))).Verdict);
     }
 
     /// <summary>
@@ -1699,7 +1701,7 @@ public sealed class PlannerTests
         {
             LastRun = ServiceClient.ReadLastRun(records),
         };
-        var config = Config() with { Strikes = 2 };
+        var config = Config();
 
         Assert.Equal(1, snapshot.Strikes["q1"]);
         Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, config)).Verdict);
@@ -1798,7 +1800,7 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config().WithReleased("q1", "s1"))).Verdict);
         Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config(holds: ["Game"]))).Verdict);
         Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config(drivable: []))).Verdict);
-        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>

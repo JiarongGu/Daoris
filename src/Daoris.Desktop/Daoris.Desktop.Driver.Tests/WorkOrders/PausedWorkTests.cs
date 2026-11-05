@@ -106,7 +106,7 @@ public sealed class PausedWorkTests
     {
         var edited = DriverConfig.Parse(
                 """{"pausedAsks":{"a1":{"at":"2026-10-02T14:02:11Z","stopped":{"q7":"s-1"}}},"pausedQuests":{"q9":{"stopped":{}}},"released":{"q2":"s-5"}}""")
-            .WithDrivable("engine", true).WithStrikes(2).WithReleased("q3", "s-6").WithHold("engine", true);
+            .WithDrivable("engine", true).WithReleased("q3", "s-6").WithHold("engine", true);
 
         var back = DriverConfig.Parse(edited.ToJson());
         Assert.Equal("s-1", back.PausedAsk("a1")!.Stopped["q7"]);

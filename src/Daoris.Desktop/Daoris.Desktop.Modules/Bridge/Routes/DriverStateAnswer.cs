@@ -10,11 +10,12 @@ internal static class DriverStateAnswer
     /// session for a release. Null for every other answer, which the bridge leaves out.</param>
     /// <param name="reviewed">What a review's procedure look found (REVIEWENV1a), on the answer to <c>SET_REVIEW</c> alone.</param>
     /// <param name="shownAgain">What *Show it again* said (REVIEWENV1d), on the answer to <c>SHOW_REVIEW_AGAIN</c> alone.</param>
+    /// <param name="parksAt">On a *Try again*'s mark, the failed sessions the quest's line's failures rule parks it at again; else the machine's rule is said.</param>
     /// <remarks>
     /// A read of the loop alone, so the domains whose standing choices answer with it (Across, Lines) reach it by name over
     /// their loop, holding no other domain's class (PART10d).
     /// </remarks>
-    public static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null)
+    public static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null, int? parksAt = null)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var access = ConfiguredAccess.Read(loop.Home);
@@ -47,7 +48,8 @@ internal static class DriverStateAnswer
             config.Cap,
             config.PollSeconds,
             config.Notify,
-            config.Strikes,
+            // The failed sessions that park a quest, from the supervisor's rules alone: a retried quest's own line's, else the machine's.
+            Strikes = parksAt ?? SupervisorRuleBook.Read(loop.Home).MachineFailures,
             // The cool-off a limit naming no time takes, in minutes (TOOL4g): the file's, or the hour when it sets none.
             CoolOff = (int)config.CoolOff.TotalMinutes,
             // How long a session may be quiet before Daoris looks in, in minutes: the file's, or the default.

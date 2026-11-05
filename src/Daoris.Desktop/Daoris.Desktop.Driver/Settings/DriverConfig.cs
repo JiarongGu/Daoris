@@ -26,12 +26,8 @@ public sealed record DriverConfig(
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
     IReadOnlyList<string> Trees,
     bool Notify = true,
-    int Strikes = 3,
     IReadOnlyDictionary<string, int>? Forgiven = null)
 {
-    /// <summary>How many failed sessions park a quest. <c>0</c> never parks: for a person who wants the loop to keep trying.</summary>
-    public int Strikes { get; init; } = Math.Max(0, Strikes);
-
     /// <summary>
     /// Quests the person has restarted, and the failure count they were restarted at. A mark rather
     /// than an erasure: the records still say what happened, and the next three failures park it again.
@@ -68,9 +64,6 @@ public sealed record DriverConfig(
         };
         return this with { Forgiven = next };
     }
-
-    /// <summary>How many failures park a quest on this machine.</summary>
-    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
 
     /// <summary>
     /// The quests the person released from their stop, each against the session they stopped: a later stop holds the quest again,

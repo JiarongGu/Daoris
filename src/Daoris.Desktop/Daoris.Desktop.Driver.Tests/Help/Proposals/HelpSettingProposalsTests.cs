@@ -504,18 +504,19 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — the quest forgiven at the
-    /// strike limit as it stands when applied, not erased, so the next failures park it again.
+    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris quest retry</c> make — a park carrying no count forgiven at
+    /// the number its line's failures rule parked it at, as the look read the rules, not erased, so as many more failures park it again.
     /// </summary>
     [Fact]
-    public void Applying_a_retry_marks_the_quest_forgiven_at_the_strike_limit_as_the_drawers_route_does()
+    public void Applying_a_retry_marks_the_quest_forgiven_at_its_failures_rule_as_the_drawers_route_does()
     {
-        var plan = HelpProposals.Plan(Setting("retry", "#q1a2b3c4"), DriverConfig.Empty.WithStrikes(3), Facts);
+        var facts = Facts with { Parked = [new ParkedQuest("q1a2b3c4", "engine", ParksAt: 5)] };
+        var plan = HelpProposals.Plan(Setting("retry", "#q1a2b3c4"), DriverConfig.Empty, facts);
 
-        var config = plan.Apply!(DriverConfig.Empty.WithStrikes(5));
+        var config = plan.Apply!(DriverConfig.Empty);
 
         Assert.Equal(5, config.ForgivenAt("q1a2b3c4"));
-        Assert.Contains("5 more failure(s) will park it again", HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, Facts).Describe);
+        Assert.Contains("5 more failure(s) will park it again", HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, facts).Describe);
         Assert.Null(config.ReleasedFor("q1a2b3c4"));
     }
 
@@ -526,8 +527,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [Fact]
     public void Applying_a_retry_of_a_quest_parked_a_second_time_marks_it_at_its_failures()
     {
-        var facts = Facts with { Parked = [new ParkedQuest("q1a2b3c4", "engine", 6)] };
-        var config = DriverConfig.Empty.WithStrikes(3).WithForgiven("q1a2b3c4", 3);
+        var facts = Facts with { Parked = [new ParkedQuest("q1a2b3c4", "engine", 6, ParksAt: 3)] };
+        var config = DriverConfig.Empty.WithForgiven("q1a2b3c4", 3);
 
         var plan = HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, facts);
 
@@ -545,7 +546,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     {
         var plan = HelpProposals.Plan(Setting("retry", "#q2taken0"), DriverConfig.Empty, Facts);
 
-        var config = plan.Apply!(DriverConfig.Empty.WithStrikes(5));
+        var config = plan.Apply!(DriverConfig.Empty);
 
         Assert.Equal("s7a8b9c0", config.ReleasedFor("q2taken0"));
         Assert.Equal(0, config.ForgivenAt("q2taken0"));

@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// How many sessions have failed on it here in all, as the records count them (<see cref="Consideration.Failures"/>), which a
 /// retry marks it at (RETRY1b); null where the verdict carried none.
 /// </param>
-public sealed record ParkedQuest(string Quest, string Repository, int? Failures = null) : IKnowledgeParkedQuest;
+/// <param name="ParksAt">The failed sessions its line's failures rule parks at, as the look read it (<see cref="Consideration.ParksAt"/>).</param>
+public sealed record ParkedQuest(string Quest, string Repository, int? Failures = null, int? ParksAt = null) : IKnowledgeParkedQuest;
 
 /// <summary>
 /// A quest the loop's last look held by the person's stop (SESSUX1b, D126 §3.3): its id, the repository it is addressed
@@ -42,5 +43,5 @@ public sealed class ParkedQuests
     public void Record(IEnumerable<Consideration> considered) =>
         _latest = [.. considered
             .Where(consideration => consideration.Verdict == StartVerdict.Exhausted)
-            .Select(consideration => new ParkedQuest(consideration.Quest.Id, consideration.Quest.To, consideration.Failures))];
+            .Select(consideration => new ParkedQuest(consideration.Quest.Id, consideration.Quest.To, consideration.Failures, consideration.ParksAt))];
 }

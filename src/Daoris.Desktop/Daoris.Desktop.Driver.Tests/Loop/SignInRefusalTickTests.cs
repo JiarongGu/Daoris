@@ -71,7 +71,6 @@ public sealed class SignInRefusalTickTests : IDisposable
             TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: a refused sign-in must hold none.
-            Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -132,7 +131,6 @@ public sealed class SignInRefusalTickTests : IDisposable
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
-            Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -180,7 +178,6 @@ public sealed class SignInRefusalTickTests : IDisposable
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
-            Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -215,7 +212,6 @@ public sealed class SignInRefusalTickTests : IDisposable
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
-            Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
                 ["acp-stub"] = ["node", AcpAgent(), Log],

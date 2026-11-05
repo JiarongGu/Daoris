@@ -57,7 +57,7 @@ public sealed class CoolOffTests
     [Fact]
     public void Another_edit_keeps_the_cool_off()
     {
-        var edited = DriverConfig.Parse("""{"cooloff":45}""").WithDrivable("engine", true).WithStrikes(2);
+        var edited = DriverConfig.Parse("""{"cooloff":45}""").WithDrivable("engine", true);
 
         Assert.Equal(TimeSpan.FromMinutes(45), DriverConfig.Parse(edited.ToJson()).CoolOff);
     }

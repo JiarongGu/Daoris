@@ -331,7 +331,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
                 : null,
         };
         using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
-        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
+        SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes);
 
         var (exit, said) = await RunAsync(["supervise", "s1"], Instance());
 

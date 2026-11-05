@@ -68,7 +68,7 @@ public sealed class ReleasedTests
     public void Another_edit_keeps_the_releases()
     {
         var edited = DriverConfig.Parse("""{"released":{"q1":"s1"},"cooloff":45}""")
-            .WithDrivable("engine", true).WithStrikes(2).WithForgiven("q2", 3);
+            .WithDrivable("engine", true).WithForgiven("q2", 3);
 
         Assert.Equal("s1", DriverConfig.Parse(edited.ToJson()).ReleasedFor("q1"));
     }

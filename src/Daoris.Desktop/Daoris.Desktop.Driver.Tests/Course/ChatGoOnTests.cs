@@ -629,7 +629,7 @@ public sealed class ChatGoOnTests : IDisposable
     [Fact]
     public async Task A_third_answer_alone_to_an_ended_chat_waits_for_the_person_until_they_let_it_go_on()
     {
-        SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes);
+        SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes);
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "talk", _root).Helped("w3", "Another agent says five.", helper: "h1");
         ledger.Chat("h1", "completed", "codex-acp", _root);

@@ -84,7 +84,6 @@ public sealed class AccountNamesSaidTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Actors = StaffedRoles.On("acp-stub"),
-        Strikes = 1,
         PollSeconds = 1,
     };
 

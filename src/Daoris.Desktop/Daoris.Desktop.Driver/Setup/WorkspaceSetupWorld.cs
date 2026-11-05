@@ -46,6 +46,10 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
 
     public Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct) => service.StrikesAsync(ct);
 
+    public SupervisorRuleBook Rules() => _rules ??= SupervisorRuleBook.Read(home);
+
+    private SupervisorRuleBook? _rules;
+
     public Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct) => service.SessionRunsAsync(ct);
 
     public IReadOnlyList<ToolTouch> Touched(string session) =>

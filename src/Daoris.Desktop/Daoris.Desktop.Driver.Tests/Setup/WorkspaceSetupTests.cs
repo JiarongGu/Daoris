@@ -502,15 +502,17 @@ public sealed class WorkspaceSetupTests : IDisposable
     }
 
     /// <summary>A set-up its failed sessions parked (DRV6) holds no session and needs the person: it frees the slot and is not asked again.</summary>
+    /// <summary>A set-up parks at its line's failures rule, as the planner parks a quest: here the machine's rule, at 2.</summary>
     [Fact]
     public async Task A_parked_set_up_frees_its_slot_and_is_never_asked_again()
     {
         var world = World("atlas", "billing");
+        world.Book = new([new SupervisorRuleSet(SupervisorRules.Machine, 1, SupervisorRuleBook.Seeded(failures: 2))]);
         var config = Driven(3);
         await PressAsync(world, config, new(Pilot: 0));
 
         await TickAsync(world, config);
-        world.Strikes[world.SetupOf("atlas").Id] = config.Strikes;
+        world.Strikes[world.SetupOf("atlas").Id] = 2;
         await TickAsync(world, config);
         await TickAsync(world, config);
 
@@ -703,7 +705,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var plan = new WorkspaceSetupPlan("work", ["atlas"], 1, 2);
         QuestView taken = new("q1", "ask #a1", "atlas", SetupQuests.Title(SetupQuests.SetUp, Day), "", "Taken");
 
-        var standing = Assert.Single(WorkspaceSetupRules.Stand(plan, [WorkspaceSetupStandIn.Row("atlas")], [taken], new Dictionary<string, int>(), Driven(2)));
+        var standing = Assert.Single(WorkspaceSetupRules.Stand(plan, [WorkspaceSetupStandIn.Row("atlas")], [taken], new Dictionary<string, int>(), Driven(2), SupervisorRuleBook.Seed));
 
         Assert.Equal(SetupState.Open, standing.State);
         Assert.Equal("q1", standing.Quest);

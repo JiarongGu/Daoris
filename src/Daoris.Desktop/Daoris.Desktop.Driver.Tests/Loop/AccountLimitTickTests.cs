@@ -66,7 +66,6 @@ public sealed class AccountLimitTickTests : IDisposable
             PollSeconds = 1,
             // Two failures park it, and the quest already holds one: were the limit a strike, the carry-on it refused
             // would park the quest, as observation 4's did.
-            Strikes = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent()] },
         };
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);

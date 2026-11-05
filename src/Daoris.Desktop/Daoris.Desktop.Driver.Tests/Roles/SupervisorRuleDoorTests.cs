@@ -57,7 +57,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     [Fact]
     public void CONTEXTDRIVE1l_a_seeded_home_takes_a_rule_with_no_conversion_asked()
     {
-        Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
+        Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
         var press = Read("""{ "id": "supervisor", "place": "repository:daoris", "rulesRevision": 0, "rules": [{ "count": "answers-alone", "at": 3, "do": "hold" }] }""");
 
         RoleDoor.Apply(Staffing, press.Change);

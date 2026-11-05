@@ -180,7 +180,7 @@ public sealed class SessionMessagesPlanTests
             LastRun = new Dictionary<string, PriorSession> { ["q1"] = Written("failed") },
         };
 
-        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
     }
 
     /// <summary>

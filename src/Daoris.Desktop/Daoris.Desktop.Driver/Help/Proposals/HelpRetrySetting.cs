@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// The quest must be on one of the look's two lists, since a helper can invent an id, and forgiving a quest that is not
-/// parked lets it run past its strikes (D110). The mark is the look's count; the limit said is the one standing when
-/// the person applies, as the route reads it.
+/// parked lets it run past its strikes (D110). The mark is the look's count; the number said is the one its line's
+/// failures rule parked it at, as that look read the rules.
 /// </remarks>
 internal static class HelpRetrySetting
 {
@@ -48,10 +48,10 @@ internal static class HelpRetrySetting
                 "", terminal, null);
         }
 
-        // RETRY_QUEST's own mark (RETRY1b): the quest's failures as the last look counted them, not the limit, which left a
-        // quest parked a second time parked. A park carrying no count is marked at the least count the planner parks at.
-        int Mark(DriverConfig at) => parkedQuest.Failures ?? at.ForgivenAt(quest) + at.Strikes;
-        var strikes = config.Strikes;
+        // RETRY_QUEST's own mark (RETRY1b): the quest's failures as the last look counted them, not the rule's number, which left a
+        // quest parked a second time parked. A park carrying no count is marked at the number its failures rule parked it at.
+        var strikes = parkedQuest.ParksAt ?? 0;
+        int Mark(DriverConfig at) => parkedQuest.Failures ?? at.ForgivenAt(quest) + strikes;
         return new HelpPlan(null,
             $"Quest `#{quest}` may be started again. Counting from {Mark(config)} failure(s) — what already happened is still in "
             + $"the records, and {(strikes > 0 ? strikes.ToString(CultureInfo.InvariantCulture) : "no")} more failure(s) will park "
