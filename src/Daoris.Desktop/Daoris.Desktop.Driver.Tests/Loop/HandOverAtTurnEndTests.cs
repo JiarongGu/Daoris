@@ -33,6 +33,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
     private DriverHandOvers HandOvers(string? mode)
     {
         var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub") };
+        config = ActorChoices.With(config, "build", [new ActorChoice("stub"), new ActorChoice("codex-acp")]);
         if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))

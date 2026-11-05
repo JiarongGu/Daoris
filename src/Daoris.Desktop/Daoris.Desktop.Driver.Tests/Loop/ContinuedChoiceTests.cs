@@ -115,7 +115,7 @@ public sealed class ContinuedChoiceTests : IDisposable
 
         Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran, rule, Config));
         Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran with { Adapter = null }, rule, Config));
-        Assert.Equal(["first"], OpinionGateLook.Reviewers(press, null, rule, Config with { Actors = StaffedRoles.On("piped") }));
+        Assert.Equal(["first"], OpinionGateLook.Reviewers(press, null, rule, Config));
         Assert.Equal(["dsh"], OpinionGateLook.Reviewers(press with { SameAgent = false, Reviewer = "dsh" }, ran, rule, Config));
         Assert.Equal(["codex-acp"], OpinionGateLook.Reviewers(null, ran, rule, Config));
     }
