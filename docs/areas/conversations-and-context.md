@@ -279,5 +279,7 @@ of everything it handed, section by section.
 - **HELPWIRED1b:** what the door says it loaded, beside what was handed.
 - **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and
   children.
-- **RPC1g:** a terminal's conversation is the running Daoris's (design first).
+- **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
+  is proposed: one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
+  Today `daoris chat` still runs its own `ChatRunner` beside the instance (`Daoris.Desktop.Driver.Host/ChatConsole.cs`).
 - **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.
