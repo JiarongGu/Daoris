@@ -19,9 +19,10 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     /// <param name="said">Told what its door says about its account's windows, on either structured door.</param>
     /// <param name="watched">Its adapter, whether its conversation is kept, and the ended chat it goes on with.</param>
-    /// <param name="limits">
+    /// <param name="account">
     /// The account's part of its sink: the native door's failed result read for a limit, concluded at its turn's end as a protocol refused
-    /// turn is, its cooling line before that end and the end moving it to the next account.
+    /// turn is, its cooling line before that end and the end moving it to the next account; and an open's refused model kept in the offers
+    /// store.
     /// </param>
     /// <returns>
     /// Whether the chat it goes on with is to be tried once more as the same resume: its native harness ended on a failed exit before it named
@@ -31,7 +32,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
         string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
         string? servers, Action<JsonElement>? said, ChatWatched watched, ActorRun actorRun, MachineLog actorLog,
-        NativeLimits limits)
+        IReadingSink account)
     {
         var goOnDoor = wiring.Of<ChatGoOn>();
         var processes = Context.Processes;
@@ -81,7 +82,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, LineageHome = Context.Home, Preamble = watched.Preamble });
             // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
             run.HandSink(ReadingSinks.Of(
-                limits,
+                account,
                 new RecordReadings(sessionId, Context.Output, Context.Events),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),

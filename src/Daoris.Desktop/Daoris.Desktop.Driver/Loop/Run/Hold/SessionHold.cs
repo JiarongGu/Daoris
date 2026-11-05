@@ -216,11 +216,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             ? null
             : async refusal =>
             {
-                if (AgentOffers.Refused(home, adapter.Name, offers.Version, offers.Account, refusal.Value, DateTimeOffset.UtcNow) is { } unkept)
-                {
-                    log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
-                }
-
+                // The refusal is a reading the run said before this re-ask, which the offers store's part of its sink kept (below).
                 log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Name), ("model", refusal.Value),
                     ("code", refusal.Code)]);
                 if (await reask(refusal).ConfigureAwait(false) is not { } later) return null;
@@ -314,7 +310,9 @@ internal sealed class SessionHold(IRunWiring wiring)
             new RecordReadings(sessionId, output, context.Events),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
-            limits));
+            limits,
+            offers is null ? null
+                : new OfferRefusals(home, adapter.Name, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
 
         // The rules and servers a go-on runs under, the ones this start was handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));

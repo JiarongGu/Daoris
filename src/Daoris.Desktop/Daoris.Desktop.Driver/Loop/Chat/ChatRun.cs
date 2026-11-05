@@ -455,15 +455,22 @@ internal sealed class ChatRun(
             new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog,
             // The native door's failed result read for the account's limit, concluded at its turn's end as a protocol conversation's refused
             // turn is: the account cools, its cooling line stands before the turn's end, and that end moves it to the next account.
-            new NativeLimits(
-                failure => agent.Read(harnesses.Adapters, failure, clock().GetUtcNow(), harnesses.Zone),
-                limit =>
+            // And an open's refused model kept as the account's refusal before its re-ask walks on.
+            ReadingSinks.Of(
+                new NativeLimits(
+                    failure => agent.Read(harnesses.Adapters, failure, clock().GetUtcNow(), harnesses.Zone),
+                    limit =>
+                    {
+                        if (accounts.Limited(sessionId, agent, selection.Profile, limit.Failure.Words ?? "", config.CoolOff, limit.Limit) is not { } cooling) return;
+                        Context.Output?.Append(sessionId, $"— {cooling.Note}");
+                        Context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
+                        Interlocked.Exchange(ref limitedTurn, 1);
+                    }),
+                new OfferRefusals(home, agent.Name, selection.Version, selection.Profile, why =>
                 {
-                    if (accounts.Limited(sessionId, agent, selection.Profile, limit.Failure.Words ?? "", config.CoolOff, limit.Limit) is not { } cooling) return;
-                    Context.Output?.Append(sessionId, $"— {cooling.Note}");
-                    Context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
-                    Interlocked.Exchange(ref limitedTurn, 1);
-                }));
+                    using var log = new MachineLog(home, "driver");
+                    log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]);
+                })));
         Context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => Context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
