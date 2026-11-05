@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FlowEdge, FlowNode } from '../design/FlowCanvas';
-import { LifeFlow } from '../design/LifeFlow';
+import { LifeFlow } from '../design/canvas/LifeFlow';
 import { Button, Inline } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import type { WorkflowLanded, WorkflowRoute, WorkflowStart } from './current';

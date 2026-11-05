@@ -5,9 +5,9 @@ import { LifeFlow } from './LifeFlow';
 import {
   APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, LARGE_ONE, LARGE_SETTLED, LARGE_THREE, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, type Said,
   UNEQUAL,
-} from './flowFixtures';
-import { atWidths, FLOW_WIDTHS, inDark, inLight } from './flowFrames';
-import { chinese } from './storyLanguage';
+} from '../flowFixtures';
+import { atWidths, FLOW_WIDTHS, inDark, inLight } from '../flowFrames';
+import { chinese } from '../storyLanguage';
 
 // The flowchart's stories (FLOWCHART1a1; the flowchart design §4.4): the hardest graphs, each in both themes, in English
 // and 中文, at the frame's widths, 300 px (the side bar's floor), 400 (the main area's), 544 (a 680 px window's main area)

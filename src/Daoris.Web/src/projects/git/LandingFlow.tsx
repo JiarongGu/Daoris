@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ExternalLink } from '../../design/links';
-import { LifeFlow } from '../../design/LifeFlow';
+import { LifeFlow } from '../../design/canvas/LifeFlow';
 import { Icon, Inline } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { moment } from '../../locales/format';

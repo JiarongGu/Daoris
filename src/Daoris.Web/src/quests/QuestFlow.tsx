@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { QuestMove } from '../data/api';
-import { LifeFlow } from '../design/LifeFlow';
+import { LifeFlow } from '../design/canvas/LifeFlow';
 import { Icon } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type QuestMoveLine, type QuestOfLife, questFlow } from './questLife';

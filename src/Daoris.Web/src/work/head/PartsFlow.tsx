@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { LifeFlow } from '../../design/LifeFlow';
+import { LifeFlow } from '../../design/canvas/LifeFlow';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { partsFlow } from './partsLife';
 import { ranLine } from '../actors';

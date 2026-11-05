@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import i18n from '../locales/i18n';
-import { type FlowEdge, type FlowNode } from './FlowCanvas';
+import i18n from '../../locales/i18n';
+import { type FlowEdge, type FlowNode } from '../FlowCanvas';
 import { LifeFlow } from './LifeFlow';
 
 // ONEWAY1aa: the life-flows draw through one component in the canvas's viewport, in each language; the layout's own tests are

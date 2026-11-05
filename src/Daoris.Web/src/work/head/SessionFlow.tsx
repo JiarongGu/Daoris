@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LifeFlow } from '../../design/LifeFlow';
+import { LifeFlow } from '../../design/canvas/LifeFlow';
 import { Icon, SESSION_TONE, type ShownState, shownKey, shownState } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { store, stored } from '../../lib/stored';

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type CanvasOptions } from './canvas/Canvas';
-import { FlowCanvas, type FlowProps } from './FlowCanvas';
-import { FlowNodeBox } from './FlowNodeBox';
+import { FlowCanvas, type FlowProps } from '../FlowCanvas';
+import { FlowNodeBox } from '../FlowNodeBox';
+import { type CanvasOptions } from './Canvas';
 
 /**
  * **A life-flow on the canvas** (ONEWAY1aa; D224, D228): the landing's, a quest's, the parts' and a session's lives, and a workflow's
