@@ -193,6 +193,8 @@ public static class PersonDoors
         // COMMS1k: what waits for one part, the messages to it and on its line's own channel, read by the driver that runs it; moves nothing.
         new("GET", "/api/channel/addressed", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
+        new("GET", "/api/sessions/{id}", DoorClass.Open),
+        new("GET", "/api/sessions/changes", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         new("GET", "/api/sessions/{id}/record", DoorClass.Open),
         new("GET", "/api/sessions/{id}/memory", DoorClass.Open),

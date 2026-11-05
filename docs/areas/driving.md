@@ -183,7 +183,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     session's end). A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on
     beside the look, reserved. The whole lists a pass or the work beside it reads together (the snapshot's, the tidy's
     holders, the nodes' units) are asked at once. The tidy reads a repository's refs, top and working trees once a look,
-    each tree's branch from that list, until one of its stages writes. (from D68, D181)
+    each tree's branch from that list, until one of its stages writes. A reader of one record asks for it alone, a reader of the
+    running ones the open ones, and the window's sessions slice and the parks a look says read the list kept by its change since
+    their last mark (`SessionListKept`). (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is kept in the file and read by nothing. (from D200)
@@ -259,7 +261,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
-| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read held to its budget |
+| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read held to its budget; `Loop/SessionChangeBenchProcessTests`, one change read as its change |
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |

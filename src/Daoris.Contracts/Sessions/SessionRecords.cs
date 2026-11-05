@@ -78,6 +78,13 @@ public sealed record SessionResponse(
     [property: PageType(SessionPageTypes.Chosen)] JsonElement? Chosen = null,
     string? Work = null, string? Head = null);
 
+/// <summary>
+/// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer
+/// moved since the mark asked from, as the list answers it.
+/// </summary>
+/// <param name="Whole">The mark asked from was none this host holds, so every record is among the changed.</param>
+public sealed record SessionChangesResponse(string Mark, IReadOnlyList<string> Order, IReadOnlyList<SessionResponse> Changed, bool Whole);
+
 /// <summary>The session as it stands, and the ledger's sentence.</summary>
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 

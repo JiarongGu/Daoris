@@ -20,6 +20,16 @@ public sealed class SessionListAnswers(HostWiring host)
         // Made apart from the asker's cancellation: readers at one mark share the making, and one that leaves stops none of the others.
         Kept.AnswerAsync((repository, includeClosed, workspace, local), () => MakeAsync(repository, includeClosed, workspace, local, CancellationToken.None), ct);
 
+    /// <summary>One record as the list answers it, its facts read by the store's single reads; null for an unknown id.</summary>
+    public async Task<SessionResponse?> OneAsync(string id, bool local, CancellationToken ct)
+    {
+        if (await Service.Sessions.FindAsync(id, ct) is not { } session) return null;
+        var deletable = host.Mode == ServiceMode.Local && (await Service.Ledger.DeletableAsync([session], ct)).Contains(session.Id);
+        var answered = await Service.Ledger.WithEntryAsync(session, ct);
+        var head = local && session.Origin is null ? (await Lines.HeadOfLineAsync(Service.Sessions, Service.Quests, session, ct))?.Id : null;
+        return SessionAnswers.ToSession(answered, local) with { Deletable = deletable, Head = head };
+    }
+
     private async Task<SessionResponse[]> MakeAsync(string? repository, bool includeClosed, string? workspace, bool local, CancellationToken ct)
     {
         var sessions = await Service.Sessions.ListAsync(repository, includeClosed, workspace, ct);

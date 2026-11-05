@@ -324,7 +324,10 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
     [GeneratedRegex(@"\b(?<name>[A-Z]\w*)\s*(?==|,|$)")]
     private static partial Regex ServiceField();
 
-    /// <summary>The service's doors the slice reads, standing in: every record as a test sets it, read whole with the closed.</summary>
+    /// <summary>
+    /// The service's doors the slice reads, standing in: every record as a test sets it, read whole with the closed, and the list's change
+    /// answered as every record, which the kept list lays over nothing.
+    /// </summary>
     private sealed class StandIn : HttpMessageHandler
     {
         private string _sessions = "[]";
@@ -337,11 +340,23 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            var sessions = request.RequestUri!.PathAndQuery == "/api/sessions?includeClosed=true";
+            var asked = request.RequestUri!.PathAndQuery;
+            var answer = asked == "/api/sessions?includeClosed=true" ? Sessions
+                : asked.StartsWith("/api/sessions/changes", StringComparison.Ordinal) ? Whole(Sessions)
+                : "[]";
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
-                Content = new StringContent(sessions ? Sessions : "[]", Encoding.UTF8, "application/json"),
+                Content = new StringContent(answer, Encoding.UTF8, "application/json"),
             });
+        }
+
+        private static string Whole(string sessions)
+        {
+            var records = JsonNode.Parse(sessions)!.AsArray();
+            var order = new JsonArray([.. records.OfType<JsonObject>()
+                .Select(record => record["id"] is JsonValue id && id.TryGetValue<string>(out var named) ? named : null)
+                .OfType<string>().Select(id => (JsonNode)id)]);
+            return new JsonObject { ["mark"] = "m", ["whole"] = true, ["order"] = order, ["changed"] = records }.ToJsonString();
         }
     }
 }

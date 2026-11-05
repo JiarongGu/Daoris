@@ -101,7 +101,7 @@ internal sealed class LoopRun(
 
         ServePipe();
 
-        var told = new LookTold(loop, shared, eventBus, service, key, doors, news, ct);
+        var told = new LookTold(loop, shared, eventBus, service, doors, news, ct);
         // The conversations' take-up, run beside each look before the limits' wake: a dead shell's move is taken up, and a live one
         // quiet ten minutes said once.
         var moves = new ConversationMoves(homeDirectory, service, loop.Events, loop.Output);
