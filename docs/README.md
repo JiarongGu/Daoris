@@ -247,6 +247,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-05-git-design.md` | Design: GITDESIGN1, git's place in Daoris: git built into the core with every remote act through the doors, one push, a pull request composed as a place's workflow steps with a hosted-service step that runs no git or CLI, proven in CI against stand-ins, in chunks G1 to G10; proposed for the owner's yes (D241)
 | `2026-11-05-merge-tool-design.md` | Design: MERGETOOL1 with QUEUEHANG1, the merge tool and rehearsals cut by what each becomes, run folders kept by age and size, a gate killed from outside said as lost; chunks MT1 to MT9, FR1 to FR3; proposed (D237)
 | `2026-11-06-terminal-conversation-design.md` | Design: RPC1g, a terminal's conversation is the running Daoris's: one runner, a hold of one conversation by one pipe connection under one Confirm that also carries its lines, nothing alone with no instance, ONEWAY1's area T; rows RPC1g1 to RPC1g5; proposed for the owner's yes (D238)
+| `2026-11-06-map-ux-design.md` | Design: MAPUX1, the Map's UI and UX: four questions, two levels in one place, what each zoom shows, one choice read in one line and one detail, find on the level shown, the list as one tree, the empty and large cases in en and zh; rows MAPUX1a to MAPUX1g; proposed for the owner's yes (D239)
 
 ## UI, browser, tools and plugin contracts
 
