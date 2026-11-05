@@ -113,7 +113,6 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   const tree = useMemo(() => buildTree(modules, dependencies), [modules, dependencies]);
   // Which groups the person opened, for the tree they were opened on; a changed map starts from its own default.
   const [held, setHeld] = useState<{ tree: typeof tree; open: ReadonlySet<string> } | null>(null);
-  const [listed, setListed] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const base = held?.tree === tree ? held.open : defaultOpen(tree);
   // The chosen module stays drawn: its path is open for as long as it is chosen.
@@ -227,23 +226,14 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setHeld(null); }}>
         {t('code.foldAgain')}
       </Button>
-      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setListed(!listed)}>
-        {t(listed ? 'canvas.asGraph' : 'canvas.asList')}
-      </Button>
     </>
   );
-
-  if (listed) {
-    return (
-      <div className="grid gap-2">
-        <div className="flex flex-wrap items-center gap-1">{tools}</div>
-        <CanvasList
-          label={t('code.canvas', { repository })} groups={lists} selected={selected}
-          onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
-        />
-      </div>
-    );
-  }
+  const list = (
+    <CanvasList
+      label={t('code.canvas', { repository })} groups={lists} selected={selected}
+      onPick={(id) => { setOpen(openingPath(tree, base, id)); onSelect(id === selected ? null : id); }}
+    />
+  );
 
   return (
     <div ref={wrapper}>
@@ -258,6 +248,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         renderNode={renderNode}
         renderEdges={(context) => <CodeEdges lines={scene.lines} context={context} focus={context.hovered ?? chosenCard} name={nameOf} />}
         tools={tools}
+        list={list}
       />
     </div>
   );

@@ -1,6 +1,5 @@
 import { type FocusEvent, type KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
 import { useRootRem, useWidth } from '../useWidth';
 import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './Canvas';
 import { CanvasFind } from './CanvasFind';
@@ -8,6 +7,7 @@ import { CanvasList, type ListGroup } from './CanvasList';
 import { DotLayer } from './DotLayer';
 import { FIND_FROM } from './findNodes';
 import { GoneNotice, useSelectionGone } from './GoneNotice';
+import { ListToggle } from './ListToggle';
 import { useCanvasFind } from './useCanvasFind';
 import { createLayoutClient, spawnLayoutWorker } from './layoutClient';
 import type { Layout, Scene } from './layoutScene';
@@ -185,9 +185,7 @@ export function PositionedCanvas({ scene, label, feature, storeKey, version = ''
           onDown={() => { if (shown) focusNode(shown); }}
         />
       )}
-      <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setListed(!listed)}>
-        {t(listed ? 'canvas.asGraph' : 'canvas.asList')}
-      </Button>
+      <ListToggle listed={listed} onToggle={() => setListed(!listed)} />
     </>
   );
 

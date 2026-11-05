@@ -6,6 +6,7 @@ import { Canvas, CANVAS_FLOOR, type CanvasHandle, type CanvasOptions } from './C
 import { CanvasFind } from './CanvasFind';
 import { FIND_FROM } from './findNodes';
 import { GoneNotice, useSelectionGone } from './GoneNotice';
+import { ListToggle } from './ListToggle';
 import { createWalk, type Stop, type WalkLine } from './suppliedWalk';
 import { type Tier, tierAt } from './tiers';
 import { useCanvasFind } from './useCanvasFind';
@@ -63,7 +64,7 @@ const hoverOf = (target: EventTarget): string | null => {
 
 export function SuppliedCanvas({
   world, label, moves, fit, feature, storeKey, selected, onSelect, zoom, opening, nodeLabel, titleOf, frameClass, renderNode, renderEdges,
-  tools, findLabel, findFrom = FIND_FROM, findItems,
+  tools, findLabel, findFrom = FIND_FROM, findItems, list,
 }: {
   world: SuppliedWorld;
   /** Names the region and the world for a reader. */
@@ -97,6 +98,8 @@ export function SuppliedCanvas({
    * once the feature, answering `onSelect`, has drawn one.
    */
   findItems?: readonly { id: string; title: string; stands?: string }[];
+  /** The world as a list (`CanvasList`), the whole reading: given, *Show as list* is offered at every width. */
+  list?: ReactNode;
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pane = useRef<HTMLDivElement>(null);
@@ -111,6 +114,7 @@ export function SuppliedCanvas({
   const [active, setActive] = useState<Stop | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const { gone, onGone } = useSelectionGone(selected);
+  const [listed, setListed] = useState(false);
   const onView = useCallback((view: View, _viewport: Size) => setTier(tierAt(view.k, rem)), [rem]);
 
   const stops = useMemo(() => world.order.filter((id) => !statics.has(id) && world.boxes.has(id)), [world, statics]);
@@ -210,8 +214,19 @@ export function SuppliedCanvas({
         />
       )}
       {tools}
+      {list !== undefined && <ListToggle listed={false} onToggle={() => setListed(true)} />}
     </>
   );
+
+  if (listed && list !== undefined) {
+    return (
+      <div ref={frameRef} className="min-w-0">
+        <div className="mb-2 flex flex-wrap items-center justify-end gap-x-1"><ListToggle listed onToggle={() => setListed(false)} /></div>
+        {list}
+        {gone && <GoneNotice />}
+      </div>
+    );
+  }
 
   return (
     <div ref={frameRef} className="min-w-0">

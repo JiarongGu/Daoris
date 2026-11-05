@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import { act, fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -190,5 +190,25 @@ describe('the map as a ring', () => {
     expect(screen.getByRole('button', { name: 'engine, 1 open, a session working now' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /from game to engine/ })).toBeInTheDocument();
     expect(scaleOf()).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('the map as a list', () => {
+  it('reads every repository, then each kind of line, named as the drawing names them, a pick choosing and a second releasing', async () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(map(TOPOLOGY, null, onSelect));
+    await userEvent.click(screen.getByRole('button', { name: 'Show as list' }));
+    const list = document.querySelector<HTMLElement>('[data-canvas-list]')!;
+    expect(within(list).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      expect.stringContaining('Repositories'), expect.stringContaining('Quests between repositories'), expect.stringContaining('The same thing learned twice'),
+    ]);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(TOPOLOGY.nodes.length + 2);
+    await userEvent.click(within(list).getByRole('button', { name: /from portal-ui to portals-db/ }));
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: 'quests', from: 'portal-ui', to: 'portals-db' });
+    rerender(<Tooltip.Provider>{map(TOPOLOGY, { kind: 'quests', from: 'portal-ui', to: 'portals-db' }, onSelect)}</Tooltip.Provider>);
+    await userEvent.click(within(document.querySelector<HTMLElement>('[data-canvas-list]')!).getByRole('button', { name: /from portal-ui to portals-db/ }));
+    expect(onSelect).toHaveBeenLastCalledWith(null);
+    await userEvent.click(screen.getByRole('button', { name: 'Show as graph' }));
+    expect(screen.getByRole('group', { name: 'the workspace map' })).toBeInTheDocument();
   });
 });

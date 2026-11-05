@@ -112,6 +112,18 @@ export const WorkspacesChineseDark: Story = { args: { topology: blocks() }, deco
 export const ALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } } };
 export const ALineChosenRing: Story = { args: { topology: RING, line: { kind: 'quests', from: 'game', to: 'engine' } }, decorators: [storyWidths.half] };
 
+/** *Show as list* pressed, as a keyboard reaches it in the toolbar. */
+const asList: Story['play'] = async ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>('[data-canvas-list-toggle]')?.click();
+  await new Promise((settled) => requestAnimationFrame(settled));
+};
+
+/** The map as a list, the reading that is not a canvas: the repositories, then each kind of line, a press choosing either. */
+export const AsList: Story = { play: asList };
+export const AsListNarrow: Story = { play: asList, decorators: [storyWidths.narrow] };
+export const AsListChineseDark: Story = { play: asList, decorators: [storyWidths.half, chinese, inDark] };
+export const AsListALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } }, play: asList };
+
 /** The viewer's place restored under a changed map: the view kept by its anchor, and the repository once selected said to be gone. */
 export const ASelectionGone: Story = { args: { storeKey: 'gone' }, decorators: [keptWithAGoneSelection, storyWidths.wide] };
 export const ASelectionGoneChineseDark: Story = { args: { storeKey: 'gone' }, decorators: [keptWithAGoneSelection, storyWidths.wide, chinese, inDark] };

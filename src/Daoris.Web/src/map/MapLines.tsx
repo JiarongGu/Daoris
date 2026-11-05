@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
@@ -45,6 +46,20 @@ export const howMany = (sessions: number) => (sessions > 1 ? ` · ${sessions}` :
 /** A line's name, and whether a session is on one of its quests now, since the ring is not words (MAP4d). */
 export const lineLabel = (t: (key: string) => string, label: string, live: Live) =>
   (live ? `${label}${t(`map.lineLive.${live}`)}` : label);
+
+/** What a line is named for a reader and in the list: its kind, its ends and its count, and a session on it now. */
+export function lineName(t: TFunction, line: MapLine): string {
+  switch (line.kind) {
+    case 'depends': return t('map.dependsLabel', { from: line.edge.from, to: line.edge.to });
+    case 'knowledge': return t('map.knowledgeLabel', { a: line.edge.a, b: line.edge.b, count: line.edge.groups });
+    case 'asks': return lineLabel(t, t('map.asksLabel', { to: line.edge.to, count: line.edge.quests.length }), line.edge.live);
+    case 'chains': {
+      const steps = line.edge.steps.length + line.edge.waiting.length;
+      return lineLabel(t, t('map.chainsLabel', { from: line.edge.from, to: line.edge.to, count: steps }), line.edge.live);
+    }
+    case 'quests': return lineLabel(t, t('map.questsLabel', { from: line.edge.from, to: line.edge.to, count: line.edge.quests.length }), line.edge.live);
+  }
+}
 
 /**
  * A line's count, on the line, in the line's own state; ringed as a node is while a session is on one
@@ -102,21 +117,18 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
         const chosen = selected === line.id;
         const back = !forward(line);
         const marker = (open: boolean) => (open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)');
-        let name: string;
+        const name = lineName(t, line);
         let shown: ReactElement;
         let count: ReactElement | null = null;
         switch (line.kind) {
           case 'depends':
-            name = t('map.dependsLabel', { from: line.edge.from, to: line.edge.to });
             shown = <path d={line.d} fill="none" strokeDasharray={DEPENDS_DASH} markerEnd="url(#map-arrow-declared)" className={cn('shown stroke-ink-soft', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
             break;
           case 'knowledge':
-            name = t('map.knowledgeLabel', { a: line.edge.a, b: line.edge.b, count: line.edge.groups });
             shown = <path d={line.d} fill="none" strokeDasharray="5 5" className={cn('shown stroke-ink-faint', chosen ? 'stroke-[3]' : 'stroke-[1.5]')} />;
             break;
           case 'asks': {
             const open = line.edge.open > 0;
-            name = lineLabel(t, t('map.asksLabel', { to: line.edge.to, count: line.edge.quests.length }), line.edge.live);
             shown = <path d={line.d} fill="none" strokeDasharray={ASKS_DASH} markerEnd={marker(open)} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')} />;
             count = <Count x={line.mid.x} y={line.mid.y} open={open} count={line.edge.quests.length} live={line.edge.live} />;
             break;
@@ -124,14 +136,12 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
           case 'chains': {
             const open = chainOpen(line.edge);
             const steps = line.edge.steps.length + line.edge.waiting.length;
-            name = lineLabel(t, t('map.chainsLabel', { from: line.edge.from, to: line.edge.to, count: steps }), line.edge.live);
             shown = <path d={line.d} fill="none" strokeDasharray={CHAIN_DASH} strokeLinecap="round" markerEnd={marker(open)} className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')} />;
             count = <Count x={line.mid.x} y={line.mid.y} open={open} count={steps} live={line.edge.live} />;
             break;
           }
           case 'quests': {
             const open = line.edge.open > 0;
-            name = lineLabel(t, t('map.questsLabel', { from: line.edge.from, to: line.edge.to, count: line.edge.quests.length }), line.edge.live);
             shown = (
               <path
                 d={line.d} fill="none" markerEnd={marker(open)}
