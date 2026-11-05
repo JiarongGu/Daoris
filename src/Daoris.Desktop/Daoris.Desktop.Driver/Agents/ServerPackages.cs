@@ -51,7 +51,7 @@ public static class ServerPackages
     {
         if (Kept(home, npx) is { } kept) return kept;
 
-        var gate = Gates.GetOrAdd(Path.Combine(home, Key(npx.Package)), _ => new SemaphoreSlim(1, 1));
+        var gate = Gates.GetOrAdd(Path.GetDirectoryName(Folder(home, npx.Package, "0"))!, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
@@ -143,6 +143,9 @@ public static class ServerPackages
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardInputEncoding = System.Text.Encoding.UTF8,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+            StandardErrorEncoding = System.Text.Encoding.UTF8,
         };
         foreach (var argument in resolved.Skip(1)) info.ArgumentList.Add(argument);
         Tools.Hand(info, home);
