@@ -69,42 +69,6 @@
           }
         }
       }
-    },
-    "gh": {
-      "source": "https://github.com/cli/cli/releases",
-      "licence": { "id": "MIT", "url": "https://github.com/cli/cli/blob/trunk/LICENSE" },
-      "versions": {
-        "2.102.0": {
-          "files": {
-            "win-x64": {
-              "url": "https://github.com/cli/cli/releases/download/v2.102.0/gh_2.102.0_windows_amd64.zip",
-              "sha256": "ae64e556ecc240b200f7eba60d550e4bb60d78e860e69dd88c449405b86067f4",
-              "size": 15512013,
-              "archive": "zip",
-              "exe": "bin/gh.exe",
-              "paths": ["bin"]
-            }
-          }
-        }
-      }
-    },
-    "az": {
-      "source": "https://github.com/Azure/azure-cli/releases",
-      "licence": { "id": "MIT", "url": "https://github.com/Azure/azure-cli/blob/dev/LICENSE" },
-      "versions": {
-        "2.90.0": {
-          "files": {
-            "win-x64": {
-              "url": "https://github.com/Azure/azure-cli/releases/download/azure-cli-2.90.0/azure-cli-2.90.0-x64.zip",
-              "sha256": "c4ef59b14f0edd074427fd9981e57b0780965ccdcf6191c033fdf4b4361f33d7",
-              "size": 90215627,
-              "archive": "zip",
-              "exe": "bin/az.cmd",
-              "paths": ["bin"]
-            }
-          }
-        }
-      }
     }
   }
 }

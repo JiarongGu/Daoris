@@ -153,7 +153,7 @@ internal static class DriveConsole
         // The plugins that speak (D64): their processes live as long as this host does, and are stopped
         // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
         // What the set does with each, without their words, goes to this host's machine log (PLUGUI1d).
-        await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log);
+        await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log, hostToken: PlaceHostTokens.For(home));
 
         // The loop's start is over: its first look begins, and what ends the driver from here is `unhandled` (HOSTSTART2).
         entryPoint.Running();

@@ -91,7 +91,7 @@ public sealed class WorkObserver(NodeRecordFiles records, IWorkRuntimePort port,
     private (Bound? Bound, string Unit, string Node, string? Code) Bind(WorkStepHeard heard, IReadOnlyDictionary<string, GovernedUnit> governed)
     {
         var frame = heard.Step;
-        if (port.GenerationOf(heard.Plugin) != heard.Generation) return (null, "", "", WorkRefusals.NotSender);
+        if (port.GenerationOf(heard.Plugin, heard.Generation) != heard.Generation) return (null, "", "", WorkRefusals.NotSender);
 
         var slash = frame.Step.LastIndexOf('/');
         if (slash >= 0 && !string.Equals(frame.Step[..slash], heard.Plugin, StringComparison.Ordinal)) return (null, "", "", WorkRefusals.NotNamed);

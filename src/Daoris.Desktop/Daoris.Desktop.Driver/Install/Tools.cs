@@ -60,8 +60,6 @@ public static class Tools
         new("git", "Git", ["git"], ["--version"], ["core.sshCommand"]),
         new("node", "Node.js", ["node", "npm", "npx"], ["--version"], []),
         new("pwsh", "PowerShell", ["pwsh"], ["--version"], []),
-        new("gh", "GitHub CLI", ["gh"], ["--version"], []),
-        new("az", "Azure CLI", ["az"], ["version"], []),
     ];
 
     /// <summary>What Daoris's git may carry (§2.5): one key, the one WSR7 measured the need for.</summary>

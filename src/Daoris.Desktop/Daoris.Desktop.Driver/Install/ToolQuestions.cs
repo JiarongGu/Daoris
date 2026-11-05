@@ -74,7 +74,7 @@ public static partial class ToolQuestions
 
     /// <summary>
     /// The version a program said: its first dotted number, the way each declared tool says it (<c>git version
-    /// 2.51.0.windows.1</c>, <c>v22.11.0</c>, az's JSON). Null when it said none.
+    /// 2.51.0.windows.1</c>, <c>v22.11.0</c>). Null when it said none.
     /// </summary>
     public static string? VersionIn(string said) => DottedNumber().Match(said) is { Success: true } found ? found.Value : null;
 

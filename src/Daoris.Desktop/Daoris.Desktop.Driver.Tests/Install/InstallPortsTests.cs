@@ -70,7 +70,7 @@ public sealed class InstallPortsTests : IDisposable
     [InlineData(null, "held", "could not be moved aside")]
     public async Task A_delete_the_clearing_keeps_is_refused_in_the_installs_words(string? keeps, string check, string? said)
     {
-        var folder = ToolInstall.VersionFolder(Home, "gh", "2.62.0");
+        var folder = ToolInstall.VersionFolder(Home, "pwsh", "2.62.0");
         Directory.CreateDirectory(folder);
         var workplaces = ToolDownloads.Current;
         var stand = new StandDownloads(new ToolVersionCleared("kept", keeps, keeps switch
@@ -84,7 +84,7 @@ public sealed class InstallPortsTests : IDisposable
         {
             ToolDownloads.Current = stand;
             var refused = await Assert.ThrowsAsync<ToolRefusal>(() =>
-                ToolInstall.DeleteAsync(Home, "gh", "2.62.0", _ => Task.FromResult(LiveSessions.None), harnesses: "wiring.json", config: "driver.json"));
+                ToolInstall.DeleteAsync(Home, "pwsh", "2.62.0", _ => Task.FromResult(LiveSessions.None), harnesses: "wiring.json", config: "driver.json"));
 
             Assert.Equal(check, refused.Check);
             if (said is not null) Assert.Contains(said, refused.Message);
@@ -95,20 +95,20 @@ public sealed class InstallPortsTests : IDisposable
         }
 
         // The install asked for exactly this version, handed the files that say what is used as it was told them.
-        Assert.Equal(("gh", "2.62.0", "wiring.json", "driver.json"), stand.Asked);
+        Assert.Equal(("pwsh", "2.62.0", "wiring.json", "driver.json"), stand.Asked);
         Assert.True(Directory.Exists(folder), "the version stays");
     }
 
     [Fact]
     public async Task A_delete_the_clearing_removes_answers_the_folder()
     {
-        var folder = ToolInstall.VersionFolder(Home, "gh", "2.62.0");
+        var folder = ToolInstall.VersionFolder(Home, "pwsh", "2.62.0");
         Directory.CreateDirectory(folder);
         var workplaces = ToolDownloads.Current;
         try
         {
             ToolDownloads.Current = new StandDownloads(new ToolVersionCleared("removed", null, []));
-            Assert.Equal(folder, await ToolInstall.DeleteAsync(Home, "gh", "2.62.0", _ => Task.FromResult(LiveSessions.None)));
+            Assert.Equal(folder, await ToolInstall.DeleteAsync(Home, "pwsh", "2.62.0", _ => Task.FromResult(LiveSessions.None)));
         }
         finally
         {
