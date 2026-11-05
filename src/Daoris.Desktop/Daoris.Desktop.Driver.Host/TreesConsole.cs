@@ -227,7 +227,8 @@ internal static class TreesConsole
 
                 if (string.IsNullOrWhiteSpace(tree))
                 {
-                    var none = TreesWords.NoTreeToLand(session);
+                    var none = TreesWords.TreeNamedForSession(await service.SessionRecordsAsync().ConfigureAwait(false), session)
+                               ?? TreesWords.NoTreeToLand(session);
                     none.Print(Console.Out, Console.Error);
                     return none.Code;
                 }
