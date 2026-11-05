@@ -24,6 +24,7 @@ public sealed class GitFetchCommandTests : TreeSyncFixture
         Directory.CreateDirectory(bin);
         File.WriteAllText(Path.Combine(bin, GitWiring.SshDoor), "");
         File.WriteAllText(Path.Combine(bin, GitWiring.RemoteHelper), "");
+        File.WriteAllText(Path.Combine(bin, GitCredentialDoor.Exe), "");
     }
 
     [Theory]
