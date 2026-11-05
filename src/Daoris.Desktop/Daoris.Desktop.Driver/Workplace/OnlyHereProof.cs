@@ -123,10 +123,10 @@ internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
             await WorkingTree.GitAsync(root, ["worktree", "prune"], ct).ConfigureAwait(false);
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-        return code == 0
+        var stays = await JournaledDeletes.ForcedAsync(new ContentHolds(context), root, context.OwnerOf(tree).Repository, branch, ct).ConfigureAwait(false);
+        return stays is null
             ? new(true, $"deleted the branch `{branch}`, whose tree was already gone.")
-            : new(false, $"git would not delete the branch `{branch}`: {FirstLine(err)}");
+            : new(false, $"the branch `{branch}` stays: {stays}");
     }
 
     /// <summary>

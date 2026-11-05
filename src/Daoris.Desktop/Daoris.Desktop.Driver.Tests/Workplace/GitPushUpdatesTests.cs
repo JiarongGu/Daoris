@@ -164,18 +164,24 @@ public sealed class GitPushUpdatesTests
     }
 
     [Fact]
-    public void A_grant_with_no_old_commit_never_carries_a_dangerous_kind_and_one_with_it_carries_that_exact_update()
+    public void A_grant_with_no_old_commit_never_carries_a_dangerous_kind_one_with_it_carries_that_exact_update_and_none_carries_a_tag()
     {
         var landing = new[] { new GitGrantRef("refs/heads/work", New) };
-        var exact = new[] { new GitGrantRef("refs/tags/v1", New, Zero) };
+        var exact = new[] { new GitGrantRef("refs/heads/work", New, Old) };
+        var tagged = new[] { new GitGrantRef("refs/tags/v1", New, Zero) };
 
         var forced = Judge(new(Old, New, "refs/heads/work"), GitPushKind.Force, GitAccessKeys.Deny, landing, writeByGrant: true);
-        var tag = Judge(new(Zero, New, "refs/tags/v1"), GitPushKind.Tag, GitAccessKeys.Deny, exact, writeByGrant: true);
-        var tagElsewhere = Judge(new(Old, New, "refs/tags/v1"), GitPushKind.Tag, GitAccessKeys.Deny, exact, writeByGrant: true);
+        var forcedExact = Judge(new(Old, New, "refs/heads/work"), GitPushKind.Force, GitAccessKeys.Deny, exact, writeByGrant: true);
+        var tagDenied = Judge(new(Zero, New, "refs/tags/v1"), GitPushKind.Tag, GitAccessKeys.Deny, tagged, writeByGrant: true);
+        var tagAllowed = Judge(new(Zero, New, "refs/tags/v1"), GitPushKind.Tag, GitAccessKeys.Allow, tagged, writeByGrant: true);
+        var tagElsewhere = Judge(new(Old, New, "refs/tags/v1"), GitPushKind.Tag, GitAccessKeys.Allow, tagged, writeByGrant: true);
 
-        Assert.False(forced.Allowed);
-        Assert.Equal((true, true), (tag.Allowed, tag.UsedGrant));
-        Assert.False(tagElsewhere.Allowed);
+        Assert.Equal((false, "dangerous-denied"), (forced.Allowed, forced.Code));
+        Assert.Equal((true, true), (forcedExact.Allowed, forcedExact.UsedGrant));
+        // D241 point 2: a tag is the same act as a branch, its grant naming it for Write, and the place's Dangerous value decides it.
+        Assert.Equal((false, "dangerous-denied", GitPushUpdates.DeniedLine(GitPushKind.Tag)), (tagDenied.Allowed, tagDenied.Code, tagDenied.Line));
+        Assert.Equal((true, "granted", true), (tagAllowed.Allowed, tagAllowed.Code, tagAllowed.UsedGrant));
+        Assert.Equal((false, "grant-bound"), (tagElsewhere.Allowed, tagElsewhere.Code));
     }
 
     [Fact]

@@ -116,7 +116,11 @@ public sealed class ActRuns(ActJournal journal)
     /// <param name="ct">The watch: it cancels the act before its first effect step, and after that only the watch.</param>
     public async Task<ActRun> RunAsync(ActPlan plan, CancellationToken ct)
     {
-        using var held = Hold(journal.Home, plan.Checkout, plan.Repository);
+        // ONEWAY1r: a flow that holds the checkout alone already (a tidy, a removal) runs its act under that hold, since a second open in
+        // one process is refused; any other takes it here.
+        var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
+        using var taken = outer is null ? Hold(journal.Home, plan.Checkout, plan.Repository) : null;
+        var held = outer ?? taken;
         if (held is null) return Refused($"{TreeLock.Held(plan.Repository, TreeLock.HolderOf(journal.Home, plan.Checkout))}: nothing was changed.");
 
         var reconciler = new ActReconciler(journal) { ExitBound = ExitBound, Ending = Ending };

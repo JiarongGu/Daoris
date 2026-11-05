@@ -201,6 +201,9 @@ public static class PersonPresses
     /// <summary><c>git fetch &lt;repository&gt; --yes</c> (GITAPP2f, D204): origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
     public static InstanceRoute GitFetch { get; } = Person("GIT_FETCH");
 
+    /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c> (GITAPP2g, n; D241 point 2): one ref pushed to origin under its grant, the person's yes.</summary>
+    public static InstanceRoute GitPush { get; } = Person("GIT_PUSH");
+
     /// <summary>
     /// <c>git pick|revert|rebase &lt;repository&gt; &lt;branch&gt; … --yes</c> (GITAPP2m, D204): a branch's history edited from objects, the person's
     /// yes, carrying the ids its plan pinned. The plan is the same route's <c>plan</c> form, open (a <c>PipeRule</c> in the census), which the
@@ -284,6 +287,8 @@ public static class PersonPresses
         ("git branch <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git tag <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git fetch <repository> --yes", GitFetch),
+        ("git push <repository> branch <name> [<commit>] --yes", GitPush),
+        ("git push <repository> tag <name> [<commit>] --yes", GitPush),
         ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
         ("git revert <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
         ("git rebase <repository> <branch> <onto> --yes", GitHistoryEdit),

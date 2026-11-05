@@ -13,5 +13,5 @@ internal static class GitLease
 {
     [ModuleInitializer]
     internal static void Install() =>
-        VerbLeases.Answer("git", new(args => GitIdentityCommand.Changes(args) || GitAccessCommand.Changes(args) || GitRefCommand.Changes(args) || GitFetchCommand.Changes(args) || GitHistoryCommand.Changes(args)));
+        VerbLeases.Answer("git", new(args => GitIdentityCommand.Changes(args) || GitAccessCommand.Changes(args) || GitRefCommand.Changes(args) || GitFetchCommand.Changes(args) || GitPushCommand.Changes(args) || GitHistoryCommand.Changes(args)));
 }

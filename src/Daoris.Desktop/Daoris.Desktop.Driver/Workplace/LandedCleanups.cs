@@ -211,7 +211,7 @@ internal sealed class LandedCleanups(
 
                 // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read before the recovery
                 // ref was made, verified in the delete's own transaction; nothing is read again here.
-                var kept = await content.DeleteJudgedAsync(root, item.Branch, now.Tip, now.Rests, ct).ConfigureAwait(false);
+                var kept = await content.DeleteJudgedAsync(root, item.Repository, item.Branch, now.Tip, now.Rests, ct).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
