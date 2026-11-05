@@ -432,7 +432,6 @@ internal static class ConformanceCases
         else
         {
             refused.Add((transport.GoOnAsync("c-1", "go on", [], never), "a go-on"));
-            refused.Add((transport.RestartAsync(never), "a restart"));
         }
 
         if (!adapter.Resumes) refused.Add((transport.ResumeAsync("c-1", never), "a resume"));

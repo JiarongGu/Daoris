@@ -8,9 +8,9 @@ namespace Daoris.Driver;
 /// unit a start is: the downloads it is handed kept, the process bracketed by its own lineage token, started through the agents' route and
 /// tracked, a reaper beside it, the capture, a native prompt on its input, the wait for the exit and the capture bounded past it, written once
 /// beneath the contract so each executor holds the run and none prepares a process itself. Every executor's run holds it (ONEWAY1h-i,
-/// through <see cref="SessionHold.HoldAsync{T}"/>), a native run's go-on with held words and its resume's one retry too (ONEWAY1h-ii, <see cref="GoOnAsync"/>
-/// and <see cref="RestartAsync"/>), and a conversation's, its session held open for the person's words (ONEWAY1h-iii, the conversation's
-/// runner).
+/// through <see cref="SessionHold.HoldAsync{T}"/>), a native run's go-on with held words (ONEWAY1h-ii, <see cref="GoOnAsync"/>) and its
+/// resume's one retry, the run's own behind <see cref="IResumeState"/> (m-ii), and a conversation's, its session held open for the person's
+/// words (ONEWAY1h-iii, the conversation's runner).
 /// </summary>
 /// <remarks>
 /// <para><b>Admitted by the run's own evidence</b> (design §2.4): its door's wire and its resume. An operation the door's evidence does not
@@ -19,11 +19,13 @@ namespace Daoris.Driver;
 /// the process it holds, so no executor calls <see cref="SendAsync"/> or <see cref="SteerAsync"/>.</para>
 /// <para><b>An executor's own steps between the spawn and the open.</b> A start keeps its actor, opens its watch and its inbox once its process
 /// is up and before anything reads it (D205 row b, SESSWATCH1a), so such an executor spawns first (<see cref="SpawnAsync"/>), takes its steps,
-/// hands the rest of its start (<see cref="HandStart"/>) and its records, then opens; the open spawns the process itself otherwise. One that
+/// hands the rest of its start (<see cref="HandStart"/>) and its sink, then opens; the open spawns the process itself otherwise. One that
 /// composes what names its process before the spawn, the conversation's connector, brackets it first (<see cref="BracketAsync"/>).</para>
+/// <para><b>One channel out</b> (row l): what the run's door says, the record's events, the console's lines, the streams beside, the
+/// conversation named, the account's windows and every failure, is a <see cref="WireReading"/> written to the sink its executor composed;
+/// the run writes its own transcript and names no store above it.</para>
 /// <para><b>What is deleted later.</b> <see cref="Session"/> is the conversation's runner's alone, until m-ii moves its words behind
-/// <c>DoorInput</c>; <c>LayerRun</c> refuses a conversation before then. <see cref="HandRecords"/> goes at row l, <see cref="GoOnAsync"/> and
-/// <see cref="RestartAsync"/> at m-ii.</para>
+/// <c>DoorInput</c>; <c>LayerRun</c> refuses a conversation before then. <see cref="GoOnAsync"/> goes with <c>DoorInput</c>.</para>
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
@@ -42,11 +44,14 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     private readonly List<Task> _captures = [];
 
-    private RunRecords? _records;
+    private IReadingSink? _sink;
+
+    // The native resume's state its one retry reads and marks (row m-ii); null for a start and for a resume handed none.
+    private IResumeState? _resume;
 
     private RunCarriers _carriers = new();
 
-    private HarnessWords _own = new();
+    private HarnessWords _own = start.Own ?? new();
 
     // The first process's token once bracketed and until its spawn takes it, and the session it was issued for.
     private (string Proc, string SessionId)? _bracketed;
@@ -116,8 +121,12 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task OpenAsync(CancellationToken ct) => BeginAsync(conversation: null, ct);
 
-    public override Task ResumeAsync(string conversation, CancellationToken ct) =>
-        adapter.Resumes ? BeginAsync(conversation, ct) : Refused("a resume");
+    public override Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null)
+    {
+        if (!adapter.Resumes) return Refused("a resume");
+        _resume = state;
+        return BeginAsync(conversation, ct);
+    }
 
     public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Refused(ChoiceAbility);
 
@@ -150,20 +159,27 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     // ---- The five members every executor uses today ----
 
-    public override void HandRecords(RunRecords records)
-    {
-        _records = records;
-        _own = records.Own ?? new HarnessWords();
-    }
+    public override void HandSink(IReadingSink sink) => _sink = sink;
 
     public override void HandCarriers(RunCarriers carriers) => _carriers = carriers;
 
     public override async Task<AgentRunEnd> EndAsync(CancellationToken ct)
     {
         var leg = _opened ?? throw new InvalidOperationException("the run is not open: nothing started its process.");
-        var exit = await host.WaitAsync(Records().SessionId, leg.Proc, leg.Process, ct, _start.Minutes, _start.TimingOut, _start.Quiet, _start.QuietEnding)
+        var exit = await host.WaitAsync(SessionOf(), leg.Proc, leg.Process, ct, _start.Minutes, _start.TimingOut, _start.Quiet, _start.QuietEnding)
             .ConfigureAwait(false);
-        return await ConcludedAsync(leg, exit, first: true).ConfigureAwait(false);
+        var end = await ConcludedAsync(leg, exit, first: true).ConfigureAwait(false);
+
+        // 🔴 The native resume's one retry (design §2.6, row m-ii): a structured resume whose harness ended on a failed exit before it named
+        // its conversation proves nothing of its loss, so it is tried once more as the same resume, conversation, account and access, and a
+        // second such end is the conclusion's. Never after a clean exit, a fresh start, a refusal, a stop asked, or on the plain capture.
+        if (leg.Mapper is not null && _resume is { Named: false, Refused: false, Retried: false } resume && end.Exit is int early && early != 0
+            && !host.Processes.WasStopRequested(SessionOf()))
+        {
+            end = await RetriedAsync(resume, ct).ConfigureAwait(false);
+        }
+
+        return end;
     }
 
     public override Task<AgentRunEnd> GoOnAsync(string conversation, string prompt, IReadOnlyList<SessionEvent> opening, CancellationToken ct) =>
@@ -187,31 +203,37 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         if (_carriers.Servers is not null) adapter.HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);
 
-        var sessionId = Records().SessionId;
+        var sessionId = SessionOf();
         var (process, proc) = await StartProcessAsync(sessionId, info, host.Bracketed(sessionId, info, moved: null), StartClass.Person, piece: null, ct)
             .ConfigureAwait(false);
         started?.Invoke();
         var leg = Captured(process, proc, append: true, opening, preamble: null, named: null, ct);
         await PromptedAsync(process, prompt, ct).ConfigureAwait(false);
-        var exit = await host.WaitAsync(Records().SessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
+        var exit = await host.WaitAsync(sessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
     }
 
-    public override async Task<AgentRunEnd> RestartAsync(CancellationToken ct)
+    /// <summary>
+    /// The same start once more, its transcript appended and its opening not said again (SESSCTX1c): the native resume's one retry, said on
+    /// the console and marked on the resume's state before its process starts.
+    /// </summary>
+    private async Task<AgentRunEnd> RetriedAsync(IResumeState resume, CancellationToken ct)
     {
-        if (IsProtocol || _start.Again is not { } again) throw Unsupported("a restart");
-        var records = Records();
+        var sessionId = SessionOf();
 
-        records.Output?.Append(records.SessionId, "— its harness ended before it reopened its conversation, so the same resume is tried once more.");
-        again();
+        Sink().Read(new WireReading.Shown("— its harness ended before it reopened its conversation, so the same resume is tried once more.")
+        {
+            By = ReadingBy.Observed,
+        });
+        resume.Again();
         // The first run's start again, already the launcher's where that one was (TERMTRUST1a): left as it is, and said again, under a token of
         // its own (COWORKVIEW1a).
         var (process, proc) = await StartProcessAsync(
-                records.SessionId, _start.Info, host.Bracketed(records.SessionId, _start.Info, moved: null), StartClass.Person, piece: null, ct)
+                sessionId, _start.Info, host.Bracketed(sessionId, _start.Info, moved: null), StartClass.Person, piece: null, ct)
             .ConfigureAwait(false);
-        var leg = Captured(process, proc, append: true, opening: null, preamble: null, _start.Named, ct);
+        var leg = Captured(process, proc, append: true, opening: null, preamble: null, Told, ct);
         if (_start.Prompt is { } prompt) await PromptedAsync(process, prompt, ct).ConfigureAwait(false);
-        var exit = await host.WaitAsync(records.SessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
+        var exit = await host.WaitAsync(sessionId, proc, process, ct, null, null, default, null).ConfigureAwait(false);
         return await ConcludedAsync(leg, exit, first: false).ConfigureAwait(false);
     }
 
@@ -222,7 +244,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// </summary>
     public void Say(string text)
     {
-        var records = Records();
+        var sink = Sink();
         if (_file is { } file)
         {
             lock (file)
@@ -232,7 +254,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
             }
         }
 
-        records.Output?.Append(records.SessionId, text);
+        sink.Read(new WireReading.Shown(text) { By = ReadingBy.Observed });
     }
 
     // ---- The unit of a start ----
@@ -286,7 +308,11 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         }
 
         _start = completed;
+        if (completed.Own is { } own) _own = own;
     }
+
+    /// <summary>The start the run holds, for an executor that completes it later (<see cref="HandStart"/>).</summary>
+    internal TransportStart Start => _start;
 
     /// <summary>
     /// The run let go before its end (ANSWER2): as when its record will not move to working, its process ended, its <c>end</c> written unclean
@@ -300,21 +326,34 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         else await host.AbandonedAsync(spawned.SessionId, spawned.Proc, spawned.Process, Task.CompletedTask).ConfigureAwait(false);
     }
 
-    private RunRecords Records() => _records ?? throw new InvalidOperationException("the run was handed no records: HandRecords comes before the open.");
+    private IReadingSink Sink() => _sink ?? throw new InvalidOperationException("the run was handed no sink: HandSink comes before the open.");
+
+    private string SessionOf() => _start.Session ?? throw new InvalidOperationException("the run's start names no session: it is handed before the open.");
+
+    private string TranscriptOf() =>
+        _start.Transcript ?? throw new InvalidOperationException("the run's start names no transcript: it is handed before the open.");
 
     private static Task Refused(string ability) => Task.FromException(Unsupported(ability));
 
+    /// <summary>The first run's and its retry's harness named its conversation: the resume's state marked, then the executor told.</summary>
+    private void Told()
+    {
+        _resume?.Opened();
+        _start.Named?.Invoke();
+    }
+
     private async Task BeginAsync(string? conversation, CancellationToken ct)
     {
-        var records = Records();
+        var sessionId = SessionOf();
+        Sink();
         if (_opened is not null) throw new InvalidOperationException("the run is open already.");
-        if (_spawned is null) await SpawnAsync(records.SessionId, ct).ConfigureAwait(false);
+        if (_spawned is null) await SpawnAsync(sessionId, ct).ConfigureAwait(false);
         var (process, proc, spawnedFor) = _spawned!.Value;
-        if (spawnedFor != records.SessionId) throw new InvalidOperationException($"the run's process was started for {spawnedFor}, not {records.SessionId}.");
+        if (spawnedFor != sessionId) throw new InvalidOperationException($"the run's process was started for {spawnedFor}, not {sessionId}.");
 
         _opened = IsProtocol
             ? OpenedProtocol(process, proc, conversation, ct)
-            : Captured(process, proc, append: conversation is not null, records.Opening, records.Preamble, _start.Named, ct);
+            : Captured(process, proc, append: conversation is not null, _start.Opening, _start.Preamble, Told, ct);
         // FOUNDATION1f-iv part b: the write's return is where a carry-on's moved words are `sent`, never the process's start.
         if (_start.Prompt is { } prompt && await PromptedAsync(process, prompt, ct).ConfigureAwait(false)) _start.Written?.Invoke();
     }
@@ -350,26 +389,21 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     private Leg Captured(
         Process process, string proc, bool append, IReadOnlyList<SessionEvent>? opening, string? preamble, Action? named, CancellationToken ct)
     {
-        var records = Records();
-        var id = records.SessionId;
+        var id = SessionOf();
         if (adapter.StructuredOutput() is { } mapper)
         {
+            // Told once the sink kept the conversation it named: it opened the conversation its input carried the person's words to, so the
+            // words went (MSG1b).
             var structured = HarnessCapture.CaptureStructuredAsync(
-                host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), records.Transcript, id, records.Output,
-                records.Events, mapper, prompt: null, ct, preamble, observed: _start.Observed, opened: opening, append: append, said: records.Said,
-                named: conversation =>
-                {
-                    if (records.KeepAs is { } keepAs) host.KeepConversation(id, keepAs, conversation);
-                    // It opened the conversation its input carried the person's words to, so the words went (MSG1b).
-                    named?.Invoke();
-                },
-                own: _own, lineage: records.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null);
+                host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
+                preamble, observed: _start.Observed, opened: opening, append: append, named: named,
+                own: _own, lineage: _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }
 
         var plain = HarnessCapture.CaptureAsync(
-            host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), records.Transcript, id, records.Output, ct, preamble);
+            host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), ct, preamble);
         _captures.Add(plain);
         return new Leg(process, proc, plain);
     }
@@ -381,10 +415,10 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// </summary>
     private Leg OpenedProtocol(Process process, string proc, string? conversation, CancellationToken ct)
     {
-        var records = Records();
-        var id = records.SessionId;
+        var id = SessionOf();
+        var sink = Sink();
         var protocol = _start.Protocol ?? throw new InvalidOperationException($"the `{adapter.Name}` run was handed no protocol session to open.");
-        var file = _file = AgentContext.Current.OpenTranscript(records.Transcript, append: conversation is not null);
+        var file = _file = AgentContext.Current.OpenTranscript(TranscriptOf(), append: conversation is not null);
 
         void Line(string text)
         {
@@ -395,18 +429,18 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
                 file.WriteLine(text);
             }
 
-            records.Output?.Append(id, text);
+            sink.Read(new WireReading.Shown(text));
         }
 
-        void Event(SessionEvent e) => records.Events?.Keep(id, e, Line);
+        void Event(SessionEvent e) => sink.Read(new WireReading.Said(e));
 
         // A fact about how the run was set up, ahead of anything else, as the native door writes it (HELPMODE1a1). Then what was asked: the
         // target the driver composed is the conversation's opening line, and what this harness is doing that Daoris could not govern, on the
         // transcript rather than swallowed (ACP3).
-        if (records.Preamble is { Length: > 0 } preamble) Line(preamble);
-        var errors = HarnessCapture.PumpAsync(host.Hearing(process.StandardError, id), file, id, records.Output, ct);
+        if (_start.Preamble is { Length: > 0 } preamble) Line(preamble);
+        var errors = HarnessCapture.PumpAsync(host.Hearing(process.StandardError, id), file, sink, ct);
         _captures.Add(errors);
-        foreach (var opening in records.Opening ?? [])
+        foreach (var opening in _start.Opening ?? [])
         {
             if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
             Event(opening);
@@ -414,10 +448,10 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
         var session = new AcpSession(
             host.Hearing(process.StandardOutput, id), process.StandardInput, Line, closeTimeout: null, protocol.Posture, protocol.Meta, Event,
-            streams: records.Output?.ForSession(id), onOptions: protocol.Options,
-            onConversation: records.KeepAs is not { } keepAs ? null : named => host.KeepConversation(id, keepAs, named))
+            streams: ReadingStreams.Of(sink), onOptions: protocol.Options,
+            onConversation: named => sink.Read(new WireReading.ConversationNamed(named)))
         {
-            Lineage = records.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null,
+            Lineage = _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null,
             TypedFailures = protocol.TypedFailures,
         };
         Session = session;
@@ -460,6 +494,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         catch (Exception error)
         {
             failed = error;
+            if (error is not OperationCanceledException) Sink().Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Open)));
             // A session that never opened is no session: nothing closes it, and nothing more is said to it.
             Session = null;
             protocol.Unopened?.Invoke(error);
@@ -513,7 +548,8 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         catch (DriverException error)
         {
             // A protocol failure belongs in the transcript and goes to the conclusion beside the exit (ACPEND1); the executor says it by its code.
-            // FOUNDATION1g part b: the refusal as the door carried it, for a conclusion that reads its code.
+            // FOUNDATION1g part b: the refusal as the door carried it, for a conclusion that reads its code. Its one reading on the sink (row l).
+            Sink().Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Prompt)));
             return (null, error.Message, error as AcpRefusal ?? (error as AcpWordTurnFailed)?.Refusal);
         }
         finally
@@ -537,9 +573,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// </summary>
     private async Task<AgentRunEnd> ConcludedAsync(Leg leg, int? exit, bool first)
     {
-        var records = Records();
+        var sessionId = SessionOf();
         // 🔴 State E (SESSWATCH1a): a stray its agent started may hold the capture open past the exit; bounded, and concluded by the exit.
-        var drained = await host.DrainedAsync(records.SessionId, leg.Proc, leg.Capture).ConfigureAwait(false);
+        var drained = await host.DrainedAsync(sessionId, leg.Proc, leg.Capture).ConfigureAwait(false);
 
         AcpOutcome? outcome = null;
         string? failure = null;
@@ -557,9 +593,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
         // DONEEND1: an agent the run ended because it lingered after its session had ended exited as its session did, cleanly.
         if (first && _start.Protocol?.Ending?.EndedLingering == true && exit is not null) exit = 0;
-        host.Ended(records.SessionId, leg.Proc, exit);
+        host.Ended(sessionId, leg.Proc, exit);
 
-        var ending = Ending(IsProtocol, leg.Structured is not null, exit, failure, _own, records.Transcript) with
+        var ending = Ending(IsProtocol, leg.Structured is not null, exit, failure, _own, TranscriptOf()) with
         {
             // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
             ProviderRefused = outcome?.ProviderRefused == true,

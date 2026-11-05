@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// </param>
 internal sealed class ResumeAsk(
     string conversation, IReadOnlyList<SaidWordView> words, string firstLine, string? appendix = null,
-    Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null)
+    Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null) : IResumeState
 {
     /// <summary>The first line with its lines by code (CONVNOTE2a): its English is the line the ask keeps.</summary>
     public ResumeAsk(
@@ -111,6 +111,11 @@ internal sealed class ResumeAsk(
         Named = false;
         Refused = null;
     }
+
+    bool IResumeState.Refused => Refused is not null;
+
+    /// <summary>The native harness opened the conversation its input carried the words to, so they went (MSG1b).</summary>
+    void IResumeState.Opened() => Named = Prompted = true;
 
     /// <summary>
     /// The words went to the session (MSG1b): the protocol door's first prompt is on the wire, or the native door's harness

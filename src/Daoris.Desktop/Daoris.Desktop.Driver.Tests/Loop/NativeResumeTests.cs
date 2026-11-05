@@ -305,8 +305,9 @@ public sealed class NativeResumeTests
                 """{"type":"system","subtype":"init","session_id":"0b5e7c1a","cwd":"D:/trees/chat-1","tools":[],"model":"x"}"""));
 
             await HarnessCapture.CaptureStructuredAsync(
-                stdout, new StringReader(""), Path.Combine(folder, "s1.log"), "s1", output: null, events: null,
-                new ClaudeStreamJson(), prompt: null, CancellationToken.None, named: told.Add);
+                stdout, new StringReader(""), Path.Combine(folder, "s1.log"),
+                ReadingSinks.On<WireReading.ConversationNamed>(named => told.Add(named.Conversation)),
+                new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
             Assert.Equal(["0b5e7c1a"], told);
         }

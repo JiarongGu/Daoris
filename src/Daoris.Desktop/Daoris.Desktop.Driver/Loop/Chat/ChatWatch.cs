@@ -73,9 +73,12 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The conversation's messages are recorded as the person sends them, so the capture opens with no composed prompt of its own, its
             // first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation resumed,
             // its id kept for its record the moment its door names it.
-            run.HandRecords(new RunRecords(
-                sessionId, transcript, Context.Output, Context.Events, LineageHome: Context.Home, KeepAs: watched.Keeps ? watched.Adapter : null,
-                Said: said, Preamble: watched.Preamble));
+            run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, LineageHome = Context.Home, Preamble = watched.Preamble });
+            run.HandSink(ReadingSinks.Of(
+                new RecordReadings(sessionId, Context.Output, Context.Events),
+                !watched.Keeps ? null
+                    : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
+                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows))));
             await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
                 .ConfigureAwait(false);
 

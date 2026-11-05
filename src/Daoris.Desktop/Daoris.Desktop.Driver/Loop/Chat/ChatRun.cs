@@ -333,7 +333,7 @@ internal sealed class ChatRun(
                     sessionId, agent.Name, clock(),
                     refused =>
                     {
-                        var read = agent.Read(harnesses.Adapters, DoorFailure.OfPrompt(refused), clock().GetUtcNow(), harnesses.Zone);
+                        var read = agent.Read(harnesses.Adapters, DoorFailures.OfPrompt(refused), clock().GetUtcNow(), harnesses.Zone);
                         using var log = new MachineLog(home, "driver");
                         log.Info("agent.error", ("session", sessionId), ("adapter", agent.Name), ("account", selection.Profile), ("kind", read.Spelled), ("by", read.By));
                         return read;

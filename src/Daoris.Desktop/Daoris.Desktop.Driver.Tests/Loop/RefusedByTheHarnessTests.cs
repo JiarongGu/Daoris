@@ -98,8 +98,8 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     {
         var own = new HarnessWords();
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(string.Join('\n', stdout)), new StringReader(stderr), Transcript, "s1", output: null,
-            events: null, new ClaudeStreamJson(), prompt: "test the error path", CancellationToken.None, own: own);
+            new StringReader(string.Join('\n', stdout)), new StringReader(stderr), Transcript, ReadingSinks.None,
+            new ClaudeStreamJson(), prompt: "test the error path", CancellationToken.None, own: own);
         return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 

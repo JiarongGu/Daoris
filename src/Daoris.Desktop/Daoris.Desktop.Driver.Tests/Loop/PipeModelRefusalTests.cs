@@ -51,8 +51,8 @@ public sealed class PipeModelRefusalTests : IDisposable
     {
         var own = new HarnessWords();
         await HarnessCapture.CaptureStructuredAsync(
-            new StringReader(string.Join('\n', stdout)), new StringReader(""), Transcript, "s1", output: null,
-            events: null, new ClaudeStreamJson(), prompt: "fix the gate", CancellationToken.None, own: own);
+            new StringReader(string.Join('\n', stdout)), new StringReader(""), Transcript, ReadingSinks.None,
+            new ClaudeStreamJson(), prompt: "fix the gate", CancellationToken.None, own: own);
         return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 

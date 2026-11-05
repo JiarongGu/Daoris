@@ -180,7 +180,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// </summary>
     private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
         ended?.Refusal is { } refused
-        && AgentErrors.Read(context.Adapters, adapter, DoorFailure.OfPrompt(refused), context.Harnesses.Clock(), context.Harnesses.Zone)
+        && AgentErrors.Read(context.Adapters, adapter, DoorFailures.OfPrompt(refused), context.Harnesses.Clock(), context.Harnesses.Zone)
             is { Kind: AgentErrorKind.Access } read
         && !read.By.Contains(":words:", StringComparison.Ordinal);
 }

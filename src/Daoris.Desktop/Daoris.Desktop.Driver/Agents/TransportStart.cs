@@ -15,6 +15,24 @@ namespace Daoris.Driver;
 /// </param>
 internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
 {
+    /// <summary>The session record the run is, which its process is tracked, waited and bracketed under; required by the open.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>Where the run's own transcript is written: the text of its wire a person reads; required by the open.</summary>
+    public string? Transcript { get; init; }
+
+    /// <summary>The events the record opens with, said once: a start's target or a resume's answer, never said again by a restart.</summary>
+    public IReadOnlyList<SessionEvent>? Opening { get; init; }
+
+    /// <summary>A fact about how the run was set up, written ahead of anything the process says; null says none.</summary>
+    public string? Preamble { get; init; }
+
+    /// <summary>The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</summary>
+    public string? LineageHome { get; init; }
+
+    /// <summary>Where the harness's own words are kept for its ending (AGT3c), which its executor reads after; null keeps the run's own.</summary>
+    public HarnessWords? Own { get; init; }
+
     /// <summary>The target the spawn was prepared for, which a go-on prepares its resume from.</summary>
     public SessionTarget? Target { get; init; }
 
@@ -74,12 +92,6 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// land behind that end. Null tells none.
     /// </summary>
     public Action<SessionEvent>? Observed { get; init; }
-
-    /// <summary>
-    /// Told as the same start is made once more (SESSCTX1c): the resume's retry mark. Null where the run is no resume, which
-    /// <see cref="AgentRun.RestartAsync"/> refuses.
-    /// </summary>
-    public Action? Again { get; init; }
 
     /// <summary>The protocol door's session over the process: what its open is handed. Null on a native door.</summary>
     public TransportProtocol? Protocol { get; init; }
@@ -200,9 +212,6 @@ internal interface ITransportHost
 
     /// <summary>The downloads a start is handed, kept on its record before it is spawned (KEEP1b).</summary>
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
-
-    /// <summary>The conversation the harness named, kept for the record under the adapter (ANSWER1a).</summary>
-    void KeepConversation(string sessionId, string adapter, string conversation);
 
     /// <summary>The command configured for a door, or null for its own.</summary>
     IReadOnlyList<string>? Command(string adapter);

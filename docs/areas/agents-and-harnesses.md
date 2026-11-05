@@ -31,7 +31,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `SessionTarget`, `ChatTarget`, `EarlierMaker` | same names | What a spawn carries |
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
 | `ClaimedPrompt`, `ResumedPrompt`, `AskedPrompt`, `RequirementsPrompt`, `WorkplacePrompt` | same names | The instruction's pieces for a claim and its retry, for a resume or a carry-on, for the ask, for the requirements and their evidence, and for the working tree |
-| `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait, go-on and restart |
+| `TransportRun`, `TransportStart` | `TransportRun.cs`, `TransportStart.cs` | The one run over both transports: spawn, lineage token, capture, native prompt, wait and go-on; the start names its session, transcript, opening and preamble, and everything the door says leaves as readings to the sink its executor hands it |
+| `IResumeState` | `Contract/` | A native resume's state, which Course's `ResumeAsk` implements: the run marks it opened when its harness names the conversation, and its end tries a structured resume once more where the harness exited nonzero before naming it, never after a clean exit, a refusal, a stop asked or on the plain capture |
+| `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a failure), the one port it writes them to and its composition; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, the windows |
 | `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
 | `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
 | `OpenPrompts`, `OpenPrompt`, `PromptPassage` | `Turn/` | The prompts on the wire and the run's door they pass, under one gate whose header names what it guards, the order of the locks and what a race would break: a prompt opens as it is admitted under the write lock, the door shuts between two writes, a word is taken once |
@@ -232,7 +234,9 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   `AcpRun` are), reaching the session through a wiring interface. What touches the open prompts goes through `OpenPrompts`, whose
   gate is the only lock of that state: a new member that reads or changes it is added there, under the gate, calling nothing out
   while it is held. `Acp.cs` is a root that wires: never more code in it.
-- How a run starts, waits or goes on: `TransportRun` and `TransportStart`.
+- How a run starts, waits or goes on: `TransportRun` and `TransportStart`. What a run's door says goes out as a `WireReading` on its
+  sink, never as a callback or a store the run names: a new fact is a reading in `Events/Readings/`, kept by its owner's part where the
+  executor composes the sink (`SessionHold`, `ChatWatch`).
 - Which account or binary a start takes: `HarnessRoster` for the walk's facts. The pure ranking goes in `AccountRotation` or
   `Domain/`. Settings shape goes in `HarnessSettings` or `AccountSet`.
 - Which choice or model a start takes: Roles (`Roles/`), not Agents.
@@ -247,7 +251,8 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `ProviderRegistryTests`,
   `ProvidersBuiltTests`, `StandInShimProcessTests`;
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
-  `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`;
+  `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
+  readings and the sink, each door's event file as before, a subagent's card `think` on both doors);
 - spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `OwnContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
   `StandingHandedTests`, `TargetPromptGoldenTests`;
 - accounts: `AccountRotation*Tests`, `AccountSetTests`, `AccountNextStartTests`, `SwitchDecisionTests`, `UsageCurvesTests`,
@@ -309,7 +314,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   shell reads, Platform's launcher starting and containing the completed recipe (D201), the identity names moved down from
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
-  the readings' one sink per run (l), words through the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice
+  the sink's rest (l: the protocol door's windows still on the driven door's callback, a conversation's word turns' failures and the
+  open's refused model as no reading yet, the lineage still a writer the run makes rather than Participants' part, the four `stream-json`
+  readers not yet one, `ChildBindings` not yet each provider's `IChildVocabulary`, run, generation and sequence not yet on a reading),
+  m-ii's rest (words through the run by `DoorInput` and `GoOnAsync` gone with it; a conversation's native retry still `ChatWatch`'s own,
+  a start of its own rather than the run's; the protocol resume once for a driven run and a conversation; the hand-over's accounts once;
+  `IConversationHome`), the same-session re-ask of a refused choice
   (n), one connector plan (p, with **CONNECTORS1**), the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.
@@ -321,7 +331,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
   kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes.
+  Waits on a recorded native limit, the owner's yes. The channel is built: a failed native `result` is one `WireReading.Failed`
+  (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, which nothing reads for the account yet; D210's row 1c adds the
+  part that reads it through `AgentErrors.Read` and Claude Code's limit words, composed beside the others in `SessionHold` and `ChatWatch`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
