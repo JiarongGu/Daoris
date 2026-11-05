@@ -16,8 +16,8 @@ public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool As
 /// doors at the remote command. Until the person can set git access (GITAUTH1f) it answers Daoris's default, door by door, which is
 /// today's behaviour: <b>Read</b> is allowed; <b>Write</b> is allowed to the landing alone, by the grant the driver writes for its
 /// plugin's push on the person's yes (<see cref="GitGrants"/>), and refused to every other process, a session on any harness among
-/// them; <b>Dangerous</b>, a push's force or delete, is judged at the doors for every agent whatever its harness (D233 choice 3),
-/// refused unless the person's git access allows it (<see cref="JudgeDangerous"/>).
+/// them; <b>Dangerous</b>, each update of a push judged by its kind, is judged at the doors for every agent whatever its harness
+/// (D233 choice 3, D241 point 3), refused unless the person's git access allows it (<see cref="GitPushJudge"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Git access alone</b> says whether a session pushes: a home whose person had switched <c>no-push</c> off was converted once into
@@ -73,18 +73,6 @@ public static class GitAccessRules
             _ => Judge(act, granted),
         };
     }
-
-    /// <summary>
-    /// The answer for a force-push or a branch delete (D233 choice 3) under Dangerous's value: the landing's grant passes it, as it
-    /// passes the landing's Write; <c>allow</c> passes; <c>ask</c> is asked at the door; anything else, the default among them, refuses.
-    /// </summary>
-    public static GitVerdict JudgeDangerous(string value, bool granted) => value switch
-    {
-        _ when granted => new(true, "granted", null),
-        GitAccessKeys.Allow => new(true, "access", null),
-        GitAccessKeys.Ask => new(false, "ask", null, Ask: true),
-        _ => new(false, "dangerous-denied", GitPushUpdates.DeniedLine),
-    };
 
     /// <summary>The class of an ssh remote command's program (§4.2): read, write, or null for one the door does not take.</summary>
     public static GitAct? ClassOf(string program, string? lfsOperation = null) => program switch
@@ -162,22 +150,30 @@ public static class GitAddressKeys
 /// </summary>
 /// <remarks>
 /// A grant file can be written by any process of the account, as every local record can (§10): grants are bound to their act and their
-/// minutes, and the doors govern an agent's ordinary git, not an agent set on getting round them. The transport judge (GITAUTH1g) binds
-/// a grant to its ref and new commit as well.
+/// minutes, and the doors govern an agent's ordinary git, not an agent set on getting round them. A grant carries the refs of its own act
+/// (<see cref="GitGrantRef"/>) and nothing else.
 /// </remarks>
 public static class GitGrants
 {
     /// <summary>How long a grant stands: a held call's bound (<c>HeldPermissions.Bound</c>).</summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMinutes(15);
 
-    /// <summary>Write a grant for one write connection to <paramref name="address"/>; its id, or null where the address has no key.</summary>
-    public static string? Write(string home, string address, DateTimeOffset now)
+    /// <summary>
+    /// Write a grant for one push to <paramref name="address"/> that carries exactly <paramref name="refs"/>; its id, or null where the
+    /// address has no key or no ref is named.
+    /// </summary>
+    public static string? Write(string home, string address, IReadOnlyList<GitGrantRef> refs, DateTimeOffset now)
     {
-        if (GitAddressKeys.Of(address) is not { } key) return null;
+        if (GitAddressKeys.Of(address) is not { } key || refs.Count == 0) return null;
         var id = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
         var folder = DaorisHome.Entry(home, HomeEntry.GitGrants);
         Directory.CreateDirectory(folder);
-        var record = new JsonObject { ["address"] = key, ["until"] = (now + Bound).ToString("O") };
+        var record = new JsonObject
+        {
+            ["address"] = key,
+            ["until"] = (now + Bound).ToString("O"),
+            ["refs"] = new JsonArray(refs.Select(each => (JsonNode)new JsonObject { ["ref"] = each.Ref, ["new"] = each.New, ["old"] = each.Old }).ToArray()),
+        };
         var path = Path.Combine(folder, id + ".json");
         File.WriteAllText(path + ".writing", record.ToJsonString());
         File.Move(path + ".writing", path);
@@ -185,8 +181,34 @@ public static class GitGrants
     }
 
     /// <summary>
-    /// Take the grant <paramref name="id"/> names for a write to <paramref name="key"/>: true once, where it is there, names that key
-    /// and stands at <paramref name="now"/>. A grant for another address is left for its own act.
+    /// The refs the grant <paramref name="id"/> carries for a push to <paramref name="key"/>, read and left where it is: null where it is not
+    /// there, names another address, has passed its bound or carries no ref. A grant for another address is no grant here.
+    /// </summary>
+    public static IReadOnlyList<GitGrantRef>? Read(string home, string? id, string? key, DateTimeOffset now)
+    {
+        if (id is null || key is null || id.Length != 32 || !id.All(char.IsAsciiHexDigitLower)) return null;
+        try
+        {
+            var path = Path.Combine(DaorisHome.Entry(home, HomeEntry.GitGrants), id + ".json");
+            if (!File.Exists(path) || JsonNode.Parse(AtomicFile.ReadText(path)) is not JsonObject record) return null;
+            if (!string.Equals((string?)record["address"], key, StringComparison.OrdinalIgnoreCase)) return null;
+            if (!DateTimeOffset.TryParse((string?)record["until"], out var until) || now > until) return null;
+            var refs = (record["refs"] as JsonArray ?? new JsonArray())
+                .OfType<JsonObject>()
+                .Select(each => new GitGrantRef((string?)each["ref"] ?? "", (string?)each["new"] ?? "", (string?)each["old"]))
+                .Where(each => each.Ref.Length > 0 && each.New.Length > 0)
+                .ToList();
+            return refs.Count == 0 ? null : refs;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Take the grant <paramref name="id"/> names for a push to <paramref name="key"/>: true once, where it is there, names that key
+    /// and stands at <paramref name="now"/>. Which refs it carries is <see cref="Read"/>'s, judged by <see cref="GitPushJudge"/> first.
     /// </summary>
     public static bool Take(string home, string? id, string? key, DateTimeOffset now)
     {

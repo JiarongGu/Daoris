@@ -28,8 +28,8 @@ public sealed record GitAccessEdit
 /// </summary>
 public static class GitAccessActs
 {
-    /// <summary>The refusal for the class the transport judge will own.</summary>
-    public const string DangerousLine = "git: Dangerous is set once Daoris's doors can judge each update of a push, and they cannot yet (dangerous-unavailable)";
+    /// <summary>The refusal for Dangerous asked: the doors judge each dangerous update themselves, and no person is waited on.</summary>
+    public const string DangerousAskLine = "git: Dangerous is `allow` or `deny`: the doors judge each dangerous update themselves and wait on no one (dangerous-no-ask)";
 
     private const string Scope = "git access is set for a repository, a workspace or this machine — name exactly one.";
     private const string OneChange = "one change at a time: the classes it names with their values, one value for both, or clear.";
@@ -70,7 +70,7 @@ public static class GitAccessActs
     }
 
     /// <summary>The edit's changes, judged: the class and its value, or null to take it away.</summary>
-    /// <exception cref="DriverException">An edit that is not one change, a class or a value there is not, or Dangerous.</exception>
+    /// <exception cref="DriverException">An edit that is not one change, a class or a value there is not, or Dangerous asked.</exception>
     public static IReadOnlyList<KeyValuePair<string, string?>> Changes(GitAccessEdit edit)
     {
         var changes = new[] { edit.Set is { Count: > 0 }, edit.OneValue is not null, edit.Clear }.Count(each => each);
@@ -86,8 +86,9 @@ public static class GitAccessActs
         foreach (var (spelled, value) in edit.Set!)
         {
             var name = GitAccessKeys.ClassNamed(spelled) ?? throw new DriverException($"`{spelled.Trim()}` is not a class of git access — `read`, `write` or `dangerous`.");
-            if (name == GitAccessKeys.Dangerous) throw new DriverException(DangerousLine);
-            set.Add(new(name, string.IsNullOrWhiteSpace(value) ? null : GitAccessKeys.ValueNamed(value) ?? throw new DriverException($"git access is `allow`, `ask` or `deny`, not `{value.Trim()}`.")));
+            var named = string.IsNullOrWhiteSpace(value) ? null : GitAccessKeys.ValueNamed(value) ?? throw new DriverException($"git access is `allow`, `ask` or `deny`, not `{value.Trim()}`.");
+            if (name == GitAccessKeys.Dangerous && named == GitAccessKeys.Ask) throw new DriverException(DangerousAskLine);
+            set.Add(new(name, named));
         }
 
         return set;

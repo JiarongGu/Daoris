@@ -21,6 +21,10 @@
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAccessRules.cs" Link="GitAccessRules.cs" />
     <!-- A push's force-pushes and branch deletes, read at both doors (D233 choice 3). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitPushUpdates.cs" Link="GitPushUpdates.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitPushJudge.cs" Link="GitPushJudge.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitPushDoor.cs" Link="GitPushDoor.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitGrantRef.cs" Link="GitGrantRef.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitHelperPush.cs" Link="GitHelperPush.cs" />
     <!-- The person's git access, read from the driver's file, and the go-ahead a door holds an act for (GITAUTH1f, §6.5 and §6.6). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAccessKeys.cs" Link="GitAccessKeys.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAsks.cs" Link="GitAsks.cs" />
