@@ -267,9 +267,7 @@ public sealed class PluginCatalogTests : IDisposable
 
         Assert.Contains("claude-code", entry.Problem);
         Assert.Contains("this build", entry.Problem);
-        var built = Assert.IsType<LegacyDoor>(AdapterSet.Built().WithPlugins(catalog).Resolve("claude-code"));
-        Assert.Null(built.Door.Identity.DeclaredBy);
-        Assert.Equal(new ProviderId("claude-code"), built.Provider.Id);
+        Assert.Null(Assert.IsType<LegacyDoor>(AdapterSet.Built().WithPlugins(catalog).Resolve("claude-code")).Door.Identity.DeclaredBy);
     }
 
     /// <summary>

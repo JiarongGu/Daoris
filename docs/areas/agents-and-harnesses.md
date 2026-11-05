@@ -284,7 +284,11 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Open
 
-- **AGENTPROVIDER1** host rows (d, e, f, g, h, l, m-ii, n, o, p, q, r, s, u): the readings' one sink per run (l), words through
+- **AGENTPROVIDER1d**'s rest: `ProviderRegistry.OwnerOf` and `ProviderOf` as the one reader of whose accounts a door runs as,
+  `HarnessToolchain.Owner` and `AdapterSet.Holder` retired; Codex's limit words and usage question on provider `codex`;
+  `tools/live-logins.mjs` reading the driver's answer; s-ix on. **1e**'s rest: the usage question each provider's own, with no
+  `UsageKind` switch; the window, limit and sign-in tables split between provider and door; then s-iii.
+- **AGENTPROVIDER1** host rows (f, g, h, l, m-ii, n, o, p, q, r, s, u): the readings' one sink per run (l), words through
   the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice (n), one connector plan (p, with **CONNECTORS1**),
   the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
