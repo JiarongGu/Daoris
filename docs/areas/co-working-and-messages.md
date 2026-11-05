@@ -49,7 +49,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | Page: conversation | `Web/work/conversation/Composer.tsx`, `ExchangeCard.tsx`, `exchanges.ts`, `answerHeads.ts`, `AskView.tsx`, `SenderChip.tsx`, `channelHome.ts` | The level menu; a helper ask's card and the exchanges drawn; each word's sender chip; a helper's answer no card holds as its agent's block; a channel message's poster and the door to its channel |
 | Page: At work, channel, attention | `Web/work/atWork/AtWorkView.tsx`, `exchangeSeek.ts`, `AtWorkAskView.tsx`, `Web/asks/ChannelSection.tsx`, `TeammateAskPage.tsx`, `Web/bridge/sessions/asks.ts`'s `useLineChannel`, `Web/work/attention/attention.ts`, `Web/work/waits/waitObligations.ts`, `Web/notifications/StewardLine.tsx` | *At work* and *Waiting on*, opened at a request, with the line's channel; the ask's channel and a teammate's; *What needs you* and the foot's count by one key; the steward's line |
 
-The agent's half is the canon skill `canon/core/skills/co-working/SKILL.md`.
+The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SKILL.md`; it also says what the person sees of an agent's part (the sender marks, the wait counted once, a line's channel, the steward desk's history).
 
 ## Its rules
 
