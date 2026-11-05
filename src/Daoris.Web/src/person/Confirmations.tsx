@@ -38,8 +38,6 @@ export type Confirmation = {
   asker?: { process?: string | null; pid?: number | null } | null;
   /** When it was asked. It waits, whichever its source, until the person answers or its asker takes it back (ONEWAY1n). */
   asked?: string | null;
-  /** Read by nothing: no request has a clock (ONEWAY1n-ii). It goes once the test and story fixtures that still set it drop it. */
-  expires?: string | null;
   /**
    * Whether it was shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
    * since its door hears none (NOTIFY2b).
@@ -158,8 +156,8 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. **Its default is no** (design §4.2): nothing is
- * focused or pressed for the person, and *Refuse* comes first. A terminal's press waits until the person answers (CONFIRMWAIT1a-i),
- * its card saying whether a terminal still waits on it; the service's is refused when its two minutes end. A refusal of the answer
+ * focused or pressed for the person, and *Refuse* comes first. Every request waits until the person answers (ONEWAY1n-ii), a
+ * terminal's press's card saying whether a terminal still waits on it (CONFIRMWAIT1a-i). A refusal of the answer
  * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
  * answer returns (NOTIFY2a, the notification design §3.4).
  */

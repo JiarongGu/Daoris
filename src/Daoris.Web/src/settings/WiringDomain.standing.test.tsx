@@ -9,12 +9,16 @@ import userEvent from '@testing-library/user-event';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: () => undefined,
-}));
+vi.mock('@shenora/react', async () => {
+  const { answeringSlices, holdingSlices } = await import('../test/sliceShell');
+  const shell = answeringSlices(invoke);
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
+    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: () => undefined,
+  };
+});
 
 import { SettingsView } from './SettingsView';
 import i18n from '../locales/i18n';

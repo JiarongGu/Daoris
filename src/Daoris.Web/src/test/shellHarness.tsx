@@ -2,8 +2,6 @@ import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { useStateSlices } from '../bridge/state/slices';
-import { PUSHED } from '../app/ShellSignals';
 
 // The views in SHELL mode share these: what the service and the driver answer, and a render with the
 // providers every view expects. The bridge mock itself stays in each test file, because `vi.mock` is
@@ -68,16 +66,9 @@ export const serviceCalls = () =>
   vi.mocked(fetch).mock.calls.map((call) => String(call[0]))
     .filter((url) => !url.startsWith('/api/registry') && !url.startsWith('/api/status'));
 
-/** The window's pushed slices, as `ShellSignals` mounts them: each slice's snapshot read once, where a shell is here (ONEWAY1ab-ii). */
-export function Slices() {
-  useStateSlices(PUSHED);
-  return null;
-}
-
 export function show(node: React.ReactElement, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={client}>
-      <Slices />
       <Tooltip.Provider>{node}</Tooltip.Provider>
     </QueryClientProvider>,
   );

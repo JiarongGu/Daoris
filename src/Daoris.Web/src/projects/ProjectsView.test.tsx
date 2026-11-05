@@ -20,11 +20,12 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
 vi.mock('@shenora/react', async () => {
   // What a press moved reaches the state hub as the shell publishes it (STATEHUB1f, D169), where a test mounts the hub.
   const { publishing } = await import('../test/publishing');
-  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  const { answeringSlices, holdingSlices } = await import('../test/sliceShell');
+  const published = answeringSlices(publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload)), invoke);
   return {
     isShenoraAvailable: () => true,
     getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
-    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenora: () => holdingSlices(published, { isAvailable: true, bridge: { notifyReady } }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       eventHandlers.set(`${module}.${type}`, handler);
     },

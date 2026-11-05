@@ -10,7 +10,6 @@ import { NotificationsView } from './NotificationsView';
 // nothing in any, *Nothing needs you*. At the side bar's 300 px floor and at 45% of the install's window (R6), in English and 中文,
 // light and dark.
 
-const IN_TWO_MINUTES = new Date(Date.now() + 100_000).toISOString();
 
 const SAY: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'SESSION_INPUT', shown: true,
@@ -22,12 +21,12 @@ const SAY: Confirmation = {
     { role: 'session', name: '/id', value: '3f2a91c4' }, { role: 'words', name: '/text', value: 'Run the database tests before you land.' },
     { role: 'files', name: '/paths/0', value: 'src/feed/export.ts' }, { role: 'form', name: '/said', value: 'true' },
   ],
-  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(), expires: IN_TWO_MINUTES,
+  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(),
 };
 
 const SERVICE: Confirmation = {
   source: 'service', id: 'h1', route: 'POST /api/quests/{id}/review', act: "a review's verdict",
-  fields: [{ name: '/verdict', type: 'string', value: 'reviewed' }], asker: null, expires: IN_TWO_MINUTES,
+  fields: [{ name: '/verdict', type: 'string', value: 'reviewed' }], asker: null,
 };
 
 const NAMES: PressNames = { session: (id) => (id === '3f2a91c4' ? { title: 'Fix the export feed', repository: 'game' } : null) };

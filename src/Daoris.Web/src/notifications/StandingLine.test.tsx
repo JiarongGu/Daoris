@@ -33,7 +33,7 @@ const OFF: StandingConfirmationNow = { ...ON, on: false, presses: [], since: nul
 
 const PRESS: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'SESSION_DELETE', fields: [{ name: '/id', type: 'string', value: 's1' }],
-  named: [], asker: null, expires: '2026-10-23T09:40:00Z',
+  named: [], asker: null,
 };
 
 describe("Notifications' standing confirmation line", () => {

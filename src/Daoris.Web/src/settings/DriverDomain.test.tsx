@@ -12,21 +12,26 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   eventHandlers: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-    eventHandlers.set(`${module}.${type}`, handler);
-  },
-}));
+vi.mock('@shenora/react', async () => {
+  const { answeringSlices, holdingSlices } = await import('../test/sliceShell');
+  const shell = answeringSlices(invoke);
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: shell, notifyReady }),
+    useShenora: () => holdingSlices(shell, { isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      eventHandlers.set(`${module}.${type}`, handler);
+    },
+  };
+});
 
 import { SettingsView } from './SettingsView';
 
 /** The page has drawn and the driver's state has been asked and answered: what an older shell leaves out is then known to be absent. */
 const driverRead = async () => {
   await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' });
-  await vi.waitFor(() => expect(invoke.mock.calls.some(([, type]) => type === 'STATE')).toBe(true));
+  await vi.waitFor(() => expect(invoke.mock.calls.some(([, type, options]) =>
+    type === 'STATE_SLICE' && (options as { payload?: { slice?: string } } | undefined)?.payload?.slice === 'driver')).toBe(true));
   await new Promise((resolve) => setTimeout(resolve, 50));
 };
 import { moment } from '../locales/format';

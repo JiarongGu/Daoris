@@ -5,8 +5,6 @@ import realUserEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useStateHub } from '../bridge/state/stateHub';
-import { useStateSlices } from '../bridge/state/slices';
-import { PUSHED } from '../app/ShellSignals';
 import type { OpenGroup } from '../app/opener';
 import { WorkFrame } from '../work/WorkFrame';
 
@@ -115,13 +113,9 @@ export function carried() {
   };
 }
 
-/**
- * The window's state hub and its pushed slices, as `ShellSignals` mounts them beside the frame: what a press moved is asked again
- * here, and each slice's snapshot is read once (ONEWAY1ab-ii).
- */
+/** The window's state hub, as `ShellSignals` mounts it beside the frame: what a press moved is asked again here. */
 export function Hub() {
   useStateHub();
-  useStateSlices(PUSHED);
   return null;
 }
 

@@ -12,7 +12,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 
 import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
-import { eventHandlers, invoke } from '../test/workFrameBridge';
+import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
@@ -576,13 +576,13 @@ describe('a session’s page header and its acts', () => {
       : respond(String(input)))));
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORK_STATE' ? { units: [unit], unread: [] } : DRIVER_STATE));
     SESSIONS = [DRIVEN, intake];
-    const { client } = show('s1a2b3c4');
+    show('s1a2b3c4');
 
     expect(await screen.findByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by ask #0fda18');
     await screen.findByRole('region', { name: 'Where this work stands' });
     for (let minute = 10; minute < 20; minute += 1) {
       SESSIONS = [{ ...DRIVEN, updated: `2026-09-02T01:${minute}:00Z` }, intake];
-      await act(() => client.invalidateQueries());
+      await act(() => moved());
       await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument());
     }
     expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
