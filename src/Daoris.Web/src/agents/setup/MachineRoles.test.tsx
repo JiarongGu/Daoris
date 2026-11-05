@@ -96,7 +96,7 @@ describe('This machine\'s page, lit', () => {
 
   const openMachine = async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /This machine/ }));
     return screen.findByRole('heading', { level: 1, name: 'This machine' });
   };
   const openAllRoles = async () => {

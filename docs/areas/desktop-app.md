@@ -205,7 +205,10 @@ web paths are under `src/Daoris.Web/src/`.
 57. Settings has nine domains: Get started, Appearance, AI features, This Daoris, Driver, Tools, Git, Browser, Machine
     log. A domain is a `<Name>Domain.tsx` and one row in `settings/domains.ts`. (from D150, D75)
 58. Agents has two modes, Agents and Setup. Setup is the tree of places (machine, workspace, repository), each a page
-    with a head and three folded sections. It stays dark until `daoris.agents.setup` is `on`. (from D221, D150)
+    with a head and three folded sections. The tree (`setup/SetupList.tsx`) is a WAI tree: one row in the tab order, ↑ ↓ Home
+    End walk it, → and ← open, close and climb, Enter chooses; a workspace opens by its chevron or →, apart from being chosen.
+    A row's second line is a need (⚠ and its first reason), *Held*, *Adoption running*, or how it lands; the *Needs attention*
+    chip carries the count of places in hand that need a look. It stays dark until `daoris.agents.setup` is `on`. (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
 60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Workflow

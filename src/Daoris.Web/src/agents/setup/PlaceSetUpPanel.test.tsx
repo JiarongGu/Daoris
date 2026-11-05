@@ -166,14 +166,14 @@ describe('Set up…, on a place\'s page', () => {
 
   it('offers no Set up… on This machine', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /This machine/ }));
     await screen.findByRole('heading', { level: 1, name: 'This machine' });
     expect(screen.queryByRole('button', { name: 'Set up…' })).toBeNull();
   });
 
   it('opens on a repository that is imported and not driven', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
     await open(/archive-1/);
     expect(await screen.findByRole('heading', { name: 'Set up archive-1' })).toBeTruthy();
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toMatchObject({ repositories: ['archive-1'] }));
@@ -317,7 +317,7 @@ describe('Set up…, on a place\'s page', () => {
   const openImported = async () => {
     apply = { ...APPLIED, operations: [{ id: 'quest:archive-1', kind: 'quest', repository: 'archive-1', said: 'the set-up quest asked of `archive-1`', outcome: 'done', quest: 'q-77' }] };
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
     await open(/archive-1/);
   };
 

@@ -81,19 +81,25 @@ describe('The Agents place, Setup mode', () => {
 
   it('lists this machine, each workspace with its driven repositories, and the rest folded into one row', async () => {
     show(<Place />);
-    const list = await screen.findByRole('list', { name: 'Places' });
-    expect(within(list).getByRole('button', { name: /This machine/ })).toBeTruthy();
-    const workspace = within(list).getByRole('list', { name: 'aurora' });
-    expect(within(workspace).getByRole('button', { name: /aurora\s*2 driven/ })).toBeTruthy();
-    expect(within(workspace).getByRole('button', { name: /engine/ })).toBeTruthy();
-    expect(within(workspace).getByRole('button', { name: /41 imported, not driven/ })).toHaveAttribute('aria-expanded', 'false');
-    // The repository that needs a look says why, from the driver's reasons.
-    expect(within(workspace).getByRole('button', { name: /site.*No checkout on this machine/ })).toBeTruthy();
+    const tree = await screen.findByRole('tree', { name: 'Places' });
+    expect(within(tree).getByRole('treeitem', { name: /This machine/ })).toHaveAttribute('aria-level', '1');
+    const workspace = within(tree).getByRole('treeitem', { name: /aurora\s*2 driven/ });
+    expect(workspace).toHaveAttribute('aria-level', '1');
+    expect(workspace).toHaveAttribute('aria-expanded', 'true');
+    const engine = within(tree).getByRole('treeitem', { name: /engine/ });
+    expect(engine).toHaveAttribute('aria-level', '2');
+    // A repository's second line says how it lands.
+    expect(engine).toHaveTextContent(/Merge after you accept, 2 options of its own/);
+    expect(within(tree).getByRole('treeitem', { name: /41 imported, not driven/ })).toHaveAttribute('aria-expanded', 'false');
+    // The repository that needs a look says why, from the driver's first reason, after a warning mark.
+    expect(within(tree).getByRole('treeitem', { name: /site.*⚠ No checkout on this machine/ })).toBeTruthy();
+    // Exactly one row is in the tab order.
+    expect(within(tree).getAllByRole('treeitem').filter((each) => each.tabIndex === 0)).toHaveLength(1);
   });
 
   it("shows a repository's page: its head, and three sections folded to lines naming their values and where each stands", async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeTruthy();
     expect(screen.getByText('Driven')).toBeTruthy();
     expect(screen.getByText(/Merge after you accept, 2 options of its own · its own tree per session/)).toBeTruthy();
@@ -109,7 +115,7 @@ describe('The Agents place, Setup mode', () => {
 
   it('says a place that follows the defaults, and what it needs a look for', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /site/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /site/ }));
     expect(await screen.findByText(/Integrated into the line/)).toBeTruthy();
     expect(screen.getByText(/⚠ No checkout on this machine/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAccessibleDescription('All 9 works as aurora has');
@@ -117,7 +123,7 @@ describe('The Agents place, Setup mode', () => {
 
   it('reads nothing for a folded section: its body is not drawn, so it asks no route until it is opened', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     await screen.findByRole('heading', { level: 1, name: 'engine' });
     expect(mounted).toEqual(['workflow']);
     expect(asks('ROLE_STRUCTURE')).toEqual([]);
@@ -131,15 +137,15 @@ describe('The Agents place, Setup mode', () => {
 
   it('keeps the sections as the person left them, across a visit to another place', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     await userEvent.click(screen.getByRole('button', { name: 'Workflow' }));
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'false');
-    await userEvent.click(screen.getByRole('button', { name: /site/ }));
+    await userEvent.click(screen.getByRole('treeitem', { name: /site/ }));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'site' })).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'true');
-    await userEvent.click(screen.getByRole('button', { name: /engine/ }));
+    await userEvent.click(screen.getByRole('treeitem', { name: /engine/ }));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'engine' })).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('aria-expanded', 'false');
@@ -147,7 +153,7 @@ describe('The Agents place, Setup mode', () => {
 
   it("opens the parent's page through the head's door, and Back returns to the page it came from", async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     await userEvent.click(await screen.findByRole('button', { name: /aurora ›/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'aurora' })).toBeTruthy();
     expect(screen.getByText(/2 of 43 driven/)).toBeTruthy();
@@ -158,8 +164,8 @@ describe('The Agents place, Setup mode', () => {
 
   it('opens an imported repository on its detail, as a page not driven, with the same three sections', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
-    await userEvent.click(await screen.findByRole('button', { name: /archive-1/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /archive-1/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'archive-1' })).toBeTruthy();
     expect(await screen.findByText('Not driven · checkout here')).toBeTruthy();
     expect(asks('PLACES').at(-1)).toMatchObject({ detail: { workspace: 'aurora', repository: 'archive-1' } });
@@ -169,37 +175,79 @@ describe('The Agents place, Setup mode', () => {
 
   it("opens a workspace's imported repositories as a paged read", async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
-    expect(await screen.findByRole('button', { name: /archive-1/ })).toBeTruthy();
+    await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
+    expect(await screen.findByRole('treeitem', { name: /archive-1/ })).toBeTruthy();
     expect(asked().at(-1)).toMatchObject({ fold: 'aurora' });
     expect(screen.getByText('2 of 41')).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Next page' }));
-    expect(await screen.findByRole('button', { name: /archive-3/ })).toBeTruthy();
+    expect(await screen.findByRole('treeitem', { name: /archive-3/ })).toBeTruthy();
     expect(asked().at(-1)).toMatchObject({ fold: 'aurora', foldAfter: 'aurora/archive-2' });
     await userEvent.click(screen.getByRole('button', { name: 'First page' }));
-    await waitFor(() => expect(screen.queryByRole('button', { name: /archive-3/ })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: /archive-3/ })).toBeNull());
 
-    await userEvent.click(screen.getByRole('button', { name: /archive-1/ }));
+    await userEvent.click(screen.getByRole('treeitem', { name: /archive-1/ }));
     expect(await screen.findByText('Not driven · checkout here')).toBeTruthy();
   });
 
   it('narrows by a search and by Needs a look, asked of the driver', async () => {
     show(<Place />);
-    await screen.findByRole('list', { name: 'Places' });
+    await screen.findByRole('tree', { name: 'Places' });
+    // The chip counts the places in hand that need a look: here, the one repository.
+    expect(screen.getByRole('button', { name: 'Needs attention 1' })).toHaveAttribute('aria-pressed', 'false');
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search places' }), 'sit');
     await waitFor(() => expect(asked().at(-1)).toMatchObject({ search: 'sit', foldSearch: 'sit' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Needs attention' }));
+    await userEvent.click(screen.getByRole('button', { name: /Needs attention/ }));
     await waitFor(() => expect(asked().at(-1)).toMatchObject({ search: 'sit', needsLook: true }));
-    await waitFor(() => expect(screen.queryByRole('button', { name: /engine/ })).toBeNull());
-    expect(screen.getByRole('button', { name: /site/ })).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: /engine/ })).toBeNull());
+    expect(screen.getByRole('treeitem', { name: /site/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Needs attention/ })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('is walked by the keys of the WAI tree pattern, and a workspace is opened apart from being chosen', async () => {
+    show(<Place />);
+    const tree = await screen.findByRole('tree', { name: 'Places' });
+    const item = (name: RegExp) => within(tree).getByRole('treeitem', { name });
+    const machine = item(/This machine/);
+    machine.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(item(/aurora\s*2 driven/)).toHaveFocus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(item(/engine/)).toHaveFocus();
+    await userEvent.keyboard('{End}');
+    expect(item(/41 imported, not driven/)).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(item(/aurora\s*2 driven/)).toHaveFocus();
+    // Left on an open workspace closes it, and chooses nothing.
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(item(/aurora\s*2 driven/)).toHaveAttribute('aria-expanded', 'false');
+    expect(within(tree).queryByRole('treeitem', { name: /engine/ })).toBeNull();
+    expect(screen.queryByRole('heading', { level: 1, name: 'aurora' })).toBeNull();
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}{Enter}');
+    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeTruthy();
+    expect(item(/engine/)).toHaveAttribute('aria-selected', 'true');
+    await userEvent.keyboard('{Home}');
+    expect(machine).toHaveFocus();
+    // The fold opens with Right, as an expanded row, and Enter on it toggles it rather than choosing a place.
+    await userEvent.keyboard('{End}{ArrowRight}');
+    expect(await screen.findByRole('treeitem', { name: /archive-1/ })).toHaveAttribute('aria-level', '3');
+    expect(item(/41 imported, not driven/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it("opens a workspace by its chevron without choosing it", async () => {
+    show(<Place />);
+    const tree = await screen.findByRole('tree', { name: 'Places' });
+    const workspace = within(tree).getByRole('treeitem', { name: /aurora\s*2 driven/ });
+    await userEvent.click(workspace.querySelector('span[aria-hidden]')!);
+    expect(workspace).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('heading', { level: 1, name: 'aurora' })).toBeNull();
   });
 
   it('is named in Chinese', async () => {
     i18n.changeLanguage('zh');
     show(<Place />);
     expect(await screen.findByRole('radio', { name: '配置' })).toBeChecked();
-    expect(await screen.findByRole('button', { name: /41 个已导入，未驱动/ })).toBeTruthy();
-    expect(within(screen.getByRole('list', { name: '位置' })).getByRole('button', { name: /^本机$/ })).toBeTruthy();
+    expect(await screen.findByRole('treeitem', { name: /41 个已导入，未驱动/ })).toBeTruthy();
+    expect(within(screen.getByRole('tree', { name: '位置' })).getByRole('treeitem', { name: /^本机$/ })).toBeTruthy();
   });
 });

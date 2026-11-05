@@ -5,7 +5,9 @@ import { InTheme } from '../../plugins/storyIcons';
 import { AgentsModes } from '../AgentsModes';
 import { PlaceRolesView } from './PlaceRoles';
 import { usePlaceShell } from './placeShell';
-import { findPlace, placeAsk, repositoryId, rowOfFound, SetupList, SetupMain, type SetupState } from './SetupPlaces';
+import { SetupList } from './SetupList';
+import { findPlace, placeAsk, repositoryId, rowOfFound, SetupMain } from './SetupPlaces';
+import type { SetupState } from './setupTreeModel';
 import { AGENTS, CATALOGUE, CHAIN, PLACES } from './setupFixtures';
 
 // The Agents place's Setup mode (AGENTSPLACE1e, the Agents-place design §3): the tree of places beside a place's head, at the widths the

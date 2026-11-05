@@ -99,7 +99,7 @@ describe('A place page, Roles', () => {
 
   const openEngine = async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     // A repository's page opens on Workflow; Roles is folded to its line until pressed (SETUPUX1h).
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     return (await screen.findAllByText('Engine build · in repository engine'))[0]!;
@@ -132,7 +132,7 @@ describe('A place page, Roles', () => {
   it('opens Roles by itself at the work whose start is held, and for no other reason', async () => {
     held = true;
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /site/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /site/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'site' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAttribute('aria-expanded', 'true');
     await waitFor(() => expect(document.activeElement).toHaveAttribute('data-place-row', 'review'));
@@ -141,7 +141,7 @@ describe('A place page, Roles', () => {
 
   it('edits an imported, not-driven place\'s roles through the same presses, and never sets driving', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /41 imported, not driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /41 imported, not driven/ }));
     await userEvent.click(await screen.findByRole('button', { name: /archive-1/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     await unfold();
@@ -238,7 +238,7 @@ describe('A place page, Roles', () => {
 
   it('shows no fold on this machine, which has no parent', async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /This machine/ }));
     await screen.findAllByText('Build · on this machine', { selector: 'span' });
     expect(screen.queryByRole('button', { name: /more, as / })).toBeNull();
     expect(screen.getByText('Ask Daoris', { selector: 'span' })).toBeTruthy();
@@ -308,7 +308,7 @@ describe('A place page, Roles', () => {
       return { ...answer, places: [{ ...answer.places[0]!, works }, ...answer.places.slice(1)] };
     };
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /aurora\s*2 driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /aurora\s*2 driven/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     await screen.findByText('Aurora chat · in workspace aurora');
     expect(asked().at(-1)).toEqual({ workspace: 'aurora' });
@@ -327,7 +327,7 @@ describe('A place page, Roles', () => {
   it("holds a workspace's supervisor among its Appointed roles, held by its rules, and a repository's place none", async () => {
     roles = { ...CATALOGUE, roles: [...CATALOGUE.roles, SUPERVISOR] };
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /aurora\s*2 driven/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /aurora\s*2 driven/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Roles' }));
     const row = await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[data-place-row="supervisor"]');
@@ -345,7 +345,7 @@ describe('A place page, Roles', () => {
 
   it("gives this machine's roles an Edit and nothing to go back to", async () => {
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /This machine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /This machine/ }));
     expect((await screen.findAllByText('Build · on this machine', { selector: 'span' })).length).toBe(2);
     expect(asked().at(-1)).toEqual({});
     expect(screen.queryByRole('button', { name: /Back to/ })).toBeNull();
@@ -380,7 +380,7 @@ describe('A place page, Roles', () => {
   it('is in Chinese: the section, the rows and the acts', async () => {
     i18n.changeLanguage('zh');
     show(<Place />);
-    await userEvent.click(await screen.findByRole('button', { name: /engine/ }));
+    await userEvent.click(await screen.findByRole('treeitem', { name: /engine/ }));
     await userEvent.click(await screen.findByRole('button', { name: '角色' }));
     expect(await screen.findByRole('heading', { name: '角色' })).toBeTruthy();
     await userEvent.click(await screen.findByRole('button', { name: /^另有 \d+ 项，与aurora相同/ }));

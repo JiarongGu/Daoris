@@ -281,6 +281,8 @@
   "agents.setup.failed": "这里无法读取位置；请稍后重试。",
   "agents.setup.nothing": "没有匹配的位置。",
   "agents.setup.drivenCount": "{{count}} 个已驱动",
+  "agents.setup.tree.held": "已暂停",
+  "agents.setup.tree.adoption": "采用进行中",
   "agents.setup.imported": "{{count}} 个已导入，未驱动",
   "agents.setup.page": "{{shown}} / {{total}}",
   "agents.setup.first": "第一页",
