@@ -327,24 +327,24 @@ public sealed class StrikeTests
 
         var read = DriverConfig.Parse(config.ToJson());
 
-        // The limit is the rules' now: the file neither writes nor reads it.
-        Assert.DoesNotContain("strikes", config.WithStrikes(5).ToJson(), StringComparison.Ordinal);
+        // The limit is the failures rule's: the file writes no `strikes`.
+        Assert.DoesNotContain("strikes", config.ToJson(), StringComparison.Ordinal);
         Assert.Equal(3, read.ForgivenAt("q1"));
         Assert.Equal(0, read.ForgivenAt("q2"));
         Assert.Contains("Game", read.Holds);
     }
 
     /// <summary>
-    /// 🔴 Absent means the DEFAULT, and this is the opposite reading from <c>notify</c>. A machine
-    /// whose `driver.json` predates this field is exactly the one that has been driving unattended
-    /// longest, so silence must not mean "never park" there.
+    /// 🔴 A file that still holds <c>strikes</c> decides nothing by it: the failures rule parks, and the key is kept as written for the
+    /// migration to take out, never read or written again.
     /// </summary>
     [Fact]
-    public void A_file_written_before_this_field_gets_the_default_limit()
+    public void A_file_still_holding_strikes_is_read_by_no_one_and_kept_as_written()
     {
-        var read = DriverConfig.Parse("""{ "drivable": ["Game"], "cap": 2 }""");
+        var read = DriverConfig.Parse("""{ "drivable": ["Game"], "cap": 2, "strikes": 0 }""");
 
-        Assert.Equal(3, read.Strikes);
         Assert.Empty(read.Forgiven);
+        Assert.Contains("\"strikes\"", read.WithHold("Game", true).ToJson(), StringComparison.Ordinal);
+        Assert.Equal(SupervisorRuleBook.FailuresByDefault, SupervisorRuleBook.Seed.MachineFailures);
     }
 }

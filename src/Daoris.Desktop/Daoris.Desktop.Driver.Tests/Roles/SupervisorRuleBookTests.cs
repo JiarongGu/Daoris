@@ -33,7 +33,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
         Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(SupervisorRuleBook.Seed.For("chat", null, null, null)),
             SupervisorRuleBook.FailuresAt(SupervisorRuleBook.Seed.For("chat", null, null, null)), SupervisorRuleBook.TriesLimit(SupervisorRuleBook.Seed.For("chat", null, null, null))));
 
-        Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
+        Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
         var seeded = SupervisorRuleBook.Read(_home);
         Assert.Single(seeded.Sets, set => set.Place == SupervisorRules.Machine && set.Revision == 1);
     }
@@ -155,8 +155,8 @@ public sealed class SupervisorRuleBookTests : IDisposable
     [Fact]
     public void CONTEXTDRIVE1e_a_fresh_home_s_first_start_writes_its_rules_and_a_home_with_a_file_is_left_to_the_conversion()
     {
-        Assert.True(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
+        Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
         Assert.Equal(SupervisorRuleBook.Seeded(3), new SupervisorRuleStore(_home).Of("machine").Rules);
-        Assert.False(SupervisorRuleBook.SeedFresh(_home, DriverConfig.Empty, () => StoreSettled.Yes));
+        Assert.False(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
     }
 }

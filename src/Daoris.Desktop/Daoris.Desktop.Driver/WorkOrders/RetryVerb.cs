@@ -85,7 +85,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
             {
                 StandingChoices.Write(path, config => config.WithForgiven(quest, count));
                 return Task.FromResult<object?>(null);
-            }, _ => null, _ => Marked(count, false, before.Strikes));
+            }, _ => null, _ => Marked(count, false, MachineFailures()));
         }
 
         // While Daoris runs, the quest's *Try again* (RETRY_QUEST): the instance judges from its planner's verdict and answers what it
@@ -115,7 +115,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
                 throw new ChoiceWords("this machine's store would not take your yes, so nothing was approved; try again.");
             }
 
-            return new Retried(decision.Did, decision.Session, now.ForgivenAt(quest), now.Strikes);
+            return new Retried(decision.Did, decision.Session, now.ForgivenAt(quest), decision.ParksAt ?? MachineFailures());
         }, answer =>
         {
             var retried = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("retried", out var said) && said.ValueKind == JsonValueKind.Object
@@ -136,11 +136,14 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
                 }
             }
 
-            var strikes = answer.ValueKind == JsonValueKind.Object && Json.Number(answer, "strikes") is { } counted ? (int)counted : before.Strikes;
+            var strikes = answer.ValueKind == JsonValueKind.Object && Json.Number(answer, "strikes") is { } counted ? (int)counted : MachineFailures();
             return new Retried(did ?? RetryDecision.Marked, session, mark, strikes);
         }, fields => fields is Retried { Did: RetryDecision.Released, Session: { } session } ? Released(session)
             : fields is Retried { Did: RetryDecision.Approved } ? Approved()
-            : fields is Retried marked ? Marked(marked.Mark, true, marked.Strikes) : Marked(0, true, before.Strikes));
+            : fields is Retried marked ? Marked(marked.Mark, true, marked.Strikes) : Marked(0, true, MachineFailures()));
+
+        // The failed sessions the machine's failures rule parks a quest at, where no verdict said its own line's.
+        int MachineFailures() => SupervisorRuleBook.Read(DriverConfig.HomeOf(path)).MachineFailures;
     }
 
     /// <summary>What *Try again* did, as the words read it: from the operation alone, or from the route's answer.</summary>

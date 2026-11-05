@@ -23,7 +23,7 @@ public static class HomeSeed
             DriverConfig.Empty.WithDefaultWorkflow(copy).Save(configPath);
             // Its rules at today's numbers too, so its lines read them from the first start; a store that does not take them leaves the
             // home for the conversion to seed.
-            SupervisorRuleBook.SeedFresh(home, DriverConfig.Empty);
+            SupervisorRuleBook.SeedFresh(home);
             return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or ChoiceWords)

@@ -59,7 +59,7 @@ public sealed class LimitResumeTickTests : IDisposable
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
         {
-            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("acp-stub"), Strikes = 1,
+            Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("acp-stub"),
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, "update"] },
         };
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home,
@@ -90,7 +90,7 @@ public sealed class LimitResumeTickTests : IDisposable
     private IReadOnlyList<SessionEvent> Events(string session) =>
         new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
-    private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode, int strikes = 0, bool paused = false)
+    private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode, bool paused = false)
     {
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
@@ -100,7 +100,6 @@ public sealed class LimitResumeTickTests : IDisposable
             Actors = StaffedRoles.On("acp-stub"),
             TestBound = 1,
             PollSeconds = 1,
-            Strikes = strikes,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };
         if (paused) config = config.WithPausedQuest("q1", new WorkPause(Seen, new Dictionary<string, string>()));
@@ -126,7 +125,7 @@ public sealed class LimitResumeTickTests : IDisposable
     public async Task A_line_whose_own_account_freed_resumes_its_own_conversation_with_Daoris_s_word_and_no_brief()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var driver = Driver(service, "resumes", strikes: 1);
+        var driver = Driver(service, "resumes");
         await LimitedAsync(service, driver);
 
         // Held while the account cools, with the line's own sentence, said on its record once: nothing spawned, no word kept.
@@ -180,7 +179,7 @@ public sealed class LimitResumeTickTests : IDisposable
     public async Task A_full_resume_refused_gone_goes_on_briefed_in_the_same_start_and_leaves_no_word()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var driver = Driver(service, "gone", strikes: 1);
+        var driver = Driver(service, "gone");
         await LimitedAsync(service, driver);
 
         _now = Until.AddMinutes(1);
@@ -234,7 +233,7 @@ public sealed class LimitResumeTickTests : IDisposable
     public async Task Two_limited_full_resumes_running_leave_the_words_waiting_and_no_word_of_Daoris_s()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var driver = Driver(service, "limited", strikes: 1);
+        var driver = Driver(service, "limited");
         await LimitedAsync(service, driver);
         var asked = await service.SayAsync("s1", "Also log the port.");
 
@@ -263,7 +262,7 @@ public sealed class LimitResumeTickTests : IDisposable
     public async Task A_refusal_with_the_same_limit_just_after_the_reset_says_it_was_not_lifted_once_and_never_parks()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var driver = Driver(service, "limited", strikes: 1);
+        var driver = Driver(service, "limited");
         await LimitedAsync(service, driver);
         Assert.DoesNotContain("limit.not-lifted", service.Record("s1"));
 
@@ -292,7 +291,7 @@ public sealed class LimitResumeTickTests : IDisposable
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
         Directory.CreateDirectory(AccountCooling.PathOf(_home));
-        var driver = Driver(service, "resumes", strikes: 1);
+        var driver = Driver(service, "resumes");
         await LimitedAsync(service, driver);
         Assert.True(AccountCooling.Unwritten(_home, "stub", null));
         Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());

@@ -151,6 +151,11 @@ internal sealed class WorkspaceSetupStandIn : IWorkspaceSetupWorld
     public Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyDictionary<string, int>>(new Dictionary<string, int>(Strikes, StringComparer.OrdinalIgnoreCase));
 
+    /// <summary>The supervisor's rules the plan reads: the seeded ones unless a test sets its own.</summary>
+    public SupervisorRuleBook Book { get; set; } = SupervisorRuleBook.Seed;
+
+    public SupervisorRuleBook Rules() => Book;
+
     public Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<SessionRun>>([.. Runs]);
 
     public IReadOnlyList<ToolTouch> Touched(string session) => Touches.TryGetValue(session, out var touched) ? touched : [];

@@ -42,6 +42,9 @@ public interface IWorkspaceSetupWorld : ISetupWorld
     /// <summary>How many sessions failed on each quest, by quest id, as the snapshot derives them (DRV6).</summary>
     Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct);
 
+    /// <summary>The supervisor's rules the home holds: a set-up quest parks at its line's failures rule, as the planner parks it.</summary>
+    SupervisorRuleBook Rules();
+
     /// <summary>Every session record this machine keeps, with the repository it ran in: what §4.2 counts.</summary>
     Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct);
 

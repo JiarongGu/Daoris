@@ -56,6 +56,9 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     /// <summary>The failed sessions that park a quest; 0 where no rule holds it.</summary>
     public static int FailuresAt(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) => Lowest(effective, SupervisorRules.Failures, SupervisorRules.Hold) ?? 0;
 
+    /// <summary>The failed sessions that park a quest at the machine's place, for any role: where a line with no narrower rule parks; 0 where none holds.</summary>
+    public int MachineFailures => FailuresAt(For(null, null, null, null));
+
     /// <summary>The tries a run's transient episode makes: the lowest <c>at</c> of the effective tries rules, which every line holds (the judge refuses a write leaving none).</summary>
     public static int TriesLimit(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective) =>
         effective.TryGetValue(SupervisorRules.Tries, out var rules) && rules.Count > 0 ? Math.Clamp(rules.Min(rule => rule.At), 1, TransientRetry.Bound) : TransientRetry.Bound;
@@ -108,13 +111,13 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
 
     /// <summary>
     /// The machine's rules every home holds at today's numbers (§6.1, the owner's answer of 2026-11-03): answers alone 2 in a row, failed
-    /// sessions at <paramref name="strikes"/> (none at 0), and five transient tries, for every role.
+    /// sessions at <paramref name="failures"/> (none at 0; an older home's migration hands its file's number), and five transient tries, for every role.
     /// </summary>
-    public static IReadOnlyList<SupervisorRule> Seeded(int strikes) =>
+    public static IReadOnlyList<SupervisorRule> Seeded(int failures = FailuresByDefault) =>
     [
         new("answers-alone", SupervisorRules.AnswersAlone, SupervisorRules.Windows[SupervisorRules.AnswersAlone], AnswersAloneBound, SupervisorRules.Hold, null, SupervisorRules.Machine, null),
-        .. strikes > 0
-            ? [new SupervisorRule("failures", SupervisorRules.Failures, SupervisorRules.Windows[SupervisorRules.Failures], Math.Min(strikes, 20), SupervisorRules.Hold, null, SupervisorRules.Machine, null)]
+        .. failures > 0
+            ? [new SupervisorRule("failures", SupervisorRules.Failures, SupervisorRules.Windows[SupervisorRules.Failures], Math.Min(failures, 20), SupervisorRules.Hold, null, SupervisorRules.Machine, null)]
             : Array.Empty<SupervisorRule>(),
         new("tries", SupervisorRules.Tries, SupervisorRules.EpisodeWindow, TransientRetry.Bound, SupervisorRules.Hold, null, SupervisorRules.Machine, null),
     ];
@@ -125,11 +128,11 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     /// decides by the same rules.
     /// </summary>
     /// <returns>Whether the rules were written.</returns>
-    public static bool SeedFresh(string home, DriverConfig config, Func<StoreSettled>? settled = null)
+    public static bool SeedFresh(string home, Func<StoreSettled>? settled = null)
     {
         var store = new SupervisorRuleStore(home, settled);
         if (store.Seeded()) return false;
-        return store.Write(SupervisorRules.Machine, 0, Seeded(config.Strikes), SeedDoor, SupervisorRuleDoor.World(home)).Stored;
+        return store.Write(SupervisorRules.Machine, 0, Seeded(), SeedDoor, SupervisorRuleDoor.World(home)).Stored;
     }
 
     /// <summary>The door a seed's revision is kept as written by.</summary>

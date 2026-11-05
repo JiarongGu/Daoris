@@ -55,14 +55,13 @@ public sealed class AccountLimitHoldTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Actors = StaffedRoles.On("acp-stub"),
-        // One failure would park it: a limit must not.
-        Strikes = 1,
         PollSeconds = 1,
     };
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster, string adapter = "acp-stub")
     {
-        SupervisorRuleBook.SeedFresh(_home, Config, () => StoreSettled.Yes);
+        // One failure would park it, by the machine's failures rule at 1: a limit must not.
+        SeededRules.In(_home, strikes: 1);
         return new(service, Config with { Actors = StaffedRoles.On(adapter) }, AdapterSet.Built(), _home, harnesses: roster);
     }
 

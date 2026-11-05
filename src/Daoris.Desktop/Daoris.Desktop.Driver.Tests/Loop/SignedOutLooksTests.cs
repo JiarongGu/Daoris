@@ -76,7 +76,6 @@ public sealed class SignedOutLooksTests : IDisposable
         Drivable = ["engine"],
         Trees = ["engine"],
         Actors = StaffedRoles.On("stub"),
-        Strikes = 1,
         PollSeconds = 1,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Script, Log] },
     };

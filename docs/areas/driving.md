@@ -311,8 +311,8 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
 - D88 counts work on any branch of the person's as landed; `Workplace/EndJudgement.cs:322-326` calls it handed, not
   ended, and `Workplace/TreeSetAside.cs:23-30` makes the look wait for the line; only the press goes on D88's proof.
   The code reads right.
-- D58 makes `strikes` in `driver.json` the count; D229 makes it a seeded rule and refuses the key on a reached home
-  (`DriverConfig.Strikes` is marked transitional). D229 reads right.
+- D58 makes `strikes` in `driver.json` the count; D229 makes it the failures rule, and no configuration reads the key: the
+  release's migration takes it out (`Transitional/Migration/RulesStep.cs`). D229 reads right.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
   written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
 - D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief

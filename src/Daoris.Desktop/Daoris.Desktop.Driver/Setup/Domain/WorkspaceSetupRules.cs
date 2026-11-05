@@ -30,7 +30,7 @@ public static class WorkspaceSetupRules
     /// </summary>
     public static IReadOnlyList<SetupStanding> Stand(
         WorkspaceSetupPlan plan, IReadOnlyList<RegistrationRow> rows, IReadOnlyList<QuestView> quests,
-        IReadOnlyDictionary<string, int> strikes, DriverConfig config)
+        IReadOnlyDictionary<string, int> strikes, DriverConfig config, SupervisorRuleBook rules)
     {
         var standings = new List<SetupStanding>();
         foreach (var repository in plan.Order)
@@ -81,11 +81,12 @@ public static class WorkspaceSetupRules
         }
 
         // An open or taken quest, parked as the planner parks one (DRV6): its failed sessions, less where the person last
-        // restarted it.
+        // restarted it, at its line's failures rule, a set-up being build's work.
         SetupStanding Active(string repository, QuestView active, string what)
         {
             var failed = (strikes.TryGetValue(active.Id, out var count) ? count : 0) - config.ForgivenAt(active.Id);
-            return config.Strikes > 0 && failed >= config.Strikes
+            var parks = SupervisorRuleBook.FailuresAt(rules.For(RoleWork.Build, active.To, plan.Workspace, active.Id));
+            return parks > 0 && failed >= parks
                 ? new(repository, SetupState.Parked, active.Id,
                     $"its {what} #{active.Id} is parked: {failed} session(s) failed on it. `daoris quest retry {active.Id}` "
                     + "starts it again once you know why.")

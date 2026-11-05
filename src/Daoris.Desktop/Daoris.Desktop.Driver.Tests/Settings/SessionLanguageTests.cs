@@ -104,7 +104,7 @@ public sealed class SessionLanguageTests
     public void Another_edit_keeps_the_languages()
     {
         var edited = DriverConfig.Parse("""{"languages":{"app":"zh"},"workspaceLanguages":{"work":"en"},"cooloff":45}""")
-            .WithDrivable("app", true).WithStrikes(2).WithStanding("app", "dev only", DateTimeOffset.UnixEpoch);
+            .WithDrivable("app", true).WithStanding("app", "dev only", DateTimeOffset.UnixEpoch);
 
         var read = DriverConfig.Parse(edited.ToJson());
         Assert.Equal("zh", read.Languages["app"]);

@@ -100,7 +100,7 @@ public static class WorkspaceSetup
         var touches = SetupOrder.Count(here, rows, quests, runs, world.Touched);
         var order = SetupOrder.Order(here, touches, first, skip);
         var strikes = await world.StrikesAsync(ct).ConfigureAwait(false);
-        var standings = WorkspaceSetupRules.Stand(new WorkspaceSetupPlan(spelled, order, atOnce, pilot), rows, quests, strikes, config);
+        var standings = WorkspaceSetupRules.Stand(new WorkspaceSetupPlan(spelled, order, atOnce, pilot), rows, quests, strikes, config, world.Rules());
 
         var listed = new List<WorkspaceSetupRow>();
         foreach (var standing in standings)
@@ -203,7 +203,7 @@ public static class WorkspaceSetup
         var said = new LookLines(look ?? LookSaid.None, "setup");
         foreach (var plan in plans)
         {
-            await WorkAsync(plan, WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config)).ConfigureAwait(false);
+            await WorkAsync(plan, WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config, world.Rules())).ConfigureAwait(false);
         }
 
         return said.Said;
@@ -319,7 +319,8 @@ public static class WorkspaceSetup
             await world.RegistrationsAsync(ct).ConfigureAwait(false),
             await world.QuestsAsync(ct).ConfigureAwait(false),
             await world.StrikesAsync(ct).ConfigureAwait(false),
-            config);
+            config,
+            world.Rules());
 
     /// <summary>The person's pause: nothing more is asked until they resume it; what it already asked carries on.</summary>
     public static WorkspaceSetupSteer Pause(IWorkspaceSetupWorld world, string home, string workspace, DateTimeOffset now)

@@ -63,6 +63,9 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
 /// <param name="Approve">The role whose policy asked: the press is its yes, one approval, written beside the moves (STAFFPOLICY1e).</param>
 public sealed record RetryDecision(string Quest, string Did, string? Session, Func<DriverConfig, DriverConfig> Change, string? Approve = null)
 {
+    /// <summary>For a mark: the failed sessions the quest's line's failures rule parks it at again, as the planner read it; else null.</summary>
+    public int? ParksAt { get; init; }
+
     public const string Marked = "marked";
     public const string Released = "released";
 

@@ -82,7 +82,7 @@ public sealed class StandingTests
     public void Another_edit_keeps_the_answers()
     {
         var edited = DriverConfig.Parse("""{"standing":{"app":{"says":"dev only","at":"2026-10-03T09:00:00Z"}},"cooloff":45}""")
-            .WithDrivable("app", true).WithStrikes(2).WithReleased("q1", "s1");
+            .WithDrivable("app", true).WithReleased("q1", "s1");
 
         Assert.Equal(new StandingAnswer("dev only", At), DriverConfig.Parse(edited.ToJson()).StandingFor("app"));
     }

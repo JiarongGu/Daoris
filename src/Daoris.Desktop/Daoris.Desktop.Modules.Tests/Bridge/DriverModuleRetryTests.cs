@@ -54,7 +54,7 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
             // The bound a quest parks at is its role's failures, which the look carries.
             FailuresAt = new Dictionary<string, int> { ["q1"] = 3 },
         };
-        DriverConfig.Empty.WithDrivable("engine", true).WithStrikes(3).WithForgiven("q1", 3).Save(DriverConfigPath);
+        DriverConfig.Empty.WithDrivable("engine", true).WithForgiven("q1", 3).Save(DriverConfigPath);
         var parked = Planner.Plan(snapshot, DriverConfig.Load(DriverConfigPath));
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(parked).Verdict);
 
@@ -66,17 +66,18 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A verdict carrying no count (one built by hand: the planner's always carries it) is marked at the least count the
-    /// planner parks at, the mark past the limit, never back at the limit.
+    /// A verdict carrying no count (one built by hand: the planner's always carries it) is marked past the mark by the number its
+    /// line's failures rule parked it at, never back at the mark, and the answer says that number as the failures that park it again.
     /// </summary>
     [Fact]
-    public async Task A_park_carrying_no_count_is_marked_at_the_least_count_that_parks_it()
+    public async Task A_park_carrying_no_count_is_marked_past_the_mark_by_its_failures_rule()
     {
-        DriverConfig.Empty.WithStrikes(3).WithForgiven("q1", 3).Save(DriverConfigPath);
+        DriverConfig.Empty.WithForgiven("q1", 3).Save(DriverConfigPath);
 
-        await AnswerAsync(Looked(new Consideration(Taken, StartVerdict.Exhausted, "parked")), "RETRY_QUEST", new { quest = "q1" });
+        var answer = await AnswerAsync(Looked(new Consideration(Taken, StartVerdict.Exhausted, "parked") { ParksAt = 3 }), "RETRY_QUEST", new { quest = "q1" });
 
         Assert.Equal(6, DriverConfig.Load(DriverConfigPath).ForgivenAt("q1"));
+        Assert.Equal(3, answer.GetProperty("strikes").GetInt32());
     }
 
     [Fact]

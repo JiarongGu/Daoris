@@ -77,7 +77,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     // One failure would park it: a refused sign-in must not.
     private static DriverConfig Config => ActorChoices.With(
-        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], Strikes = 1, PollSeconds = 1 },
+        DriverConfig.Empty with { Drivable = ["engine"], Trees = ["engine"], PollSeconds = 1 },
         "build", [new ActorChoice("acp-stub")]);
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>

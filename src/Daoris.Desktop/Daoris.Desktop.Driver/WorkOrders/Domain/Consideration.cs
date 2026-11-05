@@ -84,6 +84,12 @@ public sealed record Consideration(
     /// </summary>
     public int? Failures { get; init; }
 
+    /// <summary>
+    /// For a quest its failed sessions park: the failed sessions its line's failures rule parks at, as this look read it, which a retry's
+    /// words say park it again.
+    /// </summary>
+    public int? ParksAt { get; init; }
+
     /// <summary>For a start under <c>overlap: warn</c> whose declared paths meet an earlier unit's: the overlap, which its reason says.</summary>
     public OverlapFact? Overlaps { get; init; }
 }

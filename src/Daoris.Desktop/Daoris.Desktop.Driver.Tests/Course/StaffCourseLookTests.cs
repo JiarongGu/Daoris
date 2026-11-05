@@ -58,7 +58,7 @@ public sealed class StaffCourseLookTests : IDisposable
             FailedRuns = new Dictionary<string, int> { ["q1"] = failedRuns },
         };
 
-    private static readonly DriverConfig Config = DriverConfig.Empty with { Strikes = 3 };
+    private static readonly DriverConfig Config = DriverConfig.Empty;
 
     [Fact]
     public void The_course_reads_the_policy_of_the_scoped_role_that_took_the_work_never_seeded_builds_by_the_records_actor()

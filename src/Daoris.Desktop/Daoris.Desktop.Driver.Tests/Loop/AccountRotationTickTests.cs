@@ -73,7 +73,6 @@ public sealed class AccountRotationTickTests : IDisposable
         TestBound = 1,
         PollSeconds = 1,
         // Two failures park it, and the quest already holds one: a limit must hold none.
-        Strikes = 2,
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, signedOut] },
     };
 
@@ -191,7 +190,6 @@ public sealed class AccountRotationTickTests : IDisposable
             TestBound = 1,
             PollSeconds = 1,
             // One failure would park it: the limit must hold none.
-            Strikes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
         };
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);

@@ -107,6 +107,7 @@ internal sealed class RoundConsidering(PlanRound round)
             {
                 // What *Try again* marks: the records' count, not the count past the mark this sentence says.
                 Failures = failures,
+                ParksAt = parks,
             };
         }
 
