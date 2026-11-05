@@ -197,11 +197,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     migration's driver-keys step takes it out. (from D200)
 32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the
     person at 3Q. While it waits on its own background work these are 3Q and 5Q. A wait for a permission answer is
-    never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on the
-    protocol door, once marked, is told once as Daoris's urgent word (`watch/<session>/<episode>`; `QuietWord`), unless
-    `LongCalls` told the same call; the word is taken off the record when the episode or the run ends. Q is `quietMinutes` in
+    never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on any door
+    that takes words, once marked, is told once as Daoris's urgent word (`watch/<session>/<episode>`; `QuietWord`), unless
+    `LongCalls` told the same call: the protocol door's reaches the agent at its next step, and the native and text-only
+    doors' waits for the turn's end, judged by its episode where it leaves, so it goes to no turn once the session was heard
+    again. The word is taken off the record when the episode or the run ends, is no word a record waits on (`SessionViews.Waiting`,
+    so no look goes on with it and no carry-on resumes from it), is settled at the come-up (`UncertainWords`) where a crash left it on
+    an ended record, and is marked on its event (`SessionEvent.Watcher`) so it resets no answers-alone count. Q is `quietMinutes` in
     `driver.json`, 10 by default and 5 to 120, written only when set and read at each look; it is set at Settings → Driver, by
-    `daoris settings quiet <minutes>`, through `SET_QUIET` and by Ask Daoris's `quiet` door, and `driver list` says it. (from D200)
+    `daoris settings quiet <minutes>`, through `SET_QUIET`, by Ask Daoris's `quiet` door and, where the person granted it, by
+    Ask Daoris's `settings_quiet` tool, and `driver list` says it. Ask Daoris answers *how long may a session run?* from its room: as
+    long as it works, and Daoris looks in on one quiet for Q minutes. (from D200)
 33. An account's limit is read from the agent's own words. It cools that account until the reset it names, and is
     never a strike. The record ends `failed` with its `limited` flag and reads as *limited*. (from D125, D206)
 34. A limited driven line resumes by itself: its own conversation when its account is ready; else a briefed part on
@@ -272,7 +278,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
 | what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read held to its budget; `Loop/SessionChangeBenchProcessTests`, one change read as its change |
-| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Settings/QuietSettingTests` |
+| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Course/AnswersAloneTests`, `Settings/QuietSettingTests` |
 | a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
@@ -314,8 +320,7 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
 
 - **D214** (no backlog row): a repository's pool of trees handed from line to line; proposed, both makers' reads of
   round 3 owed.
-- **SESSWATCH1b (rest)**: the word on the native, codex text and dsh doors at the turn's end; a `watch` word kept out of
-  `AnswersAlone.Resets` and settled at the come-up; the row's *told* line; `LongCalls`' look folded into the watcher's.
+- **SESSWATCH1b (rest)**: the row's *told* line; `LongCalls`' look folded into the watcher's.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.

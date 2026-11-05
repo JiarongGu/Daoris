@@ -20,7 +20,12 @@ internal static class NativeWords
     /// the record's door to keep. Null where the run did not fail: it goes on with what is held.
     /// </summary>
     public static IReadOnlyList<ChatMessage>? Left(HarnessWords? own, int? exit, DrivenInbox held, IReadOnlyList<ChatMessage> carried) =>
-        own?.Ended(exit).Failure is { Length: > 0 } ? [.. carried, .. held.Close()] : null;
+        own?.Ended(exit).Failure is { Length: > 0 }
+            ? [.. carried.Where(word => !IsWatch(word)), .. held.Close().Where(word => !IsWatch(word))]
+            : null;
+
+    /// <summary>The watcher's word to a quiet session (<see cref="QuietWord"/>): about a quiet that is over once its turn failed, so never left waiting.</summary>
+    private static bool IsWatch(ChatMessage word) => DaorisKeys.IsWatch(word.Daoris?.Key);
 
     /// <summary>The opening of a carry-on's run (LANDBACK1 part 3): its note alone, since its words are Daoris's own prompt, never a message.</summary>
     public static IReadOnlyList<SessionEvent> Opening(Noted carry) =>

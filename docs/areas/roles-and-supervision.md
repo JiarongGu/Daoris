@@ -200,7 +200,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     handing a landed branch to a landing plugin are the person's own presses, never proposed. (from D161, D193, D233)
 56. In restricted mode, the default, it reads and proposes. Each proposal is a kind under `Help/Proposals/`, judged by
     its route's own code against the machine now, and applied only by the person's *Apply* through that route. (from D89, D170)
-57. Restricted mode adds the access the person configures: housekeeping, chosen settings and checkouts, each request
+57. Restricted mode adds the access the person configures: housekeeping, chosen settings (notify, language, cap, cool-off
+    and quiet) and checkouts, each request
     judged at the call by the door's own judges. No settings grant reaches a role. (from D183, D205)
 58. Full access runs its harness's unrestricted mode. Only the person chooses it (Settings, the panel's chip, `help
     mode`), never Ask Daoris. A change of mode or access takes the next turn and is said. (from D183)

@@ -280,6 +280,7 @@
   "help.grants.op.settings.language": "会话语言",
   "help.grants.op.settings.cap": "本机同时运行的会话数",
   "help.grants.op.settings.cooloff": "未说明时间时的冷却",
+  "help.grants.op.settings.quiet": "会话无动静多久后查看",
   "help.grants.never.housekeeping": "每个目标都按记录的身份和所有者认定，动手前再判定一次；正在运行或等待中的会话保留自己的分支，任何操作都不强制执行。",
   "help.grants.never.browser": "在页面中运行代码从不授予。",
   "help.grants.none.checkouts": "这里没有允许外部智能体读取的检出，所以没有可选的。仓库在其页面 → 配置 → 边界 中启用。",

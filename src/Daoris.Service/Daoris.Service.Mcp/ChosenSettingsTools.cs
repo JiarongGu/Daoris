@@ -5,7 +5,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Ask Daoris's chosen settings (HELPMODE1c3; the Ask Daoris modes design §4.1): five typed tools over the ordinary settings, each a
+/// Ask Daoris's chosen settings (HELPMODE1c3; the Ask Daoris modes design §4.1): six typed tools over the ordinary settings, each a
 /// request the driver judges, applies through the setting's own checks and writer, and answers (<see cref="SettingsBox"/>). None
 /// takes a path, and none reaches the mode, a grant, an account or a safeguard. Each acts only as the person granted it, which the
 /// driver reads at every call.
@@ -58,6 +58,15 @@ public sealed class ChosenSettingsTools(IntakeScope? intake = null, SessionLedge
         [Description("The minutes, a whole number of at least 1.")] int minutes,
         CancellationToken ct = default) =>
         SetAsync(SettingsBox.CoolOff, Number(minutes), null, null, ct);
+
+    [McpServerTool(Name = "settings_quiet")]
+    [Description(
+        Granted + "Set how many minutes a session may say nothing and run nothing before Daoris looks in on it, 5 to 120. A session is "
+        + "never stopped for running long: this is only when Daoris's word to it and the person's choice begin." + Applies)]
+    public Task<string> QuietAsync(
+        [Description("The minutes, a whole number from 5 to 120.")] int minutes,
+        CancellationToken ct = default) =>
+        SetAsync(SettingsBox.Quiet, Number(minutes), null, null, ct);
 
     private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 

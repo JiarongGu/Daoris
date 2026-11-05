@@ -181,6 +181,14 @@ internal sealed class SessionHold(IRunWiring wiring)
             held.Attach(interrupt: null);
         }
 
+        // A door that takes words only at its turn's end (the native and the text-only doors) is told a quiet quest session too, once an
+        // episode: the word waits on the record, and is taken off when the session is heard again or this run ends, never a turn of its own.
+        using var quietWord = held is not null && !abilities.WordsAtNextStep
+            ? QuietWord.Tell(
+                wiring.Watch, sessionId, held, new SaidDoor(service, sessionId), RunningCalls.Of(context.Events),
+                failed: error => output?.Append(sessionId, $"— Daoris's word to this quiet session was not kept: {error}"))
+            : null;
+
         // A driven session's permission prompts are read again from the driver's file at a turn's end where a word is held for the next,
         // so a change made while it runs applies at its next turn: the run ends there, its held words handed back to its record, and the
         // next look goes on in the same conversation under the setup standing then. Only a session that holds words; Ask Daoris's own
