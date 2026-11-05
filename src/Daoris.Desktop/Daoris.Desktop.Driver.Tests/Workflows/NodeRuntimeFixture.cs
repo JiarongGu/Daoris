@@ -151,11 +151,6 @@ public abstract class NodeRuntimeFixture : IDisposable
             Interlocked.Increment(ref _gitRead);
             return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
         },
-        Holds = (_, _, _, _) =>
-        {
-            Interlocked.Increment(ref _gitRead);
-            return Task.FromResult<bool?>(null);
-        },
         Gates = (_, _, _) =>
         {
             Interlocked.Increment(ref _gitRead);

@@ -77,8 +77,6 @@ public sealed class WorkSupervisionTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => throw new DriverException("the loop never asks a plugin to land work");
-
         public void Listen(Action<JsonElement?>? steps) => Steps = steps;
 
         /// <summary>Where set and true for a frame, its send fails, as a broken pipe does (FABRIC-PERFORM1i).</summary>

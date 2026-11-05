@@ -1299,12 +1299,6 @@ public sealed class PluginKitTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct)
-        {
-            told.Add(payload);
-            return Task.FromResult(new PluginLanding("acme.every", Pushed: false, PullRequest: null, "recorded"));
-        }
-
         public Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {
             told.Add(payload);

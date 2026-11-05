@@ -252,7 +252,6 @@ public sealed class PullRequestBoundsTests : IDisposable
         public bool Alive => true;
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(new PluginLanding("x", false, null, "x"));
 
         public Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {

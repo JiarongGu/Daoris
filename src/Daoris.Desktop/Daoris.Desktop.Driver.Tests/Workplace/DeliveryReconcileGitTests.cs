@@ -278,19 +278,18 @@ public sealed class DeliveryReconcileGitTests : IDisposable
         Assert.Equal(("run-a", 1L), (Store("run-b").Delivery(claim.Key)!.ClaimRun, Store("run-b").Delivery(claim.Key)!.ClaimGeneration));
     }
 
-    /// <summary>A push stopped after its record: the git phases are done, and what follows is its plugin's (row 1e), left as it stands.</summary>
+    /// <summary>A push a pre-G8 build began, stopped after its record: the git phases are done, and what followed was a landing plugin's, a wire that is gone, said and left as it stands.</summary>
     [Fact]
-    public async Task A_push_stopped_after_its_record_leaves_its_plugin_s_phases_to_the_plugin_frame()
+    public async Task A_push_stopped_after_its_record_is_left_said_as_a_retired_plugin_wire_s()
     {
         var (root, trees, tree, tip) = await TreeAsync();
         var (store, claim) = Start(tip, DeliveryMethods.Push);
-        // LANDNODE1e: a push delivery tells its plugin, so the landing needs one the stand-in wire answers for.
-        var told = new SessionTrees(_home, new DeliveryPluginPhasesTests.Wire());
-        await Assert.ThrowsAsync<Crash>(() => told.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
+        await Assert.ThrowsAsync<Crash>(() => trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: Stopping(store, claim, DeliveryPhases.Recorded)));
 
         var reconciled = Assert.Single(await Reconciler("run-b", root, DeadAre("run-a")).StartAsync(CancellationToken.None));
 
         Assert.Equal(DeliveryStandings.Plugin, reconciled.Standing);
+        Assert.Contains("no longer has", reconciled.Said);
         Assert.Equal([Named], await BranchesAsync(root));
         Assert.All(Store("run-b").Phases(claim.Key), each => Assert.Equal(DeliveryOutcomes.Done, each.Outcome));
         Assert.True(Store("run-b").Delivery(claim.Key)!.Unresolved);

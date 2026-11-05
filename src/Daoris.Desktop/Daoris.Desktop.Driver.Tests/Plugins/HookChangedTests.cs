@@ -83,9 +83,6 @@ public sealed class HookChangedTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
-            throw new DriverException("the loop never asks a plugin to land work");
-
         public async Task ChangedAsync(object payload, CancellationToken ct)
         {
             if (changed is not null) await changed(payload).WaitAsync(ct);

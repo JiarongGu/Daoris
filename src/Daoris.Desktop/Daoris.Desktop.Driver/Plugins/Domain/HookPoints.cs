@@ -49,33 +49,9 @@ public static class HookFrames
     };
 
     /// <summary>
-    /// <see cref="HookPoints.Land"/>: the branch a landing just made (D100), or moved on (LAND2c): the pull request already open
-    /// from it, which a plugin grows rather than opening a second, who accepted the work, and the commit judged, which it pushes
-    /// (LANDPIN2).
-    /// </summary>
-    public static object Land(LandingFrame frame) => new
-    {
-        repository = frame.Repository,
-        workspace = frame.Workspace,
-        root = frame.Root,
-        branch = frame.Branch,
-        @base = frame.Base,
-        title = frame.Title,
-        quest = frame.Quest is { } quest ? new { id = quest, title = frame.Title } : null,
-        session = frame.Session,
-        commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
-        pullRequest = frame.PullRequest,
-        acceptedBy = frame.AcceptedBy,
-        tip = frame.Tip,
-        origin = frame.Origin,
-        key = frame.Key,
-        mode = frame.Mode,
-    };
-
-    /// <summary>
     /// <see cref="HookPoints.State"/>: a landed branch, asked about (PLUGHOOK1a, design §2.2): where it is, the line, and the pull
     /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch; and
-    /// <c>origin</c>, as the land frame carries it (GITAUTH1b).
+    /// <c>origin</c> (GITAUTH1b).
     /// </summary>
     public static object State(StateFrame frame) => new
     {

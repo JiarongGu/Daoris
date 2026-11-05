@@ -414,9 +414,6 @@ public sealed class HookTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
-            throw new DriverException("the loop never asks a plugin to land work");
-
         public ValueTask DisposeAsync()
         {
             Disposed = true;

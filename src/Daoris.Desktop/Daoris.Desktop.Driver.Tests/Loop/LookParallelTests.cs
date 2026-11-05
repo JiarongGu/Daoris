@@ -483,9 +483,6 @@ public sealed class LookParallelTests : IDisposable
 
         public Task EndedAsync(object payload, CancellationToken ct) => ended?.Invoke() ?? Task.CompletedTask;
 
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
-            Task.FromResult(new PluginLanding("acme", true, null, "pushed"));
-
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 

@@ -89,13 +89,13 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
     [Fact]
     public async Task The_trees_and_the_end_read_a_process_through_the_facet_alone()
     {
-        var landing = new Landing(LandingForm.Branch, "feature/{quest}", Plugin: "acme.lands");
+        var landing = new Landing(LandingForm.Branch, "feature/{quest}");
         var record = new LandingWorkflow("docs-to-pr", 3, WorkflowLevels.Repository);
         var named = new Facet { Named = true, Landing = landing, Record = record };
 
         // The end judgement's cycle: a named process's landing and the version that decided; none reads the rule.
         var cycle = EndCycle.Accepts(Config(), "engine", "aurora", named);
-        Assert.Equal((LandingForm.Branch, true, record), (cycle.Form, cycle.Plugin, cycle.Workflow));
+        Assert.Equal((LandingForm.Branch, false, record), (cycle.Form, cycle.Plugin, cycle.Workflow));
         Assert.Null(EndCycle.Accepts(Config(), "engine", "aurora", new Facet { Named = false, Landing = landing, Record = record }).Workflow);
         Assert.Null(EndCycle.Accepts(Config(), "engine", "aurora").Workflow);
 
@@ -103,7 +103,7 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
         Directory.CreateDirectory(Tree);
         var cannot = new Facet { Named = true, Landing = landing, LandingCannot = "it needs an environment.", Says = "It follows `x` v1, and it needs an environment. Nothing was landed." };
         var plan = await new SessionTrees(_home).PlanAsync(Tree, new LandingSubject("s1", "q1", "Fix"), process: cannot);
-        Assert.Equal((LandingForm.Branch, "", cannot.Says, "acme.lands"), (plan.Form, plan.Target, plan.Problem, plan.Plugin));
+        Assert.Equal((LandingForm.Branch, "", cannot.Says, (string?)null), (plan.Form, plan.Target, plan.Problem, plan.Plugin));
     }
 
     // ——— The installed operations

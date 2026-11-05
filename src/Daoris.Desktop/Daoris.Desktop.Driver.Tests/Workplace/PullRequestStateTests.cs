@@ -504,14 +504,6 @@ public sealed class PullRequestStateTests : LandedFixture
         public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
         public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
 
-        public async Task<PluginLanding> LandAsync(object payload, CancellationToken ct)
-        {
-            var frame = JsonSerializer.SerializeToElement(payload);
-            var branch = frame.GetProperty("branch").GetString()!;
-            await GitAsync(frame.GetProperty("root").GetString()!, "push", "--quiet", "origin", branch);
-            return new PluginLanding(Plugin, Pushed: true, $"https://example.test/org/project/_git/engine/pullrequest/{branch.Length}", "pushed");
-        }
-
         public async Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
         {
             Interlocked.Increment(ref test._asked);

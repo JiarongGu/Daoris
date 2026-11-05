@@ -92,13 +92,13 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
-            return new(landing.Form, "", LandingSource.Default, landing.Plugin, process.LandingSays, landing.AutoAccept);
+            return new(landing.Form, "", LandingSource.Default, null, process.LandingSays, landing.AutoAccept);
         }
 
         if (landing.Form == LandingForm.Branch)
         {
-            // Who pushes it, said before the press, and what would refuse the press where something would (D100).
-            var plugin = landing.Plugin;
+            // A landing names no plugin: a graph's `push` step pushes the branch.
+            string? plugin = null;
             // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
             if (Directory.Exists(full) && context.Holds(full) && await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
             {

@@ -1,28 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The landing's side of the plugin wire (WSR4, D100): the plugin a branch rule names, started for one
-/// landing, told the branch Daoris made on <see cref="HookPoints.Land"/>, and stopped again.
+/// The trees' side of the plugin wire: whether a plugin can open pull requests here, and an occasion's state asks at
+/// <see cref="HookPoints.State"/>, a process started for one occasion's frames and stopped after them.
 /// </summary>
 /// <remarks>
-/// <para><b>Daoris pushes nothing and opens nothing</b> (D37, D87). The plugin's process does both, for
-/// its own platform, with whatever that platform's tools are signed in as — the push is the plugin's act,
-/// installed and named by the person, never Daoris's.</para>
-///
-/// <para><b>Started per landing, not kept with the loop.</b> A landing is a press, and it happens where
-/// the press is: in the shell, or in a terminal's <c>daoris tree land</c>, which has no loop. A
-/// process that exists exactly as long as the one frame it answers is the registration-as-effect rule
-/// (D64 §4) at its smallest.</para>
-///
-/// <para><b>It never throws for the plugin's sake.</b> Whatever the plugin does — not start, answer late,
-/// answer wrongly, refuse — comes back as a <see cref="PluginLanding"/> marked failed, with the sentence,
-/// because the branch is already made and the press is owed an answer about both.</para>
-///
-/// <para><b>What it did is kept without the plugin's words</b> (PLUGUI1d, D119 §4.2): the frame's start, its
-/// answer or failure, and its stop are <c>plugin.*</c> lines, by <c>landing</c> or <c>hand</c>, and words in the
-/// loop's record of the plugin's health where the process runs the loop. Never the pull request's address, the
-/// plugin's sentence or what it wrote to stderr. A plugin the press refuses before it is started was never
-/// spoken to, and writes nothing.</para>
+/// <b>Daoris pushes through its own push act and opens nothing</b> (D37, D241 point 4). A pull request is opened by the plugin's
+/// <c>pull-request</c> step on <see cref="HookPoints.Perform"/>, which the work wire's loop speaks; nothing here speaks it.
 /// </remarks>
 public sealed class LandingPlugins(
     string home,
@@ -80,8 +64,7 @@ public sealed class LandingPlugins(
 
     /// <summary>
     /// Why the plugin a landing names cannot land work on this machine, in a sentence, or null when it can: not installed, switched off,
-    /// refused by the catalogue, or speaking on no <see cref="HookPoints.Land"/> point. Asked when a workflow names it and again at the
-    /// press, so a plugin gone since is refused before anything is made.
+    /// refused by the catalogue, or speaking on no <see cref="HookPoints.Perform"/> point, where a pull request's step is performed.
     /// </summary>
     public static string? ProblemOf(string plugin, IWorkplacePluginCatalog catalog)
     {
@@ -99,119 +82,9 @@ public sealed class LandingPlugins(
 
         if (entry.Problem is { } problem) return $"plugin `{plugin}` contributes nothing: {problem}";
 
-        return entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
+        return entry.Points.Contains(HookPoints.Perform, StringComparer.Ordinal)
             ? null
-            : $"plugin `{plugin}` does not land work — its manifest speaks on no `{HookPoints.Land}` point.";
-    }
-
-    /// <summary>What the plugin's manifest declares of landing (LANDNODE1e).</summary>
-    public PluginLandDeclares LandDeclared(string plugin) =>
-        Catalog().Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase))?.Manifest.Hooks is { } hooks
-            ? new PluginLandDeclares(hooks.Key, hooks.Modes ?? [])
-            : PluginLandDeclares.None;
-
-    /// <summary>Speak the one frame and hear the answer — or the sentence saying why there is none.</summary>
-    public Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
-        SpeakAsync(plugin, frame, PluginEvents.ByLanding, ct);
-
-    /// <summary>The same frame for a branch a landing made earlier, handed on after it (WSR5b): the machine log says it was a hand-off.</summary>
-    public Task<PluginLanding> HandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
-        SpeakAsync(plugin, frame, PluginEvents.ByHand, ct);
-
-    /// <summary>
-    /// Why the judge refuses the landing's push to origin (GITAUTH1f, the git-auth design §6.7), or null where it lets it: the person's yes
-    /// stands as the grant, so only <c>deny</c> or an identity read only on its host refuses. A coded <c>git.refused</c> line says it.
-    /// The doors refuse the same push; this asks first because the plugin's start and its pull-request call never pass a door.
-    /// </summary>
-    private string? LandingRefusal(LandingFrame frame, string? pushTo)
-    {
-        if (pushTo is null) return null;
-        var value = GitAccessKeys.Resolve(home, frame.Repository, frame.Workspace).Of(GitAccessKeys.Write).Value;
-        var host = GitWords.HostOf(pushTo);
-        var way = pushTo.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? GitIdentity.Https : GitIdentity.Ssh;
-        var serves = host is null ? null : GitIdentityUse.Resolve(
-            GitIdentities.Read(home), GitIdentityUse.Read(home), frame.Repository, frame.Workspace, ["origin"], GitHosts.Canonical(host), way);
-        var verdict = GitAccessRules.Judge(GitAct.Write, value, granted: true, serves?.Identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
-        if (verdict.Allowed) return null;
-        GitLog.Refused(home, name => name == "DAORIS_REPOSITORY" ? frame.Repository : null, verdict.Code, GitAct.Write, "origin", host);
-        return verdict.Code == "read-only"
-            ? $"{serves!.Identity!.Label} is read only on {host}, so it cannot push to origin"
-            : "this repository's git access denies writes to origin";
-    }
-
-    private async Task<PluginLanding> SpeakAsync(string plugin, LandingFrame frame, string by, CancellationToken ct)
-    {
-        var catalog = Catalog();
-        if (ProblemOf(plugin, catalog) is { } problem) return Failed(plugin, problem);
-        var entry = catalog.Plugins.First(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
-        var id = entry.Manifest.Id;
-
-        // GITAUTH1b (the git-auth design §4.4 and §6.7): the frame names origin as the one reader gives it, and the push its plugin
-        // makes on the person's yes carries a grant for origin's push address, through the door, once, within the bound.
-        frame = frame with { Origin = frame.Origin ?? await GitRemotes.AddressOf(frame.Root, "origin", ct: ct).ConfigureAwait(false) };
-        var pushTo = await GitRemotes.AddressOf(frame.Root, "origin", push: true, ct: ct).ConfigureAwait(false) ?? frame.Origin;
-        // GITAUTH1c (§4.1): on a git older than the doors need, the push would pass round them, so the plugin is not started for it.
-        if (await GitWiring.RefusesAsync(home, frame.Repository, "origin", pushTo, GitAct.Write, ct).ConfigureAwait(false) is { } older)
-            return Failed(plugin, $"{char.ToUpperInvariant(older[0])}{older[1..]}, so {id} was not started to push the branch.");
-        // GITAUTH1f (§6.7): the landing asks the judge before its plugin starts. The person's Accept, or the rule that accepts for them, is
-        // the yes for exactly this push, so ask passes; deny, or an identity read only on its host, refuses before anything starts.
-        if (LandingRefusal(frame, pushTo) is { } refused) return Failed(plugin, $"{refused}, so {id} was not started to push the branch.");
-        // D241 point 3: the grant carries this push alone, `<tip>:refs/heads/<branch>`, and the door judges the old commit it sees.
-        var grant = pushTo is null || frame.Tip is not { Length: > 0 } tip ? null
-            : GitGrants.Write(home, pushTo, [new GitGrantRef($"refs/heads/{frame.Branch}", tip)], _clock());
-        // The person's press, or the rule that accepts automatically, standing for it (§6.7, §11).
-        if (grant is not null) GitLog.Granted(home, frame.Repository, "origin", frame.Session, frame.AcceptedBy == AcceptedBy.Auto ? "standing" : "press");
-
-        IHookChannel? channel = null;
-        var where = PluginEvents.AtStart;
-        var took = System.Diagnostics.Stopwatch.StartNew();
-        try
-        {
-            HookProcess.Granting.Value = grant;
-            try
-            {
-                channel = await _start(entry, line => Say(id, line), ct).ConfigureAwait(false);
-            }
-            finally
-            {
-                HookProcess.Granting.Value = null;
-            }
-
-            _log.Started(id, channel.Points, took.ElapsedMilliseconds, by);
-            if (!channel.Points.Contains(HookPoints.Land, StringComparer.Ordinal))
-            {
-                // It answered the handshake, and not with the point it declares: it cannot be asked.
-                _log.Failed(id, HookPoints.Land, PluginEvents.Unreadable, code: null, ms: null, by);
-                return Failed(id, $"plugin `{id}` declares `{HookPoints.Land}` but its process does not listen there.");
-            }
-
-            where = HookPoints.Land;
-            took.Restart();
-            var answer = await channel.LandAsync(HookFrames.Land(frame), ct).ConfigureAwait(false);
-            // GITAUTH1a (the git-auth design §10): a plugin's message is often git's last line, so it passes the one redaction before
-            // the driver says or keeps it.
-            answer = answer with { Message = GitWords.Redact(answer.Message)! };
-            _log.Called(id, HookPoints.Land, answer.Pushed ? PluginEvents.Pushed : PluginEvents.NotPushed, took.ElapsedMilliseconds);
-            Say(id, $"landed `{frame.Branch}`: {(answer.Pushed ? "pushed" : "not pushed")}"
-                + (answer.PullRequest is { } pr ? $", {pr}" : "") + $" — {answer.Message}");
-            return answer with { Plugin = id };
-        }
-        catch (DriverException error)
-        {
-            var kind = PluginFailures.KindOf(error, where == PluginEvents.AtStart ? PluginEvents.Unstartable : PluginEvents.Errored);
-            _log.Failed(id, where, kind, kind == PluginEvents.Exited ? channel?.ExitCode : null, took.ElapsedMilliseconds, by);
-            return Failed(id, GitWords.Redact(error.Message)!);
-        }
-        finally
-        {
-            if (channel is not null)
-            {
-                await channel.DisposeAsync().ConfigureAwait(false);
-                _log.Stopped(id, PluginEvents.Ended, by);
-            }
-
-            GitGrants.Drop(home, grant);
-        }
+            : $"plugin `{plugin}` does not open pull requests — its manifest speaks on no `{HookPoints.Perform}` point.";
     }
 
     /// <summary>
@@ -335,12 +208,6 @@ public sealed class LandingPlugins(
 
     private async Task<IHookChannel> StartProcessAsync(PluginEntry plugin, Action<string> onLine, CancellationToken ct) =>
         await HookChannels.StartAsync(plugin, home, onLine, ct, _statePatience).ConfigureAwait(false);
-
-    private PluginLanding Failed(string plugin, string why)
-    {
-        Say(plugin, why);
-        return new PluginLanding(plugin, Pushed: false, PullRequest: null, why, Failed: true);
-    }
 
     private void Say(string plugin, string line) => say?.Invoke(plugin, line);
 }
