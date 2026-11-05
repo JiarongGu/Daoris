@@ -98,6 +98,9 @@ public sealed record HelpMachine
 
     public int Cap { get; init; }
 
+    /// <summary>How many minutes a session may say nothing and run nothing before Daoris looks in on it (<see cref="QuietSetting"/>).</summary>
+    public int QuietMinutes { get; init; } = (int)QuietSetting.Default;
+
     /// <summary>
     /// The sessions waiting on the person (ENTRY1f2), as the Sessions list's <i>Waiting on you</i> holds them less Ask Daoris's
     /// own, by id, so a go names one the room was shown; the room's count is theirs.

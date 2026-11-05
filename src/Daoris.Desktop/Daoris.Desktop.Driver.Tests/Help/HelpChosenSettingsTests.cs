@@ -122,6 +122,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
     [InlineData(ConfiguredAccess.Language, "zh", "engine")]
     [InlineData(ConfiguredAccess.Cap, "3", null)]
     [InlineData(ConfiguredAccess.CoolOff, "90", null)]
+    [InlineData(ConfiguredAccess.Quiet, "15", null)]
     public async Task A_grant_off_refuses_each_setting_and_writes_nothing(string setting, string value, string? repository)
     {
         Handed("h1");
@@ -143,8 +144,8 @@ public sealed class HelpChosenSettingsTests : IDisposable
     public async Task A_granted_setting_is_changed_through_its_own_doors_edit()
     {
         File.WriteAllText(ConfigPath, """{ "drivable": ["engine"], "notify": true }""");
-        Choose("""{ "settings": ["notify", "language", "cap", "cooloff"] }""");
-        Handed("h1", "notify", "language", "cap", "cooloff");
+        Choose("""{ "settings": ["notify", "language", "cap", "cooloff", "quiet"] }""");
+        Handed("h1", "notify", "language", "cap", "cooloff", "quiet");
         var ledger = Ledger();
 
         var notify = await AnswerAsync(ledger, Request(ConfiguredAccess.Notify, "off"));
@@ -152,6 +153,10 @@ public sealed class HelpChosenSettingsTests : IDisposable
         Assert.Contains("`daoris settings notify off`", notify.Said);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.Cap, "3"))).Done);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.CoolOff, "90"))).Done);
+        var quiet = await AnswerAsync(ledger, Request(ConfiguredAccess.Quiet, "15"));
+        Assert.True(quiet.Done);
+        Assert.Contains("`daoris settings quiet 15`", quiet.Said);
+        Assert.Equal(15, Config.QuietMinutes);
         var language = await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "zh", repository: "engine"));
         Assert.True(language.Done);
         Assert.True((await AnswerAsync(ledger, Request(ConfiguredAccess.Language, "en", workspace: "aurora"))).Done);
@@ -174,12 +179,14 @@ public sealed class HelpChosenSettingsTests : IDisposable
     [Theory]
     [InlineData(ConfiguredAccess.Cap, "none", null)]
     [InlineData(ConfiguredAccess.CoolOff, "0", null)]
+    [InlineData(ConfiguredAccess.Quiet, "4", null)]
+    [InlineData(ConfiguredAccess.Quiet, "121", null)]
     [InlineData(ConfiguredAccess.Notify, "maybe", null)]
     [InlineData(ConfiguredAccess.Language, "fr", "engine")]
     public async Task A_value_its_own_door_refuses_is_refused_and_nothing_is_written(string setting, string value, string? repository)
     {
-        Choose("""{ "settings": ["notify", "language", "cap", "cooloff"] }""");
-        Handed("h1", "notify", "language", "cap", "cooloff");
+        Choose("""{ "settings": ["notify", "language", "cap", "cooloff", "quiet"] }""");
+        Handed("h1", "notify", "language", "cap", "cooloff", "quiet");
 
         var answer = await AnswerAsync(Ledger(), Request(setting, value, repository));
 

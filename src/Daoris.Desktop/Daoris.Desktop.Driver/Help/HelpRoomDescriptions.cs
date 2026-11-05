@@ -67,6 +67,7 @@ internal static class HelpRoomDescriptions
             Intake = First("intake", sources.Config),
             Helper = First("ask-daoris", sources.Config),
             Cap = sources.Config.Cap,
+            QuietMinutes = (int)QuietSetting.Of(sources.Config).TotalMinutes,
             // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
             // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
             Waiting = [.. sources.Snapshot.Active

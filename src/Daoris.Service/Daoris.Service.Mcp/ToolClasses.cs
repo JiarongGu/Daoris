@@ -66,6 +66,7 @@ public static class ToolClasses
         ["settings_cooloff"] = ToolClass.Restricted,
         ["settings_language"] = ToolClass.Restricted,
         ["settings_notify"] = ToolClass.Restricted,
+        ["settings_quiet"] = ToolClass.Restricted,
         ["memory_write"] = ToolClass.Restricted,
         ["memory_end"] = ToolClass.Restricted,
     };

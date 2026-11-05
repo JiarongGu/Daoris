@@ -125,6 +125,8 @@ public sealed class McpChosenSettingsToolTests : McpToolsFixture
         Assert.Equal(("cap", "3"), (cap.GetProperty("operation").GetString(), cap.GetProperty("value").GetString()));
         var cool = await Asked(() => tools.CoolOffAsync(90));
         Assert.Equal(("cooloff", "90"), (cool.GetProperty("operation").GetString(), cool.GetProperty("value").GetString()));
+        var quiet = await Asked(() => tools.QuietAsync(15));
+        Assert.Equal(("quiet", "15"), (quiet.GetProperty("operation").GetString(), quiet.GetProperty("value").GetString()));
 
         var repository = await Asked(() => tools.LanguageAsync("zh", repository: "engine"));
         Assert.Equal(

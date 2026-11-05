@@ -37,6 +37,7 @@ internal static class HarnessCapture
             Origin = word.Persons ? "person" : "target",
             // SUPERVISOR1a-i: the supervisor's answer keeps its author where the session took it.
             From = word.Daoris ? SaidFrom.Daoris : word.Supervisors ? SaidFrom.Supervisor : null,
+            Watcher = DaorisKeys.IsWatch(word.Key) ? true : null,
             Id = word.Id,
             Text = word.Text,
             Files = word.Files.Count > 0 ? word.Files : null,
