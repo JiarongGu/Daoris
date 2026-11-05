@@ -44,8 +44,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
         })
         : await identity.mutateAsync({
           action: 'add-https', host: input.host, label: input.label,
-          ...(input.user ? { user: input.user } : {}),
-          ...(input.token ? { token: input.token } : {}),
+          user: input.user ?? '', token: input.token ?? '',
           ...(input.name ? { name: input.name, email: input.email } : {}),
         });
       return {
@@ -59,6 +58,9 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
       ? { action: 'commits-as', identity: each.id, name: who.name, email: who.email }
       : { action: 'commits-as', identity: each.id, clear: true }),
     readOnly: (each, on) => identity.mutateAsync({ action: 'read-only', identity: each.id, on }),
+    apiToken: (each, token) => identity.mutateAsync(token === null
+      ? { action: 'token', identity: each.id, kind: 'api', clear: true }
+      : { action: 'token', identity: each.id, kind: 'api', token }),
     remove: (each) => identity.mutateAsync({ action: 'remove', identity: each.id }),
     makeDefault: (each) => identity.mutateAsync({ action: 'default', host: each.host, identity: each.id }),
     own: (host, on) => use.mutateAsync({ scope: 'machine', host, ...(on ? { value: 'own' as const } : {}) }),

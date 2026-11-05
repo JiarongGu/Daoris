@@ -282,10 +282,21 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "add-https":
             {
-                var identity = await GitIdentityHttps.AddHttpsAsync(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.User,
-                    press.Name, press.Email, press.Token, "https", cancellationToken).ConfigureAwait(false);
+                var identity = GitIdentityHttps.AddHttps(home, Needed(press.Host, "host"), Needed(press.Label, "label"), press.User,
+                    press.Name, press.Email, press.Token);
                 GitHolds.LiftAll(home);
                 return GitAdded(home, identity);
+            }
+
+            // The value goes in and never comes out: the answer says only that a token of that kind is set.
+            case "token":
+            {
+                var kind = press.Kind ?? GitTokens.Api;
+                var identity = press.Clear
+                    ? GitIdentityTokens.Clear(home, name ?? throw new DriverException("name the git identity."), kind)
+                    : GitIdentityTokens.Set(home, name ?? throw new DriverException("name the git identity."), kind, Needed(press.Token, "token"));
+                GitHolds.LiftAll(home);
+                return new { Identity = identity.Id, Kind = kind, Set = GitIdentityTokens.Has(home, identity, kind) };
             }
 
             case "test":
@@ -315,7 +326,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
             case "remove":
             {
-                var pointing = await GitIdentityHttps.RemoveAsync(home, name ?? throw new DriverException("name the git identity."), cancellationToken).ConfigureAwait(false);
+                var pointing = GitIdentityActs.Remove(home, name ?? throw new DriverException("name the git identity."));
                 GitHolds.LiftAll(home);
                 return new { Pointing = pointing };
             }

@@ -19,16 +19,17 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Unit | File | Its job |
 |---|---|---|
 | Wiring | `GitWiring.cs`, `GitRouting.cs` | Hands every start the no-prompt variables, strips askpass, trace and token variables, names the doors where laid |
-| The doors | `GitDoors.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe` and `git-remote-daoris.exe`: class each act by its remote command, judge it, apply the identity |
+| The doors | `GitDoors.cs`, `GitCredentialDoor.cs`, `src/Daoris.Desktop/Daoris.Desktop.GitDoor/Program.cs` | `daoris-git-ssh.exe`, `git-remote-daoris.exe` and `git-credential-daoris.exe`: class each act by its remote command, judge it, apply the identity; the third answers an identity's token to git for its own host |
 | Which repository, which address | `GitFolders.cs`, `GitRemotes.cs`, `GitRemoteRows.cs` | The repository from the act's folder; the one address reader; Setup's remote rows and what serves each |
 | Identities and pointers | `GitIdentities.cs`, `GitIdentityUse.cs` | `data/git-identities.json`; `gitIdentity`, `workspaceGitIdentity`, `machineGitIdentity` in `driver.json`; resolution with its source |
-| Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitSshFiles.cs`, `GitHostKeys.cs` | Generate or import a key, GCM sign-ins in Daoris's namespace, Daoris's `ssh_config` and `known_hosts`, host-key compare |
+| Identity acts | `GitIdentityActs.cs`, `GitIdentityHttps.cs`, `GitIdentityTokens.cs`, `GitSshFiles.cs`, `GitHostKeys.cs` | Generate or import a key, add an HTTPS identity with its token and test it, set or clear an API token, Daoris's `ssh_config` and `known_hosts`, host-key compare |
+| Secrets at rest | `GitTokens.cs`, `GitPrivateFolder.cs`, `GitKeys` in `GitIdentities.cs` | `profiles/git/tokens/<id>/` (`https`, `api`) beside `profiles/git/keys/<id>/`, each folder made limited to the person's account before a byte is written |
 | Identity verbs | `GitIdentityCommand.cs` | `daoris-driver git identity` and `git use`; a widening pressed through the running window |
 | Author | `GitAuthor.cs` | The `commitsAs` of origin's identity on a session's or Daoris's commit |
 | Config and floors | `Install/GitGlobalFile.cs`, `Install/GitVersions.cs`, `GitForWindows.cs` | `profiles/git/global.gitconfig`; the version floors; Git for Windows' launcher started past |
 | Failures and holds | `GitFailures.cs`, `GitHolds.cs`, `GitOwnInput.cs` | Class a failure; hold in `run/git/held.json`; find `own-input` and `no-identity` before the act |
 | The move | `GitMove.cs`, `GitMoved.cs` | Where both doors are laid, a remote nothing serves gets no credential of the person's; the ssh door's one line |
-| Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, GCM or plugin text; coded `git.*` machine-log lines |
+| Redaction and log | `GitWords.cs`, `GitLog.cs`, `GitUnended.cs` | One redaction for every git, ssh, door or plugin text; coded `git.*` machine-log lines |
 | Git access | `GitAccessKeys.cs`, `GitAccessActs.cs`, `GitAccessCommand.cs` | The three levels in `driver.json`, their resolution, `SET_GIT_ACCESS`, `git access` |
 | The judge, grants | `GitAccessRules.cs` (`GitGrants`), `GitGrantRef.cs` | One verdict per act; a grant in `run/git/grants` bound to its address and its refs (ref, new commit, old commit where known) |
 | A push's updates | `GitPushUpdates.cs`, `GitPushJudge.cs`, `GitPushDoor.cs`, `GitHelperPush.cs` | Each update read and kinded (plain, force, delete, tag, mirror, prune); the batch judged by grant and Dangerous; the helper's remote refs and objects |
@@ -50,12 +51,14 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Identities**
 
-1. An identity is a host, a way (an SSH key or an HTTPS sign-in), a label, the user the host reports and an optional
+1. An identity is a host, a way (an SSH key or an HTTPS token), a label, the user the host reports and an optional
    `commitsAs`. Several per host. `data/git-identities.json` holds no secret. (from D198)
 2. No scope holds a list. A repository points per remote, a workspace per host, the machine may choose `own` per host, and
    a host has a default per way. Resolution is repository, workspace, machine, default; the answer names its source. (from D198)
-3. A private key lives in `profiles/git/keys/<id>/`, the folder limited to the person's account before a byte is written,
-   plaintext at rest. An HTTPS sign-in lives in Git Credential Manager, in Daoris's own namespace. (from D198, D67)
+3. A private key lives in `profiles/git/keys/<id>/`, and an identity's tokens in `profiles/git/tokens/<id>/` (`https`, the token
+   git's HTTPS act carries; `api`, the token a hosted service's act is handed, on any identity), each folder limited to the
+   person's account before a byte is written, plaintext at rest. A token goes in through the identity's doors (the route, the
+   terminal's `git identity token --token-stdin`, the page) and is never said back: only whether one is set. (from D198, D67, D241)
 4. A host key is trusted only at the person's press, after a compare with the host's published keys. Host keys live in
    `profiles/git/known_hosts`. (from D198, D73)
 5. The person's `~/.ssh`, ssh agent and ssh configuration are never read or written. The ssh door gives its ssh
@@ -68,7 +71,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 7. Every start passes `Tools.Hand`, which calls `GitWiring.Hand`: `GIT_TERMINAL_PROMPT=0`, an empty `GIT_ASKPASS`,
    `GCM_INTERACTIVE=never`, `GIT_TRACE_REDACT=1`. A grant is never inherited. The terminal's shells keep the person's git. (from D198)
 8. Where the doors lie in the install's `app/bin/`, SSH runs `daoris-git-ssh.exe` by a bare path in `GIT_SSH_COMMAND`
-   (else `GIT_SSH`), and HTTP/HTTPS reach `git-remote-daoris.exe` by `insteadOf` in the command scope. No doors, no routing. (from D198)
+   (else `GIT_SSH`), and HTTP/HTTPS reach `git-remote-daoris.exe` by `insteadOf` in the command scope. No doors, no routing.
+   Under an identity the helper starts git's own transport with `credential.helper` emptied and then `daoris`, the install's
+   folder first on that transport's `PATH` and `DAORIS_GIT_IDENTITY` naming the identity: `git-credential-daoris.exe` answers
+   `get` with that identity's `https` token and user for the identity's own host and nothing for any other host, and changes
+   nothing on `store` or `erase`. A remote nothing serves, or no credential door laid, reads anonymously. (from D198, D241)
 9. The publish lays the doors only with `--git-doors` until D198's owed measurements pass. The deployment rehearsal always
    lays them. (from D198)
 10. A door finds the repository by the act's own working folder, so `git -C`, a clone or a submodule resolves for itself.
@@ -81,7 +88,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     that reads remotes is named the repository or runs unrouted. (from D198)
 14. Below git 2.31 the doors cannot stand: Daoris's fetches and the landing's push refuse as `old-git`. Below 2.32 a git
     setting refuses as `git-too-old`. (from D198)
-15. Every text from git, ssh, GCM or a plugin passes `GitWords.Redact` before it is kept, said or answered. (from D198)
+15. Every text from git, ssh, a door or a plugin passes `GitWords.Redact` before it is kept, said or answered. (from D198)
 
 **The move and the holds**
 
@@ -196,8 +203,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 - **How an act is carried or judged:** the doors (`GitDoors`, `GitRouting`, `GitWiring`), compiled into
   `Daoris.Desktop.GitDoor`. Never a `pre-push` hook, a credential helper or the harness's rules alone.
-- **Who an act is:** `GitIdentities` and `GitIdentityUse`; the secret-holding acts in `GitIdentityActs` or
-  `GitIdentityHttps`; a page change in `settings/git/`.
+- **Who an act is:** `GitIdentities` and `GitIdentityUse`; the secret-holding acts in `GitIdentityActs`, `GitIdentityHttps` or
+  `GitIdentityTokens`, a secret's folder in `GitTokens` or `GitKeys`; a page change in `settings/git/`.
 - **A new failure or hold:** `GitFailures`, `GitHolds` or `GitOwnInput`, with its row words where `git-held` rows are made.
 - **What an act may do:** `GitAccessKeys` and `GitAccessRules`; what a session's harness is told in `GitAccessPolicy`.
 - **A new person's act:** a step kind on the act engine, a `Git*Command.cs` twin, a `GitRoutes` route, and its rows in
@@ -209,7 +216,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 - **Quest conflicts:** `QuestLog` and `QuestExchange` (service), `Planner` (driver), the quest page.
 
 **Tests that pin the area:** `GitDoorsTests`, `GitDoorStartTests`, `GitDoorsProcessTests`, `GitPromptsProcessTests`,
-`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitIdentitiesTests`, `GitIdentityCommandTests`,
+`GitSshProcessTests`, `GitSshHoldsProcessTests`, `GitTlsProcessTests`, `GitPushUpdatesTests`, `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
@@ -219,7 +226,7 @@ census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefA
 
 **The remotes they reach** are stand-ins in the test process on free loopback ports, one per test class, with nothing installed
 (D241 point 8): `GitSshHost` (an SSH host from Microsoft's dev-tunnels library serving `git-upload-pack` and `git-receive-pack`,
-verifying RSA and ECDSA keys, never ed25519), `GitTlsHost` (`GitHttpBackendHost` behind TLS, its certificate trusted per command)
+verifying RSA and ECDSA keys, never ed25519), `GitTlsHost` (`GitHttpBackendHost` behind TLS, its certificate trusted per command, asking Basic where a test sets `Basic`)
 and `PullRequestApiHost` (GitHub's and Azure DevOps' pull-request calls, admitting a test's token). Each counts what it was asked.
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
@@ -248,7 +255,7 @@ catalogues (`i18n:check`).
 - **GITAUTH1b:** the doors' classes run with the pinned MinGit beside the runner's git (G1's rest); then `--git-doors` becomes the
   default (G6).
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
-- **GITAUTH1e:** the sign-in's `PhaseList` and its Cancel; the sync card's screen door.
+- **GITAUTH1e:** the sync card's screen door. The browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241).
 - **GITAUTH1f:** the session's record of its git access with *Tighten…* and `git access --session`; the head's access facts.
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2g:** push one branch, on the person's press with a grant (after GITAUTH1f).

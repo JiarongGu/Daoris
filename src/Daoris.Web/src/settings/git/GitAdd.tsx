@@ -37,7 +37,6 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
   const [label, setLabel] = useState('');
   const [mode, setMode] = useState<'generate' | 'import'>('generate');
   const [file, setFile] = useState('');
-  const [signIn, setSignIn] = useState<'browser' | 'token'>('browser');
   const [user, setUser] = useState('');
   const [token, setToken] = useState('');
   const [who, setWho] = useState({ name: '', email: '' });
@@ -52,7 +51,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
   const importing = ssh && mode === 'import';
   const author = who.name.trim() || who.email.trim() ? { name: who.name.trim(), email: who.email.trim() } : null;
   const ready = bare.length > 0 && label.trim().length > 0
-    && (ssh ? !importing || file.trim().length > 0 : signIn === 'browser' || (token.length > 0 && user.trim().length > 0))
+    && (ssh ? !importing || file.trim().length > 0 : token.length > 0 && user.trim().length > 0)
     && (!author || (author.name.length > 0 && author.email.includes('@')));
 
   const input = (): GitAddInput => ({
@@ -60,7 +59,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
     ...(author ? author : {}),
     ...(ssh
       ? { ...(importing ? { importFile: file.trim() } : {}), ...(rsa && !importing ? { rsa: true } : {}) }
-      : { ...(user.trim() ? { user: user.trim() } : {}), ...(signIn === 'token' ? { token } : {}) }),
+      : { user: user.trim(), token }),
   });
 
   const send = async () => {
@@ -187,21 +186,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
           )}
 
           {!ssh && (
-            <SettingRow
-              label={t('settings.git.signIn')}
-              hint={t('settings.git.signInHint')}
-              control={(
-                <Segmented
-                  label={t('settings.git.signIn')}
-                  value={signIn}
-                  options={[
-                    { value: 'browser', label: t('settings.git.signInBrowser') },
-                    { value: 'token', label: t('settings.git.signInToken') },
-                  ]}
-                  onChange={setSignIn}
-                />
-              )}
-            >
+            <SettingRow label={t('settings.git.signIn')} hint={t('settings.git.signInHint')}>
               <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                 <input
                   aria-label={t('settings.git.userAria')}
@@ -211,18 +196,16 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
                   autoComplete="off"
                   className={`${FIELD} basis-40`}
                 />
-                {signIn === 'token' && (
-                  <input
-                    type="password"
-                    aria-label={t('settings.git.tokenAria')}
-                    value={token}
-                    onChange={(event) => setToken(event.target.value)}
-                    placeholder={t('settings.git.tokenPlaceholder')}
-                    autoComplete="off"
-                    className={`${FIELD} flex-1 basis-56`}
-                  />
-                )}
-                {signIn === 'token' && <p className="m-0 basis-full text-small text-ink-faint"><Inline text={t('settings.git.tokenWhy')} /></p>}
+                <input
+                  type="password"
+                  aria-label={t('settings.git.tokenAria')}
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  placeholder={t('settings.git.tokenPlaceholder')}
+                  autoComplete="off"
+                  className={`${FIELD} flex-1 basis-56`}
+                />
+                <p className="m-0 basis-full text-small text-ink-faint"><Inline text={t('settings.git.tokenWhy')} /></p>
               </div>
             </SettingRow>
           )}
@@ -249,7 +232,7 @@ export function GitAdd({ acts, knownHosts, wayToday = 'ssh', host: initialHost =
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button variant="primary" type="submit" disabled={!ready || busy || asking}>
-            {busy && !ssh && signIn === 'browser' ? t('settings.git.waitingBrowser') : t('settings.git.addPress')}
+            {t('settings.git.addPress')}
           </Button>
           <Button variant="ghost" onClick={onClose}>{t('settings.git.cancel')}</Button>
         </div>

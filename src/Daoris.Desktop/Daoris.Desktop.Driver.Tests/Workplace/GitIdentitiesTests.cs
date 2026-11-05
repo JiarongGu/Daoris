@@ -119,7 +119,7 @@ public sealed class GitIdentitiesTests : IDisposable
         var folder = GitKeys.MakeFolder(Home, "gi-0123456789ab");
 
         Assert.Empty(Directory.EnumerateFileSystemEntries(folder));
-        Assert.True(GitKeys.IsPrivate(folder));
+        Assert.True(GitPrivateFolder.IsPrivate(folder));
         Assert.EndsWith(Path.Combine("profiles", "git", "keys", "gi-0123456789ab"), folder);
         Assert.Contains("key-exists", Assert.Throws<DriverException>(() => GitKeys.MakeFolder(Home, "gi-0123456789ab")).Message);
 
@@ -140,7 +140,7 @@ public sealed class GitIdentitiesTests : IDisposable
         var folder = Path.Combine(_root, "open");
         Directory.CreateDirectory(folder);
 
-        Assert.False(GitKeys.IsPrivate(folder));
+        Assert.False(GitPrivateFolder.IsPrivate(folder));
     }
 
     // ── A key's type and fingerprint ───────────────────────────────────────────────────────────────
@@ -216,7 +216,7 @@ public sealed class GitIdentitiesTests : IDisposable
 
         Assert.Equal(("github.com", "ed25519", Ed25519Print, true), (identity.Host, identity.KeyType, identity.Fingerprint, identity.Default));
         Assert.Equal(File.ReadAllBytes(file), File.ReadAllBytes(GitKeys.KeyPath(Home, identity.Id)));
-        Assert.True(GitKeys.IsPrivate(GitKeys.Folder(Home, identity.Id)));
+        Assert.True(GitPrivateFolder.IsPrivate(GitKeys.Folder(Home, identity.Id)));
         Assert.StartsWith("ssh-ed25519 ", GitKeys.PublicKey(Home, identity.Id));
         Assert.True(File.Exists(GitSshFiles.Config(Home)));
         Assert.Equal(identity, Assert.Single(GitIdentities.Read(Home)));
@@ -245,7 +245,7 @@ public sealed class GitIdentitiesTests : IDisposable
         GitIdentityActs.Runner = (file, arguments, folder) =>
         {
             _ran.Add((file, arguments));
-            Assert.True(GitKeys.IsPrivate(folder));
+            Assert.True(GitPrivateFolder.IsPrivate(folder));
             var key = arguments[arguments.Count - 1];
             File.WriteAllText(key, "private");
             File.WriteAllText(key + ".pub", (arguments.Contains("rsa") ? Rsa2048 : Ed25519) + "\n");

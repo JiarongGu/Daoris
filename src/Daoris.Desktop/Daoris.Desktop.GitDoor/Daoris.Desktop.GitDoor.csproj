@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Daoris's two git doors (GITAUTH1b, D198 point 2; the git-auth design §4.2 and §4.3): one program, `daoris-git-ssh.exe`, which
-       git starts as its ssh, laid out a second time as `git-remote-daoris.exe`, which git runs for a `daoris::` address; `Program`
-       answers by its own file's name. A console program, since git talks to it on its standard streams. Framework-dependent and
+  <!-- Daoris's three git doors (GITAUTH1b, D198 point 2, D241 point 6; the git-auth design §4.2 and §4.3): one program, `daoris-git-ssh.exe`,
+       which git starts as its ssh, laid out again as `git-remote-daoris.exe`, which git runs for a `daoris::` address, and as
+       `git-credential-daoris.exe`, which git runs for an identity's token; `Program` answers by its own file's name. A console program, since git talks to it on its standard streams. Framework-dependent and
        referencing nothing, as the launcher is, so a door starts small on every remote act: the driver library's own files are
        compiled in, each using the base library alone. -->
   <PropertyGroup>
@@ -45,8 +45,12 @@
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFolders.cs" Link="GitFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitSshFiles.cs" Link="GitSshFiles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitMoved.cs" Link="GitMoved.cs" />
-    <!-- An identity's HTTPS act: Git Credential Manager in Daoris's namespace and none of the person's other inputs (GITAUTH1d, §4.3). -->
+    <!-- An identity's HTTPS act: the credential door's answer and none of the person's other inputs (D241 point 6, §4.3), the identity's
+         token read from `profiles/git/tokens/<id>/`, whose folder is made limited to the person's account. -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitHttps.cs" Link="GitHttps.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitCredentialDoor.cs" Link="GitCredentialDoor.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitTokens.cs" Link="GitTokens.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitPrivateFolder.cs" Link="GitPrivateFolder.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\AtomicFile.cs" Link="AtomicFile.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\BesideReads.cs" Link="BesideReads.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\JsonFile.cs" Link="JsonFile.cs" />

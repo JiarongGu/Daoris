@@ -34,7 +34,7 @@ describe('an identity\'s row', () => {
 
     draw(<ul><GitIdentityRow identity={PERSONAL} acts={acts()} /></ul>);
     expect(screen.queryByRole('button', { name: 'Copy public key' })).toBeNull();
-    expect(screen.getByText(/signed in through Git Credential Manager/)).toBeInTheDocument();
+    expect(screen.getByText(/signed in with a token/)).toBeInTheDocument();
   });
 
   it('says a refusal with the act that fixes it, and tests again', async () => {
@@ -99,6 +99,24 @@ describe('an identity\'s row', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Allow writes' }));
 
     expect(readOnly).toHaveBeenCalledWith(DEPLOY, false);
+  });
+
+  it('sets an API token from a password field that is cleared once sent, never showing it back, and clears it', async () => {
+    const apiToken = vi.fn(async () => ({}));
+    draw(<ul><GitIdentityRow identity={{ ...WORK, apiToken: true }} acts={acts({ apiToken })} /></ul>);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change API token…' }));
+    const field = screen.getByLabelText('The API token of Work');
+    expect(field).toHaveAttribute('type', 'password');
+    expect(field).toHaveValue('');
+    await userEvent.type(field, 'throwaway-api-token');
+    await userEvent.click(screen.getByRole('button', { name: 'Save token' }));
+    expect(apiToken).toHaveBeenCalledWith(expect.objectContaining({ id: WORK.id }), 'throwaway-api-token');
+    expect(document.body.textContent).not.toContain('throwaway-api-token');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Change API token…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear token' }));
+    expect(apiToken).toHaveBeenLastCalledWith(expect.objectContaining({ id: WORK.id }), null);
   });
 
   it('lists every scope pointing at an identity before it is removed, and removes on the second press', async () => {
@@ -210,12 +228,12 @@ describe('the add form', () => {
     expect(add).toHaveBeenCalledWith({ way: 'ssh', host: 'github.com', label: 'Mine', importFile: 'X:/keys/id' });
   });
 
-  it('pastes a token into a password field that is cleared once sent, and signs in through the browser otherwise', async () => {
+  it('takes a token in a password field that is cleared once sent, and offers no browser sign-in', async () => {
     const add = vi.fn(ACTS.add);
     draw(<GitAdd acts={acts({ add })} knownHosts={PAGE.hosts} host="github.com" wayToday="https" onClose={vi.fn()} />);
 
     await userEvent.type(screen.getByLabelText('A name for this identity'), 'Personal');
-    await userEvent.click(screen.getByRole('radio', { name: 'Paste a token…' }));
+    expect(screen.queryByRole('radio', { name: 'Browser sign-in' })).toBeNull();
     expect(screen.getByLabelText('The token')).toHaveAttribute('type', 'password');
     await userEvent.type(screen.getByLabelText('The account on the host'), 'octo-me');
     await userEvent.type(screen.getByLabelText('The token'), 'ghp_exampletoken');

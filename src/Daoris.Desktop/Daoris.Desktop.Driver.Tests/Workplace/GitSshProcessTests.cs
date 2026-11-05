@@ -128,7 +128,7 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         await Ok(Git(seed, "push", Bare, "main"));
 
         var identity = await GitIdentityActs.AddSshAsync(Home, _host.Host, "Fixture", null, null, null, rsa: true, CancellationToken.None);
-        Assert.True(GitKeys.IsPrivate(GitKeys.Folder(Home, identity.Id)));
+        Assert.True(GitPrivateFolder.IsPrivate(GitKeys.Folder(Home, identity.Id)));
         _host.Authorize(GitKeys.PublicKey(Home, identity.Id)!);
         var fingerprint = GitKeys.Describe(_host.HostKey)!.Value.Fingerprint;
         var tested = await GitIdentityActs.TestAsync(Home, identity.Id, fingerprint, CancellationToken.None);

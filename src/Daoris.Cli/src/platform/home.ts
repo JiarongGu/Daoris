@@ -161,6 +161,7 @@ export const HOME_ENTRIES = [
   row('browser-edge', 'profiles', 'profiles/browser/edge', 'browser/edge'),
   row('edge-cookies', 'profiles', 'profiles/browser/edge-session-cookies.bin', 'browser/edge-session-cookies.bin'),
   row('git-keys', 'profiles', 'profiles/git/keys', 'profiles/git/keys'),
+  row('git-tokens', 'profiles', 'profiles/git/tokens', 'profiles/git/tokens'),
   row('git-ssh-config', 'profiles', 'profiles/git/ssh_config', 'profiles/git/ssh_config'),
   row('git-known-hosts', 'profiles', 'profiles/git/known_hosts', 'profiles/git/known_hosts'),
   row('git-config', 'profiles', 'profiles/git/global.gitconfig', 'profiles/git/global.gitconfig'),

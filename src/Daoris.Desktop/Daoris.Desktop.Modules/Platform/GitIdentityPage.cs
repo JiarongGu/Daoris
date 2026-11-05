@@ -4,7 +4,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// What Settings → Git and the remote rows read (GITAUTH1e; the git-auth design §7.1), from the files alone, as <c>TOOLS_LIST</c>'s
-/// <c>identities</c>: the identities with what points at them, the hosts, and the hosts the person's own sign-ins are chosen for. No secret by construction: a public key and a fingerprint are the most it holds.
+/// <c>identities</c>: the identities with what points at them, the hosts, and the hosts the person's own sign-ins are chosen for. No secret by construction: a public key, a fingerprint and whether an API token is set are the most it holds.
 /// </summary>
 internal static class GitIdentityPage
 {
@@ -24,6 +24,8 @@ internal static class GitIdentityPage
                     each.CommitsName, each.CommitsEmail,
                     Test = each.Test is { } test ? new { test.Result, test.User, At = Moments.Write(test.At) } : null,
                     LastUsed = used is { } at ? Moments.Write(at) : null,
+                    // Whether a token is set, never the token.
+                    ApiToken = GitTokens.Has(home, each.Id, GitTokens.Api),
                     PublicKey = each.Way == GitIdentity.Ssh ? GitKeys.PublicKey(home, each.Id) : null,
                     KeyPage = GitHosts.Known.TryGetValue(each.Host, out var known) ? known.KeyPage : null,
                     Repositories = pointers.Repository.Sum(repository => repository.Value.Count(pointer => pointer.Value == each.Id)),

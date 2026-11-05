@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>The doors' build beside the tests' own, laid out as an install's <c>app/bin/</c>: one program, two names.</summary>
+/// <summary>The doors' build beside the tests' own, laid out as an install's <c>app/bin/</c>: one program, three names.</summary>
 internal static class GitDoorsLaid
 {
     /// <summary>Copy the built doors under <paramref name="install"/>, which holds the install's marker.</summary>
@@ -16,5 +16,6 @@ internal static class GitDoorsLaid
         Directory.CreateDirectory(bin);
         foreach (var file in Directory.EnumerateFiles(built)) File.Copy(file, Path.Combine(bin, Path.GetFileName(file)), overwrite: true);
         File.Copy(Path.Combine(built, GitWiring.SshDoor), Path.Combine(bin, GitWiring.RemoteHelper), overwrite: true);
+        File.Copy(Path.Combine(built, GitWiring.SshDoor), Path.Combine(bin, GitCredentialDoor.Exe), overwrite: true);
     }
 }

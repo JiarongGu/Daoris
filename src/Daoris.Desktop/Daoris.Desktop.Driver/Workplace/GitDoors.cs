@@ -427,7 +427,7 @@ public static class GitDoors
         // GITAUTH1e: a remote nothing serves reads anonymously, as an identity's with no sign-in would.
         var anonymous = serves.Kind == GitServeKind.None;
         if ((identity is not null || anonymous) && GitHttps.HasPassword(address))
-            return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's sign-in is stored through Git Credential Manager, not written into an address.");
+            return Refuse(error, "git-remote-daoris: refuses an address carrying a password: a git identity's token is kept in Daoris's tokens folder, not written into an address.");
 
         // Not the tools' environment (TOOLS5): git's own transport, with git's environment less Daoris's routing (§4.3).
         // The relay reads and writes the streams' bytes (BaseStream); the encodings are named for the census, and change no byte.
@@ -441,17 +441,17 @@ public static class GitDoors
             StandardOutputEncoding = Encoding.UTF8,
         };
         info.ArgumentList.Add(arguments[0]);
-        // Under an identity the transport is given no user-info; GCM's choice of account is the identity's user (§4.3 step 3).
+        // Under an identity the transport is given no user-info; the credential door answers the identity's user and token.
         info.ArgumentList.Add(identity is null && !anonymous ? address : GitHttps.Bare(address));
         GitRouting.Unroute(info.Environment);
         if (identity is not null)
         {
-            GitHttps.Apply(info.Environment, home, identity.User ?? GitHttps.UserOf(address), GitHttps.Manager(variable));
+            GitHttps.Apply(info.Environment, home, identity.Id, GitCredentialDoor.FolderOf(variable));
             GitSshFiles.Used(home, identity.Id);
         }
         else if (anonymous)
         {
-            GitHttps.Apply(info.Environment, home, null, null);
+            GitHttps.Apply(info.Environment, home, identityId: null, doorFolder: null);
         }
 
         environment?.Invoke(info.Environment);
