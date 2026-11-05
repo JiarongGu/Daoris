@@ -373,7 +373,7 @@ export const RULES: AgentRulesState = {
   path: 'C:/somewhere/data/permissions.json',
   defaults: [
     { id: 'tree-guard', list: 'deny', rules: [], why: 'keeps every write inside the session\'s own tree', on: true, hook: 'Edit, Write' },
-    { id: 'no-push', list: 'deny', rules: ['Bash(git push:*)'], why: 'a push is the person\'s', on: true },
+    { id: 'no-push', list: 'deny', rules: ['Bash(git push:*)'], why: 'git access\'s Write says whether a session pushes', on: true, fixed: true },
     { id: 'no-force', list: 'deny', rules: ['Bash(git reset --hard:*)'], why: 'a hard reset loses work', on: true },
     { id: 'connector', list: 'allow', rules: ['mcp__daoris__*'], why: 'the connector is how an agent reaches Daoris', on: true },
   ],

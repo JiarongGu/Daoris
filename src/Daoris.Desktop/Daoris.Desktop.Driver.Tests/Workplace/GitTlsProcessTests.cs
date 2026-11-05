@@ -125,6 +125,36 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
         Assert.Contains(_host.Requests, line => line.StartsWith("POST", StringComparison.Ordinal) && line.Contains("git-receive-pack", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// GITREADONLY1 at the remote helper: once an HTTPS identity marked read only on its host serves the address, its push is refused at
+    /// <c>list for-push</c> in its words, the landing's grant included, before the host hears it. The identity is written as its file
+    /// holds it, with no sign-in: the refusal comes before any credential is asked.
+    /// </summary>
+    [Fact]
+    public async Task Over_TLS_a_read_only_identitys_push_is_refused_at_the_helper_in_its_words()
+    {
+        await ServeAsync();
+        await Ok(Git(_root, "clone", Address, Work));
+        var identities = DaorisHome.Entry(Home, HomeEntry.GitIdentities);
+        Directory.CreateDirectory(Path.GetDirectoryName(identities)!);
+        File.WriteAllText(identities, $$"""
+            {"identities":[{"id":"gi-00000000000b","label":"Reader","host":"{{GitHttps.HostOf(Address)}}","way":"https","readOnly":true,"default":true}]}
+            """);
+        File.AppendAllText(Path.Combine(Work, "a.txt"), "refused\n");
+        await Ok(Git(Work, "commit", "-am", "refused"));
+        var before = await TipAsync();
+        var asked = _host.Requests.Count;
+        var push = Git(Work, "push", "origin", "main");
+        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+
+        var (exit, _, error) = await RunAsync(push);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitAccessRules.ReadOnlyLine("Reader"), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+        Assert.DoesNotContain(_host.Requests.Skip(asked), line => line.Contains("receive-pack", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task A_git_not_handed_the_hosts_authority_refuses_its_certificate()
     {

@@ -234,4 +234,56 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         Assert.NotEqual(0, exit);
         Assert.Contains("Host key verification failed", error, StringComparison.Ordinal);
     }
+
+    /// <summary>A clone through the identity, then one commit on main that a push would carry; the host's tip before it.</summary>
+    private async Task<string> CommittedAsync()
+    {
+        await Ok(Git(_root, "clone", Address, Work));
+        File.AppendAllText(Path.Combine(Work, "a.txt"), "held\n");
+        await Ok(Git(Work, "commit", "-am", "held"));
+        return await TipAsync();
+    }
+
+    private bool HostHeardAPush() =>
+        _host.Runs.Any(run => run.Command?.StartsWith("git-receive-pack", StringComparison.Ordinal) == true && run.Command.Contains(_path, StringComparison.Ordinal));
+
+    /// <summary>GITREADONLY1: an identity marked read only on its host pushes nothing, the landing's grant included, and says so.</summary>
+    [Fact]
+    public async Task A_read_only_identitys_push_is_refused_at_the_ssh_door_in_its_words_and_the_host_hears_none()
+    {
+        var identity = await ReadyAsync();
+        var before = await CommittedAsync();
+        GitIdentityActs.ReadOnly(Home, identity.Id, on: true);
+        var push = Git(Work, "push", "origin", "main");
+        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+
+        var (exit, _, error) = await RunAsync(push);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitAccessRules.ReadOnlyLine(identity.Label), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+        Assert.False(HostHeardAPush());
+    }
+
+    /// <summary>GITAUTH1f: Write says ask and no instance of Daoris holds the home, so the door refuses the push at once rather than wait.</summary>
+    [Fact]
+    public async Task With_Daoris_not_running_a_push_its_access_would_ask_about_is_refused_at_once()
+    {
+        await ReadyAsync();
+        var before = await CommittedAsync();
+        var config = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        var root = File.Exists(config)
+            ? (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(config))!
+            : new System.Text.Json.Nodes.JsonObject();
+        root["machineGitAccess"] = new System.Text.Json.Nodes.JsonObject { ["write"] = "ask" };
+        File.WriteAllText(config, root.ToJsonString());
+
+        var (exit, _, error) = await RunAsync(Git(Work, "push", "origin", "main"), TimeSpan.FromSeconds(60));
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitDoorAsks.NotRunningLine, error, StringComparison.Ordinal);
+        Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
+        Assert.Equal(before, await TipAsync());
+        Assert.False(HostHeardAPush());
+    }
 }

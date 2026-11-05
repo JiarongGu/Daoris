@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { QuestMove } from '../data/api';
-import { Flow } from '../design/Flow';
+import { LifeFlow } from '../design/canvas/LifeFlow';
 import { Icon } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type QuestMoveLine, type QuestOfLife, questFlow } from './questLife';
@@ -81,7 +81,7 @@ export function QuestLifeFlow({ quest, moves }: { quest: QuestOfLife; moves?: Qu
     const lines = life.lines[node.id as keyof typeof life.lines];
     return lines.length > 0 ? { ...node, lines: <MoveLines lines={lines} /> } : node;
   });
-  return <Flow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
+  return <LifeFlow label={life.label} nodes={nodes} edges={life.edges} entries={life.entries} />;
 }
 
 /**

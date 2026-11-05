@@ -1,5 +1,5 @@
 import type { Session, SessionState } from '../../data/api';
-import type { FlowEdge, FlowNode } from '../../design/Flow';
+import type { FlowEdge, FlowNode } from '../../design/FlowCanvas';
 import { SESSION_ACTIVE, SESSION_TONE, type ShownState, shownKey, shownState } from '../../design/ui';
 import { list } from '../../locales/format';
 import { sessionOrigin } from '../identity';

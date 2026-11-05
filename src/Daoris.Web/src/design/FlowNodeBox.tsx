@@ -1,22 +1,12 @@
 import { useId } from 'react';
 import { cn } from '../lib/cn';
-import { FlowCanvas, type FlowProps, type NodeContext } from './FlowCanvas';
+import type { NodeContext } from './FlowCanvas';
 import { Icon, Pill } from './ui';
 
-export type { FlowEdge, FlowNode, FlowProps, FlowSection, PillTone } from './FlowCanvas';
-
 /**
- * **A flowchart** (FLOWCHART1a1; D186, the flowchart design §3 and §4): the canvas drawing its nodes as the generic box, a glyph and
- * title, a state's pill, who acts, the caller's lines and a foot of presses. The layout, placement, ink, keys and folds are
- * `FlowCanvas`'s; a caller whose nodes need more (the workflow's steps and their ports) draws them through the canvas itself.
- *
- * A molecule: the flow arrives worded and its doors go out.
+ * One node of a flow (FLOWCHART1a1; D186 §3.3): a glyph and title, a state's pill, who acts, the caller's lines and a foot of presses,
+ * in reading order. The canvas places it; a caller whose nodes need more (the workflow's steps and their ports) draws its own.
  */
-export function Flow(props: FlowProps) {
-  return <FlowCanvas {...props} renderNode={(context) => <FlowNodeBox {...context} />} />;
-}
-
-/** One node (§3.3): its words in reading order, and its foot's presses. */
 export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: NodeContext) {
   const titleId = useId();
   const stateId = useId();

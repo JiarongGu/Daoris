@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>A judge's answer for one remote act (the git-auth design §6.5): whether it may pass, its code, and the one line a refusal says.</summary>
 /// <param name="Allowed">Whether the act may pass.</param>
-/// <param name="Code">Why: <c>read</c>, <c>granted</c>, <c>no-push-off</c>, or <c>denied</c>.</param>
+/// <param name="Code">Why: <c>read</c>, <c>granted</c>, <c>access</c>, <c>asked</c>, or a refusal's code (<c>denied</c>, <c>read-only</c>, ...).</param>
 /// <param name="Line">The one line a refusal writes where git prints it; null where the act passes.</param>
 /// <param name="Ask">Whether the act must be asked of the person at the door (GITAUTH1f, §6.6): not allowed yet, and not refused.</param>
 public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool Ask = false);
@@ -20,32 +20,32 @@ public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool As
 /// refused unless the person's git access allows it (<see cref="JudgeDangerous"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>A machine whose person switched <c>no-push</c> off</b> keeps today's: its sessions push, so Write is allowed there. GITAUTH1f
-/// reads it once as this machine's <c>machineGitAccess.write</c> <i>allow</i> (§6.8); until then the judge reads the switch itself.</para>
+/// <para><b>Git access alone</b> says whether a session pushes: a home whose person had switched <c>no-push</c> off was converted once into
+/// this machine's Write <i>allow</i> by the home's migration (<c>GitPushStep</c>).</para>
+/// <para><b>An identity read only on its host</b> refuses every Write through it, a grant's included, at both doors and at the landing.</para>
 /// <para><b>Refusing a Codex session's push</b>, which nothing refused before, is a narrowing D72 lets Daoris make without the person
 /// (§6.2). So is refusing a push by a process that is not a session and holds no grant (a plugin's trial or tool run, a hook).</para>
 /// <para>The base library alone: the doors compile it in (<c>Daoris.Desktop.GitDoor</c>).</para>
 /// </remarks>
 public static class GitAccessRules
 {
-    /// <summary>The shipped default whose switch the judge reads (<c>Permissions.Defaults</c>' id).</summary>
-    public const string NoPush = "no-push";
-
     /// <summary>The line a refused push says, where git prints it.</summary>
     public const string DeniedLine =
         "daoris: Daoris's git access refuses a push from here: a session's accepted work is pushed by its landing, on the person's yes.";
 
-    /// <summary>The answer for an act of <paramref name="act"/>'s class.</summary>
+    /// <summary>The answer for an act of <paramref name="act"/>'s class under Daoris's default (<see cref="GitAccessKeys.AsToday"/>).</summary>
     /// <param name="act">Read or Write, from the remote command.</param>
-    /// <param name="pushesHere">Whether the person switched <c>no-push</c> off on this machine (<see cref="PushesHere"/>).</param>
     /// <param name="granted">Whether the act carried a grant it took (<see cref="GitGrants.Take"/>).</param>
-    public static GitVerdict Judge(GitAct act, bool pushesHere, bool granted) => act switch
+    public static GitVerdict Judge(GitAct act, bool granted) => act switch
     {
         GitAct.Read => new(true, "read", null),
         _ when granted => new(true, "granted", null),
-        _ when pushesHere => new(true, "no-push-off", null),
         _ => new(false, "denied", DeniedLine),
     };
+
+    /// <summary>The line a refusal says where the identity serving the act is read only on its host.</summary>
+    public static string ReadOnlyLine(string label) =>
+        $"daoris: the git identity {label} is read only on its host, so Daoris refuses a push through it: point this remote at another identity, or clear the mark in Daoris's settings.";
 
     /// <summary>The line a refusal says where the person's git access denies the act.</summary>
     public static string AccessDeniedLine(GitAct act) =>
@@ -56,20 +56,21 @@ public static class GitAccessRules
 
     /// <summary>
     /// The answer for an act under the value its class resolved to (GITAUTH1f, §6.2, §6.5): <c>allow</c> passes, <c>deny</c> refuses,
-    /// <c>ask</c> is asked at the door, and <see cref="GitAccessKeys.AsToday"/> (Write, set by none) is <see cref="Judge(GitAct, bool, bool)"/>.
-    /// A grant (the landing's, or a late answer's) passes a Write whatever the value but <c>deny</c>. A <c>readOnly</c> identity makes
-    /// Write deny whatever the access.
+    /// <c>ask</c> is asked at the door, and <see cref="GitAccessKeys.AsToday"/> (Write, set by none) is <see cref="Judge(GitAct, bool)"/>.
+    /// A grant (the landing's, or a late answer's) passes a Write whatever the value but <c>deny</c>. An identity read only on its host makes
+    /// Write refuse whatever the access and the grant.
     /// </summary>
-    public static GitVerdict Judge(GitAct act, string value, bool pushesHere, bool granted, bool readOnlyIdentity = false)
+    /// <param name="readOnlyIdentity">The label of the identity serving the act where the person marked it read only on its host; else null.</param>
+    public static GitVerdict Judge(GitAct act, string value, bool granted, string? readOnlyIdentity = null)
     {
-        if (act == GitAct.Write && readOnlyIdentity) return new(false, "read-only", AccessDeniedLine(act));
+        if (act == GitAct.Write && readOnlyIdentity is not null) return new(false, "read-only", ReadOnlyLine(readOnlyIdentity));
         return value switch
         {
             GitAccessKeys.Deny => new(false, "access-denied", AccessDeniedLine(act)),
             GitAccessKeys.Allow => new(true, "access", null),
             GitAccessKeys.Ask when granted => new(true, "granted", null),
             GitAccessKeys.Ask => new(false, "ask", null, Ask: true),
-            _ => Judge(act, pushesHere, granted),
+            _ => Judge(act, granted),
         };
     }
 
@@ -84,26 +85,6 @@ public static class GitAccessRules
         GitAccessKeys.Ask => new(false, "ask", null, Ask: true),
         _ => new(false, "dangerous-denied", GitPushUpdates.DeniedLine),
     };
-
-    /// <summary>
-    /// Whether the person switched <c>no-push</c> off in the home's <c>permissions.json</c> (<c>defaultsOff</c>). A file that is absent or
-    /// unreadable is the default's: on.
-    /// </summary>
-    public static bool PushesHere(string home)
-    {
-        try
-        {
-            var path = DaorisHome.Entry(home, HomeEntry.Permissions);
-            if (!File.Exists(path)) return false;
-            return JsonNode.Parse(AtomicFile.ReadText(path)) is JsonObject root
-                && root["defaultsOff"] is JsonArray off
-                && off.Any(each => each is JsonValue value && value.TryGetValue<string>(out var id) && id == NoPush);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException)
-        {
-            return false;
-        }
-    }
 
     /// <summary>The class of an ssh remote command's program (§4.2): read, write, or null for one the door does not take.</summary>
     public static GitAct? ClassOf(string program, string? lfsOperation = null) => program switch

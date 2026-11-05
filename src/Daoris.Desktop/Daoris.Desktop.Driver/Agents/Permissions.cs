@@ -34,7 +34,11 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
         [.. Deny.Union(more.Deny, StringComparer.Ordinal)]);
 }
 
-/// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id, removable by nothing else.</summary>
+/// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id unless fixed, removable by nothing else.</summary>
+/// <param name="Fixed">
+/// Switched by nothing in the rules file: on for every session, and opened only by what composes it (<c>no-push</c>, by the session's
+/// git access Write, <see cref="GitAccessPolicy"/>).
+/// </param>
 /// <param name="Hook">
 /// The tools a hook default judges, when it is one (PERM3) — a hook adds no rule, so its
 /// <paramref name="Rules"/> are empty and this says what it covers instead.
@@ -45,7 +49,7 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 /// alone, because only the driver writes the spawn file; the CLI's table carries no twin of it.
 /// </param>
 public sealed record PermissionDefault(
-    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null, string? HardDeny = null);
+    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null, string? HardDeny = null, bool Fixed = false);
 
 /// <summary>
 /// `permissions.json` as it stands: the machine's rules, each circle's, each repository's, and the
@@ -101,6 +105,12 @@ public static class PermissionRules
 
     /// <summary>The tree guard's id (PERM3) — a default that is a hook rather than a rule.</summary>
     public const string TreeGuardId = "tree-guard";
+
+    /// <summary>The push forms' default, fixed: git access's Write composes it (<see cref="GitAccessPolicy"/>).</summary>
+    public const string NoPushId = "no-push";
+
+    /// <summary>The publishing and release sentence's default, switched alone (ONEWAY1q).</summary>
+    public const string NoPublishId = "no-publish";
 
     /// <summary>The connector's own name, as its tools arrive: `mcp__&lt;server&gt;__&lt;tool&gt;`.</summary>
     private const string ConnectorPrefix = $"mcp__{KnowledgeConnector.ServerName}__";
@@ -165,14 +175,19 @@ public static class PermissionRules
         // warning. The price, stated: a `git -C <dir> commit` whose message has "push" as a word before
         // another is refused too. What no rule can name — a quoted subcommand, an alias, a path to git, a
         // shell running it — is the classifier's, told below; on the pipe door nothing allows it anyway.
+        // ONEWAY1q: a push is git access's Write alone, so this default is fixed and the policy opens its plain forms.
         new(
-            "no-push", RuleList.Deny,
+            NoPushId, RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"],
-            // UNBLOCK4 left the reason as it was: the page's Chinese catalogue translates it by id, and the
-            // rules say the rest.
-            "A push leaves this machine, and that stays the person's call.",
+            "A push leaves this machine: git access's Write, set in Settings → Git, says whether a session may.",
             HardDeny: "Pushing to any remote in any form (for example git -C <dir> push, git -c <key>=<value> "
-            + "push), publishing a package, or creating a release: these stay the person's."),
+            + "push): this stays the person's.",
+            Fixed: true),
+        new(
+            NoPublishId, RuleList.Deny,
+            [],
+            "Publishing a package or creating a release leaves this machine, and that stays the person's call.",
+            HardDeny: "Publishing a package or creating a release: these stay the person's."),
         new(
             TreeGuardId, RuleList.Deny,
             [],
@@ -192,15 +207,19 @@ public static class PermissionRules
 
     /// <summary>
     /// What the harness's auto-mode classifier is told as hard denials (UNBLOCK4, D122 §3.7): the sentence
-    /// of each default still on that carries one — today `no-push`'s, so nothing while the person has
-    /// switched it off. The harness's own list is kept by <see cref="SpawnSettings.Write"/>, never here.
+    /// of each default on that carries one — `no-push`'s always, `no-publish`'s unless the person switched it
+    /// off. The harness's own list is kept by <see cref="SpawnSettings.Write"/>, never here.
     /// </summary>
     public static IReadOnlyList<string> HardDeny(PermissionFile file) =>
     [
         .. Defaults
-            .Where(shipped => shipped.HardDeny is not null && !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal))
+            .Where(shipped => shipped.HardDeny is not null && IsOn(file, shipped))
             .Select(shipped => shipped.HardDeny!),
     ];
+
+    /// <summary>Whether a shipped default is on for this file: a fixed one always, any other unless switched off.</summary>
+    public static bool IsOn(PermissionFile file, PermissionDefault shipped) =>
+        shipped.Fixed || !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
 
     /// <summary>Whether sessions are handed the tree guard (PERM3): on unless the person switched it off.</summary>
     public static bool GuardsTree(PermissionFile file) => !file.DefaultsOff.Contains(TreeGuardId, StringComparer.Ordinal);
@@ -351,7 +370,7 @@ public static class PermissionRules
     public static RuleLists Compose(PermissionFile file, string? workspace, string? repository)
     {
         var layers = new List<RuleLists>();
-        foreach (var shipped in Defaults.Where(d => !file.DefaultsOff.Contains(d.Id, StringComparer.Ordinal)))
+        foreach (var shipped in Defaults.Where(d => IsOn(file, d)))
         {
             layers.Add(shipped.List switch
             {
@@ -404,6 +423,12 @@ public static class PermissionRules
         {
             throw new DriverException(
                 $"no default `{id}` — Daoris ships {string.Join(", ", Defaults.Select(d => $"`{d.Id}`"))}.");
+        }
+
+        if (Defaults.First(d => d.Id == id).Fixed)
+        {
+            throw new DriverException(
+                $"`{id}` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris-driver git access`.");
         }
 
         var off = file.DefaultsOff.Where(existing => existing != id).ToList();

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlowNodeBox } from '../Flow';
+import { FlowNodeBox } from '../FlowNodeBox';
 import { FlowCanvas, type FlowNode } from '../FlowCanvas';
 import { DENSE, type Fixture, LIFECYCLE, type Said } from '../flowFixtures';
 import { inDark } from '../flowFrames';

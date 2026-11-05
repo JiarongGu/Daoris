@@ -384,7 +384,7 @@ export function RankedFlow({
       </p>
     </div>
   );
-  // The first section heads the flow where `Flow` draws it, read by a reader; a caller's rail carries its own titles.
+  // The first section heads the flow where the flow draws it, read by a reader; a caller's rail carries its own titles.
   const heading = head && (placement !== 'rail' || !rail) && (
     <div className="mb-3 grid min-w-0 gap-1.5">
       <h3 className="m-0 text-small font-semibold text-ink-faint">{head.title}</h3>

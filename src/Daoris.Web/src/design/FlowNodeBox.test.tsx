@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
-import { Flow, type FlowEdge, type FlowNode } from './Flow';
+import { FlowCanvas, type FlowEdge, type FlowNode, type FlowProps } from './FlowCanvas';
+import { FlowNodeBox } from './FlowNodeBox';
 import { DENSE, type Fixture, LARGE_ONE, LARGE_THREE } from './flowFixtures';
 
 // FLOWCHART1a1 (D186 points 3 and 8; the flowchart design §3.2, §3.3, §3.7 and §7 traps 4-7, 9, 14, 15, 21): one list in
@@ -24,6 +25,11 @@ const EDGES: FlowEdge[] = [
   { id: 'done', from: 'Taken', to: 'Done', says: 'when its work is done' },
   { id: 'decline', from: 'Taken', to: 'Declined', says: 'when it is declined' },
 ];
+
+/** The ranked flow drawn with the generic box and no viewport: an inline flow in a scrolling page. */
+function Flow(props: FlowProps) {
+  return <FlowCanvas {...props} renderNode={(context) => <FlowNodeBox {...context} />} />;
+}
 
 const LIST_KEY = 'daoris.flow.list';
 
