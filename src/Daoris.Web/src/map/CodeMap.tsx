@@ -5,6 +5,7 @@ import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { CanvasList } from '../design/canvas/CanvasList';
 import { type EdgeContext, type NodeState, SuppliedCanvas } from '../design/canvas/SuppliedCanvas';
+import { lineDrawn } from '../design/canvas/suppliedCull';
 import { Button, PathText } from '../design/ui';
 import { buildTree, type CodeLine, defaultOpen, layoutCode, listByFolder, openingPath } from './codeClusters';
 
@@ -45,7 +46,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
           <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
         </marker>
       </defs>
-      {lines.map((line) => {
+      {lines.filter((line) => lineDrawn(context.culled, line.from, line.to)).map((line) => {
         const chosen = context.selected === line.id;
         const lit = (focus !== null && forward(line)) || chosen;
         const back = !forward(line);

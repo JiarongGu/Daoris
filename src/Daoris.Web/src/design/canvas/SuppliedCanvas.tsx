@@ -1,4 +1,6 @@
-import { type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState,
+} from 'react';
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 import { useRootRem, useWidth } from '../useWidth';
@@ -8,14 +10,16 @@ import { FIND_FROM } from './findNodes';
 import { GoneNotice, useSelectionGone } from './GoneNotice';
 import { ListToggle } from './ListToggle';
 import { createWalk, type Stop, type WalkLine } from './suppliedWalk';
-import { type Tier, tierAt } from './tiers';
+import type { Tier } from './tiers';
 import { useCanvasFind } from './useCanvasFind';
+import { useSuppliedCull } from './useSuppliedCull';
 import { graphIdentity } from './viewMemory';
-import type { Box, Size, View, ZoomBounds } from './viewMath';
+import type { Box, ZoomBounds } from './viewMath';
 import type { WorldRead } from './worldBoxes';
 
 // A positioned world the feature supplies (CANVAS1e; D224, the canvas design §2.2): the feature's own frame, boxes and drawing over the
-// canvas, which gives the viewport, the tiers, find with its list, the viewer's place, the minimap and one roving stop. Nodes are the
+// canvas, which gives the viewport, the tiers with culling past 400 cards and the dot layer, find with its list, the list view, the
+// viewer's place with the selection-gone notice, the minimap and one roving stop. Nodes are the
 // feature's content in a button the canvas places; lines are the feature's SVG, each a stop the canvas walks. Display only: a press
 // selects a node or a line, a second one releases it, and the canvas adds no act of its own.
 
@@ -48,6 +52,8 @@ export type EdgeContext = {
   selected: string | null;
   /** The card the pointer or the focus is on. */
   hovered: string | null;
+  /** Past 400 cards, those a line needs an end at to be drawn (`lineDrawn`); `null` where every line is. */
+  culled: ReadonlySet<string> | null;
   line: (id: string) => { 'data-flow-line': string; role: 'button'; tabIndex: number; 'aria-pressed': boolean; onClick: () => void };
 };
 
@@ -110,12 +116,10 @@ export function SuppliedCanvas({
   const statics = world.statics ?? NO_STATICS;
   const { frame } = world;
 
-  const [tier, setTier] = useState<Tier>('full');
   const [active, setActive] = useState<Stop | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const { gone, onGone } = useSelectionGone(selected);
   const [listed, setListed] = useState(false);
-  const onView = useCallback((view: View, _viewport: Size) => setTier(tierAt(view.k, rem)), [rem]);
 
   const stops = useMemo(() => world.order.filter((id) => !statics.has(id) && world.boxes.has(id)), [world, statics]);
   const walk = useMemo(() => createWalk({ order: world.order, boxes: world.boxes, lines: world.lines, statics }), [world, statics]);
@@ -126,11 +130,13 @@ export function SuppliedCanvas({
   /** A box in the world's own units: the feature's coordinates less the frame's origin. */
   const placed = useCallback((box: Box): Box => ({ x: box.x - frame.x, y: box.y - frame.y, w: box.w, h: box.h }), [frame.x, frame.y]);
   const press = (id: string) => onSelect(selected === id ? null : id);
+  // A stop reached by a key may not be mounted yet (culled, or a dot): it is pinned as the active one, then focused once it is drawn.
+  const focusing = useRef<Stop | null>(null);
+  const [focusTick, setFocusTick] = useState(0);
   const focusStop = (stop: Stop) => {
     setActive(stop);
-    const element = [...(pane.current?.querySelectorAll<HTMLElement>('[data-flow-node], [data-flow-line]') ?? [])]
-      .find((each) => (stop.line ? each.getAttribute('data-flow-line') : each.getAttribute('data-flow-node')) === stop.id);
-    element?.focus({ preventScroll: true });
+    focusing.current = stop;
+    setFocusTick((tick) => tick + 1);
   };
 
   // A match the world does not draw yet: shown when the feature's answer to its selection has put a card there.
@@ -169,6 +175,21 @@ export function SuppliedCanvas({
     return new Set([...find.matching].map((id) => stands.get(id) ?? id));
   }, [find.matching, findItems]);
 
+  // What stays mounted wherever the view is: the active stop (a line's two ends), the selected, find's match and the hovered.
+  const atLine = at?.line ? world.lines.find((line) => line.id === at.id) : undefined;
+  const pinned = [at && !at.line ? at.id : null, atLine?.from ?? null, atLine?.to ?? null, selected, find.shown, hovered];
+  const { cull, onView, overlay } = useSuppliedCull(shifted, rem, pinned);
+  const { tier } = cull;
+  useLayoutEffect(() => {
+    const stop = focusing.current;
+    if (stop === null) return;
+    const element = [...(pane.current?.querySelectorAll<HTMLElement>('[data-flow-node], [data-flow-line]') ?? [])]
+      .find((each) => (stop.line ? each.getAttribute('data-flow-line') : each.getAttribute('data-flow-node')) === stop.id);
+    if (!element) return;
+    focusing.current = null;
+    element.focus({ preventScroll: true });
+  }, [focusTick, cull]);
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event)) return;
     if (event.key === 'Escape') {
@@ -196,7 +217,7 @@ export function SuppliedCanvas({
   const onOver = (event: PointerEvent<HTMLDivElement>) => setHovered(hoverOf(event.target));
 
   const context: EdgeContext = {
-    tier, selected, hovered,
+    tier, selected, hovered, culled: cull.culled,
     line: (id) => ({ 'data-flow-line': id, role: 'button', tabIndex: isAt({ line: true, id }) ? 0 : -1, 'aria-pressed': selected === id, onClick: () => press(id) }),
   };
 
@@ -250,6 +271,7 @@ export function SuppliedCanvas({
           onGone: () => { onGone(); onSelect(null); },
         }}
         minimap={{ boxes: [...shifted.values()] }}
+        overlay={overlay}
         onView={onView}
       >
         <div
@@ -269,7 +291,7 @@ export function SuppliedCanvas({
           </svg>
           {world.order.map((id) => {
             const raw = world.boxes.get(id);
-            if (!raw) return null;
+            if (!raw || !cull.mounted.has(id)) return null;
             const box = placed(raw);
             const place = { left: box.x, top: box.y, width: box.w, height: box.h };
             const dim = standing !== null && !statics.has(id) && !standing.has(id);

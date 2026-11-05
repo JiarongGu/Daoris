@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import type { EdgeContext } from '../design/canvas/SuppliedCanvas';
+import { lineDrawn } from '../design/canvas/suppliedCull';
 import type { MapLine } from './mapLayout';
 import type { ChainEdge, Live } from './topology';
 
@@ -113,7 +114,7 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
           <path d="M 1 1 L 9 5 L 1 9" fill="none" className="stroke-ink-soft stroke-[1.5]" />
         </marker>
       </defs>
-      {PAINT.flatMap((kind) => lines.filter((line) => line.kind === kind)).map((line) => {
+      {PAINT.flatMap((kind) => lines.filter((line) => line.kind === kind && lineDrawn(context.culled, line.from, line.to))).map((line) => {
         const chosen = selected === line.id;
         const back = !forward(line);
         const marker = (open: boolean) => (open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)');

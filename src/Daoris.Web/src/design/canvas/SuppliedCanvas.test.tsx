@@ -158,6 +158,27 @@ describe('a supplied world in the viewport', () => {
     expect(screen.queryByRole('button', { name: /^Sizing/ })).toBeNull();
   });
 
+  it('mounts past 400 cards only those near the view, the Tab stop among them (trap 11)', () => {
+    const boxes = new Map(Array.from({ length: 900 }, (_, at) => [`n${at}`, { x: (at % 30) * 200, y: Math.floor(at / 30) * 100, w: 100, h: 40 }] as const));
+    const field: SuppliedWorld = { frame: { x: 0, y: 0, w: 6000, h: 3000 }, boxes, order: [...boxes.keys()], lines: [] };
+    render(
+      <Tooltip.Provider>
+        <SuppliedCanvas
+          world={field} label="a field" moves="a field: drag to move" fit="Show the whole field" feature="test" storeKey="field"
+          selected="n899" onSelect={() => undefined} zoom={{ min: 0.1, max: 2.5 }} opening={1}
+          nodeLabel={(id) => `card ${id}`} titleOf={(id) => id} findLabel="find a card"
+          renderNode={(id) => <span>{id}</span>} renderEdges={() => null}
+        />
+      </Tooltip.Provider>,
+    );
+    const mounted = document.querySelectorAll('[data-flow-node]');
+    expect(mounted.length).toBeGreaterThan(0);
+    expect(mounted.length).toBeLessThan(900);
+    expect(document.querySelector('[data-flow-node="n0"]')).toHaveAttribute('tabindex', '0');
+    // The selected stays mounted wherever it lies.
+    expect(document.querySelector('[data-flow-node="n899"]')).not.toBeNull();
+  });
+
   it('says once that the selection kept under a changed graph is gone, until something is chosen again (trap 18)', async () => {
     localStorage.setItem(memoryKey('test', 'world'), JSON.stringify({
       identity: 'another graph', view: { x: 0, y: 0, k: 1 }, anchor: { id: 'a', group: null, screen: { x: 10, y: 10 } }, selected: 'gone',
