@@ -117,7 +117,8 @@ describe('The Agents place, Setup mode', () => {
     show(<Place />);
     await userEvent.click(await screen.findByRole('treeitem', { name: /site/ }));
     expect(await screen.findByText(/Integrated into the line/)).toBeTruthy();
-    expect(screen.getByText(/⚠ No checkout on this machine/)).toBeTruthy();
+    // The tree row's second line and the page's fact both say it.
+    expect(screen.getAllByText(/⚠ No checkout on this machine/)).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Roles' })).toHaveAccessibleDescription('All 9 works as aurora has');
   });
 
@@ -194,7 +195,7 @@ describe('The Agents place, Setup mode', () => {
     show(<Place />);
     await screen.findByRole('tree', { name: 'Places' });
     // The chip counts the places in hand that need a look: here, the one repository.
-    expect(screen.getByRole('button', { name: 'Needs attention 1' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /^Needs attention\s?1$/ })).toHaveAttribute('aria-pressed', 'false');
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search places' }), 'sit');
     await waitFor(() => expect(asked().at(-1)).toMatchObject({ search: 'sit', foldSearch: 'sit' }));
     await userEvent.click(screen.getByRole('button', { name: /Needs attention/ }));
