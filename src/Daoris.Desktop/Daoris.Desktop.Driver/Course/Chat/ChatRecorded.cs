@@ -112,7 +112,7 @@ internal static class ChatRecorded
     {
         if (message.Preface is not { Length: > 0 } preface) return null;
         // CONVNOTE2c: the lead by its code; the preface is Daoris's one-copy English to the agent (D142 point 6), shown as written.
-        var told = Noted.Of(NoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
+        var told = Noted.Of(ChatNoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 
@@ -130,7 +130,7 @@ internal static class ChatRecorded
     internal static SessionEvent? ToldBrowser(ChatMessage message)
     {
         if (message.Briefing is not { Length: > 0 } line) return null;
-        var told = Noted.Of(NoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
+        var told = Noted.Of(ChatNoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
     }
 
@@ -153,7 +153,7 @@ internal static class ChatRecorded
         if (message.Process is not { Words.Length: > 0 } process) return null;
         var set = process.Source == CommitRules.DefaultSource ? "by default" : $"set for its {process.Source}";
         var told = Noted.Of(
-                NoteCodes.ChatToldProcess, $"told the agent this repository's process, its commit rule `{process.Mode}` {set}:",
+                ChatNoteCodes.ChatToldProcess, $"told the agent this repository's process, its commit rule `{process.Mode}` {set}:",
                 ("mode", process.Mode), ("source", process.Source))
             .Then(" ", Noted.Said(process.Words, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };

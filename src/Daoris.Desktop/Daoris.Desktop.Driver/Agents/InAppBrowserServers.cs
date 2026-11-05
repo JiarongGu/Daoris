@@ -95,7 +95,7 @@ public static class InAppBrowserServers
         Noted? why = null;
         if (browser is null)
         {
-            why = Noted.Of(NoteCodes.BrowserNoHost, "this host carries no in-app browser — only the desktop shell does");
+            why = Noted.Of(ChatNoteCodes.BrowserNoHost, "this host carries no in-app browser — only the desktop shell does");
         }
         else
         {
@@ -103,7 +103,7 @@ public static class InAppBrowserServers
             {
                 // The endpoint only: the browser comes up at a press or the first connection, never at a start (BROWSERSTART1).
                 endpoint = await browser.EndpointAsync(ct).ConfigureAwait(false);
-                if (endpoint is null) why = Noted.Of(NoteCodes.BrowserNoneUp, "the shell answered that it has no browser to bring up");
+                if (endpoint is null) why = Noted.Of(ChatNoteCodes.BrowserNoneUp, "the shell answered that it has no browser to bring up");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -120,7 +120,7 @@ public static class InAppBrowserServers
         Noted? notice = withheld.Count == 0
             ? null
             : Noted.Of(
-                    NoteCodes.BrowserWithheld,
+                    ChatNoteCodes.BrowserWithheld,
                     $"— {string.Join(", ", withheld.Select(name => $"`{name}`"))} drives Daoris's own browser, and was not handed:",
                     ("servers", (IReadOnlyList<string>)[.. withheld]))
                 .Then(" ", why ?? new Noted("", []))

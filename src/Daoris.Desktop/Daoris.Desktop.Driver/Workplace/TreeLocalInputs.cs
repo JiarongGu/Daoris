@@ -258,7 +258,7 @@ internal sealed record LocalCopy(IReadOnlyList<string> Copied, IReadOnlyList<Loc
     public Noted? Line() => Copied.Count == 0
         ? null
         : Noted.Of(
-            NoteCodes.StartedLocalCopied,
+            StartNoteCodes.StartedLocalCopied,
             $"The machine-local files the repository's gates read were copied in from your checkout, read-only: {Listed}.",
             ("inputs", (IReadOnlyList<string>)[.. Copied]));
 
@@ -285,14 +285,14 @@ internal sealed record LocalUncopied(string Input, string Why, string? Detail = 
         return Why switch
         {
             LocalUncopiedWhy.Missing => Noted.Of(
-                NoteCodes.StartedLocalMissing, $"`{Input}` was not copied: the repository's gates read it, and your checkout does not hold it.", input),
+                StartNoteCodes.StartedLocalMissing, $"`{Input}` was not copied: the repository's gates read it, and your checkout does not hold it.", input),
             LocalUncopiedWhy.Refused => Noted.Of(
-                NoteCodes.StartedLocalRefused,
+                StartNoteCodes.StartedLocalRefused,
                 $"`{Input}` was not copied: Daoris copies into a tree only a file under `local/` that git ignores there, and this is not one.", input),
             _ when Detail is { Length: > 0 } said => Noted.Of(
-                    NoteCodes.StartedLocalFailed, $"`{Input}` was not copied from your checkout: the copy failed ({said}).", input)
+                    StartNoteCodes.StartedLocalFailed, $"`{Input}` was not copied from your checkout: the copy failed ({said}).", input)
                 .Also(NotePart.Said(said, NoteBy.Program)),
-            _ => Noted.Of(NoteCodes.StartedLocalFailed, $"`{Input}` was not copied from your checkout: the copy failed.", input),
+            _ => Noted.Of(StartNoteCodes.StartedLocalFailed, $"`{Input}` was not copied from your checkout: the copy failed.", input),
         };
     }
 }

@@ -71,7 +71,7 @@ public static class Observation
         "Taken" when Asks(awaitsBefore, awaitsAfter)
             => SessionConclusion.Of("completed", Exit(
                 Noted.Of(
-                    NoteCodes.EndedAwaits,
+                    EndNoteCodes.EndedAwaits,
                     $"asked `#{awaitsAfter}` of another repository and waits for its answer — the quest resumes, "
                     + "in the same tree, once that is answered" + (exitCode == 0 ? "." : $" (exit {exitCode})."),
                     ("awaits", awaitsAfter)),
@@ -82,7 +82,7 @@ public static class Observation
         // the park a session holding its own quest would read as: parked, it was never due, and its branch never landed by itself.
         "Taken" when submitted
             => SessionConclusion.Of("completed", Exit(
-                Noted.Of(NoteCodes.EndedSubmitted, "its agent made its work ready: the quest is submitted, and closes at its workflow's end."),
+                Noted.Of(EndNoteCodes.EndedSubmitted, "its agent made its work ready: the quest is submitted, and closes at its workflow's end."),
                 exitCode)),
 
         // 🔴 A refused turn (ACPEND1), before the stand-down reading: measured on the first real run, an
@@ -90,10 +90,10 @@ public static class Observation
         // "someone else has it". Where the work reached its close or its wait first, that ending stands.
         // The lead-in is Daoris's and the failure the agent's own words, each a part of its own (LANG1a).
         "Taken" when turnFailed is { Length: > 0 }
-            => SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedTurnFailedTaken, "the agent's turn failed with the quest still taken:")
+            => SessionConclusion.Of("failed", Noted.Of(EndNoteCodes.EndedTurnFailedTaken, "the agent's turn failed with the quest still taken:")
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent))),
         "Open" when turnFailed is { Length: > 0 }
-            => SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
+            => SessionConclusion.Of("failed", Noted.Of(EndNoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent))),
 
         // 🔴 APIREFUSAL1 (the install, 2026-10-23): its model's provider refused a call and the turn ended on it. Its adapter said the
@@ -107,7 +107,7 @@ public static class Observation
         // would ask them what only the step's go-on or abandon answers. Their go-on carries it on in the same tree.
         "Taken" when exitCode == 0 && reopenedFrom is { Length: > 0 } source
             => SessionConclusion.Of("completed", Noted.Of(
-                NoteCodes.EndedSourceReopened,
+                EndNoteCodes.EndedSourceReopened,
                 $"stopped with its quest still taken: the work of `#{source}` it grew from was reopened, and it goes on in the same tree "
                 + "once the person goes on with it on the new work.",
                 ("quest", source))),
@@ -118,7 +118,7 @@ public static class Observation
         // strikes bound it, as work that never ends is bounded on the protocol door.
         "Taken" when exitCode == 0 && backgroundCut is { Count: > 0 } works && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
             => SessionConclusion.Of("failed", Noted.Of(
-                NoteCodes.EndedBackgroundCut,
+                EndNoteCodes.EndedBackgroundCut,
                 $"its turn ended while its own background work ran: {string.Join(", ", works.Select(name => $"`{name}`"))}. Its agent "
                 + "ends such work with the turn, so it was cut off before that work finished, and is carried on in the same tree.",
                 ("works", works))),
@@ -143,21 +143,21 @@ public static class Observation
         // Holding its quest with a messy exit is a failure, and the strikes bound carrying it on (D80).
         "Taken" when awaitsBefore is { Length: > 0 }
             => SessionConclusion.Of("failed", Noted.Of(
-                NoteCodes.EndedAnsweredUnfinished,
+                EndNoteCodes.EndedAnsweredUnfinished,
                 $"resumed with `#{awaitsBefore}` answered, and ended with the quest still taken (exit {exitCode}).",
                 ("awaits", awaitsBefore), ("exit", exitCode))),
         "Taken" when resumed
             => SessionConclusion.Of("failed", Noted.Of(
-                NoteCodes.EndedCarriedUnfinished, $"carried the quest on, and ended with it still taken (exit {exitCode}).", ("exit", exitCode))),
+                EndNoteCodes.EndedCarriedUnfinished, $"carried the quest on, and ended with it still taken (exit {exitCode}).", ("exit", exitCode))),
 
         // The quest reaching its close outranks a messy exit: the work is what matters, and the exit
         // is noted for the reader rather than allowed to overrule the record.
         "Done" => SessionConclusion.Of("completed", Exit(
-            Noted.Of(NoteCodes.EndedDone, exitCode == 0 ? "the quest reached done." : $"the quest reached done (exit {exitCode})."),
+            Noted.Of(EndNoteCodes.EndedDone, exitCode == 0 ? "the quest reached done." : $"the quest reached done (exit {exitCode})."),
             exitCode)),
         "Declined" => SessionConclusion.Of("declined", Exit(
             Noted.Of(
-                NoteCodes.EndedDeclined,
+                EndNoteCodes.EndedDeclined,
                 exitCode == 0 ? "the session declined, with its reason on the quest."
                               : $"the session declined (exit {exitCode}); the reason is on the quest."),
             exitCode)),
@@ -165,13 +165,13 @@ public static class Observation
         // A clean exit with the quest taken, by a session that did not take it, is the stand-down shape:
         // it found someone else's claim and finished without touching anything.
         "Taken" when exitCode == 0 => SessionConclusion.Of("stood-down",
-            Noted.Of(NoteCodes.EndedStoodDown, "exited cleanly with the quest taken — someone else has it.")),
+            Noted.Of(EndNoteCodes.EndedStoodDown, "exited cleanly with the quest taken — someone else has it.")),
         "Taken" => SessionConclusion.Of("failed",
-            Noted.Of(NoteCodes.EndedTakenExit, $"exit {exitCode} with the quest still taken.", ("exit", exitCode))),
+            Noted.Of(EndNoteCodes.EndedTakenExit, $"exit {exitCode} with the quest still taken.", ("exit", exitCode))),
 
         _ => SessionConclusion.Of("failed",
-            exitCode == 0 ? Noted.Of(NoteCodes.EndedUntouched, "exited without touching its quest.")
-                          : Noted.Of(NoteCodes.EndedUntouchedExit, $"exit {exitCode} before taking its quest.", ("exit", exitCode))),
+            exitCode == 0 ? Noted.Of(EndNoteCodes.EndedUntouched, "exited without touching its quest.")
+                          : Noted.Of(EndNoteCodes.EndedUntouchedExit, $"exit {exitCode} before taking its quest.", ("exit", exitCode))),
     };
 
     /// <summary>
@@ -191,10 +191,10 @@ public static class Observation
     /// </summary>
     internal static Noted Parked(string? lastWords) =>
         lastWords is { Length: > 0 } said
-            ? Noted.Of(NoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
+            ? Noted.Of(EndNoteCodes.EndedParkedAsked, "It stopped with its quest still taken, to ask you:")
                 .Then("\n\n", Noted.Said(said, NoteBy.Agent))
             : Noted.Of(
-                NoteCodes.EndedParkedTranscript,
+                EndNoteCodes.EndedParkedTranscript,
                 "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript.");
 
     /// <summary>
@@ -205,7 +205,7 @@ public static class Observation
         SessionConclusion.Of(
             "failed",
             Noted.Of(
-                NoteCodes.EndedChoiceNotOffered,
+                EndNoteCodes.EndedChoiceNotOffered,
                 $"Not started: `{agent}` did not offer `{refusal.Value}` on its account, so nothing ran; the next look chooses again by its role's order.",
                 ("agent", agent), ("model", refusal.Value)));
 
@@ -222,7 +222,7 @@ public static class Observation
     {
         var minutes = (int)Math.Round(episode.Waited.TotalMinutes);
         var line = Noted.Of(
-            NoteCodes.EndedTransient,
+            EndNoteCodes.EndedTransient,
             $"Its provider kept failing after {episode.Tries} tries, with {minutes} minutes of waits between them. It waits for you: your "
             + "words, or Try again, go on in the same conversation:",
             ("count", episode.Tries), ("minutes", minutes));
@@ -232,7 +232,7 @@ public static class Observation
     internal static Noted ProviderRefusedNote(string? words)
     {
         var line = Noted.Of(
-            NoteCodes.EndedProviderRefused,
+            EndNoteCodes.EndedProviderRefused,
             "its model's provider refused its turn, so the run failed and goes on as a failed run does:");
         return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
     }
@@ -242,7 +242,7 @@ public static class Observation
     /// no answer comes. Its agent's words are not quoted: they are its conversation's, and a quote would read as a question.
     /// </summary>
     public static Noted AwaitsHelper => Noted.Of(
-        NoteCodes.EndedAwaitsHelper,
+        EndNoteCodes.EndedAwaitsHelper,
         "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, "
         + "and comes to you only if no answer comes.");
 
@@ -264,7 +264,7 @@ public static class Observation
     /// design §4 row 2): the line's text stays its whole sentence, and the exit's is the two words inside it.
     /// </summary>
     internal static Noted Exit(Noted line, int exitCode) =>
-        exitCode == 0 ? line : line.Also(NoteCodes.EndedExit.Part($"exit {exitCode}", ("exit", exitCode)));
+        exitCode == 0 ? line : line.Also(EndNoteCodes.EndedExit.Part($"exit {exitCode}", ("exit", exitCode)));
 
     /// <summary>
     /// How a run that resumed its own conversation ends (ANSWER1a; MSG1b, D137 §2.3): as any start's, from its exit and its
@@ -312,14 +312,14 @@ public static class Observation
     /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
     public static SessionConclusion WentOn(int exitCode, string before, string? turnFailed = null) =>
         turnFailed is { Length: > 0 } failed
-            ? SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedWentOnFailed, "it went on with your words, and its turn failed:")
+            ? SessionConclusion.Of("failed", Noted.Of(EndNoteCodes.EndedWentOnFailed, "it went on with your words, and its turn failed:")
                 .Then(" ", Noted.Said(failed, NoteBy.Agent)))
             : exitCode == 0
         ? SessionConclusion.Of(
             before is "completed" or "declined" or "failed" or "stopped" ? before : "completed",
-            Noted.Of(NoteCodes.EndedWentOn, "it went on with your words and ended; its quest stays as it closed."))
+            Noted.Of(EndNoteCodes.EndedWentOn, "it went on with your words and ended; its quest stays as it closed."))
         : SessionConclusion.Of("failed", Noted.Of(
-            NoteCodes.EndedWentOnExit, $"it went on with your words and exited {exitCode}; its quest stays as it closed.", ("exit", exitCode)));
+            EndNoteCodes.EndedWentOnExit, $"it went on with your words and exited {exitCode}; its quest stays as it closed.", ("exit", exitCode)));
 
     /// <summary>
     /// How a run Daoris ended at its turn's end because its repository's permission prompts changed concludes (ACCESSSWAP1b, D183's note):
@@ -337,12 +337,12 @@ public static class Observation
     public static SessionConclusion SetupChanged(SessionConclusion observed, SetupSwap swap)
     {
         var line = Noted.Of(
-            NoteCodes.EndedSetupChanged,
+            EndNoteCodes.EndedSetupChanged,
             $"its permission prompts changed while it worked, from `{swap.From}` to `{swap.To}`: Daoris ended it at its turn's end, never "
             + "mid-turn, and it goes on in the same conversation under the new setup.",
             ("from", swap.From), ("to", swap.To));
         var ownChoice = SessionStates.IsParked(observed.State)
-                        || observed.Parts?.Any(part => part.Code == NoteCodes.EndedUntouched.Code) == true;
+                        || observed.Parts?.Any(part => part.Code == EndNoteCodes.EndedUntouched.Code) == true;
         return ownChoice ? SessionConclusion.Of("completed", line) : observed.Then("\n\n", line);
     }
 
@@ -357,12 +357,12 @@ public static class Observation
             ? observed
             : SessionConclusion.Of("awaiting-person", cut.Call is { } call
                 ? Noted.Of(
-                    NoteCodes.EndedParkedCut,
+                    EndNoteCodes.EndedParkedCut,
                     $"Its turn was cut short: the agent ended it `cancelled` after the permission it asked for, {call}, was refused. "
                     + "It asked you nothing; say how it should go on, or change its permission prompts.",
                     ("call", call))
                 : Noted.Of(
-                    NoteCodes.EndedParkedCancelled,
+                    EndNoteCodes.EndedParkedCancelled,
                     "Its turn was cancelled by its agent, not stopped by you, with its quest still taken. It asked you nothing; say how it should go on."));
 
     /// <summary>
@@ -370,27 +370,27 @@ public static class Observation
     /// they go on, not again (<see cref="FailedTurnWords"/>).
     /// </summary>
     public static Noted WordsUnderNewSetup =>
-        Noted.Of(NoteCodes.EndedWordsSetup, "Your words go on at the next look, in the same conversation under the new setup.");
+        Noted.Of(EndNoteCodes.EndedWordsSetup, "Your words go on at the next look, in the same conversation under the new setup.");
 
     /// <summary>The person's plain stop, where the door that stopped it said nothing more (the language design §4 row 19).</summary>
-    public static Noted Stopped => Noted.Of(NoteCodes.EndedStopped, "the person stopped it.");
+    public static Noted Stopped => Noted.Of(EndNoteCodes.EndedStopped, "the person stopped it.");
 
     /// <summary>
     /// The steward's stop (STEWARDROLE1b, D209 §5.1): its own record, never the person's with a suffix, handed in at the driver's own
     /// stop so nothing on disk carries its attribution. It holds its quest for <i>Try again</i> as the person's stop does.
     /// </summary>
-    public static Noted StoppedBySteward => Noted.Of(NoteCodes.EndedStoppedSteward, "the steward stopped it.");
+    public static Noted StoppedBySteward => Noted.Of(EndNoteCodes.EndedStoppedSteward, "the steward stopped it.");
 
     /// <summary>
     /// State E's note line (SESSWATCH1a, D200): its agent's process exited, something it started held its output, and Daoris ended what
     /// was left. Never the conclusion: the run concludes by its exit.
     /// </summary>
     public static Noted Gone { get; } = Noted.Of(
-        NoteCodes.EndedGone, "its agent's process had ended, but something it started still held its output; Daoris ended what was left.");
+        EndNoteCodes.EndedGone, "its agent's process had ended, but something it started still held its output; Daoris ended what was left.");
 
     /// <summary>A run the watcher ended after <paramref name="minutes"/> with nothing heard (SESSWATCH1a): a headless <c>--quiet-end</c>.</summary>
     public static Noted Quiet(int minutes) =>
-        Noted.Of(NoteCodes.EndedQuiet, $"nothing came from its agent for {minutes} minutes. Daoris ended this run, and the work goes on in the same tree.", ("minutes", minutes));
+        Noted.Of(EndNoteCodes.EndedQuiet, $"nothing came from its agent for {minutes} minutes. Daoris ended this run, and the work goes on in the same tree.", ("minutes", minutes));
 
     /// <summary>
     /// How a driven run the watcher ended ends (SESSWATCH1a, the session-watch design §2.2): failed, saying the quiet, a strike as a timeout
@@ -398,7 +398,7 @@ public static class Observation
     /// </summary>
     public static SessionConclusion AfterQuiet(int minutes, string? startedOn, string questStatus) =>
         questStatus == "Done" && startedOn is ("Open" or "Taken")
-            ? SessionConclusion.Of("completed", Noted.Of(NoteCodes.EndedDone, "the quest reached done.").Then(" ", Quiet(minutes)))
+            ? SessionConclusion.Of("completed", Noted.Of(EndNoteCodes.EndedDone, "the quest reached done.").Then(" ", Quiet(minutes)))
             : SessionConclusion.Of("failed", Quiet(minutes));
 
     /// <summary>
@@ -406,14 +406,14 @@ public static class Observation
     /// press, its record <c>stopped</c> with this note; no strike, and the words that waited for it go to the next part.
     /// </summary>
     public static Noted QuietPressed(int minutes) =>
-        Noted.Of(NoteCodes.EndedQuietPressed, $"You ended this run after {minutes} minutes with nothing from its agent, and the work goes on in the same tree.", ("minutes", minutes));
+        Noted.Of(EndNoteCodes.EndedQuietPressed, $"You ended this run after {minutes} minutes with nothing from its agent, and the work goes on in the same tree.", ("minutes", minutes));
 
     /// <summary>Whether a record's note is the person's <i>End and carry on</i> (<see cref="QuietPressed"/>), by its code, never its English.</summary>
-    public static bool IsQuietPressed(IReadOnlyList<NotePart>? parts) => parts?.Any(part => part.Code == NoteCodes.EndedQuietPressed.Code) == true;
+    public static bool IsQuietPressed(IReadOnlyList<NotePart>? parts) => parts?.Any(part => part.Code == EndNoteCodes.EndedQuietPressed.Code) == true;
 
     /// <summary>A session the timeout killed (row 18).</summary>
     public static Noted TimedOut(int minutes) =>
-        Noted.Of(NoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));
+        Noted.Of(EndNoteCodes.EndedTimeout, $"timed out after {minutes} minutes and was killed.", ("minutes", minutes));
 
     /// <summary>
     /// How a driven run the timeout killed ends (BGWAIT2): failed, saying the timeout, unless this run brought its quest to done,
@@ -432,12 +432,12 @@ public static class Observation
     /// <param name="questStatus">Its quest's status as the run left it.</param>
     public static SessionConclusion AfterTimeout(int minutes, string? startedOn, string questStatus) =>
         questStatus == "Done" && startedOn is ("Open" or "Taken")
-            ? SessionConclusion.Of("completed", Noted.Of(NoteCodes.EndedDone, "the quest reached done.").Then(" ", TimedOut(minutes)))
+            ? SessionConclusion.Of("completed", Noted.Of(EndNoteCodes.EndedDone, "the quest reached done.").Then(" ", TimedOut(minutes)))
             : SessionConclusion.Of("failed", TimedOut(minutes));
 
     /// <summary>A session the driver's own shutdown ended (row 21), for a driven session, a resumed one and an intake alike.</summary>
     public static Noted DriverClosed =>
-        Noted.Of(NoteCodes.EndedDriverClosed, "the driver was stopped while this ran; the session's process was ended with it.");
+        Noted.Of(EndNoteCodes.EndedDriverClosed, "the driver was stopped while this ran; the session's process was ended with it.");
 
     /// <summary>
     /// How a driven session the driver's close ended is recorded (D104): stopped and interrupted, to be carried on at the next
@@ -511,7 +511,7 @@ public static class FailedTurnWords
     public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, PriorSession before, bool limited = false) =>
         turnFailed is not { Length: > 0 } || conclusion.State != "failed" ? WordsAfter.Taken
         : limited ? WordsAfter.LimitWait
-        : before.NoteParts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code || part.Code == NoteCodes.EndedWordsWaitYou.Code) == true
+        : before.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedWordsWait.Code || part.Code == EndNoteCodes.EndedWordsWaitYou.Code) == true
             ? WordsAfter.Held
             : WordsAfter.Wait;
 
@@ -527,17 +527,17 @@ public static class FailedTurnWords
     /// </remarks>
     public static WordsAfter Judge(
         SessionConclusion conclusion, string? turnFailed, IHarnessEnding ended, PriorSession before, bool limited = false) =>
-        conclusion.State == "failed" && conclusion.Parts?.Any(part => part.Code == NoteCodes.AccountRefusedModel.Code) == true
+        conclusion.State == "failed" && conclusion.Parts?.Any(part => part.Code == AccountNoteCodes.AccountRefusedModel.Code) == true
             ? WordsAfter.Wait
             : Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before, limited);
 
     /// <summary>The line the record's note and its conversation say why the words wait by; null for words taken.</summary>
     public static Noted? Line(WordsAfter after) => after switch
     {
-        WordsAfter.Wait => Noted.Of(NoteCodes.EndedWordsWait, "Your words wait to go again at the next look."),
+        WordsAfter.Wait => Noted.Of(EndNoteCodes.EndedWordsWait, "Your words wait to go again at the next look."),
         WordsAfter.Held => Noted.Of(
-            NoteCodes.EndedWordsWaitYou, "Your words failed twice and wait for you: they go again with the next words you say."),
-        WordsAfter.LimitWait => Noted.Of(NoteCodes.EndedLimitWordsWait, "Your words wait for the account's limit to lift."),
+            EndNoteCodes.EndedWordsWaitYou, "Your words failed twice and wait for you: they go again with the next words you say."),
+        WordsAfter.LimitWait => Noted.Of(EndNoteCodes.EndedLimitWordsWait, "Your words wait for the account's limit to lift."),
         _ => null,
     };
 }

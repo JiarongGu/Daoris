@@ -45,7 +45,7 @@ public sealed class NativeCarryTickTests : IDisposable
 
     /// <summary>How many times the record says the bound was met (the note is kept in the record's events, never the transcript).</summary>
     private int BoundNotes() => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events
-        .Count(e => e.Parts?.Any(part => part.Code == NoteCodes.BackgroundCarryBound.Code) == true);
+        .Count(e => e.Parts?.Any(part => part.Code == ChatNoteCodes.BackgroundCarryBound.Code) == true);
 
     /// <summary>A carry-on that commits: the session reads completed with a clean tree after one resumed run, the commit its own.</summary>
     [Fact]

@@ -158,7 +158,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
                 var why = $"Ask Daoris's room could not be written — {error.Message}";
                 await wiring.ConcludeAsync(
                     sessionId, "failed",
-                    cancelled ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
+                    cancelled ? Noted.Of(ChatNoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
                     onEnded).ConfigureAwait(false);
                 if (cancelled) throw;
                 return new(null, why);
@@ -331,7 +331,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// checkouts outside the room are not read until the next conversation.
     /// </summary>
     public static Noted AsWritten(TimeSpan bound) => Noted.Of(
-        NoteCodes.HelpRoomAsWritten,
+        PeerNoteCodes.HelpRoomAsWritten,
         $"This machine was not read within {Seconds(bound)} seconds, so Ask Daoris starts on its room as last written, reading no "
         + "checkout outside it; the room is written again once the machine is read.",
         ("seconds", Seconds(bound)));
@@ -341,7 +341,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// written before any was judged: it started at once, and its room says what is not read yet.
     /// </summary>
     public static Noted NotReadYet() => Noted.Of(
-        NoteCodes.HelpRoomNotReadYet,
+        PeerNoteCodes.HelpRoomNotReadYet,
         "Ask Daoris started at once on this machine as read so far: what is not read yet, its room says, and the room is written "
         + "again as each part is read.");
 
@@ -349,7 +349,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
     /// What a start says where the machine was not read within the bound and no room was ever written: nothing can serve, so it ends failed.
     /// </summary>
     public static Noted NotRead(TimeSpan bound) => Noted.Of(
-        NoteCodes.HelpRoomUnread,
+        PeerNoteCodes.HelpRoomUnread,
         $"Ask Daoris's room could not be written: this machine was not read within {Seconds(bound)} seconds, and no room was "
         + "written before. Ask again once it is less busy.",
         ("seconds", Seconds(bound)));

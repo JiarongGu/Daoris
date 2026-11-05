@@ -129,14 +129,14 @@ public static class HeldWords
     public static (string Why, Noted Line) NoCheckout(string repository)
     {
         var why = $"`{repository}` has no checkout on this machine any more";
-        return (why, Whole(NoteCodes.HeldNoCheckout, why, ("repository", repository)));
+        return (why, Whole(HeldNoteCodes.HeldNoCheckout, why, ("repository", repository)));
     }
 
     /// <summary>A replay holds the repository's trees.</summary>
     public static (string Why, Noted Line) Replaying(string repository)
     {
         var why = ReplayingWhy(repository);
-        return (why, Whole(NoteCodes.HeldReplaying, why, ("repository", repository)));
+        return (why, Whole(HeldNoteCodes.HeldReplaying, why, ("repository", repository)));
     }
 
     /// <summary>The shared start sentence while Workplace holds the repository for replay.</summary>
@@ -151,9 +151,9 @@ public static class HeldWords
     public static (string Why, Noted Line) Holding(string repository, string? by) => by switch
     {
         HeldBy.Updating => Replaying(repository),
-        HeldBy.Tidying => Held(NoteCodes.HeldTidying, $"`{repository}`'s session trees are being cleaned up right now", repository),
-        HeldBy.Promoting => Held(NoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
-        _ => Held(NoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
+        HeldBy.Tidying => Held(HeldNoteCodes.HeldTidying, $"`{repository}`'s session trees are being cleaned up right now", repository),
+        HeldBy.Promoting => Held(HeldNoteCodes.HeldPromoting, $"`{repository}`'s line is being moved to what its integration promoted right now", repository),
+        _ => Held(HeldNoteCodes.HeldWriting, $"another of Daoris's writes holds `{repository}` right now", repository),
     };
 
     private static (string Why, Noted Line) Held(NoteCode code, string holder, string repository)
@@ -166,7 +166,7 @@ public static class HeldWords
     public static (string Why, Noted Line) Answering(string session)
     {
         var why = AnsweringWhy(session);
-        return (why, Whole(NoteCodes.HeldAnswering, why, ("session", session)));
+        return (why, Whole(HeldNoteCodes.HeldAnswering, why, ("session", session)));
     }
 
     /// <summary>The reason <see cref="Answering"/> says, which a new conversation's refusal says too.</summary>
@@ -178,12 +178,12 @@ public static class HeldWords
     {
         var why = $"this machine's driver.json could not be read: {message}";
         var lead = $"{ResumeWords.NotYet}this machine's driver.json could not be read:";
-        return (why, Noted.Of(NoteCodes.HeldConfigUnread, lead).Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
+        return (why, Noted.Of(HeldNoteCodes.HeldConfigUnread, lead).Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
     }
 
     /// <summary>A reason that is a program's message alone (the roster's refusal, the ledger's): its words, between lead and tail.</summary>
     public static (string Why, Noted Line) Program(string message) =>
-        (message, Noted.Of(NoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd())
+        (message, Noted.Of(HeldNoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd())
             .Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
 
     /// <summary>
@@ -195,13 +195,13 @@ public static class HeldWords
         var words = Program(selection.Refusal!);
         if (selection.RefusalNote is not { } coded) return words;
 
-        var line = Noted.Of(NoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd()).Then(" ", coded).Then(" ", TailLine());
+        var line = Noted.Of(HeldNoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd()).Then(" ", coded).Then(" ", TailLine());
         return line.Note == words.Line.Note ? (words.Why, line) : words;
     }
 
     private static string Trimmed(string message) => message.TrimEnd('.', ' ');
 
-    private static Noted TailLine() => Noted.Of(NoteCodes.HeldTail, Tail);
+    private static Noted TailLine() => Noted.Of(HeldNoteCodes.HeldTail, Tail);
 
     private static Noted Whole(NoteCode code, string why, params (string Name, object? Value)[] values) =>
         Noted.Of(code, $"{ResumeWords.NotYet}{Trimmed(why)}. {Tail}", values);
@@ -236,11 +236,11 @@ public static class ResumeWords
                    + $"{CoolingWords.Why(cooling)}, and its conversation is on that account, so your words wait to go on in it then.";
         (string Name, object? Value)[] facts =
             [("owner", cooling.Agent), ("until", NoteCodes.Moment(cooling.Until)), ("why", CoolingWhy.Of(cooling))];
-        if (cooling.Account is { } account) return Noted.Of(NoteCodes.WaitsAccount, said, [("account", account), .. facts]);
+        if (cooling.Account is { } account) return Noted.Of(HeldNoteCodes.WaitsAccount, said, [("account", account), .. facts]);
 
         // UX6e2: the refresh is the Agents place's Read again, since opening it asks nothing (D150 §5.3).
-        return Noted.Of(NoteCodes.WaitsOwn, said, facts).Then(" ", Noted.Of(
-            NoteCodes.WaitsReadAgain,
+        return Noted.Of(HeldNoteCodes.WaitsOwn, said, facts).Then(" ", Noted.Of(
+            HeldNoteCodes.WaitsReadAgain,
             "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts."));
     }
 
@@ -262,17 +262,17 @@ public static class ResumeWords
             var one = passed.Count == 1;
             var who = string.Join(", ", passed.Select(account => $"`{AccountNames.Said(names, account)}`"));
             var waits = Noted.Of(
-                NoteCodes.HeldLimitWaitsSignIn,
+                HeldNoteCodes.HeldLimitWaitsSignIn,
                 $"{lead}No account it may run on is ready: {who} {(one ? "needs" : "need")} a sign-in, and the rest are at their limit. "
                 + $"It goes on by itself once {ready}",
                 [("account", waited), .. facts, ("accounts", passed)]);
-            return RotationWords.SignInOf(waits, earliest.Agent, passed, "A sign-in starts it sooner", NoteCodes.HeldSignInSooner);
+            return RotationWords.SignInOf(waits, earliest.Agent, passed, "A sign-in starts it sooner", HeldNoteCodes.HeldSignInSooner);
         }
 
         var said = $"{lead}Every account it may run on is at its limit: it goes on by itself once {ready}";
         return earliest.Account is { } account
-            ? Noted.Of(NoteCodes.HeldLimitWaits, said, [("account", account), .. facts])
-            : Noted.Of(NoteCodes.HeldLimitWaitsOwn, said, facts);
+            ? Noted.Of(HeldNoteCodes.HeldLimitWaits, said, [("account", account), .. facts])
+            : Noted.Of(HeldNoteCodes.HeldLimitWaitsOwn, said, facts);
     }
 
     /// <summary>
@@ -299,7 +299,7 @@ public static class ResumeWords
 
     /// <summary><see cref="NewSessionDoor"/> by code (CONVNOTE2g): the session a value, the command the catalogue's.</summary>
     public static Noted NewSessionDoorOf(string session) =>
-        Noted.Of(NoteCodes.WaitsDoorNewSession, NewSessionDoor(session), ("session", session));
+        Noted.Of(HeldNoteCodes.WaitsDoorNewSession, NewSessionDoor(session), ("session", session));
 
     /// <summary>
     /// The door out of the wait where nothing carries the words on by itself: a conversation, or a closed quest's session. The
@@ -309,7 +309,7 @@ public static class ResumeWords
         $"To start a conversation with these words now instead, without that one: `daoris session start-from {session}`.";
 
     /// <summary><see cref="ChatDoor"/> by code (CONVNOTE2g): the session a value, the command the catalogue's.</summary>
-    public static Noted ChatDoorOf(string session) => Noted.Of(NoteCodes.WaitsDoorChat, ChatDoor(session), ("session", session));
+    public static Noted ChatDoorOf(string session) => Noted.Of(HeldNoteCodes.WaitsDoorChat, ChatDoor(session), ("session", session));
 
     /// <summary>
     /// The door out of the wait for Ask Daoris's own conversation (ASKHIST1): no repository holds it, so a new conversation starts
@@ -319,7 +319,7 @@ public static class ResumeWords
         "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.";
 
     /// <summary><see cref="HelpDoor"/> by code (CONVNOTE2g).</summary>
-    public static Noted HelpDoorOf() => Noted.Of(NoteCodes.WaitsDoorHelp, HelpDoor);
+    public static Noted HelpDoorOf() => Noted.Of(HeldNoteCodes.WaitsDoorHelp, HelpDoor);
 
     /// <summary>
     /// The line a note adds after the reason <c>account</c>: why the record's own account could not carry the words, coded
@@ -327,15 +327,15 @@ public static class ResumeWords
     /// </summary>
     public static Noted? Line(NextHold hold, bool chosen = false) => (hold, chosen) switch
     {
-        (NextHold.Cooling, true) => Noted.Of(NoteCodes.AccountResumeNewSession, "You chose a new session over waiting for that account."),
-        (NextHold.SignedOut, _) => Noted.Of(NoteCodes.AccountResumeSignedOut, "That account is not signed in any more."),
-        (NextHold.Refused, _) => Noted.Of(NoteCodes.AccountResumeRefused, "Its provider refused that account."),
-        (NextHold.Missing, _) => Noted.Of(NoteCodes.AccountResumeGone, "That account is not on this machine any more."),
-        (NextHold.Outside, _) => Noted.Of(NoteCodes.AccountResumeOutside, "This work no longer uses that account."),
-        (NextHold.Kept, _) => Noted.Of(NoteCodes.AccountResumeKept, "That account is kept for conversations, which driven work never runs on."),
+        (NextHold.Cooling, true) => Noted.Of(AccountNoteCodes.AccountResumeNewSession, "You chose a new session over waiting for that account."),
+        (NextHold.SignedOut, _) => Noted.Of(AccountNoteCodes.AccountResumeSignedOut, "That account is not signed in any more."),
+        (NextHold.Refused, _) => Noted.Of(AccountNoteCodes.AccountResumeRefused, "Its provider refused that account."),
+        (NextHold.Missing, _) => Noted.Of(AccountNoteCodes.AccountResumeGone, "That account is not on this machine any more."),
+        (NextHold.Outside, _) => Noted.Of(AccountNoteCodes.AccountResumeOutside, "This work no longer uses that account."),
+        (NextHold.Kept, _) => Noted.Of(AccountNoteCodes.AccountResumeKept, "That account is kept for conversations, which driven work never runs on."),
         _ => null,
     };
 
     /// <summary>The own account's reading does not offer the asked model (D205 §3.5(a)), naming neither, since the note travels.</summary>
-    public static Noted NotOfferedLine => Noted.Of(NoteCodes.AccountResumeNotOffered, "That account does not offer the model this work asked for.");
+    public static Noted NotOfferedLine => Noted.Of(AccountNoteCodes.AccountResumeNotOffered, "That account does not offer the model this work asked for.");
 }

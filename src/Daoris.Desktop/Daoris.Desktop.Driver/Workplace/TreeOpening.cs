@@ -223,14 +223,14 @@ internal sealed class TreeOpening(TreeContext context)
         // recorded before TREEDEPS1 did, and a tree its checkout's were copied into says it under a code of its own.
         var opening = dependencies.Copied.Count > 0
             ? Noted.Of(
-                NoteCodes.StartedTreeCopied,
+                StartNoteCodes.StartedTreeCopied,
                 $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds what git tracks, and here the "
                 + $"dependencies your checkout installed at the same lockfile, copied in: {dependencies.Listed}. `npm ci` is not "
                 + "needed there unless a lockfile changes; the rest of the repository's own setup cost, build outputs included, is "
                 + "paid here, and in exchange the root's uncommitted work holds nothing.",
                 ("branch", branch), ("basedOn", startedAt), ("copied", (IReadOnlyList<string>)[.. dependencies.Copied]))
             : Noted.Of(
-                NoteCodes.StartedTree,
+                StartNoteCodes.StartedTree,
                 $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
                 + "nothing git does not track: no installed dependencies, no build outputs. The "
                 + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
@@ -242,7 +242,7 @@ internal sealed class TreeOpening(TreeContext context)
         if (unrecorded is null) return opening;
 
         var line = Noted.Of(
-            NoteCodes.StartedTreeUnrecorded,
+            StartNoteCodes.StartedTreeUnrecorded,
             $"Daoris could not record where its branch started ({unrecorded}), so bringing it up to date "
             + "will cut where its work first differs from the line.");
         return opening.Then(" ", unrecorded.Length == 0 ? line : line.Also(NotePart.Said(unrecorded, NoteBy.Program)));

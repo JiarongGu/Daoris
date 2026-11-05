@@ -98,7 +98,7 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 
     /// <summary>
     /// That a stop runs under the person's standing confirmation (TERMTRUST1a, D201 point 7): the record the loop ends keeps its own
-    /// note and gains <see cref="NoteCodes.StandingTerminal"/>. An older loop reads none, and writes the plain stop.
+    /// note and gains <see cref="EndNoteCodes.StandingTerminal"/>. An older loop reads none, and writes the plain stop.
     /// </summary>
     public bool Standing { get; init; }
 

@@ -29,7 +29,7 @@ public static class ActorOpenings
             await service.TryKeepActorAsync(sessionId, log, chosen: new ActorChosen(bound.Rule, bound.By)).ConfigureAwait(false);
             // The role that took the work, by its name as written: an added designer's policy chose this, never Build's (STAFFPOLICY1e2).
             var name = NameOf(ledger.Home, bound.Role, actor);
-            var line = Noted.Of(NoteCodes.OpeningChosen, $"{name}'s policy chose this: {bound.Said}.", ("actor", name), ("said", bound.Said));
+            var line = Noted.Of(StartNoteCodes.OpeningChosen, $"{name}'s policy chose this: {bound.Said}.", ("actor", name), ("said", bound.Said));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
@@ -39,7 +39,7 @@ public static class ActorOpenings
         /// </summary>
         internal static void SayMovedChoice(ISessionEvents events, string sessionId, string from, string said)
         {
-            var line = Noted.Of(NoteCodes.OpeningMovedChoice, $"Moved here from {from}: {said}.", ("from", from), ("said", said));
+            var line = Noted.Of(StartNoteCodes.OpeningMovedChoice, $"Moved here from {from}: {said}.", ("from", from), ("said", said));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
@@ -73,7 +73,7 @@ public static class ActorOpenings
         /// </summary>
         internal static void SayMovedOff(ISessionEvents events, string sessionId, string account)
         {
-            var line = Noted.Of(NoteCodes.OpeningMovedOff, $"The same start moved here: `{account}` refused it for its sign-in.", ("account", account));
+            var line = Noted.Of(StartNoteCodes.OpeningMovedOff, $"The same start moved here: `{account}` refused it for its sign-in.", ("account", account));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
@@ -84,12 +84,12 @@ public static class ActorOpenings
         internal static void SayMovedOffModel(ISessionEvents events, string sessionId, string agent, string model)
         {
             var line = Noted.Of(
-                NoteCodes.OpeningMovedOffModel, $"The same start moved here: `{agent}` refused `{model}` on the account it ran on.",
+                StartNoteCodes.OpeningMovedOffModel, $"The same start moved here: `{agent}` refused `{model}` on the account it ran on.",
                 ("agent", agent), ("model", model));
             events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         }
 
-        internal static Noted DesignLine(string role) => Noted.Of(NoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
+        internal static Noted DesignLine(string role) => Noted.Of(StartNoteCodes.OpeningDesign, $"Design work: it ran on {role}'s order.", ("role", role));
 
         /// <summary>
         /// <c>Ran as Build's choice 2, claude-code-acp · sonnet: choice 1, claude-code-acp · opus: …</c> (§4.6, §7.1), by code; null where the
@@ -106,7 +106,7 @@ public static class ActorOpenings
             var entry = new BuildPass(ran, "", null).Named;
             var said = string.Join("; ", passed.Select(pass => pass.Said));
             return Noted.Of(
-                NoteCodes.OpeningActor, $"Ran as {ActorWords.Name(actor)}'s choice {n}, {entry}: {said}.",
+                StartNoteCodes.OpeningActor, $"Ran as {ActorWords.Name(actor)}'s choice {n}, {entry}: {said}.",
                 ("actor", actor), ("n", n), ("entry", entry), ("passed", said));
         }
     }

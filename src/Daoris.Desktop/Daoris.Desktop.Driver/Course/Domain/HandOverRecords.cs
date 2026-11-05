@@ -48,21 +48,21 @@ public static class HandOverNotes
     /// <summary>The old conversation's end: where it went. Never an account's name or a path (D125 §3.6).</summary>
     public static Noted HandedOver(string agent, string session) =>
         Noted.Of(
-            NoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
+            ChatNoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
             ("agent", agent), ("session", session));
 
     /// <summary>A quest's session end, stopped so its quest goes on with another agent (MIXAGENT1a-ii): which agent. Never an account's name or a path.</summary>
     public static Noted QuestHandedOver(string agent) =>
-        Noted.Of(NoteCodes.EndedHandedOver, $"Handed over to {agent}: its quest goes on with it, in the same tree.", ("agent", agent));
+        Noted.Of(EndNoteCodes.EndedHandedOver, $"Handed over to {agent}: its quest goes on with it, in the same tree.", ("agent", agent));
 
     /// <summary>The new conversation's line where Daoris's briefing did not reach its agent.</summary>
     public static Noted Unsaid() =>
-        Noted.Of(NoteCodes.ChatBriefingUnsaid, "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.");
+        Noted.Of(ChatNoteCodes.ChatBriefingUnsaid, "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.");
 
     /// <summary>The new conversation's first line: where it came from and why.</summary>
     public static Noted TakenOver(string agent, string session, string why) =>
         Noted.Of(
-            NoteCodes.ChatTakenOver, $"The conversation went on from {agent} conversation {session}, handed over because {HandOverWhy.Noted(why)}.",
+            ChatNoteCodes.ChatTakenOver, $"The conversation went on from {agent} conversation {session}, handed over because {HandOverWhy.Noted(why)}.",
             ("agent", agent), ("session", session), ("why", why));
 
     /// <summary>
@@ -73,7 +73,7 @@ public static class HandOverNotes
     /// </summary>
     public static Noted MovedOn(string session, string agent, string? account, string why, long? context, int brief) =>
         Noted.Of(
-            NoteCodes.MovedOn,
+            StartNoteCodes.MovedOn,
             $"Went on in session {session} with {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
             + (context is { } tokens
                 ? $"its context stood at {tokens} tokens, and the new session was handed Daoris's brief of it, {brief} characters."
@@ -83,7 +83,7 @@ public static class HandOverNotes
     /// <summary>The same move's line on the new part (<see cref="MovedOn"/>): the session it continues, the agent and account that one ran on.</summary>
     public static Noted MovedFrom(string session, string agent, string? account, string why, long? context, int brief) =>
         Noted.Of(
-            NoteCodes.MovedFrom,
+            StartNoteCodes.MovedFrom,
             $"Continues session {session}, which ran on {agent}{As(account)}, because {HandOverWhy.Noted(why)}: "
             + (context is { } tokens
                 ? $"its context stood at {tokens} tokens, and it was handed Daoris's brief of it, {brief} characters."
@@ -104,7 +104,7 @@ public static class HandOverNotes
     {
         var (used, curve) = (RotationWords.Whole(move.Used), RotationWords.Points(move.Curve));
         return Noted.Of(
-            NoteCodes.ChatMoved,
+            ChatNoteCodes.ChatMoved,
             $"Moved to `{move.Account}` at the end of its turn: `{from}` had used {used}% of its {move.Window} limit, over its curve's {curve}%; `{move.Account}` has room.",
             ("to", move.Account), ("from", from), ("window", move.Window), ("used", used), ("curve", curve));
     }
@@ -114,7 +114,7 @@ public static class HandOverNotes
     {
         var (used, curve) = (RotationWords.Whole(move.Used), RotationWords.Points(move.Curve));
         return Noted.Of(
-            NoteCodes.ChatMovedFrom,
+            ChatNoteCodes.ChatMovedFrom,
             $"Continues from `{from}`, which had used {used}% of its {move.Window} limit, over its curve's {curve}%.",
             ("from", from), ("window", move.Window), ("used", used), ("curve", curve));
     }

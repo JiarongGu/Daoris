@@ -20,7 +20,7 @@ type Declared = { code: string; values: string[]; key: string; writer: string; w
 
 const root = join(process.cwd(), '..', '..');
 const DECLARATION =
-  /new\("(?<code>[a-z][a-z.-]*)", \[(?<values>[^\]]*)\](?:, Key: "(?<key>[^"]+)")?\)(?: \{ Why = (?<why>\w+) \})?/g;
+  /new\("(?<code>[a-z][a-z.-]*)", \[(?<values>[^\]]*)\](?:, Key: "(?<key>[^"]+)")?\)(?: \{ Why = NoteCodes\.(?<why>\w+) \})?/g;
 
 const names = (values: string) =>
   values.split(',').map((value) => value.trim().replace(/^"|"$/g, '')).filter((value) => value.length > 0);
@@ -48,7 +48,9 @@ function backgroundStates(): string[] {
   return [...block.matchAll(/public const string \w+ = "([^"]+)";/g)].map((match) => match[1]);
 }
 
-const driver = declared('driver', driverSource('NoteCodes.cs'));
+/** The files the codes are declared in, by domain; `NoteCodes.cs` keeps the reasons and the list of these. */
+const DOMAIN_FILES = ['EndNoteCodes.cs', 'StartNoteCodes.cs', 'HeldNoteCodes.cs', 'ChatNoteCodes.cs', 'AccountNoteCodes.cs', 'PeerNoteCodes.cs'];
+const driver = declared('driver', DOMAIN_FILES.map(driverSource).join('\n'));
 // The service core's files sit in module folders (STRUCT5b), so NoteParts.cs is found by name under the core.
 const coreFolder = 'src/Daoris.Service/Daoris.Service.Core';
 const noteParts = readdirSync(join(root, ...coreFolder.split('/')), { recursive: true, encoding: 'utf8' })

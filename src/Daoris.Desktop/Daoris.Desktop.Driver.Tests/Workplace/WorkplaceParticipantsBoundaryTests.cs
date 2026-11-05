@@ -178,7 +178,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
     // ——— What holds a tree for a helper's wait
 
     private static PriorSession Waiting(string session = "s1") =>
-        new(session, "trees/s-1", "completed") { Quest = "q1", Tree = "trees/s-1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [] };
+        new(session, "trees/s-1", "completed") { Quest = "q1", Tree = "trees/s-1", NoteParts = [EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [] };
 
     [Fact]
     public void A_record_holds_its_tree_for_its_helper_only_as_a_completed_record_of_this_machine_carrying_the_code()
@@ -188,15 +188,15 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         Assert.True(HelperWaits.HoldsTree(waiting));
         Assert.True(HelperWaits.HoldsTree(waiting with { State = "Completed" }));
         Assert.True(HelperWaits.HoldsTree(waiting with { Said = [new SaidWordView("w1", "the answer", At, [], true) { Helper = "h1" }] }));
-        Assert.True(HelperWaits.HoldsTree(waiting with { NoteParts = [NoteCodes.EndedAwaits.Part("a line.", []), NoteCodes.EndedAwaitsHelper.Part("a line.", [])] }));
+        Assert.True(HelperWaits.HoldsTree(waiting with { NoteParts = [EndNoteCodes.EndedAwaits.Part("a line.", []), EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])] }));
         Assert.False(HelperWaits.HoldsTree(waiting with { State = "working" }));
         Assert.False(HelperWaits.HoldsTree(waiting with { Session = "laptop/s1" }));
-        Assert.False(HelperWaits.HoldsTree(waiting with { NoteParts = [NoteCodes.EndedAwaits.Part("a line.", [])] }));
+        Assert.False(HelperWaits.HoldsTree(waiting with { NoteParts = [EndNoteCodes.EndedAwaits.Part("a line.", [])] }));
         Assert.False(HelperWaits.HoldsTree(waiting with { NoteParts = [] }));
         Assert.False(HelperWaits.HoldsTree(waiting with { NoteParts = null }));
-        Assert.True(HelperWaits.Ended([NoteCodes.EndedAwaitsHelper.Part("a line.", [])]));
+        Assert.True(HelperWaits.Ended([EndNoteCodes.EndedAwaitsHelper.Part("a line.", [])]));
         Assert.False(HelperWaits.Ended(null));
-        Assert.False(HelperWaits.Ended([NoteCodes.EndedAwaits.Part("a line.", [])]));
+        Assert.False(HelperWaits.Ended([EndNoteCodes.EndedAwaits.Part("a line.", [])]));
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
             JsonSerializer.Serialize(new
             {
                 id, state, repository = "engine", quest, tree, kind = "driven",
-                noteParts = helper ? new[] { new { code = NoteCodes.EndedAwaitsHelper.Code, values = new { }, text = "a line." } } : [],
+                noteParts = helper ? new[] { new { code = EndNoteCodes.EndedAwaitsHelper.Code, values = new { }, text = "a line." } } : [],
                 created = "2026-10-27T00:00:00Z", updated = "2026-10-27T00:00:00Z",
             });
 

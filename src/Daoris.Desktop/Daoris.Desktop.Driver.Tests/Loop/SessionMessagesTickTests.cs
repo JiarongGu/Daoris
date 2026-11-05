@@ -341,7 +341,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
         Assert.True(prompt["resumed"]!.GetValue<bool>(), seen);
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(prompt["cwd"]!.GetValue<string>()), ignoreCase: true);
-        var remade = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.TreeRemade.Code) == true);
+        var remade = Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == StartNoteCodes.TreeRemade.Code) == true);
         Assert.Contains($"`daoris/{Path.GetFileName(tree)}`", remade.Text, StringComparison.Ordinal);
     }
 
@@ -403,7 +403,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.True(TreeFolders().SequenceEqual(folders), seen);
         Assert.False(Directory.Exists(tree));
         Assert.Contains(look.Events, line => line.Contains("held", StringComparison.Ordinal) && line.Contains("are both gone", StringComparison.Ordinal));
-        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.TreeGone.Code) == true);
+        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == StartNoteCodes.TreeGone.Code) == true);
     }
 
     /// <summary>The tree the record says its session ran in.</summary>
@@ -575,7 +575,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.True(service.State("s1") == "failed", first);
         Assert.True(service.Said("s1").Count == 1, first);
         Assert.Contains("ECONNRESET", service.Note("s1"));
-        Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code) == true);
+        Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == EndNoteCodes.EndedWordsWait.Code) == true);
 
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
@@ -639,7 +639,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         Assert.EndsWith("Your words wait to go again at the next look.", service.Note("s1"));
         Assert.True(service.Said("s1").SequenceEqual(["w1"]), seen);
         Assert.Empty(service.Taken);
-        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code) == true);
+        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Parts?.Any(part => part.Code == EndNoteCodes.EndedWordsWait.Code) == true);
         Assert.DoesNotContain(Events("s1"), e => e.Why is not null);
         Assert.Null(new GoOnMarks(_home).Read("s1"));
         Assert.Contains(look.Events, line => line.StartsWith("failed  session s1", StringComparison.Ordinal));

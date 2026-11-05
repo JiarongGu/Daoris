@@ -26,7 +26,7 @@ public sealed class ObservationTests
         (closed, interrupted) = Observation.Closed(new SessionStop(Reason: null, Note: null));
         Assert.Equal(("stopped", "ended.stopped", false), (closed.State, closed.Parts![0].Code, interrupted));
 
-        var paused = Noted.Of(NoteCodes.EndedStopped, "stopped for the pause.");
+        var paused = Noted.Of(EndNoteCodes.EndedStopped, "stopped for the pause.");
         (closed, interrupted) = Observation.Closed(new SessionStop(Reason: null, paused));
         Assert.Equal(("stopped", "stopped for the pause.", false), (closed.State, closed.Note, interrupted));
     }
@@ -332,7 +332,7 @@ public sealed class ObservationTests
         {
             Assert.Equal("completed", conclusion.State);
             var part = Assert.Single(conclusion.Parts!);
-            Assert.Equal((NoteCodes.EndedSourceReopened.Code, "q1"), (part.Code, part.Value("quest")?.ToString()));
+            Assert.Equal((EndNoteCodes.EndedSourceReopened.Code, "q1"), (part.Code, part.Value("quest")?.ToString()));
             Assert.Equal(
                 "stopped with its quest still taken: the work of `#q1` it grew from was reopened, and it goes on in the same tree once "
                 + "the person goes on with it on the new work.",
@@ -366,7 +366,7 @@ public sealed class ObservationTests
         {
             Assert.Equal("failed", conclusion.State);
             var part = Assert.Single(conclusion.Parts!);
-            Assert.Equal(NoteCodes.EndedBackgroundCut.Code, part.Code);
+            Assert.Equal(EndNoteCodes.EndedBackgroundCut.Code, part.Code);
             Assert.Equal(["npm run gates"], Assert.IsAssignableFrom<IReadOnlyList<string>>(part.Value("works")));
             Assert.Equal(
                 "its turn ended while its own background work ran: `npm run gates`. Its agent ends such work with the turn, so it "
@@ -378,11 +378,11 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Done", took: true, backgroundCut: ["npm run gates"]).State);
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, backgroundCut: ["npm run gates"]).State);
         Assert.Equal(
-            NoteCodes.EndedSourceReopened.Code,
+            EndNoteCodes.EndedSourceReopened.Code,
             Observation.Conclude(0, "Taken", took: true, reopenedFrom: "q1", backgroundCut: ["npm run gates"]).Parts![0].Code);
-        Assert.Equal(NoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, backgroundCut: ["npm run gates"]).Parts![0].Code);
+        Assert.Equal(EndNoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, backgroundCut: ["npm run gates"]).Parts![0].Code);
         Assert.Equal(
-            NoteCodes.EndedTurnFailedTaken.Code,
+            EndNoteCodes.EndedTurnFailedTaken.Code,
             Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, backgroundCut: ["npm run gates"]).Parts![0].Code);
         Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, backgroundCut: ["npm run gates"]).State);
         Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: PicksUp, backgroundCut: []).State);
@@ -411,11 +411,11 @@ public sealed class ObservationTests
                  })
         {
             Assert.Equal("failed", conclusion.State);
-            Assert.Equal(NoteCodes.EndedProviderRefused.Code, conclusion.Parts![0].Code);
+            Assert.Equal(EndNoteCodes.EndedProviderRefused.Code, conclusion.Parts![0].Code);
             var words = Assert.Single(conclusion.Parts!, part => part.Code is null);
             Assert.Equal((ProviderSaid, NoteBy.Program), (words.Words, words.By));
             Assert.Contains("req_011StandIn", conclusion.Note);
-            Assert.DoesNotContain(conclusion.Parts!, part => part.Code == NoteCodes.EndedParkedAsked.Code);
+            Assert.DoesNotContain(conclusion.Parts!, part => part.Code == EndNoteCodes.EndedParkedAsked.Code);
         }
 
         Assert.Equal(
@@ -426,7 +426,7 @@ public sealed class ObservationTests
             "ended.awaits",
             Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, lastWords: ProviderSaid, providerRefused: true).Parts![0].Code);
         Assert.Equal(
-            ("awaiting-person", NoteCodes.EndedParkedAsked.Code),
+            ("awaiting-person", EndNoteCodes.EndedParkedAsked.Code),
             (Observation.Conclude(0, "Taken", took: true, lastWords: "Which port?").State,
              Observation.Conclude(0, "Taken", took: true, lastWords: "Which port?").Parts![0].Code));
     }
@@ -442,7 +442,7 @@ public sealed class ObservationTests
         var parked = Observation.Conclude(0, "Taken", took: true, lastWords: "I could not edit the file.");
 
         var cut = Observation.Cut(parked, new TurnCut("Edit docs/a.md"));
-        Assert.Equal(("awaiting-person", NoteCodes.EndedParkedCut.Code), (cut.State, cut.Parts![0].Code));
+        Assert.Equal(("awaiting-person", EndNoteCodes.EndedParkedCut.Code), (cut.State, cut.Parts![0].Code));
         Assert.Equal("Edit docs/a.md", cut.Parts[0].Value("call"));
         Assert.Contains("refused", cut.Note);
         Assert.Contains("asked you nothing", cut.Note);
@@ -450,7 +450,7 @@ public sealed class ObservationTests
         Assert.DoesNotContain("I could not edit the file.", cut.Note);
 
         var cancelled = Observation.Cut(parked, new TurnCut(null));
-        Assert.Equal(("awaiting-person", NoteCodes.EndedParkedCancelled.Code), (cancelled.State, cancelled.Parts![0].Code));
+        Assert.Equal(("awaiting-person", EndNoteCodes.EndedParkedCancelled.Code), (cancelled.State, cancelled.Parts![0].Code));
         Assert.Contains("cancelled", cancelled.Note);
 
         var done = Observation.Conclude(0, "Done");
@@ -479,7 +479,7 @@ public sealed class ObservationTests
                  })
         {
             Assert.Equal("completed", conclusion.State);
-            Assert.Equal(NoteCodes.EndedAwaitsHelper.Code, Assert.Single(conclusion.Parts!).Code);
+            Assert.Equal(EndNoteCodes.EndedAwaitsHelper.Code, Assert.Single(conclusion.Parts!).Code);
             Assert.Equal(
                 "It asked a helper and stopped so the helper could read: it goes on in the same conversation with the helper's answer, "
                 + "and comes to you only if no answer comes.",
@@ -490,13 +490,13 @@ public sealed class ObservationTests
         Assert.Equal("ended.done", Observation.Conclude(0, "Done", took: true, awaitsHelper: true).Parts![0].Code);
         Assert.Equal("ended.awaits", Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, awaitsHelper: true).Parts![0].Code);
         Assert.Equal(
-            NoteCodes.EndedSourceReopened.Code, Observation.Conclude(0, "Taken", took: true, reopenedFrom: "q1", awaitsHelper: true).Parts![0].Code);
-        Assert.Equal(NoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, awaitsHelper: true).Parts![0].Code);
+            EndNoteCodes.EndedSourceReopened.Code, Observation.Conclude(0, "Taken", took: true, reopenedFrom: "q1", awaitsHelper: true).Parts![0].Code);
+        Assert.Equal(EndNoteCodes.EndedTakenExit.Code, Observation.Conclude(1, "Taken", took: true, awaitsHelper: true).Parts![0].Code);
         Assert.Equal(
-            NoteCodes.EndedTurnFailedTaken.Code, Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, awaitsHelper: true).Parts![0].Code);
+            EndNoteCodes.EndedTurnFailedTaken.Code, Observation.Conclude(0, "Taken", turnFailed: "limit reached", took: true, awaitsHelper: true).Parts![0].Code);
         Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, awaitsHelper: true).State);
         Assert.Equal(
-            ("awaiting-person", NoteCodes.EndedParkedAsked.Code),
+            ("awaiting-person", EndNoteCodes.EndedParkedAsked.Code),
             (Observation.Conclude(0, "Taken", took: true, lastWords: HelperAsked).State, Observation.Conclude(0, "Taken", took: true, lastWords: HelperAsked).Parts![0].Code));
     }
 
@@ -511,13 +511,13 @@ public sealed class ObservationTests
         var bare = Observation.HelperGone(HelperNotes.Refused(HelperWhy.Declined), lastWords: null);
 
         Assert.Equal("awaiting-person", quoted.State);
-        Assert.Equal(["helper.refused-by", NoteCodes.EndedParkedAsked.Code, null], quoted.Parts!.Select(part => part.Code));
+        Assert.Equal(["helper.refused-by", EndNoteCodes.EndedParkedAsked.Code, null], quoted.Parts!.Select(part => part.Code));
         Assert.Equal((HelperAsked, NoteBy.Agent), (quoted.Parts![2].Words, quoted.Parts[2].By));
         Assert.Equal(
             "Helper codex-acp did not answer this question: the helper ended without an answer.\n\nIt stopped with its quest still taken, to ask you:"
             + $"\n\n{HelperAsked}",
             quoted.Note);
-        Assert.Equal(("awaiting-person", "helper.refused", NoteCodes.EndedParkedTranscript.Code), (bare.State, bare.Parts![0].Code, bare.Parts[1].Code));
+        Assert.Equal(("awaiting-person", "helper.refused", EndNoteCodes.EndedParkedTranscript.Code), (bare.State, bare.Parts![0].Code, bare.Parts[1].Code));
     }
 
     /// <summary>With no last words to quote, the park still says where they would be.</summary>

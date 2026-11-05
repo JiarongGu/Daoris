@@ -526,16 +526,16 @@ internal sealed record Uncopied(string Modules, string Why, string? Workspace = 
         var modules = ("modules", (object?)Modules);
         return Why switch
         {
-            UncopiedWhy.Manager => Noted.Of(NoteCodes.StartedUncopiedManager, not + "pnpm or yarn installs it, and Daoris copies only what npm installed.", modules),
-            UncopiedWhy.Moved => Noted.Of(NoteCodes.StartedUncopiedMoved, not + "this tree's lockfile beside it differs from the checkout's, so it is installed afresh.", modules),
-            UncopiedWhy.Uninstalled => Noted.Of(NoteCodes.StartedUncopiedUninstalled, not + "the checkout holds no install of it at its lockfile.", modules),
+            UncopiedWhy.Manager => Noted.Of(StartNoteCodes.StartedUncopiedManager, not + "pnpm or yarn installs it, and Daoris copies only what npm installed.", modules),
+            UncopiedWhy.Moved => Noted.Of(StartNoteCodes.StartedUncopiedMoved, not + "this tree's lockfile beside it differs from the checkout's, so it is installed afresh.", modules),
+            UncopiedWhy.Uninstalled => Noted.Of(StartNoteCodes.StartedUncopiedUninstalled, not + "the checkout holds no install of it at its lockfile.", modules),
             UncopiedWhy.Workspace => Noted.Of(
-                NoteCodes.StartedUncopiedWorkspace, not + $"the lockfile of its npm workspace `{Workspace}` differs from the checkout's.", modules, ("workspace", Workspace)),
-            UncopiedWhy.Link => Noted.Of(NoteCodes.StartedUncopiedLink, not + "a link in it leads outside what this tree holds.", modules),
-            UncopiedWhy.Unignored => Noted.Of(NoteCodes.StartedUncopiedUnignored, not + "git does not ignore it here, so a copy would read as this tree's work.", modules),
-            _ when Detail is { Length: > 0 } said => Noted.Of(NoteCodes.StartedUncopiedFailed, not + $"the copy failed ({said}).", modules)
+                StartNoteCodes.StartedUncopiedWorkspace, not + $"the lockfile of its npm workspace `{Workspace}` differs from the checkout's.", modules, ("workspace", Workspace)),
+            UncopiedWhy.Link => Noted.Of(StartNoteCodes.StartedUncopiedLink, not + "a link in it leads outside what this tree holds.", modules),
+            UncopiedWhy.Unignored => Noted.Of(StartNoteCodes.StartedUncopiedUnignored, not + "git does not ignore it here, so a copy would read as this tree's work.", modules),
+            _ when Detail is { Length: > 0 } said => Noted.Of(StartNoteCodes.StartedUncopiedFailed, not + $"the copy failed ({said}).", modules)
                 .Also(NotePart.Said(said, NoteBy.Program)),
-            _ => Noted.Of(NoteCodes.StartedUncopiedFailed, not + "the copy failed.", modules),
+            _ => Noted.Of(StartNoteCodes.StartedUncopiedFailed, not + "the copy failed.", modules),
         };
     }
 }

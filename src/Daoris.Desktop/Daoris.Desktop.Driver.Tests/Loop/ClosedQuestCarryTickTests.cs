@@ -68,8 +68,8 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
         Assert.Equal("Also add the extra file.", prompts[0]);
         Assert.StartsWith(Words, prompts[1], StringComparison.Ordinal);
         Assert.Contains("Daoris never runs `git add` or `git commit` for you", prompts[1], StringComparison.Ordinal);
-        Assert.Equal(1, Notes(NoteCodes.BackgroundCarriedOn));
-        Assert.Equal(0, Notes(NoteCodes.BackgroundCarryBound));
+        Assert.Equal(1, Notes(ChatNoteCodes.BackgroundCarriedOn));
+        Assert.Equal(0, Notes(ChatNoteCodes.BackgroundCarryBound));
 
         // The tree is clean, and the commit is the stand-in's: Daoris committed nothing, and no card was made.
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
@@ -95,8 +95,8 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
         var prompts = ResumedPrompts();
         Assert.True(prompts.Count == 2, seen);
         Assert.StartsWith(Words, prompts[1], StringComparison.Ordinal);
-        Assert.Equal(1, Notes(NoteCodes.BackgroundCarriedOn));
-        Assert.Equal(1, Notes(NoteCodes.BackgroundCarryBound));
+        Assert.Equal(1, Notes(ChatNoteCodes.BackgroundCarriedOn));
+        Assert.Equal(1, Notes(ChatNoteCodes.BackgroundCarryBound));
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
         Assert.Equal("?? extra.txt", Git(tree, "status", "--porcelain").Trim());
     }
@@ -113,7 +113,7 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(["Just tell me the port."], ResumedPrompts());
-        Assert.Equal(0, Notes(NoteCodes.BackgroundCarriedOn));
+        Assert.Equal(0, Notes(ChatNoteCodes.BackgroundCarriedOn));
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
     }
 

@@ -649,7 +649,7 @@ public sealed class ChatGoOnTests : IDisposable
 
         events.Append("c1", Shown("w3", "Another agent says five.") with { Origin = "target", Helper = "h1" });
 
-        var held = await NoteAsync(events, "c1", e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+        var held = await NoteAsync(events, "c1", e => e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersHeld.Code) == true);
         // FOUNDATION1h branch 7: the course's answer is the answers-alone hold, which offers the person's three doors.
         Assert.Equal(("c1", "hold:AnswersAlone:answers-alone"), Assert.Single(decided) is var (session, answer) ? (session, Said(answer)) : default);
         Assert.Equal(["w3"], held.Words!);
@@ -663,7 +663,7 @@ public sealed class ChatGoOnTests : IDisposable
 
         await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
         Assert.Equal(["working", "failed"], ledger.Moves("c1"));
-        Assert.Single(events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.AnswersHeld.Code) == true);
+        Assert.Single(events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersHeld.Code) == true);
         // COMMS1g: the line's admission was seeded at two, the person's press reset it, and the answer it let go on is admitted once.
         var admission = new ContinuationAdmissions(_home, () => StoreSettled.Yes).Of("c1")!;
         Assert.Equal([("seed", 2), ("reset", 0)], admission.Epochs.Select(epoch => (epoch.Cause, epoch.N)));

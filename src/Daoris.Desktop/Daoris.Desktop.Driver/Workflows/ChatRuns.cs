@@ -174,7 +174,7 @@ public static class ChatRuns
 
     /// <summary>What the conversation is told once of a bind the home could not keep (§4.3), by its code.</summary>
     public static Noted FailedLine(string problem) => Noted.Of(
-        NoteCodes.ChatWorkflowFailed,
+        ChatNoteCodes.ChatWorkflowFailed,
         $"Its repository's workflow could not be bound, so this conversation's work cannot be landed yet: {problem}.", ("problem", problem));
 
     /// <summary>
@@ -188,11 +188,11 @@ public static class ChatRuns
         var owner = binding.Level is WorkflowLevels.Workspace or WorkflowLevels.WorkspaceKind ? binding.Workspace : binding.Repository;
         return binding.Problem is { } problem
             ? Noted.Of(
-                NoteCodes.ChatWorkflowUnread,
+                ChatNoteCodes.ChatWorkflowUnread,
                 $"This conversation's work was bound to `{binding.Workflow}`, the workflow `{owner}` chose, which cannot land it: {problem}",
                 ("workflow", binding.Workflow), ("owner", owner), ("problem", problem))
             : Noted.Of(
-                NoteCodes.ChatWorkflow, $"This conversation's work follows `{binding.Workflow}` v{binding.Version}, the workflow `{owner}` chose.",
+                ChatNoteCodes.ChatWorkflow, $"This conversation's work follows `{binding.Workflow}` v{binding.Version}, the workflow `{owner}` chose.",
                 ("workflow", binding.Workflow), ("version", binding.Version), ("owner", owner));
     }
 

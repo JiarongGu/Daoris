@@ -273,7 +273,7 @@ public sealed class SessionLocksTests : IDisposable
         await SessionLocks.HoldAsync(tree, "s1", CancellationToken.None);
 
         await service.AdvanceAsync("s1", "completed",
-            Noted.Of(helper ? NoteCodes.EndedAwaitsHelper : NoteCodes.EndedSetupChanged, "continues"));
+            Noted.Of(helper ? EndNoteCodes.EndedAwaitsHelper : EndNoteCodes.EndedSetupChanged, "continues"));
 
         Assert.Equal("daoris session s1", await LockOfAsync(root, tree));
     }

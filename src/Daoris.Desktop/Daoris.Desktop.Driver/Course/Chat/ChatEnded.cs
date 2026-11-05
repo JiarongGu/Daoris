@@ -23,8 +23,8 @@ internal static class ChatEnded
     internal static Noted EndedNote(bool stopped, bool notKept)
     {
         var ended = stopped
-            ? Noted.Of(NoteCodes.ChatEndedByPerson, EndedByPersonNote)
-            : Noted.Of(NoteCodes.ChatEnded, "the conversation ended; its commits are its record.");
-        return notKept ? ended.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept)) : ended;
+            ? Noted.Of(ChatNoteCodes.ChatEndedByPerson, EndedByPersonNote)
+            : Noted.Of(ChatNoteCodes.ChatEnded, "the conversation ended; its commits are its record.");
+        return notKept ? ended.Then(" ", Noted.Of(ChatNoteCodes.ChatNotKept, NotKept)) : ended;
     }
 }

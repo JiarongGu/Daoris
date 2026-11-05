@@ -58,7 +58,7 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 
     /// <summary>
     /// That the press runs under the person's standing confirmation: the pipe admitted it with no card. A stop's records gain
-    /// <see cref="NoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering <c>running-here</c> where a
+    /// <see cref="EndNoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering <c>running-here</c> where a
     /// process for the session runs here, and is moved by the ledger only from <c>awaiting-person</c>.
     /// </summary>
     public bool Standing { get; init; }

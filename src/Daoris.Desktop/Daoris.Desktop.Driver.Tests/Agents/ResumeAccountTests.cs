@@ -338,7 +338,7 @@ public sealed class ResumeAccountTests : IDisposable
     public void The_roster_s_refusal_is_the_held_note_by_code_where_the_selection_has_its_parts()
     {
         const string sentence = "`codex` is not installed on this machine, so there is nothing to spawn.";
-        var coded = Noted.Of(NoteCodes.HeldNotInstalled, sentence, ("agent", "codex"));
+        var coded = Noted.Of(HeldNoteCodes.HeldNotInstalled, sentence, ("agent", "codex"));
         var held = HeldWords.Refused(new HarnessSelection(sentence) { RefusalNote = coded });
 
         Assert.Equal(HeldWords.Program(sentence).Line.Note, held.Line.Note);
