@@ -186,6 +186,7 @@ public sealed class ChatAttachmentTests : IDisposable
             { "id": "in-app-browser", "servers": [
                 { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
             """);
+        SessionServersTests.Lay(_home, "@playwright/mcp", "0.0.82");
     }
 
     /// <summary>
