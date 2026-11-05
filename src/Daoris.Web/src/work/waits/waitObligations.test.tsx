@@ -36,7 +36,7 @@ const pushed = (kind: PushedAttention['kind'], id: string, over: Partial<PushedA
 
 /** The foot's count, read from its region's name: one wait is said with no number. */
 const footCount = () => {
-  const name = screen.getByRole('region', { name: /waiting on you|等你处理/ }).getAttribute('aria-label') ?? '';
+  const name = screen.getByRole('region', { name: /waiting on you|等你处理/i }).getAttribute('aria-label') ?? '';
   return Number(/^(\d+)/.exec(name)?.[1] ?? 1);
 };
 
