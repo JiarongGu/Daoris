@@ -20,4 +20,10 @@ internal sealed class ClaudeChildVocabulary : IChildVocabulary
 
     /// <inheritdoc/>
     public bool SaysEnd => true;
+
+    /// <inheritdoc/>
+    public IChildLines Lines() => new ClaudeChildLines();
+
+    /// <inheritdoc/>
+    public ChildCall? Wake(System.Text.Json.Nodes.JsonObject line) => ClaudeChildLines.Wake(line);
 }

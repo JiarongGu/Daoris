@@ -127,14 +127,7 @@ public sealed record ChildBindings
     /// <summary>Only seen, by a hook or the stream (L1).</summary>
     public const string Observed = "observed";
 
-    private const string Claude = "claude-code";
-    private const string Codex = "codex";
-
-    /// <summary>🔴 The connector's <c>CallLineage</c> id shape, copied (twins).</summary>
-    private static readonly Regex IdShape = new("^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$", RegexOptions.CultureInvariant);
-
-    /// <summary>An agent id the hook was sent and could not read; no id's shape, so no real id equals it.</summary>
-    private const string UnreadableAgent = "\0unreadable";
+    private static readonly Regex IdShape = LineageText.IdShape;
 
     private static readonly string[] Signals = ["hook", "call", "stream", "acp"];
 
@@ -142,9 +135,6 @@ public sealed record ChildBindings
 
     /// <summary>A re-run's suffix on the protocol door's ids (CONSOLE2): the same child run again.</summary>
     private static readonly Regex ReRun = new(":generation:[0-9]+$", RegexOptions.CultureInvariant);
-
-    /// <summary>Whether the connector named a field its harness sent that is not an id (FABRIC-C2a): the call is unknown, never the root's.</summary>
-    private static bool Malformed(JsonObject line) => line["malformed"] is not null;
 
     /// <summary>The harness the lines are from, or null where none said.</summary>
     public string? Harness { get; init; }
@@ -194,23 +184,12 @@ public sealed record ChildBindings
     public bool Wakes(string line)
     {
         if (Parse(line) is not { } read) return false;
-        string id;
-        switch (Text(read, "by"))
-        {
-            case "hook" when Text(read, "event") == "call":
-                if (read["agentUnreadable"] is not null || Id(read, "agent") is not { } agent) return false;
-                id = agent;
-                break;
-            case "call" when Text(read, "harness") == Codex:
-                if (Malformed(read) || Id(read, "thread") is not { } thread) return false;
-                if (Id(read, "parent") is null) return Children.Any(child => child.Native == thread);
-                id = thread;
-                break;
-            case "call":
-                return false;
-            default:
-                return true;
-        }
+        var spoken = Spoken();
+        // What the line names is its agent's words to say; a line that is no call moves the reading, and a call no agent reads does not.
+        var said = SpokenBy(read, spoken) is { } speaker ? spoken[speaker].Wake(read) : null;
+        if (said is null) return Text(read, "by") != "call";
+        if (said is { Kind: ChildCallKind.Root, Agent: { } root }) return Children.Any(child => child.Native == root);
+        if (said is not { Kind: ChildCallKind.Child, Agent: { } id }) return false;
 
         var placed = Id(read, "proc") is { } proc ? Processes.Contains(proc) : Processes.Count == 0;
         if (!placed) return !UnplacedIds.Contains(id);
@@ -292,45 +271,26 @@ public sealed record ChildBindings
     {
         var read = lines.Select(Parse).OfType<JsonObject>().ToList();
 
-        // First every line, unplaced ones too, in no order, for who an id is: Claude Code's root is the hook's session, Codex's the
-        // thread a call names with no parent, else the root its metadata names; a call's agent by its toolUse; the protocol door's
-        // children by their id less a re-run's suffix. And each process the file recorded: its `start`, and its own `end` wherever
-        // it sits.
+        // First every line, unplaced ones too, in no order, for who an id is: each agent's own lines learnt by its vocabulary's reader
+        // (its root, and how a call joins its agent); the protocol door's children by their id less a re-run's suffix. And each
+        // process the file recorded: its `start`, and its own `end` wherever it sits.
+        var spoken = Spoken();
+        var readers = spoken.ToDictionary(pair => pair.Key, pair => pair.Value.Lines(), StringComparer.Ordinal);
         string? harness = null;
-        string? claudeRoot = null;
-        string? codexNamed = null;
-        var agentOf = new Dictionary<string, string?>(StringComparer.Ordinal);
-        var roots = new HashSet<string>(StringComparer.Ordinal);
         var announced = new Dictionary<string, string>(StringComparer.Ordinal);
         var starts = new Dictionary<string, Generation>(StringComparer.Ordinal);
         var firstStart = -1;
         for (var i = 0; i < read.Count; i++)
         {
             var line = read[i];
+            if (SpokenBy(line, spoken) is { } speaker)
+            {
+                harness ??= speaker;
+                readers[speaker].Learn(line);
+            }
+
             switch (Text(line, "by"))
             {
-                case "hook":
-                    harness ??= Claude;
-                    claudeRoot ??= Id(line, "session");
-                    if (Text(line, "event") == "call" && Id(line, "toolUse") is { } use)
-                    {
-                        agentOf[use] = line["agentUnreadable"] is JsonValue bad && bad.TryGetValue<bool>(out var unread) && unread
-                            ? UnreadableAgent
-                            : Id(line, "agent");
-                    }
-
-                    break;
-                case "stream":
-                    harness ??= Claude;
-                    break;
-                case "call" when Text(line, "harness") == Claude:
-                    harness ??= Claude;
-                    break;
-                case "call" when Text(line, "harness") == Codex:
-                    harness ??= Codex;
-                    if (Id(line, "thread") is { } thread && Id(line, "parent") is null && !Malformed(line)) roots.Add(thread);
-                    codexNamed ??= Id(line, "root");
-                    break;
                 case "acp" when Id(line, "agent") is { } agent:
                     announced.TryAdd(ReRun.Replace(agent, ""), agent);
                     break;
@@ -349,8 +309,8 @@ public sealed record ChildBindings
             }
         }
 
-        var codexRoot = roots.FirstOrDefault() ?? codexNamed;
-        var root = harness == Codex ? codexRoot : claudeRoot;
+        string? RootOf(string? speaker) => speaker is not null && readers.TryGetValue(speaker, out var own) ? own.Root : null;
+        var root = RootOf(harness);
 
         // Then each line in the file's order, placed in its process's generation, or as history, or nowhere.
         var children = new List<Child>();
@@ -372,28 +332,25 @@ public sealed record ChildBindings
 
             string? who = null, agent = null, word = null;
             var act = Act.Touch;
+            var speaker = SpokenBy(line, spoken);
             switch (by)
             {
-                case "hook" when Id(line, "agent") is { } named:
-                    (who, agent) = (Claude, named);
-                    act = Text(line, "event") switch { "started" => Act.Start, "stopped" => Act.Stop, _ => Act.Touch };
+                case "call":
+                    // A call is read by its agent's own words as the child it came from; one no agent's words read is unknown.
+                    var said = speaker is null ? ChildCall.Unknown : readers[speaker].Call(line);
+                    if (said.Kind == ChildCallKind.Root) rootCalls++;
+                    else if (said.Kind == ChildCallKind.Unknown) unknown++;
+                    else if (said.Kind == ChildCallKind.Unjoined) unjoined++;
+                    else if (said.Kind == ChildCallKind.Child) (who, agent) = (speaker, said.Agent);
                     break;
                 case "stream" or "acp" when Id(line, "agent") is { } named:
-                    (who, agent, word) = (by == "stream" ? Claude : null, named, Id(line, by == "stream" ? "status" : "state"));
+                    (who, agent, word) = (speaker, named, Id(line, by == "stream" ? "status" : "state"));
                     act = Text(line, "event") switch { "started" => Act.Start, "ended" => Act.Stop, _ => Act.Touch };
                     break;
-                case "call" when Text(line, "harness") == Claude && Id(line, "toolUse") is { } use:
-                    if (!agentOf.TryGetValue(use, out var caller)) unjoined++;
-                    else if (caller == UnreadableAgent) unknown++;
-                    else if (caller is null) rootCalls++;
-                    else (who, agent) = (Claude, caller);
-                    break;
-                case "call" when Text(line, "harness") == Codex && Id(line, "thread") is { } thread && !Malformed(line):
-                    if (roots.Contains(thread) || thread == codexRoot) rootCalls++;
-                    else (who, agent) = (Codex, thread);
-                    break;
-                case "call":
-                    unknown++;
+                // A hook's line, in the words of the agent whose hook wrote it.
+                case not null when speaker is not null && Id(line, "agent") is { } named:
+                    (who, agent) = (speaker, named);
+                    act = Text(line, "event") switch { "started" => Act.Start, "stopped" => Act.Stop, _ => Act.Touch };
                     break;
             }
 
@@ -426,13 +383,11 @@ public sealed record ChildBindings
             child.Seen.Add(by!);
             Said(child, by!, line, key: id => announced.GetValueOrDefault(ReRun.Replace(id, "")) ?? id);
             if (by == "call") child.Calls++;
-            if (SaysNoEnd(who) && announced.Count == 0) child.Unsaid = true;
+            if (who is not null && !spoken[who].SaysEnd && announced.Count == 0) child.Unsaid = true;
             Moved(child, generation, i, act, word, AtOf(line));
         }
 
-        HashSet<string> rootIds = [.. roots];
-        if (claudeRoot is not null) rootIds.Add(claudeRoot);
-        if (codexRoot is not null) rootIds.Add(codexRoot);
+        HashSet<string> rootIds = [.. readers.Values.SelectMany(own => own.Roots)];
         var newest = Math.Max(starts.Values.Select(each => each.Order).DefaultIfEmpty(-1).Max(), history?.Order ?? -1);
         return new ChildBindings
         {
@@ -450,7 +405,7 @@ public sealed record ChildBindings
             Announced = announced,
             Processes = starts.Keys.ToHashSet(StringComparer.Ordinal),
             Readings = starts.Values.Where(each => each.Reading is not null).ToDictionary(each => each.Proc!, each => each.Reading!.Value, StringComparer.Ordinal),
-            Children = [.. children.Select(child => Bound(child, byId, (child.Harness ?? harness) == Codex ? codexRoot : claudeRoot, harness, kind))],
+            Children = [.. children.Select(child => Bound(child, byId, RootOf(child.Harness ?? harness), harness, kind))],
         };
 
         // A line naming its process is that process's wherever it sits, and one no `start` names is no process's. Before a file's first
@@ -666,11 +621,22 @@ public sealed record ChildBindings
     private static string Moment(DateTimeOffset at) =>
         at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
 
-    /// <summary>Whether the harness named by its provider's id declares a vocabulary that says no child's end (its provider's <c>IChildVocabulary</c>).</summary>
-    private static bool SaysNoEnd(string? harness) =>
-        harness is not null
-        && Providers.Built().FirstOrDefault(provider => string.Equals(provider.Id.Value, harness, StringComparison.Ordinal)) is { Children.IsKnown: true } provider
-        && !provider.Children.Required.SaysEnd;
+    /// <summary>The agents whose lineage is read in their own words: each built provider's <c>IChildVocabulary</c>, by its id.</summary>
+    private static Dictionary<string, IChildVocabulary> Spoken() =>
+        Providers.Built().Where(provider => provider.Children.IsKnown)
+            .ToDictionary(provider => provider.Id.Value, provider => provider.Children.Required, StringComparer.Ordinal);
+
+    /// <summary>The agent whose words a line is: a connector call's by the agent it names, a hook's or a stream's by its vocabulary's lines.</summary>
+    private static string? SpokenBy(JsonObject line, IReadOnlyDictionary<string, IChildVocabulary> spoken)
+    {
+        var by = Text(line, "by");
+        if (by == "call") return Text(line, "harness") is { } named && spoken.ContainsKey(named) ? named : null;
+        foreach (var (id, vocabulary) in spoken)
+        {
+            if (vocabulary.HookLines.Contains(by) || vocabulary.StreamSignals.Contains(by)) return id;
+        }
+        return null;
+    }
 
     private static JsonObject? Parse(string line)
     {
@@ -685,10 +651,9 @@ public sealed record ChildBindings
         }
     }
 
-    private static string? Text(JsonObject line, string name) =>
-        line[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+    private static string? Text(JsonObject line, string name) => LineageText.Text(line, name);
 
-    private static string? Id(JsonObject line, string name) => Text(line, name) is { } text && IdShape.IsMatch(text) ? text : null;
+    private static string? Id(JsonObject line, string name) => LineageText.Id(line, name);
 
     private static int? Number(JsonObject line, string name) =>
         line[name] is JsonValue value && value.TryGetValue<int>(out var number) && number > 0 ? number : null;

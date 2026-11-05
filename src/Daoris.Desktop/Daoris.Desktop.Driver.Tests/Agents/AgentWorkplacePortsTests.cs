@@ -77,8 +77,9 @@ public sealed class AgentWorkplacePortsTests : IDisposable
             AgentWorkplace.Current = stand;
             SessionGit.Current = stand;
             var target = Target() with { LandsOn = plan, Commits = commits };
-            var info = Shell.Start(new ProcessRecipe("stand-command", []), target);
-            Assert.Equal(["tools", "git", "words"], calls);
+            var info = Shell.Start(new ProcessRecipe("stand-command", []), SpawnRequests.Of(target, null));
+            // The instruction is the request's, composed before the shell hands the tools and the session's git.
+            Assert.Equal(["words", "tools", "git"], calls);
             Assert.Equal("present", info.Environment["stand-workplace"]);
             Assert.Equal((_home, _home), stand.Git);
             Assert.Same(plan, stand.Plan);
@@ -99,12 +100,12 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         try
         {
             AgentWorkplace.Current = null!;
-            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, Target()));
+            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, SpawnRequests.Of(Target(), null)));
             Assert.Throws<InvalidOperationException>(() => TargetPrompt.Compose(Target()));
             AgentWorkplace.Current = actual;
             // D212's bound: an unset session git throws before any spawn completes or any registration check passes a git name.
             SessionGit.Current = null!;
-            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, Target()));
+            Assert.Throws<InvalidOperationException>(() => Shell.Start(stand, SpawnRequests.Of(Target(), null)));
             Assert.Throws<InvalidOperationException>(() => Spawning.Daoris("GIT_CONFIG_COUNT"));
             Assert.Throws<InvalidOperationException>(() => new ProviderRegistry(Providers.Built(), []));
             foreach (var failure in new Exception[] { new IOException("refused"), new OperationCanceledException(new CancellationToken(true)) })
@@ -112,7 +113,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
                 var failing = new Stand([]) { Failure = failure };
                 AgentWorkplace.Current = failing;
                 SessionGit.Current = failing;
-                Assert.Same(failure, Assert.Throws(failure.GetType(), () => Shell.Start(stand, Target())));
+                Assert.Same(failure, Assert.Throws(failure.GetType(), () => Shell.Start(stand, SpawnRequests.Of(Target(), null))));
                 Assert.Same(failure, Assert.Throws(failure.GetType(), () => TargetPrompt.Compose(Target())));
             }
         }

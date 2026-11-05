@@ -41,7 +41,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// <summary>Its door's spawn (<see cref="ClaudeCodeSpawn"/>), which this class's spawn members are one-line doors to until row t.</summary>
     private static readonly ClaudeCodeSpawn Spawn = new();
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => Shell.Start(Spawn.Start(target, command), target);
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => SpawnRequests.Started(Spawn, target, command);
 
     public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
 
@@ -49,7 +49,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     public bool Resumes => true;
 
     public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-        Shell.Start(Spawn.Resume(target, command, conversation), target);
+        SpawnRequests.Resumed(Spawn, target, command, conversation)!;
 
     /// <summary>
     /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
@@ -90,7 +90,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// all the same. In full access it names <see cref="FullPosture"/> (<see cref="ChatTarget.PermissionMode"/>), in place of
     /// <c>acceptEdits</c>.</para>
     /// </remarks>
-    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => Shell.Chat(Spawn.Chat(target, command), target);
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) => SpawnRequests.Chatted(Spawn, target, command);
 
     /// <summary>
     /// <c>--permission-mode bypassPermissions</c>, Claude Code's mode that asks nothing, measured on 2.1.281 (the stream-json

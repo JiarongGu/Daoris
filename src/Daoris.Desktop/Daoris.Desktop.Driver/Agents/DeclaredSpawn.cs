@@ -6,10 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class DeclaredSpawn(IReadOnlyList<string> command) : ISpawn
 {
-    public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? given) =>
-        ProcessRecipe.Of(Resolve(given)) with { Input = true };
+    public ProcessRecipe Start(SpawnRequest request) => ProcessRecipe.Of(Resolve(request.Command)) with { Input = true };
 
-    public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? given) => ProcessRecipe.Of(Resolve(given));
+    public ProcessRecipe Chat(SpawnRequest request) => ProcessRecipe.Of(Resolve(request.Command));
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? given) => given is { Count: > 0 } ? given : command;
 }

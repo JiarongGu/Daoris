@@ -14,16 +14,16 @@ namespace Daoris.Driver;
 public interface ISpawn
 {
     /// <summary>The recipe of a driven session: preparation only, the driver owns its lifetime (D46 §5).</summary>
-    ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command);
+    ProcessRecipe Start(SpawnRequest request);
 
-    /// <summary>The recipe of a conversation; the shell opens its stdin.</summary>
-    ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command);
+    /// <summary>The recipe of a conversation, a new one or the one <see cref="SpawnRequest.Resume"/> names; the shell opens its stdin.</summary>
+    ProcessRecipe Chat(SpawnRequest request);
 
     /// <summary>
-    /// The native door's resume of a conversation the agent kept, its next turn written on the input by the driver (AGENTLYNTAI1s-i); null
-    /// where the door knows none.
+    /// The native door's resume of the conversation <see cref="SpawnRequest.Resume"/> names, its next turn written on the input by the
+    /// driver (AGENTLYNTAI1s-i); null where the door knows none.
     /// </summary>
-    ProcessRecipe? Resume(SessionTarget target, IReadOnlyList<string>? command, string conversation) => null;
+    ProcessRecipe? Resume(SpawnRequest request) => null;
 
     /// <summary>The variables that load a session's tools with its first request; empty where there is no such switch.</summary>
     IReadOnlyDictionary<string, string> ToolsUpFront => ReadOnlyDictionary<string, string>.Empty;
@@ -111,6 +111,15 @@ public interface IChildVocabulary
 
     /// <summary>Whether the agent says a child's end; where it does not, an end stays unknown.</summary>
     bool SaysEnd { get; }
+
+    /// <summary>A reader of one record's lines in this agent's words, new per reading.</summary>
+    IChildLines Lines();
+
+    /// <summary>
+    /// What a line of this agent's appended after a reading names for whether it moves it: the child a call came from, a call from an id
+    /// named with no parent (<see cref="ChildCallKind.Root"/>), or none that can; null where the line is no call, and any line moves it.
+    /// </summary>
+    ChildCall? Wake(System.Text.Json.Nodes.JsonObject line);
 }
 
 /// <summary>

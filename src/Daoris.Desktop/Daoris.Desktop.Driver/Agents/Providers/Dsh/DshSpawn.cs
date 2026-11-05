@@ -10,14 +10,14 @@ internal sealed class DshSpawn : ISpawn
 {
     private static readonly string[] Program = ["dsh"];
 
-    public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) =>
-        ProcessRecipe.Of(Resolve(command), ["--profile", DshAdapter.Profile]) with
+    public ProcessRecipe Start(SpawnRequest request) =>
+        ProcessRecipe.Of(Resolve(request.Command), ["--profile", DshAdapter.Profile]) with
         {
             Input = true,
             Variables = new Dictionary<string, string> { [DshAdapter.PermissionVariable] = DshAdapter.Posture },
         };
 
-    public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) =>
+    public ProcessRecipe Chat(SpawnRequest request) =>
         throw new DriverException(
             "the `dsh` adapter cannot hold a conversation — it spawns an agent that takes its "
             + "target once and runs to completion. Chat with an adapter that declares `interactive`.");

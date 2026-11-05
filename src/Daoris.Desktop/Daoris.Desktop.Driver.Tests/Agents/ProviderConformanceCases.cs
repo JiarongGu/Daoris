@@ -269,7 +269,7 @@ internal static class ConformanceCases
     private static void RecipeNamesNoDaorisVariable(ConformanceRun run)
     {
         Assert.True(run.TheDoor.Spawn.IsKnown, $"{run.TheDoor.Id} states no spawn, so no recipe of its own");
-        var recipe = run.TheDoor.Spawn.Required.Start(run.Target(), run.Command());
+        var recipe = run.TheDoor.Spawn.Required.Start(SpawnRequests.Of(run.Target(), run.Command()));
         var named = recipe.Variables.Keys.Where(Spawning.Daoris).ToList();
 
         Assert.True(named.Count == 0, $"the door's own recipe sets Daoris's {string.Join(", ", named)}: the transports' shell sets them (§4.6)");
@@ -780,8 +780,8 @@ internal static class ConformanceCases
 
     private sealed class BareSpawn : ISpawn
     {
-        public ProcessRecipe Start(SessionTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
+        public ProcessRecipe Start(SpawnRequest request) => ProcessRecipe.Of(request.Command!);
 
-        public ProcessRecipe Chat(ChatTarget target, IReadOnlyList<string>? command) => ProcessRecipe.Of(command!);
+        public ProcessRecipe Chat(SpawnRequest request) => ProcessRecipe.Of(request.Command!);
     }
 }

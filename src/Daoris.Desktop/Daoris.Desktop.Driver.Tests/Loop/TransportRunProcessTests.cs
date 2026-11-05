@@ -134,7 +134,7 @@ public sealed class TransportRunProcessTests : IDisposable
         public IStreamMapper? StructuredOutput() => structured ? new ClaudeStreamJson() : null;
 
         private ProcessStartInfo Start(SessionTarget target, params string[] arguments) =>
-            Shell.Start(new ProcessRecipe("node", [Path.Combine(home, "agent.cjs"), .. arguments]), target);
+            Shell.Start(new ProcessRecipe("node", [Path.Combine(home, "agent.cjs"), .. arguments]), SpawnRequests.Of(target, null));
     }
 
     private TransportRun Over(ISessionAdapter adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)

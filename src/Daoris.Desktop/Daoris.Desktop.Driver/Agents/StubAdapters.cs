@@ -21,10 +21,10 @@ public sealed class StubAdapter : ISessionAdapter
     public bool Interactive => true;
 
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-        Shell.Start(ProcessRecipe.Of(Command(command)), target);
+        Shell.Start(ProcessRecipe.Of(Command(command)), SpawnRequests.Of(target, command));
 
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
-        Shell.Chat(ProcessRecipe.Of(Command(command)), target);
+        Shell.Chat(ProcessRecipe.Of(Command(command)), SpawnRequests.Of(target, command));
 
     /// <summary>
     /// A toolchain with real mechanics and no tool behind it — the same trick as the adapter itself
@@ -100,10 +100,10 @@ public sealed class AcpStubAdapter : ISessionAdapter
     public bool Interactive => true;
 
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-        Shell.Start(ProcessRecipe.Of(Resolve(command)) with { Input = true }, target);
+        Shell.Start(ProcessRecipe.Of(Resolve(command)) with { Input = true }, SpawnRequests.Of(target, command));
 
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
-        Shell.Chat(ProcessRecipe.Of(Resolve(command)), target);
+        Shell.Chat(ProcessRecipe.Of(Resolve(command)), SpawnRequests.Of(target, command));
 
     /// <summary>
     /// A door onto the stub's accounts (TOOL4j, D125 §1.3 rule 4), as Claude Code's protocol door is onto Claude Code's
