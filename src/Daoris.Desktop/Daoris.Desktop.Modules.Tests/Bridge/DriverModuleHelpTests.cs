@@ -256,7 +256,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [Fact]
     public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
     {
-        File.WriteAllText(DriverConfigPath, """{ "helperAdapter": "claude-code-acp" }""");
+        File.WriteAllText(DriverConfigPath, """{ "actors": { "ask-daoris": [{ "agent": "claude-code-acp" }] } }""");
         var module = Module();
 
         var refusal = await RefusalAsync(module, "START_HELP");

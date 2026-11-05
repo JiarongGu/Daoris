@@ -343,7 +343,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
 
     private async Task<(DriverLoop Loop, DriverModule Module, StandIn Service)> UpAsync(MachineLog? log = null)
     {
-        File.WriteAllText(DriverConfigPath, """{ "adapter": "talk", "helperAdapter": "talk" }""");
+        File.WriteAllText(DriverConfigPath, """{ "actors": { "chat": [{ "agent": "talk" }], "ask-daoris": [{ "agent": "talk" }] } }""");
         var service = new StandIn();
         var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", log: log);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
