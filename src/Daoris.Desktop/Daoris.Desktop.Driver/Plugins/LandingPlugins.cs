@@ -156,7 +156,9 @@ public sealed class LandingPlugins(
         // GITAUTH1f (§6.7): the landing asks the judge before its plugin starts. The person's Accept, or the rule that accepts for them, is
         // the yes for exactly this push, so ask passes; deny, or an identity read only on its host, refuses before anything starts.
         if (LandingRefusal(frame, pushTo) is { } refused) return Failed(plugin, $"{refused}, so {id} was not started to push the branch.");
-        var grant = pushTo is null ? null : GitGrants.Write(home, pushTo, _clock());
+        // D241 point 3: the grant carries this push alone, `<tip>:refs/heads/<branch>`, and the door judges the old commit it sees.
+        var grant = pushTo is null || frame.Tip is not { Length: > 0 } tip ? null
+            : GitGrants.Write(home, pushTo, [new GitGrantRef($"refs/heads/{frame.Branch}", tip)], _clock());
         // The person's press, or the rule that accepts automatically, standing for it (§6.7, §11).
         if (grant is not null) GitLog.Granted(home, frame.Repository, "origin", frame.Session, frame.AcceptedBy == AcceptedBy.Auto ? "standing" : "press");
 

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Daoris.Driver;
 using Xunit.Abstractions;
 
@@ -152,7 +153,7 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         File.AppendAllText(Path.Combine(Work, "a.txt"), "landed\n");
         await Ok(Git(Work, "commit", "-am", "landed"));
         var push = Git(Work, "push", "origin", "main");
-        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+        push.Environment[GitRouting.GrantVariable] = await GrantAsync("refs/heads/main");
         await Ok(push);
         Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), await TipAsync());
 
@@ -178,7 +179,7 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         File.AppendAllText(Path.Combine(Work, "a.txt"), "fixed\n");
         await Ok(Git(Work, "commit", "-am", "fixed"));
         var push = Git(Work, "push", "origin", "work/fix");
-        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+        push.Environment[GitRouting.GrantVariable] = await GrantAsync("refs/heads/work/fix");
         await Ok(push);
         var pushed = await Ok(Git(Bare, "rev-parse", "refs/heads/work/fix"));
         Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), pushed);
@@ -255,7 +256,7 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         var before = await CommittedAsync();
         GitIdentityActs.ReadOnly(Home, identity.Id, on: true);
         var push = Git(Work, "push", "origin", "main");
-        push.Environment[GitRouting.GrantVariable] = GitGrants.Write(Home, Address, DateTimeOffset.UtcNow);
+        push.Environment[GitRouting.GrantVariable] = await GrantAsync("refs/heads/main");
 
         var (exit, _, error) = await RunAsync(push);
 
@@ -285,5 +286,188 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
         Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
         Assert.Equal(before, await TipAsync());
         Assert.False(HostHeardAPush());
+    }
+
+    // ── GITAUTH1g: each update judged by its kind, a grant bound to its refs, a batch refused whole ─────────────
+
+    /// <summary>The machine's git access as the person set it: Write, and Dangerous where given.</summary>
+    private void Access(string write, string? dangerous = null)
+    {
+        var config = DaorisHome.Entry(Home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(config)!);
+        var root = File.Exists(config) ? (JsonObject)JsonNode.Parse(File.ReadAllText(config))! : new JsonObject();
+        var level = new JsonObject { ["write"] = write };
+        if (dangerous is not null) level["dangerous"] = dangerous;
+        root["machineGitAccess"] = level;
+        File.WriteAllText(config, root.ToJsonString());
+    }
+
+    /// <summary>A grant for one ref at <paramref name="commit"/> (the clone's head where none is given), as the landing writes it.</summary>
+    private async Task<string?> GrantAsync(string reference, string? commit = null) =>
+        GitGrants.Write(Home, Address, [new GitGrantRef(reference, commit ?? await Ok(Git(Work, "rev-parse", "HEAD")))], DateTimeOffset.UtcNow);
+
+    /// <summary>What the host's repository holds at a ref; null where it holds none.</summary>
+    private async Task<string?> RefAsync(string reference)
+    {
+        var (exit, output, _) = await RunAsync(Git(Bare, "rev-parse", "--verify", "--quiet", reference));
+        return exit == 0 ? output.Trim() : null;
+    }
+
+    private async Task<string> ErrorOfAsync(params string[] push)
+    {
+        var (exit, _, error) = await RunAsync(Git(Work, push));
+        Assert.NotEqual(0, exit);
+        return error;
+    }
+
+    [Fact]
+    public async Task A_grant_for_one_ref_refuses_another_ref_and_moves_nothing_and_is_not_spent_by_the_refusal()
+    {
+        await ReadyAsync();
+        var before = await CommittedAsync();
+        var grant = await GrantAsync("refs/heads/main");
+        var other = Git(Work, "push", "origin", "main:refs/heads/other");
+        other.Environment[GitRouting.GrantVariable] = grant;
+
+        var (exit, _, error) = await RunAsync(other);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitPushJudge.NotCarriedLine("refs/heads/other"), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+        Assert.Null(await RefAsync("refs/heads/other"));
+
+        var own = Git(Work, "push", "origin", "main");
+        own.Environment[GitRouting.GrantVariable] = grant;
+        await Ok(own);
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), await TipAsync());
+    }
+
+    [Fact]
+    public async Task A_grant_bound_to_another_commit_refuses_the_push_of_this_one()
+    {
+        await ReadyAsync();
+        var before = await CommittedAsync();
+        var push = Git(Work, "push", "origin", "main");
+        push.Environment[GitRouting.GrantVariable] = await GrantAsync("refs/heads/main", commit: before);
+
+        var (exit, _, error) = await RunAsync(push);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitPushJudge.NotCarriedLine("refs/heads/main"), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+    }
+
+    [Fact]
+    public async Task A_grant_taken_by_one_push_is_gone_for_the_next()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        var grant = await GrantAsync("refs/heads/main");
+        var first = Git(Work, "push", "origin", "main");
+        first.Environment[GitRouting.GrantVariable] = grant;
+        await Ok(first);
+        File.AppendAllText(Path.Combine(Work, "a.txt"), "again\n");
+        await Ok(Git(Work, "commit", "-am", "again"));
+        var again = Git(Work, "push", "origin", "main");
+        again.Environment[GitRouting.GrantVariable] = grant;
+
+        var (exit, _, error) = await RunAsync(again);
+
+        Assert.NotEqual(0, exit);
+        Assert.Contains(GitAccessRules.DeniedLine, error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_tag_is_Dangerous_refused_by_deny_and_passed_by_allow()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        await Ok(Git(Work, "tag", "v1"));
+        Access("allow", "deny");
+
+        var error = await ErrorOfAsync("push", "origin", "v1");
+
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Tag), error, StringComparison.Ordinal);
+        Assert.Null(await RefAsync("refs/tags/v1"));
+        Access("allow", "allow");
+        await Ok(Git(Work, "push", "origin", "v1"));
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "v1")), await RefAsync("refs/tags/v1"));
+    }
+
+    [Fact]
+    public async Task A_mirror_push_is_Dangerous_refused_by_deny_and_passed_by_allow()
+    {
+        await ReadyAsync();
+        await CommittedAsync();
+        await Ok(Git(Work, "update-ref", "refs/custom/x", "HEAD"));
+        Access("allow", "deny");
+
+        var error = await ErrorOfAsync("push", "--mirror", "origin");
+
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Mirror), error, StringComparison.Ordinal);
+        Assert.Null(await RefAsync("refs/custom/x"));
+        Access("allow", "allow");
+        await Ok(Git(Work, "push", "--mirror", "origin"));
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), await RefAsync("refs/custom/x"));
+    }
+
+    [Fact]
+    public async Task A_prune_is_Dangerous_refused_by_deny_with_its_plain_update_moving_nothing_and_passed_by_allow()
+    {
+        await ReadyAsync();
+        await Ok(Git(Bare, "branch", "stale", "main"));
+        var before = await CommittedAsync();
+        Access("allow", "deny");
+
+        var error = await ErrorOfAsync("push", "--prune", "origin", "refs/heads/*:refs/heads/*");
+
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Prune), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+        Assert.NotNull(await RefAsync("refs/heads/stale"));
+        Access("allow", "allow");
+        await Ok(Git(Work, "push", "--prune", "origin", "refs/heads/*:refs/heads/*"));
+        Assert.Null(await RefAsync("refs/heads/stale"));
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), await TipAsync());
+    }
+
+    [Fact]
+    public async Task A_force_and_a_delete_are_each_judged_by_their_kind()
+    {
+        await ReadyAsync();
+        await Ok(Git(Bare, "branch", "stale", "main"));
+        await CommittedAsync();
+        Access("allow", "deny");
+        await Ok(Git(Work, "push", "origin", "main"));
+        var pushed = await TipAsync();
+        await Ok(Git(Work, "commit", "--amend", "--allow-empty", "-m", "rewritten"));
+
+        var forced = await ErrorOfAsync("push", "--force", "origin", "main");
+        var deleted = await ErrorOfAsync("push", "origin", "--delete", "stale");
+
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Force), forced, StringComparison.Ordinal);
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Delete), deleted, StringComparison.Ordinal);
+        Assert.Equal(pushed, await TipAsync());
+        Assert.NotNull(await RefAsync("refs/heads/stale"));
+        Access("allow", "allow");
+        await Ok(Git(Work, "push", "--force", "origin", "main"));
+        await Ok(Git(Work, "push", "origin", "--delete", "stale"));
+        Assert.Equal(await Ok(Git(Work, "rev-parse", "HEAD")), await TipAsync());
+        Assert.Null(await RefAsync("refs/heads/stale"));
+    }
+
+    [Fact]
+    public async Task A_batch_with_one_refused_ref_moves_none_and_a_Dangerous_ask_is_not_waited_on()
+    {
+        await ReadyAsync();
+        var before = await CommittedAsync();
+        await Ok(Git(Work, "tag", "v1"));
+        Access("allow", "ask");
+
+        var error = await ErrorOfAsync("push", "origin", "main", "v1");
+
+        Assert.Contains(GitPushUpdates.DeniedLine(GitPushKind.Tag), error, StringComparison.Ordinal);
+        Assert.Equal(before, await TipAsync());
+        Assert.Null(await RefAsync("refs/tags/v1"));
+        Assert.Empty(GitAsks.List(Home, DateTimeOffset.UtcNow));
     }
 }

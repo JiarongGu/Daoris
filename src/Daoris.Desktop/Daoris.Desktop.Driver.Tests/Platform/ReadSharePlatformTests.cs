@@ -417,7 +417,7 @@ public sealed class ReadSharePlatformTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         const string Remote = "git@github.com:org/engine.git";
-        var id = GitGrants.Write(_home, Remote, Now);
+        var id = GitGrants.Write(_home, Remote, [new GitGrantRef("refs/heads/main", new string('a', 40))], Now);
         Assert.NotNull(id);
         var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.GitGrants), id + ".json");
 

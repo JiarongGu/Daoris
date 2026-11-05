@@ -230,6 +230,9 @@ public sealed class GitDoorsTests : IDisposable
         Assert.Equal(GitAccessRules.DeniedLine, error.ToString().Trim());
     }
 
+    /// <summary>The one ref the grants of these cases carry.</summary>
+    private static readonly GitGrantRef Carried = new("refs/heads/main", new string('a', 40));
+
     private string Put(HomeEntry entry, string json)
     {
         var path = DaorisHome.Entry(Home, entry);
@@ -248,7 +251,7 @@ public sealed class GitDoorsTests : IDisposable
         var variables = new Dictionary<string, string?>
         {
             [GitRouting.HomeVariable] = Home, ["PATH"] = "",
-            [GitRouting.GrantVariable] = GitGrants.Write(Home, "git@host:org/engine.git", DateTimeOffset.UtcNow),
+            [GitRouting.GrantVariable] = GitGrants.Write(Home, "git@host:org/engine.git", [Carried], DateTimeOffset.UtcNow),
         };
 
         var code = GitDoors.Ssh(["git@host", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
@@ -330,20 +333,35 @@ public sealed class GitDoorsTests : IDisposable
     }
 
     [Fact]
-    public void The_landings_grant_taken_at_the_door_is_said_and_who_used_it_is_the_landing()
+    public void The_landings_grant_is_said_when_a_push_it_carries_takes_it_and_who_used_it_is_the_landing()
     {
-        var grant = GitGrants.Write(Home, "git@github.com:org/engine.git", DateTimeOffset.UtcNow)!;
+        var grant = GitGrants.Write(Home, "git@github.com:org/engine.git", [Carried], DateTimeOffset.UtcNow)!;
         var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "", [GitRouting.GrantVariable] = grant };
+        var write = new GitVerdict(true, "granted", null);
+        var updates = new[] { new GitPushUpdate(new string('1', 40), Carried.New, Carried.Ref) };
 
-        // Allowed by the grant; with no git identity serving the host the act is then not reached, which is said too.
-        var error = new StringWriter();
-        GitDoors.Ssh(["git@github.com", "git-receive-pack 'org/engine.git'"], name => variables.GetValueOrDefault(name), error, _root);
+        // A grant stands for the door's first judgement but is taken only by the push it carries, once its commands are read.
+        var line = GitPushDoor.Refusal(Home, write, updates, (_, _) => true, "github.com/org/engine", name => variables.GetValueOrDefault(name), null, "github.com", _root);
 
-        Assert.Contains("has no git identity", error.ToString(), StringComparison.Ordinal);
+        Assert.Null(line);
         var used = Assert.Single(Lines("git.grant.used"));
         Assert.Equal(("landing", "write", "github.com"), (Field(used, "door"), Field(used, "class"), Field(used, "host")));
-        var refused = Assert.Single(Lines("git.refused"));
-        Assert.Equal(("no-identity", "landing"), (Field(refused, "code"), Field(refused, "door")));
+        Assert.Empty(Lines("git.refused"));
+        Assert.Null(GitGrants.Read(Home, grant, "github.com/org/engine", DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public void A_push_the_grant_does_not_carry_is_refused_in_a_coded_line_and_leaves_the_grant_for_its_own_push()
+    {
+        var grant = GitGrants.Write(Home, "git@github.com:org/engine.git", [Carried], DateTimeOffset.UtcNow)!;
+        var variables = new Dictionary<string, string?> { [GitRouting.HomeVariable] = Home, ["PATH"] = "", [GitRouting.GrantVariable] = grant };
+        var other = new[] { new GitPushUpdate(new string('1', 40), Carried.New, "refs/heads/other") };
+
+        var line = GitPushDoor.Refusal(Home, new(true, "granted", null), other, (_, _) => true, "github.com/org/engine", name => variables.GetValueOrDefault(name), null, "github.com", _root);
+
+        Assert.Equal(GitPushJudge.NotCarriedLine("refs/heads/other"), line);
+        Assert.Equal("grant-bound", Field(Assert.Single(Lines("git.refused")), "code"));
+        Assert.NotNull(GitGrants.Read(Home, grant, "github.com/org/engine", DateTimeOffset.UtcNow));
     }
 
     [Fact]
@@ -445,16 +463,16 @@ public sealed class GitDoorsTests : IDisposable
     public void A_grant_is_taken_once_for_its_address_within_its_bound()
     {
         var now = DateTimeOffset.UtcNow;
-        var id = GitGrants.Write(Home, "https://github.com/org/engine.git", now)!;
+        var id = GitGrants.Write(Home, "https://github.com/org/engine.git", [Carried], now)!;
 
         Assert.False(GitGrants.Take(Home, id, "github.com/org/other", now));
         Assert.True(GitGrants.Take(Home, id, "github.com/org/engine", now));
         Assert.False(GitGrants.Take(Home, id, "github.com/org/engine", now));
 
-        var late = GitGrants.Write(Home, "git@github.com:org/engine.git", now)!;
+        var late = GitGrants.Write(Home, "git@github.com:org/engine.git", [Carried], now)!;
         Assert.False(GitGrants.Take(Home, late, "github.com/org/engine", now + GitGrants.Bound + TimeSpan.FromSeconds(1)));
 
-        var dropped = GitGrants.Write(Home, "git@github.com:org/engine.git", now)!;
+        var dropped = GitGrants.Write(Home, "git@github.com:org/engine.git", [Carried], now)!;
         GitGrants.Drop(Home, dropped);
         Assert.False(GitGrants.Take(Home, dropped, "github.com/org/engine", now));
     }

@@ -29,7 +29,7 @@ public sealed class DriverModuleGitAccessTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task A_class_or_value_it_does_not_have_and_dangerous_are_refused_and_nothing_is_written()
+    public async Task A_class_or_value_it_does_not_have_and_dangerous_asked_are_refused_and_nothing_is_written()
     {
         var module = Module();
         await AnswerAsync(module, "SET_GIT_ACCESS", new { repository = "engine", access = new { write = "ask" } });
@@ -37,12 +37,12 @@ public sealed class DriverModuleGitAccessTests : DriverModuleBridge
 
         var cls = await RefusalAsync(module, "SET_GIT_ACCESS", new { repository = "engine", access = new { push = "ask" } });
         var value = await RefusalAsync(module, "SET_GIT_ACCESS", new { repository = "engine", access = new { read = "sometimes" } });
-        var dangerous = await RefusalAsync(module, "SET_GIT_ACCESS", new { repository = "engine", access = new { dangerous = "allow" } });
+        var dangerous = await RefusalAsync(module, "SET_GIT_ACCESS", new { repository = "engine", access = new { dangerous = "ask" } });
         var level = await RefusalAsync(module, "SET_GIT_ACCESS", new { oneValue = "ask" });
 
         Assert.Contains("not a class of git access", cls);
         Assert.Contains("not `sometimes`", value);
-        Assert.Contains("dangerous-unavailable", dangerous);
+        Assert.Contains("dangerous-no-ask", dangerous);
         Assert.Contains("name exactly one", level);
         Assert.Equal(before, File.ReadAllText(DriverConfigPath));
     }
