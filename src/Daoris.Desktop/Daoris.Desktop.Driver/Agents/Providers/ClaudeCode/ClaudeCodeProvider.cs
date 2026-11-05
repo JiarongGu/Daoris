@@ -95,7 +95,7 @@ internal static class ClaudeCodeProvider
             Known<TablesPart>.Declared(tables, Evidence),
             Known<UsagePart>.Declared(usage, Evidence),
             Known<LentPart>.Declared(new LentPart(pool, tables with { ErrorWords = null }, usage), Evidence),
-            Known<PortRef>.Absent, Known<IChildVocabulary>.Absent,
+            Known<ISettingsFile>.Declared(new ClaudeSettingsFile(), Evidence), Known<IChildVocabulary>.Absent,
             Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence),
             Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
             Known<IConversationHome>.Absent,

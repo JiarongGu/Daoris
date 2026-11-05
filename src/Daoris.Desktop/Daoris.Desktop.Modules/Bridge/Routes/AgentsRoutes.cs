@@ -152,6 +152,9 @@ public sealed class AgentsRoutes(DriverContext context)
                     SettingsChoices = settingsFile is null
                         ? null
                         : new { AgentSettings.Models, AgentSettings.Efforts },
+                    // What a session on this door may carry (the agent-provider design, row n): the scope the page's actors offer, apart
+                    // from the account's settings above, with `max` only where a session may carry it.
+                    SessionChoices = SessionChoices.Of(harnesses.Home, harnesses.Adapters.Registry, report.Adapter),
                     // Whether this agent takes an API key at all — the control is absent where
                     // it does not, by the rule `Pinnable` and `SignsIn` follow.
                     TakesKey = accountActs.TakesKey,

@@ -93,7 +93,7 @@ internal static class ProviderRegistration
         return new Provider(
             id, new ProviderIdentity(null, null, null, false, []), [], Known<ProgramFacts>.Absent,
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(agent), null, PoolFacts.None), "a name a disabled plugin declares"),
-            Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Absent(), Known<IChildVocabulary>.Absent,
+            Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent, Unavailable: true);
     }
@@ -148,7 +148,7 @@ internal static class ProviderRegistration
             usage.Question is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(usage, evidence),
             lent is null ? Known<LentPart>.Absent : Known<LentPart>.Declared(lent, evidence),
             // A plugin's adapter is read for its rules and skills as it declares them (AdapterParts), never through its provider.
-            Absent(), Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent,
+            Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }

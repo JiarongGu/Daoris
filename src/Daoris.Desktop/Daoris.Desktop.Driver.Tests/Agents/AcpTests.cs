@@ -2880,8 +2880,7 @@ public sealed class AcpTests
 
     /// <summary>
     /// 🔴 A model the agent refuses at the set, where the start re-asks, ends the open before any prompt: the refusal is the re-ask's,
-    /// coded <c>not-offered</c> for a value its list did not name, the session closed, and the outcome carries it, so the record ends
-    /// <c>choice-not-offered</c>. The opening's list is told as the agent's offers first.
+    /// coded <c>not-offered</c> for a value its list lacked, the session closed, the record ending <c>choice-not-offered</c>.
     /// </summary>
     [Fact]
     public async Task A_model_refused_at_the_open_with_nothing_else_ends_it_before_any_prompt()
@@ -2892,7 +2891,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("mythos", null),
-            ModelRefused = refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); },
+            ModelRefused = ChoiceReask.Of(refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); }),
             OffersRead = options => offered = options,
         };
 
@@ -2920,7 +2919,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null),
+            ModelRefused = ChoiceReask.Of(refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null)),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
@@ -2945,7 +2944,7 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
         {
             Carry = Entry("opus", null),
-            ModelRefused = _ => Task.FromResult<ActorAsked?>(Entry(null, "low")),
+            ModelRefused = ChoiceReask.Of(_ => Task.FromResult<ActorAsked?>(Entry(null, "low"))),
         };
 
         var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);

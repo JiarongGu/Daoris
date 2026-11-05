@@ -410,7 +410,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 drivesBrowser: drivesBrowser,
                 // A resumed run is on the account it parked on, so what it says about that account's windows is kept
                 // as any run's is (TOOL6c with ANSWER1a).
-                said: _driver.Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
                 resume: resume,
                 goesOnAs: selection,
                 // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its

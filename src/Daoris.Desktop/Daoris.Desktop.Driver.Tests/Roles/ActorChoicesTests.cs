@@ -152,4 +152,34 @@ public sealed class ActorChoicesTests
         Assert.Throws<DriverException>(() => ActorChoices.With(config, "build", []));
         Assert.Empty(config.Actors);
     }
+
+    /// <summary>
+    /// s-iv: the page's actors offer a door's session scope. Claude Code's native door carries `max`, its protocol door and the account's
+    /// settings never do, and Codex, which states no settings file, offers only what its open has listed.
+    /// </summary>
+    [Fact]
+    public void The_actors_offer_each_door_s_session_efforts_with_max_only_where_a_session_may_carry_it()
+    {
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "session-choices", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var registry = ProviderRegistry.Of(AdapterSet.Built());
+
+            var native = SessionChoices.Of(home, registry, "claude-code");
+            var protocol = SessionChoices.Of(home, registry, "claude-code-acp");
+
+            Assert.Equal([.. AgentSettings.Efforts, "max"], native?.Efforts);
+            Assert.Equal(AgentSettings.Efforts, protocol?.Efforts);
+            Assert.DoesNotContain("max", AgentSettings.Efforts);
+            Assert.Null(SessionChoices.Of(home, registry, "codex-acp"));
+
+            Assert.Null(AgentOffers.Offered(home, "codex-acp", "1.0.0", "acct", ["gpt-5"], ["low", "high"], DateTimeOffset.UtcNow));
+            Assert.Equal(["low", "high"], SessionChoices.Of(home, registry, "codex-acp")?.Efforts);
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
 }

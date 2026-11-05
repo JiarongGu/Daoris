@@ -58,9 +58,9 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
     public TransportProtocol For(
         TransportRun run, string sessionId, string cwd, string prompt, string? posture,
         IReadOnlyDictionary<string, string>? scope, object? meta, IReadOnlyList<AcpMcpServer> servers, DrivenInbox? inbox,
-        Action<JsonElement>? said, ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
+        ResumeAsk? resume, string? keepAs, Func<CancellationToken, Task<bool>>? waitsOnBackground, string? noConnector,
         AcpEnding? ending, Func<string, string, string>? unoffered, Func<bool>? setupChanged, ActorAsked? asked,
-        Action<ActorAsked>? carried, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
+        Action<ActorAsked>? carried, IChoiceReask? modelRefused, Action<IReadOnlyList<AcpConfigOption>>? offerRead,
         TransientRetry? retry, Func<CancellationToken, Task<TurnCarry>>? carriesOn, Action? written, bool typedFailures,
         Action<IReadOnlyList<ChatMessage>> handedBack)
     {
@@ -136,8 +136,6 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
                 wiring.Watch.OwnWork(sessionId, () => session.WaitsOnOwnWork, () => [.. session.BackgroundRunning.Select(task => task.Name)]);
                 if (retry is not null) wiring.Watch.Transient(sessionId, () => session.WaitsOnTransient);
 
-                // What it says about its account's windows, kept as it says it.
-                if (said is not null) session.LimitsSaid += said;
                 using var stops = context.Output is null ? null : context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
 
                 // Under its run's light checks, a call or a background task past its bound is told to it once, as Daoris's urgent word,

@@ -314,7 +314,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 transientWanted: async retryCt =>
                     !_context.Processes.WasStopRequested(sessionId)
                     && await service.FindAskAsync(ask.Id, retryCt).ConfigureAwait(false) is { } now && now.Quests.Count == ask.Quests.Count,
-                said: _driver.Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter, selection, sessionId),
                 stopMade: stop => stoppedFirst = stop,
                 // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
                 // re-asked within this start, the order read once: a later entry of the same agent on the same account is set on this

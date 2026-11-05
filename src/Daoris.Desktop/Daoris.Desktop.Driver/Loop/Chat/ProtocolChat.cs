@@ -100,7 +100,7 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     /// Asked where its agent refused <see cref="Asked"/>'s model at the open, before any prompt: a later entry to set on this same session,
     /// or null, and the open ends <c>choice-not-offered</c>. Null reads the model as not carried.
     /// </summary>
-    public Func<ModelRefusal, Task<ActorAsked?>>? ModelRefused { get; init; }
+    public IChoiceReask? ModelRefused { get; init; }
 
     /// <summary>The refusal that ended its open before any prompt, or null.</summary>
     public ModelRefusal? NotOffered { get; set; }
@@ -448,6 +448,12 @@ internal sealed class ProtocolChat : ITurnedChat, IEpisodeWords
             _line("— the turn ended: the session was stopped");
             _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
             return true;
+        }
+
+        // Whatever it was, a turn's failure is one reading on the run's sink, as the driven door's is.
+        if (_open.Task.IsCompletedSuccessfully && _open.Task.Result is { } failedRun)
+        {
+            failedRun.Read(new WireReading.Failed(DoorFailures.OfProtocol(error, DoorWhere.Prompt)));
         }
 
         if (error is AcpTransientExhausted exhausted && Retry is { } retry)

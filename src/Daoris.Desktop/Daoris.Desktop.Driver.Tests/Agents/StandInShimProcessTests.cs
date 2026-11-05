@@ -165,7 +165,7 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private static Provider Provider() => new(
         new ProviderId("resuming"), new ProviderIdentity(null, null, null, false, []), [ResumingDoor()], Known<ProgramFacts>.Absent,
-        Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
+        Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<ISettingsFile>.Absent,
         Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
         Known<VocabularyPart>.Absent);
 

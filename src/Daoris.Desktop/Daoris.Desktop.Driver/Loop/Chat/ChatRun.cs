@@ -359,7 +359,7 @@ internal sealed class ChatRun(
                 OffersRead = offers => options.KeepOffers(agent.Name, selection, sessionId, offers),
                 Pending = pending,
                 Shown = said => Context.TakeShown(sessionId, said),
-                ModelRefused = pending is null ? null : async refusal =>
+                ModelRefused = ChoiceReask.Of(pending is null ? null : async refusal =>
                 {
                     // Kept as the account's reading first, then the walk asked again as if it had been known.
                     var later = await wiring.Of<ChatReplacement>().ReaskAsync(pending, sessionId, agent, selection, config, refusal).ConfigureAwait(false);
@@ -367,7 +367,7 @@ internal sealed class ChatRun(
                     choice = later.From;
                     await service.TryKeepActorAsync(sessionId, null, choice, later.Asked, ct: CancellationToken.None).ConfigureAwait(false);
                     return later.Asked;
-                },
+                }),
             };
             chat.Turns.Closing = () => Context.Closing;
             chat.Turns.Unsent = count => closing.Unsent(sessionId, count);
@@ -445,12 +445,16 @@ internal sealed class ChatRun(
             {
                 if (goOn.Named()) _ = goOnDoor.WentOnAsync(sessionId, goOn, agent.Name);
             },
-            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, offered, agent, Said),
+            Protocol = chat is null ? null : held.Of(run, chat, sessionId, workTree, place.Posture ?? agent.Posture, meta, offered, agent),
         });
 
         var watch = watching.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
+            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog,
+            // The native door's failed result read for the account's limit, cooling it as a protocol conversation's refused turn does.
+            new NativeLimits(
+                failure => agent.Read(harnesses.Adapters, failure, clock().GetUtcNow(), harnesses.Zone),
+                (failure, error) => accounts.Limited(sessionId, agent, selection.Profile, failure.Words ?? "", config.CoolOff, error.Limit) is not null));
         Context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => Context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);

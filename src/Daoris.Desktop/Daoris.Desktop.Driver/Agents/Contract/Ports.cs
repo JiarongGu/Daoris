@@ -107,6 +107,22 @@ public interface IChildVocabulary
     bool SaysEnd { get; }
 }
 
+/// <summary>
+/// An agent's settings file for an account's default model and effort (the design §2.3, row n): the model names its program takes as aliases
+/// and the efforts a default in the file may hold, which are not what a session may carry (<see cref="DoorOffers"/>' two scopes).
+/// </summary>
+public interface ISettingsFile
+{
+    /// <summary>The aliases the program accepts, offered before a free field for a full model id.</summary>
+    IReadOnlyList<string> Models { get; }
+
+    /// <summary>The efforts a default may hold; one a session alone may carry is not among them.</summary>
+    IReadOnlyList<string> Efforts { get; }
+
+    /// <summary>The efforts only a session on the program's native door may carry, never a file's default (<c>max</c> for Claude Code).</summary>
+    IReadOnlyList<string> SessionOnly { get; }
+}
+
 /// <summary>What a conversation keeps under an account's home, by the agent's version (the design §2.3).</summary>
 public interface IConversationHome
 {

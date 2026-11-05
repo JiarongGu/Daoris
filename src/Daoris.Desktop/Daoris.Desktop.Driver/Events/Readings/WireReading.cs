@@ -41,6 +41,15 @@ public abstract record WireReading
     /// <summary>Whether a resume's history replayed it rather than the run saying it now.</summary>
     public bool Replayed { get; init; }
 
+    /// <summary>The session the run says it for; null before its run stamped it.</summary>
+    public string? Run { get; init; }
+
+    /// <summary>The process of the run that said it: 1 for its first, each retry's or go-on's the next; 0 before its run stamped it.</summary>
+    public int Generation { get; init; }
+
+    /// <summary>Its place in its run's order, from 1; 0 before its run stamped it.</summary>
+    public long Sequence { get; init; }
+
     /// <summary>An event the session's record keeps, of today's kinds: the person's words, the agent's, a tool, a turn, usage, a note.</summary>
     public sealed record Said(SessionEvent Event) : WireReading;
 
