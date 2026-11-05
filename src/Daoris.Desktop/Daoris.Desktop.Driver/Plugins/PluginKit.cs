@@ -187,9 +187,9 @@ public static class PluginKit
             Sample(HookFrames.State(SampleState)),
             """
               // A query, only where git cannot tell: the pull request from frame.branch (or at frame.pullRequest),
-              // asked of your platform in frame.root. Nothing is removed until git confirms a completed answer, so
-              // `unknown` is an honest answer until this asks. A read is
-              //   run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json'], frame.root)
+              // asked of your platform's API. Nothing is removed until git confirms a completed answer, so
+              // `unknown` is an honest answer until this asks. A read is one call with the token Daoris hands this
+              // process, `fetch(url, { headers: { Authorization: `Bearer ${process.env.DAORIS_HOST_TOKEN}` } })
               'work/state': (frame) => ({
                 state: 'unknown',
                 pullRequest: null,

@@ -291,7 +291,9 @@ catalogues (`i18n:check`).
   unknown) and the person's `pre-push` hook have no proof of their own yet.
 - **ONEWAY1r:** the doors' own recovery refs and undo records (`RecoveryRetention`, `RecoveryDropping`) give way to the journal's,
   their reader kept until the last record from before ONEWAY1r passes its retention; the git page lists no journal of deletes yet.
-- **G9:** the pull-request plugins' own `git push` (in the plugins repository) leaves for the push act.
+- **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git. Left: the
+  loop gives `HookSet` no resolver for the token yet (which place's origin a shared plugin process serves), and `gh` and `az` are still
+  declared tools of the product (`Tools.Declared`, `resources.json`, the CLI's `tools.ts`, the tools page and their tests).
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).

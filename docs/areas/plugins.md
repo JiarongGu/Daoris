@@ -75,6 +75,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 17. Offers are `app/plugin-offers/` in the install, laid out each publish from `examples/plugins/`: the GitHub and
     Azure DevOps pull-request plugins and `in-app-browser`. None installs without a press. The driver looks beside the
     application first, then beside the home. (from D103)
+17a. The two pull-request plugins perform one step, `pull-request`, on `work/perform` and answer `work/state`, through their
+    service's REST API with `DAORIS_HOST_TOKEN`: the API token of the identity serving origin (`PluginHostToken`), set by `HookProcess`
+    around the one start `HookSet` makes for it and removed from every other environment. A plugin whose hand is refused (no identity
+    serves origin, the identity is read only, Write denies, no API token) is not started. They run no git, `gh` or `az`, and declare
+    node alone. The hand is read from a place's origin by a resolver the host gives `HookSet`; the loop gives none yet. (from D241)
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files
     matching the record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`,
     unjudged. Newer: the person's, said nothing. (from D119)
@@ -146,7 +151,6 @@ example's `node --test`.
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
 - EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris events relay`.
-- GITAUTH1b: the pull-request plugins carry today's credentials through the doors.
 - No row: D120's workshop (`<home>/plugins/.workshop/`, `plugin-sources.json`, `daoris plugin workshop`, *Send to a repository…*).
 - No row: D120's NuGet source (find, show, install by id, update from a source, *Available*, another publisher's installing off, pinned `plugin-offers.json`).
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
