@@ -31,7 +31,7 @@ const CHANNEL: Channel = {
 const meta = {
   title: 'Asks/TeammateAskPage',
   component: TeammateAskPage,
-  args: { ask: ASK, channel: CHANNEL },
+  args: { ask: ASK, channel: CHANNEL, onPost: (_post, answered) => answered.done() },
   // The main area's height, for its scroll box; its width is the helper's.
   decorators: [(Story) => <div className="flex h-[40rem] border border-line bg-page"><Story /></div>, storyWidths.wide],
 } satisfies Meta<typeof TeammateAskPage>;

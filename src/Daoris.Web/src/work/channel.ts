@@ -198,10 +198,25 @@ export function lastWords(channel: Channel | null | undefined, only: { entry: st
   return forEntry(channel.items, only).filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
 }
 
-/** The newest messages of a whole channel, oldest first: the ask page's own read (COWORKVIEW1c, COWORKVIEW1d). */
-export function lastMessages(channel: Channel | null | undefined, count = 3): ChannelItem[] {
+/** The newest messages of a whole channel, oldest first: the ask page's own read (COWORKVIEW1c, COWORKVIEW1d), and a line's own. */
+export function lastMessages(channel: { items: readonly ChannelItem[] } | null | undefined, count = 3): ChannelItem[] {
   if (!channel) return [];
   return channel.items.filter((item) => item.kind === 'message').sort((a, b) => a.at.localeCompare(b.at)).slice(-count);
+}
+
+/**
+ * A line's own channel as the person reads it (COMMS1k, the comms design §4.4): the channel of a line of work on no ask held here (a
+ * chat's, a quest session's, a teammate's ask's), every message on it oldest first, each to one part naming it (`part`) with what it
+ * reached in that part's line (`receipt`). It has no mark and no lines of Daoris's.
+ */
+export type LineChannel = { origin: string; items: ChannelItem[] };
+
+/** The shell's `CHANNEL_LINE` answer as a line's channel, or null where the line has none of its own or the shell answered another shape. */
+export function lineChannelOf(raw: unknown): LineChannel | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const { origin, items } = raw as Record<string, unknown>;
+  if (typeof origin !== 'string' || !Array.isArray(items)) return null;
+  return { origin, items: items.filter(isItem) };
 }
 
 /** The message a message answers, or null where it answers none or the channel does not hold it. */
