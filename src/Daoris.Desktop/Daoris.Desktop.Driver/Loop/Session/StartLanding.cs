@@ -18,7 +18,7 @@ internal static class StartLanding
         if (quest.Parent is not { Length: > 0 }) return own;
         try
         {
-            var chain = await LandingRules.SubjectAsync(session, quest.Id, find, opening: null).ConfigureAwait(false);
+            var chain = await BranchPatterns.SubjectAsync(session, quest.Id, find, opening: null).ConfigureAwait(false);
             // A service that no longer answers for the step itself names it with no title: its own is truer.
             return chain.Title is null ? own : chain;
         }

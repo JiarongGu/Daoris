@@ -224,7 +224,7 @@ public static class WorkflowNamed
         NamedStepReading.ReadShape(value, number, prior);
 
     public static (IReadOnlyList<NamedStep>? Steps, string? Problem) GateSteps(
-        NodeGraph graph, int number, LandingRule landing, IReadOnlyDictionary<string, string>? bound = null) =>
+        NodeGraph graph, int number, Landing landing, IReadOnlyDictionary<string, string>? bound = null) =>
         NamedStepReading.GateSteps(graph, number, landing, bound);
 
     internal static (object? Value, string? Problem) ReadField(WorkflowKindField field, JsonElement? raw) => NamedStepReading.ReadField(field, raw);

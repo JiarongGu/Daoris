@@ -118,7 +118,6 @@ public static class StewardStages
 public static class StewardWhy
 {
     public const string Unregistered = "unregistered";
-    public const string LandingPushes = "landing-pushes";
     public const string NoTree = "no-tree";
     public const string NotOwn = "not-own";
     public const string RunningHere = "running-here";
@@ -138,11 +137,11 @@ public static class StewardActRows
     /// <summary>Every row, in §3.1's order.</summary>
     public static IReadOnlyList<IRoleAct> All { get; } =
     [
-        new Setting(StewardActNames.Drive, "drivable", true, pushes: true, noTree: true),
-        new Setting(StewardActNames.Undrive, "drivable", false, pushes: false, noTree: false),
-        new Setting(StewardActNames.Trees, "ownTree", true, pushes: true, noTree: false),
-        new Setting(StewardActNames.Hold, "held", true, pushes: false, noTree: false),
-        new Setting(StewardActNames.Resume, "held", false, pushes: false, noTree: false),
+        new Setting(StewardActNames.Drive, "drivable", true, noTree: true),
+        new Setting(StewardActNames.Undrive, "drivable", false, noTree: false),
+        new Setting(StewardActNames.Trees, "ownTree", true, noTree: false),
+        new Setting(StewardActNames.Hold, "held", true, noTree: false),
+        new Setting(StewardActNames.Resume, "held", false, noTree: false),
         new StopAct(),
         new FinishAct(),
         new RetryAct(),
@@ -171,11 +170,6 @@ public static class StewardActRows
     internal static string Text(JsonElement form, string name) =>
         form.EnumerateObject().First(each => string.Equals(each.Name, name, StringComparison.OrdinalIgnoreCase)).Value.GetString()!;
 
-    /// <summary>Whether the effective landing of <paramref name="repository"/> is a plugin that pushes (§3.1 rows 1 and 3).</summary>
-    internal static async Task<bool> PushesAsync(IStewardWorld world, DriverConfig config, string repository, CancellationToken ct) =>
-        LandingRules.Line(config, repository, await world.WorkspaceOfAsync(repository, ct).ConfigureAwait(false)).Rule
-            is { Form: LandingForm.Branch, Plugin: not null };
-
     /// <summary>A quest's own session (§3.1): driven, with a quest, never a conversation's, an intake's, a teammate's, a helper's or a partner's.</summary>
     internal static bool QuestSession(PriorSession record) =>
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false, Serves: null, Piece: null };
@@ -183,7 +177,7 @@ public static class StewardActRows
     private static IStewardWorld WorldOf(RoleActRun run) => run.World ?? throw new InvalidOperationException("no world was handed to the act.");
 
     /// <summary>Rows 1 to 5: a repository's standing choice, <c>{ repository, &lt;field&gt;: &lt;value&gt; }</c>.</summary>
-    private sealed class Setting(string name, string field, bool value, bool pushes, bool noTree) : IRoleAct
+    private sealed class Setting(string name, string field, bool value, bool noTree) : IRoleAct
     {
         public string Name => name;
 
@@ -201,7 +195,6 @@ public static class StewardActRows
             var repository = Target(run.Form);
             if (!await world.RegisteredAsync(repository, ct).ConfigureAwait(false)) return StewardWhy.Unregistered;
             var config = world.Config();
-            if (pushes && await PushesAsync(world, config, repository, ct).ConfigureAwait(false)) return StewardWhy.LandingPushes;
             // Row 1: trees are opt-in, so a repository whose sessions open none works in the owner's checkout (D51): the owner's to drive.
             if (noTree && !config.OpensOwnTree(repository)) return StewardWhy.NoTree;
             // Row 5: only a hold the steward made this run that nothing has touched since (D201's rule, its memory the role's).

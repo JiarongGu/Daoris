@@ -78,8 +78,8 @@ internal static class DriverConfigReader
             // A default that is no workflow's id is not read (WORKFLOWCLEAN1 1a).
             DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
                 && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,
-            LinePolicies = LandingKey.PolicyMap(root, "linePolicies"),
-            WorkspaceLinePolicies = LandingKey.PolicyMap(root, "workspaceLinePolicies"),
+            LinePolicies = LinePolicyKey.PolicyMap(root, "linePolicies"),
+            WorkspaceLinePolicies = LinePolicyKey.PolicyMap(root, "workspaceLinePolicies"),
             // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
             IntegrationGates = IntegrationGatesKey.Map(root),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.

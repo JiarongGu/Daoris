@@ -359,7 +359,7 @@ public static class WorkflowGraphRuns
             if (value is not null && settings.All(setting => setting.Name != name)) settings.Add(new WorkflowSetting(name, value));
         }
 
-        var rule = process?.Landing.Rule;
+        var rule = process?.Landing;
         // LANDNODE1c2: a `land` waits on no press of its own; the person's Accept is its `review`'s.
         if (node.Kind == NodeKinds.Land) Default("accept", "automatic");
         if (NodeKinds.IsLanding(node.Kind))

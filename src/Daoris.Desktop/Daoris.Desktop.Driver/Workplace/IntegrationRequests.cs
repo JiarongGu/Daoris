@@ -33,9 +33,9 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     public async Task<IntegrationAdmission> AdmitAsync(IntegrationAsk ask, CancellationToken ct = default)
     {
         var settings = config();
-        var landing = LandingRules.Line(settings, ask.Repository, ask.Workspace);
-        if (ask.Route == IntegrationRoutes.Node || ask.Requester.Door == IntegrationDoors.Node) return await NodeAsync(ask, landing, settings, ct).ConfigureAwait(false);
-        if (landing.Rule is not { Form: LandingForm.Branch, Integrate: { } integrate })
+        var line = settings.LinePolicyOf(ask.Repository, ask.Workspace);
+        if (ask.Route == IntegrationRoutes.Node || ask.Requester.Door == IntegrationDoors.Node) return await NodeAsync(ask, line, settings, ct).ConfigureAwait(false);
+        if (line is not { } integrate)
         {
             return Refuse(IntegrationRefusals.NoIntegrate, NoIntegrateSaid(ask.Repository));
         }
@@ -45,8 +45,8 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         if (DoorRefusal(ask, policy) is { } closed) return Refuse(IntegrationRefusals.Door, closed);
         return ask.Route switch
         {
-            IntegrationRoutes.Recorded => await RecordedAsync(ask, landing, _ => (policy, null), IntegrationRoutes.Recorded, settings, ct).ConfigureAwait(false),
-            IntegrationRoutes.Records => await RecordsAsync(ask, landing, policy, settings, ct).ConfigureAwait(false),
+            IntegrationRoutes.Recorded => await RecordedAsync(ask, _ => (policy, null), IntegrationRoutes.Recorded, settings, ct).ConfigureAwait(false),
+            IntegrationRoutes.Records => await RecordsAsync(ask, policy, settings, ct).ConfigureAwait(false),
             _ => Refuse(IntegrationRefusals.Door, $"`{ask.Route}` is no route this door knows: nothing was requested."),
         };
     }
@@ -67,16 +67,15 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// </param>
     public IntegrationAdmission Press(string repository, string? workspace, string branch, string tip, string line, bool delivered = false)
     {
-        var landing = delivered ? null : LandingRules.Line(config(), repository, workspace);
-        if (landing is { Rule.Form: not LandingForm.Merge })
+        if (!delivered && config().LinePolicyOf(repository, workspace) is not null)
         {
-            return Refuse(IntegrationRefusals.Door, $"`{repository}`'s landing rule is no merge rule, so its press is not carried as one: nothing was requested.");
+            return Refuse(IntegrationRefusals.Door, $"`{repository}`'s line carries a policy, so its press is not carried as a merge: nothing was requested.");
         }
 
         var request = new IntegrationRequest(NewId(), repository, RemoteTarget.Workspace(workspace), branch, tip, IntegrationRoutes.Merge, line,
             IntegrationRequester.Press, Legacy, DateTimeOffset.UtcNow)
         {
-            RuleSource = landing?.Source,
+            RuleSource = delivered ? null : LandingSource.Default,
             Epoch = IntegrationEpoch.Of(Legacy, null),
         };
         // An earlier press of the same commit still open (its run held) is this press's request: the press goes on with it.
@@ -90,14 +89,14 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     private static string NoIntegrateSaid(string repository) =>
-        $"`{repository}`'s landing rule carries no `integrate`, so nothing was requested: its landed branches stay the result, as always.";
+        $"`{repository}`'s line carries no policy, so nothing was requested: its landed branches stay the result, as always.";
 
     /// <summary>
     /// The unit's own landing (INTEGRATE1n part n2; §17.4, F40, C30): the <c>integrate</c> node's start, by Daoris, for the unit and the tip it
     /// froze. The landing's record decides whether its acceptance was the request, by the provenance it keeps for that tip and who accepted it;
     /// then it is admitted as a recorded landing is, on its record, exact tip, gate proof and no double.
     /// </summary>
-    private async Task<IntegrationAdmission> NodeAsync(IntegrationAsk ask, Landing landing, DriverConfig settings, CancellationToken ct)
+    private async Task<IntegrationAdmission> NodeAsync(IntegrationAsk ask, LandingIntegrate? line, DriverConfig settings, CancellationToken ct)
     {
         if (ask.Route != IntegrationRoutes.Node)
         {
@@ -114,7 +113,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             return Refuse(IntegrationRefusals.Door, "a node's ask names its unit and the tip it froze, and this one does not: nothing was requested.");
         }
 
-        return await RecordedAsync(ask, landing, entry => NodeJudgement(ask, entry, landing), IntegrationRoutes.Node, settings, ct).ConfigureAwait(false);
+        return await RecordedAsync(ask, entry => NodeJudgement(ask, entry, line), IntegrationRoutes.Node, settings, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -122,7 +121,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// keeps and who accepted it, and the policy the request then freezes: the request the acceptance stood under (the node's own where the
     /// version's step asks), the rest the rule's. Nothing is read from git, and a record that says neither is no request.
     /// </summary>
-    internal static (LandingIntegrate? Policy, IntegrationAdmission? Refused) NodeJudgement(IntegrationAsk ask, LandedBranch entry, Landing landing)
+    internal static (LandingIntegrate? Policy, IntegrationAdmission? Refused) NodeJudgement(IntegrationAsk ask, LandedBranch entry, LandingIntegrate? line)
     {
         var (by, provenance) = entry.Advances.Count > 0 ? (entry.Advances[^1].AcceptedBy, entry.Advances[^1].Integrate) : (entry.AcceptedBy, entry.Integrate);
         if (by is not (AcceptedBy.Person or AcceptedBy.Auto) || provenance is null || !LandingIntegrate.Requests.Contains(provenance.Request))
@@ -132,8 +131,8 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
                 + "it waits for the owner's card, and under `request: done` for the come-up sweep. Nothing was requested."));
         }
 
-        // A rule's step needs the rule to carry it still; a version's own step is the unit's process whatever the rule says (§4.1).
-        var rule = landing.Rule is { Form: LandingForm.Branch, Integrate: { } integrate } ? integrate : null;
+        // A step outside a version needs the line to carry a policy still; a version's own step is the unit's process whatever the line says.
+        var rule = line;
         if (provenance.Source != LandedIntegrate.Version && rule is null) return (null, Refuse(IntegrationRefusals.NoIntegrate, NoIntegrateSaid(ask.Repository)));
         var request = provenance.Request;
         if (request == LandingIntegrate.Steward)
@@ -163,7 +162,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     public async Task<IReadOnlyList<IntegrationAdmission>> SweepAsync(string repository, string? workspace, string root, CancellationToken ct = default)
     {
         var settings = config();
-        if (LandingRules.Line(settings, repository, workspace).Rule is not { Form: LandingForm.Branch, Integrate: not null }
+        if (settings.LinePolicyOf(repository, workspace) is null
             || WorkplaceWorkflows.Current.IntegrateOf(home, settings, repository, workspace).Request != LandingIntegrate.Done)
         {
             return [];
@@ -217,7 +216,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// request open for it, nor the line holding it.
     /// </summary>
     private async Task<IntegrationAdmission> RecordedAsync(
-        IntegrationAsk ask, Landing landing, Func<LandedBranch, (LandingIntegrate? Policy, IntegrationAdmission? Refused)> judge, string route,
+        IntegrationAsk ask, Func<LandedBranch, (LandingIntegrate? Policy, IntegrationAdmission? Refused)> judge, string route,
         DriverConfig settings, CancellationToken ct)
     {
         var named = records.Landings().Where(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, ask.Repository, ask.Branch)).ToList();
@@ -276,7 +275,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
             Quest = work.Quest ?? entry.Quest,
             LandedAt = entry.LandedAt,
             Proof = proof,
-            RuleSource = landing.Source,
+            RuleSource = LandingSource.Default,
             Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request, $"`{ask.Branch}` at {Short(tip)} is requested for `{line}` from its landing's record, {By(ask.Requester)}.");
@@ -288,7 +287,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     /// repository recorded, standing or a trace, are refused here: a unit comes only through its own landing or its recorded landing.
     /// </summary>
     private async Task<IntegrationAdmission> RecordsAsync(
-        IntegrationAsk ask, Landing landing, LandingIntegrate policy, DriverConfig settings, CancellationToken ct)
+        IntegrationAsk ask, LandingIntegrate policy, DriverConfig settings, CancellationToken ct)
     {
         if (ask.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)
             || records.SessionBranches().Any(entry => SessionBranches.SameBranch(entry.Repository, entry.Branch, ask.Repository, ask.Branch)))
@@ -328,7 +327,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
         var request = new IntegrationRequest(NewId(), ask.Repository, RemoteTarget.Workspace(ask.Workspace), ask.Branch, stands!,
             IntegrationRoutes.Records, line!, ask.Requester, policy, DateTimeOffset.UtcNow)
         {
-            RuleSource = landing.Source,
+            RuleSource = LandingSource.Default,
             Epoch = IntegrationEpoch.Of(policy, IntegrationAcceptance.Of(settings, ask.Repository)),
         };
         return Kept(request,

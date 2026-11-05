@@ -84,7 +84,7 @@ public static class ChatLandCommand
 
         if (pressed.Landed.Landed)
         {
-            events.Keep(session, LandingRules.Note(pressed.Landed), each => world.Error.WriteLine($"trees: {each}"));
+            events.Keep(session, LandingNotes.Note(pressed.Landed), each => world.Error.WriteLine($"trees: {each}"));
             var followed = await TreesWords.FollowMovedAsync(service, world.Home, () => DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Log, ct)
                 .ConfigureAwait(false);
             foreach (var each in followed.Out) world.Output.WriteLine(each);

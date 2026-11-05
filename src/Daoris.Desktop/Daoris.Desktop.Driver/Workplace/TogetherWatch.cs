@@ -85,7 +85,7 @@ internal sealed class TogetherWatch(string home, Func<DateTimeOffset> now, Func<
         var settled = new TogetherOperations(home).Settle(operation.Id, decided, now(), evidence.Request?.Id);
         if (settled is { Phase: TogetherPhase.Landed } && keep is not null)
         {
-            foreach (var brought in TogetherInclusion.Of(settled)) keep(brought.Session, LandingRules.BroughtIntoNote(brought));
+            foreach (var brought in TogetherInclusion.Of(settled)) keep(brought.Session, LandingNotes.BroughtIntoNote(brought));
         }
 
         return settled;

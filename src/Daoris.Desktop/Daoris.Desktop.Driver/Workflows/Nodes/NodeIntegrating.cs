@@ -69,9 +69,9 @@ internal sealed class NodeIntegrating(
         };
 
         // The landing's acceptance read first, with no git and no write: where it was no request, the node waits ready for the owner's card
-        // or the steward's act, and nothing is written (a rule gaining `integrate` over standing landings requests none of them).
-        var landing = LandingRules.Line(settings, repository, governed.Watched.Workspace);
-        if (IntegrationRequests.NodeJudgement(ask, landed.Entry, landing).Refused is { } waits)
+        // or the steward's act, and nothing is written (a line gaining a policy over standing landings requests none of them).
+        var policy = settings.LinePolicyOf(repository, governed.Watched.Workspace);
+        if (IntegrationRequests.NodeJudgement(ask, landed.Entry, policy).Refused is { } waits)
         {
             // The owner's card made this landing's request at its tip (the recorded-landing door keeps its unit), so the node follows that
             // request as its own; until one is made, the wait is the owner's to answer where their card is the request.
