@@ -113,6 +113,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// <summary>Why the named workflow its run was bound to cannot be read here: none of its steps can start, and nothing is swapped in.</summary>
     public string? Problem { get; init; }
 
+    /// <summary>The <see cref="Problem"/> as a code and its values, which the page words in each language; null where it is the driver's sentence only.</summary>
+    public BindingProblem? Coded { get; init; }
+
     /// <summary>Why it could not be read whether a named workflow governs this work: the service named no chain.</summary>
     public string? Unread { get; init; }
 

@@ -153,11 +153,13 @@ public sealed class HelpRoomScopeTests : IDisposable
     public void Two_workspaces_rooms_written_at_once_never_cross()
     {
         var whole = HelpRoomScopeFixture.Machine();
+        // A written room carries the home's supervisor rules beside the machine's facts (CONTEXTDRIVE1k).
+        var rules = HelpRuleFacts.Read(_home);
         var said = new Dictionary<string, string?>
         {
-            ["alpha"] = HelpRoom.Render(whole.Within("alpha")),
-            ["beta"] = HelpRoom.Render(whole.Within("beta")),
-            ["default"] = HelpRoom.Render(whole),
+            ["alpha"] = HelpRoom.Render(whole.Within("alpha") with { Rules = rules }),
+            ["beta"] = HelpRoom.Render(whole.Within("beta") with { Rules = rules }),
+            ["default"] = HelpRoom.Render(whole with { Rules = rules }),
         };
 
         var written = new System.Collections.Concurrent.ConcurrentBag<string>();
@@ -201,7 +203,7 @@ public sealed class HelpRoomScopeTests : IDisposable
 
         var alpha = Path.Combine(HelpRoom.PathOf(_home, "alpha"), "AGENTS.md");
         // Read as the room's writer is read (READSHARE1): a plain read meeting the rename refuses, and failed this twice under load.
-        await Poll.Until(() => AtomicFile.ReadText(alpha) == HelpRoom.Render(landed.Within("alpha")));
+        await Poll.Until(() => AtomicFile.ReadText(alpha) == HelpRoom.Render(landed.Within("alpha") with { Rules = HelpRuleFacts.Read(_home) }));
         await Poll.Until(() => !catchUp.Writing);
         Assert.False(HelpRoom.SaidNotReadYet(_home, "alpha"));
         Assert.Equal("beta's room as written\n", File.ReadAllText(beta));

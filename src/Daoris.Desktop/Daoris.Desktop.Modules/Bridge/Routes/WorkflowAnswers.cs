@@ -103,6 +103,8 @@ internal static class WorkflowAnswers
             run.Session,
             run.At,
             run.Problem,
+            // the problem as a code and its values, which the page words from its catalogue; null where the driver has no code for it.
+            ProblemCoded = run.Coded is { } coded ? new { coded.Code, coded.Values } : null,
             // a chat run's key and its checks, which a conversation's execution is held to;
             // null for a quest's run, and from a driver before it.
             Chat = run.ChatRun is { } chat ? new { Run = chat, Checks = run.ChatChecks, Enforced = true } : null,

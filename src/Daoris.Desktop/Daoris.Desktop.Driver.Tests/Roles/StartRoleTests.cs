@@ -12,6 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class StartRoleTests : IDisposable
 {
     private static readonly RolePlace Machine = new();
+    private static readonly RolePlace InEnginePlace = new(Repository: "engine");
+    private static readonly RoleScope InEngine = new(RoleScope.Repository, "engine");
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "rolestep1b-start-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -27,6 +29,7 @@ public sealed class StartRoleTests : IDisposable
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>
         {
             ["build"] = [new ActorChoice("claude", "sonnet")],
+            ["design"] = [new ActorChoice("claude", "opus", "high")],
             ["designer"] = [new ActorChoice("codex", "opus", "high"), new ActorChoice("claude", "opus")],
         },
     };
@@ -38,14 +41,14 @@ public sealed class StartRoleTests : IDisposable
         RoleCatalog.Of([RoleCatalogTests.Stored(RoleCatalogTests.Working("designer", work, scope), revision)]);
 
     [Fact]
-    public void A_quest_marked_design_starts_on_Build_s_order_while_no_role_takes_design_and_on_the_role_that_takes_it_once_one_does()
+    public void A_quest_marked_design_starts_on_the_seeded_Design_role_and_on_the_role_that_takes_design_more_specifically_once_one_does()
     {
         var before = Plan("design", RoleCatalog.Of([]), Machine);
-        Assert.Equal(("build", "build", 0L), (before.Role, before.Seeded, before.Revision));
-        Assert.Equal([new ActorEffective("claude", "sonnet", null, "1")], before.Order);
+        Assert.Equal(("design", "design", 0L), (before.Role, before.Seeded, before.Revision));
+        Assert.Equal([new ActorEffective("claude", "opus", "high", "1")], before.Order);
 
-        var after = Plan("design", WithDesigner(), Machine);
-        Assert.Equal(("designer", "build", 3L), (after.Role, after.Seeded, after.Revision));
+        var after = Plan("design", WithDesigner(scope: InEngine), InEnginePlace);
+        Assert.Equal(("designer", "design", 3L), (after.Role, after.Seeded, after.Revision));
         Assert.Equal([new ActorEffective("codex", "opus", "high", "1"), new ActorEffective("claude", "opus", null, "2")], after.Order);
     }
 
@@ -63,7 +66,7 @@ public sealed class StartRoleTests : IDisposable
 
     /// <summary>The service's quest answer (its door carries <c>weight</c>), read by the client and started, with and without a role taking design.</summary>
     [Fact]
-    public void A_quest_published_with_weight_design_starts_on_Build_s_order_then_on_the_role_that_takes_it()
+    public void A_quest_published_with_weight_design_starts_on_the_seeded_Design_role_then_on_the_role_that_takes_it_more_specifically()
     {
         var answered = QuestViews.Read(
             """[{"id":"q1","from":"a","to":"b","title":"Decide the cap","body":"Two ways.","status":"Open","weight":"design"},""" +
@@ -73,9 +76,9 @@ public sealed class StartRoleTests : IDisposable
         Assert.Null(answered[1].Weight);
 
         var marked = Daoris.Driver.Driver.StartWork(answered[0]);
-        Assert.Equal("build", Plan(marked, RoleCatalog.Of([]), Machine).Role);
-        Assert.Equal("designer", Plan(marked, WithDesigner(), Machine).Role);
-        Assert.Equal("build", Plan(Daoris.Driver.Driver.StartWork(answered[1]), WithDesigner(), Machine).Role);
+        Assert.Equal("design", Plan(marked, RoleCatalog.Of([]), Machine).Role);
+        Assert.Equal("designer", Plan(marked, WithDesigner(scope: InEngine), InEnginePlace).Role);
+        Assert.Equal("build", Plan(Daoris.Driver.Driver.StartWork(answered[1]), WithDesigner(scope: InEngine), InEnginePlace).Role);
     }
 
     [Fact]
@@ -140,13 +143,13 @@ public sealed class StartRoleTests : IDisposable
 
         Assert.Equal("designer", plan.Role);
         Assert.Equal([new ActorEffective("claude", "opus", null, "2")], plan.Order);
-        Assert.Equal("build", Plan("design", catalogue, new RolePlace(Repository: "other")).Role);
+        Assert.Equal("design", Plan("design", catalogue, new RolePlace(Repository: "other")).Role);
     }
 
     [Fact]
     public void An_older_build_s_continuation_of_a_record_started_on_an_added_role_runs_as_its_seeded_work()
     {
-        var plan = Plan("design", WithDesigner(), Machine);
+        var plan = Plan("design", WithDesigner(scope: InEngine), InEnginePlace);
         Assert.Contains(plan.Seeded, ActorChoices.Ids);
 
         // What an older build reads: the record's `actor`, the seeded id the start wrote, never the added role's.
@@ -154,7 +157,7 @@ public sealed class StartRoleTests : IDisposable
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config));
 
         // The newer build reads the binding's role first, and where the role is since removed, the role that takes the work now.
-        Assert.Equal("codex", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: WithDesigner(), place: Machine));
+        Assert.Equal("codex", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: WithDesigner(scope: InEngine), place: InEnginePlace));
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: RoleCatalog.Of([]), place: Machine));
     }
 
@@ -193,12 +196,12 @@ public sealed class StartRoleTests : IDisposable
         RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Workspace, "default"))), () => StoreSettled.Yes);
         WorkflowStore.Add(_home, new WorkflowVersionAdded("staffed", "Staffed work", "terminal", "2026-11-01T09:00:00Z", null, JsonNode.Parse(
             $$$"""
-            {"schemaVersion":2,"entries":["work"],"end":"pull-request","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"role":"{{{named}}}"}},
+            {"schemaVersion":2,"entries":["work"],"end":"push","nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed","options":{"role":"{{{named}}}"}},
               {"id":"review","kind":"review","version":1,"reach":"pressed"},
-              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"pull-request"}},
-              {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pull-request","kind":"pull-request","version":1,"reach":"observed"}],
+              {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch","pattern":"feature/{quest}-{slug}"}},
+              {"id":"push","kind":"push","version":1,"reach":"performed"}],
              "wires":[{"id":"a","kind":"after","from":"work","to":"review"},{"id":"r","kind":"after","from":"review","to":"landing"},
-                      {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
+                      {"id":"b","kind":"after","from":"landing","to":"push"}]}
             """)), kept: []);
         var config = DriverConfig.Parse("""
             {"workflows":{"engine":{"default":"staffed"}}}

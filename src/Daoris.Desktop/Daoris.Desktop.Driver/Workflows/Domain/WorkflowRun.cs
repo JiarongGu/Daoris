@@ -8,6 +8,9 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     public WorkflowGateState? WorkflowGate { get; init; }
     public string? Problem { get; init; }
 
+    /// <summary>The <see cref="Problem"/> as a code and its values for the page to word; null where it is the driver's sentence only.</summary>
+    public BindingProblem? Coded { get; init; }
+
     /// <summary>The ask the chain was asked by, or null.</summary>
     public string? Ask { get; init; }
 

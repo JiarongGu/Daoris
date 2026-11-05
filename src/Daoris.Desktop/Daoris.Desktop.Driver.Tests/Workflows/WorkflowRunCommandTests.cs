@@ -304,7 +304,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), JsonSerializer.Serialize(new
         {
             id = "example.pull-request",
-            hooks = new { command = new[] { "node", "${plugin}/hook.mjs" }, points = new[] { "work/land", "work/state" } },
+            hooks = new { command = new[] { "node", "${plugin}/hook.mjs" }, points = new[] { "work/perform", "work/state" } },
         }));
         PluginState.Enable(_home, "example.pull-request");
 
@@ -330,8 +330,9 @@ public sealed class WorkflowRunCommandTests : IDisposable
          "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},{"id":"opinion","kind":"opinion","version":1,"reach":"observed"},
                   {"id":"look","kind":"look","version":1,"reach":"observed","options":{"environment":"local"}},
                   {"id":"landing","kind":"land","version":1,"reach":"performed",
-                   "options":{"method":"pull-request","plugin":"example.pull-request","pattern":"work/{quest}"}},
-                  {"id":"pushed","kind":"pushed","version":1,"reach":"observed"},{"id":"pr","kind":"pull-request","version":1,"reach":"observed"}],
+                   "options":{"method":"branch","pattern":"work/{quest}"}},
+                  {"id":"pushed","kind":"push","version":1,"reach":"performed"},
+                  {"id":"pr","kind":"example.pull-request/pull-request","version":1,"reach":"performed"}],
          "wires":[{"id":"w>o","kind":"after","from":"work","to":"opinion"},{"id":"w>l","kind":"after","from":"work","to":"look"},
                   {"id":"o>n","kind":"after","from":"opinion","to":"landing"},{"id":"l>n","kind":"after","from":"look","to":"landing"},
                   {"id":"n>p","kind":"after","from":"landing","to":"pushed"},{"id":"p>r","kind":"after","from":"pushed","to":"pr"}]}
