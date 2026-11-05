@@ -84,6 +84,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `LandingKey`, `LandingRule`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | The landing key's reading, writing and sentences, and the rule, integrate policy, form and names it reads |
 | `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
 | `SessionTrees` | `Workplace/SessionTrees.cs` | Opens a fresh tree; the front over every tree part (`TreeContext`) |
+| `TreeHeads` | `Workplace/TreeHeads.cs` | The branch each listed tree has checked out, one `worktree list` per repository; a tree git does not list is asked on its own |
 | `TreeDependencies`, `TreeLocalInputs` | `Workplace/` | Copy installed dependencies and declared machine-local files into a tree as it opens |
 | `AutoTidies`, `TreeSetAside`, `TreeSweeps` | `Workplace/` | The look's own tidy, the move aside, and the clean-up press's one path |
 | `EndJudgement`, `EndKeeping` | `Workplace/EndJudgement.cs`, `Workplace/EndKeeping.cs` | Whether a branch's work ended, from git alone, and the one writer of that fact |
@@ -180,7 +181,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 30. The loop looks at its pace (15 s by default), on a nudge, and on a wake (a ledger change, a terminal's words, a
     session's end). A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on
-    beside the look, reserved. (from D68, D181)
+    beside the look, reserved. The whole lists a pass or the work beside it reads together (the snapshot's, the tidy's
+    holders, the nodes' units) are asked at once. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is kept in the file and read by nothing. (from D200)
@@ -237,7 +239,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     content, or carried. With a tree, only this home's tree on a branch that moved. Landed work goes only once it is on
     the line. The folder is moved aside into `.tidied`, never deleted; the keeping pass purges it. (from D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Uncommitted or
-    untracked work keeps it. (from D195, D218)
+    untracked work keeps it. An ignored folder of more than 5,000 files is too large to look through and keeps it, counted by
+    name before any file's time or bytes are read. (from D195, D218)
 50. The person's clean-up press lists every session branch with what it holds and removes those the proof clears,
     judging each again right before it goes. (from D88)
 
@@ -255,6 +258,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a part of a quest's start | a stage of its own in its phase's subdomain of `Loop/Run/`, marked `[RunStage]`; what it reaches of the driver goes on `IRunWiring`; what it reads of an earlier stage or leaves for a later one goes on `RunState`, written by one stage | `Loop/DriverRunPartsTests`, and the tests of the stage it moves |
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
+| what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read held to its budget |
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |

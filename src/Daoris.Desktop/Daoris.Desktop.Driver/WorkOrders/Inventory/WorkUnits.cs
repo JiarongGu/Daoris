@@ -68,9 +68,12 @@ public static class WorkUnits
         IReadOnlyList<SessionRecord> sessions;
         try
         {
-            quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
-            asks = await service.EveryAskAsync(ct).ConfigureAwait(false);
-            sessions = await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+            // Asked at once: each is a whole list, so together they cost the slowest of them rather than their sum.
+            var questsRead = service.EveryQuestAsync(ct);
+            var asksRead = service.EveryAskAsync(ct);
+            var sessionsRead = service.SessionRecordsAsync(ct);
+            await Task.WhenAll(questsRead, asksRead, sessionsRead).ConfigureAwait(false);
+            (quests, asks, sessions) = (await questsRead.ConfigureAwait(false), await asksRead.ConfigureAwait(false), await sessionsRead.ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
             || (error is TaskCanceledException && !ct.IsCancellationRequested))

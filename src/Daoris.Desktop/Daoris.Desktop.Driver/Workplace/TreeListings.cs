@@ -55,16 +55,18 @@ internal sealed class TreeListings(TreeContext context, TreeSetAside setAsides)
 
         // Both places of the trees (TREEPLACE1), each as found. The folders the look moved aside are no trees (AUTOTIDY1): git no
         // longer knows them as such.
-        foreach (var root in context.TreesRoots.Where(Directory.Exists))
-        foreach (var workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder))
-        foreach (var repository in Repositories(workspace))
-        foreach (var tree in Directory.EnumerateDirectories(repository))
+        var folders = (
+            from root in context.TreesRoots.Where(Directory.Exists)
+            from workspace in Directory.EnumerateDirectories(root).Where(folder => Path.GetFileName(folder) != TreeSetAside.SetAsideFolder)
+            from repository in Repositories(workspace)
+            from tree in Directory.EnumerateDirectories(repository)
+            select (workspace, repository, tree)).ToList();
+        // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever repository holds the home.
+        var branches = await TreeHeads.ReadAsync([.. folders.Select(each => each.tree).Where(tree => Path.Exists(Path.Combine(tree, ".git")))], ct)
+            .ConfigureAwait(false);
+        foreach (var (workspace, repository, tree) in folders)
         {
-            // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever
-            // repository holds the home.
-            var (code, branch, _) = Path.Exists(Path.Combine(tree, ".git"))
-                ? await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false)
-                : (1, SessionTree.NotATree, "");
+            var (code, branch) = branches.TryGetValue(tree, out var read) ? read : (1, SessionTree.NotATree);
             found.Add(new(
                 tree,
                 Path.GetFileName(workspace),
