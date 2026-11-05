@@ -23236,3 +23236,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] Each row below was a second place for text another row already held (D228); its remaining text is in the row named.
 
   **Outcome** 2026-11-05: WORKFLOWCLEAN1z and FABRIC-CLOSEBIND1 into NOCOMPAT1b2 (the same deletion: the landing rules, the handed node, the plain bind); GITREADONLY1 into GITAUTH1f; QUEUEHANG1 into MERGETOOL1; GITAPP1 part two into OPTIMIZE1a; OPTIMIZE1c (start-up) into PERF1; FLAKE1 into SESSOPT1d as its standing line; SESSONE2i, MIXAGENT3a-iii and SESSONE1c-look into COMMS1k, COMMS1h and COMMS1n; AUTOTIDY1c, SQUASHTIDY1d, PLUGHOOK1d and FABRIC-PERFORM1l into WORKSETUP1 as its tail; WIRING1d's second listing inside ONEWAY1 into the WIRING1d row; TOOL4n into LIMITRESUME1f; SESSCTX1a and FABRIC-C2b into HELPMODE1a3 (one installed spend sitting, D240 point 7); MODELROLE1d3 into MODELROLE1c4 (one installed sitting).
+
+## TREENAME1 (2026-11-05)
+
+- [x] **TREENAME1 — a tree's name given for a session names its session** (driver): `trees land s-92ed2c8c`, the tree's name, answers that the session names no working tree here; it should say the tree is session `7ca1353a`'s. The console says so now (`62b4ccb3c`); left: the page's landing routes still answer the old sentence. → `docs/areas/git-and-remotes.md`
+
+  **Outcome** 2026-11-05: the page's four tree doors (plan, press, discard, review) name the session a tree's name belongs to (BL16, `TreeNamedRefusals`), as the console already did.
