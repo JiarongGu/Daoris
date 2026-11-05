@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an executor holds of a live run (the design §2.5, §4.1): open or resume, apply a refused choice's later one, take words, steer,
-/// stop a turn or a task, and close, and beside those the five members every executor uses today (AGENTPROVIDER1m-i): the records handed
-/// at the open, the carriers, the run's end, the go-on and the restart. Each operation is admitted by the run's own evidence (§2.4) and
+/// stop a turn or a task, and close, and beside those the five members every executor uses today (AGENTPROVIDER1m-i): the sink its readings
+/// go to, the carriers, the run's end, the go-on and the restart. Each operation is admitted by the run's own evidence (§2.4) and
 /// one it lacks is answered <see cref="Unsupported"/> naming the ability, before anything is written. Row b declares it; row m-i makes the
 /// executors hold it over <see cref="TransportRun"/>, and m-ii and the rows after it add the parameters the design names there
 /// (<c>DoorInput</c>, <c>IChoiceReask</c>, <c>IResumeState</c>) that no type holds yet.
@@ -37,11 +37,11 @@ public abstract class AgentRun
     public abstract Task CloseAsync(CancellationToken ct);
 
     /// <summary>
-    /// The records the run is handed at its open, as today's capture is handed them (design §4.1): the transcript, the session's events,
-    /// the lineage hook, the streams beside, the conversation named and the window readings. Handed before <see cref="OpenAsync"/> or
-    /// <see cref="ResumeAsync"/>. <b>Replaced at row l</b> by the sink, which the run writes its readings to itself.
+    /// The sink the run writes its readings to (design §3.1, row l), composed by its executor of its owners' parts: the record's events, the
+    /// console's lines and the streams beside, the conversation named, the account's windows and every failure, one <see cref="WireReading"/>
+    /// each. Handed before <see cref="OpenAsync"/> or <see cref="ResumeAsync"/>.
     /// </summary>
-    public abstract void HandRecords(RunRecords records);
+    public abstract void HandSink(IReadingSink sink);
 
     /// <summary>
     /// The carriers handed to the start and to each go-on (design §4.1): the settings and the servers files the run before it was handed, so
@@ -76,24 +76,6 @@ public abstract class AgentRun
 /// the native resume's one retry reads.
 /// </summary>
 public sealed record AgentRunEnd(int? Exit, AcpUsage? Usage, HarnessEnding Ending, bool Named);
-
-/// <summary>
-/// The records a run is handed at its open (design §4.1), until row l replaces them with the sink: where its transcript is, the events
-/// and the console its lines reach, the home whose lineage file hears each subagent, the adapter its conversation is kept under, the
-/// harness's own words, what the stream says of the account's windows, and what the transcript opens with.
-/// </summary>
-/// <param name="Output">The live console a run's lines reach, and the streams beside; null where nobody watches.</param>
-/// <param name="Events">The session's record, which each event is kept on; null keeps none.</param>
-/// <param name="LineageHome">The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</param>
-/// <param name="KeepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
-/// <param name="Own">Where the harness's own words are kept for its ending (AGT3c); null keeps none.</param>
-/// <param name="Said">Told what the stream says of the account's windows (TOOL6c); null tells none.</param>
-/// <param name="Opening">The events the record opens with, said once: a start's target or a resume's answer, never said again by a restart.</param>
-/// <param name="Preamble">A fact about how the run was set up, written ahead of anything the process says; null says none.</param>
-public sealed record RunRecords(
-    string SessionId, string Transcript, ISessionOutput? Output = null, ISessionEvents? Events = null, string? LineageHome = null,
-    string? KeepAs = null, HarnessWords? Own = null, Action<System.Text.Json.JsonElement>? Said = null,
-    IReadOnlyList<SessionEvent>? Opening = null, string? Preamble = null);
 
 /// <summary>
 /// The carriers of a run (design §4.1): the settings file and the servers file its start was handed, handed again to each go-on so it runs

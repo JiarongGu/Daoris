@@ -239,7 +239,7 @@ internal sealed class BrainstormTurnRunner(DriverBrainstorms owner, LoopContext 
         try
         {
             var read = refusal is null ? null
-                : AgentErrors.Read(_context.Adapters, adapter, DoorFailure.OfPrompt(refusal), _context.Harnesses.Clock(), _context.Harnesses.Zone);
+                : AgentErrors.Read(_context.Adapters, adapter, DoorFailures.OfPrompt(refusal), _context.Harnesses.Clock(), _context.Harnesses.Zone);
             var byCode = read is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null;
             return _context.Harnesses.Limited(adapter.Name, selection.Profile, failure, sessionId, _context.Config.CoolOff, byCode) is not null;
         }

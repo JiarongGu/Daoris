@@ -38,7 +38,7 @@ public sealed class AcpTypedFailureTests
     private static TransientRetry Retry(MovedClock clock, AcpTransientTests.Told told) => new()
     {
         Read = refused => AgentErrors.Read(
-            Built, Built.Resolve("codex-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Built, Built.Resolve("codex-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
         Clock = clock,
         Began = (_, next) => told.Add($"began:{(next - clock.GetUtcNow()).TotalMinutes:0}"),
         Tried = (_, number, next) => told.Add($"try:{number}:{(next is { } at ? (at - clock.GetUtcNow()).TotalMinutes.ToString("0") : "last")}"),

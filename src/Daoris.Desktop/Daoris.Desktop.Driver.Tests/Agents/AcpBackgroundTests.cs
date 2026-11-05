@@ -1696,7 +1696,7 @@ public sealed class AcpBackgroundTests
     private static TransientRetry Retry(MovedClock clock, Func<CancellationToken, Task<bool>>? wanted = null) => new()
     {
         Read = refused => AgentErrors.Read(
-            Built, Built.Resolve("claude-code-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Built, Built.Resolve("claude-code-acp"), DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
         Clock = clock,
         Wanted = wanted,
     };

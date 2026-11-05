@@ -131,7 +131,7 @@ internal static class ConformanceLiveCases
         // nothing, so its quest's take is said and never thrown.
         using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run)))!;
         var transcript = Path.Combine(run.Scratch, "transcript.txt");
-        await HarnessCapture.CaptureAsync(process.StandardOutput, process.StandardError, transcript, "s-1", null, CancellationToken.None).WaitAsync(Bound);
+        await HarnessCapture.CaptureAsync(process.StandardOutput, process.StandardError, transcript, ReadingSinks.None, CancellationToken.None).WaitAsync(Bound);
         await process.WaitForExitAsync().WaitAsync(Bound);
 
         Assert.Equal(0, process.ExitCode);
@@ -209,7 +209,7 @@ internal static class ConformanceLiveCases
         var waits = 0;
         var retry = new TransientRetry
         {
-            Read = refused => AgentErrors.Read(run.Subject.Adapters, run.Adapter, DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Read = refused => AgentErrors.Read(run.Subject.Adapters, run.Adapter, DoorFailures.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
             Clock = clock,
             Waits = waiting =>
             {
@@ -239,7 +239,7 @@ internal static class ConformanceLiveCases
             var read = (AgentError?)null;
             var retry = new TransientRetry
             {
-                Read = refused => read = AgentErrors.Read(run.Subject.Adapters, run.Adapter, DoorFailure.OfPrompt(refused), DateTimeOffset.UtcNow, TimeZoneInfo.Utc),
+                Read = refused => read = AgentErrors.Read(run.Subject.Adapters, run.Adapter, DoorFailures.OfPrompt(refused), DateTimeOffset.UtcNow, TimeZoneInfo.Utc),
             };
 
             var ran = await OverTheWire(run,scenario, retry: retry);

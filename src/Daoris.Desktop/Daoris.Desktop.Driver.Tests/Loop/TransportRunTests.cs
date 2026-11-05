@@ -208,7 +208,8 @@ public sealed class TransportRunTests : IDisposable
     {
         var host = new RecordingTransportHost(_home, _processes) { Commands = ["claude"] };
         var run = GoingOn(host, new ClaudeCodeAdapter());
-        run.HandRecords(new RunRecords("s1", Path.Combine(_home, "s1.log")));
+        run.HandStart(run.Start with { Session = "s1", Transcript = Path.Combine(_home, "s1.log") });
+        run.HandSink(ReadingSinks.None);
         run.HandCarriers(new RunCarriers("D:/daoris-data/sessions/s1.settings.json", "D:/daoris-data/sessions/s1.mcp.json"));
         var told = 0;
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
@@ -231,8 +232,8 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// The contract holds the five members every executor uses (design §4.1, round 5): the records, the carriers, the end, the go-on and
-    /// the restart, and no word operation beyond the two it already had.
+    /// The contract holds the five members every executor uses (design §4.1, round 5): the sink its readings go to (row l), the carriers,
+    /// the end, the go-on and the restart, and no word operation beyond the two it already had.
     /// </summary>
     [Fact]
     public void The_contract_gains_the_five_members_and_no_word_operation()
@@ -245,7 +246,7 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.Equal(
             [
-                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandRecords", "OpenAsync", "RestartAsync",
+                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandSink", "OpenAsync", "RestartAsync",
                 "ResumeAsync", "SendAsync", "SteerAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);
