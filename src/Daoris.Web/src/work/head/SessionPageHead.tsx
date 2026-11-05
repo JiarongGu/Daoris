@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey, Tip } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
-import { AccessChip, startedFull } from '../AccessFact';
+import { AccessChip, startedFull } from './AccessFact';
 import { choiceChip } from '../actors';
 import { ChoiceChip } from './ChoiceChip';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';

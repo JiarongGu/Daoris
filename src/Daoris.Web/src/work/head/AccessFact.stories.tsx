@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Session } from '../data/api';
-import { chinese } from '../design/storyLanguage';
-import { storyWidths } from '../design/storyWidths';
-import { InTheme } from '../plugins/storyIcons';
-import { SessionHead } from './head/SessionHead';
-import { SessionPageHead } from './head/SessionPageHead';
+import type { Session } from '../../data/api';
+import { chinese } from '../../design/storyLanguage';
+import { storyWidths } from '../../design/storyWidths';
+import { InTheme } from '../../plugins/storyIcons';
+import { SessionHead } from './SessionHead';
+import { SessionPageHead } from './SessionPageHead';
 
 // SESSACCESS1 (D184 point 1; the UI/UX design §3.3 and §4's `AccessFact`, D185): a session's head says the access it started
 // under, from its record's pause map. The page head wears *Full access* only where every pause was recorded open; the record's

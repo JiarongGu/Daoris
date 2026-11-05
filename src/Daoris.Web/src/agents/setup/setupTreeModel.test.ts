@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { PlaceRow, PlacesRead } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { placeLine } from './SetupList';
-import { keyInTree, treeItems } from './setupTreeModel';
+import { keyInTree as keyed, type TreeItem, treeItems } from './setupTreeModel';
+
+const keyInTree = (items: readonly TreeItem[], id: string, key: string, composing = false) =>
+  keyed(items, id, { key, keyCode: composing ? 229 : 0, isComposing: composing });
 
 // SETUPUX1i: the places tree's rows in reading order, its WAI-pattern keys, and a row's second line.
 
@@ -61,6 +64,10 @@ describe('keyInTree', () => {
     expect(keyInTree(items, 'workspace:aurora', ' ')).toEqual({ choose: 'workspace:aurora' });
     expect(keyInTree(items, 'fold:aurora', 'Enter')).toEqual({ toggle: 'fold:aurora' });
     expect(keyInTree(items, 'machine', 'a')).toBeNull();
+  });
+
+  it('leaves a key an input method is composing with to it (IME1)', () => {
+    expect(keyInTree(items, 'repo:aurora/engine', 'Enter', true)).toBeNull();
   });
 });
 

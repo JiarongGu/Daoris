@@ -1,10 +1,10 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import type { Session } from '../data/api';
-import { Icon, Inline } from '../design/ui';
-import { cn } from '../lib/cn';
-import { pauseName, recordedFull, recordedPauses, valueName } from '../settings/repository/Access';
-import type { DetailRow } from './head/DetailsFold';
+import type { Session } from '../../data/api';
+import { Icon, Inline } from '../../design/ui';
+import { cn } from '../../lib/cn';
+import { pauseName, recordedFull, recordedPauses, valueName } from '../../settings/repository/Access';
+import type { DetailRow } from './DetailsFold';
 
 /**
  * **A session's access, as it started** (SESSACCESS1, D184 point 1; the UI/UX design §3.3, D185): read from the record's pause map,
