@@ -68,6 +68,8 @@ export type DriverState = {
    * Absent on a shell older than it, and the setting is then not offered.
    */
   coolOff?: number;
+  /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; absent on an older shell. */
+  quiet?: number;
   /** How many sessions Daoris starts at once on this machine (CAPSET1); absent on a shell older than the setting's route. */
   cap?: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
@@ -343,6 +345,9 @@ export const useSetNotify = () => useDriverChange('SET_NOTIFY');
  * `cooloff` `daoris settings cooloff <minutes>` edits; less than one is the driver's refusal.
  */
 export const useSetCoolOff = () => useDriverChange('SET_COOLOFF');
+
+/** How long a session may be quiet before Daoris looks in: the same `quiet` `daoris settings quiet <minutes>` edits. */
+export const useSetQuiet = () => useDriverChange('SET_QUIET');
 
 /** How many sessions Daoris starts at once (CAPSET1): the same `cap` `daoris settings cap <n>` edits; less than one is refused. */
 export const useSetCap = () => useDriverChange('SET_CAP');

@@ -24,7 +24,7 @@ string service, window;
 try
 {
     service = PageTypes.Write(RouteDeclaration.In(typeof(IRoute<>).Assembly));
-    window = PageRoutes.Write();
+    window = PageRoutes.Write() + PageSettings.Write();
 }
 catch (InvalidOperationException refused)
 {

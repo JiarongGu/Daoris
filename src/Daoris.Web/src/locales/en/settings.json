@@ -43,5 +43,11 @@
   "settings.cooloff.body": "When an agent refuses a turn for its account's limit and names no time it resets, the account cools this many minutes before Daoris starts on it again. Long enough that a spent account is not started on at every look; short enough that a wrong guess costs an hour, not an evening. A limit that names its reset cools until then.",
   "settings.cooloff.minutes": "minutes",
   "settings.cooloff.set": "An account whose agent names no reset now cools {{count}} minute.",
-  "settings.cooloff.set_other": "An account whose agent names no reset now cools {{count}} minutes."
+  "settings.cooloff.set_other": "An account whose agent names no reset now cools {{count}} minutes.",
+  "settings.quiet.label": "Look in on a quiet session after",
+  "settings.quiet.terminal": "Also `daoris settings quiet <minutes>`, from 5 to 120 — one file, either door.",
+  "settings.quiet.body": "A session is never stopped for running long. One that says nothing and runs nothing for this long gets Daoris's help: a word, then your choice or a fresh start of the same work.",
+  "settings.quiet.minutes": "minutes",
+  "settings.quiet.set": "Daoris now looks in on a session quiet for {{count}} minute.",
+  "settings.quiet.set_other": "Daoris now looks in on a session quiet for {{count}} minutes."
 }

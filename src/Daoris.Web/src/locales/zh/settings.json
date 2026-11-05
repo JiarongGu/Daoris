@@ -43,5 +43,11 @@
   "settings.cooloff.body": "当智能体因账户上限拒绝一轮对话、却没有说明何时重置时，该账户会冷却这么多分钟，之后 Daoris 才会再在它上面启动。时间足够长，用尽的账户就不会在每次检查时都被启动；又足够短，猜错的代价是一小时而不是一个晚上。说明了重置时间的上限会冷却到那个时间。",
   "settings.cooloff.minutes": "分钟",
   "settings.cooloff.set": "智能体没有说明重置时间的账户，现在冷却 {{count}} 分钟。",
-  "settings.cooloff.set_other": "智能体没有说明重置时间的账户，现在冷却 {{count}} 分钟。"
+  "settings.cooloff.set_other": "智能体没有说明重置时间的账户，现在冷却 {{count}} 分钟。",
+  "settings.quiet.label": "会话无动静多久后查看",
+  "settings.quiet.terminal": "也可用 `daoris settings quiet <minutes>`，5 到 120——同一个文件，任一入口。",
+  "settings.quiet.body": "会话不会因为运行时间长而被停止。如果它这么久既没有输出、也没有在运行任何程序，Daoris 会协助它：先提醒它，再由你决定，或让同一项工作重新开始。",
+  "settings.quiet.minutes": "分钟",
+  "settings.quiet.set": "会话无动静 {{count}} 分钟后，Daoris 现在会去查看。",
+  "settings.quiet.set_other": "会话无动静 {{count}} 分钟后，Daoris 现在会去查看。"
 }

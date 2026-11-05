@@ -6,6 +6,7 @@ import type { UpdateState } from '../update/UpdateBanner';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
+import { MinutesSetting } from './MinutesSetting';
 import { type AccessEdit, type AccessLevel, AccessRows, resolveAccess } from './repository/Access';
 import { type GitAccessEdit, type GitAccessLevel, GitAccessRows, resolveGitAccess } from './repository/GitAccess';
 import { UpdateSection } from './Update';
@@ -21,6 +22,8 @@ export type DriverFacts = {
   notify: boolean;
   /** Minutes an account cools when its agent names no reset (TOOL4g); absent on a shell older than the field. */
   coolOff?: number | null;
+  /** Minutes a session may be quiet before Daoris looks in; absent on a shell older than the field. */
+  quiet?: number | null;
   /** How many sessions Daoris starts at once here (CAPSET1); absent on a shell older than the route. */
   cap?: number | null;
   /** This machine's sessions' access (AUTONOMY1d); absent on a shell older than it. */
@@ -37,13 +40,15 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onAccess, onGitAccess, onSayUpdate }: {
+export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess, onSayUpdate }: {
   facts: DriverFacts;
   busy: { access: boolean; update: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
   onCoolOff: (minutes: number) => void;
+  /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
+  onQuiet?: (minutes: number) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held (CAPSET1). */
   onCap: (cap: number) => void;
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
@@ -52,10 +57,8 @@ export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onA
   onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
   const { t } = useTranslation();
-  // The cool-off's minutes as typed (TOOL4g), held as text while it is being typed: a number input mid-edit passes through
-  // the empty string, and writing it straight to the config would be refused while the person was still reaching for a digit.
-  const [coolOff, setCoolOff] = useState<string | null>(null);
-  // The cap as typed (CAPSET1), held as text for the same reason.
+  // The cap as typed (CAPSET1), held as text while it is being typed: a number input mid-edit passes through the empty string,
+  // and writing it straight to the config would be refused while the person was still reaching for a digit.
   const [cap, setCap] = useState<string | null>(null);
 
   return (
@@ -115,33 +118,13 @@ export function DriverCards({ facts, busy, onGo, onNotify, onCoolOff, onCap, onA
           {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
               since an older shell answers no such field and has no route to write it. */}
           {typeof facts.coolOff === 'number' && (
-            <SettingRow
-              label={t('settings.cooloff.label')}
-              hint={t('settings.cooloff.terminal')}
-              why={t('settings.cooloff.body')}
-              control={(
-                <span className="inline-flex items-center gap-1.5">
-                  <input
-                    type="number"
-                    min={1}
-                    aria-label={t('settings.cooloff.label')}
-                    value={coolOff ?? String(facts.coolOff)}
-                    onChange={(event) => setCoolOff(event.target.value)}
-                    onBlur={() => {
-                      // Passing through is not a write (REV3), and less than a minute is the driver's refusal, so nothing typed,
-                      // a value under one, not whole, or the one it holds puts the held value back.
-                      const held = facts.coolOff ?? 60;
-                      const value = coolOff === null || coolOff.trim() === '' ? held : Number(coolOff);
-                      setCoolOff(null);
-                      if (!Number.isInteger(value) || value < 1 || value === held) return;
-                      onCoolOff(value);
-                    }}
-                    className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
-                  />
-                  <span className="text-small text-ink-soft">{t('settings.cooloff.minutes')}</span>
-                </span>
-              )}
-            />
+            <MinutesSetting setting="cooloff" held={facts.coolOff} onSet={onCoolOff} />
+          )}
+
+          {/* How long a session may say nothing and run nothing before Daoris looks in: the one quiet setting, offered where the
+              shell says it. A session is never stopped for running long. */}
+          {typeof facts.quiet === 'number' && onQuiet && (
+            <MinutesSetting setting="quiet" held={facts.quiet} onSet={onQuiet} />
           )}
 
           {/* How many sessions Daoris starts at once (CAPSET1, D130's CAPCOUNT1 note): the person's one dial for the machine,

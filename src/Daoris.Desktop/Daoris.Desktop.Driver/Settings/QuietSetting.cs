@@ -9,14 +9,16 @@ namespace Daoris.Driver;
 /// </summary>
 public static class QuietSetting
 {
+    private static readonly MachineSetting Declared = MachineSettings.Of("quiet")!;
+
     /// <summary>Its field in <c>driver.json</c>.</summary>
     public const string File = "quietMinutes";
 
-    /// <summary>The fewest minutes it takes: less would mark a session thinking through a long step.</summary>
-    public const int Least = 5;
+    /// <summary>The fewest minutes it takes, as the list declares it.</summary>
+    public static int Least => Declared.Least!.Value;
 
-    /// <summary>The most minutes it takes: more would leave a stuck session unseen for hours.</summary>
-    public const int Most = 120;
+    /// <summary>The most minutes it takes, as the list declares it.</summary>
+    public static int Most => Declared.Most!.Value;
 
     /// <summary>Q where the file sets none: ten minutes, longer than the longest foreground command Claude Code allows.</summary>
     public const int Default = 10;
@@ -26,7 +28,7 @@ public static class QuietSetting
         $"how long a session may be quiet is a whole number of minutes from {Least} to {Most} — e.g. `daoris settings quiet 15`.");
 
     /// <summary>Whether a value is one the setting takes.</summary>
-    public static bool Takes(long minutes) => minutes is >= Least and <= Most;
+    public static bool Takes(long minutes) => minutes >= Least && minutes <= Most;
 
     /// <summary>The bound this machine's watcher reads: the file's minutes, or the default.</summary>
     public static TimeSpan Of(DriverConfig config) => TimeSpan.FromMinutes(config.QuietMinutes ?? Default);
