@@ -15,6 +15,7 @@ import { CALLS_SLICE, GROUPS_SLICE, keys, SESSIONS_SLICE, sessionsIn } from '../
 import type { SessionEntry } from '../../work/entries';
 import type { SessionGrouping } from '../../work/groups';
 import { callsSlice, groupsIn, groupsSlice, sessionsSlice, withCall } from './sessions';
+import { sessionsComposer } from './sessionListMerge';
 import { mergeKeyed } from '../state/slices';
 
 describe('the running calls, pushed (WAITSAY1c2)', () => {
@@ -88,6 +89,41 @@ describe('the sessions, pushed (PUSH1d2)', () => {
     ]), true) as Session[];
 
     expect(composed.map((each) => each.id)).toEqual(['d-parked', 'g-open', 'd-early', 'g-late']);
+  });
+
+  // PERF1f: a pushed change is merged into the list the page holds, where the whole list was sorted again at every change.
+  it('merges each pushed change into the list it holds, the same list as composing the whole', () => {
+    const workspaces = ['default', 'games', 'site'];
+    const many = Array.from({ length: 60 }, (_, at) => record(`s${String(at).padStart(2, '0')}`, {
+      workspace: workspaces[at % 3], state: at % 7 === 0 ? 'working' : 'completed',
+      created: `2026-10-19T${String(8 + (at % 10)).padStart(2, '0')}:00:00+00:00`,
+    }));
+    let held = new Map<string, unknown>(workspaces.map((name) => [name, keyed(...many.filter((each) => each.workspace === name))]));
+    const kept = sessionsComposer();
+    const whole = (partitions: ReadonlyMap<string, unknown>) => sessionsComposer()(partitions, true);
+    const push = (workspace: string, delta: Session[], removed: string[] = []) => {
+      held = new Map(held).set(workspace, mergeKeyed(held.get(workspace), keyed(...delta), removed));
+      return kept(held, true);
+    };
+
+    const first = kept(held, true)!;
+    expect(first).toEqual(whole(held));
+
+    // A closed one opens: it moves to the front of the list.
+    expect(push('games', [{ ...many[1], state: 'working' }])).toEqual(whole(held));
+    // A new record, an open one's end, a record gone, and one that moved to another workspace.
+    expect(push('site', [record('s99', { workspace: 'site', created: '2026-10-19T07:30:00+00:00' })])).toEqual(whole(held));
+    expect(push('default', [{ ...many[0], state: 'completed' }])).toEqual(whole(held));
+    expect(push('site', [], [many[2].id])).toEqual(whole(held));
+    expect(push('site', [{ ...many[3], workspace: 'site' }])).toEqual(whole(held));
+    expect(push('default', [], [many[3].id])).toEqual(whole(held));
+
+    // A record the change did not touch is the very object the list held, and a change that touched half the list sorts it whole.
+    const before = kept(held, true)!;
+    const after = push('default', [{ ...many[6], note: 'moved' }])!;
+    expect(after.find((each) => each.id === many[9].id)).toBe(before.find((each) => each.id === many[9].id));
+    expect(push('default', many.filter((each) => each.workspace === 'default').map((each) => ({ ...each, note: 'again' }))))
+      .toEqual(whole(held));
   });
 
   it('composes nothing before the owner judged, and an empty list once it judged none', () => {

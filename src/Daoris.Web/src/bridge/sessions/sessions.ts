@@ -1,7 +1,7 @@
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { useEffect, useRef } from 'react';
-import { type Session, SESSION_ACTIVE } from '../../data/api';
+import type { Session } from '../../data/api';
 import { CALLS_SLICE, keys, SESSIONS_SLICE } from '../../data/queries';
 import { searchable } from '../../lib/searchable';
 import type { SessionEvent } from '../../work/conversation/conversation';
@@ -16,23 +16,13 @@ import type { RelatedOwn, RelatedRow } from '../../work/head/RelatedSessions';
 import type { MemoryRow } from '../../work/head/SessionMemory';
 import { call } from '../call';
 import { word } from './sessionHelpers';
+import { sessionsComposer } from './sessionListMerge';
 import { readSlice } from '../driver';
 import { mergeKeyed, type SliceSpec, usePushedLive } from '../state/slices';
 import { askHeld } from '../state/held';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
-
-/** The service's order of its records (`Sessions.ListAsync`): the open ones first, then by when each began. */
-const inServiceOrder = (a: Session, b: Session) => {
-  const open = Number(!SESSION_ACTIVE.has(a.state)) - Number(!SESSION_ACTIVE.has(b.state));
-  if (open !== 0) return open;
-  const began = (Date.parse(a.created) || 0) - (Date.parse(b.created) || 0);
-  return began !== 0 ? began : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-};
-
-const isRecord = (value: unknown): value is Session =>
-  typeof value === 'object' && value !== null && typeof (value as { id?: unknown }).id === 'string';
 
 /**
  * The session records as the shell pushes them (PUSH1d2, D182): a partition per workspace, each its records by id with the fields the
@@ -44,12 +34,7 @@ export const sessionsSlice: SliceSpec = {
   name: SESSIONS_SLICE,
   key: keys.sessions(null, true, null),
   read: () => readSlice(SESSIONS_SLICE),
-  compose: (partitions, judged) => {
-    if (!judged) return undefined;
-    return [...partitions.values()]
-      .flatMap((part) => (typeof part === 'object' && part !== null && !Array.isArray(part) ? Object.values(part).filter(isRecord) : []))
-      .sort(inServiceOrder);
-  },
+  compose: sessionsComposer(),
   merge: mergeKeyed,
 };
 
