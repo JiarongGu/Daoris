@@ -368,7 +368,6 @@ public static class WorkflowGraphRuns
             Default("accept", rule is null ? null : rule.AutoAccept ? "automatic" : "you");
         }
 
-        if (node.Kind == NodeKinds.PullRequest) Default("plugin", rule?.Plugin);
         if (NodeKinds.IsPlugin(node.Kind)) Default("plugin", node.Kind[..node.Kind.IndexOf('/')]);
 
         var automatic = settings.FirstOrDefault(setting => setting.Name == "accept")?.Value is "automatic";
@@ -379,7 +378,6 @@ public static class WorkflowGraphRuns
             NodeKinds.Look => (WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed),
             NodeKinds.Land => (WorkflowKinds.Landing, automatic ? WorkflowParticipation.Automatic : WorkflowParticipation.You, WorkflowExecutor.Daoris,
                 automatic ? null : WorkflowPress.Accept),
-            NodeKinds.PullRequest => (WorkflowKinds.PullRequest, WorkflowParticipation.You, WorkflowExecutor.Plugin, WorkflowPress.Merge),
             NodeKinds.GoAhead => (WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
             NodeKinds.Human => (NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris, null),
             NodeKinds.Review => (NodeKinds.Review, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept),

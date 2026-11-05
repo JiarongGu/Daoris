@@ -277,7 +277,7 @@ public static class PlacePlans
         DriverConfig config, string name, string workspace, PlaceAsk ask, SetupLand land, PlaceTip tip, IWorkplacePluginCatalog plugins,
         PlannedWorkflows? planned, List<PlaceSave> saves, List<PlaceChange> changes, Action<string, string, string> refuse)
     {
-        if (land.Method == LandNodes.PullRequest && SetupPresets.PluginFor(tip.Host, null, plugins) is null)
+        if (land.Method == SetupLand.PullRequest && SetupPresets.PluginFor(tip.Host, plugins) is null)
         {
             refuse(Delivery, NoLandingPlugin, tip.Host is { } host
                 ? $"`{name}`'s remote is on `{host}`, and no landing plugin here opens a pull request there: a pull request is its platform's "
@@ -398,10 +398,9 @@ public static class PlacePlans
                     .Select(quest => new PlaceReleased(quest.Id, quest.Short ?? quest.Title))]
                 : [];
             var declares = tip.Text is { } text && IntegrationDeclaration.Read(text).Facts is not null;
-            var plugin = SetupPresets.PluginFor(tip.Host, null, plugins);
             // A delivery is the person's choice where it is driven by a rule set somewhere; the default rule chose nothing.
             var chosen = before.Driven && before.Values.Landing.Source != PlaceSource.Default;
-            var (suggested, why) = SetupPresets.Suggestion(before.Match, chosen, declares, plugin);
+            var (suggested, why) = SetupPresets.Suggestion(before.Match, chosen, declares);
             rows.Add(new PlaceRepository(
                 row.Repository, workspace, before, after, applied.Changes, LowersOf(store, config, applied, row.Repository, workspace), reach, released,
                 DeclarationOf(tip, applied.After, row.Repository, workspace, after), tip.Problem,

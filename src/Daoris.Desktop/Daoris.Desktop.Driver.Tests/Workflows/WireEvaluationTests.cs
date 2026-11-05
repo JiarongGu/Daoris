@@ -541,7 +541,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void An_observed_built_in_takes_the_callers_git_reads()
     {
-        var g = new Graph([new NodeDeclaration("p", NodeKinds.Pushed, 1, NodeReach.Observed), Node("n")], [After("w1", "p", "n")])
+        var g = new Graph([new NodeDeclaration("p", NodeKinds.Push, 1, NodeReach.Performed), Node("n")], [After("w1", "p", "n")])
         {
             Run = Base with
             {
@@ -556,7 +556,7 @@ public sealed class WireEvaluationTests
 
         g.Run = g.Run with { Git = new NodeGitReads(RemoteTip: _ => "t1") };
         g.Evaluate();
-        Assert.Equal((NodeStates.Reached, NodeSource.PluginRef, NodeStates.Ready), (g.State("p"), g.Statuses["p"].By, g.State("n")));
+        Assert.Equal((NodeStates.Reached, NodeSource.Git, NodeStates.Ready), (g.State("p"), g.Statuses["p"].By, g.State("n")));
     }
 
     /// <summary>A branch unit whose landing a plugin answered it pushed at <c>t1</c>.</summary>
@@ -702,7 +702,7 @@ public sealed class WireEvaluationTests
     [Fact]
     public void An_observation_on_a_moved_tip_gives_no_receipt_and_no_start()
     {
-        var g = new Graph([new NodeDeclaration("p", NodeKinds.Pushed, 1, NodeReach.Observed), Node("n")], [After("w1", "p", "n")])
+        var g = new Graph([new NodeDeclaration("p", NodeKinds.Push, 1, NodeReach.Performed), Node("n")], [After("w1", "p", "n")])
         {
             Run = Base with
             {
@@ -806,7 +806,7 @@ public sealed class WireEvaluationTests
     private static readonly NodeDeclaration[] RunNodes =
     [
         Node("claimed", NodeKinds.Claimed), Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look), Node("handed", NodeKinds.Land),
-        Node("pushed", NodeKinds.Pushed), Node("release"),
+        Node("pushed", NodeKinds.Push), Node("release"),
     ];
 
     private static readonly Wire[] RunWires =

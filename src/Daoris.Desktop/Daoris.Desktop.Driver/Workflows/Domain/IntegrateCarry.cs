@@ -32,8 +32,7 @@ public static class IntegrateCarry
     public static IReadOnlyList<string> Cannots(string repository, NodeGraph graph, LandingIntegrate? policy, Landing landing, AcceptedGates? accepted)
     {
         var integrate = graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Integrate);
-        var pushes = graph.Nodes.Where(node => node.Kind is NodeKinds.Pushed or NodeKinds.PullRequest).ToList();
-        if (graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } land || (integrate is null && pushes.Count == 0)) return [];
+        if (graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } land || integrate is null) return [];
 
         var said = new List<string>();
         if (integrate is not null)
@@ -44,12 +43,6 @@ public static class IntegrateCarry
             {
                 said.Add($"{step} integrates the branch the landing `{land.Id}` makes, and the landing names no pattern for one (a merge makes none): "
                     + "the workflow's `land` names one.");
-            }
-
-            if (landing.Plugin is { } plugin)
-            {
-                said.Add($"{step} integrates a branch no plugin lands, and the landing `{land.Id}` is landed by the plugin `{plugin}`: that "
-                    + "repository's platform integrates its work, so it chooses a pull-request version.");
             }
 
             if (request is LandingIntegrate.Done or LandingIntegrate.Steward)
@@ -76,15 +69,6 @@ public static class IntegrateCarry
             {
                 said.Add($"{step} asks with `done`, which a landing with no press starts, and the landing `{land.Id}` waits for your Accept (a `review` "
                     + "stands before it): a version with no `review` lands with no press.");
-            }
-        }
-
-        if (landing.Plugin is null)
-        {
-            foreach (var push in pushes)
-            {
-                said.Add($"its `{push.Id}` (`{push.Kind}`) pushes the landing's branch through a plugin, and the landing `{land.Id}` names none: "
-                    + "the workflow's `land` names one.");
             }
         }
 

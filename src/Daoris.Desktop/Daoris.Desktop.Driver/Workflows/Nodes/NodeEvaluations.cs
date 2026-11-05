@@ -239,28 +239,21 @@ internal static class NodeEvaluations
     }
 
     /// <summary>
-    /// What git says for a branch unit's observed built-ins that wait on it: a <c>pushed</c> active or unknown on a landing a plugin answered it
-    /// pushed reads the landed branch's remote-tracking ref, and a <c>pull-request</c> active or unknown on an answer completed from another
-    /// commit asks git's ancestry, each through the pass's one read (<paramref name="git"/>). Null where nothing waits on git, so a unit with no
-    /// such node asks it nothing; what was not read stays absent, and its node unknown.
+    /// What git says for a branch unit's observed built-ins that wait on it: a <c>push</c> active or unknown on a landing Daoris pushed reads the
+    /// landed branch's remote-tracking ref, through the pass's one read (<paramref name="git"/>). Null where nothing waits on git, so a unit with
+    /// no such node asks it nothing; what was not read stays absent, and its node unknown.
     /// </summary>
     public static async Task<NodeGitReads?> GitReadsAsync(GovernedUnit governed, NodeRecord record, PassGit git, CancellationToken ct)
     {
-        // A run's `pushed` and `pull-request` observe its branch at the landing `handed` reached on.
+        // A run's `push` observes its branch at the landing `land` reached on.
         var unit = governed.Scope is null ? governed.Unit : Landed(governed, record.Statuses)?.Unit;
         if (unit?.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(unit) is not { } landing) return null;
-        bool Waits(string kind) => governed.Graph.Nodes.Any(node => node.Kind == kind
+        var waits = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push
             && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
+        if (!waits || !BuiltInNodes.AsksRemote(landing)) return null;
 
-        var root = governed.Watched.Root;
-        var remote = Waits(NodeKinds.Pushed) && BuiltInNodes.AsksRemote(landing);
-        var tip = remote ? await git.RemoteAsync(root, landing.Branch, ct).ConfigureAwait(false) : null;
-        var ancestry = Waits(NodeKinds.PullRequest) ? BuiltInNodes.AncestryOf(landing) : null;
-        var holds = ancestry is var (holder, held) ? await git.HoldsAsync(root, holder, held, ct).ConfigureAwait(false) : null;
-        if (!remote && ancestry is null) return null;
-        return new NodeGitReads(
-            remote ? each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null : null,
-            ancestry is null ? null : (holder, held) => (holder, held) == ancestry ? holds : null);
+        var tip = await git.RemoteAsync(governed.Watched.Root, landing.Branch, ct).ConfigureAwait(false);
+        return new NodeGitReads(each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null);
     }
 
     /// <summary>Each checkout's landed branches a pass may judge <c>pushed</c> on: what the pass's one read of its remote refs serves.</summary>
@@ -268,7 +261,7 @@ internal static class NodeEvaluations
     {
         var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
         var pushing = governed.Where(each => each.Unit.Kind is WorkUnitKind.Branch or WorkUnitKind.Run && each.Watched.Root.Length > 0
-                && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Pushed))
+                && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push))
             // A run's landed branches are its branches' landings, each read once a checkout with the rest.
             .SelectMany(each => (each.Scope?.Branches ?? [each.Unit]).Select(unit => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(unit))))
             .Where(each => each.Landing is { } landing && BuiltInNodes.AsksRemote(landing));

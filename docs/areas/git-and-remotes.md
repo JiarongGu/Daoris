@@ -157,9 +157,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 
 **Landing and pull requests**
 
-30. Daoris's one push is the push act (rule 36); it opens no pull request. A landing rule names a plugin that declares `work/land`; it
-    pushes and opens the pull request after Daoris made the branch, its `git push` still its own until the plugins move to their APIs
-    (G9). With no plugin named, the landing pushes nothing. (from D87, D100, D241)
+30. Daoris's one push is the push act (rule 36); it opens no pull request. A workflow's `push` node performs it (`PushDoor`) and a
+    plugin's performed step on `work/perform` opens the pull request. `work/land` and a landing's plugin remain only until the
+    landing-plugin wire (`LandingPlugins.LandAsync`/`HandAsync`, the hand-off verb, `HookPoints.Land`) is deleted. (from D87, D100, D241)
 31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
     yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
     because the plugin's start and its pull-request call pass no door. (from D198, D145)

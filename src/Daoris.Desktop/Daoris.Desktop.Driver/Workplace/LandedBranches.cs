@@ -111,6 +111,10 @@ public sealed class LandedBranches(string home)
             ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest ?? each.PullRequest, PushedTip = tip }
             : each)]);
 
+    /// <summary>The commit Daoris's own push act left on origin for the branch (G8, D241 point 2), kept on its entry for the <c>push</c> node to read.</summary>
+    public void Pushed(string repository, string branch, string tip) => Edit(all =>
+        [.. all.Select(each => Standing(each, repository, branch) ? each with { Pushed = true, PushedTip = tip } : each)]);
+
     /// <summary>
     /// A later done moved the standing branch on as a fast-forward (LAND2c, D149 point 2), or by one more squashed commit
     /// (PROCESS1b-ii): its tip is the advance's, the session tip squashed moves with it where the advance squashed one, and the

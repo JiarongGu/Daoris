@@ -39,10 +39,10 @@ public static class NodeGraphs
 
     /// <summary>The kinds an end is at or before the line by: the cleanup waits for no such end (§C2, §C3).</summary>
     private static readonly HashSet<string> AtOrBeforeTheLine =
-        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Land, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
+        new([NodeKinds.Claimed, NodeKinds.WorkRequests, NodeKinds.Land, NodeKinds.Push, NodeKinds.Integrate, NodeKinds.Line], StringComparer.Ordinal);
 
     /// <summary>The kinds that observe the landing record (INTEGRATE1n, F47): none can be reached before a <c>handed</c> has made one.</summary>
-    private static readonly string[] OfTheLanding = [NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line, NodeKinds.Integrate];
+    private static readonly string[] OfTheLanding = [NodeKinds.Push, NodeKinds.Line, NodeKinds.Integrate];
 
     /// <summary>
     /// Everything a save refuses in <paramref name="graph"/>, in a stable order; empty when it holds. The schema and the bounds; each
@@ -244,45 +244,41 @@ public static class NodeGraphs
             if (method is not null && LandNodes.Methods.Contains(method, StringComparer.Ordinal))
             {
                 var after = Reach([land.Id], ordered, forward: true);
-                var pushes = byId.Values.Where(node => node.Kind == NodeKinds.Pushed).ToList();
-                var requests = byId.Values.Where(node => node.Kind == NodeKinds.PullRequest).ToList();
-                void Tail(string kind, bool brought, List<NodeDeclaration> held)
+                // A push is Daoris's step after a landing that made a branch; an integrate is the tail of its own method (G8).
+                foreach (var late in byId.Values.Where(node => node.Kind == NodeKinds.Push && !after.Contains(node.Id)))
                 {
-                    if (!brought)
+                    Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{NodeKinds.Push}` pushes the branch `{land.Id}` made, and no way from `{land.Id}` reaches it.");
+                }
+
+                if (method != LandNodes.Branch)
+                {
+                    foreach (var extra in byId.Values.Where(node => node.Kind == NodeKinds.Push))
                     {
-                        foreach (var extra in held)
-                        {
-                            var brings = kind == NodeKinds.Integrate ? LandNodes.Integrate : kind == NodeKinds.Pushed ? LandNodes.Push : LandNodes.PullRequest;
-                            Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{kind}`, which comes with a `land` whose method is `{brings}`: "
-                                + "choose that method on the landing and it brings this step.");
-                        }
-                    }
-                    else if (held.Count == 0)
-                    {
-                        Say(GraphRefusal.LandTail, null, land.Id, $"node `{land.Id}`: a `{method}` land brings a `{kind}` after it, and the graph holds none.");
-                    }
-                    else
-                    {
-                        foreach (var late in held.Where(node => !after.Contains(node.Id)))
-                        {
-                            Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{kind}` is the tail of `{land.Id}`, and no way from `{land.Id}` reaches it.");
-                        }
+                        Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{NodeKinds.Push}`, which pushes the branch of a `land` whose method is `{LandNodes.Branch}`: "
+                            + "choose that method on the landing.");
                     }
                 }
 
-                Tail(NodeKinds.Pushed, method is LandNodes.Push or LandNodes.PullRequest, pushes);
-                Tail(NodeKinds.PullRequest, method == LandNodes.PullRequest, requests);
-                Tail(NodeKinds.Integrate, method == LandNodes.Integrate, integrates);
-                if (method == LandNodes.PullRequest && pushes.Count > 0)
+                if (method != LandNodes.Integrate)
                 {
-                    var afterPush = Reach(pushes.Select(node => node.Id), ordered, forward: true);
-                    foreach (var early in requests.Where(node => !afterPush.Contains(node.Id)))
+                    foreach (var extra in integrates)
                     {
-                        Say(GraphRefusal.LandTail, null, early.Id, $"node `{early.Id}`: a `{NodeKinds.PullRequest}` comes after the `{NodeKinds.Pushed}` of `{land.Id}`, and no way from it reaches `{early.Id}`.");
+                        Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{NodeKinds.Integrate}`, which comes with a `land` whose method is `{LandNodes.Integrate}`: "
+                            + "choose that method on the landing and it brings this step.");
+                    }
+                }
+                else if (integrates.Count == 0)
+                {
+                    Say(GraphRefusal.LandTail, null, land.Id, $"node `{land.Id}`: a `{method}` land brings a `{NodeKinds.Integrate}` after it, and the graph holds none.");
+                }
+                else
+                {
+                    foreach (var late in integrates.Where(node => !after.Contains(node.Id)))
+                    {
+                        Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{NodeKinds.Integrate}` is the tail of `{land.Id}`, and no way from `{land.Id}` reaches it.");
                     }
                 }
             }
-
         }
 
         // INTEGRATE1o (§17.3's graph rules): at most one `work.requests`, after a `claimed` and before every landing. After: a `claimed` of this graph

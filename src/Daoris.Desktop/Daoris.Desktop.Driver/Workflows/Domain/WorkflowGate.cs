@@ -84,9 +84,9 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
         string? Text(string name) => land.Options.TryGetValue(name, out var raw) ? NodeOptions.Value(raw) as string : null;
         var rule = Landing;
-        var method = Text("method") ?? (rule.Form == LandingForm.Merge ? LandNodes.Merge : rule.Plugin is not null ? LandNodes.PullRequest : LandNodes.Branch);
+        var method = Text("method") ?? (rule.Form == LandingForm.Merge ? LandNodes.Merge : LandNodes.Branch);
         var squash = (land.Options.TryGetValue("squash", out var written) ? NodeOptions.Value(written) as bool? : null) ?? rule.Squash;
-        squash &= method is LandNodes.Branch or LandNodes.Push or LandNodes.PullRequest;
+        squash &= method is LandNodes.Branch;
         var template = Text("message");
         var ticket = template?.Contains("{ticket}", StringComparison.Ordinal) == true ? BranchPatterns.Ticket(subject, rule.Key) : null;
 
@@ -357,7 +357,6 @@ public static class Involvement
                 NodeKinds.Opinion => WorkflowKinds.Opinion,
                 NodeKinds.Look => WorkflowKinds.Look,
                 NodeKinds.Land => WorkflowKinds.Landing,
-                NodeKinds.PullRequest => WorkflowKinds.PullRequest,
                 NodeKinds.GoAhead => WorkflowKinds.GoAhead,
                 // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
                 NodeKinds.Integrate => NodeKinds.Integrate,

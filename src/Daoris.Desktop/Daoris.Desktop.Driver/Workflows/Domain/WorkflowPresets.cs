@@ -97,8 +97,6 @@ public static class WorkflowPresets
             said.Add(method switch
             {
                 LandNodes.Merge => you ? "You accept each piece of work, and it merges into the line." : "Each piece of work merges into the line once its agent is done.",
-                LandNodes.Push => you ? "You accept each piece of work onto a branch, and its plugin pushes it."
-                    : "Each piece of work lands on a branch once its agent is done, and its plugin pushes it.",
                 _ => you ? "You accept each piece of work onto a branch, and push it yourself."
                     : "Each piece of work lands on a branch once its agent is done, and you push it yourself.",
             });
