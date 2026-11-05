@@ -24,11 +24,11 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     /// turn is, its cooling line before that end and the end moving it to the next account; and an open's refused model kept in the offers
     /// store.
     /// </param>
-    /// <returns>
-    /// Whether the chat it goes on with is to be tried once more as the same resume: its native harness ended on a failed exit before it named
-    /// its conversation, the first time. The record is left working, and nothing is concluded.
-    /// </returns>
-    public async Task<bool> WatchAsync(
+    /// <remarks>
+    /// A native chat going on whose harness ended on a failed exit before it named its conversation is tried once more by the run itself,
+    /// handed the words its first process never acknowledged (D243); the record stays working, and a second such end concludes `exited`.
+    /// </remarks>
+    public async Task WatchAsync(
         string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
         string? servers, Action<JsonElement>? said, ChatWatched watched, ActorRun actorRun, MachineLog actorLog,
@@ -87,7 +87,10 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
                 said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows))));
-            await (goOn is null ? run.OpenAsync(CancellationToken.None) : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None))
+            // The native door's go-on hands the run its ask, which the run's one retry reads and marks.
+            await (goOn is null
+                    ? run.OpenAsync(CancellationToken.None)
+                    : run.ResumeAsync(goOn.Ask.Conversation, CancellationToken.None, mapper is not null && chat is null ? goOn.Ask : null))
                 .ConfigureAwait(false);
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
@@ -97,25 +100,19 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             ending = true;
             var end = await run.EndAsync(CancellationToken.None).ConfigureAwait(false);
 
-            // The native door's harness ended on a failed exit before naming its conversation: it never opened it, which a crash, a failed
-            // sign-in or a flag it rejected ends the same way, so it proves nothing of its loss. The same resume is tried once more, once this
-            // watch has let its process go; a second such end is `exited`, never `gone`. Read from the structure, never from its words.
-            if (goOn is { Ask.Refused: null } && mapper is not null && chat is null && !goOn.Ask.Named
+            // The run tried the same resume once more where its native harness ended on a failed exit before naming its conversation, which a
+            // crash, a failed sign-in or a flag it rejected ends the same way, so it proves nothing of its loss; a second such end is
+            // `exited`, never `gone`. Read from the structure, never from its words.
+            if (goOn is { Ask: { Refused: null, Retried: true, Named: false } } && mapper is not null && chat is null
                 && end.Exit != 0 && !processes.WasStopRequested(sessionId))
             {
-                if (!goOn.Ask.Retried)
-                {
-                    goOn.Ask.Again();
-                    return true;
-                }
-
                 goOn.Ask.Refused = ContinueWhy.Of(ContinueWhy.Exited);
             }
 
             if (goOn?.Ask.Refused is { } refused)
             {
                 await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return false;
+                return;
             }
 
             // What it consumed, where its door reported it, measured before the record moves, so a page told of the ending finds the
@@ -129,7 +126,6 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The driver's own reason when it was the driver, closing say, and the person's otherwise. Said before anyone writes to it.
             var note = conclusion.EndedNoteFor(sessionId, watched, stopped);
             await conclusion.ConcludeAsync(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
-            return false;
         }
         catch (Exception error)
         {
@@ -142,13 +138,13 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             if (goOn?.Ask.Refused is { } refused)
             {
                 await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
-                return false;
+                return;
             }
 
             if (processes.WasStopRequested(sessionId))
             {
                 await conclusion.ConcludeAsync(sessionId, "stopped", conclusion.EndedNoteFor(sessionId, watched, stopped: true), onEnded).ConfigureAwait(false);
-                return false;
+                return;
             }
 
             // Its agent refused the choice at the open, before any prompt: `choice-not-offered`, no strike and no Ended notice, the reading
@@ -157,11 +153,10 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             {
                 var ended = Observation.ChoiceNotOffered(watched.Adapter, notOffered);
                 await conclusion.ConcludeAsync(sessionId, ended.State, ended.AsNoted(), onEnded).ConfigureAwait(false);
-                return false;
+                return;
             }
 
             await conclusion.ConcludeAsync(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
-            return false;
         }
         finally
         {

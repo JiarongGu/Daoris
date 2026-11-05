@@ -78,7 +78,7 @@ internal sealed class ChatReplacement(IExecutorWiring wiring) : IExecutor
     /// Against a host whose <c>opens</c> mark is 2 the open moves the words the refused record keeps, and each goes to the replacement as its
     /// own record's word, never taken off the refused record; a moved part's display goes with its message.
     /// </remarks>
-    public async Task ReplaceAsync(Task<bool> watch, ChatPending pending, string sessionId, HarnessSelection selection)
+    public async Task ReplaceAsync(Task watch, ChatPending pending, string sessionId, HarnessSelection selection)
     {
         var context = wiring.Context;
         try

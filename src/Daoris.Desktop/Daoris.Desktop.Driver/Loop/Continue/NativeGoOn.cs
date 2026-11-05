@@ -170,17 +170,20 @@ internal sealed class NativeGoOn(LoopContext context)
         AgentRunEnd ended;
         try
         {
-            ended = await run.GoOnAsync(conversation, prompt, opening, started: () =>
+            // The words are the run's input, written to its next process as that process's one prompt (D243): their receipt `sent` is the
+            // write's return, and they leave the record then (COWORK1c, the design §7).
+            run.Input.Hold(new DoorWord([.. words.Select(word => word.Id).OfType<string>()], prompt, opening, Written: () =>
             {
                 up = true;
-                // COWORK1c (the design §7): the go-on carries them from its start, their receipt `sent`, and they leave the record.
                 foreach (var word in words)
                 {
                     if (word.Id is { } id) _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Receipt, Id = id, Receipt = Receipts.Sent }, say: null);
                 }
 
                 Went(words);
-            }, ct).ConfigureAwait(false);
+            }));
+            await run.ResumeAsync(conversation, ct).ConfigureAwait(false);
+            ended = await run.EndAsync(ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested && !up)
         {
