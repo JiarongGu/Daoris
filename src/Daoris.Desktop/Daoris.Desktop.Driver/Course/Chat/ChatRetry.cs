@@ -14,4 +14,10 @@ internal sealed record ChatRetry(string Session, string Agent, TimeProvider Cloc
 {
     /// <summary>Told as each try goes, its number from one, and when the next would, or null where it is the last: the machine log's line.</summary>
     public Action<TransientEpisode, int, DateTimeOffset?>? Tried { get; init; }
+
+    /// <summary>The tries its episode makes: its line's tries rule (CONTEXTDRIVE1n, <see cref="ConversationRules.Tries"/>), else D210's five.</summary>
+    public int Limit { get; init; } = TransientRetry.Bound;
+
+    /// <summary>Told as a turn ends past its episode, before its end is recorded: the turn's end its rules then judge (<see cref="TransientMove"/>).</summary>
+    public Action? PastBound { get; init; }
 }

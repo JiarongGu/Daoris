@@ -60,7 +60,6 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
           place={place}
           landingAsked={place.asked === 'landing'}
           notify={notify}
-          onOpenPlugin={(plugin) => open('plugins', plugin)}
         />
       ),
       sessions: (

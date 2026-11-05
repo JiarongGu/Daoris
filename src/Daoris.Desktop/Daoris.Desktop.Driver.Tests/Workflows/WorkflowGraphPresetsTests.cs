@@ -266,8 +266,6 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     [Fact]
     public async Task New_from_a_repository_s_Current_is_retired_and_names_the_conversion()
     {
-        File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}","plugin":"acme.pr","autoAccept":true}}}""");
-
         var exit = await Run("workflow new made --from current:web-app", ("web-app", "work", null));
 
         Assert.Equal(2, exit);
@@ -304,7 +302,7 @@ public sealed class WorkflowGraphPresetsTests : IDisposable
     public async Task With_no_press_is_refused_for_a_line_that_declares_no_gates_and_writes_no_choice()
     {
         await Run("workflow new quiet --from integrated-no-press");
-        File.WriteAllText(Config, """{"landings":{"web-app":{"form":"branch","pattern":"w/{quest}"}}}""");
+        File.WriteAllText(Config, "{}");
 
         var exit = await Run("workflow use quiet --repository web-app", ("web-app", "work", null));
 

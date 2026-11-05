@@ -9,8 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class GraphGatesTests
 {
     private const string Declared = """
-        {"landings":{"web-app":{"form":"branch","pattern":"feature/{quest}"}},
-         "reviews":{"web-app":{"required":true,"environments":[
+        {"reviews":{"web-app":{"required":true,"environments":[
            {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"},
            {"name":"dev","kind":"deployed","procedure":"docs/deploying.md"}]}},
          "opinions":{"web-app":{"reviewers":["codex-acp","dsh"],"on":["landing"],"verify":true,"minutes":30}}}

@@ -84,7 +84,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             return new TreeLanding(false,
                 $"the session's tree has uncommitted work — {dirty} path(s) — which a "
                 + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.")
-            { Refusal = AutoLandingCode.Uncommitted };
+            { Refusal = LandingCode.Uncommitted };
         }
 
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -101,7 +101,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         if (string.IsNullOrWhiteSpace(ahead))
         {
             return new TreeLanding(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.")
-            { Refusal = AutoLandingCode.Nothing };
+            { Refusal = LandingCode.Nothing };
         }
 
         var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -121,7 +121,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             if (delivering is not null && !string.Equals(branch, name, StringComparison.Ordinal))
             {
                 return new TreeLanding(false, $"Nothing was landed: this session's tree is on its own branch, `{branch}`, and its delivery lands `{name}`.")
-                { Refusal = AutoLandingCode.Refused };
+                { Refusal = LandingCode.Refused };
             }
 
             var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
@@ -138,7 +138,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
                 if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct, delivering).ConfigureAwait(false) is { } stays)
                 {
                     return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, could not be replayed in place ({stays}). "
-                        + "The tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut };
+                        + "The tree and its branch are as they were.") { Refusal = LandingCode.Refused, LeftOut = sync.Held.LeftOut };
                 }
 
                 return new Branched(
@@ -157,7 +157,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
                     is { Code: not 0 } unverified)
             {
                 return new TreeLanding(false, $"Nothing was landed: `{branch}` was not read standing at {TextBounds.ShortCommit(commits[^1].Sha, 8)}: "
-                    + $"{FirstLine(unverified.Stderr)}") { Refusal = AutoLandingCode.Refused };
+                    + $"{FirstLine(unverified.Stderr)}") { Refusal = LandingCode.Refused };
             }
 
             return new Branched(
@@ -180,7 +180,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
         if (exists == 0 && entered && context.Recorded.Of(repository, name) is null)
         {
-            return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = AutoLandingCode.Exists };
+            return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = LandingCode.Exists };
         }
 
         // LANDNODE1b3: the branch this delivery wrote and read back before Daoris stopped goes on to its record (the land node design §3, a
@@ -404,7 +404,7 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         {
             return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "
                 + $"{FirstLine(moveErr)} It may have moved meanwhile; nothing was changed.")
-            { Refusal = AutoLandingCode.Exists };
+            { Refusal = LandingCode.Exists };
         }
 
         var pushIt = handedOn ? "" : $" Push it to grow its pull request: `git push origin {name}`.";

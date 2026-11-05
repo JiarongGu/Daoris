@@ -127,7 +127,7 @@ public sealed class EntryLandingsTests
         var refused = EntryLandWords.Conflicted("feature/x", "CONFLICT (content): Merge conflict in app.cs.");
 
         Assert.False(refused.Landed);
-        Assert.Equal(AutoLandingCode.Refused, refused.Refusal);
+        Assert.Equal(LandingCode.Refused, refused.Refusal);
         Assert.Contains("onto `feature/x`, its entry's branch, conflicts with the entry's earlier work there", refused.Message);
         Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);    }
 
@@ -138,7 +138,7 @@ public sealed class EntryLandingsTests
     [Fact]
     public void A_left_out_part_is_kept_as_a_coded_note_naming_the_entrys_branch()
     {
-        var note = LandingRules.LeftOutNote("feature/x");
+        var note = LandingNotes.LeftOutNote("feature/x");
 
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.Equal("the person left this part out when its line of work landed on `feature/x`: its work did not land there.", note.Text);
@@ -156,9 +156,9 @@ public sealed class EntryLandingsTests
         SessionEvent At(SessionEvent note, long seq) => note with { Seq = seq };
         var said = new SessionEvent { Kind = SessionEventKind.Note, Text = "a turn ended." };
 
-        Assert.Equal("feature/x-2", LandingRules.LeftOutOf([At(LandingRules.LeftOutNote("feature/x"), 1), said, At(LandingRules.LeftOutNote("feature/x-2"), 3)]));
-        Assert.Null(LandingRules.LeftOutOf([At(LandingRules.LeftOutNote("feature/x"), 1), At(LandingRules.Note(new TreeLanding(true, "put the work on `feature/x`.")), 2)]));
-        Assert.Equal("feature/x", LandingRules.LeftOutOf([At(LandingRules.Note(new TreeLanding(true, "put the work on `feature/y`.")), 1), At(LandingRules.LeftOutNote("feature/x"), 2)]));
-        Assert.Null(LandingRules.LeftOutOf([said]));
+        Assert.Equal("feature/x-2", LandingNotes.LeftOutOf([At(LandingNotes.LeftOutNote("feature/x"), 1), said, At(LandingNotes.LeftOutNote("feature/x-2"), 3)]));
+        Assert.Null(LandingNotes.LeftOutOf([At(LandingNotes.LeftOutNote("feature/x"), 1), At(LandingNotes.Note(new TreeLanding(true, "put the work on `feature/x`.")), 2)]));
+        Assert.Equal("feature/x", LandingNotes.LeftOutOf([At(LandingNotes.Note(new TreeLanding(true, "put the work on `feature/y`.")), 1), At(LandingNotes.LeftOutNote("feature/x"), 2)]));
+        Assert.Null(LandingNotes.LeftOutOf([said]));
     }
 }

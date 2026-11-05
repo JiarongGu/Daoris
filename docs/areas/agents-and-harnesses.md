@@ -178,8 +178,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     past 8 days, else 60 minutes. A limit is never a strike. (from D125)
 38. A limited line resumes by itself at the look: its own conversation on its own account when ready, else a briefed resume on
     another account or choice, else it waits showing the earliest reset. (from D206)
-39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes. It is never a strike, park,
-    cool-off or walk. Past the bound the quest is held until the person's word or *Try again*. (from D210)
+39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries
+    rule. It is never a strike, park, cool-off or walk. Past the bound the quest is held until the person's word or
+    *Try again*. Every run on the protocol door takes that one retry (`TransientRetries.For` at the hold, `ChatRetry` for a
+    conversation), each with its owner's check: a driven session, an intake, a helper, an opinion, a partner and a
+    brainstorm voice. A pass with minutes of its own waits none past them. Past the bound, or with its minutes ended inside
+    the episode, it fails with its kind's code (`helper.transient`, refused `transient`; `opinion.transient`;
+    `intake.transient`, its ask unbound; `partner.transient`, its work kept; a voice dropped), never *timed out*
+    (`TransientEnded`). (from D210, D229)
 40. Access goes to the person: the account is marked refused or signed out, with no retry. A fatal error fails with its
     reason and is a strike. (from D210)
 
@@ -287,8 +293,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   agent-provider library as a package. Its rows wait on that library's releases; nothing is referenced by the driver yet.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
-- **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1d**: the retry for intakes, helpers,
-  opinions, partners and brainstorm voices; **1e**: what remains of point 8.
+- **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1d**'s rest: an intake's ask bound
+  again after a second `intake.transient`, an opinion's gate read `Unavailable` / `transient` from its code, and each
+  kind's own authority as its check; **1e**: what remains of point 8 (the native door's live, driven and one-turn tries).
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
   Waits on a recorded native limit, the owner's yes.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot

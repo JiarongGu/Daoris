@@ -42,9 +42,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Named workflow reading | `Workflows/Domain/WorkflowNamed.cs`, `NamedStepReading.cs`, `NamedStepCanon.cs`, `Workflows/WorkflowOperations.cs`, `WorkflowUsing.cs` | A saved file and its ids and plan to add a version; a version's steps read, and their canonical text and digest; the typed operations, with choosing a workflow for a place apart |
 | `daoris workflow` | `Workflows/DriverWorkflowsCommand.cs`, `WorkflowTerminal.cs`, `WorkflowListing.cs`, `WorkflowChoosing.cs`, `WorkflowWriting.cs` | The usage and the door; the terminal's flags, say and press; the reading, choosing and writing verbs |
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
-| Land node | `Workflows/Nodes/LandNodes.cs` | `land`'s options, their resolution at the bind, the intent a run lands by |
-| Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land` |
-| Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs`, `Workplace/LandingRules.cs` | The merge, the branch and the squash; the plan and its refusals; `LandingRules` and the line's landing outside a run. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
+| Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
+| Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
+| Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press, a hand-off and a part left out; whether a named plugin can land work (`LandingPlugins.ProblemOf`) |
+| Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
+| Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs` | The merge, the branch and the squash; the plan and its refusals, each read from the run's bound `land`. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json` (`LandedBranchJson` writes and reads it by hand), a pull request's state from its plugin, the look's tidy (`TidyHolders` the trees sessions hold, `TidyKeeping` what the look keeps beside the branches; `BranchTidying` keeps their doors and the saying) |
 | Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workflows/PlaceIntegrate.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; `PlaceIntegrate` the place's requester outside a run; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
@@ -172,10 +174,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     version as a graph; each place on the landing rules follows the home default or a saved copy of what its rules drew; a rule's
     `integrate` becomes its line's policy; the landing rules and work cycles leave `driver.json`. A version the save refuses is
     left, said. There is no door, receipt or undo. (from D232)
-45. No landing rule or work cycle is read or written: `driver.json` holds no `landings`, `workspaceLandings` or work cycles, and no
-    door sets one. A hand-off pushes to the plugin its card names. (from D232)
+45. There is no landing rule: no type, reader or writer of `landings` or `workspaceLandings` outside the migration, which reads them raw
+    (`MigratedPlaces`) and takes them out of `driver.json` once. Every door that lands, plans, names a branch or says how work lands reads
+    the run's bound `land`; work no version governs lands as the declared merge and is held by its gate. A line's integration reads
+    the line's policy. A hand-off pushes to the plugin its card names, and a pull request is asked of the plugin that pushed it. `LINES`
+    answers no `landings` and `SESSION_PROCESS` no landing. (from D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
-    no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. (from D227, D228, D232)
+    no look that lands, no due list, and no landing rule's `tidy`; the performer of a run's `land` is the only lander. What a landing try
+    came to is a `LandingCode`. The service answers no `POST /api/quests/{id}/bind`. (from D227, D228, D232)
 
 **Drawing**
 
@@ -217,11 +223,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D157 point 1 (a workflow is a list of steps) vs `WorkflowNamed.ReadVersion(onSave)` refusing steps: D227 point 2 reads right.
 - D157 point 15 (nothing set is Current) vs `WorkflowSelection.cs:234-236` (the home default first): D227 reads right.
 - D157's rejection of *merging with nobody* vs the shipped `Defaults/workflows/merge-automatic.json` and `integrated-no-press.json`: the code reads right.
-- D87 (how work lands is a workspace's landing rule) vs no rule read (`LandingRules.Line`, `Landing.cs`): D227 and D232 read right.
+- D87 (how work lands is a workspace's landing rule) vs no rule read (`Workflows/Nodes/Landing.cs`, the bound `land`): D227 and D232 read right.
 - D164 amendment point 2 (the rule holds pattern, key, squash) vs `LandNodes.cs:7` (`land`'s options): D227 reads right.
 - D145 point 1 (a branch rule's `autoAccept`) vs `LandNodes.Reviewed` (no `review` step means no press): D227 reads right.
 - D88 (without `tidy` the tree stays; clean-up is the person's press) vs `BranchTidying.cs` (the look's own tidy): the code reads right.
-- D215 point 2 (the install's policy on a branch rule's `integrate`) vs `LandingRules.Line` (`linePolicies` alone): D227's 1a note reads right.
+- D215 point 2 (the install's policy on a branch rule's `integrate`) vs `DriverConfig.LinePolicyOf` (`linePolicies` alone): D227's 1a note reads right.
 - D215 point 5 (no node added to any graph) vs `NodeContract.cs:60` (`integrate` kind) and `land` method `integrate`: the code reads right.
 - D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
 - D227's 1e note (`daoris-driver workflow convert`) vs `Driver.Host/Program.cs:150` (`daoris-driver convert`): the code reads right.
@@ -236,8 +242,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **SETUPUX1y:** Setup is the Agents place's default and its tree of places is always drawn; the opener's `roleSection` names Appointed
   roles or All roles only. A door naming a repository's place says `placeOf`, which `placeOpening` resolves to the place's id.
 - **WORKFLOWCLEAN1j:** a saved workflow that runs a work cycle, only if a place with one is found.
-- **WORKFLOWCLEAN1z (NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
-  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the `handed` node in about 22 test files.
+- **WORKFLOWCLEAN1z (NOCOMPAT1b2, NOCOMPAT1b4):** the runtime suites still seeding work cycles in `driver.json` (`ObservedEventTests`,
+  `LookParallel`, `NodeWakes`, which the runtime no longer reads) rebound onto saved graphs; the workspace's Setup tab, once its
+  other rows have a page; `AutoLandingWorld`, whose name still says the auto lander. The service holds no bind door: only its
+  exchange's `BindAsync` writes a quest's closure bind, which service tests seed and the take reads, until a bound run's close no
+  longer reads a bind recorded at the take.
 - **CHATFLOW1 (1g, the rest):** the terminal's `ChatLandCommand` still lands a graph-bound chat in place; the installed window.
 - **PROCESS1d-iii:** a session told its squash from `land`'s options, and a conversation's process proven.
 - **INTEGRATE1 k, i, m:** the flip of this repository's integrator, the steward's acts, a sibling repository's declared integration; h's installed proof.

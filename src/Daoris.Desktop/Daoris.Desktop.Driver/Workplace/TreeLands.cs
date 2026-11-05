@@ -56,7 +56,7 @@ internal sealed class TreeLands
     /// <para>🔴 <b>Work the line already holds by content is never landed again</b> (SQUASHTIDY1f): where a squash merge or a
     /// cherry-pick put the tree's commits on the line or a branch of the person's, as the session's head reads it
     /// (<see cref="SessionTrees.DiscardOfferAsync"/>, SQUASHTIDY1b), every door is refused here, before the review's gate and before anything
-    /// is made, in the head's clause and with <see cref="AutoLandingCode.Carried"/>: a merge would copy the work onto the line
+    /// is made, in the head's clause and with <see cref="LandingCode.Carried"/>: a merge would copy the work onto the line
     /// again, or conflict with it, and a branch would carry it to a second pull request. Its discard is the way.</para>
     /// </remarks>
     /// <param name="inUse">
@@ -72,7 +72,7 @@ internal sealed class TreeLands
     /// The landing gate for this tree (the review's <c>SessionTreeGates.GateAsync</c>), read once by the door that lands it: the second opinion
     /// (XAGENT1f, D155 point 9) and then D154's look (REVIEWENV1c, D154 point 7). The first part that does not let go refuses before
     /// anything is made, merge or branch, an advance among them, with its sentence and its code
-    /// (<see cref="AutoLandingCode.Opinion"/>, then <see cref="AutoLandingCode.Unreviewed"/>); what let each go is kept on the
+    /// (<see cref="LandingCode.Opinion"/>, then <see cref="LandingCode.Unreviewed"/>); what let each go is kept on the
     /// landing record. Null is a door that asked none.
     /// </param>
     /// <param name="joins">
@@ -125,7 +125,7 @@ internal sealed class TreeLands
         // LANDHOLD3: named by its session and the branch its tree stands on, for a door that waits behind it.
         using var hold = await LandingHolds.TakeAsync(context.Home, path, ct, by: new LandingHolder(subject.Session, TreeTips.Branch(path)))
             .ConfigureAwait(false);
-        if (hold is null) return new(false, StillLanding) { Refusal = AutoLandingCode.Refused };
+        if (hold is null) return new(false, StillLanding) { Refusal = LandingCode.Refused };
 
         // LANDNODE1b3: a delivery is read under the tree's hold and held in this process while it lands, so a press and a pass of one delivery
         // land it once and a restart's settlement never writes beside it; one delivered while this waited is said so, and nothing more lands.
@@ -150,13 +150,13 @@ internal sealed class TreeLands
         // record lock while this holds the tree, so a press binding it waits for this landing to end.
         if (TogetherGuard.Refusal(context.Home, path, together) is { } bound)
         {
-            return Closed(new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused });
+            return Closed(new(false, $"Nothing was landed: {bound}.") { Refusal = LandingCode.Refused });
         }
 
         // A member a combined Accept brought in lands that work no second time; a later commit is its own.
         if (together is null && await TogetherGuard.BroughtAsync(context.Home, path, pinned, ct).ConfigureAwait(false) is { } brought)
         {
-            return Closed(new(false, $"Nothing was landed: {brought}.") { Refusal = AutoLandingCode.Already });
+            return Closed(new(false, $"Nothing was landed: {brought}.") { Refusal = LandingCode.Already });
         }
 
         // FABRIC-CLOSE1h: what the door judged before it took the hold may have moved while it waited, so it judges again here, under the

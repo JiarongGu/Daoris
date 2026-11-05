@@ -79,7 +79,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
                 var why = part.Gate?.Refusal?.Message ?? "no saved workflow's `land` node performs its landing, so it is held.";
                 outcomes.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, new TreeLanding(false, $"Nothing was landed: {why}")
                 {
-                    Refusal = AutoLandingCode.Refused,
+                    Refusal = LandingCode.Refused,
                 }));
             }
         }
@@ -160,7 +160,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
             if (string.IsNullOrWhiteSpace(tree)) continue;
             var gate = await trees.GateAsync(tree, part.Quest, new ServiceReviewWorld(service), part.Session, cancellationToken).ConfigureAwait(false);
             // TREEFOLLOWNAME1: its own words, which name its landing where its tree is on a branch of its own.
-            var own = await LandingRules.SubjectAsync(part.Session, part.Quest, quest => quests.FindAsync(quest, cancellationToken),
+            var own = await BranchPatterns.SubjectAsync(part.Session, part.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([part.Session]).GetValueOrDefault(part.Session)).ConfigureAwait(false);
             // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: the quest the part served and its submission as read here, which its landing keeps.
             if (part.Quest is { } served && await quests.FindAsync(served, cancellationToken).ConfigureAwait(false) is { } read)
@@ -180,7 +180,7 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
 
         var lead = entry.Parts.Count > 0 ? entry.Parts[0] : null;
         var subject = lead is null ? new LandingSubject(entry.Key, null, null)
-            : await LandingRules.SubjectAsync(lead.Session, lead.Quest, quest => quests.FindAsync(quest, cancellationToken),
+            : await BranchPatterns.SubjectAsync(lead.Session, lead.Quest, quest => quests.FindAsync(quest, cancellationToken),
                 events.Openings([lead.Session]).GetValueOrDefault(lead.Session)).ConfigureAwait(false);
         // ACCEPTFOOT2: a conversation's entry is named for its first part's work, as each part's own Accept names it.
         if (lead is not null && parts.Count > 0)

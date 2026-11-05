@@ -124,7 +124,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     [InlineData("A second opinion is asked: `codex-acp` reads it from the driver's next look; press Accept again once it settles.")]
     public async Task A_chat_runs_press_refused_is_its_sentence_and_exit_1(string why)
     {
-        var said = TreesWords.Land(new TreeLanding(false, why) { Refusal = AutoLandingCode.Refused }, []);
+        var said = TreesWords.Land(new TreeLanding(false, why) { Refusal = LandingCode.Refused }, []);
         Assert.Equal(1, said.Code);
         Assert.Equal([$"trees: {why}"], said.Out);
         await AssertSameAsync(said);

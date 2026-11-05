@@ -1,4 +1,4 @@
-import type { CodeDependency, CodeModule } from '../data/api';
+import type { CodeDependency, CodeModule } from '../../data/api';
 
 // The code map's fixtures (CANVAS1f; the canvas design §9): this repository's own map, synthetic ones at any size, a cycle and long ids.
 // Stories, tests and the measured book draw these; nothing ships them.
@@ -87,6 +87,30 @@ export const WITH_A_CYCLE: CodeFixture = {
   dependencies: [
     dep('engine', 'planner', 'calls'), dep('planner', 'runner', 'calls'), dep('runner', 'engine', 'callback'),
     dep('web', 'engine', 'http'), dep('runner', 'store', 'project'),
+  ],
+};
+
+/** A cycle that crosses three folders, held by the folder above them, beside modules of those folders that are in no cycle. */
+export const CYCLE_ACROSS_FOLDERS: CodeFixture = {
+  modules: [
+    mod('session', 'src/core/session'), mod('rules', 'src/core/rules'), mod('panel', 'src/web/panel'), mod('board', 'src/web/board'),
+    mod('ledger', 'src/data/ledger'), mod('cache', 'src/data/cache'), mod('cli', 'tools/cli'),
+  ],
+  dependencies: [
+    dep('session', 'ledger', 'calls'), dep('ledger', 'panel', 'notifies'), dep('panel', 'session', 'calls'),
+    dep('session', 'rules'), dep('board', 'panel'), dep('ledger', 'cache'), dep('cli', 'session', 'http'),
+  ],
+};
+
+/** A stack of layers whose top uses what is several layers down: the lines that skip a layer are routed around the cards between. */
+export const SKIPPING_LAYERS: CodeFixture = {
+  modules: [
+    mod('app', 'src/app/app'), mod('screens', 'src/app/screens'), mod('widgets', 'src/app/widgets'), mod('core', 'src/app/core'),
+    mod('store', 'src/app/store'), mod('log', 'src/app/log'),
+  ],
+  dependencies: [
+    dep('app', 'screens'), dep('screens', 'widgets'), dep('widgets', 'core'), dep('core', 'store'), dep('store', 'log'),
+    dep('app', 'core', 'calls'), dep('app', 'log', 'calls'), dep('screens', 'store', 'reads'),
   ],
 };
 

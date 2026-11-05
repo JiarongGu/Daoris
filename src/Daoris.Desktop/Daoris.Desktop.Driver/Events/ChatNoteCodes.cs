@@ -98,7 +98,7 @@ public static class ChatNoteCodes
     public static readonly NoteCode LandingPersonHanded = new("landing.person-handed", []);
 
     // A part the person left out of its entry's Accept: the branch its line of work landed on, or the line it merged into. Its review
-    // reads it back (<c>LandingRules.LeftOutOf</c>) and leads with Discard.
+    // reads it back (<c>LandingNotes.LeftOutOf</c>) and leads with Discard.
     public static readonly NoteCode LandingLeftOut = new("landing.left-out", ["branch"]);
 
     // A member whose work a combined Accept brought into its head's landing: the branch it went onto, or the line it merged into, and

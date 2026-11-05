@@ -397,10 +397,10 @@ describe('A place page, Roles', () => {
       ...over,
     });
 
-    it("says the rule and its moves on a role's line", async () => {
+    it("says the rule on a role's line, and none of its moves, which are the supervisor's rules", async () => {
       roles = { ...CATALOGUE, policies: [policy('engine-build'), policy('build')] } as typeof CATALOGUE;
       await openEngine();
-      expect(rowOf('building').getByText(/cannot run: signed out.* · spread 3 · moves on a limit · at most 3 moves/)).toBeTruthy();
+      expect(rowOf('building').getByText(/cannot run: signed out.* · spread 3$/)).toBeTruthy();
     });
 
     it('says a stale policy as running in order, and no rule beside it', async () => {
@@ -417,12 +417,12 @@ describe('A place page, Roles', () => {
       await userEvent.click(rowOf('design and decisions').getByRole('button', { name: 'Give engine its own… for design and decisions' }));
       const editor = within(await screen.findByRole('form', { name: 'A new role' }));
       expect(editor.getByRole('textbox', { name: "choice 1's weight" })).toHaveValue('3');
-      expect(editor.getByRole('combobox', { name: 'It reaches its limit' })).toHaveTextContent('Move to the next by weight');
+      expect(editor.queryByRole('combobox', { name: 'It reaches its limit' })).toBeNull();
       await userEvent.click(editor.getByRole('button', { name: 'Save' }));
       await waitFor(() => expect(sent()).toEqual([expect.objectContaining({
         change: 'set', id: 'build-engine', policyRevision: null,
         choices: [{ agent: 'claude-code', model: 'opus', effort: 'high' }],
-        policy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }], moves: { limit: 'weighted' }, most: 3 },
+        policy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }] },
       })]));
     });
   });

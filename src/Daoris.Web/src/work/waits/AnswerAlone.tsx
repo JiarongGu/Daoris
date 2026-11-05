@@ -11,7 +11,17 @@ import { SOUGHT } from './WaitAnchor';
  * message-urgency design §2.3, §8.3), as `ANSWER_WAITS` answers it: the session whose line it would take on, the agent that answered
  * by its adapter (null where the driver named none), the answers' ids on its record, and since when it was held.
  */
-export type AnswerWait = { session: string; agent: string | null; words: string[]; since: string };
+export type AnswerWait = { session: string; agent: string | null; words: string[]; since: string; rule?: AnswerRule | null };
+
+/** The person's rule that held the answer (CONTEXTDRIVE1h): its place, the threshold, and what the count stood at; none for a hold marked before the rules. */
+export type AnswerRule = { place: string; at: number; n: number; count: string; do: string };
+
+/** A rule's place in the person's words: this machine as *This Daoris*, any other as its own name (`repository:daoris` is `daoris`). */
+export const rulePlaceName = (t: TFunction, place: string): string => (place === 'machine' ? t('settings.supervisor.machine') : place.slice(place.indexOf(':') + 1));
+
+/** The one sentence the head, the foot and *What needs you* say of a held answer's rule: what the count stood at and where the rule waits. */
+export const answerRuleLine = (t: TFunction, rule: AnswerRule): string =>
+  t('work.wait.answerRule', { n: rule.n, at: rule.at, place: rulePlaceName(t, rule.place) });
 
 /** The person's answer as the driver took it (`SESSION_ANSWER_ALONE`): whether it stands, and where not, its code and sentence. */
 export type AnswerAloneAnswered = { answered: boolean; why: string | null; message: string };
@@ -31,6 +41,8 @@ export type AnswerWaits = {
   onAnswer?: AnswerAloneAnswer;
   /** An answer is on its way, pressed in either place: every press waits for it. */
   busy?: boolean;
+  /** *Change the rule…*: opens the place whose rule held the answer; absent, the door is not drawn. */
+  onChangeRule?: (place: string) => void;
 };
 
 /** The wait a session's line holds for the person, or null: one per session, since the driver marks a session's answers at once. */
@@ -58,11 +70,12 @@ export const answerAloneLine = (t: TFunction, wait: AnswerWait, nameOf?: (agent:
  * `onAnswer` no press is drawn: a browser or a teammate's record still says what waits. A refusal of the answer is said beside it
  * (UXFIX2b3b). Its words never say "waiting on you", which a parked session's are (`person-waits`).
  */
-export function AnswerAlone({ wait, nameOf, onAnswer, busy = false, marked = false }: {
+export function AnswerAlone({ wait, nameOf, onAnswer, busy = false, marked = false, onChangeRule }: {
   wait: AnswerWait;
   nameOf?: (agent: string) => string;
   onAnswer?: AnswerAloneAnswer;
   busy?: boolean;
+  onChangeRule?: (place: string) => void;
   /** A press led here: the wait is outlined. */
   marked?: boolean;
 }) {
@@ -98,6 +111,12 @@ export function AnswerAlone({ wait, nameOf, onAnswer, busy = false, marked = fal
       className={cn('grid gap-1 rounded-control border border-line bg-raised px-3 py-2', marked ? SOUGHT : 'outline-none')}
     >
       <p className="m-0 text-body">{answerAloneLine(t, wait, nameOf)}</p>
+      {wait.rule && <p className="m-0 text-small text-ink-soft">{answerRuleLine(t, wait.rule)}</p>}
+      {wait.rule && onChangeRule && (
+        <div>
+          <Button variant="ghost" onClick={() => onChangeRule(wait.rule!.place)}>{t('work.wait.answer.changeRule')}</Button>
+        </div>
+      )}
       {onAnswer && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <Button variant="primary" disabled={busy || pending} aria-describedby={refusal ? refusalId : undefined} onClick={() => press(true)}>

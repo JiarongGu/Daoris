@@ -165,7 +165,7 @@ public sealed class WorkplaceWorkflowsBoundaryTests : IDisposable
         Assert.Equal("`docs-to-pr` v1", gate.Process.Name);
         Assert.Equal("q1", gate.WorkflowPart()!.Process.Binding!.Run);
         Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository), gate.Process.Record);
-        Assert.Equal(LandingForm.Branch, gate.Process.Landing.Rule.Form);
+        Assert.Equal(LandingForm.Branch, gate.Process.Landing.Form);
 
         // The run's own part alone, judged for the process the door read: the same state, the session said.
         var part = await trees.WorkflowAsync(Tree, gate.WorkflowPart()!.Process, "s1");

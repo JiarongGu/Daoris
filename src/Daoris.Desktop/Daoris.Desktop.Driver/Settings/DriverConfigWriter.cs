@@ -78,8 +78,8 @@ internal static class DriverConfigWriter
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", config.WorkspaceWorkflows, workspace: true);
             // Written only when set (WORKFLOWCLEAN1 1a): absent is no home default (a place follows Current) and no line policy.
             if (config.DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
-            LandingKey.WritePolicies(writer, "linePolicies", config.LinePolicies);
-            LandingKey.WritePolicies(writer, "workspaceLinePolicies", config.WorkspaceLinePolicies);
+            LinePolicyKey.WritePolicies(writer, "linePolicies", config.LinePolicies);
+            LinePolicyKey.WritePolicies(writer, "workspaceLinePolicies", config.WorkspaceLinePolicies);
             // Written only when set (INTEGRATE1d), beside the landed route's acceptance: absent is nothing accepted for integration.
             IntegrationGatesKey.WriteMap(writer, config.IntegrationGates);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.

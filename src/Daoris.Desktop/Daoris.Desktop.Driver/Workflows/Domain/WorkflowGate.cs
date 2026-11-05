@@ -83,12 +83,12 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         }
 
         string? Text(string name) => land.Options.TryGetValue(name, out var raw) ? NodeOptions.Value(raw) as string : null;
-        var rule = Landing.Rule;
+        var rule = Landing;
         var method = Text("method") ?? (rule.Form == LandingForm.Merge ? LandNodes.Merge : rule.Plugin is not null ? LandNodes.PullRequest : LandNodes.Branch);
         var squash = (land.Options.TryGetValue("squash", out var written) ? NodeOptions.Value(written) as bool? : null) ?? rule.Squash;
         squash &= method is LandNodes.Branch or LandNodes.Push or LandNodes.PullRequest;
         var template = Text("message");
-        var ticket = template?.Contains("{ticket}", StringComparison.Ordinal) == true ? LandingRules.Ticket(subject, rule.Key) : null;
+        var ticket = template?.Contains("{ticket}", StringComparison.Ordinal) == true ? BranchPatterns.Ticket(subject, rule.Key) : null;
 
         // Its options as the bind resolved them: what the version wrote, the bind's resolutions where it left them open, the method and the squash.
         var options = new System.Text.Json.Nodes.JsonObject();
@@ -146,7 +146,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     /// opinion choose among. It lands nothing of its own: its landing is the merge a graph's <c>land</c> replaces.
     /// </summary>
     public static WorkflowProcess Declared(DriverConfig config, string repository, string? workspace) =>
-        new(repository, new Landing(LandingRule.Merge, LandingSource.Default), ReviewRules.Resolve(config, repository, workspace),
+        new(repository, Landing.Merge, ReviewRules.Resolve(config, repository, workspace),
             OpinionRules.Resolve(config, repository, workspace));
 
     /// <summary>Why work that follows no saved workflow is held: nothing runs or lands it.</summary>
@@ -155,14 +155,14 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
 
     /// <summary>
     /// A graph version holding a <c>land</c> as a process (WORKFLOWCLEAN1 1c, design §2.6): the landing is the intent it binds
-    /// (<see cref="LandNodes.RuleOf"/>) and the gates are read from the node options by <see cref="GraphGates.Of"/>, no step between.
+    /// (<see cref="LandNodes.LandingOf"/>) and the gates are read from the node options by <see cref="GraphGates.Of"/>, no step between.
     /// </summary>
-    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates, LandingRule bound)
+    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, GraphGateReading gates, Landing bound)
     {
         var declared = Declared(config, repository, workspace);
         return declared with
         {
-            Landing = new Landing(bound, declared.Landing.Source),
+            Landing = bound,
             Opinion = gates.Opinion,
             Binding = binding,
             Look = gates.Look,
@@ -171,7 +171,7 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
         };
     }
 
-    private static string? BoundCannot(LandingRule bound) =>
+    private static string? BoundCannot(Landing bound) =>
         bound.Form == LandingForm.Branch && bound.Pattern is null
             ? "its `land` puts the work on a branch, and neither the node nor the bind names a pattern for it."
             : null;

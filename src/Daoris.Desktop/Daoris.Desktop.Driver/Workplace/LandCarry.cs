@@ -24,14 +24,14 @@ public static class LandCarry
 
     public const string Conflicted = "conflict";
 
-    /// <summary>The landing the kept yes accepted (<see cref="AutoLandingNotes.Of"/>'s <c>carry</c>): the work landed once its tree was clean.</summary>
+    /// <summary>The landing the kept yes accepted (<see cref="LandTryNotes.Of"/>'s <c>carry</c>): the work landed once its tree was clean.</summary>
     public const string Accepted = "accepted";
 
     /// <summary>What a refused landing asks of its session, or null where the refusal is no work of the session's to do.</summary>
     public static string? WhyOf(TreeLanding landed) =>
         landed.Landed ? null
         : landed.Conflict is not null ? Conflicted
-        : landed.Refusal == AutoLandingCode.Uncommitted ? Uncommitted
+        : landed.Refusal == LandingCode.Uncommitted ? Uncommitted
         : null;
 
     /// <summary>

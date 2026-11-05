@@ -93,7 +93,7 @@ public sealed class LandDeliveryGitTests : IDisposable
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.Equal(AutoLandingCode.Exists, landed.Refusal);
+        Assert.Equal(LandingCode.Exists, landed.Refusal);
         Assert.Contains("does not move a branch it did not make", landed.Message);
         Assert.Equal(theirs, await RevAsync(root, $"refs/heads/{Named}"));
         Assert.Null(trees.Recorded.Of("engine", Named));
@@ -173,7 +173,7 @@ public sealed class LandDeliveryGitTests : IDisposable
         var landed = await trees.LandAsync(tree.Path, Subject, inUse: NoneRunning, delivery: new TreeDelivery(store, claim));
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.Equal(AutoLandingCode.Nothing, landed.Refusal);
+        Assert.Equal(LandingCode.Nothing, landed.Refusal);
         Assert.Contains("nothing to land", landed.Message);
         Assert.Null(await RevAsync(root, $"refs/heads/{Named}"));
         var phase = Assert.Single(Reopened().Phases(claim.Key));

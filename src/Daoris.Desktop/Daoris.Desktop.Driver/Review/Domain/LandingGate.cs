@@ -36,15 +36,15 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
 
     /// <summary>
     /// The first part that holds, in §7's order, as a landing's refusal: its sentence and its code; null where all let go. The run's
-    /// own part, its graph's (FABRIC-CUTOVER1d) and the landing step's are refused as <see cref="AutoLandingCode.Refused"/>: their sentence says
+    /// own part, its graph's (FABRIC-CUTOVER1d) and the landing step's are refused as <see cref="LandingCode.Refused"/>: their sentence says
     /// what holds them.
     /// </summary>
     public TreeLanding? Refusal =>
-        Workflow is { LetsGo: false } workflow ? new(false, workflow.Says) { Refusal = AutoLandingCode.Refused }
-        : !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = AutoLandingCode.Opinion }
-        : !Review.LetsGo ? new(false, Review.Says) { Refusal = AutoLandingCode.Unreviewed }
-        : Graph is { LetsGo: false } graph ? new(false, graph.Says) { Refusal = AutoLandingCode.Refused }
-        : Workflow?.Process is { LandingCannot: not null } landing ? new(false, landing.LandingSays) { Refusal = AutoLandingCode.Refused }
+        Workflow is { LetsGo: false } workflow ? new(false, workflow.Says) { Refusal = LandingCode.Refused }
+        : !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = LandingCode.Opinion }
+        : !Review.LetsGo ? new(false, Review.Says) { Refusal = LandingCode.Unreviewed }
+        : Graph is { LetsGo: false } graph ? new(false, graph.Says) { Refusal = LandingCode.Refused }
+        : Workflow?.Process is { LandingCannot: not null } landing ? new(false, landing.LandingSays) { Refusal = LandingCode.Refused }
         : null;
 
     /// <summary>Whether what holds the work is the run's own part or its landing step's (WORKFLOW1f), where it holds.</summary>
@@ -110,12 +110,12 @@ public static class LandingGateWords
     public static LandingLine? Held(string session, (string Workspace, string Repository) owner, LandingGate gate, TreeLanding landed, string door) =>
         landed.Refusal switch
         {
-            AutoLandingCode.Refused when gate.GraphHolds && gate.Graph is { } graph =>
+            LandingCode.Refused when gate.GraphHolds && gate.Graph is { } graph =>
                 graph.Held(session, owner.Repository, owner.Workspace, gate.Process, door),
-            AutoLandingCode.Refused when gate.WorkflowHolds && gate.Workflow is { } workflow =>
+            LandingCode.Refused when gate.WorkflowHolds && gate.Workflow is { } workflow =>
                 workflow.Held(session, owner.Repository, owner.Workspace, door),
-            AutoLandingCode.Opinion => OpinionLines.Held(session, owner.Repository, owner.Workspace, gate.Opinion, door),
-            AutoLandingCode.Unreviewed => ReviewLines.Held(session, owner.Repository, owner.Workspace, gate.Review, door),
+            LandingCode.Opinion => OpinionLines.Held(session, owner.Repository, owner.Workspace, gate.Opinion, door),
+            LandingCode.Unreviewed => ReviewLines.Held(session, owner.Repository, owner.Workspace, gate.Review, door),
             _ => null,
         };
 }

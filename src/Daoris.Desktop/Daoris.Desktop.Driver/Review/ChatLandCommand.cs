@@ -31,7 +31,7 @@ public static class ChatLandCommand
         {
             var payload = new { id = session, branch = entered, said = true, follow = true };
             Task<int> Elsewhere() =>
-                Task.FromResult(Print(world, TreesWords.Land(new TreeLanding(false, ChatPresses.Elsewhere) { Refusal = AutoLandingCode.Refused }, [])));
+                Task.FromResult(Print(world, TreesWords.Land(new TreeLanding(false, ChatPresses.Elsewhere) { Refusal = LandingCode.Refused }, [])));
             return world.Instance is null
                 ? await Elsewhere().ConfigureAwait(false)
                 : await InstanceDoor.PressAsync(TreesRoutes.Land, payload, Elsewhere, answer => TreesSaid.ReadWords(world.Output, world.Error)(answer) ?? 2,
@@ -84,7 +84,7 @@ public static class ChatLandCommand
 
         if (pressed.Landed.Landed)
         {
-            events.Keep(session, LandingRules.Note(pressed.Landed), each => world.Error.WriteLine($"trees: {each}"));
+            events.Keep(session, LandingNotes.Note(pressed.Landed), each => world.Error.WriteLine($"trees: {each}"));
             var followed = await TreesWords.FollowMovedAsync(service, world.Home, () => DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Log, ct)
                 .ConfigureAwait(false);
             foreach (var each in followed.Out) world.Output.WriteLine(each);

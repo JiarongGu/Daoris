@@ -41,7 +41,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
                 var line = repository.LineNotReadYet ? "not read yet" : LineOf(repository.Line);
-                text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Landing, repository.Workflow)} | "
+                text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Workflow)} | "
                     + $"{KnowledgeReviews.Current.ReviewCell(repository.Review)} | {KnowledgeReviews.Current.OpinionCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
             }
 
@@ -121,8 +121,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             _ => $"`{branch}` (the checkout's own)",
         };
 
-    /// <summary>Where a saved workflow is followed, its newest version's <c>land</c> step says how work lands; the landing rule only under Current (D227).</summary>
-    private static string Lands(Landing landing, HelpWorkflowFollowed? followed)
+    /// <summary>Where a saved workflow is followed, its newest version's <c>land</c> step says how work lands; work no workflow governs is held.</summary>
+    private static string Lands(HelpWorkflowFollowed? followed)
     {
         if (followed is not null && followed.Workflow != WorkflowLevels.Current)
         {
@@ -140,19 +140,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             return $"{how} (the `land` step of `{followed.Workflow}`)";
         }
 
-        var rule = landing.Rule.Form == "branch"
-            ? $"on a branch `{landing.Rule.Pattern}`"
-            : "merged into the line";
-        if (landing.Rule.Plugin is { } plugin) rule += $", pushed with a pull request opened by plugin `{plugin}`";
-        // LAND2a (D145): the switch rides the rule, so the room says it where it says the rule.
-        if (landing.Rule.AutoAccept) rule += ", accepted automatically when its quest is done";
-        var source = landing.Source switch
-        {
-            LandingSource.Repository => "set for it",
-            LandingSource.Workspace => "its workspace's rule",
-            _ => "the default",
-        };
-        return $"{rule} (the old landing rule, {source})";
+        return "not landed: no saved workflow is chosen for it, so its work is held";
     }
 }
 
@@ -174,8 +162,6 @@ public sealed record HelpRepository(string Name, string Workspace)
 
     /// <summary>Whether its checkout's line was not judged yet when the room was written (PARALLEL1a).</summary>
     public bool LineNotReadYet { get; init; }
-
-    public Landing Landing { get; init; } = new(LandingRule.Merge, LandingSource.Default);
 
     /// <summary>Its standing answer on this machine, the person's words (KNOWUSE1b); null where it keeps none.</summary>
     public string? Standing { get; init; }

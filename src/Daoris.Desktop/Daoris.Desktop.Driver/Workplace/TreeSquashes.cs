@@ -127,7 +127,7 @@ internal sealed class TreeSquashes(TreeContext context)
         {
             return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "
                 + $"{FirstLine(moveErr)} It may have moved meanwhile; nothing was changed.")
-            { Refusal = AutoLandingCode.Exists };
+            { Refusal = LandingCode.Exists };
         }
 
         // What the branch holds beyond the line now, as a plugin is told at an advance; the one commit made where git cannot say.

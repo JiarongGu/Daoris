@@ -335,7 +335,7 @@ internal static class TreesConsole
                     SessionLog.WriteLanding(log, held);
                 }
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
-                if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
+                if (landed.Landed) events.Keep(session, LandingNotes.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
                 // 1 where the step the rule asked for did not happen: refused, or the plugin did not push.
                 return said.Code;

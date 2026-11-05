@@ -168,7 +168,7 @@
   "settings.ai.policy.later": "各选择按权重分得新工作；不能运行的选择改由下一个按权重的选择接手。",
   "settings.ai.policy.choicesNote": "各选择按权重分得新工作。关闭仅适用于承担接入或询问 Daoris 的角色。恢复角色默认值会还给内置角色它的名称、工作和位置；清除人员配置会让它的选择回到此前的状态。",
   "settings.ai.policy.lighter": "把较轻的选择放在前面；Daoris 不知道价格。",
-  "settings.ai.policy.movesNote": "正在运行的线路只会在下面设定的条件下，于一段工作结束时改用其他选择。",
+  "settings.ai.policy.movesNote": "正在运行的线路只会依据主管规则，于一段工作结束时改用其他选择。",
   "settings.ai.policy.field.weight": "权重",
   "settings.ai.policy.field.aim": "目标",
   "settings.ai.policy.field.limits": "限制",

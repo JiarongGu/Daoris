@@ -197,9 +197,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     // The ports' halves the quest doors answer, sent through QuestViews.
     Task<RequestPublished> IRequestPort.PublishAsync(RequestAsk ask, CancellationToken ct) => this.PublishAsync(ask, ct);
 
-    Task<(bool Ok, string Message)> IClosureBindPort.BindQuestAsync(string id, string graph, string session, CancellationToken ct) =>
-        this.BindQuestAsync(id, graph, session, ct);
-
     Task<QuestCloseAnswer> IQuestClosePort.CloseQuestsAsync(
         string quest, string key, string token, IReadOnlyList<QuestCloseItem> quests, CancellationToken ct) =>
         QuestPersonViews.CloseQuestsAsync(this, quest, key, token, quests, ct);

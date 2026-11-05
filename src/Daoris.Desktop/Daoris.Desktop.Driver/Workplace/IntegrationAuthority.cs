@@ -56,10 +56,9 @@ internal static class IntegrationAuthority
             return null;
         }
 
-        var landing = LandingRules.Line(config, request.Repository, request.Workspace);
-        if (landing.Rule is not { Form: LandingForm.Branch, Integrate: not null })
+        if (config.LinePolicyOf(request.Repository, request.Workspace) is null)
         {
-            return $"`{request.Repository}`'s landing rule no longer carries `integrate`, so a request made under it is no longer admitted";
+            return $"`{request.Repository}`'s line no longer carries a policy, so a request made under it is no longer admitted";
         }
 
         var asks = WorkplaceWorkflows.Current.IntegrateOf(home, config,request.Repository, request.Workspace).Request;

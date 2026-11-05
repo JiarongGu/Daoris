@@ -116,7 +116,7 @@ public static class AttentionWaits
         .. new GoOnMarks(home).All()
             .Where(each => each.Mark.Why == GoOnMarks.AnswersAlone)
             .OrderBy(each => each.Mark.At).ThenBy(each => each.Session, StringComparer.Ordinal)
-            .Select(each => (object)new { each.Session, each.Mark.Agent, Words = each.Mark.Said, Since = Moments.Write(each.Mark.At) }),
+            .Select(each => (object)new { each.Session, each.Mark.Agent, Words = each.Mark.Said, Since = Moments.Write(each.Mark.At), Rule = AnswerRuleWords.Of(home, each.Session) }),
     ];
 
     /// <summary>

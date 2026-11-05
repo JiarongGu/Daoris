@@ -305,7 +305,6 @@ public sealed class HelpRoomTests : IDisposable
         var report = Assert.Single(machine.Repositories, repository => repository.Name == "console-ui");
         Assert.True(report.Drivable && report.OwnTree && report.Checkout && !report.Held);
         Assert.Equal("feature/app", report.Line.Branch);
-        Assert.Equal(LandingSource.Default, report.Landing.Source);
         Assert.True(Assert.Single(machine.Repositories, repository => repository.Name == "reports-db").Held);
         Assert.False(Assert.Single(machine.Repositories, repository => repository.Name == "engine").Checkout);
         Assert.Equal([new HelpWaitingSession("s1", "console-ui")], machine.Waiting);

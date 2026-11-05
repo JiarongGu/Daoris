@@ -305,7 +305,23 @@ export type RoleCatalogue = {
   policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
   /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
+  /** The supervisor's rules: every place's set and what each ruled count takes (CONTEXTDRIVE1g); absent from a driver before them. */
+  supervisor?: SupervisorRulesRead;
 };
+
+/** One supervisor rule as `ROLES` answers it and a press carries it: when `count` reaches `at`, `do`; `upTo` minutes for `wait`, `roles` none for every role. */
+export type SupervisorRuleWire = {
+  id?: string; count: string; window?: string; at: number; do: string; upTo?: number | null; place?: string; roles?: string[] | null;
+};
+
+/** A place's rules written whole, with the revision they were read at (0 for a place that holds none). */
+export type SupervisorRuleSetRead = { place: string; revision: number; rules: SupervisorRuleWire[] };
+
+/** What a ruled count takes at the door: its window, its actions and its bounds. */
+export type SupervisorCountRead = { count: string; window: string; actions: string[]; least: number; most: number };
+
+/** The supervisor's rules as `ROLES` answers them. */
+export type SupervisorRulesRead = { sets: SupervisorRuleSetRead[]; counts: SupervisorCountRead[] };
 
 /** A role's change as `SET_ROLE` takes it: set with its record and choices, removed, given back its seed, or every seeded role given back (`default-all`, whose id is `*`). */
 export type RoleChangePress = {
@@ -320,6 +336,8 @@ export type RoleChangePress = {
   policy?: string | StaffPolicy | null;
   /** The policy revision the person read: a save against a moved one is refused, nothing written. */
   policyRevision?: number | null;
+  /** The supervisor's rules at one place, written whole against the revision read (id `supervisor`); no other field of a role's press rides with them. */
+  place?: string; rules?: SupervisorRuleWire[]; rulesRevision?: number;
 };
 
 /**

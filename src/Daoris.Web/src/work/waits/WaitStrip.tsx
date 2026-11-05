@@ -274,6 +274,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                 wait={alone}
                 nameOf={props.answers.nameOf}
                 onAnswer={props.answers.onAnswer}
+                onChangeRule={props.answers.onChangeRule}
                 busy={props.answers.busy}
               />
             )}

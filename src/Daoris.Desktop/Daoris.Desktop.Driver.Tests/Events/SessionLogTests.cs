@@ -511,9 +511,9 @@ public sealed class SessionLogTests : IDisposable
     {
         using var w = Watch();
 
-        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", AutoLandingCode.PluginFailed, 2, null, "acme.lands", false));
+        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", LandingCode.PluginFailed, 2, null, "acme.lands", false));
         w.Watch.Dispose();
-        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", AutoLandingCode.Landed, 1, null, null, null));
+        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", LandingCode.Landed, 1, null, null, null));
 
         var line = Assert.Single(Named("landing.auto"));
         Assert.Equal("info", line.GetProperty("level").GetString());

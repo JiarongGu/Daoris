@@ -5,7 +5,6 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
 import { SETUP_DEFAULTS, SETUP_OWN } from '../../projects/fixtures';
 import type { RepositorySetupProps } from '../../projects/setup/RepositorySetup';
-import type { RepositoryLanding } from '../../settings/repository/Landings';
 import { LIST, PALETTE } from '../../workflow/edit/editFixtures';
 import { FULL, GATES_CHANGED, INTEGRATION_CHANGED, START, WORKSPACE } from '../../workflow/fixtures';
 import { EFFECTIVE_CURRENT, EFFECTIVE_RELEASE } from '../../workflow/place/effectiveFixtures';
@@ -108,30 +107,23 @@ describe("a workspace place's Landing row", () => {
     list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),
     saving: false, onSave: vi.fn(), using: false, onUse: vi.fn(), onOpen: vi.fn(),
   };
-  const drawWorkspace = (props: Partial<PlaceWorkflowProps>, landing: RepositoryLanding | null = null) =>
+  const drawWorkspace = (props: Partial<PlaceWorkflowProps>) =>
     render(
       <Tooltip.Provider>
         <PlaceWorkflowView
           page="workspace"
           name="aurora"
           current={{ ...WORKSPACE, start: { ...START, integration: null }, effective: EFFECTIVE_CURRENT }}
-          landing={(hand) => <WorkspaceLandingFolds workspace="aurora" hand={hand} landing={landing} unread={null} />}
+          landing={(hand) => <WorkspaceLandingFolds workspace="aurora" hand={hand} />}
           {...props}
         />
       </Tooltip.Provider>,
     );
 
-  it('reads the rule under Current and offers the conversion, with no field to edit it', async () => {
-    const onConvert = vi.fn();
-    const rule: RepositoryLanding = { repository: '', workspace: 'aurora', source: 'workspace', form: 'branch', pattern: 'work/{quest}' };
-    drawWorkspace({ onConvert }, rule);
+  it('draws no Landing fold under Current, whose conversion the routes offer', () => {
+    drawWorkspace({ onConvert: vi.fn() });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Landing' }));
-    expect(screen.getAllByText(/work\/\{quest\}/).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'Set' })).toBeNull();
-    // The row's door is the second beside the routes' own, and both open the one conversion.
-    await userEvent.click(screen.getAllByRole('button', { name: 'Convert…' }).at(-1)!);
-    expect(onConvert).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Landing' })).toBeNull();
   });
 
   it("offers the followed version's land options, judged as its next version", async () => {

@@ -438,14 +438,14 @@ public sealed class ReviewGateTests
     [Fact]
     public void An_unreviewed_try_is_read_again_at_every_look_and_never_closes_its_entry()
     {
-        var entry = new AutoLanding("s1", "q1", "web-app", "work", "tree", DateTimeOffset.UnixEpoch)
+        var entry = new LandEntry("s1", "q1", "web-app", "work", "tree", DateTimeOffset.UnixEpoch)
         {
-            Tries = [new AutoTry(DateTimeOffset.UnixEpoch, AutoLandingCode.Unreviewed) { Tip = Shown, Status = "clean" }],
+            Tries = [new AutoTry(DateTimeOffset.UnixEpoch, LandingCode.Unreviewed) { Tip = Shown, Status = "clean" }],
         };
 
-        Assert.True(AutoLandingRules.ShouldTry(entry, Shown, "clean"));
-        Assert.False(AutoLandingCode.Closes(AutoLandingCode.Unreviewed));
-        Assert.True(AutoLandingNotes.Says(AutoLandingCode.Unreviewed));
+        Assert.True(LandTries.ShouldTry(entry, Shown, "clean"));
+        Assert.False(LandingCode.Closes(LandingCode.Unreviewed));
+        Assert.True(LandTryNotes.Says(LandingCode.Unreviewed));
     }
 
     /// <summary>
@@ -457,7 +457,7 @@ public sealed class ReviewGateTests
     {
         const string gate = "Waits for your review in `local`: nothing shows it there yet: no set-up step for `web-app` is in its chain.";
 
-        var note = AutoLandingNotes.Of(AutoLandingCode.Unreviewed, new TreeLanding(false, gate) { Refusal = AutoLandingCode.Unreviewed });
+        var note = LandTryNotes.Of(LandingCode.Unreviewed, new TreeLanding(false, gate) { Refusal = LandingCode.Unreviewed });
 
         Assert.Equal(ChatNoteCodes.LandingUnreviewed.Code, note.Parts![0].Code);
         Assert.Equal(

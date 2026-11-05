@@ -318,7 +318,7 @@ describe('the strip of what waits on the person, at the foot', () => {
       />,
     );
 
-    expect(within(strip()).getByText('Codex’s answer would take this work on a third time with nobody between.')).toBeInTheDocument();
+    expect(within(strip()).getByText('Codex’s answer would take this work on again with nobody between.')).toBeInTheDocument();
     await userEvent.click(within(strip()).getByRole('button', { name: 'Go on with this answer' }));
     expect(onAnswer).toHaveBeenCalledWith(ALONE, true, { done: expect.any(Function), refused: expect.any(Function) });
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));

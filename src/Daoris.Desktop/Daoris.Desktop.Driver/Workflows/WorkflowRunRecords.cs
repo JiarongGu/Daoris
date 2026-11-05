@@ -12,7 +12,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
 
     /// <summary>
     /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, read
-    /// from the writer's own words (<see cref="LandingRules.IsAcceptance"/>). A teammate's record is on its machine.
+    /// from the writer's own words (<see cref="LandingNotes.IsAcceptance"/>). A teammate's record is on its machine.
     /// </summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions)
     {
@@ -24,7 +24,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
             {
                 if (!File.Exists(events.PathOf(session.Id))) continue;
                 var notes = events.After(session.Id, 0).Events
-                    .Where(note => note.Kind == SessionEventKind.Note && note.Text is { } text && LandingRules.IsAcceptance(text))
+                    .Where(note => note.Kind == SessionEventKind.Note && note.Text is { } text && LandingNotes.IsAcceptance(text))
                     .ToList();
                 if (notes.Count > 0) accepted[session.Id] = notes[^1].At;
             }

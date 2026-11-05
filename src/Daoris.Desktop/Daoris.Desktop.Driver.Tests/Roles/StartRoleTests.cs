@@ -201,7 +201,7 @@ public sealed class StartRoleTests : IDisposable
                       {"id":"b","kind":"after","from":"landing","to":"pushed"},{"id":"c","kind":"after","from":"pushed","to":"pull-request"}]}
             """)), kept: []);
         var config = DriverConfig.Parse("""
-            {"workflows":{"engine":{"default":"staffed"}},"landings":{"engine":{"form":"branch","pattern":"a/{quest}","plugin":"acme.pr"}}}
+            {"workflows":{"engine":{"default":"staffed"}}}
             """) with
         {
             Drivable = ["engine"],

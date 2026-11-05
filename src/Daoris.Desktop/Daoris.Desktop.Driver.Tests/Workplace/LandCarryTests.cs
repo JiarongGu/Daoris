@@ -37,14 +37,14 @@ public sealed class LandCarryTests : LandedFixture
 
         var refused = await trees.LandAsync(tree.Path, Subject, gate: Lands);
         Assert.False(refused.Landed, refused.Message);
-        Assert.Equal(AutoLandingCode.Uncommitted, refused.Refusal);
+        Assert.Equal(LandingCode.Uncommitted, refused.Refusal);
 
         var carried = await LandCarry.CarryAsync(SayAsync, Home, Subject.Session, tree.Path, refused, record: null, Pressed);
 
         Assert.True(carried!.Told, carried.Sentence);
         Assert.Equal(LandCarry.Uncommitted, carried.Why);
         var said = Assert.Single(_said);
-        var status = AutoLandingRules.Fingerprint(await GitAsync(tree.Path, "status", "--porcelain"));
+        var status = LandTries.Fingerprint(await GitAsync(tree.Path, "status", "--porcelain"));
         Assert.Equal(DaorisKeys.Carry(Subject.Session, status, 1), said.Key);
         Assert.Equal(Subject.Session, said.Session);
         Assert.Contains("uncommitted", said.Text);
@@ -105,7 +105,7 @@ public sealed class LandCarryTests : LandedFixture
         var refused = await trees.LandAsync(tree.Path, Subject);
 
         Assert.False(refused.Landed, refused.Message);
-        Assert.Equal(AutoLandingCode.Uncommitted, refused.Refusal);
+        Assert.Equal(LandingCode.Uncommitted, refused.Refusal);
         var carried = await LandCarry.CarryAsync(SayAsync, Home, Subject.Session, tree.Path, refused, record: null, Pressed);
         Assert.True(carried!.Told, carried.Sentence);
         Assert.Single(_said);

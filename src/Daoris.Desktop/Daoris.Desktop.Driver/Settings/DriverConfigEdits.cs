@@ -152,7 +152,7 @@ internal static class DriverConfigEdits
         if (policy is null) next.Remove(key.Trim());
         else
         {
-            if (LandingKey.PolicyProblem(policy, wholeSet: true) is { } problem) throw new DriverException(problem);
+            if (LinePolicyKey.PolicyProblem(policy, wholeSet: true) is { } problem) throw new DriverException(problem);
             next[key.Trim()] = policy;
         }
 

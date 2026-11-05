@@ -100,13 +100,13 @@ export const generatorBuild = (output) => ({
 /** Build and run the generator. No build server outlives it, so a pre-script leaves nothing running. */
 function generate(root, hash) {
   const options = {
-    cwd: root, stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true, maxBuffer: 64 * 1024 * 1024,
+    cwd: root, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024,
     env: { ...process.env, MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' },
   };
   try {
     const { build, built } = generatorBuild(join(root, OWN_OUTPUT));
-    execFileSync('dotnet', build, options);
-    execFileSync('dotnet', [built, '--out', join(root, OUTPUTS.service), '--routes', join(root, OUTPUTS.routes), '--stamp', hash], options);
+    execFileSync('dotnet', build, { ...options, windowsHide: true });
+    execFileSync('dotnet', [built, '--out', join(root, OUTPUTS.service), '--routes', join(root, OUTPUTS.routes), '--stamp', hash], { ...options, windowsHide: true });
     return true;
   } catch (error) {
     process.stdout.write(error.stdout ?? '');

@@ -9,7 +9,7 @@ public sealed class LandTargetTests
 
     private static Task<(TreeDelivery? Delivery, TreeLanding? Refusal)> Start(BoundLand bound) =>
         CurrentDeliveries.StartAsync(
-            "unused-home", null!, new Landing(new LandingRule(LandingForm.Merge), "test"), "repo", "ws", "unused-root",
+            "unused-home", null!, Landing.Merge, "repo", "ws", "unused-root",
             new LandingSubject("s1", null, "t"), "0123456789abcdef0123456789abcdef01234567", "main", "feature/x", null, AcceptedBy.Person, false,
             () => null, CancellationToken.None, bound);
 

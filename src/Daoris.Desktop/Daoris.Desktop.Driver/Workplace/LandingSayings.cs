@@ -32,7 +32,7 @@ internal static class LandingSayings
         new(false, $"`{branch}` moved after its landing was judged: it stands at {TextBounds.ShortCommit(stands, 8)}, "
             + $"not {TextBounds.ShortCommit(pinned, 8)}. Nothing was landed; it is judged again at its new tip.")
         {
-            Refusal = AutoLandingCode.Refused,
+            Refusal = LandingCode.Refused,
         };
 
     /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/> (LANDRACE1).</summary>
@@ -67,9 +67,9 @@ internal static class LandingSayings
         + "branch name to enter. Leave it blank, or change the rule with `daoris place landing`.";
 
     /// <summary>
-    /// What names the branch: the person's entered name where there is one (LANDNAME1a), else the rule's pattern expanded, its
-    /// <c>{ticket}</c> found by the rule's key (PROCESS1b-i). The plan and the press both ask it, so they name one branch.
+    /// What names the branch: the person's entered name where there is one, else the bound <c>land</c>'s pattern expanded, its
+    /// <c>{ticket}</c> found by its key. The plan and the press both ask it, so they name one branch.
     /// </summary>
-    internal static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
-        subject.EnteredName ?? subject.EntryBranch ?? LandingRules.Branch(subject, rule, repository);
+    internal static string BranchNamed(LandingSubject subject, Landing landing, string repository) =>
+        subject.EnteredName ?? subject.EntryBranch ?? BranchPatterns.Branch(subject, landing, repository);
 }

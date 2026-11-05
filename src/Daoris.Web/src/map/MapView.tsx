@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CodeMapDetail, CodeMapWorld } from './CodeMap';
+import { CodeMapDetail, CodeMapWorld } from './code/CodeMap';
 import type { MapSelection } from './MapLines';
 import { MapWorld } from './MapWorld';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';

@@ -1,11 +1,13 @@
 import { type ReactNode, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
+import { CanvasList } from '../design/canvas/CanvasList';
 import { SuppliedCanvas, type NodeState } from '../design/canvas/SuppliedCanvas';
 import { useTall, useWidth } from '../design/useWidth';
 import { RING_MAX } from './layers';
 import { layeredGeometry, ringGeometry, START_LEAST } from './mapLayout';
-import { howMany, MapEdges, type MapSelection, sameSelection } from './MapLines';
+import { mapListGroups } from './mapList';
+import { howMany, lineName, MapEdges, type MapSelection, sameSelection } from './MapLines';
 import { fitRadius, placeLabel, RADIUS } from './ring';
 import { ASKS, type MapNode, type Topology } from './topology';
 
@@ -131,6 +133,10 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey }: {
   };
   const titleOf = useCallback((id: string) => id, []);
   const ring = geometry.ring;
+  const statics = geometry.world.statics;
+  const listed = mapListGroups(geometry.world.order.filter((id) => !statics?.has(id)), geometry.lines, {
+    repositories: t('map.listRepositories'), kind: (kind) => t(`map.kind.${kind}`), node: nodeLabel, line: (line) => lineName(t, line),
+  });
 
   return (
     <div ref={holder}>
@@ -163,6 +169,7 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey }: {
           </>
         )}
         tools={tools}
+        list={<CanvasList label={t('map.canvas')} groups={listed} selected={chosen} onPick={(id) => choose(id === chosen ? null : id)} />}
       />
     </div>
   );

@@ -35,7 +35,7 @@ public sealed class EndJudgementTests
     public void A_named_workflows_landing_decides_the_cycle()
     {
         var config = DriverConfig.Empty;
-        var process = new WorkflowProcess("engine", new Landing(new LandingRule(LandingForm.Branch, "docs/{quest}-{slug}", Plugin: "forge"), LandingSource.Repository), null, null)
+        var process = new WorkflowProcess("engine", new Landing(LandingForm.Branch, "docs/{quest}-{slug}", Plugin: "forge"), null, null)
         {
             Binding = new WorkflowRunBinding("q1", "engine", "aurora", "docs-to-pr", "task", DateTimeOffset.UnixEpoch) { Version = 2, Kind = "docs" },
         };
@@ -61,7 +61,7 @@ public sealed class EndJudgementTests
     [Fact]
     public void Merge_form_ends_when_the_line_holds_the_session_tip_and_is_a_claim_until_then()
     {
-        var merge = EndCycle.Of(new Landing(LandingRule.Merge, LandingSource.Default));
+        var merge = EndCycle.Of(Daoris.Driver.Landing.Merge);
         var session = Branch(EndRole.Session);
 
         var ended = EndJudgement.Judge(merge, session, Facts(Held.At("main")));

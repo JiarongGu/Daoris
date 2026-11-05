@@ -42,7 +42,7 @@ public sealed class LandingTests : IDisposable
     [InlineData("feature/{quest}..x", false)]
     [InlineData("feature {quest}", false)]
     public void A_pattern_names_a_branch_git_would_take_and_one_per_session(string pattern, bool valid) =>
-        Assert.Equal(valid, LandingRules.Problem(pattern) is null);
+        Assert.Equal(valid, BranchPatterns.Problem(pattern) is null);
 
     [Theory]
     [InlineData("Verify the streaming budget on the device", "verify-the-streaming-budget-on-the")]
@@ -50,7 +50,7 @@ public sealed class LandingTests : IDisposable
     [InlineData("修复 登录", "work")]
     [InlineData(null, "work")]
     public void A_slug_is_the_title_in_words_git_takes(string? title, string slug) =>
-        Assert.Equal(slug, LandingRules.Slug(title));
+        Assert.Equal(slug, BranchPatterns.Slug(title));
 
     /// <summary>
     /// WSR5, found landing TK-2202: a chain lands from its last step, and its branch was named for that
@@ -68,14 +68,14 @@ public sealed class LandingTests : IDisposable
         };
         Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
 
-        var subject = await LandingRules.SubjectAsync("fd12f1bc", "cafe01", Find, opening: null);
+        var subject = await BranchPatterns.SubjectAsync("fd12f1bc", "cafe01", Find, opening: null);
 
         Assert.Equal(new LandingSubject("fd12f1bc", "34a9d57b8fd5", "TK-2202: the OEE dashboard shows Empty Shackles 0"), subject);
         Assert.Equal(new LandingSubject("s1", "34a9d57b8fd5", "TK-2202: the OEE dashboard shows Empty Shackles 0"),
-            await LandingRules.SubjectAsync("s1", "34a9d57b8fd5", Find, opening: null));
+            await BranchPatterns.SubjectAsync("s1", "34a9d57b8fd5", Find, opening: null));
         // A parent the service no longer answers for ends the walk where it is; a chat has its opening.
-        Assert.Equal("cafe01", (await LandingRules.SubjectAsync("s2", "cafe01", id => Task.FromResult(id == "cafe01" ? quests[id] : null), null)).Quest);
-        Assert.Equal(new LandingSubject("c1", null, "tidy the docs"), await LandingRules.SubjectAsync("c1", null, Find, "tidy the docs"));
+        Assert.Equal("cafe01", (await BranchPatterns.SubjectAsync("s2", "cafe01", id => Task.FromResult(id == "cafe01" ? quests[id] : null), null)).Quest);
+        Assert.Equal(new LandingSubject("c1", null, "tidy the docs"), await BranchPatterns.SubjectAsync("c1", null, Find, "tidy the docs"));
     }
 
     [Fact]
@@ -83,28 +83,8 @@ public sealed class LandingTests : IDisposable
     {
         var names = new LandingNames("0fda18", "fix-api-gap", "engine", "s1a2b3c4");
 
-        Assert.Equal("feature/0fda18-fix-api-gap", LandingRules.Expand("feature/{quest}-{slug}", names));
-        Assert.Equal("team/engine/s1a2b3c4", LandingRules.Expand("team/{repository}/{session}", names));
-    }
-
-    /// <summary>
-    /// WSR4 (D100): a rule may name the plugin that pushes its branch and opens the pull request — only
-    /// the branch form, since the plugin starts from the branch Daoris made, and only an id a plugin
-    /// could have.
-    /// </summary>
-    [Theory]
-    [InlineData("branch", "feature/{quest}-{slug}", "example.github-pull-request", null)]
-    [InlineData("branch", "feature/{quest}-{slug}", null, null)]
-    [InlineData("merge", null, "example.github-pull-request", "only a branch")]
-    [InlineData("branch", "feature/{quest}-{slug}", "Not An Id", "not a plugin id")]
-    [InlineData("branch", "feature/{quest}-{slug}", "../elsewhere", "not a plugin id")]
-    [InlineData("push", null, null, "a plugin's to do")]
-    public void Only_a_branch_rule_names_a_plugin_and_only_by_an_id(string form, string? pattern, string? plugin, string? problem)
-    {
-        var said = LandingRules.Problem(new LandingRule(form, pattern, Plugin: plugin));
-
-        if (problem is null) Assert.Null(said);
-        else Assert.Contains(problem, said);
+        Assert.Equal("feature/0fda18-fix-api-gap", BranchPatterns.Expand("feature/{quest}-{slug}", names));
+        Assert.Equal("team/engine/s1a2b3c4", BranchPatterns.Expand("team/{repository}/{session}", names));
     }
 
     /// <summary>
@@ -122,11 +102,11 @@ public sealed class LandingTests : IDisposable
         PluginState.Disable(_home, "example.off");
         var catalog = PluginCatalog.Load(_home);
 
-        Assert.Null(LandingRules.PluginProblem("example.lands", catalog));
-        Assert.Contains("not installed", LandingRules.PluginProblem("example.nowhere", catalog));
-        Assert.Contains("daoris plugin enable example.off", LandingRules.PluginProblem("example.off", catalog));
-        Assert.Contains("needs plugin API 99", LandingRules.PluginProblem("example.broken", catalog));
-        Assert.Contains("`work/land`", LandingRules.PluginProblem("example.watches", catalog));
+        Assert.Null(LandingPlugins.ProblemOf("example.lands", catalog));
+        Assert.Contains("not installed", LandingPlugins.ProblemOf("example.nowhere", catalog));
+        Assert.Contains("daoris plugin enable example.off", LandingPlugins.ProblemOf("example.off", catalog));
+        Assert.Contains("needs plugin API 99", LandingPlugins.ProblemOf("example.broken", catalog));
+        Assert.Contains("`work/land`", LandingPlugins.ProblemOf("example.watches", catalog));
     }
 
     /// <summary>
@@ -401,14 +381,14 @@ public sealed class LandingTests : IDisposable
         var trees = new SessionTrees(_home);
         var first = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        var landed = await LandAsync(trees, first.Path, await LandingRules.SubjectAsync("s1", "q1", Find, null));
+        var landed = await LandAsync(trees, first.Path, await BranchPatterns.SubjectAsync("s1", "q1", Find, null));
         Assert.True(landed.Landed, landed.Message);
         var tip = (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim();
 
         var drill = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
         await CommitAsync(drill.Path, "drill.txt", "the drill-down", "the drill-down");
         var head = (await GitAsync(drill.Path, "rev-parse", "HEAD")).Trim();
-        var advanced = await LandAsync(trees, drill.Path, await LandingRules.SubjectAsync("s3", "q3", Find, null));
+        var advanced = await LandAsync(trees, drill.Path, await BranchPatterns.SubjectAsync("s3", "q3", Find, null));
 
         Assert.True(advanced.Landed, advanced.Message);
         Assert.Equal("feature/q1-fix-the-gap", advanced.Branch);
@@ -446,7 +426,7 @@ public sealed class LandingTests : IDisposable
         await CommitAsync(apart.Path, "apart.txt", "work beside the chain", "work beside");
         var grewApart = await LandAsync(trees, apart.Path, new LandingSubject("s2", "q1", "Fix the gap"));
         Assert.False(grewApart.Landed);
-        Assert.Equal(AutoLandingCode.Exists, grewApart.Refusal);
+        Assert.Equal(LandingCode.Exists, grewApart.Refusal);
         Assert.Contains("does not grow from `feature/q1-fix-the-gap`", grewApart.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
 
@@ -557,7 +537,7 @@ public sealed class LandingTests : IDisposable
         var refused = await LandAsync(trees, next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
 
         Assert.False(refused.Landed);
-        Assert.Equal(AutoLandingCode.Completed, refused.Refusal);
+        Assert.Equal(LandingCode.Completed, refused.Refusal);
         Assert.Contains("already reads on `main` — its pull request was merged", refused.Message);
         Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
     }
@@ -616,7 +596,7 @@ public sealed class LandingTests : IDisposable
         var entry = trees.Recorded.Of("engine", "feature/q1-fix-the-gap")!;
         Assert.Equal("https://example.test/pull/7", entry.PullRequest);
         Assert.Equal((await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim(), entry.PushedTip);
-        Assert.Equal(AutoLandingCode.Advanced, AutoLandingRules.CodeOf(advanced));
+        Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
     }
 
     /// <summary>A plugin faked on the wire's channel: nothing reaches a network or a platform.</summary>

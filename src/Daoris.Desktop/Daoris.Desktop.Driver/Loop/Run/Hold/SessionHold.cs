@@ -245,13 +245,15 @@ internal sealed class SessionHold(IRunWiring wiring)
                 return later.Asked;
             };
 
-        // A driven quest session's protocol door is handed the transient retry, its waits on the driver's clock; its bound is its role's
-        // `after` where the role moves on `transient`, else five.
-        var retry = adapter.Wire == SessionWire.Acp && transientWanted is not null && target.QuestId is { } retried
+        // Every run on the protocol door handed its owner's check takes the one transient retry (D210 point 8), its waits on the driver's
+        // clock: a driven session, an intake, a helper, an opinion, a partner and a brainstorm voice. Its bound is its line's tries rule, and a
+        // pass with minutes of its own waits none past them.
+        var retry = adapter.Wire == SessionWire.Acp && transientWanted is not null
             ? TransientRetries.For(
-                context.Adapters, adapter, context.Harnesses, service, context.Events, output, wiring.Watch, log, sessionId, retried,
+                context.Adapters, adapter, context.Harnesses, service, context.Events, output, wiring.Watch, log, sessionId, target.QuestId ?? sessionId,
                 prior?.Profile, wiring.RetryClock, transientWanted,
-                tries: StaffCourse.Tries(context.Harnesses.StaffFor(home), context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, retried)))
+                tries: StaffCourse.Tries(context.Harnesses.StaffFor(home), context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, target.QuestId ?? sessionId)),
+                deadline: minutes is { } bound ? wiring.RetryClock.GetUtcNow().AddMinutes(bound) : null)
             : null;
         var protocol = adapter.Wire == SessionWire.Acp;
 

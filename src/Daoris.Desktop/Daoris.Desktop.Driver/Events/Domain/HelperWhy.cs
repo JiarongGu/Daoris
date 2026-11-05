@@ -54,6 +54,9 @@ public static class HelperWhy
     /// </summary>
     public const string Limited = "limited";
 
+    /// <summary>Its provider kept failing past the retry's tries or the helper's minutes (AGENTERRORS1d, D210 point 8): not <i>no answer</i>.</summary>
+    public const string Transient = "transient";
+
     /// <summary>
     /// Under the default rule (HELPERDEFAULT1, D163's 2026-10-24 note), the agent the asker named is not one Daoris has set up and
     /// signed in on this machine, and only those are asked by default.
@@ -105,6 +108,7 @@ public static class HelperWhy
         CannotTake => "that session cannot take the answer",
         HandUncertain => "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
         Limited => "its account hit its limit before it answered, and the session no longer waits on it",
+        Transient => "its provider kept failing, through every try or until its minutes ran out",
         NotSetUp => "it is not an agent Daoris has set up and signed in on this machine, and only those are asked by default",
         NoneSetUp => "no agent is set up and signed in for Daoris on this machine, and only those are asked by default",
         _ => why,

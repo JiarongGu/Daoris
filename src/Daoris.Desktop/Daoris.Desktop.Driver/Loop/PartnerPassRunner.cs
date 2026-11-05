@@ -164,6 +164,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 handedServers: [],
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
+                transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
                 noConnector: PartnerPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
                 // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
@@ -195,9 +196,11 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                     conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    var transient = !byPerson && !limited && TransientEnded.Of(ended, timedOut: exitCode is null) is not null;
+                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Partner, adapter.Name, timedOut: exitCode is null);
 
                     await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
-                    var end = PartnerTurns.End(byPerson, exitCode, limited);
+                    var end = transient ? PartnerEnds.Transient : PartnerTurns.End(byPerson, exitCode, limited);
                     var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_context.Events, sessionId, transcript) : null;
                     return Ended(conclusion.State, end, conclusion.Note, lastWords);
                 }).ConfigureAwait(false);

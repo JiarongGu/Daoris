@@ -26,7 +26,7 @@ internal sealed class LandingPress(
         {
             return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
             {
-                Refusal = AutoLandingCode.Refused,
+                Refusal = LandingCode.Refused,
             };
         }
 
@@ -35,10 +35,10 @@ internal sealed class LandingPress(
         if (refused is null)
         {
             (read, var unread) = TreeDelivering.Read(delivery, context.Home, repository);
-            refused = read is null ? new(false, $"Nothing was landed: {unread}.") { Refusal = AutoLandingCode.Refused }
-                : read.Unauthorized() is { } revoked ? new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = AutoLandingCode.Off }
+            refused = read is null ? new(false, $"Nothing was landed: {unread}.") { Refusal = LandingCode.Refused }
+                : read.Unauthorized() is { } revoked ? new(false, $"Nothing was landed: {revoked}; your Accept lands it.") { Refusal = LandingCode.Off }
                 : read is { Next: DeliveryPhases.Prepared } && read.Begin(DeliveryPhases.Prepared, read.Preparing) is { } notBegun
-                    ? new(false, $"Nothing was landed: {notBegun}.") { Refusal = AutoLandingCode.Refused }
+                    ? new(false, $"Nothing was landed: {notBegun}.") { Refusal = LandingCode.Refused }
                 : null;
         }
 
@@ -62,7 +62,7 @@ internal sealed class LandingPress(
     /// <summary>
     /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (LANDRACE1 and its review): where
     /// it is, who accepted it, what its plugin answered (a failure said as a landing says it, with how the branch is pushed), and that
-    /// nothing more was landed. Kept as <see cref="AutoLandingCode.Already"/>, as the look keeps a press's landing.
+    /// nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
     /// </summary>
     internal static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
     {
@@ -75,7 +75,7 @@ internal sealed class LandingPress(
             $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
             + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}.{plugin} Nothing more was landed.", before.Branch)
         {
-            Refusal = AutoLandingCode.Already,
+            Refusal = LandingCode.Already,
             Plugin = before.Said,
         };
     }
@@ -109,7 +109,7 @@ internal sealed class LandingPress(
         // checkout, its status and its files are that checkout's, and a replay or a follow in it would rewrite them: nothing lands.
         if (here is not null && await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
-            return new(false, $"Nothing was landed: {bound}.") { Refusal = AutoLandingCode.Refused };
+            return new(false, $"Nothing was landed: {bound}.") { Refusal = LandingCode.Refused };
         }
 
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
@@ -117,7 +117,7 @@ internal sealed class LandingPress(
         var work = await workReads.WorkAsync(full, ct, uncommitted, here).ConfigureAwait(false);
         if (work is not null && gate?.Process?.JudgesHolds != false && DiscardOffer.Of(full, work) is { } carried)
         {
-            return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
+            return new(false, carried.NotLanded) { Refusal = LandingCode.Carried };
         }
 
         // LANDGIT1c: the dirty check below is told what that judgement's `status` counted, and asks git only where it could not say. Nothing
@@ -131,22 +131,18 @@ internal sealed class LandingPress(
         var review = gate?.ReviewLanding;
 
         var (workspace, repository) = context.OwnerOf(full);
-        // Under a named workflow the run's bound version decides how it lands, read with the gate (WORKFLOW1f): a version is never
-        // edited, so nothing changes under it. Under Current the rule is read again here, as before.
+        // The run's bound version decides how it lands, read with the gate: a version is never edited, so nothing changes under it.
         var process = gate?.Process;
         var named = delivering is null && process is { Named: true } ? process : null;
-        var landing = named?.Landing ?? LandingRules.Line(context.Config(), repository, workspace);
-        // LANDNODE1b2: a delivery lands as its intent says, and keeps of the rule only what setup keeps.
+        var landing = process is { Named: true } ? process.Landing : Landing.Merge;
+        // A delivery lands as its intent says.
         if (delivering is not null) landing = delivering.Over(landing);
-        // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
-        // at done land with no press, nor under a switch now off. The switch is the effective rule's (AUTONOMY1c2): the access setup's
-        // `landing: rule` turns a branch rule's on, and never a merge's; a rule that says so itself is Current's graph with no review before its
-        // `land`, a merge's too, since the workflow decides (D145's note of 2026-11-01). A delivery's authority is its authorization's.
-        if (delivering is null && acceptedBy == AcceptedBy.Auto && landing.Rule is not { AutoAccept: true })
+        // A landing with no press needs a graph with no review before its `land`. A delivery's authority is its authorization's.
+        if (delivering is null && acceptedBy == AcceptedBy.Auto && landing is not { AutoAccept: true })
         {
-            return new(false, "its repository's rule no longer accepts automatically, so nothing was landed: your Accept lands it.")
+            return new(false, "its workflow does not accept it automatically, so nothing was landed: your Accept lands it.")
             {
-                Refusal = AutoLandingCode.Off,
+                Refusal = LandingCode.Off,
             };
         }
 
@@ -157,7 +153,7 @@ internal sealed class LandingPress(
             && !string.Equals(stands, delivering.Intent.Line, StringComparison.Ordinal))
         {
             return new(false, $"Nothing was landed: its delivery lands into `{delivering.Intent.Line}`, and `{repository}`'s line is "
-                + (stands is null ? "none git can name" : $"`{stands}`") + " now.") { Refusal = AutoLandingCode.Refused };
+                + (stands is null ? "none git can name" : $"`{stands}`") + " now.") { Refusal = LandingCode.Refused };
         }
 
         // The commit the door judged, or the delivery pinned: what lands is that commit or nothing.
@@ -168,16 +164,16 @@ internal sealed class LandingPress(
         // commit the squash made, which binds the branch the tidy reads to this landing (FABRIC-END4a, fourth review).
         string? squashedTip = null;
         string? squashedInto = null;
-        var branchForm = landing.Rule.Form == LandingForm.Branch;
+        var branchForm = landing.Form == LandingForm.Branch;
         // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used. A delivery's
         // name is its intent's.
         if (delivering is null && !branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
-        var plugin = branchForm ? landing.Rule.Plugin : null;
+        var plugin = branchForm ? landing.Plugin : null;
         var unready = plugin is null ? null : context.Plugins.Problem(plugin);
         if (unready is not null && acceptedBy != AcceptedBy.Auto)
         {
-            return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
-                + "plugin or the rule (`daoris place landing`), then accept again.");
+            return new(false, $"{unready} Nothing was landed: its workflow's `land` hands the branch to that plugin, so fix the "
+                + "plugin or the workflow, then accept again.");
         }
 
         // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
@@ -191,10 +187,10 @@ internal sealed class LandingPress(
         {
             // The fetch brought what holds all of it: SQUASHTIDY1f's sentence where its proof now finds it, else nothing to land.
             return Fetched(await workReads.DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } heldNow
-                ? new(false, heldNow.NotLanded) { Refusal = AutoLandingCode.Carried, LeftOut = replaying.Held.LeftOut }
+                ? new(false, heldNow.NotLanded) { Refusal = LandingCode.Carried, LeftOut = replaying.Held.LeftOut }
                 : new(false, $"`{replaying.Branch}` holds nothing `{replaying.OntoName}` lacks: the line already holds "
                     + $"{string.Join(", ", replaying.Held.LeftOut.Select(LandingSyncWords.Each))} — nothing to land.")
-                { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
+                { Refusal = LandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
         }
 
         // LANDNODE1c3 (the land node design §3, §4): under Current the door writes the delivery here, the landing judged and nothing of it made,
@@ -210,11 +206,11 @@ internal sealed class LandingPress(
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             var tip = pinned ?? TreeTips.Read(full) ?? await CommitOfAsync(root, $"refs/heads/{tree}", ct).ConfigureAwait(false);
             if (line is null || tip is null || tree is "" or "HEAD") return null;
-            // The standing automatic authority judged again before the first effect: Current's switch as the rule says it now; a version's,
-            // which is never edited, its graph holding no review before its `land`.
+            // The standing automatic authority judged again before the first effect: a version's, which is never edited, its graph holding
+            // no review before its `land`; work no version governs has none.
             Func<string?> standing = named is { } version
-                ? () => version.Landing.Rule.AutoAccept ? null : "its workflow's graph holds a review before its landing"
-                : () => LandingRules.Line(context.Config(), repository, workspace).Rule is { AutoAccept: true } ? null : "its repository's rule no longer accepts automatically";
+                ? () => version.Landing.AutoAccept ? null : "its workflow's graph holds a review before its landing"
+                : () => "no workflow it follows accepts it automatically";
             var (delivery, refusal) = await CurrentDeliveries.StartAsync(
                 context.Home, context.Plugins, landing, repository, workspace, root, subject, tip, line, tree, name, acceptedBy, hold?.Waited == true,
                 standing, ct, bound).ConfigureAwait(false);
@@ -255,8 +251,8 @@ internal sealed class LandingPress(
         else
         {
             // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
-            var worked = await plans.ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
-            var name = delivering?.Intent.Branch ?? BranchNamed(worked, landing.Rule, repository);
+            var worked = await plans.ForWorkAsync(full, workspace, repository, landing, subject, ct, always: landing.Squash).ConfigureAwait(false);
+            var name = delivering?.Intent.Branch ?? BranchNamed(worked, landing, repository);
             // TREEFOLLOW1: a tree on a branch of its own lands as that branch, which its delivery names, replayed in place or as it stands.
             var own = here?.Branch.Trim() is { } onBranch && onBranch is not ("" or "HEAD") && !onBranch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)
                 ? onBranch : null;
@@ -264,7 +260,7 @@ internal sealed class LandingPress(
             var branched = await branches.BranchAsync(full, workspace, repository,
                 delivering?.Intent.Branch ?? name,
                 handedOn: plugin is not null, ct,
-                entered: delivering is not { Door: false } && subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
+                entered: delivering is not { Door: false } && subject.EnteredName is not null, squash: landing.Squash ? worked : null, sync: replaying,
                 join: joins ? sync : null, pinned: pinned, uncommitted: uncommitted, here: here, delivering: delivering).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
@@ -289,7 +285,7 @@ internal sealed class LandingPress(
                     {
                         AcceptedBy = acceptedBy, Review = review, Opinion = gate?.OpinionLanding, Workflow = named?.Record,
                         // INTEGRATE1e (design §17.4): its own acceptance's provenance, as it keeps its own AcceptedBy.
-                        Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null, named?.IntegrateRequest),
+                        Integrate = LandedIntegrate.Of(null, named is not null, named?.IntegrateRequest),
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
                         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
@@ -310,10 +306,10 @@ internal sealed class LandingPress(
                     // Who accepted it, and the rule as it stood (LAND2b, D145 point 6): a choice keeps its facts (D143). Where the access
                     // setup turned its switch on, where that was set, so the record says the setup accepted it (AUTONOMY1c2).
                     AcceptedBy = acceptedBy,
-                    Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source) { Access = landing.Access },
+                    Rule = new LandedRule(plugin, landing.AutoAccept, LandingSource.Default),
                     // INTEGRATE1e (design §17.4): that `integrate` stood at this acceptance, its `request` and whose step, so a landing made
                     // before the rule carried it never reads as one made for integration.
-                    Integrate = LandedIntegrate.Of(landing.Rule.Integrate, named is not null, named?.IntegrateRequest),
+                    Integrate = LandedIntegrate.Of(null, named is not null, named?.IntegrateRequest),
                     // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
                     Review = review,
                     // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.

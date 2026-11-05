@@ -18,15 +18,14 @@ const BASE: Editing = {
     { key: 2, agent: 'agent-a', model: 'opus', effort: 'high', weight: '1', budgetKind: 'starts', budget: '6', works: ['design'] },
   ],
   policy: {
-    state: 'set', revision: 4, why: null, preset: 'weighted', carried: {}, most: '3',
-    moves: { limit: { do: 'weighted', after: '', upTo: '' }, transient: { do: 'weighted', after: '2', upTo: '' }, failed: { do: 'retry', after: '', upTo: '' } },
+    state: 'set', revision: 4, why: null, preset: 'weighted',
   },
 };
 
 const ORDER: Editing = {
   ...BASE,
   drafts: BASE.drafts.map((draft) => ({ ...draft, weight: '1' })),
-  policy: { ...BASE.policy!, preset: 'first', moves: {}, most: '' },
+  policy: { ...BASE.policy!, preset: 'first' },
 };
 
 const NEXT = { choice: '1', by: 'weight', said: 'by weight: 3 of the last 4 were choice 1, aim 3 in 4', agent: 'agent-a', model: 'sonnet', effort: 'high' };
@@ -40,6 +39,7 @@ const meta: Meta<typeof RoleEditor> = {
     busy: false, held: false, placed: 'Placed on this machine; the place is fixed and the id is made for you.',
     consequence: 'Saving puts this role to work at once: new work takes its choices, and running work keeps its own.',
     conversing: false, mayOff: false, isOff: false, mayClear: false, refused: null, next: NEXT,
+    rules: ['Moves to another choice a day: at 3: Ask before the next (This Daoris)', 'The service did not answer: at 2: Go to the next by weight (daoris)'],
     onSave: () => {}, onClear: () => {}, onCancel: () => {},
   },
   decorators: [storyWidths.wide],
@@ -48,7 +48,7 @@ export default meta;
 
 type Story = StoryObj<typeof RoleEditor>;
 
-/** Spread by weight, the weights with their aim, a limit on the second choice, the moves, and the next new start. */
+/** Spread by weight, the weights with their aim, a limit on the second choice, the rules naming the role, and the next new start. */
 export const Weighted: Story = {};
 export const WeightedHalf: Story = { decorators: [storyWidths.half] };
 export const WeightedNarrow: Story = { decorators: [storyWidths.narrow] };

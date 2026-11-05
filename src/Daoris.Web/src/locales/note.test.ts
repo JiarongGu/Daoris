@@ -225,7 +225,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
    */
   it('words every reason no helper answered a question', () => {
     const helper = reasons('Helper');
-    expect(helper.length).toBe(20);
+    expect(helper.length).toBe(21);
     const page = Object.values(HELPER_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...helper].sort(byKey));

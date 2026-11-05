@@ -10,7 +10,7 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     public string TreeGuardMatcher => TreeGuard.Matcher;
     public string TreeGuardEditMatcher => TreeGuard.EditMatcher;
     public IReadOnlyList<string> AcceptanceNotes =>
-        [LandingRules.PersonAccepted, LandingRules.AutoAccepted, LandingRules.HandNote(new TreeHand(true, "")).Text!];
+        [LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.HandNote(new TreeHand(true, "")).Text!];
     public string LandingsFileName => LandedBranches.FileName;
 
     public (IReadOnlyList<LandedBranch> Entries, string Path) Landings(string home)
@@ -38,7 +38,6 @@ internal sealed class KnowledgeWorkplaceReads : IKnowledgeWorkplace
     public Task<string?> GuessAsync(string root, CancellationToken ct) => LineGuesses.Shared.GuessAsync(root, ct);
     public Line? JudgedLine(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed) =>
         CanonicalLine.Judged(config, repository, workspace, root, guessed);
-    public Landing ChooseLanding(DriverConfig config, string repository, string? workspace) => LandingRules.Line(config, repository, workspace);
     public string PullRequestRow(PullRequestState? kept, PullRequestAskFailed? failed) => PullRequestWords.Row(kept, null, failed, null);
     public string? HistoryCount(int count, string noun, string? nouns = null) => HistoryCommand.Count(count, noun, nouns);
     public string? HistoryCopies(int count) => HistoryCommand.Copies(count);

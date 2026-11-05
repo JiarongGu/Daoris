@@ -9,8 +9,10 @@ import type { SettingsChoices } from '../tools';
 import { holdDraftOf, holdLine, holdPress } from './appointedHold';
 import { type Draft, type Editing, RoleEditor } from './RoleEditor';
 import { RowMore } from './RowMore';
-import { conversational, fieldsOf, OFFERED_MOVES, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
+import { fieldsOf, policyDraftOf, policyIsDefault, recordOf } from './staffPolicyDraft';
 import { SuggestedChoicesCard } from './SuggestedChoicesCard';
+import { ruleSaid } from './SupervisorRulesFold';
+import { rulesOfRole } from './supervisorRulesDraft';
 
 /** A choice as `SET_ROLE` takes it: an agent, and its model and effort in the tool's own words, absent for account default. */
 export type ActorChoice = { agent: string; model?: string | null; effort?: string | null };
@@ -137,9 +139,17 @@ export function placeText(t: TFunction, kind?: string | null, id?: string | null
   return kind === 'workspace' || kind === 'repository' ? t(`settings.ai.roles.place.${kind}`, { id: id ?? '' }) : t('settings.ai.roles.place.machine');
 }
 
+/** The supervisor's rules naming `role`, each as `<count>: <rule> (<place>)`: what its editor says of the role's moves and their bound. */
+function rulesSaid(t: TFunction, catalogue: RoleCatalogue | null | undefined, role: string): string[] {
+  return rulesOfRole(catalogue?.supervisor, role).map(({ place, rule }) => {
+    const where = place === 'machine' ? t('settings.supervisor.machine') : place.slice(place.indexOf(':') + 1);
+    return t('settings.supervisor.roleRule', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), place: where });
+  });
+}
+
 /**
- * A role's policy in its folded words (STAFFPOLICY1f, §6.2): the rule with its proportions, a move other than *as today* and the bound of
- * moves. Nothing for a role with no policy or a stale one, which runs in order as today and says so where it is edited.
+ * A role's policy in its folded words (STAFFPOLICY1f, §6.2): the rule with its proportions; its moves and their bound are the supervisor's
+ * rules and said there. Nothing for a role with no policy or a stale one, which runs in order as today and says so where it is edited.
  */
 export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined): string {
   const policy = read?.policyState === 'set' ? read.staffPolicy : null;
@@ -147,13 +157,7 @@ export function policyLine(t: TFunction, read: RolePolicyRow | null | undefined)
   const weights = policy.choices.map((choice) => choice.weight ?? 1);
   const rule = policy.rule !== 'weight' ? t('settings.ai.policy.summary.first')
     : weights.every((each) => each === 1) ? t('settings.ai.policy.summary.even') : t('settings.ai.policy.summary.weighted', { weights: weights.join(':') });
-  const moved = Object.keys(policy.moves ?? {});
-  const conditions = [...OFFERED_MOVES.map((each) => each.condition as string), 'signed-out', 'model-refused', 'budget'].filter((each) => moved.includes(each));
-  return [
-    rule,
-    conditions.length > 0 ? t('settings.ai.policy.summary.moves', { conditions: conditions.map((each) => t(`settings.ai.policy.cond.${each}`)).join(t('settings.ai.role.and')) }) : '',
-    policy.most ? t('settings.ai.policy.summary.most', { count: policy.most }) : '',
-  ].filter((part) => part !== '').join(' · ');
+  return rule;
 }
 
 /** A role's folded line: the work it takes, where, and its first choice and how many more (the staffing's, where it is read). */
@@ -306,8 +310,7 @@ export function RolesCard({
     if (!policy) return {};
     const empty = policyIsDefault(now.drafts, policy);
     if (empty && policy.state === 'default') return {};
-    const works = now.takes.length > 0 ? now.takes : [now.work];
-    return { policy: empty ? null : recordOf(now.drafts, policy, conversational(works)), policyRevision: policy.revision };
+    return { policy: empty ? null : recordOf(now.drafts, policy), policyRevision: policy.revision };
   };
   /** *Save* (the editor's choices) or *Off* (`[]`), over `SET_ROLE`. */
   const save = (now: Editing, off = false) => {
@@ -355,7 +358,7 @@ export function RolesCard({
         placed={t('settings.ai.roles.fixedPlace', { place: placeText(t, now.place, now.placeId) })}
         consequence={consequence ?? t('settings.ai.roles.editor.then')} conversing={CONVERSING.has(now.id)}
         mayOff={mayOff} isOff={!!isOff} mayClear={mayClear} refused={refused && refused.at === at ? refused.sentence : null}
-        next={policyOf(now.id)?.next ?? null} fields={catalogue?.policyFields}
+        next={policyOf(now.id)?.next ?? null} rules={rulesSaid(t, catalogue, now.id)}
         onSave={(off) => save(now, off)}
         onClear={() => press(at, { change: 'default', id: now.id, revision: row?.revision ?? null }, () => setEditing(null))}
         onCancel={() => { setRefused(null); setEditing(null); }}

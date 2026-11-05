@@ -58,7 +58,7 @@ test('two web gates writing the page\'s types at once take turns: the one that w
     const first = spawn(process.execPath, ['--input-type=module', '-e', [
       `import { withRunLock } from ${JSON.stringify(new URL('./run-lock.mjs', import.meta.url).href)};`,
       "withRunLock(process.argv[1], () => { console.log('held'); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500); });",
-    ].join('\n'), join(root, LOCK)], { stdio: ['ignore', 'pipe', 'inherit'] });
+    ].join('\n'), join(root, LOCK)], { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true });
     const ended = new Promise((done) => first.once('exit', done));
     await new Promise((held) => first.stdout.once('data', held));
 
@@ -77,7 +77,7 @@ test('two web gates writing the page\'s types at once take turns: the one that w
 test('a lock left by a run that died is taken at once, and the files are built', () => {
   const root = mkdtempSync(join(REPO, '_fixtures', 'contracts-lock-'));
   try {
-    const dead = spawnSync(process.execPath, ['-e', '']).pid;
+    const dead = spawnSync(process.execPath, ['-e', ''], { windowsHide: true }).pid;
     mkdirSync(dirname(join(root, LOCK)), { recursive: true });
     writeFileSync(join(root, LOCK), `${JSON.stringify({ pid: dead, since: new Date().toISOString() })}\n`);
     const run = stand('stale');

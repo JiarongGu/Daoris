@@ -493,9 +493,9 @@ public static class WorkflowRunWords
     /// <summary>What stood in an automatic landing's way, by its last try's code (LAND2b).</summary>
     private static string Refused(string? code) => code switch
     {
-        AutoLandingCode.Uncommitted => "its tree holds uncommitted work",
-        AutoLandingCode.Exists => "the branch it would make already stands",
-        AutoLandingCode.Completed => "its branch's pull request was merged, so bring the repository up to date and accept it",
+        LandingCode.Uncommitted => "its tree holds uncommitted work",
+        LandingCode.Exists => "the branch it would make already stands",
+        LandingCode.Completed => "its branch's pull request was merged, so bring the repository up to date and accept it",
         _ => "the landing was refused",
     };
 }

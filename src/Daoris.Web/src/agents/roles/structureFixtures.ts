@@ -1,5 +1,4 @@
 import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
-import type { RepositoryLanding } from '../../settings/repository/Landings';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import { TOOLS } from '../agentsFixtures';
 import type { PluginRef } from './roleStructure';
@@ -95,15 +94,11 @@ export const PLUGINS: PluginRef[] = [
   { id: 'github-pull-request', name: 'GitHub pull request', harnesses: [] },
 ];
 
-export const LINES: { lines: RepositoryLine[]; landings: RepositoryLanding[] } = {
+export const LINES: { lines: RepositoryLine[] } = {
   lines: [
     { repository: 'engine', workspace: 'aurora', branch: 'main', source: 'repository' },
     { repository: 'site', workspace: 'aurora', branch: 'main', source: 'workspace' },
     { repository: 'tools', workspace: 'default', source: 'none', notReadYet: true },
-  ],
-  landings: [
-    { repository: 'engine', workspace: 'aurora', form: 'branch', plugin: 'github-pull-request', source: 'repository' },
-    { repository: 'site', workspace: 'aurora', form: 'merge', source: 'default' },
   ],
 };
 

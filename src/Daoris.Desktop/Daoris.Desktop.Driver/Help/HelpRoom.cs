@@ -115,6 +115,7 @@ public static class HelpRoom
             Housekeeping = access.Housekeeping, Settings = access.Settings, CheckoutsOff = access.CheckoutsOff,
             // STAFFPOLICY1g: the roles' policies and weeks are the home's records, read as the room is written like the access.
             Roles = HelpRoleFacts.Read(home),
+            Rules = HelpRuleFacts.Read(home),
         }));
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         AtomicFile.WriteText(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");

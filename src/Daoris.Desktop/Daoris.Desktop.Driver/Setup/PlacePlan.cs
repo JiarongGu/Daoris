@@ -103,7 +103,7 @@ public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Loo
 /// <summary>
 /// A place's plan (AGENTSPLACE1a2, <c>PLACE_PLAN</c> and <c>daoris place … --plan</c>; the Agents-place design §4): the parts applied to a
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
-/// <see cref="LandingRules.Put"/>, the second opinion and the review rule), read before and after through the resolvers a start uses
+/// the line's policy, the second opinion and the review rule), read before and after through the resolvers a start uses
 /// (<see cref="PlaceProjection.ValuesAt"/>, <see cref="WorkflowProcesses.Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>,
 /// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, §17.7's reach, the work driving releases or,
 /// with adoption and driving off, that the set-up quest starts alone (AGENTSPLACE1b), and each declaration with what accepting it is for. It

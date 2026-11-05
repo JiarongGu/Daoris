@@ -164,7 +164,7 @@ public sealed class LineHoldsLandingTests : LandedFixture
         var landed = await trees.LandAsync(tree.Path, Subject, gate: Lands);
 
         Assert.False(landed.Landed, landed.Message);
-        Assert.Equal(AutoLandingCode.Refused, landed.Refusal);
+        Assert.Equal(LandingCode.Refused, landed.Refusal);
         Assert.Contains("CONFLICT (content): Merge conflict in shared.txt", landed.Conflict!.Says);
         Assert.StartsWith("Nothing was landed: replaying its own commits onto `main` conflicts with what the line changed since: CONFLICT", landed.Message);
         Assert.Contains("Rebase", landed.Conflict.Words);

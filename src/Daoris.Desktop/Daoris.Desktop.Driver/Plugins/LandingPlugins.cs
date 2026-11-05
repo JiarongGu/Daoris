@@ -75,8 +75,34 @@ public sealed class LandingPlugins(
     /// <summary>The home's plugins, read as the driver reads them — a harness name this build carries refused.</summary>
     public PluginCatalog Catalog() => PluginCatalog.Load(home, AdapterSet.Built().Names);
 
-    /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingRules.PluginProblem"/>).</summary>
-    public string? Problem(string plugin) => LandingRules.PluginProblem(plugin, Catalog());
+    /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="ProblemOf"/>).</summary>
+    public string? Problem(string plugin) => ProblemOf(plugin, Catalog());
+
+    /// <summary>
+    /// Why the plugin a landing names cannot land work on this machine, in a sentence, or null when it can: not installed, switched off,
+    /// refused by the catalogue, or speaking on no <see cref="HookPoints.Land"/> point. Asked when a workflow names it and again at the
+    /// press, so a plugin gone since is refused before anything is made.
+    /// </summary>
+    public static string? ProblemOf(string plugin, IWorkplacePluginCatalog catalog)
+    {
+        var entry = catalog.Find(plugin);
+        if (entry is null)
+        {
+            return $"the landing names plugin `{plugin}`, which is not installed on this machine — "
+                + "`daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is.";
+        }
+
+        if (!entry.Enabled)
+        {
+            return $"plugin `{plugin}` is switched off on this machine — `daoris plugin enable {entry.Id}` switches it on.";
+        }
+
+        if (entry.Problem is { } problem) return $"plugin `{plugin}` contributes nothing: {problem}";
+
+        return entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
+            ? null
+            : $"plugin `{plugin}` does not land work — its manifest speaks on no `{HookPoints.Land}` point.";
+    }
 
     /// <summary>What the plugin's manifest declares of landing (LANDNODE1e).</summary>
     public PluginLandDeclares LandDeclared(string plugin) =>
@@ -116,7 +142,7 @@ public sealed class LandingPlugins(
     private async Task<PluginLanding> SpeakAsync(string plugin, LandingFrame frame, string by, CancellationToken ct)
     {
         var catalog = Catalog();
-        if (LandingRules.PluginProblem(plugin, catalog) is { } problem) return Failed(plugin, problem);
+        if (ProblemOf(plugin, catalog) is { } problem) return Failed(plugin, problem);
         var entry = catalog.Plugins.First(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
         var id = entry.Manifest.Id;
 

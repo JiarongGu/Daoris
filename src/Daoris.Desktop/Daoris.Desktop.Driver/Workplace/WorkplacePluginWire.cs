@@ -10,7 +10,7 @@ public interface IWorkplacePluginWire
     /// <summary>The moment an occasion reckons by: whether an entry was asked in the last minute, and when an answer was asked.</summary>
     DateTimeOffset Now { get; }
 
-    /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingRules.PluginProblem"/>).</summary>
+    /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingPlugins.ProblemOf"/>).</summary>
     string? Problem(string plugin);
 
     /// <summary>What <paramref name="plugin"/>'s manifest declares of landing: its key and its modes (LANDNODE1e). None where it declares nothing.</summary>

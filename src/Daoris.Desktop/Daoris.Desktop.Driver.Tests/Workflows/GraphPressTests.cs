@@ -61,7 +61,7 @@ public sealed class GraphPressTests
         var gate = await GraphPasses.PressAsync(_ => Answered(NotJudged), Reads(Lands), Passes(comes: false), CancellationToken.None);
 
         Assert.Same(NotJudged, gate);
-        Assert.Equal(AutoLandingCode.Refused, gate.Refusal!.Refusal);
+        Assert.Equal(LandingCode.Refused, gate.Refusal!.Refusal);
         Assert.Equal(["answer kept", $"pass asked, waiting {GraphPasses.Bound.TotalSeconds:0}s"], _did);
     }
 

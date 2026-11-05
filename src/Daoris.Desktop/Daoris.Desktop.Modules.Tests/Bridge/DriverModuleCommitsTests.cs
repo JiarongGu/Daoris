@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -113,16 +114,12 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         Assert.Equal("ask", commits.GetProperty("rule").GetProperty("mode").GetString());
         Assert.Equal("Say why.", commits.GetProperty("rule").GetProperty("convention").GetString());
         Assert.Equal("workspace", commits.GetProperty("source").GetString());
-        // A landing rule set in the driver file is no longer read: the landing is the workflow's landing step's, and a tree with none lands as the default.
-        var landing = own.GetProperty("landing");
-        Assert.Equal("merge", landing.GetProperty("form").GetString());
-        Assert.Equal("default", landing.GetProperty("source").GetString());
+        // How its work lands is its run's bound land, which the run's view says, so the process names none.
+        Assert.False(own.TryGetProperty("landing", out _));
 
         // Nothing set for its repository or its workspace: Daoris's defaults, each from `default`.
         Assert.Equal("as-you-go", defaults.GetProperty("commits").GetProperty("rule").GetProperty("mode").GetString());
         Assert.Equal("default", defaults.GetProperty("commits").GetProperty("source").GetString());
-        Assert.Equal("merge", defaults.GetProperty("landing").GetProperty("form").GetString());
-        Assert.Equal("default", defaults.GetProperty("landing").GetProperty("source").GetString());
 
         // Told none: no process, as every null the bridge carries is left out.
         Assert.False(checkout.TryGetProperty("process", out var told) && told.ValueKind != JsonValueKind.Null);
@@ -138,9 +135,9 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and the sessions it is given.</summary>
-    private sealed class StandInService(string sessions = "[]") : HttpMessageHandler
+    private sealed class StandInService(string sessions = "[]") : SessionChangesHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> Respond(HttpRequestMessage request, CancellationToken ct)
         {
             var body = request.RequestUri!.AbsolutePath switch
             {

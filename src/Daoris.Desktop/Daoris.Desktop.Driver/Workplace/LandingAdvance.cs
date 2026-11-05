@@ -38,7 +38,7 @@ public static class LandingAdvance
                     + "would land on a branch the line already holds. Bring the repository up to date (`daoris tree sync`, or "
                     + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
                     + $"then Accept lands this work on a fresh `{name}`, which Daoris integrates into the line in turn.")
-                { Refusal = AutoLandingCode.Completed };
+                { Refusal = LandingCode.Completed };
             }
 
             return new TreeLanding(false,
@@ -46,7 +46,7 @@ public static class LandingAdvance
                 + "added to it now would ride no pull request. Bring the repository up to date (`daoris tree sync`, or "
                 + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
                 + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
-            { Refusal = AutoLandingCode.Completed };
+            { Refusal = LandingCode.Completed };
         }
 
         if (!facts.Descends)
@@ -59,7 +59,7 @@ public static class LandingAdvance
             ? null
             : new TreeLanding(false, $"`{name}` already holds everything on `{sessionBranch}` — nothing to land.")
             {
-                Refusal = AutoLandingCode.Nothing,
+                Refusal = LandingCode.Nothing,
             };
     }
 
@@ -108,13 +108,13 @@ public static class LandingAdvance
                       + "this session's own commits onto the line and removes that branch; "
                     : $"Delete or rename `{name}` once you no longer want its work; ")
                 + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
-            { Refusal = AutoLandingCode.Completed };
+            { Refusal = LandingCode.Completed };
         }
 
         return null;
     }
 
-    private static TreeLanding Exists(string why) => new(false, why) { Refusal = AutoLandingCode.Exists };
+    private static TreeLanding Exists(string why) => new(false, why) { Refusal = LandingCode.Exists };
 
     private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 }

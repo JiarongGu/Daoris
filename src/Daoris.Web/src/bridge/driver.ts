@@ -12,8 +12,6 @@ import type { CommitRule } from '../settings/repository/Commits';
 import type { HeavyGate, HeavyMarks } from '../settings/repository/HeavyGates';
 import type { HelperRule } from '../settings/repository/Helpers';
 import type { HandOverRule } from '../settings/repository/HandOver';
-import type { LandingRule } from '../settings/repository/Landings';
-import type { UnreadLanding } from '../projects/setup/SetupParts';
 import type { LanguageOption } from '../settings/repository/Languages';
 import type { OpinionRule } from '../settings/repository/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/repository/Reviews';
@@ -109,17 +107,6 @@ export type DriverState = {
   lines?: { repository: string; branch: string }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceLines?: { workspace: string; branch: string }[];
-  /** How work lands as set (WSR1, D87), by repository — absent on a shell older than it. */
-  landings?: ({ repository: string } & LandingRule)[];
-  /** And by workspace. */
-  workspaceLandings?: ({ workspace: string } & LandingRule)[];
-  /**
-   * The landing rules the file keeps that read as no rule (FABRIC-GRAPH1d), which the rows above skip: by repository — absent on a
-   * shell older than it.
-   */
-  unreadLandings?: ({ repository: string } & UnreadLanding)[];
-  /** And by workspace. */
-  workspaceUnreadLandings?: ({ workspace: string } & UnreadLanding)[];
   /** Reading across as set (D107), by repository — absent on a shell older than it. */
   readAcross?: { repository: string; read: boolean }[];
   /** And by workspace, for each repository there that sets none of its own. */
@@ -425,6 +412,7 @@ const readRoles = (raw: unknown): RoleCatalogue | null => {
     roles: answer.roles, works: answer.works ?? [], kept: answer.kept === true,
     ...(answer.use && Array.isArray(answer.use.roles) ? { use: answer.use } : {}),
     ...(Array.isArray(answer.policies) ? { policies: answer.policies } : {}),
+    ...(answer.supervisor && Array.isArray(answer.supervisor.sets) && Array.isArray(answer.supervisor.counts) ? { supervisor: answer.supervisor } : {}),
     ...(Array.isArray(answer.policyFields) ? { policyFields: answer.policyFields } : {}),
     ...(Array.isArray(answer.policyPresets) ? { policyPresets: answer.policyPresets } : {}),
     ...(Array.isArray(answer.suggestedChoices) ? { suggestedChoices: answer.suggestedChoices, suggestedChoicesDated: answer.suggestedChoicesDated } : {}),

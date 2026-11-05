@@ -91,8 +91,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     }
 
     /// <summary>
-    /// What <c>SESSION_PROCESS</c> says of a tree: its repository's commit rule and landing rule as <c>LINES</c> says each, with where
-    /// it was set, the repository and workspace read from the tree's place; null where the tree is not one this home made.
+    /// What <c>SESSION_PROCESS</c> says of a tree: its repository's commit rule as <c>LINES</c> says it, with where it was set, the
+    /// repository and workspace read from the tree's place; null where the tree is not one this home made. How its work lands is its run's
+    /// bound <c>land</c>, which the run's view says.
     /// </summary>
     public static object? SessionProcess(DriverConfig config, SessionTrees trees, string? tree)
     {
@@ -101,22 +102,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         if (repository.Length == 0) return null;
 
         var commits = CommitRules.Resolve(config, repository, workspace);
-        var landing = LandingRules.Line(config, repository, workspace);
         return new
         {
             Commits = new { Repository = repository, Workspace = workspace, Rule = LinesRoutes.CommitWire(commits.Rule), commits.Source },
-            Landing = new
-            {
-                Repository = repository,
-                Workspace = workspace,
-                landing.Rule.Form,
-                landing.Rule.Pattern,
-                landing.Rule.Plugin,
-                landing.Rule.AutoAccept,
-                landing.Rule.Key,
-                landing.Rule.Squash,
-                landing.Source,
-            },
         };
     }
 
@@ -658,7 +646,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // plugin is told, so a hand-off that waited behind another push tells no plugin where that result moved meanwhile.
         var pressed = await PressQuests.HandedAsync(entry, loop.Service ?? throw NotReady(), cancellationToken);
         var handed = await trees.HandAsync(root, entry, plugin, cancellationToken, beforePush: pressed.BeforePush);
-        if (handed.Plugin is not null) loop.Events.Keep(entry.Session, LandingRules.HandNote(handed), line => loop.Output.Append(entry.Session, line));
+        if (handed.Plugin is not null) loop.Events.Keep(entry.Session, LandingNotes.HandNote(handed), line => loop.Output.Append(entry.Session, line));
         loop.Nudge();
         return handed;
     }

@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// plugin's (D37, D100), and a landing writes no quest state (D46).</para>
 ///
 /// <para><b>A refusal is not tried every pass.</b> Each try is kept in memory with the tree's tip and status it was made at, and the next is made
-/// only once either moves (<see cref="AutoLandingRules.ShouldTry"/>), or the person's press asks again (<see cref="Retry"/>). A restart reads as
+/// only once either moves (<see cref="LandTries.ShouldTry"/>), or the person's press asks again (<see cref="Retry"/>). A restart reads as
 /// no try, and the next pass judges afresh.</para>
 ///
 /// <para><b>Judged again before each effect.</b> A landing waits behind another of its tree, and a push behind another of its branch, so the
@@ -36,7 +36,7 @@ public sealed class LandPerformer(
     private void TakeRepair(LandStart run) { if (run.Review is { } review) Flows.TakeRepair(home, HoldsLease, run.Unit, review); }
 
     /// <summary>A session chosen to land, with what was read of it: its quest, its tree's tip and status, the gate pinned to that tip.</summary>
-    private sealed record Choice(AutoLanding Entry, QuestView Quest, string? Tip, string Status, LandStart Run)
+    private sealed record Choice(LandEntry Entry, QuestView Quest, string? Tip, string Status, LandStart Run)
     {
         public IWorkplaceGate? Gate { get; init; }
 
@@ -59,7 +59,7 @@ public sealed class LandPerformer(
 
     /// <summary>The sessions of <paramref name="home"/> whose landing made its branch and holds its push back, by their last try.</summary>
     public static IReadOnlySet<string> PushHeld(string home) =>
-        Tries.Where(each => each.Key.StartsWith($"{home}\n", StringComparison.OrdinalIgnoreCase) && each.Value.Code == AutoLandingCode.PushHeld)
+        Tries.Where(each => each.Key.StartsWith($"{home}\n", StringComparison.OrdinalIgnoreCase) && each.Value.Code == LandingCode.PushHeld)
             .Select(each => each.Key[(home.Length + 1)..]).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Lands the work of a run whose <c>land</c> the runtime started. Null where there is nothing to land from here.</summary>
@@ -78,11 +78,11 @@ public sealed class LandPerformer(
         if (choice is null) return said;
         var landed = await LandOneAsync(choice, fresh, ct).ConfigureAwait(false);
         // A repair outlives nothing that ended the landing: a landing or a refusal spends it.
-        if (LastOf(record.Id) is { Code: var code } && AutoLandingCode.Closes(code) && code != AutoLandingCode.CarryBound) TakeRepair(start);
+        if (LastOf(record.Id) is { Code: var code } && LandingCode.Closes(code) && code != LandingCode.CarryBound) TakeRepair(start);
         return landed;
     }
 
-    private AutoLanding EntryOf(string session, string quest, LandStart start, string tree) =>
+    private LandEntry EntryOf(string session, string quest, LandStart start, string tree) =>
         new(session, quest, start.Repository, start.Workspace, tree, Now()) { Tries = LastOf(session) is { } tried ? [tried] : [] };
 
     /// <summary>
@@ -97,24 +97,24 @@ public sealed class LandPerformer(
             ?? (WorkplaceRunFiles.RecordOf(start.Run) is { } first ? RecordOf(records, first) : null);
         if (record is not { Tree: { Length: > 0 } tree }) return null;
         var entry = EntryOf(record.Id, "", start, tree);
-        if (TreeFolders.TreeGone(tree)) return Tried(entry, AutoLandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(AutoLandingCode.Gone, null)));
+        if (TreeFolders.TreeGone(tree)) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
         var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
-        if (!AutoLandingRules.ShouldTry(entry, tip, status)) return null;
+        if (!LandTries.ShouldTry(entry, tip, status)) return null;
         var (gate, held, _) = await GateAsync(entry, record.Id, null, tree, fresh, ct, tip: start.Tip).ConfigureAwait(false);
-        if (held is not null) return Tried(entry, held.Refusal ?? AutoLandingCode.Refused, tip, status, held);
+        if (held is not null) return Tried(entry, held.Refusal ?? LandingCode.Refused, tip, status, held);
         if (!string.Equals(tip, start.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return Tried(entry, AutoLandingCode.Refused, tip, status, new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = AutoLandingCode.Refused });
+            return Tried(entry, LandingCode.Refused, tip, status, new TreeLanding(false, "the work moved since it was judged; press Accept again.") { Refusal = LandingCode.Refused });
         }
 
-        if (uncommitted > 0) return Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted);
+        if (uncommitted > 0) return Tried(entry, LandingCode.Uncommitted, tip, status, uncommitted: uncommitted);
         var subject = await trees.OwnSubjectAsync(
             tree, record.Id, null, records, id => fresh.QuestAsync(id, ct), named => events.Openings([named]).GetValueOrDefault(named), gate.Process, ct)
             .ConfigureAwait(false);
         var landed = await trees.LandAsync(tree, subject, ct, fresh.InUseAsync, start.Reviewed ? AcceptedBy.Person : AcceptedBy.Auto, gate.WithTip(start.Tip),
             subject.Joins, beside: fresh.BesideAsync).ConfigureAwait(false);
         LandOutcomes.Kept(start.Unit, start.Tip, landed);
-        return Tried(entry, AutoLandingRules.CodeOf(landed), tip, status, landed);
+        return Tried(entry, LandTries.CodeOf(landed), tip, status, landed);
     }
 
     /// <summary>The service's session records, read once for a judgement, and only once it needs them.</summary>
@@ -131,7 +131,7 @@ public sealed class LandPerformer(
     /// choice where it is worth a try.
     /// </summary>
     private async Task<(string? Said, Choice? Choice)> JudgeAsync(
-        AutoLanding entry, IWorkplaceLandingWorld world, Records looked, LandStart run, CancellationToken ct)
+        LandEntry entry, IWorkplaceLandingWorld world, Records looked, LandStart run, CancellationToken ct)
     {
         // The review's word stands for the person's Accept, and its carry-on is a repair kept beside it on the run's record.
         var carried = CarriedOf(entry, run);
@@ -140,7 +140,7 @@ public sealed class LandPerformer(
             .ConfigureAwait(false);
 
         // Its branch is made and recorded and its push was held back, so it is handed on, never made again.
-        if (entry.Last is { Code: AutoLandingCode.PushHeld } pushHeld
+        if (entry.Last is { Code: LandingCode.PushHeld } pushHeld
             && await PushHeldAsync(entry, pushHeld, world, looked, process, run, ct).ConfigureAwait(false) is { } handOn)
         {
             return handOn;
@@ -150,10 +150,10 @@ public sealed class LandPerformer(
         var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
         if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
         {
-            return (Closed(entry, AutoLandingCode.Already, branch: landing.Branch), null);
+            return (Closed(entry, LandingCode.Already, branch: landing.Branch), null);
         }
 
-        if (TreeFolders.TreeGone(entry.Tree)) return (Closed(entry, AutoLandingCode.Gone), null);
+        if (TreeFolders.TreeGone(entry.Tree)) return (Closed(entry, LandingCode.Gone), null);
 
         // A live session in the tree is using it, and a newer session on it stands for it now.
         var records = await looked.ReadAsync(ct).ConfigureAwait(false);
@@ -162,7 +162,7 @@ public sealed class LandPerformer(
         var newest = onTree.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).FirstOrDefault();
         if (newest is not null && !string.Equals(newest.Id, entry.Session, StringComparison.OrdinalIgnoreCase))
         {
-            return (Closed(entry, AutoLandingCode.Superseded), null);
+            return (Closed(entry, LandingCode.Superseded), null);
         }
 
         // A stop, a decline or a stand-down takes the yes back: a carry-on is never sent to a session the person ended.
@@ -174,34 +174,34 @@ public sealed class LandPerformer(
 
         // In a closure graph the landing waits on the quest's current submission; a reopen takes it back.
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
-        if (!QuestResults.Judged(quest)) return (Closed(entry, AutoLandingCode.Undone), null);
+        if (!QuestResults.Judged(quest)) return (Closed(entry, LandingCode.Undone), null);
 
         // Held for the person's yes or evidence's verdict, said once; a graph with a `land` judges them as its `quest.holds` step instead.
         if (process.JudgesHolds && quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
         {
-            return (entry.Last?.Code != AutoLandingCode.Held ? Tried(entry, AutoLandingCode.Held, tip: null, status: null) : null, null);
+            return (entry.Last?.Code != LandingCode.Held ? Tried(entry, LandingCode.Held, tip: null, status: null) : null, null);
         }
 
         var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
-        if (!AutoLandingRules.ShouldTry(entry, tip, status)) return (null, null);
+        if (!LandTries.ShouldTry(entry, tip, status)) return (null, null);
 
         // Concluded again with nothing new, it is already on the branch its landing made: closed before the gate, behind D88's proof.
         if (uncommitted == 0 && trees.Recorded.Landing(entry.Session) is { GoneAt: null } made
             && await trees.UnlandedHereAsync(entry.Tree, ct).ConfigureAwait(false) == 0)
         {
-            return (Closed(entry, AutoLandingCode.Already, branch: made.Branch), null);
+            return (Closed(entry, LandingCode.Already, branch: made.Branch), null);
         }
 
         // The landing gate, read once, its first part that holds as a refusal.
         var (gate, held, line) = await GateAsync(entry, entry.Session, entry.Quest, entry.Tree, world, ct, process).ConfigureAwait(false);
 
         // The run's own part, kept with no tip and no status, so the next pass reads the gate again whatever the tree does.
-        if (held is { Refusal: AutoLandingCode.Refused }) return (Workflow(entry, held, line), null);
+        if (held is { Refusal: LandingCode.Refused }) return (Workflow(entry, held, line), null);
 
         // The second opinion or the review waits, said once and read again at every pass.
         if (held is { Refusal: { } waiting })
         {
-            if (waiting == AutoLandingCode.Opinion) Owe(entry, entry.Session, entry.Quest, entry.Tree, since: entry.DueAt);
+            if (waiting == LandingCode.Opinion) Owe(entry, entry.Session, entry.Quest, entry.Tree, since: entry.DueAt);
             if (entry.Last?.Code == waiting) return (null, null);
             var waits = Tried(entry, waiting, tip, status, held);
             if (line is not null) log?.Invoke(line);
@@ -212,7 +212,7 @@ public sealed class LandPerformer(
         if (uncommitted > 0)
         {
             return (carried is null
-                ? Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: uncommitted)
+                ? Tried(entry, LandingCode.Uncommitted, tip, status, uncommitted: uncommitted)
                 : await CarryOnAsync(entry, carried, LandCarry.Uncommitted, landed: null, tip, status, uncommitted, world, run, ct).ConfigureAwait(false), null);
         }
 
@@ -233,7 +233,7 @@ public sealed class LandPerformer(
         if (unlanded == 0)
         {
             var ahead = await trees.AheadOfLineAsync(entry.Tree, ct).ConfigureAwait(false);
-            return Tried(entry, ahead == 0 ? AutoLandingCode.Nothing : AutoLandingCode.Already, choice.Tip, choice.Status);
+            return Tried(entry, ahead == 0 ? LandingCode.Nothing : LandingCode.Already, choice.Tip, choice.Status);
         }
 
         var subject = await trees.OwnSubjectAsync(
@@ -245,7 +245,7 @@ public sealed class LandPerformer(
         async Task<TreeLanding?> JudgedAsync(bool waited, CancellationToken token)
         {
             judgedAgain = await UnderHoldAsync(choice, waited, token).ConfigureAwait(false);
-            return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = AutoLandingCode.Refused };
+            return judgedAgain is null ? null : new TreeLanding(false, judgedAgain) { Refusal = LandingCode.Refused };
         }
 
         // A head bound into an operation bringing sessions together lands by its combined Accept, its members brought into its one delivery.
@@ -271,7 +271,7 @@ public sealed class LandPerformer(
             return await CarryOnAsync(entry, carried, why, landed, tip, status, paths, fresh, choice.Run, ct).ConfigureAwait(false);
         }
 
-        var code = AutoLandingRules.CodeOf(landed);
+        var code = LandTries.CodeOf(landed);
         var told = landed is { Landed: false, Conflict: { } conflict } && await ToldRebaseAsync(fresh, entry, choice.Tip, conflict, ct).ConfigureAwait(false);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded, rebaseTold: told,
             carry: carried is null ? null : LandCarry.Accepted);
@@ -307,10 +307,10 @@ public sealed class LandPerformer(
     /// <see cref="LandCarry.Bound"/> times; past that the yes is taken back, and the session waits for the person's review with the reason.
     /// </summary>
     private async Task<string> CarryOnAsync(
-        AutoLanding entry, CarriedAccept carried, string why, TreeLanding? landed, string? tip, string status, int paths,
+        LandEntry entry, CarriedAccept carried, string why, TreeLanding? landed, string? tip, string status, int paths,
         IWorkplaceLandingWorld world, LandStart run, CancellationToken ct)
     {
-        if (carried.Carries >= LandCarry.Bound) return Tried(entry, AutoLandingCode.CarryBound, tip, status, landed, uncommitted: paths, carry: why);
+        if (carried.Carries >= LandCarry.Bound) return Tried(entry, LandingCode.CarryBound, tip, status, landed, uncommitted: paths, carry: why);
 
         var words = LandCarry.WordsOf(why, landed?.Conflict, paths);
         var key = CarryKeys.Of(entry.Session, LandCarry.BasisOf(why, tip, status), carried.Carries + 1);
@@ -320,18 +320,18 @@ public sealed class LandPerformer(
         {
             TakeRepair(run);
             return why == LandCarry.Conflicted
-                ? Tried(entry, AutoLandingCode.Refused, tip, status, landed)
-                : Tried(entry, AutoLandingCode.Uncommitted, tip, status, uncommitted: paths);
+                ? Tried(entry, LandingCode.Refused, tip, status, landed)
+                : Tried(entry, LandingCode.Uncommitted, tip, status, uncommitted: paths);
         }
 
-        return Tried(entry, AutoLandingCode.CarriedOn, tip, status, landed, uncommitted: paths, carry: why);
+        return Tried(entry, LandingCode.CarriedOn, tip, status, landed, uncommitted: paths, carry: why);
     }
 
     /// <summary>
     /// The rebase words said to the session itself: where its replay onto the line conflicts, the words the press would send go to the session
     /// through the say door as Daoris's, keyed by the session and the tip that conflicted. True where the door kept them.
     /// </summary>
-    private static async Task<bool> ToldRebaseAsync(IWorkplaceLandingWorld world, AutoLanding entry, string? tip, LandingConflict conflict, CancellationToken ct) =>
+    private static async Task<bool> ToldRebaseAsync(IWorkplaceLandingWorld world, LandEntry entry, string? tip, LandingConflict conflict, CancellationToken ct) =>
         await RebaseTelling.TellAsync(world.SayAsync, entry.Session, tip, conflict, ct).ConfigureAwait(false) is { Kept: true };
 
     /// <summary>
@@ -396,7 +396,7 @@ public sealed class LandPerformer(
                 if (held is not null)
                 {
                     if (line is not null) log?.Invoke(line);
-                    return $"{AutoLandingNotes.GateHeld} before its plugin was told, so its push was not tried: the branch stands, and the first "
+                    return $"{LandTryNotes.GateHeld} before its plugin was told, so its push was not tried: the branch stands, and the first "
                         + $"pass once the gate lets it go hands it on, or `daoris tree hand {last}` does now. {held.Message}";
                 }
             }
@@ -439,7 +439,7 @@ public sealed class LandPerformer(
     /// (<see cref="TreeHandOffs"/>), once; a tree whose work went on past it is landed as any later done is (null here).
     /// </summary>
     private async Task<(string? Said, Choice? Choice)?> PushHeldAsync(
-        AutoLanding entry, AutoTry held, IWorkplaceLandingWorld world, Records looked, IWorkplaceProcess process, LandStart run, CancellationToken ct)
+        LandEntry entry, AutoTry held, IWorkplaceLandingWorld world, Records looked, IWorkplaceProcess process, LandStart run, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
         var holds = process.JudgesHolds;
@@ -449,7 +449,7 @@ public sealed class LandPerformer(
         if (trees.Recorded.Landing(entry.Session) is not { } landing
             || landing is { Pushed: true } && string.Equals(landing.PushedTip, landing.Tip, StringComparison.OrdinalIgnoreCase))
         {
-            return (Closed(entry, AutoLandingCode.Already, branch: held.Branch), null);
+            return (Closed(entry, LandingCode.Already, branch: held.Branch), null);
         }
 
         var last = landing.LastSession();
@@ -473,7 +473,7 @@ public sealed class LandPerformer(
             : await GateAsync(entry, session, sessionQuest, sessionTree, world, ct, process).ConfigureAwait(false);
         if (gateHeld is not null)
         {
-            if (gateHeld.Refusal == AutoLandingCode.Opinion && sessionQuest is not null) Owe(entry, session, sessionQuest, sessionTree);
+            if (gateHeld.Refusal == LandingCode.Opinion && sessionQuest is not null) Owe(entry, session, sessionQuest, sessionTree);
             return (null, null);
         }
 
@@ -485,7 +485,7 @@ public sealed class LandPerformer(
     /// Never throws: a due list that cannot be written leaves the person's ask, which the gate's sentence names.
     /// </summary>
     /// <param name="since">The done it is owed for: a due the loop closed as landed since then is not opened again. Null opens one whatever closed the last.</param>
-    private void Owe(AutoLanding entry, string session, string quest, string tree, DateTimeOffset? since = null)
+    private void Owe(LandEntry entry, string session, string quest, string tree, DateTimeOffset? since = null)
     {
         WorkplaceReview.Current.OweLanding(home, session, quest, entry.Repository, entry.Workspace, tree, Now, since);
     }
@@ -505,17 +505,17 @@ public sealed class LandPerformer(
         // Held back there, it stays `push-held`: a refusal would be kept at this tip and never tried again, since the tree does not move.
         var landed = handed.Withheld is { } withheld ? new TreeLanding(true, handed.Message, handed.Branch) { Withheld = withheld }
             : handed.Plugin is not null ? new TreeLanding(true, handed.Message, handed.Branch, handed.Plugin)
-            : new TreeLanding(false, handed.Message, handed.Branch) { Refusal = AutoLandingCode.Refused };
-        return Tried(entry, AutoLandingRules.CodeOf(landed), choice.Tip, choice.Status, landed, handed.Plugin?.Plugin ?? made.Rule?.Plugin,
+            : new TreeLanding(false, handed.Message, handed.Branch) { Refusal = LandingCode.Refused };
+        return Tried(entry, LandTries.CodeOf(landed), choice.Tip, choice.Status, landed, handed.Plugin?.Plugin ?? made.Rule?.Plugin,
             made.Branch);
     }
 
     /// <summary>Keep one try: in memory with its facts, in the conversation where its code is said there, and in the machine log by its code.</summary>
     /// <param name="named">The branch the pattern names, which a refusal's note names where the landing made none.</param>
     /// <param name="rebaseTold">Its replay conflicted and its session was told to rebase, which its note says.</param>
-    /// <param name="carry">What the review's word was carried on for, or that it accepted the landing (<see cref="AutoLandingNotes.Of"/>).</param>
+    /// <param name="carry">What the review's word was carried on for, or that it accepted the landing (<see cref="LandTryNotes.Of"/>).</param>
     private string Tried(
-        AutoLanding entry, string code, string? tip, string? status, TreeLanding? landed = null, string? plugin = null,
+        LandEntry entry, string code, string? tip, string? status, TreeLanding? landed = null, string? plugin = null,
         string? named = null, int? commits = null, int? uncommitted = null, bool rebaseTold = false, string? carry = null)
     {
         var made = landed is { Landed: true } ? landed.Branch : null;
@@ -524,14 +524,14 @@ public sealed class LandPerformer(
             Tip = tip,
             Status = status,
             Uncommitted = uncommitted,
-            Branch = made ?? (code is AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Already ? named : null),
+            Branch = made ?? (code is LandingCode.Exists or LandingCode.Completed or LandingCode.Already ? named : null),
             Commits = made is null ? null : commits,
         };
 
         var line = Words(code, landed);
-        if (AutoLandingNotes.Says(code))
+        if (LandTryNotes.Says(code))
         {
-            var note = AutoLandingNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold, carry);
+            var note = LandTryNotes.Of(code, landed, plugin, uncommitted, named, rebaseTold, carry);
             events.Keep(entry.Session, note, say: null);
             line = note.Text!;
         }
@@ -541,15 +541,15 @@ public sealed class LandPerformer(
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
     }
 
-    private string Closed(AutoLanding entry, string code, string? branch = null) =>
+    private string Closed(LandEntry entry, string code, string? branch = null) =>
         Tried(entry, code, tip: null, status: null, named: branch);
 
     /// <summary>What the run's graph holds: a refusal kept once, with no tip and no status, so the next pass reads the gate again whatever the tree does.</summary>
     /// <returns>The line said, or null where it was said already.</returns>
-    private string? Workflow(AutoLanding entry, TreeLanding held, LandingLine? line)
+    private string? Workflow(LandEntry entry, TreeLanding held, LandingLine? line)
     {
-        if (entry.Last is { Code: AutoLandingCode.Refused, Tip: null, Status: null }) return null;
-        var said = Tried(entry, AutoLandingCode.Refused, tip: null, status: null, held);
+        if (entry.Last is { Code: LandingCode.Refused, Tip: null, Status: null }) return null;
+        var said = Tried(entry, LandingCode.Refused, tip: null, status: null, held);
         if (line is not null) log?.Invoke(line);
         return said;
     }
@@ -563,7 +563,7 @@ public sealed class LandPerformer(
     /// <param name="process">The run's process where the caller read it already; otherwise the gate reads it, once.</param>
     /// <param name="tip">The commit to judge the work at, where a push is judged; null reads the tree's head.</param>
     private async Task<(IWorkplaceGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
-        AutoLanding entry, string session, string? quest, string tree, IWorkplaceLandingWorld world, CancellationToken ct,
+        LandEntry entry, string session, string? quest, string tree, IWorkplaceLandingWorld world, CancellationToken ct,
         IWorkplaceProcess? process = null, string? tip = null)
     {
         var gate = await trees.GateOfAsync(tree, quest, world, session, ct, process, tip).ConfigureAwait(false);
@@ -576,17 +576,17 @@ public sealed class LandPerformer(
     /// The yes a run's review stands for while its landing is judged: the person's Accept, with the carries its repair counts; null where the
     /// graph holds no review, whose landing is the standing authority's.
     /// </summary>
-    private CarriedAccept? CarriedOf(AutoLanding entry, LandStart run) => run.Review is null
+    private CarriedAccept? CarriedOf(LandEntry entry, LandStart run) => run.Review is null
         ? null
         : new CarriedAccept(entry.Session, entry.Tree, Now(), Flows.RepairCarries(home, HoldsLease, run.Unit, run.Review), Awaiting: false);
 
     /// <summary>What the line says of a code the conversation is not told of.</summary>
     private static string Words(string code, TreeLanding? landed) => code switch
     {
-        AutoLandingCode.Already => "its work is already on a branch of yours, so nothing more lands.",
-        AutoLandingCode.Superseded => "a newer session went on in its tree, which stands for it now.",
-        AutoLandingCode.Gone => "its tree was discarded before it landed, so nothing lands.",
-        AutoLandingCode.Undone => "its quest is no longer done, so nothing lands.",
+        LandingCode.Already => "its work is already on a branch of yours, so nothing more lands.",
+        LandingCode.Superseded => "a newer session went on in its tree, which stands for it now.",
+        LandingCode.Gone => "its tree was discarded before it landed, so nothing lands.",
+        LandingCode.Undone => "its quest is no longer done, so nothing lands.",
         _ => landed?.Message ?? code,
     };
 
@@ -600,7 +600,7 @@ public sealed class LandPerformer(
         var (statusCode, porcelain, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
         var tip = headCode == 0 ? head.Trim() : null;
         if (statusCode != 0) return (tip, Unreadable, 0);
-        var status = AutoLandingRules.Fingerprint(porcelain);
+        var status = LandTries.Fingerprint(porcelain);
         return (tip, status, porcelain.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length);
     }
 

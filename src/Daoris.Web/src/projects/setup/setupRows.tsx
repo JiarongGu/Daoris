@@ -5,7 +5,6 @@ import { IntegrationDeclaration } from '../../settings/repository/IntegrationDec
 import { LandedRoute, type LandedSetup } from '../../settings/repository/LandedRoute';
 import { SessionChecksRow, sessionChecksSummary } from '../../settings/repository/SessionChecks';
 import { LinePolicyField, policySays } from '../../settings/repository/IntegratePolicy';
-import { type RepositoryLanding } from '../../settings/repository/Landings';
 import { LineField, type RepositoryLine } from '../../settings/repository/Lines';
 import { OpinionField, opinionRowSays, type RepositoryOpinion } from '../../settings/repository/Opinions';
 import { type RepositoryReview, ReviewField, reviewRowSays } from '../../settings/repository/Reviews';
@@ -16,7 +15,7 @@ import { type TFunction, type i18n } from 'i18next';
 import type { Driving, HeavySetup, LandsHere, SetupSectionId, WorkSetup } from './RepositorySetup';
 import { JOIN, LandingSetting } from './setupBits';
 
-export function setupRows({ driving, drivingLine, t, repository, busy, i18n, line, work, lineOwn, landing, lands, onOpenPlugin, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, landed, gatesApart, heavy }: {
+export function setupRows({ driving, drivingLine, t, repository, busy, i18n, line, work, lineOwn, lands, commits, commitRule, commitsOwn, review, reviewOwn, opinion, opinionOwn, landed, gatesApart, heavy }: {
   driving: Driving | null | undefined;
   drivingLine: string | null | undefined;
   t: TFunction<"translation", undefined>;
@@ -26,9 +25,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
   line: RepositoryLine | null | undefined;
   work: WorkSetup | null | undefined;
   lineOwn: boolean;
-  landing: RepositoryLanding | null | undefined;
   lands: LandsHere | null;
-  onOpenPlugin: ((plugin: string) => void) | undefined;
   commits: RepositoryCommits | null | undefined;
   commitRule: CommitRule;
   commitsOwn: boolean;
@@ -122,8 +119,8 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
       </>
       )
     : null;
-  const landingRow = work && (landing || lands?.is === 'version')
-    ? <LandingSetting twin={t('projects.setup.twin.landing', { repository })} landing={landing ?? null} lands={lands} unread={work.landingUnread ?? null} onOpenPlugin={onOpenPlugin} />
+  const landingRow = work && lands?.is === 'version'
+    ? <LandingSetting twin={t('projects.setup.twin.landing', { repository })} lands={lands} />
     : null;
   const commitsRow = commits && work?.onCommits
     ? (

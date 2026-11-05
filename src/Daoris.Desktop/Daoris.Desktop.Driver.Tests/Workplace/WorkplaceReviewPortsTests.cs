@@ -36,7 +36,7 @@ public sealed class WorkplaceReviewPortsTests : IDisposable
         Assert.Null(open.Held("s1", ("aurora", "engine"), new TreeLanding(true, "landed"), LandingDoors.Look));
 
         IWorkplaceGate holds = Holds();
-        Assert.Equal(AutoLandingCode.Opinion, holds.Refusal!.Refusal);
+        Assert.Equal(LandingCode.Opinion, holds.Refusal!.Refusal);
         Assert.Equal(LandingGateWords.Plan((LandingGate)holds), holds.PlanLines());
         var line = holds.Held("s1", ("aurora", "engine"), holds.Refusal, LandingDoors.Look);
         Assert.Equal(LandingGateWords.Held("s1", ("aurora", "engine"), (LandingGate)holds, holds.Refusal, ReviewDoors.Look)!.Event, line!.Event);

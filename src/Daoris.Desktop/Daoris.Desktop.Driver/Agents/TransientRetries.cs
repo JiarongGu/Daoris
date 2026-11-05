@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The transient retry a driven quest session is handed (AGENTERRORS1a, D210, the agent-errors design §5.1, §5.5): the one reader over
-/// the adapter set, the driven check, Daoris's go-on kept through the say door, the conversation's one line, the machine log's lines and
-/// the watch's heard stamp. Row 1a hands it at a start's <c>HoldAsync</c> and a continuation's alone; every other kind of run keeps
-/// today's end until its row.
+/// The transient retry every run the hold makes on the protocol door is handed (D210 points 3 and 8, the agent-errors design §5.1, §5.5,
+/// §7): the one reader over the adapter set, the owner's check, Daoris's go-on kept through the say door, the conversation's one line, the
+/// machine log's lines and the watch's heard stamp, with the line's tries and the pass's own minutes as its bound.
 /// </summary>
 internal static class TransientRetries
 {
@@ -16,13 +15,14 @@ internal static class TransientRetries
     internal static TransientRetry For(
         AdapterSet adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
         ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
-        Func<CancellationToken, Task<bool>> wanted, int tries = 5)
+        Func<CancellationToken, Task<bool>> wanted, int tries = 5, DateTimeOffset? deadline = null)
     {
         var keepGoOn = AgentCourse.Current.RetryGoOn(service, sessionId);
         return new TransientRetry
         {
             Clock = clock,
             Limit = tries,
+            Deadline = deadline,
             Read = refused =>
             {
                 var read = AgentErrors.Read(adapters, adapter, DoorFailure.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
@@ -35,7 +35,7 @@ internal static class TransientRetries
             KeepGoOn = keepGoOn,
             Began = (episode, next) =>
             {
-                var noted = TransientRetry.Retrying(adapter.Name, episode.Words, next);
+                var noted = TransientRetry.Retrying(adapter.Name, episode.Words, next, tries);
                 output?.Append(sessionId, noted.Note);
                 events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
             },

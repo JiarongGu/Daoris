@@ -22,7 +22,7 @@ const modules = import.meta.glob(['./**/*.ts', '!./**/*.test.ts', '!./shell.ts',
  * and re-exports by name from itself (`driver` has `driverConsiderations`). None is re-exported by the barrel, whose `export *` of a piece
  * would bring its helpers' names into the page.
  */
-const INTERNAL = new Set(['call', 'driverConsiderations', 'repositories/gitLog', 'sessions/sessionGroups', 'sessions/sessionHelpers']);
+const INTERNAL = new Set(['call', 'driverConsiderations', 'repositories/gitLog', 'sessions/sessionGroups', 'sessions/sessionHelpers', 'sessions/sessionListMerge']);
 
 const nameOf = (path: string) => path.replace(/^\.\/(.+)\.ts$/, '$1');
 const domains = Object.keys(sources).filter((path) => !/\.test\.ts$/.test(path)).map(nameOf).sort();

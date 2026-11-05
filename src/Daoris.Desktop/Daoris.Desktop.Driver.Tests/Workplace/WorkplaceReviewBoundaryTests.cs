@@ -66,7 +66,7 @@ public sealed class WorkplaceReviewBoundaryTests
         var holds = open with { Opinion = new OpinionGateState(OpinionGateStates.Unread, "engine") { Problem = "the host did not answer" } };
 
         Assert.False(holds.LetsGo);
-        Assert.Equal(AutoLandingCode.Opinion, holds.Refusal!.Refusal);
+        Assert.Equal(LandingCode.Opinion, holds.Refusal!.Refusal);
         Assert.Equal(holds.Opinion.Says, holds.Refusal.Message);
         Assert.Equal([$"trees: {holds.Opinion.Says}"], LandingGateWords.Plan(holds));
 
