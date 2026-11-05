@@ -48,7 +48,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private ContentHolds? _content;
     private TreeSquashes? _squashes;
     private PullRequestAsks? _asks;
-    private TreeHandOffs? _handOffs;
     private BranchReplays? _replays;
     private ReviewRanges? _ranges;
     private LandedReviews? _reviews;
@@ -89,8 +88,6 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>The occasions' asks, <i>Ask again</i> and what a kept answer proves (PLUGHOOK1a, PLUGHOOK1c).</summary>
     private PullRequestAsks Asks => _asks ??= new(_context);
 
-    /// <summary>The hand-off's look and its press (WSR5b).</summary>
-    private TreeHandOffs HandOffs => _handOffs ??= new(_context);
 
     /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
     private BranchReplays Replays => _replays ??= new(_context, Leftovers);
@@ -258,10 +255,10 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null,
         int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null,
         TreeDelivery? delivery = null) =>
-        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, beforePush: beforePush, uncommitted: uncommitted,
+        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins, judged: judged, uncommitted: uncommitted,
             together: together, beside: beside, delivery: delivery);
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
@@ -318,9 +315,9 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<TreeLanding> LandTogetherAsync(
         string operation, LandingSubject subject, IReadOnlyDictionary<string, IWorkplaceGate?> memberGates, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, IWorkplaceGate? gate = null,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, TreeDelivery? delivery = null) =>
-        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beforePush, beside, delivery);
+        new TogetherAccepts(_context, Lands).LandAsync(operation, subject, memberGates, ct, inUse, gate, judged, beside, delivery);
 
     /// <inheritdoc cref="TreeReturns.EnsureAsync"/>
     public Task<TreeStanding> EnsureAsync(string root, string tree, CancellationToken ct = default) => Returns.EnsureAsync(root, tree, ct);
@@ -576,14 +573,4 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <summary>A repository's line as the asks and the tidy read it (FABRIC-END6): the person's choice, else git's guess; null where none.</summary>
     internal async Task<string?> LineOfAsync(string root, string repository, string? workspace, CancellationToken ct = default) =>
         (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
-
-    /// <inheritdoc cref="TreeHandOffs.HandPlanAsync"/>
-    public Task<HandPlan> HandPlanAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default) =>
-        HandOffs.HandPlanAsync(root, entry, plugin, ct);
-
-    /// <inheritdoc cref="TreeHandOffs.HandAsync"/>
-    public Task<TreeHand> HandAsync(
-        string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null) =>
-        HandOffs.HandAsync(root, entry, plugin, ct, beforePush);
 }

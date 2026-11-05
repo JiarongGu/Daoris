@@ -37,19 +37,6 @@ public static class LandingCode
     /// </summary>
     public const string Completed = "completed";
 
-    /// <summary>The branch was made and recorded; the rule's plugin cannot land work here, so its push was not tried (D145 point 2).</summary>
-    public const string PluginUnready = "plugin-unready";
-
-    /// <summary>The branch was made and recorded; the rule's plugin failed, or answered that it did not push (D100).</summary>
-    public const string PluginFailed = "plugin-failed";
-
-    /// <summary>
-    /// The branch was made and recorded; its quest was held, taken back or submitted again before the rule's plugin was told, so the
-    /// push was not tried (FABRIC-CLOSE1h2, D173's note: a hold stops a landing up to the moment its push begins). Kept open and read
-    /// again at every look: once its quest stands unheld, the look hands the branch on, or lands the work that went on past it.
-    /// </summary>
-    public const string PushHeld = "push-held";
-
     /// <summary>Its work reached a branch of the person's another way: their press, or a push of their own.</summary>
     public const string Already = "already";
 
@@ -104,7 +91,7 @@ public static class LandingCode
 
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) =>
-        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or PushHeld or CarriedOn);
+        code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion or CarriedOn);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
     public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused or CarriedOn;

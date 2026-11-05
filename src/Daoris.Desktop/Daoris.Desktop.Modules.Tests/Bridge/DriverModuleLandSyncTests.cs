@@ -30,38 +30,19 @@ public sealed class DriverModuleLandSyncTests
         Assert.Equal("Rebase your work onto `main`.", read.GetProperty("words").GetString());
     }
 
-    /// <summary>
-    /// FABRIC-CLOSE1h9 (D173's FABRIC-CLOSE1h3 note, decision 4): a press whose push was held back lands with no plugin told, and says
-    /// why beside its sentence, so the page tells it from an ordinary landing.
-    /// </summary>
     [Fact]
-    public void A_press_whose_push_was_held_back_answers_why_beside_a_landing_with_no_plugin()
-    {
-        const string why = "Its quest was taken back before its plugin was told, so its push was not tried";
-        var landed = new TreeLanding(true, $"put its work on `mine/x`. {why}.", "mine/x") { Withheld = why };
-
-        var read = Read(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []));
-
-        Assert.True(read.GetProperty("done").GetBoolean());
-        Assert.Equal(JsonValueKind.Null, read.GetProperty("plugin").ValueKind);
-        Assert.Equal(why, read.GetProperty("withheld").GetString());
-        Assert.Equal(1, read.GetProperty("said").GetProperty("code").GetInt32());
-    }
-
-    [Fact]
-    public void A_press_whose_push_went_on_answers_no_withheld_and_its_fields_as_before()
+    public void A_pressed_landing_answers_its_fields()
     {
         var landed = new TreeLanding(true, "merged into `main`.", null);
 
         var read = Read(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []));
 
-        Assert.Equal(JsonValueKind.Null, read.GetProperty("withheld").ValueKind);
         // CHATFLOW1d: `press` is what refused a chat run's press, null on every other.
         Assert.Equal(JsonValueKind.Null, read.GetProperty("press").ValueKind);
         // LANDBACK1 part 1: `carried` is the carry-on an Accept sent where the tree was dirty or conflicted, null on a landing.
         Assert.Equal(JsonValueKind.Null, read.GetProperty("carried").ValueKind);
         Assert.Equal(
-            ["session", "done", "message", "branch", "plugin", "withheld", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press", "carried"],
+            ["session", "done", "message", "branch", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press", "carried"],
             read.EnumerateObject().Select(field => field.Name));
     }
 

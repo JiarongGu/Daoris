@@ -12,7 +12,7 @@ public sealed class KnowledgeWorkplacePortsTests
         Assert.IsType<KnowledgeWorkplaceReads>(read);
         Assert.Equal(TreeGuard.Matcher, read.TreeGuardMatcher);
         Assert.Equal(TreeGuard.EditMatcher, read.TreeGuardEditMatcher);
-        Assert.Equal(new[] { LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.HandNote(new TreeHand(true, "")).Text! }, read.AcceptanceNotes);
+        Assert.Equal(new[] { LandingNotes.PersonAccepted, LandingNotes.AutoAccepted, LandingNotes.PersonHanded }, read.AcceptanceNotes);
         Assert.Equal(LandedBranches.FileName, read.LandingsFileName);
         Assert.Equal(CanonicalLine.Judged(DriverConfig.Empty, "app", "default", null, null),
             read.JudgedLine(DriverConfig.Empty, "app", "default", null, null));

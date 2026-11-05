@@ -4,8 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
-/// <param name="Plugin">What the landing's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
-public sealed record TreeLanding(bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null)
+public sealed record TreeLanding(bool Landed, string Message, string? Branch = null)
 {
     /// <summary>
     /// A refusal's code (LAND2b), one of <see cref="LandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
@@ -13,20 +12,6 @@ public sealed record TreeLanding(bool Landed, string Message, string? Branch = n
     /// as <c>refused</c>. The message says it to a person.
     /// </summary>
     public string? Refusal { get; init; }
-
-    /// <summary>
-    /// Why the rule's plugin could not land work here, where a landing at done made the branch without it (LAND2b, D145
-    /// point 2): nobody is there to fix the plugin, so the branch is made and the push is not tried. Null at a press, which
-    /// refuses before anything is made instead (D100).
-    /// </summary>
-    public string? Unready { get; init; }
-
-    /// <summary>
-    /// Why its push was held back where its plugin could have pushed (FABRIC-CLOSE1h2): the automatic landing's quest was held, taken
-    /// back or submitted again after the branch was made and before the plugin was told. The branch stands, recorded, and no plugin
-    /// was spoken to. Null wherever the push went on, and at every other door, which asks no judgement there.
-    /// </summary>
-    public string? Withheld { get; init; }
 
     /// <summary>
     /// Where the landing moved a branch Daoris made on from (LAND2c, D149 point 2): the commit it stood at, recorded, before this

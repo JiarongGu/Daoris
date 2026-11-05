@@ -27,9 +27,6 @@ public enum StateScopes
     /// <summary>A session's review of its work (its diff), or every session's where the change names none.</summary>
     Diff = 1 << 2,
 
-    /// <summary>Whether a session's landed branch can be handed to a landing plugin.</summary>
-    HandOff = 1 << 3,
-
     /// <summary>The clean-up's list of session branches and landed branches.</summary>
     Sweep = 1 << 4,
 
@@ -426,9 +423,6 @@ public static class PressSteps
 
     /// <summary>A landing's move itself: its merge or replay, and the landing plugin's hand-off the rule names.</summary>
     public const string Landing = "landing";
-
-    /// <summary>A landed branch handed to its plugin.</summary>
-    public const string HandOff = "handOff";
 
     /// <summary>
     /// An Accept whose run's <c>land</c> the runtime performs waits for the pass that lands it (LANDHOLD2b), within

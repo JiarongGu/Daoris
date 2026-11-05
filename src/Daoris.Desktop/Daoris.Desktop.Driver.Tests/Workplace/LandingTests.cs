@@ -95,10 +95,10 @@ public sealed class LandingTests : IDisposable
     [Fact]
     public void A_plugin_that_is_missing_off_refused_or_lands_nothing_is_each_named()
     {
-        Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
+        Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/perform"] } }""");
         Plugin("example.watches", """{ "id": "example.watches", "hooks": { "command": ["node", "hooks.mjs"], "points": ["session/ended"] } }""");
         Plugin("example.broken", """{ "id": "example.broken", "apiVersion": 99 }""");
-        Plugin("example.off", """{ "id": "example.off", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
+        Plugin("example.off", """{ "id": "example.off", "hooks": { "command": ["node", "land.mjs"], "points": ["work/perform"] } }""");
         PluginState.Disable(_home, "example.off");
         var catalog = PluginCatalog.Load(_home);
 
@@ -106,7 +106,7 @@ public sealed class LandingTests : IDisposable
         Assert.Contains("not installed", LandingPlugins.ProblemOf("example.nowhere", catalog));
         Assert.Contains("daoris plugin enable example.off", LandingPlugins.ProblemOf("example.off", catalog));
         Assert.Contains("needs plugin API 99", LandingPlugins.ProblemOf("example.broken", catalog));
-        Assert.Contains("`work/land`", LandingPlugins.ProblemOf("example.watches", catalog));
+        Assert.Contains("`work/perform`", LandingPlugins.ProblemOf("example.watches", catalog));
     }
 
     /// <summary>
@@ -557,57 +557,6 @@ public sealed class LandingTests : IDisposable
 
         var bare = await trees.OpenAsync(root, "engine", "aurora", partOf: "s1");
         Assert.Contains("the tree session `s1` worked in is gone, and no branch holds its work here", bare.BasedOn);
-    }
-
-    /// <summary>
-    /// D149 point 4: at an advance the rule's plugin is told the pull request its first landing opened, and who accepted this
-    /// work, so it pushes and opens no second one; an answer naming no pull request keeps the one the record holds.
-    /// </summary>
-    [Fact]
-    public async Task The_plugin_is_told_the_open_pull_request_at_an_advance_and_who_accepted_it()
-    {
-        var root = await RepositoryAsync("engine");
-        Rule(GraphLand.PullRequest("feature/{quest}-{slug}", "example.lands"));
-        Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
-        var frames = new List<System.Text.Json.JsonElement>();
-        var trees = new SessionTrees(_home, new LandingPlugins(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(frame =>
-        {
-            var said = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(frame)).RootElement.Clone();
-            frames.Add(said);
-            return said.GetProperty("pullRequest").ValueKind == System.Text.Json.JsonValueKind.Null
-                ? new PluginLanding("example.lands", true, "https://example.test/pull/7", "pushed it and opened a pull request.")
-                : new PluginLanding("example.lands", true, null, "pushed it; its pull request carries the new commits.");
-        }))));
-        var first = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
-        Assert.True((await LandAsync(trees, first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
-        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
-        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
-
-        var advanced = await LandAsync(trees, next.Path, new LandingSubject("s2", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto);
-
-        Assert.True(advanced.Landed, advanced.Message);
-        Assert.Equal(2, frames.Count);
-        Assert.Equal(System.Text.Json.JsonValueKind.Null, frames[0].GetProperty("pullRequest").ValueKind);
-        Assert.Equal(AcceptedBy.Person, frames[0].GetProperty("acceptedBy").GetString());
-        Assert.Equal("https://example.test/pull/7", frames[1].GetProperty("pullRequest").GetString());
-        Assert.Equal(AcceptedBy.Auto, frames[1].GetProperty("acceptedBy").GetString());
-        Assert.Equal(2, frames[1].GetProperty("commits").GetArrayLength());
-        var entry = trees.Recorded.Of("engine", "feature/q1-fix-the-gap")!;
-        Assert.Equal("https://example.test/pull/7", entry.PullRequest);
-        Assert.Equal((await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim(), entry.PushedTip);
-        Assert.Equal(LandingCode.Advanced, LandTries.CodeOf(advanced));
-    }
-
-    /// <summary>A plugin faked on the wire's channel: nothing reaches a network or a platform.</summary>
-    private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel
-    {
-        public IReadOnlyList<string> Points => [HookPoints.Land];
-        public bool Alive => true;
-        public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
-        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(land(payload));
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private void Plugin(string id, string manifest)

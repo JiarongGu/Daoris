@@ -41,9 +41,7 @@ const CONFLICT = { says: 'CONFLICT (content): Merge conflict in CHANGELOG.md.', 
 
 function answer(landing: () => unknown, pressed?: unknown) {
   invoke.mockImplementation(async (_module: string, type: string) => {
-    if (type === 'SESSION_DIFF') return DIFF;
-    if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
-    if (type === 'LANDING') return landing();
+    if (type === 'SESSION_DIFF') return DIFF;    if (type === 'LANDING') return landing();
     if (type === 'LAND_SESSION_TREE') return pressed;
     if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume' };
     return {};

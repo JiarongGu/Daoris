@@ -91,13 +91,6 @@ internal sealed class TreeLands
     /// automatic landing's is <see cref="AutoLander"/>'s; the person's press and an entry's part ask theirs of <see cref="PressedResult"/>
     /// (FABRIC-CLOSE1h3), on the result the press was made on.
     /// </param>
-    /// <param name="beforePush">
-    /// The door's judgement once more, just before the rule's plugin is told (FABRIC-CLOSE1h2, D173's note), told the branch's record as
-    /// it reads under the branch's hold (null where none was recorded), so the work of every session the push carries
-    /// (FABRIC-CLOSE1h11), and whether the push waited behind another push of its branch: a sentence it answers holds the push back
-    /// (<see cref="TreeLanding.Withheld"/>), the branch made and recorded and no plugin spoken to; null lets the push begin, past which
-    /// nothing stops it. Null asks nothing.
-    /// </param>
     /// <param name="uncommitted">
     /// The tree's uncommitted paths as the door read them where it judged the landing (LANDGIT1c): the look's automatic landing reads
     /// them there, so the landing asks `status` no more. Read again where the landing waited for another of its tree; null reads them.
@@ -112,7 +105,7 @@ internal sealed class TreeLands
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false, bool fetched = false,
-        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
+        Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null,
         int? uncommitted = null, string? together = null, Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null,
         TreeDelivery? delivery = null)
     {
@@ -167,14 +160,12 @@ internal sealed class TreeLands
         // FABRIC-END6c: a landing holds its repository for the due moments, which skip it until it is let go, then ask.
         using (RepositoryHolds.Hold(context.Home, repository))
         {
-            landed = Closed(await press.LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold, beforePush,
+            landed = Closed(await press.LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched, hold,
                 hold.Waited ? null : uncommitted, beside, entry).ConfigureAwait(false));
         }
 
         // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
         if (landed.Landed) RefMoves.Mine(context.Home, repository);
-        // FABRIC-END6: Daoris pushed, a moment to ask about its pull request (§A4.3), told after the rule's tidy, whose own ask it counts.
-        if (landed.Plugin is { Pushed: true, Failed: false }) PullRequestMoments.Pushed(context.Home, repository);
         return landed;
     }
 }

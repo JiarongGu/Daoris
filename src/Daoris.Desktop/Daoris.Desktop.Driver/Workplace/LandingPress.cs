@@ -61,28 +61,21 @@ internal sealed class LandingPress(
 
     /// <summary>
     /// What a landing says that waited for another of its tree, which landed this very commit meanwhile (LANDRACE1 and its review): where
-    /// it is, who accepted it, what its plugin answered (a failure said as a landing says it, with how the branch is pushed), and that
-    /// nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
+    /// it is, who accepted it, and that nothing more was landed. Kept as <see cref="LandingCode.Already"/>, as the look keeps a press's landing.
     /// </summary>
     internal static TreeLanding LandedMeanwhile(LandingAttempt before, string session)
     {
         var who = before.AcceptedBy == AcceptedBy.Auto ? "accepted automatically when its quest was done" : "accepted by a press of Accept";
-        var plugin = before.Said is { } said ? $" {Said(said, before.Branch)}"
-            : before.Unready is { } unready ? $" Its push was not tried: {Sentence(unready)}"
-            : before.Plugin is { } named ? $" Plugin `{named}` had not answered when that landing ended: `daoris tree hand {session}` hands it the branch."
-            : "";
         return new(false,
             $"another landing of this session finished while this one waited for it: its work is on `{before.Branch}` at "
-            + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}.{plugin} Nothing more was landed.", before.Branch)
+            + $"{TextBounds.ShortCommit(before.Tip, 8)}, {who}. Nothing more was landed.", before.Branch)
         {
             Refusal = LandingCode.Already,
-            Plugin = before.Said,
         };
     }
 
     /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
     /// <param name="hold">The tree's hold (LANDRACE1), which keeps what this landing came to for a door waiting behind it.</param>
-    /// <param name="beforePush">The door's judgement just before its plugin is told (FABRIC-CLOSE1h2), as <see cref="LandAsync"/> takes it.</param>
     /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
     /// <param name="fence">
     /// The delivery it performs, its preparation written ahead (LANDNODE1b2); empty under Current, whose door writes one into it here once the
@@ -91,7 +84,7 @@ internal sealed class LandingPress(
     internal async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
         string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
-        Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null,
+        int? uncommitted = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null, DeliveryEntry? fence = null)
     {
         var delivering = fence?.Delivering;

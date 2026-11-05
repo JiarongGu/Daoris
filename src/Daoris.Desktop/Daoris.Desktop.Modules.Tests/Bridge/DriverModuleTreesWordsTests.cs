@@ -76,39 +76,6 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("id", refusal);
     }
 
-    /// <summary><c>trees hand</c>: a landed branch named by the branch (and its repository), where the page names a session.</summary>
-    [Fact]
-    public async Task A_hand_off_names_a_branch_and_says_what_refused_it_in_the_terminals_words()
-    {
-        var answer = await AnswerAsync(await ComeUpAsync(), "HANDOFF", new { branch = "feature/x", repository = "engine", plugin = "example.lands" });
-
-        Assert.False(answer.GetProperty("done").GetBoolean());
-        Assert.Equal(TreeHand.NotLanded("feature/x"), answer.GetProperty("message").GetString());
-        var (output, error, code) = Said(answer);
-        Assert.Empty(output);
-        Assert.Equal([$"trees: {TreeHand.NotLanded("feature/x")}"], error);
-        Assert.Equal(1, code);
-    }
-
-    [Fact]
-    public async Task A_hand_off_by_session_answers_what_the_page_reads_and_the_words_beside_it()
-    {
-        var answer = await AnswerAsync(await ComeUpAsync(), "HANDOFF", new { id = "s1a2b3c4" });
-
-        Assert.Equal("s1a2b3c4", answer.GetProperty("session").GetString());
-        Assert.False(answer.GetProperty("done").GetBoolean());
-        Assert.Equal(TreeHand.NotLanded("s1a2b3c4"), answer.GetProperty("message").GetString());
-        Assert.Equal(1, Said(answer).Code);
-    }
-
-    [Fact]
-    public async Task A_hand_off_naming_nothing_is_refused()
-    {
-        var refusal = await RefusalAsync(await ComeUpAsync(), "HANDOFF", new { plugin = "example.lands" });
-
-        Assert.Contains("id", refusal);
-    }
-
     /// <summary><c>trees clean --yes --workspace</c>: the press takes one workspace's checkouts alone, refusing one the registry does not name.</summary>
     [Fact]
     public async Task A_clean_up_press_takes_a_workspace_and_refuses_one_the_registry_does_not_name()

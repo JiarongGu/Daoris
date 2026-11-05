@@ -135,7 +135,6 @@ public sealed class InstancePortsTests
             (TreesMarks.WithdrawLanding, PressesTold.WithdrawLanding, "WITHDRAW_LANDING_BRANCH"),
             (TreesMarks.Sweep, PressesTold.Sweep, "SWEEP"),
             (TreesMarks.TreesSync, PressesTold.TreesSync, "TREES_SYNC"),
-            (TreesMarks.HandOff, PressesTold.HandOff, "HANDOFF"),
             (TreesMarks.LandEntry, PressesTold.LandEntry, "LAND_ENTRY"),
             (TreesMarks.LandAsk, PressesTold.LandAsk, "LAND_ASK"),
         ];

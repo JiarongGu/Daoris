@@ -308,28 +308,6 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
-    /// Every person's hand-off, the page's and Ask Daoris's card through the route's one shared press and the terminal's
-    /// <c>trees hand</c>, holds its push to the result of the session that last moved the branch, by the driver's one helper.
-    /// </summary>
-    [Fact]
-    public void Every_hand_off_holds_its_push_to_the_result_of_the_session_that_last_moved_its_branch()
-    {
-        var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
-        var hand = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesHandVerb.cs"));
-        var shared = route[route.IndexOf("internal static async Task<TreeHand> HandAsync(", StringComparison.Ordinal)..];
-
-        foreach (var door in new[] { hand, shared })
-        {
-            Assert.Contains("await PressQuests.HandedAsync(entry, ", door);
-            Assert.Contains("beforePush: pressed.BeforePush", door);
-        }
-
-        Assert.Contains(
-            "await TreesRoutes.HandAsync(_loop, trees, root, entry, named, cancellationToken)",
-            File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesHandDesk.cs")));
-    }
-
-    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.

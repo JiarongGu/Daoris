@@ -47,11 +47,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             var world = new ServiceReviewWorld(Service);
             var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
-            // FABRIC-CLOSE1h15: a branch made whose push is held back has not landed, so the opinion holding it stays owed and is asked.
-            var pushHeld = LandPerformer.PushHeld(Home);
             foreach (var due in open)
             {
-                if (await JudgeAsync(due, dues, world, quests, pushHeld, keep: judged is not null, beside: false, ct).ConfigureAwait(false) is not { } fact)
+                if (await JudgeAsync(due, dues, world, quests, keep: judged is not null, beside: false, ct).ConfigureAwait(false) is not { } fact)
                 {
                     continue;
                 }
@@ -153,7 +151,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 {
                     var world = new ServiceReviewWorld(Service);
                     var quests = await world.QuestsAsync(token).ConfigureAwait(false);
-                    return await JudgeAsync(due, new OpinionDues(Home), world, quests, LandPerformer.PushHeld(Home), keep: true, beside: true, token)
+                    return await JudgeAsync(due, new OpinionDues(Home), world, quests, keep: true, beside: true, token)
                         .ConfigureAwait(false);
                 }, due.Run ?? $"#{due.Quest}", beside: true).ConfigureAwait(false);
                 _context.Runs.Facts.Judged($"opinion/{subject}");
@@ -198,7 +196,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// pass's opening; the next judgment reads where it came to.
     /// </param>
     private async Task<OpinionFact?> JudgeAsync(
-        OpinionDue due, OpinionDues dues, ServiceReviewWorld world, IReadOnlyList<QuestView> quests, IReadOnlySet<string> pushHeld, bool keep,
+        OpinionDue due, OpinionDues dues, ServiceReviewWorld world, IReadOnlyList<QuestView> quests, bool keep,
         bool beside, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
@@ -211,7 +209,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
             run ?? WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
         var closes = run is null
-            ? await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false)
+            ? await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process).ConfigureAwait(false)
             : await OpinionLook.RunClosesAsync(due, _context.Trees.Recorded, process, ct).ConfigureAwait(false);
         if (closes is { } closed)
         {
