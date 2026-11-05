@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where <c>daoris-driver agent</c> acts (PUSH1f2d): the terminal it says its words on and finds the running Daoris from, and what a
+/// Where <c>daoris agent</c> acts (PUSH1f2d): the terminal it says its words on and finds the running Daoris from, and what a
 /// verb reads the machine by: the folder a relative folder is named from, the person's own profile folder an agent's own home falls
 /// back to, the agents this machine runs, and the moment an answer is settled at. A test hands its own of each.
 /// </summary>

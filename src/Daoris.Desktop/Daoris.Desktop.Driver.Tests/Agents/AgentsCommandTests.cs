@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris-driver agent</c> (PUSH1f2d, D194, the alone-path design §1.2, §2): a person's press acting alone is refused from a session's
+/// <c>daoris agent</c> (PUSH1f2d, D194, the alone-path design §1.2, §2): a person's press acting alone is refused from a session's
 /// terminal, nothing written, a read is not; the rules and their proposals keep the door on <c>DAORIS_HOME</c> whatever
 /// <c>DAORIS_HARNESS_CONFIG</c> names, so <c>rules accept</c> is never alone beside a running Daoris; an account's settings and a trust on
 /// a named wiring file's home are written alone, nothing sent; and the verb table says which home each verb writes. Today's words are

@@ -448,7 +448,7 @@ public sealed class HelpRoutes(DriverContext context)
 
     // ——— Ask Daoris's history: its conversations listed and searched, named, pinned and started from. Going on in
     // one is the person's words to it (`SESSION_INPUT`), and deleting one is `SESSION_DELETE`'s, so each has the one owner the
-    // rest of the window uses; `daoris-driver help` is the terminal's door to the same. This machine's and the person's:
+    // rest of the window uses; `daoris help` is the terminal's door to the same. This machine's and the person's:
     // the words are this machine's record, what the person keeps of each a file beside them (`HelpConversations`), and
     // nothing here reaches a remote.
 

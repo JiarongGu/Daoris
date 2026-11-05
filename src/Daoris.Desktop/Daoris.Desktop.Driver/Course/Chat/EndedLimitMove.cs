@@ -280,7 +280,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
 
             return new StartedFrom(to, true, null, elsewhere is null
                 ? $"`{sessionId}` went on in conversation `{to}`, handed Daoris's brief and your words."
-                : $"`{sessionId}` went on in conversation `{to}` with {onto}, its actor's next choice, handed Daoris's brief and your words.");
+                : $"`{sessionId}` went on in conversation `{to}` with {onto}, its role's next choice, handed Daoris's brief and your words.");
         }
         finally
         {

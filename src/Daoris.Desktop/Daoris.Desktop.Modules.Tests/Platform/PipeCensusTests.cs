@@ -115,7 +115,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The standing choices <c>daoris-driver driver</c> sends (PUSH1f2a, D194 point 5): each a route of the driver's module the census
+    /// The standing choices <c>daoris driver</c> sends (PUSH1f2a, D194 point 5): each a route of the driver's module the census
     /// makes the person's, so the window confirms it, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -181,7 +181,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The agents' presses <c>daoris-driver agent</c> sends (PUSH1f2d, D194 point 5): each a route of the driver's module the census
+    /// The agents' presses <c>daoris agent</c> sends (PUSH1f2d, D194 point 5): each a route of the driver's module the census
     /// classes as the person's, and each verb no route takes says why it acts alone.
     /// </summary>
     [Fact]
@@ -207,7 +207,7 @@ public sealed class PipeCensusTests
     }
 
     /// <summary>
-    /// The plugins' presses <c>daoris-driver plugin</c> sends (PUSH1f2f, D194 point 5): each a route of the driver's module the census
+    /// The plugins' presses <c>daoris plugin</c> sends (PUSH1f2f, D194 point 5): each a route of the driver's module the census
     /// classes as the person's in the form the command sends it (<c>PLUGIN_UPDATE</c> with <c>apply: true</c>), and the replace no route
     /// takes says why it acts alone.
     /// </summary>

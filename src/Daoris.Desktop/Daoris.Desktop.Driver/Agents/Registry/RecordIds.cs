@@ -29,7 +29,7 @@ public static class RecordIds
     public static IReadOnlyList<RecordIdField> Fields { get; } =
     [
         new("The session record", "Adapter", IdKind.Door),
-        new("The actor asked and ran", "agent", IdKind.Door),
+        new("The role asked and ran", "agent", IdKind.Door),
         new("The store's bindings", "adapter", IdKind.Door),
         new("Ask Daoris's wired file", "harness", IdKind.Door),
         new("SessionEnded, the usage history", "Adapter", IdKind.Door),

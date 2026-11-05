@@ -131,7 +131,7 @@ public static class QuestReviewCommand
         var quest = await world.Service.FindQuestAsync(ask.Quest, ct).ConfigureAwait(false);
         if (quest is null)
         {
-            output.WriteLine($"daoris-driver: no quest `#{ask.Quest}` here. Ids come from the quest's page or `daoris session list`.");
+            output.WriteLine($"daoris: no quest `#{ask.Quest}` here. Ids come from the quest's page or `daoris session list`.");
             return 1;
         }
 
@@ -142,7 +142,7 @@ public static class QuestReviewCommand
         {
             if (quest.SetUpIn is null)
             {
-                output.WriteLine($"daoris-driver: quest `#{quest.Id}` is no set-up step, so nothing of it was shown to review: "
+                output.WriteLine($"daoris: quest `#{quest.Id}` is no set-up step, so nothing of it was shown to review: "
                     + $"`{ask.Said}` answers a set-up. `daoris quest review {quest.Id} skip` lets its work land without a review.");
                 return 1;
             }
@@ -150,7 +150,7 @@ public static class QuestReviewCommand
             shown = quest.SetUps.LastOrDefault();
             if (shown is not { Machine: not null, Sequence: not null })
             {
-                output.WriteLine($"daoris-driver: set-up step `#{quest.Id}` has shown nothing yet in `{quest.SetUpIn}`: its session says "
+                output.WriteLine($"daoris: set-up step `#{quest.Id}` has shown nothing yet in `{quest.SetUpIn}`: its session says "
                     + "what it showed, and Daoris posts it when the session ends.");
                 return 1;
             }
@@ -160,7 +160,7 @@ public static class QuestReviewCommand
 
         var (ok, message) = await world.Service.ReviewAsync(quest.Id, ask.Said, ask.Words, shown?.Machine, shown?.Sequence, ct)
             .ConfigureAwait(false);
-        output.WriteLine($"daoris-driver: {message}");
+        output.WriteLine($"daoris: {message}");
         if (!ok) return 1;
         world.Log?.Invoke(ReviewDoorWords.Verdict(quest.Id, ask.Said, LandingDoors.Terminal));
 
@@ -169,7 +169,7 @@ public static class QuestReviewCommand
         {
             if (shown!.Session is not { } session)
             {
-                output.WriteLine("daoris-driver: that set-up was your own, so no session hears your words: they are kept on the quest and its ask.");
+                output.WriteLine("daoris: that set-up was your own, so no session hears your words: they are kept on the quest and its ask.");
             }
             else if (world.Say is { } say)
             {
@@ -177,7 +177,7 @@ public static class QuestReviewCommand
             }
         }
 
-        output.WriteLine($"daoris-driver: the gate: {Gate(quest, ask.Said, shown)}");
+        output.WriteLine($"daoris: the gate: {Gate(quest, ask.Said, shown)}");
         return 0;
     }
 
@@ -190,7 +190,7 @@ public static class QuestReviewCommand
     {
         if (KnowledgeReviews.Current.Review(world.Config, quest.To, quest.Workspace) is not { Rule.IsNone: false } declared)
         {
-            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment, so nothing of its work can be shown for review: "
+            output.WriteLine($"daoris: `{quest.To}` declares no review environment, so nothing of its work can be shown for review: "
                 + $"`daoris place review {quest.To} <environment> --kind local|deployed --procedure <path>` declares one. Nothing was published.");
             return 1;
         }
@@ -199,16 +199,16 @@ public static class QuestReviewCommand
         var environment = chosen == "on" ? names[0] : chosen;
         if (!names.Contains(environment))
         {
-            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment `{environment}`: it declares {ReviewDoorWords.Either(names)}. "
+            output.WriteLine($"daoris: `{quest.To}` declares no review environment `{environment}`: it declares {ReviewDoorWords.Either(names)}. "
                 + "Nothing was published.");
             return 1;
         }
 
         var (ok, message, step) = await world.Service.PublishSetUpStepAsync(quest.Id, environment, ct).ConfigureAwait(false);
-        output.WriteLine($"daoris-driver: {message}");
+        output.WriteLine($"daoris: {message}");
         if (!ok) return 1;
 
-        output.WriteLine($"daoris-driver: the gate: `{quest.To}`'s work waits for set-up step `#{step ?? "…"}` to show it in `{environment}`, "
+        output.WriteLine($"daoris: the gate: `{quest.To}`'s work waits for set-up step `#{step ?? "…"}` to show it in `{environment}`, "
             + $"then for your look: `daoris quest review {step ?? "<step>"} reviewed` once you have looked.");
         return 0;
     }
@@ -218,7 +218,7 @@ public static class QuestReviewCommand
     {
         var lines = new List<string>
         {
-            $"daoris-driver: set-up step `#{step.Id}` showed it in `{step.SetUpIn}` at `{Short(setUp.Commit)}`"
+            $"daoris: set-up step `#{step.Id}` showed it in `{step.SetUpIn}` at `{Short(setUp.Commit)}`"
             + (setUp.Session is { } session ? $", said by session {session}" : ", as your own set-up")
             + (setUp.Shows is { Length: > 0 } shows ? $": {shows}" : "."),
         };

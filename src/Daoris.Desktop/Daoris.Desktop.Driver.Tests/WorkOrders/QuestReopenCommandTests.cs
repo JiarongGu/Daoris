@@ -78,8 +78,8 @@ public sealed class QuestReopenCommandTests
         var older = await service.ContinueQuestAsync("q4");
 
         var said = output.ToString().ReplaceLineEndings("\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal("daoris-driver: Reopened quest `#q1`'s submission: its step `#q2` is withdrawn.", said[0]);
-        Assert.StartsWith("daoris-driver: Quest `#q2` grew from `#q1`", said[1], StringComparison.Ordinal);
+        Assert.Equal("daoris: Reopened quest `#q1`'s submission: its step `#q2` is withdrawn.", said[0]);
+        Assert.StartsWith("daoris: Quest `#q2` grew from `#q1`", said[1], StringComparison.Ordinal);
         Assert.Contains("#q3", said[2], StringComparison.Ordinal);
         Assert.Contains("no submission", said[2], StringComparison.Ordinal);
         // A quest with no submission sends nothing; the older host's door is asked and answers no JSON.

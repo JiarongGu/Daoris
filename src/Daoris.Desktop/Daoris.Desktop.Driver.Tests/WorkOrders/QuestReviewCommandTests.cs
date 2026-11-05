@@ -56,11 +56,11 @@ public sealed class QuestReviewCommandTests
 
         Assert.Equal(0, exit);
         Assert.Equal(
-            "daoris-driver: set-up step `#q2` showed it in `local` at `01234567`, said by session s7: the new column\n"
+            "daoris: set-up step `#q2` showed it in `local` at `01234567`, said by session s7: the new column\n"
             + "  look: http://localhost:4200/reports\n"
             + "  again: open reports\n"
-            + "daoris-driver: Reviewed set-up step `#q2` in `local` at `01234567`: what its review held goes on.\n"
-            + "daoris-driver: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris tree land <session>`, "
+            + "daoris: Reviewed set-up step `#q2` in `local` at `01234567`: what its review held goes on.\n"
+            + "daoris: the gate: work up to `01234567` in `web-app` may land: the review's Accept, `daoris tree land <session>`, "
             + "or the next look where it is accepted automatically. Work added after it waits for its own review.\n",
             output.ToString().ReplaceLineEndings("\n"));
         var (path, body) = heard.Single(each => each.Path.EndsWith("/review", StringComparison.Ordinal));
@@ -98,7 +98,7 @@ public sealed class QuestReviewCommandTests
         Assert.Equal([("s7", "the total is off")], said);
         using var sent = JsonDocument.Parse(heard.Single(each => each.Path.EndsWith("/review", StringComparison.Ordinal)).Body);
         Assert.Equal(("not-yet", "the total is off"), (sent.RootElement.GetProperty("verdict").GetString(), sent.RootElement.GetProperty("words").GetString()));
-        Assert.EndsWith("daoris-driver: the gate: it waits for the set-up `#q2` shows next, in `local`.\n", output.ToString().ReplaceLineEndings("\n"));
+        Assert.EndsWith("daoris: the gate: it waits for the set-up `#q2` shows next, in `local`.\n", output.ToString().ReplaceLineEndings("\n"));
     }
 
     /// <summary>A skip names no set-up, on a set-up step or on the chain's work; a quest that is no set-up step takes only a skip.</summary>

@@ -428,7 +428,7 @@ public static class PermissionRules
         if (Defaults.First(d => d.Id == id).Fixed)
         {
             throw new DriverException(
-                $"`{id}` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris-driver git access`.");
+                $"`{id}` is not switched here: git access's Write says whether a session pushes. Set it in Settings → Git, or `daoris git access`.");
         }
 
         var off = file.DefaultsOff.Where(existing => existing != id).ToList();

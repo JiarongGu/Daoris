@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// One read from a commit, a session or a quest back to its ask, from a terminal (TRACE1, D143, D50): <c>daoris-driver
+/// One read from a commit, a session or a quest back to its ask, from a terminal (TRACE1, D143, D50): <c>daoris
 /// trace</c>. The words are the library's (<see cref="TraceCommand"/>); this wires the real world: the service, the home and
 /// the person's choices. It writes nothing: the host routes it before the machine log opens, since that open prunes old files.
 /// </summary>

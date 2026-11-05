@@ -58,8 +58,8 @@ public static class QuestReopenCommand
         if (quest?.Submission is not { } submission)
         {
             output.WriteLine(quest is null
-                ? $"daoris-driver: no quest `#{ask.Quest}` here. Ids come from Quests or `daoris session list`."
-                : $"daoris-driver: quest `#{ask.Quest}` is {quest.Status} with no submission to reopen: only what an agent submitted in a "
+                ? $"daoris: no quest `#{ask.Quest}` here. Ids come from Quests or `daoris session list`."
+                : $"daoris: quest `#{ask.Quest}` is {quest.Status} with no submission to reopen: only what an agent submitted in a "
                     + "workflow that closes its quests itself is reopened. Nothing moved.");
             return 1;
         }
@@ -71,7 +71,7 @@ public static class QuestReopenCommand
     /// <summary>The service's sentence, said; a refusal is an answer, not a tool error.</summary>
     private static int Say((bool Ok, string Message) answer, TextWriter output)
     {
-        output.WriteLine($"daoris-driver: {answer.Message}");
+        output.WriteLine($"daoris: {answer.Message}");
         return answer.Ok ? 0 : 1;
     }
 

@@ -176,6 +176,6 @@ public static class WorkCommand
     /// <summary>The first line under the binary's name, as its other one-line answers are; the rest as written, indented.</summary>
     private static void Write(TextWriter output, IReadOnlyList<string> lines)
     {
-        for (var at = 0; at < lines.Count; at++) output.WriteLine(at == 0 ? $"daoris-driver: {lines[at]}" : lines[at]);
+        for (var at = 0; at < lines.Count; at++) output.WriteLine(at == 0 ? $"daoris: {lines[at]}" : lines[at]);
     }
 }

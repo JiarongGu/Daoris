@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A pin taken back and an account's change both ways (PUSH1f2e2, D194 points 4 and 6, the alone-path design §3): <c>daoris-driver agent
+/// A pin taken back and an account's change both ways (PUSH1f2e2, D194 points 4 and 6, the alone-path design §3): <c>daoris agent
 /// unpin|profile …</c> acting alone, and the same words' press sent to the window's route (<c>HARNESS_ACTION</c>'s <c>unpin</c> and
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c> and <c>ready</c>), its answer said by the same words function, over one home from the
 /// same files. The wiring, the accounts' names, the cool-offs, the accounts' folders, the text and the exit are equal: red where a route

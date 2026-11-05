@@ -45,7 +45,7 @@ function gatesSaid(t: TFunction, landed: WorkflowLanded): string {
 /**
  * **The landed route** of a repository (FABRIC-PIPELINE1a; D192 point 2, the pipeline design §1.3): Setup's route row, the verification
  * workflow the work that lands follows, what chose it, where its gates stand, and the person's choice among the verification workflows
- * saved here, no verification, or its workspace's again where it names one of its own. The same `landed` route `daoris driver workflow
+ * saved here, no verification, or its workspace's again where it names one of its own. The same `landed` route `daoris workflow
  * use … --landed` sets (D50), kept on this machine.
  *
  * @remarks

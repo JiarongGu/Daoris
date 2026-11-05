@@ -417,7 +417,7 @@ public sealed class AbandonTests : IDisposable
         var pressed = await WorkCommand.RunAsync(new WorkAsk(scope, "abandon", id) { Reason = Reason, Yes = true }, world, output);
 
         Assert.Equal((1, 1), (listed, pressed));
-        Assert.Contains($"daoris-driver: {said}", output.ToString());
+        Assert.Contains($"daoris: {said}", output.ToString());
         Assert.False(File.Exists(ConfigPath));
     }
 
@@ -539,7 +539,7 @@ public sealed class AbandonTests : IDisposable
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, exit);
         Assert.StartsWith(
-            "daoris-driver: abandoning ask #a1 would take 11 pieces and keep 9; "
+            "daoris: abandoning ask #a1 would take 11 pieces and keep 9; "
             + "`daoris ask abandon a1 --reason \"…\" --yes` abandons what this list holds.\n",
             said);
         Assert.Contains("  declines #q1: it applies only while it is open.", said);
@@ -578,7 +578,7 @@ public sealed class AbandonTests : IDisposable
 
         var said = output.ToString().ReplaceLineEndings("\n");
         Assert.Equal(0, exit);
-        Assert.StartsWith("daoris-driver: abandoned ask #a1: 11 of 11 pieces.\n", said);
+        Assert.StartsWith("daoris: abandoned ask #a1: 11 of 11 pieces.\n", said);
         Assert.Contains("  declined #q1, #q2, #q3, #q6 with your reason.", said);
         Assert.Contains("  closed ask #a1 with your reason.", said);
         Assert.Contains(
@@ -600,7 +600,7 @@ public sealed class AbandonTests : IDisposable
         var exit = await WorkCommand.RunAsync(new WorkAsk(WorkScope.Ask, "abandon", "a1") { Yes = true }, World(service, Trees(events), events), output);
 
         Assert.Equal(1, exit);
-        Assert.Contains($"daoris-driver: {WorkAbandoning.NeedsReason}", output.ToString());
+        Assert.Contains($"daoris: {WorkAbandoning.NeedsReason}", output.ToString());
         Assert.Empty(ledger.Declines);
         Assert.False(File.Exists(ConfigPath));
     }

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each of the agents' presses both ways (PUSH1f2d, D194 points 4 and 6, the alone-path design §3): <c>daoris-driver agent</c> acting
+/// Each of the agents' presses both ways (PUSH1f2d, D194 points 4 and 6, the alone-path design §3): <c>daoris agent</c> acting
 /// alone, through the library's operation, and the same words' press sent to the window's route (<c>RULE_ACTION</c>,
 /// <c>RULE_PROPOSAL</c>, <c>SET_AGENT_SETTINGS</c>), its answer said by the same words function, over one home from the same files. The
 /// bytes written, the text, the refusal's line and the exit are equal: red where a route and its operation disagree, or where the payload

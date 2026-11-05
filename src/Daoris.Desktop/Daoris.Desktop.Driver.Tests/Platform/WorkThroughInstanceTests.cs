@@ -57,7 +57,7 @@ public sealed class WorkThroughInstanceTests
         await using var home = new InstanceTestHome();
         var standIn = home.Serve();
         standIn.Confirming = true;
-        string[] lines = [$"daoris-driver: said for {name}.", "  and its second line"];
+        string[] lines = [$"daoris: said for {name}.", "  and its second line"];
         standIn.Data = new { said = new TreesSaid(lines, [], 0).ToWire() };
         var service = new EmptyService();
         var output = new StringWriter();
@@ -66,7 +66,7 @@ public sealed class WorkThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(string.Concat(lines.Select(line => line + Environment.NewLine)), output.ToString());
-        Assert.Matches(InstanceStandIn.WaitingAlone("daoris-driver"), home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("daoris"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
         Assert.Equal(route, press.GetProperty("type").GetString());
@@ -80,7 +80,7 @@ public sealed class WorkThroughInstanceTests
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
         var standIn = home.Serve();
-        standIn.Data = new { said = new TreesSaid(["daoris-driver: paused ask #a1."], [], 2).ToWire() };
+        standIn.Data = new { said = new TreesSaid(["daoris: paused ask #a1."], [], 2).ToWire() };
 
         var exit = await WorkCommand.RunAsync(new WorkAsk(WorkScope.Ask, "pause", "a1"), World(new EmptyService(), home.Home, home.World()), new StringWriter());
 
@@ -94,14 +94,14 @@ public sealed class WorkThroughInstanceTests
         if (!OperatingSystem.IsWindows()) return;
         await using var home = new InstanceTestHome();
         var standIn = home.Serve();
-        standIn.Data = new { said = new TreesSaid(["daoris-driver: abandoning #q1 would take 1 quest."], [], 0).ToWire() };
+        standIn.Data = new { said = new TreesSaid(["daoris: abandoning #q1 would take 1 quest."], [], 0).ToWire() };
         var service = new EmptyService();
         var output = new StringWriter();
 
         var exit = await WorkCommand.RunAsync(new WorkAsk(WorkScope.Quest, "abandon", "q1"), World(service, home.Home, home.World()), output);
 
         Assert.Equal(0, exit);
-        Assert.Equal("daoris-driver: abandoning #q1 would take 1 quest." + Environment.NewLine, output.ToString());
+        Assert.Equal("daoris: abandoning #q1 would take 1 quest." + Environment.NewLine, output.ToString());
         Assert.Equal("", home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
@@ -147,7 +147,7 @@ public sealed class WorkThroughInstanceTests
             new WorkAsk(WorkScope.Quest, "abandon", "q1") { Yes = true }, World(new EmptyService(), home.Home, home.World()), output);
 
         Assert.Equal(1, exit);
-        Assert.Equal($"daoris-driver: {WorkAbandoning.NeedsReason}{Environment.NewLine}", output.ToString());
+        Assert.Equal($"daoris: {WorkAbandoning.NeedsReason}{Environment.NewLine}", output.ToString());
         Assert.Empty(standIn.Presses);
     }
 
@@ -163,7 +163,7 @@ public sealed class WorkThroughInstanceTests
         var exit = await WorkCommand.RunAsync(new WorkAsk(WorkScope.Quest, "resume", "q1"), World(service, home.Home, home.World()), output);
 
         Assert.Equal(1, exit);
-        Assert.Equal($"daoris-driver: {WorkPausing.Unknown(WorkScope.Quest, "q1")}{Environment.NewLine}", output.ToString());
+        Assert.Equal($"daoris: {WorkPausing.Unknown(WorkScope.Quest, "q1")}{Environment.NewLine}", output.ToString());
         Assert.True(service.Requests > 0);
     }
 }

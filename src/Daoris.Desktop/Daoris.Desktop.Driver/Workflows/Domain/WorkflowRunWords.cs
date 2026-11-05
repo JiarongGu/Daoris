@@ -404,7 +404,7 @@ public static class WorkflowRunWords
         {
             var node = step.Step.Id;
             var stop = $"`daoris workflow stop {run} {node}` stops it.";
-            if (acts.Contains(NodeWordActs.Send)) yield return $"`daoris-driver workflow send {run} {node}` sends it: it waits for your send.";
+            if (acts.Contains(NodeWordActs.Send)) yield return $"`daoris workflow send {run} {node}` sends it: it waits for your send.";
             yield return acts.Contains(NodeWordActs.Skip) ?$"`daoris workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
                 : acts.Contains(NodeWordActs.Changes) ? $"`daoris workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
                 : stop;

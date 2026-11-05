@@ -168,7 +168,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
     }
 
     internal static string NoneSaid(string whose) =>
-        $"{whose} follows no workflow: nothing runs or lands its work. `daoris driver workflow use <id> …` chooses one.";
+        $"{whose} follows no workflow: nothing runs or lands its work. `daoris workflow use <id> …` chooses one.";
 
     /// <summary>The lines of a place that follows no workflow, with the registry's notes and, where a choice or a kind is read, what chose it under the header; then the routes.</summary>
     internal List<string> WithChoice(

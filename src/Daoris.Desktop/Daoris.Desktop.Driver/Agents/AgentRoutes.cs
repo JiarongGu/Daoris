@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The routes <c>daoris-driver agent</c> sends while Daoris runs (PUSH1f2d; RPC1f, the terminal RPC design §9), each the window twin of the
+/// The routes <c>daoris agent</c> sends while Daoris runs (PUSH1f2d; RPC1f, the terminal RPC design §9), each the window twin of the
 /// change it makes, the verbs no route takes, each with why it acts alone (D171's PUSH1f note, kept by D194 point 5), and which home each
 /// writes: the CLI's <c>AGENT_VERBS</c> rows for these verbs, now this program's. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>

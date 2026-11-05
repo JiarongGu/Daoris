@@ -326,7 +326,7 @@ public sealed class SpaceFreeTests : IAsyncLifetime
         BaseDirectory = AppContext.BaseDirectory,
         Out = _out,
         Error = _error,
-        Verb = "daoris-driver",
+        Verb = "daoris",
         Answer = TimeSpan.FromMinutes(2),
         Wait = TimeSpan.FromMinutes(2),
     };
