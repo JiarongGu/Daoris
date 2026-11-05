@@ -163,7 +163,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             }
         }
 
-        handed.Write(quest, new HandedQuest(ask.Agent, ask.Account, id, ask.Why, ask.AskedBy, ask.At) { Note = agentAsk ? AgentNote(id) : null });
+        handed.Write(quest, new HandedQuest(ask.Agent, ask.Account, id, ask.Why, ask.AskedBy, ask.At)
+        {
+            Note = agentAsk ? AgentNote(id) : null, Model = ask.Model, Effort = ask.Effort,
+        });
         // The part is stopped and the quest held on its new agent: the old part's end, which the carry-on goes on from. A write the store would not
         // take leaves the move standing, taken again at the next look, which makes no second stop.
         move.OldEnded();
@@ -282,11 +285,13 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         bool kept;
         string? message;
         string? code;
+        var approved = await ApprovedStepAsync(record, agent, ct).ConfigureAwait(false);
         if (IsQuest(record))
         {
             // FOUNDATION1f-v part c: decided as a driven move in the store, which the take below, in this very look, takes.
             var asked = await QuestHandOver.AskAsync(
-                service, Moves, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, ct, HandOver.ConsentOf(verdict), Decided).ConfigureAwait(false);
+                service, Moves, Drives, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, ct, HandOver.ConsentOf(verdict), Decided,
+                approved?.Model, approved?.Effort).ConfigureAwait(false);
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
         else if (_context.HandsOver is { } take)
@@ -305,7 +310,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             // FOUNDATION1h branch 3: the rule's verdict, `go`, is the consent the course reads as a fact; the door keeps the judging.
             var asked = (await HandOver.AskAsync(
                 service, moves, AccountsOf, session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow, ct,
-                HandOver.ConsentOf(verdict)).ConfigureAwait(false)).Answer;
+                HandOver.ConsentOf(verdict), model: approved?.Model, effort: approved?.Effort).ConfigureAwait(false)).Answer;
             (kept, message, code) = (asked.Kept, asked.Message, asked.Why);
         }
 
@@ -340,8 +345,13 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         switch (verdict.Kind)
         {
             case HandOverAskVerdict.GoKind when Drives(verdict.Agent!) is not null:
+                var approved = record is null ? null : await ApprovedStepAsync(record, verdict.Agent!, ct).ConfigureAwait(false);
                 new HandedQuests(_context.Home).Write(
-                    quest, new HandedQuest(verdict.Agent!, null, session, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow) { Note = ask.Note });
+                    quest,
+                    new HandedQuest(verdict.Agent!, null, session, HandOverWhy.Agent, HandOverBy.Agent, DateTimeOffset.UtcNow)
+                    {
+                        Note = ask.Note, Model = approved?.Model, Effort = approved?.Effort,
+                    });
                 files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Taken, null, verdict.Agent, DateTimeOffset.UtcNow));
                 if (own is not { State: HandOverAskStates.Approved }) Say(session, HandOverAskNotes.Taking(verdict.Agent!));
                 return verdict.Agent;
@@ -361,9 +371,22 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         var quest = IsQuest(record);
         // D205 §3.5(e) (MODELROLE1e): every path takes the actor's effective order, a driven line's Build's and a conversation's Chat's:
         // the next entry on another agent. The roster's order serves only where the actor is as before.
-        return HandOverOrder.Steps(record.Adapter, doors, OrderOf(quest ? "build" : "chat", record))
+        return HandOverOrder.Steps(record.Adapter, doors, OrderOf(WorkOf(record), record))
             .Select(step => step.Harness)
             .FirstOrDefault(agent => quest ? Drives(agent) is not null : AccountsOf(agent) is not null);
+    }
+
+    /// <summary>The work a hand-over's order is read for: a driven line's build, a conversation's chat; the role the line was bound to decides the rest.</summary>
+    private string WorkOf(PriorSession record) => IsQuest(record) ? ParticipantWork.Build : ParticipantWork.Chat;
+
+    /// <summary>
+    /// The choice an agent's own ask for <paramref name="agent"/> is kept on (STAFFPOLICY1d): the arranged order's step for it, which the next
+    /// start takes and revalidates. Null where the order names no model or effort for that agent.
+    /// </summary>
+    private async Task<HandOverStep?> ApprovedStepAsync(PriorSession record, string agent, CancellationToken ct)
+    {
+        var doors = _context.HandOverDoors is { } stand ? await stand(ct).ConfigureAwait(false) : await RosterDoorsAsync(ct).ConfigureAwait(false);
+        return ApprovedChoice.StepFor(record.Adapter, doors, OrderOf(WorkOf(record), record), agent);
     }
 
     /// <summary>

@@ -101,7 +101,8 @@ public static class QuestHandOver
     /// <param name="moves">The driven holder, its scope the lease holder's, whose store the move is decided in.</param>
     public static async Task<HandOverAnswer> AskAsync(
         ServiceClient service, ConversationMoves moves, Func<string, HandOverAgent?> drives, string id, string agent, string? account,
-        string why, string askedBy, CancellationToken ct = default, CourseRules? consent = null, Action<LineCourse>? decided = null)
+        string why, string askedBy, CancellationToken ct = default, CourseRules? consent = null, Action<LineCourse>? decided = null,
+        string? model = null, string? effort = null)
     {
         var (refused, _) = await JudgeAsync(
             service, drives, id, agent, account, ct, agentAsk: askedBy == HandOverBy.Agent, askedWhy: why, consent: consent, decided: decided).ConfigureAwait(false);
@@ -109,7 +110,7 @@ public static class QuestHandOver
 
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
         var begun = await moves.BeginAsync(
-            new MoveDecision(id, MoveExecutors.Driven, MoveHows.Brief, why, askedBy) { Agent = agent, Account = named }, ct).ConfigureAwait(false);
+            new MoveDecision(id, MoveExecutors.Driven, MoveHows.Brief, why, askedBy) { Agent = agent, Account = named, Model = model, Effort = effort }, ct).ConfigureAwait(false);
         if (begun.Move is not null)
         {
             return new HandOverAnswer(true, null, $"it is stopped at the driver's next look, then goes on in the same tree with {agent}.");

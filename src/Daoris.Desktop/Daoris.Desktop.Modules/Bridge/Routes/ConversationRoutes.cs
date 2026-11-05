@@ -249,7 +249,7 @@ public sealed class ConversationRoutes(DriverContext context)
             var moves = new ConversationMoves(_loop.Home, service, _loop.Events, _loop.Output, scope: MoveTakeUpScope.LeaseHolder);
             var answer = await QuestHandOver.AskAsync(
                     service, moves, SessionsCommand.DrivesBy(_loop.Home), id, agent, press.Account, why, HandOverBy.Person,
-                    cancellationToken)
+                    cancellationToken, model: press.Model, effort: press.Effort)
                 .ConfigureAwait(false);
             if (answer.Kept)
             {
