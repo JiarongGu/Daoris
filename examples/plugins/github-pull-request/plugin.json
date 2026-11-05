@@ -2,25 +2,27 @@
   "id": "github-pull-request",
   "apiVersion": 1,
   "name": "GitHub pull request",
-  "version": "1.3.0",
-  "changes": "Pushes the commit the landing judged, not the branch by name, so a commit made after the judgement waits for the next landing.",
-  "description": "Once a branch rule's landing has made its branch, pushes it to origin and opens a pull request with the gh CLI.",
+  "version": "2.0.0",
+  "changes": "Opens and reads the pull request through GitHub's REST API with the token of the git identity serving origin. It runs no git and no gh: Daoris's push node pushes the branch first.",
+  "description": "A performed step, pull-request: opens a GitHub pull request from the branch Daoris pushed, through GitHub's REST API with the API token of the identity serving origin, and reads its state.",
   "hooks": {
-    "command": ["node", "${plugin}/land.mjs"],
-    "points": ["work/land", "work/state"],
-    "key": true,
-    "modes": ["push"]
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["work/watch", "work/step", "work/perform", "work/state"]
   },
-  "tools": [
-    { "id": "node", "versions": ">=16.6.0", "for": "Runs the plugin's land.mjs." },
-    { "id": "git", "versions": ">=1.7.0", "for": "Pushes the commit the landing judged to the branch on origin." },
+  "steps": [
     {
-      "id": "gh",
-      "versions": ">=1.9.0",
-      "for": "Opens the pull request, and reads whether it is still open before pushing to it again.",
-      "ready": [
-        { "run": ["gh", "auth", "status"], "says": "Signed in", "fix": "gh auth login" }
-      ]
+      "id": "pull-request",
+      "title": { "en": "Open a pull request", "zh": "创建拉取请求" },
+      "about": { "en": "Opens a GitHub pull request from the branch Daoris pushed to origin, or finds the one already open for it. It sends nothing but its API calls, with the API token of the git identity serving origin.", "zh": "从 Daoris 已推送到 origin 的分支创建 GitHub 拉取请求，已有未关闭的则直接沿用。只发送它的 API 请求，使用为 origin 服务的 git 身份的 API 令牌。" },
+      "reach": "performed",
+      "outputs": { "pullRequest": "github-pull-request/pull-request@1" },
+      "evidence": { "schema": "github-pull-request/receipt@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited", "timeout"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
+      "timeoutSeconds": 300
     }
+  ],
+  "tools": [
+    { "id": "node", "versions": ">=18.0.0", "for": "Runs the plugin's plugin.mjs, and its calls to GitHub's REST API (fetch)." }
   ]
 }
