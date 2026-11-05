@@ -15,12 +15,13 @@ public sealed class HelpRoomLandingTests
         var some = HelpRoom.Render(HelpRoomFixture.Machine with { LandingPlugins = ["example.github-pull-request", "example.lands"] });
         var none = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("`--plugin <id>`", some);
-        Assert.Contains("Plugins that can land work here: `example.github-pull-request`, `example.lands`.", some);
-        Assert.Contains("No plugin that lands work is installed here", none);
+        Assert.DoesNotContain("`--plugin <id>`", some);
+        Assert.Contains("A pull request is a step of a workflow, performed by a plugin", some);
+        Assert.Contains("Plugins that perform pull-request steps here: `example.github-pull-request`, `example.lands`.", some);
+        Assert.Contains("No plugin that performs pull-request steps is installed here", none);
         Assert.Contains("`daoris plugin add <folder>`", none);
         // UX6i2a (D150 §2): Settings → Plugins retired into the Plugins place with UX6j.
-        Assert.Contains("or the Plugins place), so never propose a rule naming one", none);
+        Assert.Contains("or the Plugins place), so never propose a workflow naming one", none);
         Assert.DoesNotContain("Settings → Plugins", none);
     }
 
@@ -38,8 +39,8 @@ public sealed class HelpRoomLandingTests
                     $$"""{ "id": "{{id}}", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": [{{points}}] } }""");
             }
 
-            Install("example.lands", "\"work/land\"");
-            Install("example.off", "\"work/land\"");
+            Install("example.lands", "\"work/perform\"");
+            Install("example.off", "\"work/perform\"");
             Install("example.quiet", "\"session/ended\"");
             PluginState.Disable(home, "example.off");
 

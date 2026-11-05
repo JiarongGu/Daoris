@@ -98,7 +98,7 @@ public static class WorkflowLimits
             + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
             + "process of its own for one."),
         (PluginUnready, "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes "
-            + "nothing, or speaks on no `work/land` point. `daoris plugin list` says which."),
+            + "nothing, or speaks on no `work/perform` point. `daoris plugin list` says which."),
         (PullRequestUnread, "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or "
             + "abandoned."),
         (PullRequestAtCleanUp, "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."),

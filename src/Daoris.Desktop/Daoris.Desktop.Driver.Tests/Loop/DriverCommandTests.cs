@@ -215,7 +215,9 @@ public sealed class DriverCommandTests
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
             File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
-        Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
+        // The terminal lands nothing itself: it keeps the person's word for the running Daoris's next pass.
+        Assert.Contains("TreesWords.AcceptedForPass(home, gate)", program);
+        Assert.DoesNotContain("landing.LandAsync(", program);
         Assert.DoesNotContain("WorkAsync(", program);
         Assert.DoesNotContain("ContentHold", program);
     }

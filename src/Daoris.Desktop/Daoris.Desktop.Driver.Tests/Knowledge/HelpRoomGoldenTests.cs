@@ -140,7 +140,7 @@ public sealed class HelpRoomGoldenTests
         ],
         Plugins =
         [
-            new HelpPlugin("example.lands", Enabled: true, ["work/land"]) { Source = "folder" },
+            new HelpPlugin("example.lands", Enabled: true, ["work/perform"]) { Source = "folder" },
             new HelpPlugin("example.off", Enabled: false, []) { Source = "offer" },
             new HelpPlugin("example.broken", Enabled: true, []) { Problem = "`apiVersion` must be an integer." },
             new HelpPlugin("example.quiet", Enabled: true, []) { Source = "folder" },
@@ -184,7 +184,7 @@ public sealed class HelpRoomGoldenTests
         ],
         Offers =
         [
-            new HelpOffer("github-pull-request", "GitHub pull request", "1.0.0", ["work/land"], ["gh, signed in: `gh auth login`."]),
+            new HelpOffer("github-pull-request", "GitHub pull request", "1.0.0", ["work/perform"], ["gh, signed in: `gh auth login`."]),
             new HelpOffer("in-app-browser", "In-app browser", "1.0.0", [], ["node on the PATH."]) { Servers = ["browser"] },
             new HelpOffer("example.agent", "example.agent", "", ["custom/point", "session/ended"], []) { Harnesses = ["acme-agent"] },
         ],

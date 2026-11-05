@@ -16,15 +16,15 @@ public sealed class HelpRoomOwnPluginsTests
         {
             Offers =
             [
-                new HelpOffer("github-pull-request", "GitHub pull request", "1.0.0", ["work/land"], ["gh, signed in: `gh auth login`."]),
+                new HelpOffer("github-pull-request", "GitHub pull request", "1.0.0", ["work/perform"], ["gh, signed in: `gh auth login`."]),
                 new HelpOffer("in-app-browser", "In-app browser", "1.0.0", [], ["node on the PATH."]) { Servers = ["browser"] },
             ],
         });
 
         Assert.Contains("## Daoris's own plugins", offers);
         Assert.Contains("`offer` its id, never a path", offers);
-        Assert.Contains("- `github-pull-request` (GitHub pull request 1.0.0): speaks on `work/land`, to push a branch Daoris made "
-            + "and open its pull request; needs: gh, signed in: `gh auth login`.", offers);
+        Assert.Contains("- `github-pull-request` (GitHub pull request 1.0.0): speaks on `work/perform`, to perform a step of the work, "
+            + "once per attempt, with what it makes removed at the end: a `<plugin>/pull-request` step opens the pull request of the branch Daoris pushed; needs: gh, signed in: `gh auth login`.", offers);
         Assert.Contains("- `in-app-browser` (In-app browser 1.0.0): hands every session `browser`; needs: node on the PATH.", offers);
         // No landing plugin installed, and one offered: the helper may propose installing it first.
         Assert.Contains("this install offers `github-pull-request`, which you may propose installing first.", offers);
@@ -45,7 +45,7 @@ public sealed class HelpRoomOwnPluginsTests
                 File.WriteAllText(Path.Combine(offersFolder, id, PluginCatalog.ManifestName), manifest);
             }
 
-            Offer("github-pull-request", """{ "id": "github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
+            Offer("github-pull-request", """{ "id": "github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/perform"] } }""");
             // HELPPLUG1a: a server declared for Ask Daoris is not one it hands every session.
             Offer("tickets", """
                 { "id": "tickets", "servers": [
@@ -62,7 +62,7 @@ public sealed class HelpRoomOwnPluginsTests
                 plugins: PluginCatalog.Load(home), offers: PluginOffers.Load(offersFolder, home, []));
 
             Assert.Equal(["github-pull-request", "tickets"], machine.Offers.Select(offer => offer.Id));
-            Assert.Equal(["work/land"], machine.Offers[0].Points);
+            Assert.Equal(["work/perform"], machine.Offers[0].Points);
             Assert.Equal(["docs"], machine.Offers[1].Servers);
             Assert.Equal(["tickets"], machine.Offers[1].HelpServers);
             Assert.Contains(

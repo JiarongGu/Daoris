@@ -22,10 +22,6 @@ internal static class HelpDoorRowsMachine
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
             "`daoris tree remove <session|branch> [--repository <name>] --force`"),
-        // A landed branch handed to a landing plugin after its landing; never a proposal.
-        new("hand a branch a landing made to a landing plugin, to push it and open the pull request",
-            "Sessions → the session's review → Hand to <plugin>", "`daoris tree hand <session|branch> [--plugin <id>]`",
-            new HelpDoorAsk.Never("the push is yours")),
         // Ask again from a terminal, exempt from Ask Daoris as a read.
         new("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine",
             "(no screen yet)", "`daoris tree state <session|branch> [--repository <name>]`",

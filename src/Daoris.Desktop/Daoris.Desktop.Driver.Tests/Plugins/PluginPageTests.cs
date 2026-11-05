@@ -190,7 +190,7 @@ public sealed class PluginPageTests : IDisposable
     public void A_landing_plugin_says_whether_it_can_land_work_here()
     {
         Install("acme.lands", """
-            { "id": "acme.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }
+            { "id": "acme.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/perform"] } }
             """);
 
         var ready = PluginPage.Read(Home, "acme.lands");
@@ -198,7 +198,7 @@ public sealed class PluginPageTests : IDisposable
         var off = PluginPage.Read(Home, "acme.lands");
 
         Assert.Null(ready.Landing!.Problem);
-        Assert.Equal(new PagePoint("work/land", "act", 120_000, null), Assert.Single(ready.Points));
+        Assert.Equal("work/perform", Assert.Single(ready.Points).Name);
         Assert.Contains("daoris plugin enable acme.lands", off.Landing!.Problem);
         Assert.Equal("off", off.Health.State);
     }

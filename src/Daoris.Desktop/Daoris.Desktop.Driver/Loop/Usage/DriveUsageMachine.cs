@@ -37,7 +37,6 @@ internal static class DriveUsageMachine
           tree remove <landing branch> [--repository <name>] --why "…" [--plan]
           tree clean [--workspace <name>] [--yes]  ·  tree land <session> [--plan] [--branch <name>]
           tree land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
-          tree hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
           tree state [--entries]  ·  tree state <session|branch> [--repository <name>]
           tree sync [--repository <name>] [--workspace <name>] [--all] [--yes]
               this machine's session trees and the branches its landings made; remove takes a failed or
