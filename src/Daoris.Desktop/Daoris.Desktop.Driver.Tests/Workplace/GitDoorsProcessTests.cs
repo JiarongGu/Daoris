@@ -189,12 +189,13 @@ public sealed class GitDoorsProcessTests : IDisposable
     }
 
     [Fact]
-    public async Task Where_the_person_switched_no_push_off_a_push_passes_the_door_as_it_did()
+    public async Task Where_the_person_had_switched_no_push_off_the_converted_home_pushes_through_the_door_as_it_did()
     {
         if (!OperatingSystem.IsWindows()) return;
         await ServeAsync();
         GitDoorsLaid.Lay(_root);
         File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Permissions), """{"defaultsOff":["no-push"]}""");
+        new GitPushStep().Run(new HomeMigrationRun(Home, HomeMigration.Name));
         await using var host = new GitHttpBackendHost(Backend(), Projects);
         await Ok(_root, "clone", host.Address("org/engine.git"), Work);
         var tip = await CommitAsync("pushed");

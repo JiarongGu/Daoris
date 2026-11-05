@@ -95,6 +95,7 @@ public sealed class LandingPlugins(
     /// <summary>
     /// Why the judge refuses the landing's push to origin (GITAUTH1f, the git-auth design §6.7), or null where it lets it: the person's yes
     /// stands as the grant, so only <c>deny</c> or an identity read only on its host refuses. A coded <c>git.refused</c> line says it.
+    /// The doors refuse the same push; this asks first because the plugin's start and its pull-request call never pass a door.
     /// </summary>
     private string? LandingRefusal(LandingFrame frame, string? pushTo)
     {
@@ -104,7 +105,7 @@ public sealed class LandingPlugins(
         var way = pushTo.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? GitIdentity.Https : GitIdentity.Ssh;
         var serves = host is null ? null : GitIdentityUse.Resolve(
             GitIdentities.Read(home), GitIdentityUse.Read(home), frame.Repository, frame.Workspace, ["origin"], GitHosts.Canonical(host), way);
-        var verdict = GitAccessRules.Judge(GitAct.Write, value, pushesHere: true, granted: true, readOnlyIdentity: serves?.Identity?.ReadOnly == true);
+        var verdict = GitAccessRules.Judge(GitAct.Write, value, granted: true, serves?.Identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
         if (verdict.Allowed) return null;
         GitLog.Refused(home, name => name == "DAORIS_REPOSITORY" ? frame.Repository : null, verdict.Code, GitAct.Write, "origin", host);
         return verdict.Code == "read-only"

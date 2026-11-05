@@ -24,6 +24,11 @@
     <!-- The person's git access, read from the driver's file, and the go-ahead a door holds an act for (GITAUTH1f, §6.5 and §6.6). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAccessKeys.cs" Link="GitAccessKeys.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAsks.cs" Link="GitAsks.cs" />
+    <!-- A go-ahead is held only while an instance of Daoris holds the home, read from the home's lease (GITAUTH1f). -->
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitDoorAsks.cs" Link="GitDoorAsks.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeLease.cs" Link="HomeLease.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\ProcessLiveness.cs" Link="ProcessLiveness.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs" Link="HomeIdentity.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitRouting.cs" Link="GitRouting.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFailures.cs" Link="GitFailures.cs" />
     <!-- Each refusal and each grant taken, a coded line in the driver's machine log of the day (GITAUTH1b, the git-auth design §11). -->

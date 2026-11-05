@@ -81,7 +81,7 @@ public sealed class RuleProposalsTests : IDisposable
         // A default that allows narrows when it goes off; one that denies or guards widens.
         { "default", null, null, "connector", false, null, ChangeEffect.Narrows },
         { "default", null, null, "commit", false, null, ChangeEffect.Narrows },
-        { "default", null, null, "no-push", false, null, ChangeEffect.Widens },
+        { "default", null, null, "no-publish", false, null, ChangeEffect.Widens },
         { "default", null, null, "tree-guard", false, null, ChangeEffect.Widens },
         { "default", null, null, "commit", true, null, ChangeEffect.Nothing },
     };
@@ -106,10 +106,20 @@ public sealed class RuleProposalsTests : IDisposable
     [Fact]
     public void A_default_switched_back_on_narrows_when_it_denies_and_widens_when_it_allows()
     {
-        var file = PermissionRules.SwitchDefault(PermissionRules.SwitchDefault(PermissionRules.Load(_home), "no-push", false), "commit", false);
+        var file = PermissionRules.SwitchDefault(PermissionRules.SwitchDefault(PermissionRules.Load(_home), "no-publish", false), "commit", false);
 
-        Assert.Equal(ChangeEffect.Narrows, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "no-push", true)));
+        Assert.Equal(ChangeEffect.Narrows, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "no-publish", true)));
         Assert.Equal(ChangeEffect.Widens, RuleProposals.Effect(file, new ProposedChange("default", RuleScope.Machine, null, null, null, "commit", true)));
+    }
+
+    /// <summary>ONEWAY1q: <c>no-push</c> has no switch to propose; git access's Write says whether a session pushes.</summary>
+    [Fact]
+    public void A_proposal_to_switch_no_push_is_refused_naming_git_access()
+    {
+        var refused = Assert.Throws<DriverException>(() => RuleProposals.Effect(
+            PermissionRules.Load(_home), new ProposedChange("default", RuleScope.Machine, null, null, null, "no-push", false)));
+
+        Assert.Contains("git access", refused.Message, StringComparison.Ordinal);
     }
 
     // ——— The tick's settling.

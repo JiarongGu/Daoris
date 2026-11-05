@@ -29,6 +29,7 @@ public static class HomeMigration
         new RulesStep(),
         new WorkflowsStep(),
         new DriverKeysStep(),
+        new GitPushStep(),
         new HarnessesStep(),
         new RequestsStep(),
         new SolicitedAttemptsStep(),

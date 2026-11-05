@@ -87,7 +87,9 @@ public static class GitDoors
         var act = GitAccessRules.ClassOf(call.Program, call.Operation)!.Value;
         var host = call.Host[(call.Host.LastIndexOf('@') + 1)..];
         var key = GitAddressKeys.Of(call.Host, call.Path);
-        var verdict = Judge(home, act, key, variable, remote: null, host, folder);
+        // Who serves the act is known before the judge, which refuses a Write through an identity read only on its host.
+        var serves = Serving(home, folder, call, variable);
+        var verdict = Judge(home, act, key, variable, remote: null, host, folder, serves.Identity);
         if (!verdict.Allowed) return Refuse(error, verdict.Line!);
 
         // D233 choice 3: a push's force or delete is judged for every agent, whatever its harness's rules, before the remote hears it.
@@ -102,7 +104,6 @@ public static class GitDoors
             })
             : null;
 
-        var serves = Serving(home, folder, call, variable);
         if (serves.Kind == GitServeKind.Identity) return IdentitySsh(home, serves.Identity!, call, variable, error, folder, act, host, pushes);
 
         // Nothing serving a host means no key to reach it with (GITAUTH1e, §6.8).
@@ -473,7 +474,7 @@ public static class GitDoors
                     var text = Encoding.UTF8.GetString(line).TrimEnd('\n', '\r');
                     if (ClassOfHelperCommand(text) is { } act)
                     {
-                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host, folder ?? Environment.CurrentDirectory);
+                        if (!judged.TryGetValue(act, out var verdict)) judged[act] = verdict = Judge(home, act, key, variable, remote, host, folder ?? Environment.CurrentDirectory, identity);
                         // D233 choice 3: a push line's force (`+src:dst`) or delete (`:dst`) is judged for every agent, before the transport runs it.
                         if (verdict.Allowed && GitPushUpdates.OfHelperPush(text) is GitPushKind.Force or GitPushKind.Delete)
                             verdict = dangerous ??= JudgeDangerous(home, verdict, key, variable, remote, host, folder ?? Environment.CurrentDirectory);
@@ -525,26 +526,21 @@ public static class GitDoors
 
     // ---- Shared ----
 
-    /// <summary>The judge asked for one act, its grant's use and its refusal each a coded line (§11).</summary>
-    private static GitVerdict Judge(string home, GitAct act, string? key, Func<string, string?> variable, string? remote, string? host, string folder)
+    /// <summary>
+    /// The judge asked for one act, its grant's use and its refusal each a coded line (§11). <paramref name="identity"/> is the one serving
+    /// the act, or null; one read only on its host refuses a Write.
+    /// </summary>
+    private static GitVerdict Judge(
+        string home, GitAct act, string? key, Func<string, string?> variable, string? remote, string? host, string folder, GitIdentity? identity)
     {
         var granted = act == GitAct.Write && GitGrants.Take(home, variable(GitRouting.GrantVariable), key, DateTimeOffset.UtcNow);
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
         var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitLog.ClassName(act)).Value;
-        var verdict = act == GitAct.Read && value == GitAccessKeys.AsToday
-            ? GitAccessRules.Judge(act, pushesHere: false, granted: false)
-            : GitAccessRules.Judge(act, value, granted || GitAccessRules.PushesHere(home), granted);
+        var verdict = GitAccessRules.Judge(act, value, granted, identity is { ReadOnly: true } readOnly ? readOnly.Label : null);
         if (granted) GitLog.GrantUsed(home, variable, remote, host);
-        if (verdict.Ask)
-        {
-            // Asked at the door while the act waits (§6.6): the person's yes lets this one act through.
-            var allowed = GitAsks.Hold(home, repository, workspace, remote, host, GitLog.ClassName(act), variable(GitLog.SessionVariable), key,
-                () => DateTimeOffset.UtcNow, Thread.Sleep);
-            verdict = allowed ? new GitVerdict(true, "asked", null) : new GitVerdict(false, "ask-refused", GitAccessRules.RefusedLine);
-            GitLog.Asked(home, variable, allowed, act, remote, host);
-        }
-
-        if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code == "denied" ? "denied" : verdict.Code, act, remote, host);
+        // Asked at the door while the act waits (§6.6), where Daoris runs to ask: the person's yes lets this one act through.
+        if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitLog.ClassName(act), act, key, variable);
+        if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, act, remote, host);
         return verdict;
     }
 
@@ -558,14 +554,7 @@ public static class GitDoors
         var (repository, workspace) = GitFolders.RepositoryOf(home, folder);
         var value = GitAccessKeys.Resolve(home, repository, workspace).Of(GitAccessKeys.Dangerous).Value;
         var verdict = GitAccessRules.JudgeDangerous(value, granted: write.Code == "granted");
-        if (verdict.Ask)
-        {
-            var allowed = GitAsks.Hold(home, repository, workspace, remote, host, GitAccessKeys.Dangerous, variable(GitLog.SessionVariable), key,
-                () => DateTimeOffset.UtcNow, Thread.Sleep);
-            verdict = allowed ? new GitVerdict(true, "asked", null) : new GitVerdict(false, "ask-refused", GitAccessRules.RefusedLine);
-            GitLog.Asked(home, variable, allowed, GitAct.Write, remote, host);
-        }
-
+        if (verdict.Ask) verdict = GitDoorAsks.Hold(home, repository, workspace, remote, host, GitAccessKeys.Dangerous, GitAct.Write, key, variable);
         if (!verdict.Allowed) GitLog.Refused(home, variable, verdict.Code, GitAct.Write, remote, host);
         return verdict;
     }

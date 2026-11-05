@@ -20,24 +20,28 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         var file = PermissionRules.Load(Home);
         file = PermissionRules.Add(file, RuleScope.Machine, null, RuleList.Allow, "Bash(npm run test:*)");
         file = PermissionRules.Add(file, RuleScope.Repository, "engine", RuleList.Deny, "Bash(rm -rf:*)");
-        PermissionRules.Save(Home, PermissionRules.SwitchDefault(file, "no-push", on: false));
+        PermissionRules.Save(Home, PermissionRules.SwitchDefault(file, "no-publish", on: false));
 
         var answered = await AnswerAsync(Module(), "RULES");
 
         Assert.Equal(PermissionRules.PathOf(Home), answered.GetProperty("path").GetString());
         var defaults = answered.GetProperty("defaults").EnumerateArray().ToList();
         Assert.Equal(
-            ["connector", "commit", "no-push", "tree-guard"],
+            ["connector", "commit", "no-push", "no-publish", "tree-guard"],
             defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
-        Assert.False(defaults[2].GetProperty("on").GetBoolean());
-        Assert.Equal("deny", defaults[2].GetProperty("list").GetString());
+        // ONEWAY1q: no-push is fixed on, its switch git access's Write; no-publish is switched alone.
+        Assert.True(defaults[2].GetProperty("on").GetBoolean());
+        Assert.True(defaults[2].GetProperty("fixed").GetBoolean());
+        Assert.False(defaults[3].GetProperty("on").GetBoolean());
+        Assert.False(defaults[3].TryGetProperty("fixed", out _));
+        Assert.Equal("deny", defaults[3].GetProperty("list").GetString());
         // The driver's own sentence travels: what the number meant, never the number (POLISH4a).
-        Assert.Contains("stays the person's call", defaults[2].GetProperty("why").GetString());
+        Assert.Contains("stays the person's call", defaults[3].GetProperty("why").GetString());
         // The tree guard (PERM3) is a hook: no rule, and the tools it judges named instead. The bridge
         // leaves a null out, so a rule default carries no `hook` the page could misread.
-        Assert.Empty(defaults[3].GetProperty("rules").EnumerateArray());
-        Assert.Equal(TreeGuard.Matcher, defaults[3].GetProperty("hook").GetString());
+        Assert.Empty(defaults[4].GetProperty("rules").EnumerateArray());
+        Assert.Equal(TreeGuard.Matcher, defaults[4].GetProperty("hook").GetString());
         Assert.True(defaults[0].GetProperty("hook").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
 
         var scopes = answered.GetProperty("scopes").EnumerateArray().ToList();
