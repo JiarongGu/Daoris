@@ -166,7 +166,7 @@ internal static class HelpRoomDescriptions
                         Writes = grant.Server.Writes, Changed = grant.Changed,
                     })],
                 PluginServersOffered = [.. Offered(sources)],
-                // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
+                // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Hand, in its provider's layout), as the harness names them.
                 PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
                     .Where(skill => skill.HandedTo(PluginServerTo.Help) && SkillFiles.Judge(plugin.Folder, skill.Name) is null)
                     .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],

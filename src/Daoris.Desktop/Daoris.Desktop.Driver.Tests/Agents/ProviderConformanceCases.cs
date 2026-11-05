@@ -774,7 +774,7 @@ internal static class ConformanceCases
         return new Provider(
             new ProviderId(id), new ProviderIdentity(null, null, null, false, []), [door], Known<ProgramFacts>.Absent,
             Known<AccountsPart>.Absent, Known<TablesPart>.Absent, Known<UsagePart>.Absent, Known<LentPart>.Absent, Known<PortRef>.Absent,
-            Known<IChildVocabulary>.Absent, Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent, Known<IConversationHome>.Absent, Reach.Everywhere,
+            Known<IChildVocabulary>.Absent, Rules: default, Skills: default, Known<IConversationHome>.Absent, Reach.Everywhere,
             Known<VocabularyPart>.Absent);
     }
 

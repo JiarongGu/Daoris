@@ -317,7 +317,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   `IntakeRoom` and `BrainstormVariables`, `CommitTrailers` and `HolderTerminal` through the registry; the installed proof that
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   the readings' one sink per run (l), words through the run by `DoorInput` (m-ii), the same-session re-ask of a refused choice
-  (n), one connector plan (p, with **CONNECTORS1**), the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
+  (n); o's rest: `PostureAsked` in place of the posture string's marks (Help's and Participants' builders), the trust preflight
+  through the door's own `Home`, a full or asking start on a provider with none mapped refused naming it, `AccessKey`'s
+  `claude-code`; p's rest (**CONNECTORS1**): the protocol door's open reading the same `ConnectorPlan`, one plan per workspace with
+  its inclusions, exclusions and permitted sources, `ServerEntry` after FOUNDATION1's *Knowledge names Agents* cut,
+  `Adoption.Unadopted` read by the five places, and the session home's `.mcp.json`; q (the factory of `DeclaredDoor`s, a plugin's door
+  a contract door, `WithPlugins` out of Agents); the provider sheet (r, with **COAGENT1e**), and the rest of D213's design.
 - **AGENTPROVIDER1t**: the old seam ends. `ISessionAdapter`, `HarnessToolchain`, `SessionWire`, `AdapterSet`, `LegacyDoor`
   and the stand-in classes go; every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling
