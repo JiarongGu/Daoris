@@ -17,7 +17,6 @@ import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, SetupSection } from './SetupParts';
 import type { WorkspaceSection } from '../tabs';
-import { hostOf } from '../workspace/workspace';
 import type { GitIdentityShown } from '../../settings/git/Git';
 import { GitHosts, type GitHostActs, type GitHostShown } from '../../settings/git/GitRemotes';
 import { GitAccessRows, gitAccessSummary } from '../../settings/repository/GitAccess';
@@ -47,17 +46,18 @@ export type WorkspaceDefaults = {
   handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
 };
 
-/** Where it syncs (D48 §5), and Claude Code's rules for it (PERM1): its remote and its reach. */
+/** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none (D48 §5). Details draws it. */
+export type WorkspaceWiring = {
+  remote: { url: string; key: string } | null;
+  /** The environment names this machine's remote whole, and the file is not read (D48 §5). */
+  fromEnvironment: boolean;
+  /** Wire it; `done` once the key has landed, so the form lets the key go. */
+  onWire: (url: string, key: string, done: () => void) => void;
+  onUnwire: () => void;
+};
+
+/** Claude Code's rules for the workspace (PERM1) and the machines its remote counts undeclared: its reach, a row of its place's Sessions. */
 export type WorkspaceRemote = {
-  /** This machine's wiring for it, over `remotes.json`: the remote it is wired to, or none. */
-  wiring?: {
-    remote: { url: string; key: string } | null;
-    /** The environment names this machine's remote whole, and the file is not read (D48 §5). */
-    fromEnvironment: boolean;
-    /** Wire it; `done` once the key has landed, so the form lets the key go. */
-    onWire: (url: string, key: string, done: () => void) => void;
-    onUnwire: () => void;
-  } | null;
   rules?: {
     lists: RuleLists;
     onAdd: (list: RuleListName, rule: string, added: () => void) => void;
@@ -93,15 +93,13 @@ export type WorkspaceSetupProps = {
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
   open?: WorkspaceSection;
-  /** The header's *Wire to a remote…*: the wiring form starts open. */
-  wiring?: boolean;
   /**
    * Which rows are drawn, by the home they have on the workspace place (AGENTSPLACE1f, SETUPUX1v): its Sessions hold the access, the session
    * language, helpers, hand-over and reading rows, and *Reach* (the rules and the machines its remote counts undeclared); its Workflow the line's
    * defaults (line, landing, commits, review, opinion); the remote's wiring is Repositories' Details and the supervisor the place's Roles.
-   * `rest` is what the old tab keeps until it goes: everything but the session rows. Absent, all.
+   * Absent, all.
    */
-  rows?: 'all' | 'sessions' | 'defaults' | 'rest';
+  rows?: 'all' | 'sessions' | 'defaults';
 };
 
 const JOIN = ' · ';
@@ -125,14 +123,13 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access: accessAnswered, git, remote, busy = false, open, wiring: startWiring = false,
+  workspace, defaults, access: accessAnswered, git, remote, busy = false, open,
   rows = 'all',
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
   const mine = rows === 'all' || rows === 'sessions';
   const ofLine = rows !== 'sessions';
-  const rest = rows === 'all' || rows === 'rest';
   const { line, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
   const { language, read, helpers, handOver } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
@@ -157,16 +154,9 @@ export function WorkspaceSetup({
     ...(opinion ? [opinion.set ? opinionSummary(t, opinion.set) : daoris(opinionSummary(t, null))] : []),
   ];
 
-  const wired = remote.wiring?.remote ?? null;
   const rules = remote.rules?.lists;
   const ruleCount = rules ? rules.allow.length + rules.ask.length + rules.deny.length : 0;
   const rulesSays = rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : [];
-  const remoteParts = !rest ? [] : [
-    ...(remote.wiring
-      ? [wired ? t('projects.workspace.page.syncs', { host: hostOf(wired.url) }) : t('projects.workspace.page.local')]
-      : []),
-    ...rulesSays,
-  ];
   // The place's Sessions hold the rules and the retirement of an undeclared machine under Reach; the wiring is Details' (SETUPUX1v).
   const undeclared = remote.machines?.undeclared.length ?? 0;
   const reachParts = rows !== 'sessions' ? [] : [
@@ -201,7 +191,8 @@ export function WorkspaceSetup({
       || gitShown?.access?.classes.some((each) => each.source === 'workspace')),
     // The supervisor is a role of the place's Roles (D233 point 2): the Setup draws no section of it.
     supervisor: false,
-    remote: Boolean(wired) || ruleCount > 0 || startWiring,
+    // The remote's wiring is a row of Details, so Setup draws no section of it.
+    remote: false,
   };
 
   const sections: { id: WorkspaceSection; summary: string; body: ReactNode }[] = [];
@@ -416,21 +407,6 @@ export function WorkspaceSetup({
       ),
     });
   }
-  if (remoteParts.length > 0) {
-    sections.push({
-      id: 'remote',
-      summary: remoteParts.join(JOIN),
-      body: (
-        <>
-          {remote.wiring && (
-            <Wiring workspace={workspace} wiring={remote.wiring} busy={busy} startOpen={startWiring} />
-          )}
-          {wired && remote.machines && <Undeclared machines={remote.machines} busy={busy} />}
-          {rulesRow}
-        </>
-      ),
-    });
-  }
 
   return (
     <div className="grid">
@@ -458,7 +434,7 @@ export function WorkspaceSetup({
  */
 export function Wiring({ workspace, wiring, busy, startOpen }: {
   workspace: string;
-  wiring: NonNullable<WorkspaceRemote['wiring']>;
+  wiring: WorkspaceWiring;
   busy: boolean;
   startOpen: boolean;
 }) {

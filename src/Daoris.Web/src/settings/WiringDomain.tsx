@@ -24,7 +24,7 @@ const FILE_DOORS: Record<string, StarterDoor> = {
   browser: { view: 'settings', section: 'browser' },
   agents: { view: 'agents' },
   plugins: { view: 'plugins' },
-  workspace: { view: 'projects', workspaceTab: 'setup', workspaceSection: 'remote' },
+  workspace: { view: 'projects', workspaceSection: 'remote' },
 };
 
 /**

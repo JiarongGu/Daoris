@@ -14,14 +14,14 @@ namespace Daoris.Driver;
 /// <param name="Carries">How many times Daoris carried the session on for this Accept, at most <see cref="LandCarry.Bound"/>.</param>
 /// <param name="Awaiting">
 /// The last carry-on's turn has not ended: the landing waits for it. Set when the words were kept, cleared at the session's next
-/// conclusion (<see cref="AutoLander.Concluded"/>), so the landing never judges while the carry-on runs, and a turn that changed nothing
+/// conclusion, so the landing never judges while the carry-on runs, and a turn that changed nothing
 /// is still judged once it ends.
 /// </param>
 public sealed record CarriedAccept(string Session, string Tree, DateTimeOffset At, int Carries, bool Awaiting);
 
 /// <summary>
 /// The Accepts kept on sessions (<see cref="CarriedAccept"/>): <c>&lt;home&gt;/sessions/carried-accepts.json</c>, machine-local like the
-/// due list it feeds (<see cref="AutoLandings"/>), since which sessions this machine lands is a fact about this machine.
+/// due list it feeds, since which sessions this machine lands is a fact about this machine.
 /// </summary>
 /// <remarks>
 /// <para><b>One yes per session.</b> A new press replaces the kept one with a fresh count, and the stop, the decline, the discard of the

@@ -27,8 +27,8 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
   setListGroup: React.Dispatch<React.SetStateAction<OpenGroup | null>>;
   projectTab: "branches" | "details" | "history" | "changes" | "integration";
   chooseProjectTab: (next: "branches" | "details" | "history" | "changes" | "integration") => void;
-  workspaceTab: "branches" | "workflow" | "details" | "setup";
-  chooseWorkspaceTab: (next: "branches" | "workflow" | "details" | "setup") => void;
+  workspaceTab: "branches" | "workflow" | "details";
+  chooseWorkspaceTab: (next: "branches" | "workflow" | "details") => void;
   workspaceSection: WorkspaceSection | null;
   open: (target: View, item?: string | null | undefined, part?: OpenPart | undefined) => void;
   onSyncNow: (workspace: string) => void;
@@ -89,8 +89,8 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's setup is its place's page in the Agents place's Setup mode (AGENTSPLACE1f).
     onOpenSetup: (repository) => open('agents', null, { placeOf: repository }),
-    // A workspace's Setup sections have their homes once the Setup mode is lit, which `apply` opens for a door into the tab (SETUPUX1v).
-    onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceTab: 'setup', workspaceSection: section }),
+    // A workspace's setup sections have their homes on its place, which `apply` opens for a door naming one (SETUPUX1v).
+    onOpenWorkspaceSetup: (workspace, section) => open('projects', workspaceItem(workspace), { workspaceSection: section }),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,

@@ -143,17 +143,17 @@ describe('the opener', () => {
     expect(opening('projects', workspaceItem('aurora'), { workspaceTab: 'branches' })).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'workspace:aurora' }, workspaceTab: 'branches',
     });
-    // A section is a part of Setup, so naming one opens Setup.
+    // A section names the workspace in view too.
     expect(opening('projects', null, { workspaceSection: 'remote' }, 'forge')).toEqual({
-      view: 'projects', chosen: { view: 'projects', item: 'workspace:forge' }, workspaceTab: 'setup', workspaceSection: 'remote',
+      view: 'projects', chosen: { view: 'projects', item: 'workspace:forge' }, workspaceSection: 'remote',
     });
-    expect(opening('projects', null, { workspaceTab: 'setup' }, null)).toEqual({ view: 'projects', workspaceTab: 'setup' });
+    expect(opening('projects', null, { workspaceTab: 'workflow' }, null)).toEqual({ view: 'projects', workspaceTab: 'workflow' });
     // A repository a door names is never traded for the workspace in view.
     expect(opening('projects', 'engine', { tab: 'branches' }, 'forge')).toEqual({
       view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'branches',
     });
-    expect(opening('quests', null, { workspaceTab: 'setup' }, 'forge')).toEqual({ view: 'quests' });
-    expect(doorOpening({ view: 'projects', workspaceTab: 'setup', workspaceSection: 'defaults' }, 'forge')).toEqual(
+    expect(opening('quests', null, { workspaceTab: 'branches' }, 'forge')).toEqual({ view: 'quests' });
+    expect(doorOpening({ view: 'projects', workspaceSection: 'defaults' }, 'forge')).toEqual(
       opening('projects', null, { workspaceSection: 'defaults' }, 'forge'));
   });
 
@@ -263,7 +263,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
   // Repositories' workspace at Details. Dark, nothing moves.
   it("opens each section of a workspace's Setup tab at its new home, whichever door named it", () => {
     const door = (workspaceSection: 'access' | 'reach' | 'defaults' | 'supervisor' | 'remote') =>
-      opening('projects', workspaceItem('studio'), { workspaceTab: 'setup', workspaceSection });
+      opening('projects', workspaceItem('studio'), { workspaceSection });
     const place = (section: string, row: string) => ({ view: 'agents', agentsMode: 'setup', place: 'workspace:studio', placeAt: { section, row } });
     expect(placeOpening(door('access'), where)).toEqual(place('sessions', 'access'));
     expect(placeOpening(door('reach'), where)).toEqual(place('sessions', 'reach'));
@@ -287,8 +287,8 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     });
   });
 
-  it("leaves a door naming the workspace's Setup tab and no section where it is, until the tab goes", () => {
-    const tab = opening('projects', workspaceItem('studio'), { workspaceTab: 'setup' });
+  it("leaves a door naming a workspace's tab and no section where it is", () => {
+    const tab = opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' });
     expect(placeOpening(tab, where)).toEqual(tab);
   });
 

@@ -115,7 +115,7 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-details' })).toEqual({ view: 'projects', workspaceTab: 'details' });
     expect(placeDoor({ view: 'projects', part: 'workspace-branches' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'workspace-workflow' })).toEqual({ view: 'projects', workspaceTab: 'workflow' });
-    expect(placeDoor({ view: 'projects', part: 'workspace-setup' })).toEqual({ view: 'projects', workspaceTab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-setup' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });

@@ -176,7 +176,7 @@ public sealed class ProcessWordsTests
         Assert.DoesNotContain("uncommitted work does not land", Said(Rule(mode), Review));
     }
 
-    /// <summary>The sentences the landing's Process cases read (LandingTests, AutoLandingTests) stand, word for word.</summary>
+    /// <summary>The sentences the landing's Process cases read (LandingTests) stand, word for word.</summary>
     [Fact]
     public void The_sentences_the_landing_cases_read_stand()
     {

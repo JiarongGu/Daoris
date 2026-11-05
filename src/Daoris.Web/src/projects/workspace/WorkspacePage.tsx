@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StartWiringList } from '../../map/StartWiring';
-import { Wiring, type WorkspaceRemote } from '../setup/WorkspaceSetup';
+import { Wiring, type WorkspaceWiring } from '../setup/WorkspaceSetup';
 import type { StartWiring } from '../../map/wiring';
 import { Button, Icon, Prose } from '../../design/ui';
 import { PageHead, PageSection, PageTabs, ViewMain } from '../../work/frame/ViewMain';
@@ -71,7 +71,6 @@ export function WorkspacePage({ workspace, repositories, remote, tab = 'details'
               { id: 'details', label: t('projects.tab.details') },
               { id: 'branches', label: t('projects.tab.branches') },
               { id: 'workflow', label: t('projects.tab.workflow') },
-              { id: 'setup', label: t('projects.tab.setup') },
             ]}
             chosen={tab}
             onChoose={onTab}
@@ -86,7 +85,7 @@ export function WorkspacePage({ workspace, repositories, remote, tab = 'details'
 
 /** The remote's wiring as one row, a door's target: it takes the focus when a door asked for it. */
 function RemoteRow({ workspace, wiring, busy = false, startOpen = false, focus = false }: {
-  workspace: string; wiring: NonNullable<WorkspaceRemote['wiring']>; busy?: boolean; startOpen?: boolean; focus?: boolean;
+  workspace: string; wiring: WorkspaceWiring; busy?: boolean; startOpen?: boolean; focus?: boolean;
 }) {
   const row = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -115,7 +114,7 @@ export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpe
    * `startOpen` opens the form (the header's press, counted by `ask` so each press opens it afresh); `focus` takes the focus to the row (a door's).
    */
   remote?: {
-    workspace: string; wiring: NonNullable<WorkspaceRemote['wiring']>; busy?: boolean; startOpen?: boolean; focus?: boolean; ask?: number;
+    workspace: string; wiring: WorkspaceWiring; busy?: boolean; startOpen?: boolean; focus?: boolean; ask?: number;
   } | null;
   /** What a start in it would run on, as the driver answered, and what a person calls each account: a shell's. */
   starts?: { list: StartWiring[]; nameOf: (owner: string, profile?: string | null) => string } | null;

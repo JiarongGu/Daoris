@@ -78,7 +78,7 @@ describe("the doors that opened a workspace's Setup sections", () => {
     // The status bar's remote, Settings' wiring and Ask Daoris's workspace-remote all say `workspaceSection: 'remote'`.
     for (const door of [
       opening('projects', null, { workspaceSection: 'remote' }, 'aurora'),
-      doorOpening({ view: 'projects', workspaceTab: 'setup', workspaceSection: 'remote' }, 'aurora'),
+      doorOpening({ view: 'projects', workspaceSection: 'remote' }, 'aurora'),
     ]) {
       expect(placeOpening(door, where)).toMatchObject({ view: 'projects', workspaceTab: 'details', workspaceSection: 'remote' });
     }

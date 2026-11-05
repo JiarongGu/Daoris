@@ -36,7 +36,7 @@ import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
-import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
+import { WorkspaceSetup, type WorkspaceSetupProps, type WorkspaceWiring } from '../setup/WorkspaceSetup';
 
 /** Matched without case, as the driver matches a workspace's name. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -135,17 +135,6 @@ export function WorkspaceView({
             // The defaults are the workspace place's Workflow (SETUPUX1v): the application opens it.
             onSetup={() => onOpenSetupSection?.(workspace, 'defaults')}
             onOpenRepository={onOpenRepositoryWorkflow}
-          />
-        )
-      : tab === 'setup'
-        ? (
-          <WorkspaceSetupPart
-            workspace={workspace}
-            notify={notify}
-            open={asked ?? undefined}
-            wiring={false}
-            // The session rows are the workspace place's (AGENTSPLACE1f); this tab keeps the rest.
-            rows="rest"
           />
         )
         : (
@@ -399,7 +388,7 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
   const unwire = useUnwireRemote();
   const onError = failure(notify);
   const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
-  const wiring: NonNullable<WorkspaceSetupProps['remote']['wiring']> | null = map && {
+  const wiring: WorkspaceWiring | null = map && {
     remote: map.remotes.find((row) => same(row.workspace, workspace)) ?? null,
     fromEnvironment: map.fromEnvironment,
     onWire: (url, key, done) => wire.mutate({ workspace, url, key }, {
@@ -424,24 +413,21 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  *
- * Exported for the Agents place: a workspace's page there draws `rows="sessions"` under its Sessions (AGENTSPLACE1f, with its rules and the
- * machines its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow; this tab, once the Setup mode is lit, keeps the
- * rest until row y takes it away.
+ * The Agents place's: a workspace's page there draws `rows="sessions"` under its Sessions (AGENTSPLACE1f, with its rules and the machines
+ * its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow. The remote's wiring is a row of Details.
  */
-export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, rows, onOpenGit }: {
+export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }: {
   workspace: string;
   /** Open Settings → Git, where a host nothing serves is given an identity (GITAUTH1e). */
   onOpenGit?: (host: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
-  wiring?: boolean;
   rows?: WorkspaceSetupProps['rows'];
 }) {
   const { t } = useTranslation();
   const driver = useDriver();
   const across = useAcross();
   const rules = useRules();
-  const { wiring: wiringRow, busy: wiringBusy, error: wiringError } = useWorkspaceWiring(workspace, notify);
   // FABRIC-CLOSE1i2: the machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
   // after it hears the remote for itself, and its end pushes where the circle stands to every window.
   const standing = useSyncStanding(workspace);
@@ -462,7 +448,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const gitRemotes = useGitRemotes({ workspace });
   const setGitUse = useSetGitUse();
   const setGitAccess = useSetGitAccess();
-  useErrorNotify(wiringError ?? across.error ?? rules.error, notify);
+  useErrorNotify(across.error ?? rules.error, notify);
   const onError = failure(notify);
 
   const gitHosts: GitHostShown[] = [];
@@ -491,7 +477,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
   const setup: WorkspaceSetupProps = {
     workspace,
     open,
-    wiring,
     git: (gitIdentities && gitRemotes.data) || state?.workspaceGitAccess
       ? {
           hosts: gitIdentities && gitRemotes.data ? gitHosts : [],
@@ -515,7 +500,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
         }
       : null,
     busy: setLine.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wiringBusy
+      || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending
       || setGitAccess.isPending
       || retire.isPending,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
@@ -626,7 +611,6 @@ export function WorkspaceSetupPart({ workspace, notify, open, wiring = false, ro
         : null,
     },
     remote: {
-      wiring: wiringRow,
       machines: standing.data?.wired && Array.isArray(standing.data.undeclared)
         ? {
             undeclared: standing.data.undeclared,

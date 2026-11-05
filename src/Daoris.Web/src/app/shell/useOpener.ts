@@ -32,7 +32,7 @@ export function useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, l
   setImportRequested: React.Dispatch<React.SetStateAction<boolean>>;
   chooseProjectTab: (next: "branches" | "details" | "history" | "changes" | "integration") => void;
   setBranchAsked: React.Dispatch<React.SetStateAction<{ repository: string; branch: string; } | null>>;
-  chooseWorkspaceTab: (next: "branches" | "workflow" | "details" | "setup") => void;
+  chooseWorkspaceTab: (next: "branches" | "workflow" | "details") => void;
   setWorkspaceSection: React.Dispatch<React.SetStateAction<WorkspaceSection | null>>;
   setMapCode: React.Dispatch<React.SetStateAction<string | null>>;
   closings: FrameClosings;

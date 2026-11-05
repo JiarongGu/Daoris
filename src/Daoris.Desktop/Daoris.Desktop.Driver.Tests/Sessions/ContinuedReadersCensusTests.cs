@@ -65,7 +65,7 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "the owner's *rebase it* of a superseded commit (INTEGRATE1h): said at the head under the request's and the commit's key"),
         ],
-        ["AutoLandingWorld.cs"] =
+        ["ReviewLandingWorld.cs"] =
         [
             (How.Follows, "the landing's word to a session, said through the lander's world: said at its head under the landing's key"),
         ],

@@ -11,17 +11,17 @@ export type ProjectTab = (typeof PROJECT_TABS)[number];
 
 /**
  * A workspace's page's tabs (UX6g, D150 §4.3), in the order the page draws them: its repositories and what a start runs on,
- * the clean-up and bringing up to date across its repositories, how work moves in them (WORKFLOW1b), and every default and
- * wiring it holds on this machine.
+ * the clean-up and bringing up to date across its repositories, and how work moves in them (WORKFLOW1b). Its defaults, access
+ * and rules are its place's, in the Agents place's Setup mode; its remote's wiring is a row of Details.
  */
-export const WORKSPACE_TABS = ['details', 'branches', 'workflow', 'setup'] as const;
+export const WORKSPACE_TABS = ['details', 'branches', 'workflow'] as const;
 
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
 /**
- * The sections of a workspace's Setup (UX6g, §4.3; *Sessions' access* since AUTONOMY1d; its *Supervisor* since SUPERVISOR1e), which a
- * door may ask to see open. *Reach* is the workspace place's Sessions row that holds its rules and the machines its remote counts undeclared
- * (SETUPUX1v); the old tab keeps them under *remote*.
+ * The parts of a workspace's setup a door may name (UX6g, §4.3; *Sessions' access* since AUTONOMY1d; its *Supervisor* since SUPERVISOR1e).
+ * Each opens on the workspace's place (`WORKSPACE_HOMES`), the remote on Details' Remote row. *Reach* is the place's Sessions row that
+ * holds its rules and the machines its remote counts undeclared (SETUPUX1v).
  */
 export type WorkspaceSection = 'defaults' | 'access' | 'git' | 'supervisor' | 'remote' | 'reach';
 

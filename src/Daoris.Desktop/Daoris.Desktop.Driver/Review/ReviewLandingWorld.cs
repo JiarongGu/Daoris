@@ -9,16 +9,16 @@ namespace Daoris.Driver;
 /// The workplace's <see cref="IWorkplaceLandingWorld"/> is what the look reads of the quests and the sessions; the opinions are the
 /// review's (<see cref="IOpinionWorld"/>), and the whole gate the look reads is read over this one world.
 /// </remarks>
-public interface IAutoLandingWorld : IWorkplaceLandingWorld, IOpinionWorld
+public interface IReviewLandingWorld : IWorkplaceLandingWorld, IOpinionWorld
 {
     /// <inheritdoc cref="IWorkplaceLandingWorld.Again"/>
-    new IAutoLandingWorld Again() => this;
+    new IReviewLandingWorld Again() => this;
 
     IWorkplaceLandingWorld IWorkplaceLandingWorld.Again() => Again();
 }
 
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
-public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandingWorld
+public sealed class ServiceReviewLandingWorld(ServiceClient service) : IReviewLandingWorld
 {
     private IReadOnlyList<QuestView>? _every;
     private IReadOnlyDictionary<string, QuestView>? _quests;
@@ -48,7 +48,7 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
     public Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => BranchTidying.BesideAsync(service, ct);
 
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
-    public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
+    public IReviewLandingWorld Again() => new ServiceReviewLandingWorld(service);
 
     // FOUNDATION1d-ii: said at the head of the session's line where it went on, under the landing's key.
     public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
