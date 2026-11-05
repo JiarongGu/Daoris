@@ -14,7 +14,6 @@ import { type Authored, authoredTexts } from '../../locales/authored';
 import type { AccountsAnswer } from '../../settings/accounts/accounts';
 import type { RepositoryLine } from '../../settings/repository/Lines';
 import type { RepositoryLanding } from '../../settings/repository/Landings';
-import type { CurrentWorkflow } from '../../workflow/current';
 import { accountStates, agentRows, latestRead } from '../agents';
 import type { Tool } from '../tools';
 
@@ -53,7 +52,7 @@ export function placesToAsk(
 export const CANNOT_RUN: ReadonlySet<string> = new Set(['unavailable', 'not-offered', 'cooling', 'signed-out', 'held']);
 
 export type Reason =
-  | 'catalogue' | 'held' | 'no-role' | 'policy-failed' | 'choices-failed' | 'cannot-run' | 'not-installed' | 'not-known' | 'integration' | 'not-driven-held';
+  | 'catalogue' | 'held' | 'no-role' | 'policy-failed' | 'choices-failed' | 'cannot-run' | 'not-installed' | 'not-known' | 'not-driven-held';
 
 export type RoleRef = { id: string; name: Authored; scope: { kind: string; id?: string }; revision: number };
 
@@ -114,13 +113,6 @@ export type AccountRow = {
 
 export type PluginLine = { id: string; name: string; via: ('agent' | 'landing')[] };
 
-export type IntegrationRead = 'none' | 'proposed' | 'accepted' | 'unread' | string;
-
-export type WorkflowRead =
-  | { read: 'loading' }
-  | { read: 'failed' }
-  | { read: 'ok'; steps: number; integration: IntegrationRead | null };
-
 export type RepositoryWork = {
   work: string;
   role: RoleRef | null;
@@ -145,7 +137,6 @@ export type RepositoryRow = {
   line: { branch?: string; source: string } | null;
   landing: { form: string; plugin?: string; source: string } | null;
   driving: 'driven' | 'held' | 'not-driven' | null;
-  workflow: WorkflowRead | null;
   plugins: PluginLine[];
   reasons: Reason[];
 };
@@ -221,25 +212,10 @@ export type StructureInput = {
   plugins: readonly PluginRef[] | null | undefined;
   lines: { lines: readonly RepositoryLine[]; landings?: readonly RepositoryLanding[] } | null | undefined;
   driver: { drivable: readonly string[]; holds: readonly string[] } | null | undefined;
-  /** The workflow of each repository opened, by name. */
-  workflows: Readonly<Record<string, WorkflowRead>>;
   /** The appointments from `STATE`; absent, the diagram draws no appointed role. */
   appointed?: AppointedRead | null;
   filters: StructureFilters;
 };
-
-/**
- * A repository's Current workflow as the one line By repository says: its steps, and its integration declaration as none, proposed
- * (waiting for acceptance, which stays at the Integration tab) or accepted. A driver before the declaration leaves it out.
- */
-export function workflowReadOf(current: CurrentWorkflow): WorkflowRead {
-  const integration = current.start?.integration;
-  const state: IntegrationRead | null = integration === undefined ? null
-    : integration === null ? 'none'
-      : integration.state === 'accepted' ? (integration.gates === 'none' ? 'none' : 'accepted')
-        : integration.state === 'changed' || integration.state === 'unaccepted' ? 'proposed' : integration.state;
-  return { read: 'ok', steps: current.steps.length, integration: state };
-}
 
 const sameAnswer =(a: StructureWork | undefined, b: StructureWork | undefined): boolean =>
   (a?.role?.id ?? null) === (b?.role?.id ?? null) && (a?.role?.revision ?? 0) === (b?.role?.revision ?? 0) && (a?.held ?? null) === (b?.held ?? null);
@@ -368,7 +344,6 @@ export function buildStructure(input: StructureInput): Structure {
         const line = input.lines?.lines.find((each) => each.repository === row.repository);
         const landing = input.lines?.landings?.find((each) => each.repository === row.repository);
         const driven = input.driver ? (input.driver.holds.includes(row.repository) ? 'held' : input.driver.drivable.includes(row.repository) ? 'driven' : 'not-driven') : null;
-        const flow = input.workflows[row.repository] ?? null;
         const rowWorks = placeWorks(place, machine);
         const agents = new Set((place?.works ?? []).flatMap((each) => each.choices.map((choice) => choice.agent)));
         const via = new Map<string, Set<'agent' | 'landing'>>();
@@ -381,13 +356,12 @@ export function buildStructure(input: StructureInput): Structure {
         if (rowWorks.some((each) => each.held || each.choicesFailed || each.policyFailed)) reasons.push('held');
         if (rowWorks.some((each) => each.cannotRun)) reasons.push('cannot-run');
         if (driven === 'held') reasons.push('not-driven-held');
-        if (flow?.read === 'ok' && flow.integration === 'proposed') reasons.push('integration');
         return {
           id: placeId({ workspace, repository: row.repository }), workspace, repository: row.repository,
           differs: rowWorks.filter((each) => each.differs).length, works: rowWorks,
           line: line && !line.notReadYet ? { branch: line.branch, source: line.source } : null,
           landing: landing ? { form: landing.form, plugin: landing.plugin, source: landing.source } : null,
-          driving: driven, workflow: flow,
+          driving: driven,
           plugins: [...via.entries()].map(([id, kinds]) => ({ id, name: pluginName(id), via: [...kinds] })), reasons,
         };
       });

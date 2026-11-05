@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 import type { StructureChoice } from '../../data/wiring';
 import { Button, CheckField, Chip, Icon, SelectField } from '../../design/ui';
 import { clockOf, list, moment } from '../../locales/format';
-import { callsOf } from './callTable';
 import { entryText, roleName } from './Roles';
 import { RowMore } from './RowMore';
 import type {
-  AccountRow, IntegrationRead, RepositoryRow, RepositoryWork, RoleRef, RuleRead, Structure, StructureFilters, UsedBy, WorkRow, WorkspaceGroup,
+  AccountRow, RepositoryRow, RepositoryWork, RoleRef, RuleRead, Structure, StructureFilters, UsedBy, WorkspaceGroup,
 } from './roleStructure';
 import { NO_FILTERS, nodeOfRow, placeId } from './roleStructure';
 
@@ -22,10 +21,8 @@ export type StructureRead = 'ok' | 'loading' | 'failed';
 export type RoleDoors = {
   /** The Agents mode at this agent's accounts. */
   agent?: (agent: string) => void;
-  /** The setting that holds a work's rule, at the filtered scope. */
-  setting?: (work: string) => void;
   /** A repository's own page at a tab. */
-  repository?: (repository: string, tab: 'setup' | 'workflow' | 'integration') => void;
+  repository?: (repository: string, tab: 'setup' | 'workflow') => void;
   /** A plugin in the Plugins place. */
   plugin?: (plugin: string) => void;
   /** Working roles' editor for a new role in this workspace or repository (*Add a role here*). */
@@ -33,9 +30,6 @@ export type RoleDoors = {
   /** The diagram, its row's node chosen (COMPANYVIEW1f): a row's ⋯ *On the diagram*, offered where the row is drawn. */
   diagram?: (row: string) => void;
 };
-
-/** The works whose rule no setting holds: partnering is not a rule yet, and the others' `Off` is in Working roles. */
-const NO_SETTING = new Set(['partner']);
 
 const ANY = '*';
 
@@ -207,11 +201,6 @@ export function StructureShell({ structure, read, filters, onFilters, children }
   );
 }
 
-const Empty = () => {
-  const { t } = useTranslation();
-  return <p className="m-0 text-body text-ink-soft">{t('agents.roles.nothing')}</p>;
-};
-
 const Line = ({ label, children }: { label: string; children: ReactNode }) => (
   <p className="m-0 flex flex-wrap gap-x-2 py-0.5 text-body">
     <span className="min-w-28 text-ink-soft">{label}</span>
@@ -222,73 +211,6 @@ const Line = ({ label, children }: { label: string; children: ReactNode }) => (
 /** ---------------------------------------------------------------- Work (§3.3) */
 
 type RowProps = { open: boolean; onToggle: (id: string) => void; doors: RoleDoors; onDiagram?: () => void };
-
-function WorkRowView({ row, open, onToggle, doors, onDiagram }: RowProps & { row: WorkRow }) {
-  const { t, i18n } = useTranslation();
-  const title = workName(t, row.work);
-  const calls = callsOf(row.work);
-  const role = row.role
-    ? row.takesBuilding ? t('agents.roles.work.takesBuilding', { role: nameOf(t, i18n.language, row.role) }) : nameOf(t, i18n.language, row.role)
-    : row.held ?? t('agents.roles.work.noRole');
-  const summary = (
-    <>
-      <span>{role}</span>
-      {row.own > 0 && <span className="text-ink-faint"> · {t('agents.roles.work.own', { count: row.own })}</span>}
-    </>
-  );
-  const below = (
-    <>
-      {row.rule ? ruleText(t, row.rule) : null}
-      {row.atDefault.length > 0 && <span className="block">{t('agents.roles.rule.atDefault', { agents: row.atDefault.join(', ') })}</span>}
-    </>
-  );
-  return (
-    <FoldRow
-      id={row.id} title={title} summary={summary} below={row.rule || row.atDefault.length > 0 ? below : undefined}
-      open={open} onToggle={onToggle} onDiagram={onDiagram}
-      mark={row.reasons.length > 0 ? <Chip accent>{t('agents.roles.filter.needsLook')}</Chip> : undefined}
-    >
-      {row.held && <Line label={t('agents.roles.work.roleIs')}>{row.held}</Line>}
-      {row.choicesFailed && <Line label={t('agents.roles.work.choicesIs')}>{t('agents.roles.choices.failed', { why: row.choicesFailed })}</Line>}
-      {!row.choicesFailed && row.role && row.choices.length === 0 && <Line label={t('agents.roles.work.choicesIs')}>{t('agents.roles.choices.none')}</Line>}
-      {row.choices.map((choice, at) => (
-        <Line key={`${choice.agent}:${at}`} label={positionOf(t, choice.from)}>
-          {entryText(t, choice)} · {stateText(t, choice.state)}
-        </Line>
-      ))}
-      {calls.served.length > 0 && (
-        <Line label={t('agents.roles.work.callsIs')}>
-          {calls.allBut ? t('agents.roles.work.callsAllBut', { tools: calls.refused.join(', ') }) : calls.served.join(', ')}
-        </Line>
-      )}
-      {doors.setting && !NO_SETTING.has(row.work) && (
-        <div className="mt-2">
-          <Button variant="ghost" aria-label={t('agents.roles.door.settingOf', { work: title })} onClick={() => doors.setting!(row.work)}>
-            {t('agents.roles.door.setting')}
-          </Button>
-        </div>
-      )}
-    </FoldRow>
-  );
-}
-
-/**
- * **Work** (COMPANYVIEW1d, the company-view design §3.3): the nine works, each with the role taking it at the filtered scope, how many
- * places have their own, and the effective rule with where it was set. Opened, a work lists its choices at their positions with each
- * state by the last readings. A molecule: the rows arrive, and every press goes out.
- */
-export function WorkSection(props: SectionProps) {
-  const { structure, open, onToggle, doors } = props;
-  return (
-    <StructureShell {...props}>
-      {structure && (structure.works.length === 0
-        ? <Empty />
-        : <ul className="m-0 list-none p-0">{structure.works.map((row) => (
-          <WorkRowView key={row.id} row={row} open={open.has(row.id)} onToggle={onToggle} doors={doors} onDiagram={toDiagram(structure, doors, row.id)} />
-        ))}</ul>)}
-    </StructureShell>
-  );
-}
 
 /** ---------------------------------------------------------------- Accounts (§3.4) */
 
@@ -344,32 +266,10 @@ function AccountRowView({ row, open, onToggle, doors, onDiagram }: RowProps & { 
   );
 }
 
-/**
- * **Accounts** (§3.4): each agent a choice names, or that has accounts: the product, its accounts as the Agents list words them, when
- * they were read, and the roles that lean on it at their choices' positions. A named agent not installed, a choice that cannot run by
- * its last reading and one not read yet are said. *Open* goes to the Agents mode at that agent's accounts.
- */
-export function AccountsSection(props: SectionProps) {
-  const { structure, open, onToggle, doors } = props;
-  return (
-    <StructureShell {...props}>
-      {structure && (structure.accounts.length === 0
-        ? <Empty />
-        : <ul className="m-0 list-none p-0">{structure.accounts.map((row) => (
-          <AccountRowView key={row.id} row={row} open={open.has(row.id)} onToggle={onToggle} doors={doors} onDiagram={toDiagram(structure, doors, row.id)} />
-        ))}</ul>)}
-    </StructureShell>
-  );
-}
-
 /** ---------------------------------------------------------------- By repository (§3.5) */
 
 function placeText(t: TFunction, ref: RoleRef): string {
   return t(`settings.ai.roles.place.${ref.scope.kind}`, { id: ref.scope.id ?? '', defaultValue: ref.scope.kind });
-}
-
-function integrationText(t: TFunction, state: IntegrationRead | null): string {
-  return t(`agents.roles.repo.integration.${state ?? 'none'}`, { defaultValue: state ?? '' });
 }
 
 function RepositoryWorkLine({ work }: { work: RepositoryWork }) {
@@ -391,7 +291,6 @@ function RepositoryWorkLine({ work }: { work: RepositoryWork }) {
 
 function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps & { row: RepositoryRow }) {
   const { t } = useTranslation();
-  const flow = row.workflow;
   return (
     <FoldRow
       id={row.id} title={row.repository}
@@ -417,14 +316,6 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
         <Line label={t('agents.roles.repo.driving')}>
           {t(`agents.roles.repo.driving.${row.driving === 'not-driven' ? 'notDriven' : row.driving ?? 'unread'}`)}
         </Line>
-        <Line label={t('agents.roles.repo.workflow')}>
-          {flow === null || flow.read === 'loading'
-            ? t('agents.roles.repo.workflowLoading')
-            : flow.read === 'failed' ? t('agents.roles.repo.workflowFailed') : t('agents.roles.repo.workflowSteps', { count: flow.steps })}
-        </Line>
-        {flow?.read === 'ok' && flow.integration !== undefined && (
-          <Line label={t('agents.roles.repo.integration')}>{integrationText(t, flow.integration)}</Line>
-        )}
         <Line label={t('agents.roles.repo.plugins')}>
           {row.plugins.length === 0
             ? t('agents.roles.repo.noPlugins')
@@ -458,11 +349,6 @@ function RepositoryRowView({ row, open, onToggle, doors, onDiagram }: RowProps &
           <Button variant="ghost" aria-label={`${t('agents.roles.door.workflow')} · ${row.repository}`} onClick={() => doors.repository!(row.repository, 'workflow')}>
             {t('agents.roles.door.workflow')}
           </Button>
-          {flow?.read === 'ok' && flow.integration === 'proposed' && (
-            <Button variant="ghost" aria-label={`${t('agents.roles.door.integration')} · ${row.repository}`} onClick={() => doors.repository!(row.repository, 'integration')}>
-              {t('agents.roles.door.integration')}
-            </Button>
-          )}
           </>}
         </div>
       )}
@@ -512,23 +398,6 @@ function GroupView({ structure, group, open, onToggle, doors }: {
   );
 }
 
-/**
- * **By repository** (§3.5): workspaces as folded groups with their repositories inside. A repository folds to *takes this machine's
- * roles* or *n works differ*; opened, it says each work's role, its first choice and where the role is placed, then its line, landing,
- * driving and workflow, its integration declaration's state and the plugins whose agents or landing it uses, with the doors to its
- * Setup, Workflow and Integration tab, and to a plugin. A failed read is said on its line, never drawn as none.
- */
-export function RepositorySection(props: SectionProps) {
-  const { structure, open, onToggle, doors } = props;
-  return (
-    <StructureShell {...props}>
-      {structure && (structure.repositories.length === 0
-        ? <Empty />
-        : structure.repositories.map((group) => <GroupView key={group.id} structure={structure} group={group} open={open} onToggle={onToggle} doors={doors} />))}
-    </StructureShell>
-  );
-}
-
 /** ---------------------------------------------------------------- The diagram's detail (COMPANYVIEW1f, §4) */
 
 /** A place's answer per work, in words: what choosing it lights on the diagram. */
@@ -546,10 +415,9 @@ function PlaceWorks({ title, works }: { title: string; works: readonly Repositor
 
 /**
  * **A node's detail** (§4, *Moving between them*): the molecule its row is in the list, opened, its presses the list's own; a role's is
- * the catalogue's row with the same editor, and an appointed role's its section, both handed in. A place whose row is not shown says its
- * answer per work.
+ * the catalogue's row with the same editor, handed in. A place whose row is not shown says its answer per work.
  */
-export function DiagramDetail({ structure, id, open, onToggle, doors, working, appointed }: {
+export function DiagramDetail({ structure, id, open, onToggle, doors, working }: {
   structure: Structure;
   id: string;
   open: ReadonlySet<string>;
@@ -557,13 +425,10 @@ export function DiagramDetail({ structure, id, open, onToggle, doors, working, a
   doors: RoleDoors;
   /** The role's row in Working roles, with its editor. */
   working?: ReactNode;
-  /** The Appointed roles section. */
-  appointed?: ReactNode;
 }) {
   const { t } = useTranslation();
   const none = <p className="m-0 text-body text-ink-soft">{t('agents.roles.diagram.notShown')}</p>;
   if (id.startsWith('role:')) return <>{working ?? none}</>;
-  if (id.startsWith('appointed:')) return <>{appointed ?? none}</>;
   if (id.startsWith('agent:')) {
     const row = structure.accounts.find((each) => each.id === id);
     return row ? <ul className="m-0 list-none p-0"><AccountRowView row={row} open={open.has(id)} onToggle={onToggle} doors={doors} /></ul> : none;

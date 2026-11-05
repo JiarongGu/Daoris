@@ -11,7 +11,7 @@ import { DiagramSection } from '../roles/StructureCanvas';
 import { buildStructure, NO_FILTERS, type StructureFilters } from '../roles/roleStructure';
 import type { RolesView } from '../roles/RoleSections';
 import { RolesCard, type RoleScope } from '../roles/Roles';
-import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from '../roles/structureFixtures';
+import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS } from '../roles/structureFixtures';
 import { MachineNotesView } from './MachineNotes';
 import { PlacePageView } from './PlacePage';
 import { foldedLines, headOf, type PlaceSection, sectionsOf } from './placeShell';
@@ -40,7 +40,7 @@ const ROLES: RoleCatalogue = {
 
 const structure = buildStructure({
   structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: LINES,
-  driver: DRIVER, workflows: WORKFLOWS, filters: NO_FILTERS, appointed: null,
+  driver: DRIVER, filters: NO_FILTERS, appointed: null,
 });
 
 type Args = { view?: RolesView; search?: string; scope?: RoleScope; notes?: boolean };

@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../locales/i18n';
 import { CLAUDE_USE, CODEX_USE } from '../agentsFixtures';
-import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS, WORKFLOWS } from './structureFixtures';
+import { DRIVER, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS } from './structureFixtures';
 import {
-  buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, type StructureFilters, usedByAgent, workflowReadOf,
+  buildStructure, heldMarks, litOf, NO_FILTERS, nodeOfRow, placesToAsk, type StructureFilters, usedByAgent,
 } from './roleStructure';
 
 // COMPANYVIEW1d (the company-view design §3.3 to §3.5, §4): the rows of Work, Accounts and By repository, built once over the driver's
 // answer, with one id each. A row says the driver's answer; it resolves nothing itself.
 
-const build = (filters: Partial<StructureFilters> = {}, workflows = WORKFLOWS) => buildStructure({
+const build = (filters: Partial<StructureFilters> = {}) => buildStructure({
   structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: LINES,
-  driver: DRIVER, workflows, filters: { ...NO_FILTERS, ...filters },
+  driver: DRIVER, filters: { ...NO_FILTERS, ...filters },
 });
 
 describe('buildStructure', () => {
@@ -69,7 +69,7 @@ describe('buildStructure', () => {
 
     it('says a held start in the driver\'s sentence at its place', () => {
       const tools = buildStructure({
-        structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: null, plugins: null, lines: null, driver: null, workflows: {}, filters: NO_FILTERS,
+        structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: null, plugins: null, lines: null, driver: null, filters: NO_FILTERS,
       });
       expect(tools.works.some((row) => row.held)).toBe(false);
       const row = build().repositories.flatMap((group) => group.repositories).find((each) => each.repository === 'tools')!;
@@ -79,7 +79,7 @@ describe('buildStructure', () => {
     it('says a catalogue that does not read on every work, never an empty list', () => {
       const failed = buildStructure({
         structure: { ...STRUCTURE, roles: [], catalogue: { why: 'roles.json does not read' } }, registry: REGISTRY, tools: TOOLS, accounts: null,
-        plugins: null, lines: null, driver: null, workflows: {}, filters: NO_FILTERS,
+        plugins: null, lines: null, driver: null, filters: NO_FILTERS,
       });
       expect(failed.catalogueFailed).toBe('roles.json does not read');
       expect(failed.works.every((row) => row.reasons.includes('catalogue'))).toBe(true);
@@ -91,7 +91,7 @@ describe('buildStructure', () => {
         works: place.works.map((each) => (each.work === 'help' ? { ...each, policyFailed: 'unreadable', choicesFailed: 'unreadable too' } : each)),
       }));
       const row = buildStructure({
-        structure: { ...STRUCTURE, places }, registry: REGISTRY, tools: TOOLS, accounts: null, plugins: null, lines: null, driver: null, workflows: {}, filters: NO_FILTERS,
+        structure: { ...STRUCTURE, places }, registry: REGISTRY, tools: TOOLS, accounts: null, plugins: null, lines: null, driver: null, filters: NO_FILTERS,
       }).works.find((each) => each.work === 'help')!;
       expect(row.rule).toEqual({ kind: 'failed', why: 'unreadable' });
       expect(row.reasons).toEqual(expect.arrayContaining(['policy-failed', 'choices-failed']));
@@ -126,7 +126,7 @@ describe('buildStructure', () => {
     it('says the plugin that declared it, from the roster\'s door', () => {
       const declared = buildStructure({
         structure: { ...STRUCTURE, agents: [...STRUCTURE.agents, { agent: 'acme-agent', known: true, installed: true }] },
-        registry: REGISTRY, tools: TOOLS, accounts: null, plugins: PLUGINS, lines: null, driver: null, workflows: {}, filters: NO_FILTERS,
+        registry: REGISTRY, tools: TOOLS, accounts: null, plugins: PLUGINS, lines: null, driver: null, filters: NO_FILTERS,
       });
       expect(declared.accounts.find((row) => row.agent === 'acme-agent')?.plugin).toBe('acme.gate');
     });
@@ -153,28 +153,19 @@ describe('buildStructure', () => {
       expect(aurora!.differs).toBe(1);
     });
 
-    it('says line, landing, driving and workflow from the reads', () => {
+    it('says line, landing and driving from the reads', () => {
       const engine = rows()[0]!.repositories[0]!;
       expect(engine.line).toEqual({ branch: 'main', source: 'repository' });
       expect(engine.landing).toMatchObject({ form: 'branch', plugin: 'github-pull-request' });
       expect(engine.driving).toBe('driven');
-      expect(engine.workflow).toEqual(WORKFLOWS.engine);
       const tools = rows()[1]!.repositories[0]!;
       expect(tools.line).toBeNull();
       expect(tools.driving).toBe('not-driven');
-      expect(tools.workflow).toEqual({ read: 'failed' });
     });
 
-    it('names the plugins whose landing it uses, and a proposed integration declaration needs a look', () => {
+    it('names the plugins whose landing it uses', () => {
       const engine = rows()[0]!.repositories[0]!;
       expect(engine.plugins).toEqual([{ id: 'github-pull-request', name: 'GitHub pull request', via: ['landing'] }]);
-      expect(engine.reasons).toContain('integration');
-      expect(rows()[0]!.repositories[1]!.reasons).not.toContain('integration');
-    });
-
-    it('says a read not made as none, never as a state', () => {
-      const none = build({}, {}).repositories[0]!.repositories[0]!;
-      expect(none.workflow).toBeNull();
     });
   });
 
@@ -229,7 +220,7 @@ describe('the diagram', () => {
   };
   const diagramOf = (filters: Partial<StructureFilters> = {}, patch: Partial<Parameters<typeof buildStructure>[0]> = {}) => buildStructure({
     structure: STRUCTURE, registry: REGISTRY, tools: TOOLS, accounts: { agents: [CLAUDE_USE, CODEX_USE] }, plugins: PLUGINS, lines: LINES,
-    driver: DRIVER, workflows: WORKFLOWS, filters: { ...NO_FILTERS, ...filters }, ...patch,
+    driver: DRIVER, filters: { ...NO_FILTERS, ...filters }, ...patch,
   }).diagram;
   const ids = (kind: string, diagram = diagramOf()) => diagram.nodes.filter((node) => node.kind === kind).map((node) => node.id);
   const staffed = (role: string, diagram = diagramOf()) => diagram.edges
@@ -334,20 +325,6 @@ describe('the diagram', () => {
     expect(nodeOfRow(structure, 'place:aurora/engine')).toBe('place:aurora/engine');
     expect(nodeOfRow(structure, 'role:chat')).toBe('role:chat');
     expect(nodeOfRow(structure, 'place:default')).toBeNull();
-  });
-});
-
-describe('workflowReadOf', () => {
-  const current = (integration: unknown) => ({ steps: [{}, {}], start: integration === undefined ? undefined : { integration } }) as never;
-
-  it('reads the integration declaration as none, proposed or accepted, and leaves it unsaid on a driver that does not send it', () => {
-    expect(workflowReadOf(current(undefined))).toEqual({ read: 'ok', steps: 2, integration: null });
-    expect(workflowReadOf(current(null))).toMatchObject({ integration: 'none' });
-    expect(workflowReadOf(current({ gates: 'abc', state: 'accepted' }))).toMatchObject({ integration: 'accepted' });
-    expect(workflowReadOf(current({ gates: 'none', state: 'accepted' }))).toMatchObject({ integration: 'none' });
-    expect(workflowReadOf(current({ gates: null, state: 'unaccepted' }))).toMatchObject({ integration: 'proposed' });
-    expect(workflowReadOf(current({ gates: 'abc', state: 'changed' }))).toMatchObject({ integration: 'proposed' });
-    expect(workflowReadOf(current({ gates: null, state: 'unread' }))).toMatchObject({ integration: 'unread' });
   });
 });
 
