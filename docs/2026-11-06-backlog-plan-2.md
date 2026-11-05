@@ -3,13 +3,15 @@
 The second plan for D240's direction: the whole of `TASKS.md` built at pace in big chunks, then the code and the documents reviewed
 whole. The first plan ([`2026-11-05-backlog-plan.md`](2026-11-05-backlog-plan.md)) cut BL0 to BL30 and the sweeps; most of BL1 to
 BL29, the git design's G1 to G9 ([`2026-11-05-git-design.md`](2026-11-05-git-design.md), D241, D242) and most of AGENTPROVIDER1 (the AP
-chunks, D243) are built. This plan reads the 79 open rows again against main at `701115231`, says what is really left, and cuts the rest.
+chunks, D243) are built. This plan reads the 79 open rows again against main at `701115231`, and again at `1e6befa68` after AP-J and G8e
+merged, says what is really left, and cuts the rest.
 It follows the first plan's rules: a builder takes a whole chunk, writes its tests and runs none, compiles clean and hands back at about
 150 tool calls; at most five run at once; Opus takes each wave's exemplar, the designs and the judgement, Sonnet the mirrors; every check
 runs once, at the verification (§5.3).
 
-**In flight, not planned again here:** AP-J (AGENTPROVIDER1's l, m-ii, n, d, e and h rests), RPC1g1, G8e (the run page's coded binding
-problems and the 13 stale land tests) and BL26d (the web suite green on snapshot-only slices, ONEWAY1ab-ii).
+**In flight, not planned again here:** RPC1g1 and BL26d (the web suite green on snapshot-only slices, ONEWAY1ab-ii). **Merged while
+this was read:** G8e (`f4fa593f4`) whole, and AP-J (`d5274bdcd`) in part: m-ii, l and n moved, and d, e, f and h untouched, so their rests
+are cut again here (BL38a to BL38c).
 
 Paths below are short: the driver's under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the modules' under
 `src/Daoris.Desktop/Daoris.Desktop.Modules/`, the service's under `src/Daoris.Service/`, the web's under `src/Daoris.Web/src/`.
@@ -22,7 +24,7 @@ another repository. A row with a tail in another class says so; its count is its
 
 | Row | Class | What is really left | After |
 |---|---|---|---|
-| NOCOMPAT1b2 | a | `AutoLandingWorld`'s name; the exchange's `BindAsync`, once a bound run's close stops reading a bind recorded at the take; the workspace Setup tab, if its other rows have pages | G8e |
+| NOCOMPAT1b2 | a | `AutoLandingWorld`'s name; the exchange's `BindAsync`, once a bound run's close stops reading a bind recorded at the take; the workspace Setup tab, if its other rows have pages | none |
 | SCOPEVERIFY1 | a | the scope's one verification, run once all of §5's waves have merged (§5.3) | every chunk |
 | COMMENTGATE1 | a | the gate and its targeted pass (D235) | SCOPEVERIFY1 |
 | MERGETOOL1 | a, c tail | designed (D237): MT1 to MT8, FR1 to FR3 built beside and switched after the verification; MT9 waits on Q3 | SCOPEVERIFY1 |
@@ -33,7 +35,7 @@ another repository. A row with a tail in another class says so; its count is its
 | SESSWATCH1e | b | the automatic end, only in cells 1d allows; then an (a) chunk | 1d |
 | SESSCTX1 | b, a tail | 1a in the spend sitting; then 1e, *Go on fresh* as a hand-over to the same agent, lifting `HandOver.SameAgent` | the spend sitting |
 | RPC1g | a, b tail | g1 in flight; g2 to g4 buildable; g5 on the install | RPC1g1 |
-| AGENTPROVIDER1 | a, b tail | AP-J in flight. Left beside it: r's rest (COAGENT1e), f's rest, s-vii, u, then t (= ONEWAY1ah); t's installed proof spends | AP-J |
+| AGENTPROVIDER1 | a, b tail | after AP-J: h's rest (`SpawnRequest` composed in Loop, Platform's launcher) and n's rest (the asked choice from the whole request); d's rest (`RosterNext` taking the door's own home, s-ix o1 to o3), e's rest (door tables beside the provider's, the page's floor per agent) and f (the s-ix runs alone); l's rest (one stream-json reader, the lineage as Participants' part, `ChildBindings`' fold split) and m-ii's open choice (what `DoorInput` carries for a protocol prompt); r's rest (COAGENT1e); s-vii; u; then t (= ONEWAY1ah), whose installed proof spends | none |
 | AGENTPROVIDER1j | f | each protocol door reads its own dialect, after the protocol doors move to the layer (AGENTLYNTAI1e); a measurement first (does Codex's or dsh's adapter read `jetbrains.air`) | 1e-iv |
 | AGENTLYNTAI1 | f, b tail | the program; s-ii is a measurement that spends once | Lyntai, Q2 |
 | AGENTLYNTAI1a | f, c | the reference to Lyntai's local library (D240 point 8), which contradicts the design's §7.3 rule that no merged branch builds on a pack | Q2 |
@@ -42,16 +44,16 @@ another repository. A row with a tail in another class says so; its count is its
 | AGENTLYNTAI1b-iii | f | one part per capability: LQ11, LQ16, LQ3 and LQ17 are not built in Lyntai; AG12 is | Lyntai |
 | AGENTLYNTAI1c | f, b tail | Lyntai built R-c (its AG21 to AG24, unreleased), so this is buildable against the local library after 1b-i; one read per agent on a named account | 1b-i |
 | AGENTLYNTAI1d | f | waits on LQ4, LQ5, LQ6, LQ16, LQ17 and LQ11's access half, none of them a Lyntai row yet | Lyntai |
-| AGENTLYNTAI1e-i to e-iv (4 rows) | f | wait on LQ3 widened, LQ7, LQ8 and LQ17's context half; and m-ii (AP-J) | Lyntai, AP-J |
+| AGENTLYNTAI1e-i to e-iv (4 rows) | f | wait on LQ3 widened, LQ7, LQ8 and LQ17's context half; and m-ii's rest (BL38c) | Lyntai, BL38c |
 | AGENTLYNTAI1f-i, f-ii (2 rows) | f | wait on LQ3 and LQ13 | Lyntai |
-| AGENTERRORS1 | a, b tail | 1d's rest (an intake's ask bound again after a second `intake.transient`; an opinion's gate read from its code; each kind's authority its check) is (a); 1c's measured `--resume` spends; 1e after 1c | AP-J |
+| AGENTERRORS1 | a, b tail | 1d's rest (an intake's ask bound again after a second `intake.transient`; an opinion's gate read from its code; each kind's authority its check) is (a); 1c's measured `--resume` spends; 1e after 1c | BL38c |
 | LIMITRESUME1 | b | f with TOOL4n: the code is built (`Loop/Session/NativeLimits.cs:14`); one native session run to its limit confirms it | the spend sitting |
 | BGWAIT2b | b | the probe, once | the spend sitting |
 | HELPMODE1a3 | b | full access on the installed pins, with SESSCTX1a and FABRIC-C2b | the spend sitting |
-| HELPWIRED1b | a | what the door says it loaded beside what was handed, read from the recorded init frames | AP-J |
+| HELPWIRED1b | a | what the door says it loaded beside what was handed, read from the recorded init frames | BL38c |
 | CODEXTOOLS1 | b | a fresh and a resumed Codex quest using the connector on the first turn | the spend sitting |
 | MODELROLE1c4 | b | c4 and d3 on the install | the spend sitting |
-| COAGENT1 | a | g (a hand-over waits for descendants), c (a conversation as the lead), b2 (a piece's later acts and landing proofs). d (`partner_ask`) is in the design's order before e but has no row (§4) | AP-J |
+| COAGENT1 | a | g (a hand-over waits for descendants), c (a conversation as the lead), b2 (a piece's later acts and landing proofs). d (`partner_ask`) is in the design's order before e but has no row (§4) | BL40 for c |
 | STAFFPOLICY1 | b | d's and f's rests are built (BL7); e3 went with CONTEXTDRIVE1n; left i (installed) and h (parked behind its measurements). The agent's own hand-over in the terminal's runner goes with RPC1g4 | the install |
 | MODELROLE1e2 | d | built with BL7 (§2) | — |
 | MODELROLE1l | d | built (§2) | — |
@@ -68,7 +70,7 @@ another repository. A row with a tail in another class says so; its count is its
 | SETUPUX1 | a, b tail | i's kept selection across pages and searches; x on the install | none |
 | WORKSETUP1 | b | G10 and its tail (AUTOTIDY1c, SQUASHTIDY1d, PLUGHOOK1d, FABRIC-PERFORM1l) | Q5 |
 | INTEGRATE1 | b, c tail | k by the steward from the terminal; h's proof; m's rule for Lyntai is Q4; i parked | the install |
-| FABRIC-PIPELINE1 | a, b tail | 1d's help row and its goldens; e, f, j buildable; g on the install; h after FABRIC-PERFORM1l | G8e |
+| FABRIC-PIPELINE1 | a, b tail | 1d's help row and its goldens; e, f, j buildable; g on the install; h after FABRIC-PERFORM1l | BL32 |
 | FABRIC2 and LANDNODE1 | b | WORKFLOWEDIT1c and LANDNODE1j, the installed window | the install |
 | REVIEWFLOW1 and LINESTOGETHER1 | b | REVIEWFLOW1c on the window; LINESTOGETHER1e parked | the install |
 | COMMS1 | a, b tail | the look handing a teammate's ask's messages to a part here; the person posting on a line's own channel; n on the install | none |
@@ -77,7 +79,7 @@ another repository. A row with a tail in another class says so; its count is its
 | MSG1 | b | h and i measured per door (ONEWAY1g's parity measures), j with COMMS1n | the spend sitting |
 | STEER3 | b | Codex's `turn/steer` and Claude Code's stream-json input measured | the spend sitting |
 | COWORKVIEW1 | b | a's rest; f parked | the install |
-| GITDESIGN1 | b | G8e in flight; G10 the install (Q5); G8-CONVERT1 once no home from before G8 can start, which is after the install's home has started on a later build | G8e, the install |
+| GITDESIGN1 | b | G8e is built (`f4fa593f4`); left G10, the install (Q5), and G8-CONVERT1 once no home from before G8 can start, which is after the install's home has started on a later build | the install |
 | GITAUTH1 | a, b tail | b (the pinned MinGit fetch the toolchain lacks), e (the sync card's screen door to *Add a git identity*), g's concurrent grants and a ref moved after judgement, on the stand-in hosts; c, f's look, g's real host and h are G10's | none |
 | GITAPP2 | a | Ask Daoris's fetch card; the push's interruption and the person's `pre-push` hook proven; Stash Drop (§4) | none |
 | GITAPP1 | d | folds into OPTIMIZE1a (§2) | — |
@@ -186,25 +188,28 @@ main before its hand-back and hands back at about 150 tool calls. Web chunks add
 room's goldens are regenerated at the verification, never by hand; a generated contract file in conflict is regenerated, never merged by
 hand.
 
-**One serial track.** `Loop/Chat/ChatRunner.cs` is the hub several chunks touch. They go one per wave, in this order: AP-J (wave 9), BL52
-(10), BL39 (11), BL40 (12), BL46 (13), BL43 (14). A slip there slips the conversation track's last wave, as the landing track did in the
-first plan.
+**One serial track.** `Loop/Chat/ChatRunner.cs` and the executors beside it are the hub several chunks touch. They go one per wave, in
+this order: BL38a (wave 9), BL52 (10), BL38c (11), BL39 (12), BL40 (13), BL46 (14), BL43 (15). A slip there slips the conversation track's
+last wave, as the landing track did in the first plan.
 
 ### 5.1 The chunks
 
 | Id | Rows | Files, starts | Exemplar | Proof | Model | After |
 |---|---|---|---|---|---|---|
 | **BL31** | PERF1's rest | `Workplace/EndJudgement.cs:222`, `Workplace/TreeOffers.cs:12` (`LandOffer`), `Workplace/GitRuns.cs:8`; the service's session counts | `e20cc9b6f` (the tidy, 32 to 6 starts), `604148d70` (benchmark homes and budgets) | `Process` budgets show fewer git starts per branch for the end judgement and the offer; the figures in the driving area | Opus | none |
-| **BL32** | NOCOMPAT1b2's last traces | `Review/AutoLandingWorld.cs` and its five test files; service `Daoris.Service.Core/Quests/QuestExchange.cs:163` (`BindAsync`); `Loop/Look/BindRunsLook.cs`; web `projects/setup/WorkspaceSetup.tsx` | `3578d416c` (the plain bind retired) | no product name says the auto lander; a bound run's close reads its run, not a take's bind (a service test); the Setup tab gone or its condition named | Opus | G8e |
+| **BL32** | NOCOMPAT1b2's last traces | `Review/AutoLandingWorld.cs` and its five test files; service `Daoris.Service.Core/Quests/QuestExchange.cs:163` (`BindAsync`); `Loop/Look/BindRunsLook.cs`; web `projects/setup/WorkspaceSetup.tsx` | `3578d416c` (the plain bind retired) | no product name says the auto lander; a bound run's close reads its run, not a take's bind (a service test); the Setup tab gone or its condition named | Opus | none |
 | **BL33** | CONTEXTDRIVE1 e's rest, l, m (driver) | `Settings/DriverConfig.cs:33`, `:73` (`Strikes`, about 35 test files set it); `Roles/StaffPolicy.cs:444`, `Roles/StaffPolicyDoor.cs:18` (`moves`, `most`); `Roles/SupervisorRuleActs.cs:24` | `0f4b400bc` (a rule's act said and saved), `84b0e6116` (`convert-first` deleted) | no `strikes` read; the failures park and the tries hold each record an act read back by *Details* and the supervisor's print | Opus | none |
 | **BL34** | CONTEXTDRIVE1 g's rest, h's rest, k's words (web) | web `agents/roles/`, `work/head/headFacts.ts`, the machine's page; modules `HelpCoverageTests`; the dead `settings.ai.policy.*` keys | BL12 (`242234a89`) | the head's chip with its count, *Details*' counts, `onChangeRule` handed to head and strip; en and zh stories | Sonnet | BL33 |
 | **BL35** | SESSWATCH1b's and 1c's rests | `Loop/Run/Conclude/QuietWord.cs:12`, `Course/Domain/AnswersAlone.cs:117`, `Review/Heavy/LongCalls.cs:29`, `Settings/QuietSetting.cs:10`; service `Daoris.Service.Mcp/ChosenSettingsTools.cs:46`, `ToolClasses.cs:65`, `CallTable.cs:101` | `879bb0957` (the protocol door's word); `settings_cap` | the session watch design's cases 2 (the word), 8 and 10 on each door; `settings_quiet` in the call table's census | Opus | none |
 | **BL36** | PERSONDOOR1j; GITAUTH1g's concurrent grants and a ref moved after judgement | service `Daoris.Service.Http/PersonConfirmations.cs:135` (~142-148, ~451-462); the transport judge's tests on the stand-in hosts | G3 (`c6e86f40b`) | a nameless ask cannot hold both of a terminal's places; two grants at once and a moved ref each refused before any ref moves | Opus | none |
 | **BL37** | WIRING1e | modules' system routes; web Settings → This Daoris; the design's §4 | WIRING1c (This Daoris's cards); `.claude/knowledge/setting-doors.md` | tests per action; each said first; refusals as data; each coverage row named | Sonnet | none |
-| **BL38** | AGENTPROVIDER1r's rest (COAGENT1e) and f's rest | web `agents/agents.ts:551`, `:565`, `agents/AgentPage.tsx:157`, `agents/AgentsView.tsx:403`, `:454` (`doors[0]`); `agent list`; the room reading `IAgentFacts`; `Plugins/PluginCatalog.cs:429` (one `posture`); the family rehearsal's Stub Two phase | AP-R (`061c8aea5`) | no `doors[0]` deciding an act; the sheet on the agent's page in en and zh; the two postures' fixtures | Sonnet | AP-J |
-| **BL39** | AGENTPROVIDER1s-vii and u (both ⚖) | `Roles/StartPlan.cs:123` (the walk; `not-opened`); `Agents/Usage.cs`; web `work/head/headFacts.ts`; the pick's carry in `Loop/Chat/ChatRunner.cs` | the AP design §11 rows s-vii and u | a pick carried across `claude-code` and `claude-code-acp` on one account and not between two providers sharing a pool; an `Opened` provider passed in the walk with its code; notes on D182 and D212 | Opus | BL38 |
-| **BL40** | AGENTPROVIDER1t (ONEWAY1ah) | `Agents/ISessionAdapter.cs:11`, `Agents/AdapterSet.cs:18`, `Agents/Harnesses.cs:152` (`HarnessToolchain`), `Agents/Registry/LegacyDoor.cs:19`, the stand-in classes; `Driver.Tests/fixtures/provider-vocabulary.json`; `Agents/ProviderCensusTests.cs` | AP-H (`be47a5a19`) | the census's exceptions only the permanent ones; an older build's records read (the design's t line); its installed proof spends (§6) | Opus, two sittings | BL39 |
-| **BL41** | HELPWIRED1b; AGENTERRORS1d's rest | `Help/HelpWired.cs:168`; `WorkOrders/IntakeRoom.cs:26`; `Review/Domain/OpinionGate.cs:18`; `Agents/AgentErrors.cs:88` | `e440d8f0a` (one retry at every executor) | what the door said it loaded beside what was handed, from recorded init frames; the intake's second transient bound; the opinion's gate from its code | Opus | AP-J |
+| **BL38a** | AGENTPROVIDER1h's rest and n's rest (h ⚖) | `Agents/Contract/ProcessRecipe.cs:12` and the shell; a `SpawnRequest` composed by Loop's executor in place of `SessionTarget` and `ChatTarget`; Platform's launcher starting the completed recipe alone (D201); `Roles/Domain/ActorRun.cs:165` | AP-B2 (`60e91b544`, each door's spawn a recipe the one shell completes); AP-J (`0bf3cfe28`) | the design's h line: each built-in door's spawn equal to today's in a table; `StructureTests` with no edge from Platform into Agents; asked, carried, acknowledged and reported kept apart | Opus | none |
+| **BL38b** | AGENTPROVIDER1d's rest, e's rest, f | `Agents/RosterNext.cs:6` (the door's own home: s-ix o1 to o3, `provider-owner.json`'s `disagrees` cells); the `OwnerOf` and `ToolchainOf` classes; `Agents/Contract/ProviderParts.cs:111` (`DoorTablesPart`); `Agents/Domain/SwitchDecision.cs:11` and the page's floor per agent; `Agents/PinInstall.cs:29` | AP-A2 (`3ada4f6de`), AP-G (`7c353aeaf`) | each s-ix cell's old and new cases paired; a door's own table beside its provider's; a note on D130 | Opus | none |
+| **BL38c** | AGENTPROVIDER1l's rest; m-ii's open choice | the four `stream-json` readers into one; the lineage as Participants' part; `Participants/Domain/ChildBindings.cs:84`'s fold split; `Agents/DoorInput.cs:36`, `Agents/ProtocolWords.cs:10`, `Loop/Chat/ProtocolChat.cs:20` | AP-C (`c8d041123`, readings on one sink), AP-F2 (`ad1fffd07`, `DoorInput`) | the design's l line (each fact read once; a fixture session's events byte for byte); what `DoorInput` carries for a protocol prompt decided, **D246** reserved if it rejects an alternative | Opus | BL38a |
+| **BL38** | AGENTPROVIDER1r's rest (COAGENT1e) | web `agents/agents.ts:551`, `:565`, `agents/AgentPage.tsx:157`, `agents/AgentsView.tsx:403`, `:454` (`doors[0]`); `agent list`; the room reading `IAgentFacts`; `Plugins/PluginCatalog.cs:429` (one `posture`); the family rehearsal's Stub Two phase | AP-R (`061c8aea5`) | no `doors[0]` deciding an act; the sheet on the agent's page in en and zh; the two postures' fixtures | Sonnet | none |
+| **BL39** | AGENTPROVIDER1s-vii and u (both ⚖) | `Roles/StartPlan.cs:123` (the walk; `not-opened`); `Agents/Usage.cs`; web `work/head/headFacts.ts`; the pick's carry in `Loop/Chat/ChatRunner.cs` | the AP design §11 rows s-vii and u | a pick carried across `claude-code` and `claude-code-acp` on one account and not between two providers sharing a pool; an `Opened` provider passed in the walk with its code; notes on D182 and D212 | Opus | BL38, BL38b |
+| **BL40** | AGENTPROVIDER1t (ONEWAY1ah) | `Agents/ISessionAdapter.cs:11`, `Agents/AdapterSet.cs:18`, `Agents/Harnesses.cs:152` (`HarnessToolchain`), `Agents/Registry/LegacyDoor.cs:19`, the stand-in classes; `Driver.Tests/fixtures/provider-vocabulary.json`; `Agents/ProviderCensusTests.cs` | AP-H (`be47a5a19`) | the census's exceptions only the permanent ones; an older build's records read (the design's t line); its installed proof spends (§6) | Opus, two sittings | BL38a, BL38c, BL39 |
+| **BL41** | HELPWIRED1b; AGENTERRORS1d's rest | `Help/HelpWired.cs:168`; `WorkOrders/IntakeRoom.cs:26`; `Review/Domain/OpinionGate.cs:18`; `Agents/AgentErrors.cs:88` | `e440d8f0a` (one retry at every executor) | what the door said it loaded beside what was handed, from recorded init frames; the intake's second transient bound; the opinion's gate from its code | Opus | BL38c |
 | **BL42** | RPC1g2, g3 | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28`; the pipe client | RPC1g1 | the terminal conversation design's §5 host tests per row; `ask-daoris resume` gone from usage and Help coverage | Sonnet | RPC1g1 |
 | **BL43** | RPC1g4; STAFFPOLICY1's terminal hand-over | `Loop/Chat/TerminalOwner.cs:9`, `Course/Requests/TurnMarks.cs:28`, `ChatConsole`'s runner path, the request folder's watch | BL42 | the deleted tests gone; the census; the register entry for leftover `*.turn` marks | Sonnet | BL42, BL46 |
 | **BL44** | FABRIC-PIPELINE1d's help row; 1e | `Workflows/VerifyRuns.cs:29`, `Workflows/Nodes/CheckPort.cs:24`, `Loop/Watch/WatchNodes.cs:20`; the help room's workflow rows | BL22 (`2074ad339`) | a batch's run in its own folder to its verdict, an unknown held for the person, the failure in *What needs you*; the design's §7 read against G8's `land` first | Opus | BL32 |
@@ -215,7 +220,7 @@ first plan.
 | **BL49** | COMMS1's two loose items | `WorkOrders/ChannelReach.cs:101`; service `Daoris.Service.Core/Asks/ChannelDesk.cs:13`; web `work/atWork/` channel | BL21 (`6258d8d74`) | a part here handed a teammate's ask's messages at its look; the person's post on a line's own channel | Sonnet | none |
 | **BL50** | SETUPUX1i's kept selection; CANVAS1's three; MAPUX1's Tab order | web `agents/setup/` tree; `design/canvas/CanvasList.tsx:50` and the culled layer; `map/MapTree.tsx`, `map/MapView.tsx`; `measured/` | BL14 (`ffe3cee9d`), BL19 (`42b0c38e7`), `947fcfc29` | stories in en and zh; the measured Tab order walked on both levels | Sonnet | none |
 | **BL51** | GITAUTH1b, e; GITAPP2's fetch card and two proofs | the toolchain's pins (a MinGit fetch with its hash); `Help/Proposals/HelpSyncProposals.cs:27` (the screen door; the fetch card); the push act's tests | G6 (`370f5e57a`), G7 (`ca4e1f803`) | the doors' classes on the pinned MinGit; the card's door with the host filled; an interrupted push said unknown; a `pre-push` hook refusing | Sonnet | none |
-| **BL52** | ONEWAY1j's rest | modules `Bridge/Routes/ConversationRoutes.cs:187`; `ChatRunner`'s `GoOnBriefedAsync`; web `bridge/sessions/conversation.ts`, `work/conversation/useWords.ts`, `help/ask/useHelpSend.ts`, `locales/*/person.json` | BL13 (`bc9d75f46`) | one route per go-on case on the work page and in Ask Daoris | Sonnet | AP-J |
+| **BL52** | ONEWAY1j's rest | modules `Bridge/Routes/ConversationRoutes.cs:187`; `ChatRunner`'s `GoOnBriefedAsync`; web `bridge/sessions/conversation.ts`, `work/conversation/useWords.ts`, `help/ask/useHelpSend.ts`, `locales/*/person.json` | BL13 (`bc9d75f46`) | one route per go-on case on the work page and in Ask Daoris | Sonnet | BL38a |
 | **BL53** | ONEWAY1r's rest, ac's rest, n-ii | `Workplace/RecoveryRetention.cs:19`, `Workplace/RecoveryDropping.cs:36`; the git page's list of deletes; `Note`'s callers | G7, BL28 (`b91532c60`) | a delete's recovery read from the journal alone, the old reader kept with its ending condition; the page lists deletes | Sonnet | none |
 | **BL54** | OPTIMIZE1a's count | `Workplace/GitRuns.cs:8`; per view, landing and test class | BL31 | git's starts counted and recorded in the area; the held reader proposed or not by the figures | Opus | BL31 |
 | **BL55** | design: EVENTHOOK1d, 1e and CHANNELJOIN1 | the event-hook design §4.2, §6.2; the integration design §7.1 | the event-hook design's rounds | one design with rows; **D244** reserved | Opus | none |
@@ -226,19 +231,20 @@ first plan.
 
 | Wave | Chunks (up to five at once) |
 |---|---|
-| 9, now | AP-J, RPC1g1, G8e, BL26d (in flight); **BL31** |
-| 10 | **BL52** (AP-J), **BL38** (AP-J), BL32 (G8e), BL33, BL35 |
-| 11 | **BL39** (BL38), BL41 (AP-J), BL42 (RPC1g1), BL34 (BL33), BL36 |
-| 12 | **BL40** (BL39), BL44 (BL32), BL49, BL50, BL51 |
-| 13 | **BL46** (BL40), BL45 (BL44), BL47, BL48, BL37 |
-| 14 | **BL43** (BL42, BL46), BL53, BL54 (BL31), BL55, BL57; BL56 in the first free slot once Q2 is answered |
+| 9, now | RPC1g1, BL26d (in flight); **BL38a**, BL31, BL32 |
+| 10 | **BL52** (BL38a), BL38b, BL38, BL33, BL35 |
+| 11 | **BL38c** (BL38a), BL42 (RPC1g1), BL34 (BL33), BL36, BL44 (BL32) |
+| 12 | **BL39** (BL38, BL38b), BL41 (BL38c), BL45 (BL44), BL49, BL50 |
+| 13 | **BL40** (BL38c, BL39), BL47, BL48, BL51, BL53 |
+| 14 | **BL46** (BL40), BL54 (BL31), BL55, BL37, BL57 |
+| 15 | **BL43** (BL42, BL46); BL56 in the first free slot once Q2 is answered |
 
-The bold chunk of each wave is the conversation track's. Each wave's exemplar is its Opus chunk on a new shape: BL31 (the judgements'
-budgets), BL33 (the rules' acts), BL39 (the corrections), BL44 (the pipeline), BL48 (the co-workers), BL55 (the design).
+The bold chunk of each wave is the conversation track's. Each wave's exemplar is its Opus chunk on a new shape: BL38a (the spawn's
+request), BL33 (the rules' acts), BL44 (the pipeline), BL39 (the corrections), BL48 (the co-workers), BL55 (the design).
 
 ### 5.3 The verification, then what is built beside it
 
-1. **SCOPEVERIFY1**, once wave 14 has merged: quick fixed to write the generated contracts first; the full CI once on main's tip; its reds
+1. **SCOPEVERIFY1**, once wave 15 has merged: quick fixed to write the generated contracts first; the full CI once on main's tip; its reds
    fixed together (Opus fix chunks, mostly); the help room's goldens regenerated; the row's listed proofs (the ssh door's push relay, the
    `StatePublisherTests` case). The install is staged from the green run and §6 runs on it.
 2. **Beside the installed batch, on their own branches** (they change no behaviour, or switch only after a green run):
@@ -291,21 +297,22 @@ its spend reported (D240 point 7).
 
 | Step | Chunks | Opus / Sonnet | Builder-hours |
 |---|---|---|---|
-| Waves 9 to 14 | 27 (BL31 to BL57), with about four second sittings (BL33, BL40, BL44, BL56) | 15 / 12 | 50-60 |
+| Waves 9 to 15 | 30 (BL31 to BL57 with BL38a to BL38c), with about four second sittings (BL33, BL40, BL44, BL56) | 18 / 12 | 56-68 |
 | SCOPEVERIFY1 | 2 to 4 CI runs, 6 to 12 fix chunks | mostly Opus | 12-20 |
 | Beside the batch | BL58, S1 to S5, MT1 to MT8, FR1 to FR3 | 3 / 14 | 26-34 |
 | SCOPEVERIFY2 | one light CI, a few fixes | Opus | 4-8 |
 | Conditional | BL59 to BL67 | 7 / 2 | 16-22 |
-| **Total** without Lyntai's gated moves | about 68 sittings | | **108-144** |
+| **Total** without Lyntai's gated moves | about 71 sittings | | **114-152** |
 | Lyntai's gated moves (BL68+) | about 11, as Lyntai answers | 9 / 2 | 25-32 more |
 
-**Wall time.** Six waves at about three hours each, then one to two days of verification, then the batch and the beside-work together:
-**five to six days at five wide**, if each chunk is merged as it hands back. The conversation track sets the pace of waves 10 to 14.
+**Wall time.** Seven waves at about three hours each, then one to two days of verification, then the batch and the beside-work together:
+**about six days at five wide**, if each chunk is merged as it hands back. The conversation track sets the pace of waves 9 to 15.
 
 **Risks.**
 1. **The red at the end.** Nothing runs tests until SCOPEVERIFY1; the first scope took about 25 fix merges. A light CI after wave 12 (no
    `Process` halves) would catch drift halfway, at the owner's call against D180's note.
-2. **The conversation track.** Six chunks on `ChatRunner.cs` in series; AP-J's hand-back gates three of them.
+2. **The conversation track.** Seven chunks on `ChatRunner.cs` and the executors in series, four of them AGENTPROVIDER1's. AP-J handed
+   back with d, e, f and h untouched; if BL38a does the same, BL38c and BL40 slip a wave each.
 3. **AGENTPROVIDER1t** deletes the seam every door still reads; it is the largest piece left and the last of the track before COAGENT1c.
 4. **Lyntai.** Fourteen rows wait on another repository and on Q2; none of them gates a wave.
 5. **Stale rows.** §2's rewrites come first, so builders read rows that say what is open.
