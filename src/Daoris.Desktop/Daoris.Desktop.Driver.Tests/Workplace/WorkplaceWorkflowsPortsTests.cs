@@ -400,12 +400,6 @@ public sealed class WorkplaceWorkflowsPortsTests : IDisposable
             return ([session], true);
         }
 
-        public (string Method, string Graph) CurrentLand(LandingRule rule)
-        {
-            Calls.Add($"land:{rule.Form}");
-            return (rule.Form, "gph-0");
-        }
-
         public bool FollowsSaved(DriverConfig config, string repository, string? workspace) => false;
 
         public PlaceIntegrate IntegrateOf(string home, DriverConfig config, string repository, string? workspace) => PlaceIntegrate.None;

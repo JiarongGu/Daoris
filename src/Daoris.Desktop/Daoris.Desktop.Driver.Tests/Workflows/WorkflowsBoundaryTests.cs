@@ -102,8 +102,6 @@ public sealed class WorkflowsBoundaryTests : IDisposable
     {
         public IReadOnlyList<LandedBranch> Landings() => [];
 
-        public IReadOnlyList<AutoLanding> AutoLandings() => [];
-
         public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions) => new Dictionary<string, DateTimeOffset>();
 
         public bool Stands(string tree) => true;
