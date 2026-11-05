@@ -91,13 +91,13 @@ public sealed class StaffPolicyDoorTests : IDisposable
     }
 
     [Fact]
-    public void A_preset_fills_the_record_for_the_roles_choices_with_its_moves_and_bound_now_that_the_course_enforces_them()
+    public void A_preset_fills_the_record_for_the_roles_choices_and_its_moves_are_rules_the_record_does_not_hold()
     {
         RoleDoor.Apply(Staffing, RoleChange.Set(Role("build")), null, null, new RolePolicyPress(Preset: "even"));
 
         var read = Staffing.Policy("build");
-        Assert.Equal((StaffRules.Weight, 1, 3), (read.Policy!.Rule, read.Policy.Moves.Count, read.Policy.Most));
-        Assert.Equal(StaffActions.Weighted, read.Policy.Moves[StaffConditions.Limit].Do);
+        Assert.Equal((StaffRules.Weight, 0, (int?)null), (read.Policy!.Rule, read.Policy.Moves.Count, read.Policy.Most));
+        Assert.DoesNotContain("moves", read.Policy.Write());
         Assert.All(read.Policy.Choices, choice => Assert.Equal(1, choice.Weight));
 
         RoleDoor.Apply(Staffing, RoleChange.Set(Role("build")), null, null, new RolePolicyPress(Preset: "first", Read: read.Revision));
@@ -128,11 +128,6 @@ public sealed class StaffPolicyDoorTests : IDisposable
         { "a work the role does not take", """{"rule":"order","choices":[{"agent":"claude","model":"sonnet","effort":"high","takes":["review"]}]}""" },
         { "a work no choice takes", """{"rule":"order","choices":[{"agent":"claude","model":"sonnet","effort":"high","takes":["design"]},{"agent":"claude","model":"opus","effort":"high","takes":["design"]}]}""" },
         { "a choice the staffing does not list", """{"rule":"order","choices":[{"agent":"codex","effort":"medium"}]}""" },
-        { "an action its condition does not allow", """{"rule":"order","choices":[],"moves":{"quiet":"wait"}}""" },
-        { "a count of tries out of range", """{"rule":"order","choices":[],"moves":{"transient":{"do":"next","after":9}}}""" },
-        { "a bound out of range", """{"rule":"order","choices":[],"most":9}""" },
-        { "a refused sign-in held, not enforced yet", """{"rule":"order","choices":[],"moves":{"signed-out":"hold"}}""" },
-        { "a refused model asked about, not enforced yet", """{"rule":"order","choices":[],"moves":{"model-refused":"ask"}}""" },
     };
 
     [Theory]
@@ -150,15 +145,12 @@ public sealed class StaffPolicyDoorTests : IDisposable
     }
 
     [Fact]
-    public void A_field_this_build_does_not_enforce_says_what_it_does_enforce()
+    public void A_stored_moves_or_most_is_passed_over_and_the_policy_enforces_only_its_choices_fields()
     {
-        var refused = Assert.Throws<RoleRefusedException>(
-            () => SetBuildPolicy(Policy("order", [(Sonnet, ""), (Opus, "")], ",\"moves\":{\"model-refused\":\"hold\"}")));
+        SetBuildPolicy(Policy("order", [(Sonnet, ""), (Opus, "")], ",\"moves\":{\"model-refused\":\"hold\"},\"most\":9"));
 
-        Assert.Contains("`moves.model-refused` as `hold`", refused.Message);
-        Assert.Equal(
-            ["rule", "weight", "share", "budget.starts", "budget.tokens", "takes", "moves.limit", "moves.transient", "moves.failed", "moves.quiet", "most"],
-            StaffCapabilities.Fields);
+        Assert.DoesNotContain("moves", Staffing.Policy("build").Policy!.Write());
+        Assert.Equal(["rule", "weight", "share", "budget.starts", "budget.tokens", "takes"], StaffCapabilities.Fields);
     }
 
     [Fact]
@@ -225,17 +217,16 @@ public sealed class StaffPolicyDoorTests : IDisposable
     [InlineData("""{"limit":"ask"}""", "")]
     [InlineData("""{"limit":{"do":"wait"}}""", "")]
     [InlineData("""{"limit":"next"}""", ",\"most\":2")]
-    public void A_role_taking_a_conversations_work_is_refused_its_moves_as_every_role_is_naming_the_rules_door(string moves, string rest)
+    public void A_role_taking_a_conversations_work_is_judged_as_every_role_is_and_a_stored_move_is_passed_over(string moves, string rest)
     {
         var night = Role("build") with { Id = "night", Takes = [RoleWork.Chat], Scope = new RoleScope(RoleScope.Workspace, "w2") };
         var policy = Policy("order", [(Sonnet, ""), (Opus, "")], $",\"moves\":{moves}{rest}");
 
-        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(policy)));
+        RoleDoor.Apply(Staffing, RoleChange.Set(night), [Sonnet, Opus], null, new RolePolicyPress(policy));
 
-        // A conversation reads its limit's wait and ask and its moves' bound from the rules (CONTEXTDRIVE1n): no refusal of its own is left.
-        Assert.DoesNotContain("takes a conversation's work", refused.Message);
-        Assert.Contains("supervisor's rules", refused.Message);
-        Assert.DoesNotContain(Catalogue().Slots, slot => slot.Id == "night");
+        // A conversation reads its limit's wait and ask and its moves' bound from the rules (CONTEXTDRIVE1n); the policy holds none.
+        Assert.Equal(StaffPolicyRead.Set, Staffing.Policy("night").State);
+        Assert.DoesNotContain("moves", Staffing.Policy("night").Policy!.Write());
     }
 
     [Fact]
@@ -257,7 +248,7 @@ public sealed class StaffPolicyDoorTests : IDisposable
     {
         var before = Snapshot();
         var good = new RolePress(RoleChange.Set(Role("build") with { Name = AuthoredText.Of("Renamed") }), null, null, new RolePolicyPress(ThreeToOne()));
-        var bad = new RolePress(RoleChange.Set(Role("intake")), null, null, new RolePolicyPress(Policy("order", [(Codex, "")], ",\"moves\":{\"model-refused\":\"hold\"}")));
+        var bad = new RolePress(RoleChange.Set(Role("intake")), null, null, new RolePolicyPress(Policy("weight", [(Codex, ",\"weight\":11")])));
 
         var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.ApplyAll(Staffing, [good, bad]));
 

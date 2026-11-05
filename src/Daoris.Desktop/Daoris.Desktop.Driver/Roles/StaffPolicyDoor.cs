@@ -9,47 +9,10 @@ namespace Daoris.Driver;
 /// </summary>
 public static class StaffCapabilities
 {
-    /// <summary>
-    /// The fields the start's walk and the course enforce: the rule, a choice's weight, share, daily budgets of starts and of reported tokens,
-    /// and works; the moves of a limit, of a service that does not answer, of a fatal error and of a quiet stop (STAFFPOLICY1e, e2), with
-    /// the tries or failures before it; and the bound of moves.
-    /// </summary>
-    public static IReadOnlyList<string> Fields { get; } =
-        ["rule", "weight", "share", "budget.starts", "budget.tokens", "takes", "moves.limit", "moves.transient", "moves.failed", "moves.quiet", "most"];
+    /// <summary>The fields the start's walk enforces: the rule, a choice's weight, share, daily budgets of starts and of reported tokens, and works.</summary>
+    public static IReadOnlyList<string> Fields { get; } = ["rule", "weight", "share", "budget.starts", "budget.tokens", "takes"];
 
-    /// <summary>
-    /// The actions each condition's move may name: a limit's, a service's, a fatal error's and a quiet stop's are the course's; a refused
-    /// sign-in's, a refused model's and a budget's are the walk's, which already arranges by the role's rule, so none of those three is a
-    /// field of its own until a row moves the line by it.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, string[]> Enforced = new Dictionary<string, string[]>(StringComparer.Ordinal)
-    {
-        [StaffConditions.Limit] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Wait, StaffActions.Ask],
-        [StaffConditions.Transient] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Hold],
-        [StaffConditions.SignedOut] = [StaffActions.Next, StaffActions.Weighted],
-        [StaffConditions.ModelRefused] = [StaffActions.Next, StaffActions.Weighted],
-        [StaffConditions.Budget] = [StaffActions.Next, StaffActions.Weighted],
-        [StaffConditions.Failed] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Ask, StaffActions.Retry],
-        [StaffConditions.Quiet] = [StaffActions.Next, StaffActions.Weighted, StaffActions.Retry],
-    };
-
-    /// <summary>
-    /// The first field of <paramref name="policy"/> this build does not enforce yet, refused with the fields it does; null where it sets none. A
-    /// conversation's line reads its limit's wait and ask and the bound of its moves as a driven line does (CONTEXTDRIVE1n), so a role taking a
-    /// conversation's work is judged as every role is.
-    /// </summary>
-    public static RoleRefusal? Unenforced(string role, StaffPolicy policy)
-    {
-        var field = policy.Moves.FirstOrDefault(move => !Enforced.TryGetValue(move.Key, out var actions) || !actions.Contains(move.Value.Do, StringComparer.Ordinal)) is { Key: { } key } unenforced
-                ? $"moves.{key}` as `{unenforced.Value.Do}"
-            : null;
-        return field is null
-            ? null
-            : new RoleRefusal(StaffPolicy.Code,
-                $"`{role}`'s policy sets `{field}`, which this build does not enforce yet, so nothing was saved: it enforces {string.Join(", ", Fields.Select(each => $"`{each}`"))}.");
-    }
-
-    /// <summary><see cref="StaffPolicy.Preset"/> as the doors apply it: a preset's moves and bound are enforced, so it reaches a door whole.</summary>
+    /// <summary><see cref="StaffPolicy.Preset"/> as the doors apply it.</summary>
     public static StaffPolicy Preset(string preset, IReadOnlyList<ActorChoice> choices, StaffPolicy? draft) => StaffPolicy.Preset(preset, choices, draft);
 }
 
@@ -155,7 +118,7 @@ public static class StaffPolicyDoor
         if (staffed is not { Count: > 0 }) return (null, Refused($"`{role.Id}` has no choices of its own, so it keeps no policy: give it its choices first."));
         var (policy, refused) = press.Resolved(staffed, existing.Policy);
         if (refused is not null || policy is null) return (null, refused);
-        var judged = StaffCapabilities.Unenforced(role.Id, policy) ?? StaffPolicy.Judge(role, staffed, policy);
+        var judged = StaffPolicy.Judge(role, staffed, policy);
         return judged is null ? (policy, null) : (null, judged);
     }
 

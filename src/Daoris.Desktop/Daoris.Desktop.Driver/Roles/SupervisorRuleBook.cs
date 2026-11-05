@@ -82,31 +82,18 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
             : applied with { Moves = moves, Most = most };
     }
 
-    /// <summary>
-    /// A policy's moves and its bound as rules naming <paramref name="role"/> at <paramref name="place"/> (§4.8): <c>transient after 2: weighted</c>
-    /// is <c>tries at 2: weighted</c>, <c>failed after 2: next</c> <c>failures-on-choice at 2: next</c>, <c>limit: wait upTo 60</c>
-    /// <c>limits at 1: wait</c> up to 60, <c>quiet: next</c> <c>quiet at 1: next</c>, and the bound <c>moves at n: ask</c>. A <c>retry</c> is the
-    /// default course and a refused sign-in's, a refused model's and a budget's moves are the walk's, so none is a rule.
-    /// </summary>
-    public static IReadOnlyList<SupervisorRule> FromPolicy(StaffPolicy policy, string role, string place)
-    {
-        var rules = new List<SupervisorRule>();
-        SupervisorRule Rule(string count, int at, string does, int? upTo = null) =>
-            new($"{role}-{count}", count, SupervisorRules.Windows[count], at, does, upTo, place, [role]);
-        foreach (var (condition, move) in policy.Moves.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            if (move.Do == StaffActions.Retry) continue;
-            switch (condition)
-            {
-                case StaffConditions.Transient: rules.Add(Rule(SupervisorRules.Tries, Math.Clamp(move.After ?? TransientRetry.Bound, 1, TransientRetry.Bound), move.Do)); break;
-                case StaffConditions.Failed: rules.Add(Rule(SupervisorRules.FailuresOnChoice, move.After ?? 1, move.Do)); break;
-                case StaffConditions.Quiet: rules.Add(Rule(SupervisorRules.Quiet, 1, move.Do)); break;
-                case StaffConditions.Limit: rules.Add(Rule(SupervisorRules.Limits, 1, move.Do, move.Do == StaffActions.Wait ? move.UpTo ?? 60 : null)); break;
-            }
-        }
+    /// <summary>The moves a line makes a day before the seeded moves rule asks, and a preset's bound.</summary>
+    public const int MovesByDefault = 3;
 
-        if (policy.Bound is { } bound && rules.Count > 0) rules.Add(Rule(SupervisorRules.Moves, bound, SupervisorRules.Ask));
-        return rules;
+    /// <summary>
+    /// The rules a preset brings (§2.4): <i>Spread evenly</i> and <i>Spread by weight</i> move a line by weight on a limit, at most
+    /// <see cref="MovesByDefault"/> moves a day, as rules naming <paramref name="role"/> at <paramref name="place"/>; <i>First that can run</i> none.
+    /// </summary>
+    public static IReadOnlyList<SupervisorRule> PresetRules(string preset, string role, string place)
+    {
+        if (preset is not (StaffPresets.Even or StaffPresets.Weighted)) return [];
+        SupervisorRule Rule(string count, int at, string does) => new($"{role}-{count}", count, SupervisorRules.Windows[count], at, does, null, place, [role]);
+        return [Rule(SupervisorRules.Limits, 1, StaffActions.Weighted), Rule(SupervisorRules.Moves, MovesByDefault, SupervisorRules.Ask)];
     }
 
     /// <summary>

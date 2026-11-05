@@ -49,6 +49,9 @@ public static class GoOnBy
 public sealed record LineFacts(IReadOnlyList<CountFact> Counts, IReadOnlyList<LinePartFact> Parts, IReadOnlyList<GoOnFact> GoOns)
 {
     public static LineFacts None { get; } = new([], [], []);
+
+    /// <summary>The acts the person's rules made on the line's parts, oldest first (<see cref="SupervisorRuleActs"/>); none where no rule acted.</summary>
+    public IReadOnlyList<RuleActed> Acts { get; init; } = [];
 }
 
 /// <summary>
@@ -247,6 +250,17 @@ public static class CountTexts
         }
 
         if (facts.GoOns.Count == 0) text.Append("- none read\n");
+        if (facts.Acts.Count > 0)
+        {
+            text.Append("Its rules' acts, oldest first:\n");
+            foreach (var act in facts.Acts.OrderBy(each => each.At))
+            {
+                var label = Labels.TryGetValue(act.Rule.Count, out var counted) ? counted.ToLowerInvariant() : act.Rule.Count;
+                text.Append($"- {act.At.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)} UTC, session {act.Session}: "
+                    + $"the person's rule for {PlaceOf(act.Rule.Place)}: {label} stood at {act.N}, and Daoris {Does(act.Rule.Do) ?? "acted"} after {act.Rule.At}\n");
+            }
+        }
+
         return text.ToString().TrimEnd('\n');
     }
 
