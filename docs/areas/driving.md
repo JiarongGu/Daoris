@@ -79,7 +79,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `PartEnds` | `Events/PartEnds.cs` | The class of each end, read from the journal row alone |
 | `SessionWatch` | `Events/SessionWatch.cs` | Marks a quiet session and brings it to the person; ends nothing by itself |
 | `TransientRetry` | `Agents/TransientRetry.cs` | Retries a transient failure in the same conversation on a fixed backoff |
-| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, trees, strikes, releases, poll; the kept-but-unread `timeoutMinutes`; its doors over the units below, so callers name it alone |
+| `DriverConfig` | `Settings/DriverConfig.cs` | Drivable, holds, cap, trees, strikes, releases, poll, the quiet bound; its doors over the units below, so callers name it alone |
+| `MachineSettings` | `Settings/List/MachineSettings.cs` | Every machine setting declared once: its one key, which the terminal's verb, the route, Ask Daoris's door and the page's words spell, and its field in `driver.json`; the page reads it as `SETTINGS` |
+| `QuietSetting` | `Settings/QuietSetting.cs` | `quietMinutes`, the one quiet setting: its bounds as the list declares them, its read, its edit and the watcher's Q |
 | `DriverConfigReader`, `DriverConfigWriter`, `DriverConfigDisk`, `DriverConfigEdits` | `Settings/` | `driver.json` read by hand, written by hand, loaded and saved onto the file as it stands under its lock, and the keyed-map edits; the pause, release and role records (`WorkPause`, `TransientRelease`, `RoleRelease`, `RoleReleaseKinds`, `IRoleStarts`) each in a file of their own |
 | `LandingKey`, `LandingRule`, `LandingIntegrate`, `LandingForm`, `LandingNames` | `Settings/` | The landing key's reading, writing and sentences, and the rule, integrate policy, form and names it reads |
 | `DriverChoicesCommand`, `DriverChoicesList`, `DriverChoicesAcross`, `ChoiceRoutes`, `ChoicePress`, `ChoiceWords`, `DriverChoicesWorld`, `ChoicesRegistry` | `Settings/` | The standing choices from a terminal: the plan per verb, the `list` and `across` verbs, and the routes, press, refusal and world each in a file of their own |
@@ -191,12 +193,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     list at every change. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
-    `timeoutMinutes` is kept in the file and read by nothing. (from D200)
-32. The watcher marks a session quiet after Q (10 minutes) with nothing heard and its job idle, and brings it to the
+    `timeoutMinutes` is no setting: nothing reads or says it, and a save keeps it as it keeps any key it does not own. (from D200)
+32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the
     person at 3Q. While it waits on its own background work these are 3Q and 5Q. A wait for a permission answer is
     never quiet. Daoris ends nothing quiet but a dead process and a headless `--quiet-end`. A quest session on the
     protocol door, once marked, is told once as Daoris's urgent word (`watch/<session>/<episode>`; `QuietWord`), unless
-    `LongCalls` told the same call; the word is taken off the record when the episode or the run ends. (from D200)
+    `LongCalls` told the same call; the word is taken off the record when the episode or the run ends. Q is `quietMinutes` in
+    `driver.json`, 10 by default and 5 to 120, written only when set and read at each look; it is set at Settings → Driver, by
+    `daoris settings quiet <minutes>`, through `SET_QUIET` and by Ask Daoris's `quiet` door, and `driver list` says it. (from D200)
 33. An account's limit is read from the agent's own words. It cools that account until the reset it names, and is
     never a strike. The record ends `failed` with its `limited` flag and reads as *limited*. (from D125, D206)
 34. A limited driven line resumes by itself: its own conversation when its account is ready; else a briefed part on
@@ -267,7 +271,8 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | a kind of quest operation, or a verb of one | a module of its own in `Service/Quests/Operations/`, marked `[QuestOperation(kind, Log)]`, its payload on `IQuestOperation` and its verbs on `QuestTx`; the store gains only the verb's door | `Quests/QuestsPartsTests`, and the tests of the verb it moves |
 | when a look runs | `Loop/Watch/WatchRun.cs` | `Loop/LookStagesTests`, `Loop/DriverWatchLookTests`, `Loop/LookParallelTests`, `Loop/SessionsOutliveTheirLookTests` |
 | what a read costs at a home's size | the read's own unit: whole lists asked at once, git once per repository rather than per tree, the session list read as its change | `Loop/HomeSizeBenchProcessTests` over `Loop/BenchHome` (3,000 records, two dozen trees, one with 12,000 ignored files), each read held to its budget; `Loop/SessionChangeBenchProcessTests`, one change read as its change |
-| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests` |
+| quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `Events/SessionWatchTests`, `Events/SessionWatchQuietSettingTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests`, `Loop/QuietWordTests`, `Settings/QuietSettingTests` |
+| a machine setting, or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key: the verb in `DriverChoicesCommand` and `ChoiceRoutes`, `SET_<KEY>` in the modules, Ask Daoris's door, the page's `settings.<key>.*` words | the modules' `Platform/MachineSettingsCensusTests`, the page's `settings/everySetting.test.tsx`, and each door's own tests |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
@@ -297,9 +302,6 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   The code reads right.
 - D58 makes `strikes` in `driver.json` the count; D229 makes it a seeded rule and refuses the key on a reached home
   (`DriverConfig.Strikes` is marked transitional). D229 reads right.
-- D228 says a superseded way's doors go with it; `Settings/DriverChoicesCommand.cs` and
-  `src/Daoris.Service/Daoris.Service.Mcp/ChosenSettingsTools.cs:47-54` keep the retired `timeout` doors, which only
-  refuse. The code is today's; ONEWAY1s removes them.
 - D81 sets a driven session's posture to the harness's `auto`; D184 sets it from the repository's access setup,
   written on the record at the open (`Service/Sessions/Records/Session.cs`, `Access`). D184 reads right.
 - D131 falls back to a plain carry-on when a conversation cannot resume; D189 hands the new part Daoris's brief
@@ -313,10 +315,8 @@ The gates that bite: `driver` (which also runs `StructureTests`: the module stru
   round 3 owed.
 - **SESSWATCH1b (rest)**: the word on the native, codex text and dsh doors at the turn's end; a `watch` word kept out of
   `AnswersAlone.Resets` and settled at the come-up; the row's *told* line; `LongCalls`' look folded into the watcher's.
-- **SESSWATCH1c**: `quietMinutes`, the one quiet setting, in every door.
 - **SESSWATCH1d, 1e**: the record of quiet episodes, then an automatic end only where it shows such quiet is not work.
 - **SESSWATCH1f**: each pass asked for its own minutes.
-- **ONEWAY1s**: the retired timeout doors removed.
 - **ONEWAY1j / SESSCTX1e**: *Go on fresh*, one press per go-on case.
 - **SESSCTX1a**: resume and a fresh part measured on each door.
 - **LIMITRESUME1** (under ONEWAY1g): what is left of the limit resume.
