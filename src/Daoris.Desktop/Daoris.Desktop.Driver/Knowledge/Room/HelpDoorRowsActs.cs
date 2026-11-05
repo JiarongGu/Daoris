@@ -122,11 +122,12 @@ internal static class HelpDoorRowsActs
         // own owner's.
         new("see where a piece of work stands in its workflow: each step's state (waiting on you, waiting on an agent, working, "
             + "done, …) and what it says, the step the run stands at, and a door to where each step's record is; a session's run "
-            + "is its quest's, an ask's one per repository its work reaches, and a chat has none",
+            + "is its quest's, an ask's one per repository its work reaches, and a chat has none; a repository's line, its newest "
+            + "verifications, each with the commit it judged, its verdict and its gates",
             "Sessions → the session's *Workflow* view, in the right side bar beside Timeline and Review (View → Workflow); "
             + "*Workflow:* in a quest's page's head and an ask's, and *Workflow* on a row of What needs you, each attending its "
-            + "session in Sessions with the view open",
-            "`daoris workflow run --session|--quest|--ask <id>`",
+            + "session in Sessions with the view open; a repository's *Verifications* on its Workflow tab",
+            "`daoris workflow run --session|--quest|--ask <id>`, `daoris workflow run --line <repository>`",
             new HelpDoorAsk.Never("it reads and changes nothing, and each press a waiting step needs is its owner's: the step's door "
                 + "opens it, or the view names its command")),
         // An ask's kind and workflow, the person's door; the composer's and the ask page's are owed, and the intake's proposal of a kind.
