@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// Daoris's browser plays H.264, AAC and HEVC video (D234). The real browser is started as the shell starts
 /// it, the application's own executable with the browser's arguments, and shown a page on loopback with a
-/// clip of each: each must reach <c>readyState</c> 2 and move <c>currentTime</c>, read over CDP. The engine
+/// clip of each: each must reach <c>readyState</c> 2, move <c>currentTime</c> and decode a video frame, read over CDP. The engine
 /// plays HEVC through the machine's decoder, so that half is skipped on a machine with none.
 /// </summary>
 /// <remarks>
@@ -25,6 +25,7 @@ public sealed class CodecPlaybackProcessTests : Bridge
 
     private const string ClipState =
         "({page: document.readyState, shown: document.visibilityState, ready: v.readyState, network: v.networkState, time: v.currentTime, paused: v.paused," +
+        " width: v.videoWidth, frames: v.getVideoPlaybackQuality().totalVideoFrames," +
         " error: v.error && v.error.code, message: v.error && v.error.message})";
 
     private const string CanPlay =
@@ -90,7 +91,8 @@ public sealed class CodecPlaybackProcessTests : Bridge
                     Assert.Fail($"the engine refused {clip}: {seen}; it says it plays {plays}; {engineAt}");
                 }
 
-                return read.GetProperty("ready").GetInt32() >= 2 && read.GetProperty("time").GetDouble() > 0 ? seen : null;
+                var played = read.GetProperty("ready").GetInt32() >= 2 && read.GetProperty("time").GetDouble() > 0 && read.GetProperty("frames").GetInt32() > 0;
+                return played ? seen : null;
             }, () => $"the clip: {seen}; it says it plays {plays ?? "(not asked)"}");
         }
         finally
