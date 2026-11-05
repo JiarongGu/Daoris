@@ -88,11 +88,17 @@ internal sealed class TreeFollows(TreeContext context)
     /// it written on its session branch's ledger entry, so it is known after the tree goes, and one that came back has it cleared.
     /// Reads each tree and writes only that field; an entry the ledger has none for is left, as the tree's work is judged live.
     /// </summary>
-    internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct)
+    /// <param name="root">The repository's checkout, whose working trees git lists with each one's branch.</param>
+    /// <param name="refs">
+    /// The judgement's refs (PROC1d-iii): each tree's branch is read from the one list of the repository's working trees they hold,
+    /// where asking each tree was a git start per tree at every look. A tree the list does not name is asked on its own.
+    /// </param>
+    internal async Task LearnTreesAsync(string workspace, string repository, CancellationToken ct, string? root = null, RefSnapshot? refs = null)
     {
         // Both places of the trees (TREEPLACE1): a tree opened before the home's layout moved stays at the old.
-        var folders = context.TreesRoots.Select(root => Path.Combine(root, workspace, repository)).Where(Directory.Exists).ToList();
+        var folders = context.TreesRoots.Select(trees => Path.Combine(trees, workspace, repository)).Where(Directory.Exists).ToList();
         if (folders.Count == 0) return;
+        var listed = root is null || refs is null ? null : await TreeWorktrees.EntriesAsync(root, ct, refs).ConfigureAwait(false);
         try
         {
             foreach (var tree in folders.SelectMany(Directory.EnumerateDirectories))
@@ -105,7 +111,10 @@ internal sealed class TreeFollows(TreeContext context)
                 string? now;
                 try
                 {
-                    now = await WorkingTree.BranchAsync(tree, ct).ConfigureAwait(false);
+                    // Listed, its branch is the list's (none where detached), as its own HEAD names it.
+                    now = listed?.FirstOrDefault(each => SamePath(each.Path, tree)) is { } listedTree
+                        ? listedTree.Branch
+                        : await WorkingTree.BranchAsync(tree, ct).ConfigureAwait(false);
                 }
                 catch (DriverException)
                 {

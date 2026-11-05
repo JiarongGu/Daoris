@@ -182,7 +182,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 30. The loop looks at its pace (15 s by default), on a nudge, and on a wake (a ledger change, a terminal's words, a
     session's end). A whole look syncs with the remote and stops lost claims; a wake only plans. A slow start runs on
     beside the look, reserved. The whole lists a pass or the work beside it reads together (the snapshot's, the tidy's
-    holders, the nodes' units) are asked at once. (from D68, D181)
+    holders, the nodes' units) are asked at once. The tidy reads a repository's refs, top and working trees once a look,
+    each tree's branch from that list, until one of its stages writes. (from D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a
     pass with minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120).
     `timeoutMinutes` is kept in the file and read by nothing. (from D200)
@@ -262,7 +263,7 @@ look and the run, the lazily built parts and the settables, and grows by a one-l
 | quiet sessions | `Events/SessionWatch.cs` | `Events/SessionWatchTests`, `Events/SessionWatchProcessTests`, `Loop/QuietEndProcessTests` |
 | transient failures | `Agents/TransientRetry.cs` | `Loop/TransientRetryTickTests` |
 | opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees`' front | `Workplace/SessionTreesTests`, `Workplace/FreshTreeTests`, `Workplace/TreeDependenciesTests`, `Workplace/TreeLocalInputsTests`, `Workplace/TreeReturnsTests` |
-| the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests` |
+| the tidy and branch ends | `Workplace/EndJudgement.cs`, `Workplace/TreeSetAside.cs`, `Workplace/AutoTidies.cs` | `Workplace/EndJudgementTests`, `Workplace/EndJudgementGitTests`, `Workplace/BranchTidyingTests`, `Workplace/TreeScratchTests`, `Workplace/TidyGitCountTests` |
 | a rule every door shares | `Service/Quests/QuestExchange.cs`, `Service/Sessions/SessionLedger.cs` (with the ledger's parts above), `Service/Asks/AskDesk.cs` (with the desk's parts above) | `Quests/QuestExchangeTests`, `Quests/QuestTakeBindTests`, `Quests/QuestDeleteTests`, `Quests/QuestHandbackTests`, `Sessions/SessionLedgerTests`, `Sessions/SessionLockAcrossHostsTests`, `Asks/AskDeskTests`, `Remote/QuestSyncTests` |
 | intakes | `Loop/DriverIntakes.cs`, `WorkOrders/IntakeRoom.cs`, `WorkOrders/IntakeKinds.cs` | `WorkOrders/IntakeTests`, `WorkOrders/IntakeRoutingTests`, `WorkOrders/IntakePromptGoldenTests`, service `Asks/IntakeTests` |
 

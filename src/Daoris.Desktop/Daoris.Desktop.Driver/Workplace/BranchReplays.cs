@@ -579,13 +579,20 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     }
 
     /// <summary>The record forgets session branches that are gone, so a name is never judged by a start it no longer has.</summary>
-    internal async Task ForgetGoneAsync(string root, string repository, CancellationToken ct)
+    /// <param name="held">The judgement's refs, whose session branches are the list where they could be read; null asks git.</param>
+    internal async Task ForgetGoneAsync(string root, string repository, CancellationToken ct, RefSnapshot? held = null)
     {
         // 🔴 A list git could not give is not "every branch is gone".
-        var (code, refs, _) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
-        if (code != 0) return;
-        var standing = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
+        IReadOnlyList<string>? branches = held is null ? null : await held.BranchesAsync(TreeFollows.SessionPrefix, ct).ConfigureAwait(false);
+        if (branches is null)
+        {
+            var (code, refs, _) = await WorkingTree.GitAsync(
+                root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
+            if (code != 0) return;
+            branches = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        var standing = branches.ToHashSet(StringComparer.Ordinal);
         var gone = new List<string>();
         foreach (var entry in context.Grown.All()
                      .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && !standing.Contains(entry.Branch)))

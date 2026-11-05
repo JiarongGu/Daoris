@@ -189,18 +189,19 @@ internal sealed class AutoTidies(
         if (topCode != 0) return Pass([], TidyKept.Unread, FirstLine(topErr), TidyCause.Toplevel);
         if (!SamePath(toplevel.Trim(), root)) return Pass([]);
 
+        // The refs and the working trees read once for the judgement before the hold (PROC1d-ii, PROC1d-iii), from here: where each
+        // tree is and which branches stand are read from them too. The press's path inside the hold reads its own again.
+        var refs = RefSnapshot.Take(root);
         // Where each tree is now (TREEFOLLOW1), written on the ledger before anything is judged, so what the look removes never
         // takes with it where a tree's work is.
-        await follows.LearnTreesAsync(space, repository, ct).ConfigureAwait(false);
+        await follows.LearnTreesAsync(space, repository, ct, root, refs).ConfigureAwait(false);
         // The ledger forgets an entry with no tree and no branch standing at each look, not only after a removal (TREEFOLLOW1): a
         // branch deleted by hand left one behind. A list git cannot give forgets nothing; not cancelled, as the removal's is not.
-        await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+        await replays.ForgetGoneAsync(root, repository, CancellationToken.None, refs).ConfigureAwait(false);
 
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it. One look for the
         // pass (UIFREEZE1): the judgement before the hold and the press's path inside it ask git the checkout's line once.
         using var look = context.OneLook();
-        // The refs read once for the judgement before the hold (PROC1d-ii); the press's path inside it reads its own again.
-        var refs = RefSnapshot.Take(root);
         var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         if (HomeLease.HeldHere(context.Home))
         {

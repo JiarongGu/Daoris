@@ -109,6 +109,13 @@ public sealed class HomeSizeBenchProcessTests(ITestOutputHelper output) : IAsync
         var git = starts.Starts.OrderByDescending(start => start.WholeTicks).Take(3)
             .Select(start => $"git {string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(3))} {(long)GitLaunched.Ms(start.WholeTicks)} ms");
         output.WriteLine($"{what}: {ms} ms; asked {Home.Doors.Take()}; {starts.Starts.Count} git starts, the longest {string.Join(", ", git)}");
+        // Each command asked more than once, by its first words, so a read's starts say which fact it asked again.
+        foreach (var asked in starts.Starts.GroupBy(start => string.Join(' ', start.Arguments.Where(argument => !argument.StartsWith("--no-optional", StringComparison.Ordinal)).Take(2)))
+                     .Where(group => group.Count() > 1).OrderByDescending(group => group.Count()))
+        {
+            output.WriteLine($"  git {asked.Key}: {asked.Count()}");
+        }
+
         return ms;
     }
 
