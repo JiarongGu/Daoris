@@ -30,6 +30,7 @@ internal static class DriverConfigWriter
             writer.WriteNumber("pollSeconds", config.PollSeconds);
             // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
             if (config.CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
+            if (config.QuietMinutes is { } quiet) writer.WriteNumber(QuietSetting.File, quiet);
             writer.WriteStartObject("forgiven");
             foreach (var (quest, mark) in config.Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))
             {

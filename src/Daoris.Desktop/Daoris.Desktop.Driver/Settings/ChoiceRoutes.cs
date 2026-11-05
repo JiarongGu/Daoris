@@ -13,6 +13,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Trees { get; } = Person("SET_TREES");
     public static InstanceRoute Notify { get; } = Person("SET_NOTIFY");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
+    public static InstanceRoute Quiet { get; } = Person("SET_QUIET");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
@@ -40,6 +41,7 @@ public static class ChoiceRoutes
         ("driver trees <repo> on|off", Trees, "the window's own-tree switch"),
         ("driver notify on|off", Notify, "the window's notify switch"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
+        ("driver quiet <minutes>", Quiet, "the window's quiet bound"),
         ("driver cap <n>", Cap, "the window's session cap"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),

@@ -17,14 +17,14 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "keep", "cap", "handover", "brainstorms")]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "handover", "brainstorms")]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
+        "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
         "brainstorms", "workflow", "keep", "role",
     ];
 
@@ -33,7 +33,7 @@ public static class DriverChoicesCommand
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
                daoris place trees <repository> on|off · notify on|off
-               daoris settings cap <n> · cooloff <minutes>
+               daoris settings cap <n> · cooloff <minutes> · quiet <minutes>
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> <branch>|--clear
                daoris place across <repository>|--workspace <name> read on|off|--clear
@@ -311,6 +311,23 @@ public static class DriverChoicesCommand
                     Say($"daoris: an account whose agent names no time for its limit cools for {minutes} minutes on this machine.");
                     Say("  When the agent names when its limit resets, that time is the cool-off, whatever this says.");
                     Say($"  Written to {path} — read at the next limit, so nothing restarts.");
+                    return 0;
+                });
+            }
+
+            case "quiet":
+            {
+                var value = Number(Named(args, verb));
+                if (!IsWhole(value) || !QuietSetting.Takes((long)value))
+                {
+                    throw new ChoiceWords($"`driver quiet` needs a whole number of minutes from {QuietSetting.Least} to {QuietSetting.Most} — e.g. `daoris settings quiet 15`.");
+                }
+
+                var minutes = (int)value;
+                return Change(ChoiceRoutes.Quiet, new JsonObject { ["minutes"] = minutes }, config => config.WithQuiet(minutes), () =>
+                {
+                    Say($"daoris: a session that says nothing and runs nothing for {minutes} minutes is looked in on; none is ever stopped for running long.");
+                    Say($"  Written to {path} — read at the next look, so nothing restarts.");
                     return 0;
                 });
             }

@@ -49,6 +49,9 @@ internal static class HelpDoorRowsMachine
         // The terminal's door onto the default cool-off, and Ask Daoris's `setting` kind's `cooloff`.
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris settings cooloff <minutes>`"),
+        // The one quiet setting: a session runs as long as it works, and this is how long it may say nothing before Daoris looks in.
+        ("set how long a session may say nothing and run nothing before Daoris looks in on it", "Settings → Driver → Look in on a quiet session after",
+            "`daoris settings quiet <minutes>`"),
         // A repository's remote or a workspace's host pointed at a git identity that exists, Ask Daoris's `setting` kind's `git-use`;
         // never the person's own sign-ins, never an identity set up, tested or removed.
         new("point a repository's remote, or a workspace's host, at a git identity already set up",

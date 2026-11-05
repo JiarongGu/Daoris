@@ -335,7 +335,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.NotNull(plan.Apply);
     }
 
-    /// <summary>DOORS1a: the card's edit is the terminal's: a set changes only what it names over the rule set there, and a clear takes it back.</summary>
+    /// <summary>the card's edit is the terminal's: a set changes only what it names over the rule set there, and a clear takes it back.</summary>
     [Fact]
     public void A_helpers_rule_applied_is_the_edit_the_terminal_makes()
     {
@@ -350,7 +350,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.False(config.WorkspaceHelpers.ContainsKey("work"));
     }
 
-    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris place helpers` does not take, each refused in its words.</summary>
+    /// <summary>the twin's refusals, the registry's names, and a form `daoris place helpers` does not take, each refused in its words.</summary>
     [Theory]
     [InlineData("engine", "work", "--clear", "a helpers rule is set for a repository or a workspace — name exactly one.")]
     [InlineData(null, null, "--mode on", "a helpers rule is set for a repository or a workspace — name exactly one.")]
@@ -402,7 +402,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.NotNull(plan.Apply);
     }
 
-    /// <summary>DOORS1a: the card's edit is the terminal's, `--no-convention` the empty convention that takes the standing one away.</summary>
+    /// <summary>the card's edit is the terminal's, `--no-convention` the empty convention that takes the standing one away.</summary>
     [Fact]
     public void A_commit_rule_applied_is_the_edit_the_terminal_makes()
     {
@@ -422,7 +422,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.False(config.Commits.ContainsKey("engine"));
     }
 
-    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris place commits` does not take, each refused in its words.</summary>
+    /// <summary>the twin's refusals, the registry's names, and a form `daoris place commits` does not take, each refused in its words.</summary>
     [Theory]
     [InlineData("engine", "work", "--clear", "a commit rule is set for a repository or a workspace — name exactly one.")]
     [InlineData(null, null, "--mode ask", "a commit rule is set for a repository or a workspace — name exactly one.")]
@@ -444,7 +444,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Apply);
     }
 
-    /// <summary>DOORS1a: a convention past the twin's bound is refused in its words.</summary>
+    /// <summary>a convention past the twin's bound is refused in its words.</summary>
     [Fact]
     public void A_commit_convention_past_its_bound_is_refused()
     {
@@ -566,7 +566,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
             ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"),
             ("retry", "q1a2b3c4", null, null), ("notify", null, null, "on"), ("cap", null, null, "1"),
-            ("cooloff", null, null, "90"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
+            ("cooloff", null, null, "90"), ("quiet", null, null, "15"), ("keep", null, null, "logs 14"), ("git-use", "engine", null, "--clear"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));

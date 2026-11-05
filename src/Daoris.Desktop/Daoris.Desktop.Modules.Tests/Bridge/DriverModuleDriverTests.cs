@@ -330,7 +330,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
               "holds": [],
               "cap": 4,
               "adapter": "stub",
-              "timeoutMinutes": 45,
+              "quietMinutes": 45,
               "pollSeconds": 9,
               "commands": { "stub": ["node", "agent.mjs"] }
             }
@@ -340,7 +340,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
 
         var config = DriverConfig.Load(DriverConfigPath);
         Assert.Equal(4, config.Cap);
-        Assert.Equal(45, config.KeptTimeoutMinutes);
+        Assert.Equal(45, config.QuietMinutes);
         Assert.Equal(["node", "agent.mjs"], config.Commands["stub"]);
     }
 
