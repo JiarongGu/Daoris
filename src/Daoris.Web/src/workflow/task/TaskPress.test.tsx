@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../locales/i18n';
-import { NodeWord } from './NodeWord';
-import type { RunStep } from './run';
+import i18n from '../../locales/i18n';
+import { NodeWord } from '../NodeWord';
+import type { RunStep } from '../run';
 
 // NODEKIT1 HUMAN: under a run's step waiting on the person's task, its presses lead the skip and stop, each the run's node word with a note
 // the person may give; a press already kept is said in place of them.

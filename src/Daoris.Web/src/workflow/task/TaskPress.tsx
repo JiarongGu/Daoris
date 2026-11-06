@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { type Answered, InlineConfirm } from '../work/InlineConfirm';
+import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 
 /** A person's task's presses (NODEKIT1 HUMAN): a task's *Done*, an approval's *Approve* and *Reject*. */
 export type TaskAct = 'done' | 'approve' | 'reject';

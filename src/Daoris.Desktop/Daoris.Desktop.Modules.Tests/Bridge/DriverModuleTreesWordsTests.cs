@@ -265,7 +265,7 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
     [Fact]
     public async Task A_trees_name_given_for_a_session_names_the_session_whose_tree_it_is_at_every_tree_door()
     {
-        var module = await ComeUpAsync(Path.Combine(Home, "trees", "engine", "s-92ed2c8c"));
+        var module = await ComeUpAsync(DaorisHome.Entry(Home, HomeEntry.Trees, "default", "engine", "s-92ed2c8c"));
         var sentence = $"`s-92ed2c8c` is a tree's name, and this verb takes the session: that tree is session `s1a2b3c4`'s, so say `s1a2b3c4`.";
 
         var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s-92ed2c8c" });

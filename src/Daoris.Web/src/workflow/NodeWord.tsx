@@ -4,7 +4,7 @@ import { sentence } from '../locales/format';
 import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
-import { isTaskAct, TASK_ACTS, TaskPress } from './TaskPress';
+import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
 const WORDED: ReadonlySet<string> = new Set([

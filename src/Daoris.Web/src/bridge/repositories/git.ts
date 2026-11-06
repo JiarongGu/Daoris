@@ -4,7 +4,8 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import { call } from '../call';
 import { askHeld } from '../state/held';
-import type { GitBlame, GitCommitDetail, GitCompare, GitFileHistory, GitGraphPage } from './gitLog';
+import type { GitDeletedRef } from '../../projects/git/DeletedRefs';
+import type { GitBlame,GitCommitDetail, GitCompare, GitFileHistory, GitGraphPage } from './gitLog';
 
 // Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris git`, the same reads over the same checkouts, for
 // Repositories' Branches and History tabs. Shell-only: a checkout is this machine's, and no machine path leaves it (D47 §4).
@@ -678,21 +679,6 @@ export const useGitStashPlan = (repository: string | null, workspace: string) =>
     staleTime: 0,
     refetchOnMount: 'always',
   });
-};
-
-/**
- * One delete the journal holds (ONEWAY1r): the act `GIT_REF_UNDO` takes, what went and at which commit, who pressed it, and `closed`, why
- * its Undo is shut (`undone` · `name-taken` · `commit-gone`), null where it is open.
- */
-export type GitDeletedRef = {
-  act: string;
-  kind: 'branch' | 'tag';
-  name: string;
-  commit: string;
-  at: string;
-  press: string;
-  recovery: string | null;
-  closed: string | null;
 };
 
 const readDeletes = readPlanOf<{ rows: GitDeletedRef[] }>((value) => ({

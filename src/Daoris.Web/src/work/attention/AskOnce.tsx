@@ -6,7 +6,7 @@ import { unsettledWords } from '../gates/OpinionGate';
 import { TrustAsk } from '../waits/TrustAsk';
 import type { AttentionActId } from './attention';
 import { taskActOf } from './attentionOffers';
-import { TaskPress } from '../../workflow/TaskPress';
+import { TaskPress } from '../../workflow/task/TaskPress';
 import type { Attention } from './AttentionRow';
 
 /**

@@ -793,7 +793,6 @@ describe('a declaration owed acceptance, worded', () => {
   });
 });
 
-/** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
 /** STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move. */
 describe('a quest its role’s policy holds, worded', () => {
   const asked: Consideration = {
@@ -804,9 +803,9 @@ describe('a quest its role’s policy holds, worded', () => {
   it('says the ask and the bound by the planner’s typed sentence, offers Try again alone and opens the quest', () => {
     const item = words(row('policy-hold', 'q1', '2026-11-02T10:06:00Z', { where: 'engine', sitting: asked }), { quests: [quest({ id: 'q1', status: 'Taken' })] });
     expect(item.kind).toBe('policy-hold');
-    expect(item.detail).toBe("Its role's policy asks before it moves this quest to another choice: Try again says yes to one move.");
+    expect(item.detail).toBe('Your supervisor rule asks before it moves this quest to another choice: Try again says yes to one move.');
     expect(words(row('policy-hold', 'q1', null, { where: 'engine', sitting: bound })).detail)
-      .toBe("This quest made its role's policy's moves to another choice for today: Try again says yes to one more.");
+      .toBe('This quest made the moves to another choice your supervisor rule allows for today: Try again says yes to one more.');
     expect(attentionActs(item)).toEqual(['retry']);
     expect(rowRun(item)).toEqual({ quest: 'q1' });
   });
@@ -817,7 +816,7 @@ describe('a quest its role’s policy holds, worded', () => {
     ])).toEqual(['parked-quest:q-old', 'policy-hold:q-new']);
     await i18n.changeLanguage('zh');
     try {
-      expect(words(row('policy-hold', 'q1', null, { sitting: asked })).detail).toBe('它的角色策略在把这项委托改用其他选择之前先问你：「重试」表示同意改用一次。');
+      expect(words(row('policy-hold', 'q1', null, { sitting: asked })).detail).toBe('你的主管规则在把这项委托改用其他选择之前先问你：「重试」表示同意改用一次。');
     } finally {
       await i18n.changeLanguage('en');
     }

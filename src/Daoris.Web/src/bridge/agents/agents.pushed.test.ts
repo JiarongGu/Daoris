@@ -43,7 +43,7 @@ describe('what sessions consumed, pushed (PUSH1e)', () => {
         'codex/home': { agent: 'codex', profile: 'home', sessions: 1, used: 5 },
         'claude-code/work': { agent: 'claude-code', profile: 'work', sessions: 2, used: 9 },
         'claude-code': { agent: 'claude-code', profile: null, sessions: 1, used: 3 },
-        // An older host's share by door reads as nothing, never as another agent's (AGENTPROVIDER1 s-vii).
+        // A share keyed by its door, as hosts wrote it before the agent was the key, reads as nothing, never as another agent's (AGENTPROVIDER1 s-vii).
         'claude-code-acp/work': { harness: 'claude-code-acp', profile: 'work', sessions: 1, used: 1 },
       }],
     ]), true) as { sessions: { session: string }[]; accounts: { agent: string; profile: string | null }[] };

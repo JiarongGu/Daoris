@@ -77,7 +77,7 @@ export function MemberThread({ lead, ask, working, onBack, onAskAgain, onPass, b
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
               rows={3}
-              className="rounded-control border border-line bg-surface px-2 py-1 text-body text-ink"
+              className="rounded-control border border-line bg-raised px-2 py-1 text-body text-ink"
             />
           </label>
           <CheckField checked={forLead} onChange={setForLead} label={t('work.team.again.forLead')} />

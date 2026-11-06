@@ -14,6 +14,7 @@
   "work.milestone.by.landed": "它的成果已在 {{on}} 上，主线已包含它",
   "work.milestone.by.carried": "一个已完成的拉取请求带走了它，合并提交已在主线上",
   "work.milestone.by.inside": "它包含在 {{on}} 中，而 {{on}} 的成果已在主线上",
+  "work.milestone.by.tidied": "它所在链的拉取请求已合并，其工作流的收尾步骤已让它结束",
   "work.milestone.result.label": "成果",
   "work.milestone.result.none": "尚无保留的成果",
   "work.milestone.result.kept": "保留：{{what}}",

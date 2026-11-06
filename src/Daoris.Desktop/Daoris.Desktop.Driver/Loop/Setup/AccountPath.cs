@@ -43,10 +43,14 @@ public static class AccountPath
         }
 
         var entries = (stored ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var present = entries.Where(entry => Names(entry, bin)).ToArray();
+        // An entry's references expanded and its quotes off, as the account's shell reads it, compared with the folder by the machine's case rule.
+        var folder = Whole(bin);
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        bool Names(string entry) => AccountPathEntry.Names(Whole(Environment.ExpandEnvironmentVariables(entry.Trim('"'))), folder, comparison);
+        var present = entries.Where(Names).ToArray();
         if (on == present.Length > 0) return SetupResult.Did(changed: false);
 
-        var next = on ? [.. entries, bin] : entries.Where(entry => !Names(entry, bin)).ToArray();
+        var next = on ? [.. entries, bin] : entries.Where(entry => !Names(entry)).ToArray();
         try
         {
             account.Write(Variable, next.Length == 0 ? null : string.Join(Path.PathSeparator, next));
@@ -59,7 +63,16 @@ public static class AccountPath
         return SetupResult.Did(changed: true);
     }
 
-    /// <summary>Whether a stored entry, its references expanded and its quotes taken off, is the folder.</summary>
-    private static bool Names(string entry, string bin) =>
-        SystemWiring.SamePath(Environment.ExpandEnvironmentVariables(entry.Trim('"')), bin);
+    /// <summary>A path made whole, its trailing separator off; null where it is no path.</summary>
+    private static string? Whole(string path)
+    {
+        try
+        {
+            return string.IsNullOrWhiteSpace(path) ? null : Path.TrimEndingDirectorySeparator(Path.GetFullPath(path.Trim()));
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
 }
