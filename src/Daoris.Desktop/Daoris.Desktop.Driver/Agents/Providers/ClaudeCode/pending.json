@@ -14,9 +14,11 @@
   { "case": "ability.hands-servers", "door": "*", "row": "p", "why": "How a door hands servers is IServerHanding's, stated as a door's ability at row p." },
   { "case": "ability.servers-inherit-environment", "door": "*", "row": "p", "why": "Whether a door's servers inherit its environment is stated with the connectors at row p." },
   { "case": "ability.leaves-own-servers-out", "door": "*", "row": "p", "why": "Whether a door leaves its own servers out is stated with the connectors at row p." },
-  { "case": "frames.unknown-unread", "door": "claude-code", "row": "k", "why": "Claude Code's stream-json reader becomes its door's stated native dialect at row k; today the door states none while its adapter maps the stream." },
-  { "case": "dialect.recorded-frames", "door": "claude-code", "row": "k", "why": "Its native dialect is read over recorded frames from row k, starting from those today's tests hold at fixtures/native/ and fixtures/lineage/." },
-  { "case": "frames.unknown-unread", "door": "claude-code-acp", "row": "i", "why": "The protocol transport hands what it does not read to the door's IProtocolDialect from row i; today it reads every agent's extensions inline." },
-  { "case": "dialect.recorded-frames", "door": "claude-code-acp", "row": "i", "why": "Its protocol dialect is read over recorded frames under fixtures/providers/claude-code/ from row i." },
+  { "case": "frames.unknown-unread", "door": "claude-code", "run": "Driven", "row": "AGENTLYNTAI1d", "why": "A driven start's stream-json line the layer's Claude door does not read is kept as LQ7's bounded diagnostic, its CLI half, at the driven kind's move." },
+  { "case": "dialect.recorded-frames", "door": "claude-code", "run": "Driven", "row": "AGENTLYNTAI1d", "why": "A driven start's stream is read over the recorded frames at fixtures/native/ and fixtures/lineage/ through the layer's Claude door at the driven kind's move." },
+  { "case": "frames.unknown-unread", "door": "claude-code", "run": "Conversation", "row": "AGENTLYNTAI1f-i", "why": "A conversation's stream-json line the layer's Claude door does not read is kept bounded at the conversation kind's move." },
+  { "case": "dialect.recorded-frames", "door": "claude-code", "run": "Conversation", "row": "AGENTLYNTAI1f-i", "why": "A conversation's stream is read over the recorded frames through the layer's Claude door at the conversation kind's move, where Claude Code's native dialect goes." },
+  { "case": "frames.unknown-unread", "door": "claude-code-acp", "row": "AGENTLYNTAI1e-iii", "why": "A frame the layer's protocol door does not read is kept as LQ7's bounded diagnostic, read through the door's binding at its move." },
+  { "case": "dialect.recorded-frames", "door": "claude-code-acp", "row": "AGENTLYNTAI1e-iii", "why": "Its frames are read over recorded frames under fixtures/providers/claude-code/ through the layer's protocol door at its move." },
   { "case": "dialect.cross-fed", "door": "claude-code-acp", "row": "j", "why": "Each protocol door reads its own dialect alone from row j, which feeds it the other doors' extensions." }
 ]

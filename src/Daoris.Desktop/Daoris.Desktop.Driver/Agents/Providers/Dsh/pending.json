@@ -14,7 +14,7 @@
   { "case": "ability.hands-servers", "door": "*", "row": "p", "why": "How a door hands servers is IServerHanding's, stated as a door's ability at row p." },
   { "case": "ability.servers-inherit-environment", "door": "*", "row": "p", "why": "Whether a door's servers inherit its environment is stated with the connectors at row p." },
   { "case": "ability.leaves-own-servers-out", "door": "*", "row": "p", "why": "Whether a door leaves its own servers out is stated with the connectors at row p." },
-  { "case": "frames.unknown-unread", "door": "dsh", "row": "i", "why": "The protocol transport hands what it does not read to the door's IProtocolDialect from row i; today it reads every agent's extensions inline." },
-  { "case": "dialect.recorded-frames", "door": "dsh", "row": "i", "why": "Its protocol dialect, the spec's alone, is read over recorded frames under fixtures/providers/dsh/ from row i." },
+  { "case": "frames.unknown-unread", "door": "dsh", "row": "AGENTLYNTAI1e-i", "why": "A frame the layer's protocol door does not read is kept as LQ7's bounded diagnostic, read through the door's binding at its move." },
+  { "case": "dialect.recorded-frames", "door": "dsh", "row": "AGENTLYNTAI1e-i", "why": "Its frames, the spec's alone, are read over recorded frames under fixtures/providers/dsh/ through the layer's protocol door at its move." },
   { "case": "dialect.cross-fed", "door": "dsh", "row": "j", "why": "Each protocol door reads its own dialect alone from row j, which feeds it the other doors' extensions." }
 ]

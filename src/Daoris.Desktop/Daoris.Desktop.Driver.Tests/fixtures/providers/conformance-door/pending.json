@@ -16,7 +16,7 @@
   { "case": "ability.hands-servers", "door": "*", "row": "q", "why": "A plugin's door is stated the protocol transport's abilities, servers on the wire among them, by Agents' factory at row q." },
   { "case": "ability.servers-inherit-environment", "door": "*", "row": "p", "why": "Whether a door's servers inherit its environment is stated with the connectors at row p." },
   { "case": "ability.leaves-own-servers-out", "door": "*", "row": "p", "why": "Whether a door leaves its own servers out is stated with the connectors at row p." },
-  { "case": "frames.unknown-unread", "door": "conformance-door", "row": "i", "why": "The protocol transport hands what it does not read to the door's IProtocolDialect from row i; today it reads every agent's extensions inline." },
-  { "case": "dialect.recorded-frames", "door": "conformance-door", "row": "i", "why": "A plugin's door reads the spec's frames alone through its IProtocolDialect from row i." },
+  { "case": "frames.unknown-unread", "door": "conformance-door", "row": "AGENTLYNTAI1e-iv", "why": "A frame the layer's protocol door does not read is kept as LQ7's bounded diagnostic, read through a plugin's declared door's binding at its move." },
+  { "case": "dialect.recorded-frames", "door": "conformance-door", "row": "AGENTLYNTAI1e-iv", "why": "A plugin's declared door reads the spec's frames through the layer's generic protocol registration at its move." },
   { "case": "dialect.cross-fed", "door": "conformance-door", "row": "j", "why": "From row j a plugin's door reads no agent's extension, fed Claude Code's and Codex's frames." }
 ]

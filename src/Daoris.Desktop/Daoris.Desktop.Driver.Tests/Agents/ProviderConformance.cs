@@ -227,12 +227,22 @@ internal static class Conformance
         var run = Cases.Single(each => each.Name == @case);
         var lines = pending ?? ConformancePending.Of(provider);
         return ConformancePending.VerdictAsync(
-            () => run.Body(new ConformanceRun(subject, held, on, scratch)), ConformancePending.Holding(lines, @case, door));
+            () => run.Body(new ConformanceRun(subject, held, on, scratch)), ConformancePending.Holding(lines, @case, door, subject.Run));
     }
 }
 
-/// <summary>One line of a provider's <c>pending.json</c>: a case it cannot pass yet, on a door or every door, with its row and why.</summary>
-internal sealed record PendingLine(string Case, string Door, string Row, string Why, string File);
+/// <summary>
+/// One line of a provider's <c>pending.json</c>: a case it cannot pass yet, on a door or every door, with its row and why; on the run kind
+/// it names, or on both where it names none.
+/// </summary>
+internal sealed record PendingLine(string Case, string Door, string Row, string Why, string File, StartKind? Run = null)
+{
+    /// <summary>Whether this line's run kind meets <paramref name="run"/>: either names none, or both name the same.</summary>
+    public bool Meets(StartKind? run) => Run is null || run is null || Run == run;
+
+    /// <summary>The line as a problem names it: its case, its door, and its run where it names one.</summary>
+    public string Said => $"'{Case}' on '{Door}'{(Run is { } kind ? $" ({kind})" : "")}";
+}
 
 /// <summary>A pending file as read: its lines, and what in it breaks the layout.</summary>
 internal sealed record PendingRead(IReadOnlyList<PendingLine> Lines, IReadOnlyList<string> Problems);
@@ -244,22 +254,33 @@ internal sealed class PendingCasePasses(string message) : XunitException(message
 internal sealed class NotAnsweredYet(string reader) : Exception($"no reader answers this case yet: {reader}");
 
 /// <summary>
-/// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c>, a
-/// beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>, or, for a provider with no folder, under the tests'
-/// <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and edits none shared.
+/// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c> with
+/// an optional <c>run</c> (the agent-lyntai design §6.2), beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>,
+/// or, for a provider with no folder, under the tests' <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and
+/// edits none shared. Its twin is <c>tools/stand-ins.mjs</c>'s reader.
 /// </summary>
 internal static class ConformancePending
 {
     public const string FileName = "pending.json";
 
-    /// <summary>The rows of the design's §11 a case can wait for: row a has landed, so none names it.</summary>
+    /// <summary>
+    /// The rows a case can wait for: D213's §11 rows, row a landed and i and k re-cut by the agent-lyntai design, whose own rows that have
+    /// not landed are named whole (its §6.2, §6.4).
+    /// </summary>
     public static IReadOnlyList<string> Rows { get; } =
     [
-        "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "m-i", "m-ii", "n", "o", "p", "q", "r",
+        "b", "c", "d", "e", "f", "g", "h", "j", "l", "m", "m-i", "m-ii", "n", "o", "p", "q", "r",
         "s-i", "s-ii", "s-iii", "s-iv", "s-v", "s-vi", "s-vii", "s-viii", "s-ix", "t", "u",
+        "AGENTLYNTAI1b-ii", "AGENTLYNTAI1b-iii", "AGENTLYNTAI1c", "AGENTLYNTAI1d", "AGENTLYNTAI1e-i", "AGENTLYNTAI1e-ii", "AGENTLYNTAI1e-iii",
+        "AGENTLYNTAI1e-iv", "AGENTLYNTAI1f-i", "AGENTLYNTAI1f-ii",
     ];
 
     private static readonly string[] Fields = ["case", "door", "row", "why"];
+
+    /// <summary>The one field a line may leave out: the run kind it holds its case on, both where absent. The tools' reader reads it too.</summary>
+    private const string RunField = "run";
+
+    private static readonly StartKind[] Runs = [StartKind.Driven, StartKind.Conversation];
 
     private static readonly ConcurrentDictionary<string, PendingRead> Read = new(StringComparer.OrdinalIgnoreCase);
 
@@ -294,9 +315,12 @@ internal static class ConformancePending
         return Read.GetOrAdd(file, path => Parse(File.ReadAllText(path), path)).Lines;
     }
 
-    /// <summary>The line holding a case on a door: one naming that door, or every door.</summary>
-    public static PendingLine? Holding(IReadOnlyList<PendingLine> lines, string @case, string door) =>
-        lines.FirstOrDefault(line => line.Case == @case && (line.Door == Conformance.EveryDoor || line.Door == door));
+    /// <summary>
+    /// The line holding a case on a door and a run kind: one naming that door or every door, and that run or none; a view that runs every
+    /// kind (<paramref name="run"/> null) is held by a line of either.
+    /// </summary>
+    public static PendingLine? Holding(IReadOnlyList<PendingLine> lines, string @case, string door, StartKind? run = null) =>
+        lines.FirstOrDefault(line => line.Case == @case && (line.Door == Conformance.EveryDoor || line.Door == door) && line.Meets(run));
 
     /// <summary>
     /// The first rule: a case with no line must pass; a case a line holds must fail, and passing fails the suite naming the file its line
@@ -323,13 +347,18 @@ internal static class ConformancePending
             $"pending case '{pending.Case}' on '{pending.Door}' passes: remove its line from {Relative(pending.File)} (row {pending.Row} held it).");
     }
 
-    /// <summary>The second rule: each line names a case the suite runs for its provider, on a door it runs that case on, or <c>*</c>.</summary>
-    public static IReadOnlyList<string> Unmatched(IReadOnlyList<PendingLine> lines, IReadOnlyCollection<(string Case, string Door)> runs) =>
+    /// <summary>
+    /// The second rule: each line names a case the suite runs for its provider, on a door it runs that case on, or <c>*</c>, and on a view
+    /// that runs its run kind (a view that runs every kind runs each).
+    /// </summary>
+    public static IReadOnlyList<string> Unmatched(
+        IReadOnlyList<PendingLine> lines, IReadOnlyCollection<(string Case, string Door, StartKind? Run)> runs) =>
     [
         .. lines
-            .Where(line => !runs.Any(run => run.Case == line.Case && (line.Door == Conformance.EveryDoor || run.Door == line.Door)))
+            .Where(line => !runs.Any(run =>
+                run.Case == line.Case && (line.Door == Conformance.EveryDoor || run.Door == line.Door) && line.Meets(run.Run)))
             .Select(line =>
-                $"{Relative(line.File)}: '{line.Case}' on '{line.Door}' names no case the suite runs for this provider: name one it runs, or remove the line"),
+                $"{Relative(line.File)}: {line.Said} names no case the suite runs for this provider: name one it runs, or remove the line"),
     ];
 
     /// <summary>A file's text read by the one layout, each break of it a problem naming the line.</summary>
@@ -365,28 +394,38 @@ internal static class ConformancePending
                     continue;
                 }
 
-                var extra = element.EnumerateObject().Select(property => property.Name).Where(name => !Fields.Contains(name)).ToList();
-                problems.AddRange(extra.Select(name => $"{where}: '{name}' is no field of the layout ({string.Join(", ", Fields)})"));
+                var extra = element.EnumerateObject().Select(property => property.Name)
+                    .Where(name => !Fields.Contains(name) && name != RunField).ToList();
+                problems.AddRange(extra.Select(name => $"{where}: '{name}' is no field of the layout ({string.Join(", ", Fields)}, {RunField})"));
                 var missing = Fields.Where(name => Field(element, name) is null).ToList();
                 problems.AddRange(missing.Select(name => $"{where}: '{name}' is missing or blank"));
                 if (extra.Count > 0 || missing.Count > 0) continue;
 
                 var (name, door, row, why) = (Field(element, "case")!, Field(element, "door")!, Field(element, "row")!, Field(element, "why")!);
-                if (!Rows.Contains(row))
+                var said = element.TryGetProperty(RunField, out _) ? Field(element, RunField) ?? "" : null;
+                var run = Runs.Where(kind => kind.ToString() == said).Select(kind => (StartKind?)kind).FirstOrDefault();
+                var line = new PendingLine(name, door, row, why, file, run);
+                if (said is not null && run is null)
                 {
-                    problems.Add($"{where}: row '{row}' is no row of the design's §11 a case can wait for ({string.Join(", ", Rows)})");
+                    problems.Add($"{where}: '{RunField}' is {string.Join(" or ", Runs)}, or absent for both: {said}");
+                }
+                else if (!Rows.Contains(row))
+                {
+                    problems.Add($"{where}: row '{row}' is no row a case can wait for ({string.Join(", ", Rows)})");
                 }
                 else if (!OneSentence(why))
                 {
                     problems.Add($"{where}: the why is one sentence ending in a full stop: {why}");
                 }
-                else if (lines.Any(line => line.Case == name && (line.Door == door || line.Door == Conformance.EveryDoor || door == Conformance.EveryDoor)))
+                else if (lines.Any(other =>
+                             other.Case == name && (other.Door == door || other.Door == Conformance.EveryDoor || door == Conformance.EveryDoor)
+                             && other.Meets(run)))
                 {
-                    problems.Add($"{where}: '{name}' on '{door}' is held twice");
+                    problems.Add($"{where}: {line.Said} is held twice");
                 }
                 else
                 {
-                    lines.Add(new PendingLine(name, door, row, why, file));
+                    lines.Add(line);
                 }
             }
 

@@ -40,6 +40,12 @@ const FIELDS = ['id', 'standIn', 'program', 'doors'];
 const DOOR_FIELDS = ['id', 'kind', 'arguments'];
 const LINE_FIELDS = ['case', 'door', 'row', 'why'];
 
+/**
+ * The run kinds a pending line may name in `run`, absent for both: the driver's `StartKind` members, duplicated here on purpose (its twin,
+ * `ConformancePending` in the driver's tests, reads the same field by the same rule).
+ */
+export const RUNS = Object.freeze(['Driven', 'Conversation']);
+
 const words = (value) => Array.isArray(value) && value.every((each) => typeof each === 'string' && each.trim().length > 0);
 const text = (value) => (typeof value === 'string' && value.trim().length > 0 ? value : null);
 
@@ -127,7 +133,11 @@ export function readPending(file, folder) {
       problems.push(`${where}, line ${at + 1}: a line is an object of ${LINE_FIELDS.join(', ')}, none blank`);
       return;
     }
-    lines.push({ case: line.case, door: line.door, row: line.row, why: line.why });
+    if (line.run !== undefined && !RUNS.includes(line.run)) {
+      problems.push(`${where}, line ${at + 1}: 'run' is ${RUNS.join(' or ')}, or absent for both`);
+      return;
+    }
+    lines.push({ case: line.case, door: line.door, row: line.row, why: line.why, run: line.run ?? null });
   });
   return { lines, problems };
 }
@@ -170,9 +180,13 @@ export const programOf = (standIn, root) => join(root, 'Agents', 'Providers', st
 /** The command that runs a door's program from `root`: Node, the entry, the door's own arguments, then the case's. */
 export const doorCommand = (standIn, door, root, more = []) => ['node', programOf(standIn, root), ...door.arguments, ...more];
 
-/** The line of a provider's pending cases holding a case on a door: one naming that door, or every door. */
-export const heldBy = (lines, name, door) =>
-  lines.find((line) => line.case === name && (line.door === EVERY_DOOR || line.door === door)) ?? null;
+/**
+ * The line of a provider's pending cases holding a case on a door and a run kind: one naming that door or every door, and that run or
+ * none; asked for no run, a line of either holds it.
+ */
+export const heldBy = (lines, name, door, run = null) =>
+  lines.find((line) => line.case === name && (line.door === EVERY_DOOR || line.door === door)
+    && (line.run === null || line.run === undefined || run === null || line.run === run)) ?? null;
 
 /**
  * The scenario contract: each case a stand-in's program answers, by the conformance suite's name for its clause, the door kinds it

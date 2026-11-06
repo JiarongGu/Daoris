@@ -1098,6 +1098,15 @@ bound kind its spawn and recipe cases read the runner's recorded spawn, its tabl
 | `frames.unknown-unread`, `dialect.recorded-frames` on `claude-code` | k | **split by run kind**: `run: Driven` `AGENTLYNTAI1d` (LQ7's CLI half), `run: Conversation` `AGENTLYNTAI1f-i` *(O2-F9)* |
 | `dialect.cross-fed` on each protocol door | j | j (AG15) |
 | `alt-stub`'s own, from 1b-ii | — | its native door's own-vocabulary stream cases (`dialect.recorded-frames`, `frames.unknown-unread` on its native door) `AGENTLYNTAI1f-ii` (LQ13); its protocol door's own-vocabulary extension cases j (AG15); the rest as `stub`'s and `acp-stub`'s lines |
+| `frames.unknown-unread`, `dialect.recorded-frames` on `alt-acp-stub` *(1b-i's ruling)* | i | j (AG15) |
+
+**`alt-acp-stub`'s frames lines, ruled in 1b-i.** `alt-stub` landed as D213's row c before 1b-ii, its protocol door holding these two
+lines on row i, which the table did not list. They are its protocol door's own-vocabulary cases (§3.1 row c: AG15 un-pends them), so they
+wait on **j**, their why naming AG15: the layer's protocol door reads Claude Code's and Codex's extensions for every agent (§1.1 row 18),
+so `alt-stub`'s own `_meta` keys are read only where its registration brings its own dialect set, and j comes after 1e, so LQ7's bounded
+diagnostic is in by then. Not 1b-ii, the door's move, as the other protocol doors' frames lines go to theirs: their frames are a
+vocabulary the layer's reader holds at their move, `alt-stub`'s is not, and 1b-ii waits for neither AG15 nor LQ7, so the lines would not
+pass there. Not 1f-ii, which is its native door's (LQ13).
 
 A `*` line is split where its doors' closing rows differ; no line but the frames lines, which already name their doors, differs today. The
 former obligation is kept in the amendment: at acceptance, D213's note names each re-pointed line's former row (i, k, m) beside the row that
