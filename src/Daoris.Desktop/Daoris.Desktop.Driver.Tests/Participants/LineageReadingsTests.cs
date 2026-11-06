@@ -73,7 +73,7 @@ public sealed class LineageReadingsTests : IDisposable
         var children = heard.Where(reading => reading is WireReading.ChildSeen or WireReading.ChildEnded).ToList();
         Assert.Equal(
             [
-                new WireReading.ChildSeen("a1", ChildSignal.Stream) { Depth = 1, Task = "Read it." },
+                new WireReading.ChildSeen("a1", ChildSignal.Stream) { Call = "t1", Depth = 1, Task = "Read it." },
                 new WireReading.ChildEnded("a1", ChildSignal.Stream, "completed"),
             ],
             children.Select(reading => reading with { Run = null, Generation = 0, Sequence = 0, Process = null }));

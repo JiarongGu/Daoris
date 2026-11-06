@@ -86,6 +86,9 @@ public abstract record WireReading
     /// </summary>
     public sealed record ChildSeen(string Child, ChildSignal Signal) : WireReading
     {
+        /// <summary>The call that started it, where its wire named one: the call its own lines name as theirs.</summary>
+        public string? Call { get; init; }
+
         /// <summary>The child that started it, where a child did and the wire said which.</summary>
         public string? Parent { get; init; }
 
@@ -107,6 +110,34 @@ public abstract record WireReading
     /// that only its session's close implies is no reading: its process's own end says it.
     /// </summary>
     public sealed record ChildEnded(string Child, ChildSignal Signal, string? Word) : WireReading;
+
+    /// <summary>
+    /// A background task the agent runs beside itself started, a command and never a child, said once per task: its native id, with its kind and
+    /// its name in its wire's own words.
+    /// </summary>
+    public sealed record TaskStarted(string Task) : WireReading
+    {
+        /// <summary>The kind of task, where its wire named one.</summary>
+        public string? Kind { get; init; }
+
+        /// <summary>Its name, where its wire gave one.</summary>
+        public string? Name { get; init; }
+    }
+
+    /// <summary>
+    /// A background task's end its wire said, with the word it said it in, or none; said once, and only for a task whose start was seen.
+    /// </summary>
+    public sealed record TaskEnded(string Task, string? Word) : WireReading
+    {
+        /// <summary>The file its output was written to, where its wire named one.</summary>
+        public string? Output { get; init; }
+
+        /// <summary>
+        /// Said after its turn's result: on the native door the harness ends its own background work with its turn, so a stop or a kill said
+        /// then is its harness's, never its agent's.
+        /// </summary>
+        public bool AfterTurn { get; init; }
+    }
 
     /// <summary>
     /// A turn or an open ended on its door's failure: the one reading every failure is, on either door, which the account's reader reads

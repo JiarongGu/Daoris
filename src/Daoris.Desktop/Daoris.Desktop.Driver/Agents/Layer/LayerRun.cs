@@ -63,6 +63,9 @@ internal sealed class LayerRun(
         /// <summary>The leg's children read off its frames, each start and end once, as today's capture reads them (AGENTPROVIDER1l).</summary>
         public NativeChildren Children { get; } = new();
 
+        /// <summary>The leg's background tasks read off its frames, each start and end once, as today's capture reads them.</summary>
+        public NativeTasks Tasks { get; } = new();
+
         /// <summary>Told once the agent named its conversation and the sink kept it.</summary>
         public Action Named { get; } = named;
 
@@ -288,6 +291,8 @@ internal sealed class LayerRun(
         finally
         {
             Handed(leg, leg.Readings.Flush());
+            // The ends only an update said, its notification never written, as today's capture says them at its stream's close (BGWAIT1c).
+            foreach (var ended in leg.Tasks.Close()) Work(ended);
             leg.Started.TrySetResult(null);
             Close();
         }
@@ -348,13 +353,20 @@ internal sealed class LayerRun(
     }
 
     /// <summary>
-    /// Each raw frame of the turn's stdout, read before the layer reads its line: what the harness's ending reads of its own background work
-    /// (BGWAIT1c), as today's capture reads it.
+    /// Each raw frame of the turn's stdout, read before the layer reads its line: a child's or a background task's start or end, said once as
+    /// its reading, which the harness's ending reads for its own background work (BGWAIT1c), as today's capture says it.
     /// </summary>
     private void Framed(NativeFrame frame)
     {
-        _own.Heard(frame);
-        if (_leg is { } leg && leg.Children.Read(frame) is { } child) Hand(child);
+        if (_leg is not { } leg) return;
+        if (leg.Children.Read(frame) is { } child) Work(child);
+        if (leg.Tasks.Read(frame) is { } task) Work(task);
+    }
+
+    private void Work(WireReading reading)
+    {
+        _own.Read(reading);
+        Hand(reading);
     }
 
     /// <summary>A line the harness says outside a frame or on stderr: the transcript's and the console's, and its own words.</summary>

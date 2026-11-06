@@ -11,10 +11,11 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Read off the wire, never inferred</b> (docs/2026-09-30-console3-native-streams-evidence.md).
-/// Work is announced by a <c>system</c> <c>task_started</c>, <c>local_agent</c> for a subagent and
-/// <c>local_bash</c> for a command, and ends with its <c>task_notification</c> in the wire's word. A
-/// subagent's lines ride the session's stdout marked with the <c>parent_tool_use_id</c> of the call that
-/// spawned it. A command's output is a file whose path the harness gives only in its result's words.</para>
+/// Each subagent's and each command's start and end is the reading the capture said of it (AGENTPROVIDER1l:
+/// <see cref="WireReading.ChildSeen"/> and <see cref="WireReading.ChildEnded"/>, <see cref="WireReading.TaskStarted"/>
+/// and <see cref="WireReading.TaskEnded"/>), in the wire's word. A subagent's lines ride the session's stdout
+/// marked with the <c>parent_tool_use_id</c> of the call that spawned it, its reading's call. A command's output
+/// is a file whose path the harness gives only in its result's words, and at its end.</para>
 ///
 /// <para><b>Beside the session, never in it</b>, for the protocol door's reason: a child's words in the
 /// transcript would be quoted as the session's. The session's console says each started and how it
@@ -39,7 +40,6 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
         public string StreamId { get; } = streamId;
         public string Name { get; } = name;
         public OutputTail? Tail { get; set; }
-        public string? State { get; set; }
         public bool Ended { get; set; }
     }
 
@@ -55,10 +55,54 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
     private readonly Dictionary<string, Work> _work = new(StringComparer.Ordinal);      // by task id
     private readonly Dictionary<string, string> _subagentOfTask = new(StringComparer.Ordinal);
 
+    public void Read(WireReading reading)
+    {
+        switch (reading)
+        {
+            // A subagent the stream announced, keyed by the call its lines name as theirs; one with no call has no lines here.
+            case WireReading.ChildSeen { Call: { Length: > 0 } call } seen:
+                lock (_gate) _subagentOfTask[seen.Child] = call;
+                Open(call, $"subagent/{seen.Child}", seen.Task is { Length: > 0 } described ? described : seen.Child);
+                break;
+
+            case WireReading.ChildEnded ended:
+            {
+                Child? child;
+                lock (_gate) child = _subagentOfTask.GetValueOrDefault(ended.Child) is { } call ? _children.GetValueOrDefault(call) : null;
+                if (child is not null) EndChild(child, ended.Word ?? "ended");
+                break;
+            }
+
+            case WireReading.TaskStarted started:
+            {
+                var name = started.Name is { Length: > 0 } named ? named : started.Task;
+                Work work;
+                lock (_gate)
+                {
+                    if (_work.ContainsKey(started.Task)) return;
+                    work = _work[started.Task] = new Work($"task/{started.Task}", name);
+                }
+
+                streams.Open(new SessionStream(work.StreamId, SessionStreamKind.Task, name));
+                say($"→ background: {AcpRender.OneLine(name)}");
+                break;
+            }
+
+            case WireReading.TaskEnded ended:
+            {
+                Work? work;
+                lock (_gate) work = _work.GetValueOrDefault(ended.Task);
+                if (work is null) return;
+                Watch(work, ended.Output);
+                EndWork(work, ended.Word ?? "ended");
+                break;
+            }
+        }
+    }
+
     public bool Take(NativeFrame frame)
     {
         if (!frame.IsObject) return false;
-        var root = frame.Root;
 
         if (frame.Text("parent_tool_use_id") is { Length: > 0 } parent)
         {
@@ -70,89 +114,7 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
             return true;
         }
 
-        switch (frame.Type)
-        {
-            case "system":
-                return System(root);
-            case "user":
-                Watch(root);
-                return false;
-        }
-
-        return false;
-    }
-
-    private bool System(JsonElement root)
-    {
-        switch (Text(root, "subtype"))
-        {
-            case "task_started":
-            {
-                if (Text(root, "task_id") is not { Length: > 0 } id) return false;
-                var name = Text(root, "description") is { Length: > 0 } described ? described : id;
-                if (Text(root, "task_type") == "local_agent")
-                {
-                    if (Text(root, "tool_use_id") is not { Length: > 0 } call) return false;
-                    lock (_gate) _subagentOfTask[id] = call;
-                    Open(call, $"subagent/{id}", name);
-                    return true;
-                }
-
-                Work work;
-                lock (_gate)
-                {
-                    if (_work.ContainsKey(id)) return true;
-                    work = _work[id] = new Work($"task/{id}", name);
-                }
-
-                streams.Open(new SessionStream(work.StreamId, SessionStreamKind.Task, name));
-                say($"→ background: {AcpRender.OneLine(name)}");
-                return true;
-            }
-
-            case "task_updated":
-            {
-                // The ending's first word; the notification that follows is the one said.
-                if (Text(root, "task_id") is { } id && root.TryGetProperty("patch", out var patch) && Text(patch, "status") is { } status)
-                {
-                    lock (_gate)
-                    {
-                        if (_work.TryGetValue(id, out var work) && !work.Ended) work.State = status;
-                    }
-                }
-
-                return true;
-            }
-
-            case "task_notification":
-            {
-                if (Text(root, "task_id") is not { } id) return false;
-                var status = Text(root, "status");
-
-                string? call;
-                lock (_gate) call = _subagentOfTask.GetValueOrDefault(id);
-                if (call is not null)
-                {
-                    Child? child;
-                    lock (_gate) child = _children.GetValueOrDefault(call);
-                    if (child is not null) EndChild(child, status ?? "ended");
-                    return true;
-                }
-
-                Work? work;
-                lock (_gate) work = _work.GetValueOrDefault(id);
-                if (work is null) return false;
-                Watch(work, Text(root, "output_file"));
-                EndWork(work, status ?? work.State ?? "ended");
-                return true;
-            }
-
-            // Known, and not the conversation: the live set and a subagent's progress, which the others say.
-            case "task_progress":
-            case "background_tasks_changed":
-                return true;
-        }
-
+        if (frame.Type == "user") Watch(frame.Root);
         return false;
     }
 
@@ -218,7 +180,6 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
         {
             if (work.Ended) return;
             work.Ended = true;
-            work.State = state;
             tail = work.Tail;
         }
 
