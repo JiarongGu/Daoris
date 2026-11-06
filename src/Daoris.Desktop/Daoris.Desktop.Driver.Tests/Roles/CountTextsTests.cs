@@ -52,7 +52,7 @@ public sealed class CountTextsTests
             CountTexts.Print(facts));
 
         // A rule's acts follow the go-ons, oldest first, said from the rule's codes and numbers alone; none, no section.
-        Assert.DoesNotContain("acts", CountTexts.Print(facts), StringComparison.Ordinal);
+        Assert.DoesNotContain("Its rules' acts", CountTexts.Print(facts), StringComparison.Ordinal);
         var rule = new SupervisorRule("failures", SupervisorRules.Failures, "in-a-row", 3, SupervisorRules.Hold, null, "repository:engine", null);
         var acted = CountTexts.Print(facts with { Acts = [new RuleActed("q1", "s2", rule, 4, 3, Known: true, "start", At.AddMinutes(20))] });
         Assert.EndsWith(

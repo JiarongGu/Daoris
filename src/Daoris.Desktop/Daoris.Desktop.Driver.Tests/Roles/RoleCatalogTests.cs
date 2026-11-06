@@ -37,7 +37,7 @@ public sealed class RoleCatalogTests : IDisposable
     }
 
     [Fact]
-    public void The_seed_is_the_eight_working_roles_on_the_machine_one_per_work_and_no_role_takes_design()
+    public void The_seed_is_the_nine_working_roles_on_the_machine_one_per_work_design_taking_its_own()
     {
         var catalog = RoleCatalog.Of([]);
 
@@ -46,10 +46,9 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.All(RoleCatalog.Seed, role => Assert.Equal(RoleScope.Everywhere, role.Scope));
         Assert.Equal(ActorChoices.Ids, RoleCatalog.Seed.Where(role => role.Filled == RoleRecord.Always).Select(role => role.Id));
         Assert.Equal(
-            [("build", "build"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm")],
-            ParticipantWork.Codes.Where(work => work != ParticipantWork.Design).Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
-        Assert.DoesNotContain(RoleCatalog.Seed, role => role.Takes.Contains(ParticipantWork.Design));
-        Assert.Equal("build", catalog.RoleFor(ParticipantWork.Design, Machine).Role!.Id);
+            [("build", "build"), ("design", "design"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"), ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm")],
+            ParticipantWork.Codes.Select(work => (work, catalog.RoleFor(work, Machine).Role!.Id)));
+        Assert.Equal(["design"], RoleCatalog.Seed.Where(role => role.Takes.Contains(ParticipantWork.Design)).Select(role => role.Id));
     }
 
     [Fact]
@@ -156,7 +155,8 @@ public sealed class RoleCatalogTests : IDisposable
         var held = catalog.RoleFor(ParticipantWork.Build, Machine);
         Assert.Null(held.Role);
         Assert.Contains("`build` does not read as JSON", held.Held);
-        Assert.NotNull(catalog.RoleFor(ParticipantWork.Design, Machine).Held);
+        // Design takes its own seeded role, so an unreadable build holds nothing of it.
+        Assert.Null(catalog.RoleFor(ParticipantWork.Design, Machine).Held);
         Assert.Null(catalog.RoleFor(ParticipantWork.Chat, Machine).Held);
     }
 
@@ -192,7 +192,7 @@ public sealed class RoleCatalogTests : IDisposable
 
         Assert.Equal("drafter", catalog.RoleFor(ParticipantWork.Design, new RolePlace("w1", "r1")).Role!.Id);
         Assert.Equal("designer", catalog.RoleFor(ParticipantWork.Design, new RolePlace("w1", "r2")).Role!.Id);
-        Assert.Equal("build", catalog.RoleFor(ParticipantWork.Design, Machine).Role!.Id);
+        Assert.Equal("design", catalog.RoleFor(ParticipantWork.Design, Machine).Role!.Id);
 
         var twice = RoleCatalog.Of([Stored(workspace), Stored(workspace with { Id = "second" })]);
         var held = twice.RoleFor(ParticipantWork.Design, InWorkspace);

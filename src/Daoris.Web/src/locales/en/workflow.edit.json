@@ -370,7 +370,7 @@
   "workflow.edit.refusal.land-once": "One landing step, never two.",
   "workflow.edit.refusal.land-tail": "This step comes with a landing method: choose that method on the landing and it brings the step.",
   "workflow.edit.refusal.accept": "A landing takes no accept of its own: put Your review before it where you accept the work.",
-  "workflow.edit.refusal.land-method": "A landing step is saved with its method chosen: merge, a branch, a push, a pull request or integrate.",
+  "workflow.edit.refusal.land-method": "A landing step is saved with its method chosen: merge, a branch or integrate.",
   "workflow.edit.refusal.handed-refused": "A handed step is no longer saved: a landing step performs the landing. Choose its method and the steps after it come with it.",
   "workflow.edit.refusal.steps-refused": "A workflow is saved as a graph of steps now, and a list of steps (schema 1) is no longer saved. Compose it in the workflow editor, or save a graph with `daoris workflow apply <id> <file>`. A workflow saved as steps before is converted by the conversion plan: `daoris convert --plan`.",
   "workflow.edit.refusal.role": "Its role does not do this step's work."

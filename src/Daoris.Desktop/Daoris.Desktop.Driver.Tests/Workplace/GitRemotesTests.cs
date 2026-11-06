@@ -14,9 +14,10 @@ public sealed class GitRemotesTests
 
     /// <summary>
     /// Files that name the words and read no address: the reader itself, the read-only classifier of git's commands, and a session's
-    /// words on what the command shows under the rewrite (GITAUTH1b).
+    /// words on what the command shows under the rewrite (GITAUTH1b), and the push act, which counts the push addresses a remote names (a
+    /// push goes to the one its grant names) and says none of them.
     /// </summary>
-    private static readonly string[] Excused = ["GitRemotes.cs", "RefSnapshot.cs", "GitRewriteWords.cs"];
+    private static readonly string[] Excused = ["GitRemotes.cs", "RefSnapshot.cs", "GitRewriteWords.cs", "GitPushActs.cs"];
 
     [Theory]
     [InlineData("daoris::https://github.com/org/engine.git", "https://github.com/org/engine.git")]

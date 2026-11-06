@@ -5,6 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>daoris-driver</c>. The name stays only where it is the file the program is built as, the folder an install carries it in, or the
 /// identity a protocol hello names; each such site is listed here with its count, so a new one is a decision.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class DaorisDriverWordsTests
 {
     private const string Word = "daoris-driver";

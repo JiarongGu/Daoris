@@ -51,6 +51,7 @@ public sealed class TransportRunTests : IDisposable
         new(host, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
         {
             Target = handed ? Target() : null,
+            Request = handed ? SpawnRequests.Of(Target(), null) : null,
             Selection = handed ? new HarnessSelection(null) : null,
         });
 
@@ -245,8 +246,8 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.Equal(
             [
-                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "GoOnAsync", "HandCarriers", "HandSink", "OpenAsync",
-                "ResumeAsync", "SendAsync", "SteerAsync", "StopTaskAsync", "StopTurnAsync",
+                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "HandCarriers", "HandSink", "OpenAsync",
+                "ResumeAsync", "SteerAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);
         Assert.True(typeof(TransportRun).IsSubclassOf(typeof(AgentRun)));
