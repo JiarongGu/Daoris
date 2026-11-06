@@ -43,7 +43,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
 | The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
-| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO` |
+| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; its record names the recovery ref the door kept at the commit |
+| The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
 | Landing plugin wire | `Plugins/LandingPlugins.cs` | Whether a plugin performs pull-request steps (`ProblemOf`, its manifest speaking on `work/perform`), and `work/state` asks |
@@ -197,8 +198,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     nothing is re-run. (from D204)
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
-    `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. Each door keeps its judgement and its
-    own recovery ref; only an opening undoing the branch it just made deletes one itself. A `tidy` (`TidyDoor`) judges nothing itself: the
+    `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. The Branches tab lists them from the
+    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement and its own recovery ref, which the record names; only an opening undoing the branch it just made deletes one itself. A `tidy` (`TidyDoor`) judges nothing itself: the
     `monitor` before it read the chain's pull request merged, and each part's delete rests on the recovery ref it kept the part's commits
     on. (from D204, D228, D245)
 39. Always refused: a hard reset, `clean`, any force, a remote delete, `push -u`, an act while a session runs there or a
@@ -294,8 +295,10 @@ catalogues (`i18n:check`).
 - **GITAUTH1h:** the install, seen (the owner).
 - **GITAPP2:** Stash Drop stays deferred. Ask Daoris's fetch card is not built. The push's interruption (an end with no exit, said
   unknown) and the person's `pre-push` hook have no proof of their own yet.
-- **ONEWAY1r:** the doors' own recovery refs and undo records (`RecoveryRetention`, `RecoveryDropping`) give way to the journal's,
-  their reader kept until the last record from before ONEWAY1r passes its retention; the git page lists no journal of deletes yet.
+- **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone. Left: the doors
+  still keep a recovery ref before they judge (`ContentHolds.KeepDiscardedAsync`), which `RecoveryRetention` dates from its reflog and
+  `RecoveryDropping` presses; both end, with their callers' own refs, when no ref under `refs/daoris/discarded/` stands without a journal
+  record naming it, and ONEWAY1af deletes them.
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
   starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
   `resources.json`); left in the web: the tools page's fixtures, stories and tests, its two `why` words and the glossary line, and the

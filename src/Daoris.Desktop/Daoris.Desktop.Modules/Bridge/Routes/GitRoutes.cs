@@ -288,6 +288,13 @@ public sealed class GitRoutes(DriverContext context)
         await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
             new StashActs(new ActJournal(_loop.Home)).PlanAsync(root, token));
 
+    // The repository's deletes as the journal holds them, each with whether its Undo (`GIT_REF_UNDO`) is open (ONEWAY1r). Told by event.
+    [DriverRoute("GIT_DELETES", PipeClass.Open)]
+    [ByEvent("GIT_DELETES", Untold = "the journal's ref acts and the repository's refs, which no scope tells")]
+    private async Task<object?> GitDeletesAsync(GitCheckoutRead read, CancellationToken cancellationToken) =>
+        await GitAnsweredAsync(read.Repository, read.Workspace, cancellationToken, (root, token) =>
+            DeletedBranches.ReadAsync(_loop.Home, root, read.Repository!, token));
+
     // Stash *Save*: `refs/stash` is shared with every linked tree, so a stash that moved since the plan refuses the press.
     [DriverRoute("GIT_STASH", PipeClass.Window)]
     [Owner("GIT_STASH", Repository = "repository", Workspace = "workspace")]

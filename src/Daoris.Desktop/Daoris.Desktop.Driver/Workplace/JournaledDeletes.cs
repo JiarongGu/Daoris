@@ -49,7 +49,7 @@ internal static class JournaledDeletes
 
         var plan = new JsonObject
         {
-            ["kind"] = "branch", ["name"] = branch, ["ref"] = full, ["at"] = judged, ["recovery"] = null, ["recoveryMade"] = false,
+            ["kind"] = "branch", ["name"] = branch, ["ref"] = full, ["at"] = judged, ["recovery"] = await KeptAtAsync(root, judged).ConfigureAwait(false), ["recoveryMade"] = false,
             ["holders"] = new JsonArray([.. held.Select(each => (JsonNode)each.Ref)]), ["section"] = section?.DeepClone(),
             ["commands"] = new JsonArray((JsonNode)$"git branch -D {branch}"),
         };
@@ -81,6 +81,18 @@ internal static class JournaledDeletes
         if (stands != 0 || !WorkingTree.IsCommitId(at.Trim())) return $"git would not delete it: {(stands == 1 ? "no such branch stands" : ContentHolds.Said(err))}";
         var tip = at.Trim();
         return await content.DeleteJudgedAsync(root, repository, branch, tip, [(full, tip)], ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The recovery ref the door kept at <paramref name="judged"/> before it judged the delete, the first by name, which the record names so
+    /// <see cref="DeletedBranches"/> reads where the commit is kept from the journal alone; null where the door kept none. The act made it
+    /// not (<c>recoveryMade</c> stays false), so its Undo lets none go.
+    /// </summary>
+    private static async Task<string?> KeptAtAsync(string root, string judged)
+    {
+        var (code, listed, _) = await WorkingTree.GitAsync(
+            root, ["for-each-ref", "--points-at", judged, "--format=%(refname)", "--sort=refname", ContentHolds.DiscardedPrefix], CancellationToken.None).ConfigureAwait(false);
+        return code == 0 ? listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() : null;
     }
 
     private static string Clause(string said)

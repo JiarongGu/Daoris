@@ -224,6 +224,12 @@ public sealed class ActJournal(
     public IReadOnlyList<ActStep> Steps(string act) =>
         Reading(reader => reader.Query($"SELECT {StepColumns} FROM git_act_steps WHERE act = $act ORDER BY ordinal", MapStep, ("$act", act)), []);
 
+    /// <summary>The newest <paramref name="limit"/> acts of <paramref name="kind"/> in <paramref name="repository"/>, newest first.</summary>
+    public IReadOnlyList<ActRecord> OfKind(string kind, string repository, int limit) =>
+        Reading(reader => reader.Query(
+            $"SELECT {ActColumns} FROM git_acts WHERE kind = $kind AND repository = $repository ORDER BY at DESC, id DESC LIMIT $limit", MapAct,
+            ("$kind", kind), ("$repository", repository), ("$limit", limit)), []);
+
     /// <summary>Every act not closed, oldest first: what the driver's start reconciles.</summary>
     public IReadOnlyList<ActRecord> Unclosed() =>
         Reading(reader => reader.Query($"SELECT {ActColumns} FROM git_acts WHERE closed_at IS NULL ORDER BY at, id", MapAct), []);

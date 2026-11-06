@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
   useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
-  useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
+  useGitDeletes, useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useGitPush, useGitPushPlan } from '../../bridge/repositories/gitPush';
 import { useWorkState } from '../../bridge/repositories/lines';
@@ -307,11 +307,12 @@ function BranchesRead({ repository, workspace, ...presses }: { repository: strin
   const plan = useGitFetchPlan(repository, workspace).data?.value;
   const pushPlan = useGitPushPlan(repository, workspace).data?.value;
   const push = useGitPush(repository, workspace);
+  const deletes = useGitDeletes(repository, workspace).data?.value?.rows;
   // GITAPP2f, g: Fetch and Push are drawn only once the driver's plan is read; before it, or where it did not answer, the tab offers neither.
   const acts: RefActs = {
     ...refActs, fetch: plan ? { ...plan, press: fetchOrigin } : undefined, push: pushPlan ? { ...pushPlan, press: push } : undefined,
   };
-  return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} {...presses} />;
+  return <BranchesTab repository={repository} read={read} titles={titles} acts={acts} deleted={deletes} {...presses} />;
 }
 
 /**

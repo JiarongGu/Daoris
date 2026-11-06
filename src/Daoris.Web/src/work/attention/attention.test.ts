@@ -387,8 +387,7 @@ describe('an ask that waits on a person, worded', () => {
   });
 
   it('is the ask’s one row where its intake parked asking, with the intake’s own note', () => {
-    const note = 'published nothing: the declarations did not settle ask `#7c1e9a04b2d5`, so it asks you rather than guess.';
-    const parts = [{ words: note, by: 'before' as const }];
+    const parts = [{ words: 'published nothing: it asks you rather than guess.', by: 'before' as const }];
     expect(words(row('intake', '7c1e9a04b2d5', '2026-09-21T09:45:00Z', { where: 'aurora', note: { parts } }), { asks: [ask()] })).toEqual({
       id: '7c1e9a04b2d5', kind: 'intake', title: 'The chunk streamer stalls on a cold cache.', where: 'aurora', since: '2026-09-21T09:45:00Z', note: { parts },
     });

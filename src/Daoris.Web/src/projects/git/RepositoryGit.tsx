@@ -4,6 +4,8 @@ import { Button, Inline, Pill, Prose, SkeletonRows } from '../../design/ui';
 import { clockOf } from '../../locales/format';
 import { BranchList, type BranchListValue } from './BranchList';
 import type { RefActs } from './NewRef';
+import type { GitDeletedRef } from '../../bridge/repositories/git';
+import { DeletedRefs } from './DeletedRefs';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../../work/frame/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
@@ -66,9 +68,11 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
  * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
  * (UX6h3b).
  */
-export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts }: {
+export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts, deleted }: {
   repository: string;
   read: GitRead<BranchListValue>;
+  /** The deletes the journal holds (ONEWAY1r), listed under the branches with each one's Undo; absent, the tab lists none. */
+  deleted?: readonly GitDeletedRef[];
   /** *New branch or tag* (GITAPP2c), made at the line's commit; absent, the tab offers none. */
   acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
@@ -88,7 +92,12 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, a
   if (read.value.branches.length === 0) {
     return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
-  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} acts={acts} />;
+  return (
+    <div className="grid gap-4">
+      <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} acts={acts} />
+      {acts && deleted && <DeletedRefs rows={deleted} acts={acts} />}
+    </div>
+  );
 }
 
 /**

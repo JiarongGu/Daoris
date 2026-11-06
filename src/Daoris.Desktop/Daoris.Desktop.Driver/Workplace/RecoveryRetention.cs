@@ -15,6 +15,10 @@ public sealed record RecoveryGone(string Ref, string Commit, string Holder);
 /// never another recovery ref; and never a symbolic ref (re-check), whatever its name, read by git's own <c>%(symref)</c>: a name that
 /// points at a session branch would dangle once the sweep removes that branch. A ref named by hand under the prefix is treated as Daoris's own, since git keeps no word of who made it
 /// (no reflog is written outside <c>refs/heads/</c>): it goes only on the same rule, its commit kept by the person's own ref.
+/// <para><b>Transitional (ONEWAY1r, D228):</b> a delete's record, its Undo and its list are the journal's (<see cref="DeletedBranches"/>); this
+/// reader and its dating from a ref's reflog remain only for a recovery ref the journal's record does not name, one a door kept before every
+/// delete was journaled. It ends when no ref under <c>refs/daoris/discarded/</c> stands without a journal record naming it, past its
+/// <see cref="Kept"/> days; ONEWAY1af deletes it, with <see cref="RecoveryDropping"/>.</para>
 /// </remarks>
 public static class RecoveryRetention
 {

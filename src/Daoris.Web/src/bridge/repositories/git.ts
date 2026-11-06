@@ -680,6 +680,42 @@ export const useGitStashPlan = (repository: string | null, workspace: string) =>
   });
 };
 
+/**
+ * One delete the journal holds (ONEWAY1r): the act `GIT_REF_UNDO` takes, what went and at which commit, who pressed it, and `closed`, why
+ * its Undo is shut (`undone` · `name-taken` · `commit-gone`), null where it is open.
+ */
+export type GitDeletedRef = {
+  act: string;
+  kind: 'branch' | 'tag';
+  name: string;
+  commit: string;
+  at: string;
+  press: string;
+  recovery: string | null;
+  closed: string | null;
+};
+
+const readDeletes = readPlanOf<{ rows: GitDeletedRef[] }>((value) => ({
+  rows: (value.rows ?? []).map((row) => ({
+    act: row.act, kind: row.kind === 'tag' ? 'tag' : 'branch', name: row.name, commit: row.commit, at: row.at, press: row.press,
+    recovery: row.recovery ?? null, closed: row.closed ?? null,
+  })),
+}));
+
+/** A repository's deletes as its journal holds them, each with its Undo, read when the Branches tab opens and again after any ref act. */
+export const useGitDeletes = (repository: string | null, workspace: string) => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.gitChanges(repository ?? '', workspace), 'deletes'] as const;
+  return useQuery({
+    queryKey,
+    queryFn: () => askHeld('GIT_DELETES', client, queryKey, { repository, ...(workspace ? { workspace } : {}) }, readDeletes),
+    enabled: isAvailable && Boolean(repository),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+};
+
 const readFetchPlan = readPlanOf<GitFetchPlan>((value) => ({
   offered: value.offered === true, reason: value.reason ?? null, why: value.why ?? null, address: value.address ?? null, command: value.command ?? '',
 }));

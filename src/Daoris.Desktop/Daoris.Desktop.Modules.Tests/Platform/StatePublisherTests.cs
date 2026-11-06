@@ -499,8 +499,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_MAKE_COMMIT", "driver,checkouts", null)]
     [InlineData("GIT_AMEND", "driver,checkouts", null)]
     [InlineData("GIT_SWITCH_PLAN", "", null)]
-    [InlineData("GIT_STASH_PLAN", "", null)]
-    [InlineData("GIT_FETCH_PLAN", "", null)]
+    [InlineData("GIT_STASH_PLAN", "", null)]    [InlineData("GIT_FETCH_PLAN", "", null)]
     // GITAPP2k: a switch moves HEAD and the checkout's files, a Save the shared stash and the tracked files; the branch list and the Changes tab read both.
     [InlineData("GIT_SWITCH", "driver,checkouts", null)]
     [InlineData("GIT_STASH", "driver,checkouts", null)]
