@@ -13,7 +13,7 @@ public sealed class PluginPosturesTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        if (Directory.Exists(_home)) GitSeed.Discard(_home);
     }
 
     [Fact]

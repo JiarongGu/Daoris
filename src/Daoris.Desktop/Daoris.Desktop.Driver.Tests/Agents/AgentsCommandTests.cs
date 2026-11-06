@@ -126,7 +126,7 @@ public sealed class AgentsCommandTests : IDisposable
 
     [Theory]
     [InlineData("rules allow WebFetch")]
-    [InlineData("rules default no-push off")]
+    [InlineData("rules default no-publish off")]
     [InlineData("rules decline p0000007")]
     [InlineData("settings claude-code --account work model opus")]
     [InlineData("trust claude-code <folder> --yes")]

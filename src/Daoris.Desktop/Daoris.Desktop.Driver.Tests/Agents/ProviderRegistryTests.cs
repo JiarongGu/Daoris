@@ -28,6 +28,7 @@ public sealed class ProviderRegistryTests : IDisposable
     private static readonly string[] DoorParts =
     [
         "Id", "Transport", "Identity", "Program", "Home", "Lent", "Offers", "Postures", "Spawn", "Dialect", "Abilities", "Tables", "AccountOf",
+        "Instructions",
     ];
 
     /// <summary>§2.3: every part is required, so each is a member of the record, and the records are sealed.</summary>
@@ -490,10 +491,10 @@ public sealed class ProviderRegistryTests : IDisposable
         var set = AdapterSet.Built();
         var registry = ProviderRegistry.Of(set);
 
-        Assert.Equal(["claude-code", "codex", "dsh", "stub"], registry.Providers.Select(p => p.Id.Value));
+        Assert.Equal(["alt-stub", "claude-code", "codex", "dsh", "stub"], registry.Providers.Select(p => p.Id.Value));
         Assert.All(registry.Providers, provider => Assert.Equal(Reach.Everywhere, provider.Reach));
         Assert.All(registry.Providers, provider => Assert.False(provider.Unavailable));
-        Assert.Equal(["stub"], registry.Providers.Where(p => p.Identity.StandIn).Select(p => p.Id.Value));
+        Assert.Equal(["alt-stub", "stub"], registry.Providers.Where(p => p.Identity.StandIn).Select(p => p.Id.Value));
 
         var claude = registry.Provider("claude-code");
         Assert.Equal(["claude-code", "claude-code-acp"], claude.Doors.Select(door => door.Id.Value));
