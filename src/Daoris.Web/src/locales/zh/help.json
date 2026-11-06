@@ -59,7 +59,7 @@
   "help.proposal.place.nothing": "计划目前不会改动任何东西。",
   "help.proposal.place.note": "应用只会带着这项设置打开「配置…」，不会写入任何东西：计划由你在那里阅读，并亲自按下「应用」。",
   "help.proposal.place.open": "审阅计划",
-  "help.proposal.rules.title": "监督者：{{place}}的规则",
+  "help.proposal.rules.title": "主管：{{place}}的规则",
   "help.proposal.rules.before": "现在",
   "help.proposal.rules.after": "应用之后",
   "help.proposal.rules.none": "这里没有自己的规则",
