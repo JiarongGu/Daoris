@@ -231,7 +231,7 @@ public sealed class RelayBatchTests
         ];
         Assert.All(fixedLines, line => Assert.Matches(Sentence, line));
         Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.Stopped("Merge every landed branch now"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.NoEvents("C:/Users/someone", Run, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.NoEvents("C:/Teams/someone", Run, 1));
         Assert.DoesNotMatch(Sentence, RelaySaid.Gap("Merge-Every-Landed-Branch.Now!", 1));
         Assert.Contains("read the batch from the output file its end names", RelaySaid.Start("copy", "home"), StringComparison.Ordinal);
     }

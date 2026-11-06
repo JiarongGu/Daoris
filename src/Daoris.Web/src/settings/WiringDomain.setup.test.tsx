@@ -146,14 +146,14 @@ describe('This Daoris → set up from the page', () => {
   });
 
   it('builds the line for each terminal with the home, the address and the launchers first on the PATH', () => {
-    const facts = { home: 'C:\\Users\\me\\Daoris', url: 'http://127.0.0.1:5198', bin: BIN };
+    const facts = { home: 'C:\\Teams\\me\\Daoris', url: 'http://127.0.0.1:5198', bin: BIN };
 
     expect(terminalLine('powershell', facts)).toBe(
-      "$env:DAORIS_HOME = 'C:\\Users\\me\\Daoris'; $env:DAORIS_SERVICE_URL = 'http://127.0.0.1:5198'; $env:PATH = 'C:\\Daoris\\app\\bin;' + $env:PATH");
+      "$env:DAORIS_HOME = 'C:\\Teams\\me\\Daoris'; $env:DAORIS_SERVICE_URL = 'http://127.0.0.1:5198'; $env:PATH = 'C:\\Daoris\\app\\bin;' + $env:PATH");
     expect(terminalLine('cmd', facts)).toBe(
-      'set "DAORIS_HOME=C:\\Users\\me\\Daoris" && set "DAORIS_SERVICE_URL=http://127.0.0.1:5198" && set "PATH=C:\\Daoris\\app\\bin;%PATH%"');
+      'set "DAORIS_HOME=C:\\Teams\\me\\Daoris" && set "DAORIS_SERVICE_URL=http://127.0.0.1:5198" && set "PATH=C:\\Daoris\\app\\bin;%PATH%"');
     expect(terminalLine('bash', facts)).toBe(
-      "export DAORIS_HOME='/c/Users/me/Daoris'; export DAORIS_SERVICE_URL='http://127.0.0.1:5198'; export PATH='/c/Daoris/app/bin':\"$PATH\"");
+      "export DAORIS_HOME='/c/Teams/me/Daoris'; export DAORIS_SERVICE_URL='http://127.0.0.1:5198'; export PATH='/c/Daoris/app/bin':\"$PATH\"");
     // A part with nothing to say is left out, and a quote is escaped for the shell it is in.
     expect(terminalLine('powershell', { home: "C:\\O'Neil", url: null, bin: null })).toBe("$env:DAORIS_HOME = 'C:\\O''Neil'");
     expect(terminalLine('bash', { home: "/o'neil", url: null, bin: null })).toBe("export DAORIS_HOME='/o'\\''neil'");
