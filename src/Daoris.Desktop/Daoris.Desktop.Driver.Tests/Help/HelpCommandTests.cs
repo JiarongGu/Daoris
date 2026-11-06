@@ -94,9 +94,6 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Equal(new HelpVerbAsk("list") { Offset = 50, Limit = 20 }, HelpCommand.Read(["list", "--offset", "50", "--limit", "20"], out _));
         Assert.Equal(new HelpVerbAsk("list") { Workspace = "games" }, HelpCommand.Read(["list", "--workspace", " games "], out _));
         Assert.Equal(new HelpVerbAsk("list") { All = true, Json = true }, HelpCommand.Read(["list", "--all", "--json"], out _));
-        var resume = HelpCommand.Read(["resume", "h1", "and", "the", "remote?", "--file", "notes.md"], out _)!;
-        Assert.Equal(("resume", "h1", "and the remote?"), (resume.Verb, resume.Id, resume.Text));
-        Assert.Equal(["notes.md"], resume.Files);
         Assert.Equal(new HelpVerbAsk("rename") { Id = "h1", Text = "Workspaces, explained" }, HelpCommand.Read(["rename", "h1", "Workspaces,", "explained"], out _));
         Assert.Equal(new HelpVerbAsk("rename") { Id = "h1", Clear = true }, HelpCommand.Read(["rename", "h1", "--clear"], out _));
         Assert.Equal(new HelpVerbAsk("unpin") { Id = "h1" }, HelpCommand.Read(["unpin", "h1"], out _));
@@ -359,25 +356,17 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Words said to one go through <c>sessions say</c>'s door; with no driver on the home nothing could open it again, so they
-    /// are refused naming the window, where its panel holds it.
+    /// RPC1g3 (D238 point 5, the terminal-conversation design §3.4 T5): words to an Ask Daoris conversation are <c>session say</c>'s, so
+    /// <c>resume</c> is no verb of this family, in its usage, its verbs or its reading.
     /// </summary>
     [Fact]
-    public async Task Words_go_through_the_say_door_and_go_on_in_the_window()
+    public void Resume_is_no_verb_of_this_family()
     {
-        var (exit, said) = await RunAsync(Ledger(), "resume", "h1", "and the remote?");
-
-        Assert.Equal(1, exit);
-        Assert.Contains("h1 is Ask Daoris's conversation, which goes on in the window", said);
-    }
-
-    [Fact]
-    public async Task Resuming_a_never_spoken_conversation_does_not_claim_its_id_was_lost()
-    {
-        var (exit, said) = await RunAsync(Ledger(), "resume", "h3", "my first question");
-        Assert.Equal(1, exit);
-        Assert.Contains("never-spoken — it never took a turn", said);
-        Assert.DoesNotContain("unkept", said);
+        Assert.DoesNotContain("resume", HelpCommand.Verbs);
+        Assert.DoesNotContain("resume", HelpCommand.Usage);
+        Assert.DoesNotContain("resume", DriverCommand.Usage);
+        Assert.Null(HelpCommand.Read(["resume", "h1", "and", "the", "remote?"], out var problem));
+        Assert.DoesNotContain("resume", problem);
     }
 
     /// <summary>The host's usage names the verb, and its own usage spells each sub-verb.</summary>

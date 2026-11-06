@@ -282,6 +282,10 @@ of everything it handed, section by section.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
   is proposed: one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
   The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),
-  and a held conversation's head says *Held by a terminal*; no verb holds one yet, and `daoris chat` still runs its own
-  `ChatRunner` beside the instance (`Daoris.Desktop.Driver.Host/ChatConsole.cs`).
+  and a held conversation's head says *Held by a terminal*. `daoris chat --repository` starts one through `START_CHAT` with
+  `hold: true` and `--session` holds one open; `session start-from` and `session hand-over <id> --agent` hold what they open
+  (`HeldVerbs`, `HeldChat` and `HeldDoor` in `Daoris.Desktop.Driver/Instance/`, wired by `Driver.Host/HeldChatConsole.cs`). A line, `:attach`,
+  a turn stop and the end of input are held requests; Ctrl+C at rest lets go; with no Daoris running they refuse and run nothing.
+  `ask-daoris resume` is gone (`session say`). `ChatConsole`'s own runner path, `TerminalOwner` and `TurnMarks` remain,
+  unreachable from any verb, until RPC1g4 deletes them.
 - **MSG1h, MSG1i, STEER3:** next-step words on Codex's and the native doors; other steering measured.

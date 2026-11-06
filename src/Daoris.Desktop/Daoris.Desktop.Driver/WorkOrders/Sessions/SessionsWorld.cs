@@ -61,16 +61,15 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public Func<string?, string?, CoolingEntry?>? CoolingOf { get; init; }
 
     /// <summary>
-    /// The terminal's own conversation, opened with the words a session could not go on with (<c>start-from</c>): the host's chat
-    /// door, which runs it through the chat runner's one act the screen's route calls and answers its exit. Null where nothing here
-    /// can hold a conversation.
+    /// The conversation opened with the words a session could not go on with (<c>start-from</c>): the host's chat door, which sends the
+    /// route to the running Daoris, holds what it opens and answers its exit. Null where nothing here can hold a conversation.
     /// </summary>
     public Func<string, CancellationToken, Task<int>>? StartFrom { get; init; }
 
     /// <summary>
-    /// The terminal's own door for a conversation handed to another agent: the host's chat door, which runs the chat runner's one
-    /// hand-over, as <see cref="StartFrom"/> runs its start, and answers its exit. Takes the session, the agent and the account, or
-    /// null for the roster's pick. Null where nothing here can hold a conversation.
+    /// The door for a conversation handed to another agent: the host's chat door, which sends the route and holds what it opens, as
+    /// <see cref="StartFrom"/> does its start, and answers its exit. Takes the session, the agent and the account, or null for the
+    /// roster's pick. Null where nothing here can hold a conversation.
     /// </summary>
     public Func<string, string, string?, CancellationToken, Task<int>>? HandOver { get; init; }
 

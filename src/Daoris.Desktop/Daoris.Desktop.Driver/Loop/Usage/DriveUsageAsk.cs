@@ -42,11 +42,11 @@ internal static class DriveUsageAsk
           ask clear <id> [--yes]
               list what clearing one ask's work from this machine would take and keep; with --yes, clear it.
           ask-daoris list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
-          ask-daoris resume <id> "…" [--file <path>]…  ·  ask-daoris rename <id> "…" | --clear  ·  ask-daoris pin <id>  ·  ask-daoris unpin <id>
+          ask-daoris rename <id> "…" | --clear  ·  ask-daoris pin <id>  ·  ask-daoris unpin <id>
           ask-daoris delete <id> [--yes]
               Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, one
-              workspace's or every one's, each then labelled with its own; go on in one with your words (it goes
-              on in the window), name, pin or unpin one, or delete one, listed first and deleted with --yes.
+              workspace's or every one's, each then labelled with its own; name, pin or unpin one, or delete one,
+              listed first and deleted with --yes. Words to one are `session say <id>`'s.
           ask-daoris mode [restricted|full]
               Ask Daoris's access mode (D183), from its next start: restricted, the default, reads and proposes and
               you apply; full acts on this machine itself, in its agent's mode that asks nothing. Alone, says which.
