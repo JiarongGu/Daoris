@@ -245,7 +245,7 @@ internal static class ConformanceCases
         var name = $"`{door.Id}`";
 
         Assert.Equal((door.Postures.Ordinary, door.Postures.Asking, door.Postures.Full), (adapter.Postures.Ordinary, adapter.Postures.Asking, adapter.Postures.Full));
-        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(run.Subject.Adapters, adapter)).Refusal;
+        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(run.Set, adapter)).Refusal;
         var unrestricted = DrivenAccess.For(Permissions(AccessRules.Unrestricted), "engine", adapter).Refusal;
         var asking = DrivenAccess.For(Permissions(AccessRules.Asking), "engine", adapter).Refusal;
         if (door.Postures.Full is { Length: > 0 })
@@ -279,9 +279,9 @@ internal static class ConformanceCases
     {
         // Registered, whatever its spelling: no prefix rule refuses a provider's own variable.
         _ = new ProviderRegistry([run.Provider], []);
-        if (run.TheDoor.Home.Variable is not { Length: > 0 } variable || run.Subject.Adapters.AgentNamed(run.Adapter.Id.Value) is not { } toolchain) return;
+        if (run.TheDoor.Home.Variable is not { Length: > 0 } variable || run.Set.AgentNamed(run.Adapter.Id.Value) is not { } toolchain) return;
 
-        var info = run.Subject.Adapters.Start(run.Adapter, run.Target(), run.Command());
+        var info = run.Started(run.Adapter);
         var profile = Path.Combine(run.Home(), "profile");
         Shell.Equip(info, toolchain, profile);
 
@@ -305,9 +305,9 @@ internal static class ConformanceCases
         _ = new ProviderRegistry([Keyed(run.Provider, token)], []);
         foreach (var door in run.Provider.Doors)
         {
-            var adapter = run.Subject.Adapters.Door(door.Id.Value);
-            if (run.Subject.Adapters.AgentNamed(door.Id.Value) is not { } toolchain) continue;
-            var info = run.Subject.Adapters.Start(adapter, run.Target(), run.Command());
+            var adapter = run.Set.Door(door.Id.Value);
+            if (run.Set.AgentNamed(door.Id.Value) is not { } toolchain) continue;
+            var info = run.Started(adapter);
             Shell.Equip(info, toolchain, profileHome: null, account: new Dictionary<string, string> { [token] = "conformance-key" });
             Assert.Equal("conformance-key", info.Environment[token]);
         }
@@ -387,7 +387,7 @@ internal static class ConformanceCases
         var home = run.Home();
         var ledger = new ChatLedger().Register("engine", run.Root());
         using var client = ledger.Client();
-        using var runner = new ChatRunner(client, run.Subject.Adapters, home, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions)));
+        using var runner = new ChatRunner(client, run.Set, home, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions)));
 
         var started = await runner.StartAsync("engine", door.Id.Value, DriverConfig.Empty);
 
@@ -397,7 +397,7 @@ internal static class ConformanceCases
             started.Message);
         Assert.Equal(0, ledger.Count);
         // And the door's own spawn refuses the conversation, naming it, before anything starts.
-        Assert.Contains($"`{door.Id}`", Assert.Throws<DriverException>(() => run.Subject.Adapters.Chat(run.Adapter, run.Chat(), run.Command())).Message);
+        Assert.Contains($"`{door.Id}`", Assert.Throws<DriverException>(() => run.Set.Chat(run.Adapter, run.Chat(), run.Command())).Message);
     }
 
     /// <summary>
@@ -411,9 +411,9 @@ internal static class ConformanceCases
         var home = run.Home();
         using var client = new ServiceClient("http://127.0.0.1:9", null);
         var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions));
-        var driver = new Daoris.Driver.Driver(client, DriverConfig.Empty, run.Subject.Adapters, home, processes);
+        var driver = new Daoris.Driver.Driver(client, DriverConfig.Empty, run.Set, home, processes);
         await using var transport = new TransportRun(
-            new DriverTransportHost(driver), run.Subject.Adapters, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+            new DriverTransportHost(driver), run.Set, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         var choice = new ActorAsked(door.Id.Value, new ActorValue("entry", "m-2", true), new ActorValue("entry", null, false));
         var never = CancellationToken.None;
 
@@ -521,7 +521,7 @@ internal static class ConformanceCases
 
     private static void D210Precedence(ConformanceRun run)
     {
-        var (registry, door, adapters, adapter) = (run.Registry, run.TheDoor, run.Subject.Adapters, run.Adapter);
+        var (registry, door, adapters, adapter) = (run.Registry, run.TheDoor, run.Set, run.Adapter);
         var wire = Protocol(door) ? "protocol" : "pipe";
         AgentError Read(string words, int? status, string? kind, string where, DateTimeOffset seen) =>
             AgentErrors.Read(adapters, adapter, new DoorFailure(wire, null, kind, status, words, where), seen, TimeZoneInfo.Utc);
@@ -566,7 +566,7 @@ internal static class ConformanceCases
 
         Assert.True(resumes.IsKnown, "a resume is stated on every door");
         Assert.Equal(resumes.Value, adapter.Can.Resumes);
-        var resumed = run.Subject.Adapters.Resume(adapter, run.Target(), run.Command(), "c-1");
+        var resumed = run.Set.Resume(adapter, run.Target(), run.Command(), "c-1");
         if (Protocol(door))
         {
             // The transport's default: eligibility to negotiate at the open, never a resume known (X; §2.6).
@@ -594,7 +594,7 @@ internal static class ConformanceCases
 
         Assert.True(takes.IsKnown, "taking rules is stated on every door");
         Assert.Equal(takes.Value, adapter.Can.TakesSettings);
-        var info = run.Subject.Adapters.Start(adapter, run.Target(), run.Command());
+        var info = run.Started(adapter);
         List<string> before = [.. info.ArgumentList];
         adapter.Spawned().HandSettings(info, settings);
         var meta = adapter.AcpSessionMeta(settings, []);
@@ -694,8 +694,8 @@ internal static class ConformanceCases
     /// <summary>Each spawn a door prepares: a driven start's, and a conversation's where it holds one.</summary>
     private static IEnumerable<ProcessStartInfo> Spawns(ConformanceRun run, AgentDoor adapter)
     {
-        yield return run.Subject.Adapters.Start(adapter, run.Target(), run.Command());
-        if (adapter.Can.Interactive) yield return run.Subject.Adapters.Chat(adapter, run.Chat(), run.Command());
+        yield return run.Started(adapter);
+        if (adapter.Can.Interactive) yield return run.Set.Chat(adapter, run.Chat(), run.Command());
     }
 
     private static bool Inherits(ProcessStartInfo info, string name) =>
@@ -739,7 +739,7 @@ internal static class ConformanceCases
         {
             foreach (var door in run.Provider.Doors)
             {
-                Assert.True(run.Subject.Adapters.Start(run.Subject.Adapters.Door(door.Id.Value), run.Target(), run.Command()).Environment.ContainsKey(variable));
+                Assert.True(run.Started(run.Set.Door(door.Id.Value)).Environment.ContainsKey(variable));
             }
 
             Assert.True(Inherits(Prepared(run, twin), variable), $"the twin declaring {variable} lost it");

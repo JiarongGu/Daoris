@@ -67,6 +67,12 @@ internal sealed record ConformanceRun(ConformanceSubject Subject, Provider Provi
     /// <summary>The door as today's readers hold it.</summary>
     public AgentDoor Adapter => Subject.Adapters.Door(TheDoor.Id.Value);
 
+    /// <summary>The registry today's readers hold, the case's door among its doors.</summary>
+    public ProviderRegistry Set => Subject.Adapters;
+
+    /// <summary>The driven start of <paramref name="door"/> over the case's target and command, as that registry completes it.</summary>
+    public System.Diagnostics.ProcessStartInfo Started(AgentDoor door) => Set.Start(door, Target(), Command());
+
     /// <summary>A home of the case's own, never the machine's.</summary>
     public string Home() => Folder("home");
 
