@@ -298,7 +298,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         {
             // The state first, so a look meanwhile reads it taken and never keeps a second box.
             files.WriteState(session, new HandOverAskState(ask.Id, HandOverAskStates.Taken, null, agent, DateTimeOffset.UtcNow));
-            var handed = await take(session, agent, ct).ConfigureAwait(false);
+            var handed = await take(session, agent, approved, ct).ConfigureAwait(false);
             (kept, message, code) = (handed.Kept || handed.SessionId is not null, handed.Message, handed.Why);
         }
         else
