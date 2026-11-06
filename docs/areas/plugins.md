@@ -156,6 +156,7 @@ example's `node --test`.
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
 - EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris events relay`.
+- EVENTHOOK1d, EVENTHOOK1e: the quest kinds, `person.answered` and `work.ended` read from records, and a relay that lives for the session (`docs/2026-11-06-event-channel-design.md` §3, §4, proposed; chunks EV-A to EV-E).
 - No row: D120's workshop (`<home>/plugins/.workshop/`, `plugin-sources.json`, `daoris plugin workshop`, *Send to a repository…*).
 - No row: D120's NuGet source (find, show, install by id, update from a source, *Available*, another publisher's installing off, pinned `plugin-offers.json`).
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
