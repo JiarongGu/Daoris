@@ -62,6 +62,9 @@ public sealed record Confirmation(
 
     internal string Query { get; init; } = "";
 
+    /// <summary>The process a nameless ask came from, where the host could read it.</summary>
+    internal int? Process { get; init; }
+
     internal byte[] Bytes { get; init; } = [];
 }
 
@@ -109,7 +112,9 @@ public enum ConfirmationAnswerRefusal
 /// an ask is placed by what it says of itself, as a body may narrow who acted and never widen it (§3.1). Asks naming a session fill at
 /// most <see cref="Most"/> places; an ask naming none, the terminal's, may take one more, so sessions' asks never fill the last. Each
 /// asker, a session or the terminal, holds at most <see cref="PerAsker"/> at once. Past either, the ask is refused, naming the asker's own
-/// requests waiting, so it can withdraw one; one answered or withdrawn frees its place.</para>
+/// requests waiting, so it can withdraw one; one answered or withdrawn frees its place. A nameless ask is bound by its process
+/// (<see cref="AskerProcess"/>): one process holds <see cref="PerProcess"/> of the terminal's places, so an agent leaving its session off
+/// cannot hold both; where the process cannot be read, the nameless asks are the one terminal asker.</para>
 ///
 /// <para><b>A session can ask, and cannot answer.</b> The ask is any caller's; the answers are the key's, and a withdrawal its
 /// asker's alone, by the token its ask was answered with. Only a door that wants the key can be asked for, in the very form that wants
@@ -146,6 +151,9 @@ public sealed class PersonConfirmations(
 
     /// <summary>How many one asker, a session or the terminal, may hold waiting at once.</summary>
     public const int PerAsker = 2;
+
+    /// <summary>How many one process asking with no session may hold: one of the terminal's two, so it cannot hold both.</summary>
+    public const int PerProcess = 1;
 
     /// <summary>How long one that ended is still answered to the asker that polls it.</summary>
     public static readonly TimeSpan Kept = TimeSpan.FromMinutes(10);
@@ -351,7 +359,7 @@ public sealed class PersonConfirmations(
     /// the only time it is answered.
     /// </summary>
     public (Confirmation? Confirmation, string? Token, ConfirmationAskRefusal Refusal, string Message) Ask(
-        string? method, string? path, string? body, string? session)
+        string? method, string? path, string? body, string? session, int? process = null)
     {
         if (!holds) return (null, null, ConfirmationAskRefusal.NoKey, NoKeySentence);
 
@@ -396,7 +404,7 @@ public sealed class PersonConfirmations(
         }
 
         // The places first, before anything is parsed: with its asker's places taken, an ask costs nothing to refuse.
-        if (Admits(asker) is { } closed) return closed;
+        if (Admits(asker, process) is { } closed) return closed;
 
         JsonElement? parsed = null;
         if (text is not null)
@@ -428,7 +436,7 @@ public sealed class PersonConfirmations(
         var token = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
         lock (_gate)
         {
-            if (Admits(asker) is { } taken) return taken;
+            if (Admits(asker, process) is { } taken) return taken;
 
             var confirmation = new Confirmation(
                 _epoch + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)), verb, path, door.Pattern, act, values, fields, text,
@@ -437,6 +445,7 @@ public sealed class PersonConfirmations(
                 Token = SHA256.HashData(Encoding.ASCII.GetBytes(token)),
                 Unescaped = unescaped,
                 Query = query,
+                Process = asker is null ? process : null,
                 Bytes = text is null ? [] : Encoding.UTF8.GetBytes(text),
             };
             _kept.Add(confirmation);
@@ -448,14 +457,17 @@ public sealed class PersonConfirmations(
 
     // Whether an ask from this asker may wait now: past its own bound, or with every place it may fill taken, it is refused, naming
     // its own requests waiting. Judged once before the body is parsed and again as it is kept, since another ask may have come between.
-    private (Confirmation?, string?, ConfirmationAskRefusal, string)? Admits(string? asker)
+    private (Confirmation?, string?, ConfirmationAskRefusal, string)? Admits(string? asker, int? process)
     {
         lock (_gate)
         {
             Sweep(clock.GetUtcNow());
             List<Confirmation> waiting = [.. _kept.Where(c => c.State == ConfirmationState.Waiting)];
-            List<Confirmation> yours = [.. waiting.Where(c => string.Equals(c.Session, asker, StringComparison.Ordinal))];
-            if (yours.Count >= PerAsker) return (null, null, ConfirmationAskRefusal.Bound, BoundSentence(yours));
+            // A nameless ask whose process is read is that process's alone, holding one place of the terminal's two (PERSONDOOR1j).
+            var byProcess = asker is null && process is not null;
+            List<Confirmation> yours = [.. waiting.Where(c => string.Equals(c.Session, asker, StringComparison.Ordinal)
+                && (asker is not null || c.Process == process))];
+            if (yours.Count >= (byProcess ? PerProcess : PerAsker)) return (null, null, ConfirmationAskRefusal.Bound, BoundSentence(yours));
             return waiting.Count >= (asker is null ? Most + Reserved : Most)
                 ? (null, null, ConfirmationAskRefusal.Full, FullSentence(waiting.Count, asker is not null, yours))
                 : null;
