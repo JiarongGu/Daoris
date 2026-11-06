@@ -565,8 +565,9 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
   const opened = await request.post('/api/sessions', { data: { quest: quest.id, adapter: 'stub' } });
   const session = (await opened.json() as { session: { id: string } }).session;
   await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'starting' } });
+  // A note is drawn from its parts only (D142): the agent's words ride as a part of their own, beside the record's English.
   await request.post(`/api/sessions/${session.id}/state`, {
-    data: { state: 'working', note: 'the process is alive' },
+    data: { state: 'working', note: 'the process is alive', noteParts: [{ words: 'the process is alive', by: 'agent' }] },
   });
 
   await page.goto('/');
