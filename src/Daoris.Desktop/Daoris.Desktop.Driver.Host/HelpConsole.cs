@@ -48,7 +48,7 @@ internal static class HelpConsole
     {
         try
         {
-            return adapters.Resolve(adapter).Resumes;
+            return adapters.Door(adapter).Can.Resumes;
         }
         catch (DriverException)
         {

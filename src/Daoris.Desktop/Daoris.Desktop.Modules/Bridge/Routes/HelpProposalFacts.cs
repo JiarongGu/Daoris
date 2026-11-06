@@ -134,7 +134,7 @@ public sealed class HelpProposalFacts(DriverContext context)
             {
                 Doors = [.. roster.Select(report =>
                 {
-                    var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
+                    var toolchain = _loop.Harnesses.AgentOf(report.Adapter);
                     var pinned = settings.ResolveVersion(report.Adapter, null, null);
                     var owner = _loop.Harnesses.Adapters.OwnerOfAgent(report.Adapter).Value;
                     return new HelpDoorFacts(report.Adapter)
@@ -142,12 +142,12 @@ public sealed class HelpProposalFacts(DriverContext context)
                         Present = report.Present,
                         Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
                         Pinned = pinned,
-                        Package = toolchain?.Package,
-                        Channel = toolchain?.Channel,
+                        Package = toolchain?.Program.Package,
+                        Channel = toolchain?.Program.Channel,
                         Product = toolchain?.Product,
                         Owner = owner,
                         Accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner),
-                        SettingsKnown = _loop.Harnesses.AccountAgentOf(report.Adapter)?.SettingsFile is { Length: > 0 },
+                        SettingsKnown = _loop.Harnesses.AccountAgentOf(report.Adapter)?.Accounts.SettingsFile is { Length: > 0 },
                     };
                 })],
                 // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them.

@@ -340,7 +340,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     {
         try
         {
-            return roster.Toolchain(adapter);
+            return roster.AgentOf(adapter);
         }
         catch (DriverException)
         {
@@ -472,7 +472,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// ask it too, as the screen's own door.
     /// </summary>
     internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
-        harnesses.Toolchain(harness) is null
+        harnesses.AgentOf(harness) is null
             ? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.")
             : harnesses.Adapters.OwnerOfAgent(harness).Value;
 

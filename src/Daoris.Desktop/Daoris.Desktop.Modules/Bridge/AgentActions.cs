@@ -216,7 +216,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
         // as a door with none, Agents → Codex offered no account while `daoris agent login codex --new` made one (D50), and
         // the install's only `codex` is its pin.
         var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
-        var signingToolchain = signing?.Toolchain ?? toolchain;
+        var signingToolchain = signing ?? toolchain;
         var signingRun = signing is null ? null : _loop.Harnesses.SignInCommand(harness, config);
         if (signsIn)
         {
