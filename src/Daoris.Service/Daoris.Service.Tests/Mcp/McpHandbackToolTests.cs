@@ -112,7 +112,7 @@ public sealed class McpHandbackToolTests : McpToolsFixture
         var exchange = new QuestExchange(_service, _quests, files: _files);
         var owner = new QuestTools(_quests, exchange, In("Owner"), intake: new IntakeScope(null, session.Id));
         await owner.RespondToQuestAsync(quest.Id, "take");
-        Assert.Equal(QuestRespondRefusal.None, (await exchange.BindAsync(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await exchange.Store.SeedBound(quest.Id, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         await owner.RespondToQuestAsync(quest.Id, "ready", "Drew the minimap in 4f3e2d1; its render test passes.");
 
         var read = await (await StewardAsync()).ReadAsync(session.Id);

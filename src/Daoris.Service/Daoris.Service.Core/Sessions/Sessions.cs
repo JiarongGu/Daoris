@@ -232,8 +232,8 @@ public sealed class SessionStore
         said.MarkAttemptAsync(id, word, at, ct);
 
     /// <summary>Mark that this session took its quest itself (STANDDOWN2); see <see cref="SessionWrites.MarkTookAsync"/>.</summary>
-    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default, string? bind = null) =>
-        writes.MarkTookAsync(id, quest, ct, bind);
+    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default) =>
+        writes.MarkTookAsync(id, quest, ct);
 
     /// <summary>What this machine's record keeps of its review (REVIEWENV1b); see <see cref="SessionReads.ReviewOfAsync"/>.</summary>
     public Task<SessionReview> ReviewOfAsync(string id, CancellationToken ct = default) => reads.ReviewOfAsync(id, ct);

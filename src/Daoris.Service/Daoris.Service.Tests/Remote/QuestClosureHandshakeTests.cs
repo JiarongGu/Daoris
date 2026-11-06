@@ -22,8 +22,6 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
     private QuestExchange _exchange = null!;
 
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-22T09:00:00Z");
-    private const string Graph = "gph-0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0";
-    private const string Session = "ses-takes-its-quest";
 
     public async Task InitializeAsync()
     {
@@ -77,7 +75,7 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
     private async Task<Quest> PublishAsync(string title) => (await _exchange.PublishAsync("checker", "reports", title, "Through the bridge.", Now)).Quest!;
 
     [Fact]
-    public async Task Every_machine_declared_allows_the_bind_and_one_older_machine_refuses_it_naming_the_machine()
+    public async Task Every_machine_declared_is_heard_and_one_older_machine_is_named_as_not_having_declared()
     {
         // A and B, both of this build, each push: the remote heard both declare, and A's pass says so.
         await PublishAsync("Seed A");
@@ -88,30 +86,11 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         Assert.True(heard.Closure!.All);
         Assert.True(_a.ClosureOf(Workspaces.Default)!.All);
 
-        var allowed = await PublishAsync("Bound through the remote");
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(allowed.Id, Graph, Now, atTake: true, session: Session)).Refusal);
-        var take = await _exchange.RespondAsync(allowed.Id, "take", null, Now.AddMinutes(1), session: Session);
-        Assert.Equal(Graph, take.Quest!.Closure);
-        Assert.Equal([QuestOperationKind.Taken, QuestOperationKind.Bound], (await _a.HistoryAsync(allowed.Id)).Select(op => op.Kind).TakeLast(2));
-
-        // A graph named while every machine had declared, then an older machine pushes: the take, judged in its own write, binds nothing.
-        var named = await PublishAsync("Named before the older machine");
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(named.Id, Graph, Now, atTake: true, session: Session)).Refusal);
+        // An older machine pushes: the next pass names it as the one that did not declare.
         await _older.PublishAsync("Asker", "reports", "From an older build", "why", Now);
         await OlderSyncAsync(_older);
         Assert.Equal([_older.Machine], (await SyncAsync(_a)).Closure!.Undeclared);
-
-        var unbound = await _exchange.RespondAsync(named.Id, "take", null, Now.AddMinutes(1), session: Session);
-        Assert.Equal(QuestTakeBind.Remote, unbound.TakeBind);
-        Assert.Null(unbound.Quest!.Closure);
-        Assert.Contains("not every machine", unbound.Message, StringComparison.Ordinal);
-
-        // A bind asked now is refused, naming the machine that did not declare.
-        var refused = await _exchange.BindAsync((await PublishAsync("After the older machine")).Id, Graph, Now, atTake: true, session: Session);
-        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
-        Assert.Contains($"machine `{_older.Machine}`", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("has not declared it knows a bound quest", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("closes by its done", refused.Message, StringComparison.Ordinal);
+        Assert.Equal([_older.Machine], _a.ClosureOf(Workspaces.Default)!.Undeclared);
     }
 
     [Fact]
@@ -133,12 +112,10 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         Assert.Empty(again.Pushes);
 
         Assert.True((await SyncAsync(_a)).Closure!.All);
-        var quest = await PublishAsync("Bound once every machine declared");
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(quest.Id, Graph, Now, atTake: true, session: Session)).Refusal);
     }
 
     [Fact]
-    public async Task A_remote_before_the_handshake_or_a_wall_binds_nothing_and_a_restart_keeps_what_the_last_pass_heard()
+    public async Task A_remote_before_the_handshake_or_a_wall_says_nothing_and_a_restart_keeps_what_the_last_pass_heard()
     {
         await PublishAsync("Seed A");
         Assert.True((await SyncAsync(_a)).Closure!.All);
@@ -148,11 +125,8 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
         _exchange = Exchange(_a);
         Assert.True(_a.ClosureOf(Workspaces.Default)!.All);
 
-        // A remote before FABRIC-CLOSE1i answers no handshake: the pass hears none, and no quest binds.
+        // A remote before FABRIC-CLOSE1i answers no handshake: the pass hears none.
         Assert.Null((await SyncAsync(_a, new OlderRemote(_remote))).Closure);
-        var refused = await _exchange.BindAsync((await PublishAsync("Through an older remote")).Id, Graph, Now, atTake: true, session: Session);
-        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
-        Assert.Contains("has not said every machine", refused.Message, StringComparison.Ordinal);
 
         // A wall says nothing of the machines either.
         Assert.True((await SyncAsync(_a)).Closure!.All);
@@ -181,37 +155,31 @@ public sealed class QuestClosureHandshakeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1i2: a machine the remote still counts, retired by the person through their own machine. The bind it held off binds at
-    /// once, before any pass; a pass hears the remote say every machine declared; and a push from the retired machine counts it again.
+    /// FABRIC-CLOSE1i2: a machine the remote still counts, retired by the person through their own machine. What the remote answers is
+    /// kept at once, before any pass; a pass hears the remote say every machine declared; and a push from the retired machine counts it again.
     /// </summary>
     [Fact]
-    public async Task A_retired_machine_no_longer_refuses_a_bind_and_one_that_pushes_again_is_counted_again()
+    public async Task A_retired_machine_is_no_longer_undeclared_and_one_that_pushes_again_is_counted_again()
     {
         await PublishAsync("Seed A");
         await _older.PublishAsync("Asker", "reports", "From an older build", "why", Now);
         await SyncAsync(_a);
         await OlderSyncAsync(_older);
         Assert.Equal([_older.Machine], (await SyncAsync(_a)).Closure!.Undeclared);
-        var held = await PublishAsync("Held off by the older machine");
-        Assert.Equal(QuestRespondRefusal.NotInGraph, (await _exchange.BindAsync(held.Id, Graph, Now, atTake: true, session: Session)).Refusal);
 
         // Its store deleted: the person retires it at the remote, and what the remote answers is kept here at once.
         var retired = await QuestSync.RetireMachineAsync(_a, new StoreRemote(_remote), Workspaces.Default, _older.Machine);
         Assert.True(retired.Retired);
         Assert.True(retired.Closure.All);
         Assert.True(_a.ClosureOf(Workspaces.Default)!.All);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.BindAsync(held.Id, Graph, Now, atTake: true, session: Session)).Refusal);
         Assert.True((await SyncAsync(_a)).Closure!.All);
 
-        // The machine pushes again, still of the older build: counted again, undeclared, and the next bind refused naming it.
+        // The machine pushes again, still of the older build: counted again, undeclared.
         await _older.PublishAsync("Asker", "reports", "Back again", "why", Now);
         await OlderSyncAsync(_older);
         Assert.Equal([_older.Machine], (await SyncAsync(_a)).Closure!.Undeclared);
-        var refused = await _exchange.BindAsync((await PublishAsync("After it came back")).Id, Graph, Now, atTake: true, session: Session);
-        Assert.Equal(QuestRespondRefusal.NotInGraph, refused.Refusal);
-        Assert.Contains($"machine `{_older.Machine}`", refused.Message, StringComparison.Ordinal);
 
-        // Retired again, then pushing from this build: counted again as declared, so the binds go on.
+        // Retired again, then pushing from this build: counted again as declared.
         await QuestSync.RetireMachineAsync(_a, new StoreRemote(_remote), Workspaces.Default, _older.Machine);
         await SyncAsync(_older);
         Assert.True((await SyncAsync(_a)).Closure!.All);

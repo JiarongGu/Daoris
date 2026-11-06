@@ -64,7 +64,6 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("projects", null, "workspace-details", "Open Repositories → a workspace's Details.")]
     [InlineData("projects", null, "workspace-branches", "Open Repositories → a workspace's Branches.")]
     [InlineData("projects", null, "workspace-workflow", "Open Repositories → a workspace's Workflow.")]
-    [InlineData("projects", null, "workspace-setup", "Open Repositories → a workspace's Setup.")]
     [InlineData("projects", null, "workspace-defaults", "Open Repositories → a workspace's Defaults.")]
     [InlineData("projects", null, "workspace-remote", "Open Repositories → a workspace's Remote and reach.")]
     // UX6i2a (D150 §2): the guide is Get started since UX6j, Setup naming a repository's tab.
@@ -437,7 +436,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "sessions/waiting", "sessions/review", "sessions/new", "quests/asks", "quests/held",
                 "projects/add", "projects/import", "projects/setup", "projects/branches", "projects/history",
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
-                "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",
+                "projects/workspace-defaults", "projects/workspace-remote",
                 "knowledge/search", "knowledge/convergence",
                 "start/agent", "start/helper", "start/repositories", "start/setUp", "start/rules",
                 "agents/accounts", "agents/rules", "agents/usage", "agents/roles",

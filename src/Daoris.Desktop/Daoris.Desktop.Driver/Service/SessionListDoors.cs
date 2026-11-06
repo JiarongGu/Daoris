@@ -95,13 +95,6 @@ public sealed class SessionListDoors
     public async Task<bool> TookAsync(string id, CancellationToken ct = default) =>
         (await OneAsync(id, ct).ConfigureAwait(false))?.Took == true;
 
-    /// <summary>
-    /// Why the closure graph named for this session's take did not bind it (CLOSETAKE1, FABRIC-CLOSE1o-ii): <c>expired</c>, <c>replaced</c> or
-    /// <c>remote</c>; null for a bound take, a take no graph was named for, and a host from before the field.
-    /// </summary>
-    public async Task<string?> TookBindAsync(string id, CancellationToken ct = default) =>
-        (await OneAsync(id, ct).ConfigureAwait(false))?.TookBind is { Length: > 0 } why ? why : null;
-
     /// <summary>The quest a session serves, or null for a conversation's or an intake's (WSR1: what a landing names).</summary>
     public async Task<string?> QuestAsync(string id, CancellationToken ct = default) =>
         (await OneAsync(id, ct).ConfigureAwait(false))?.Quest is { Length: > 0 } quest ? quest : null;

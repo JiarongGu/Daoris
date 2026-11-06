@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Every planned start and every intake due begun at once, each to its record open or to what it came to, never waiting for a session
 /// to end: what an earlier look let go of, said first as that look would have said it, and this look's own outcome after it. It leaves
-/// <see cref="LookState.OpenedStarts"/> and the look's <see cref="StartsOutcome"/> for the passes after it and the report.
+/// the look's <see cref="StartsOutcome"/> for the passes after it and the report.
 /// </summary>
 [LookPass("start", LookPhase.Planned, "intakes")]
 internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
@@ -69,11 +69,6 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
         IReadOnlyList<StartCame> outcomes = [.. wiring.Runs.TakeCame(), .. begun];
         var said = Fold(outcomes, events, state.Concluded);
         state.Outcome = said with { Waits = AccountWaits.Of(outcomes, wiring.Context.Harnesses, wiring.Service) };
-        state.OpenedStarts = outcomes
-            .Where(each => each.Opened && each.Started.Start is not null)
-            .Select(each => (Consideration)each.Started.Start!)
-            .DistinctBy(start => start.Quest.Id, StringComparer.Ordinal)
-            .ToList();
     }
 
     /// <summary>

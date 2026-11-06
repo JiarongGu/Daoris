@@ -45,7 +45,7 @@ describe('the places a go may name', () => {
       'sessions/waiting', 'sessions/review', 'sessions/new', 'quests/asks', 'quests/held',
       'projects/add', 'projects/import', 'projects/setup', 'projects/branches', 'projects/history',
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
-      'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
+      'projects/workspace-defaults', 'projects/workspace-remote',
       'knowledge/search', 'knowledge/convergence',
       'start/agent', 'start/helper', 'start/repositories', 'start/setUp', 'start/rules',
       'agents/accounts', 'agents/rules', 'agents/usage', 'agents/roles',
@@ -115,7 +115,6 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-details' })).toEqual({ view: 'projects', workspaceTab: 'details' });
     expect(placeDoor({ view: 'projects', part: 'workspace-branches' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'workspace-workflow' })).toEqual({ view: 'projects', workspaceTab: 'workflow' });
-    expect(placeDoor({ view: 'projects', part: 'workspace-setup' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });

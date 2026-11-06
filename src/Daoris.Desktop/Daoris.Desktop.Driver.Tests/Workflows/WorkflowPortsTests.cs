@@ -320,19 +320,22 @@ public sealed class WorkflowPortsTests
         var world = new StartWorld([first, second]);
         var events = new List<string>();
 
-        await WorkflowRunStart.BindAsync([new WorkflowStarted(first, "work")], world, store, runs, Choice, [], () => At, events, CancellationToken.None);
-        await WorkflowRunStart.BindAsync([new WorkflowStarted(second, "work")], world, store, runs, Choice, [], () => At, events, CancellationToken.None);
+        var bound = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(first, "work"), world, store, runs, Choice, [], () => At, CancellationToken.None);
+        var later = await WorkflowRunStart.AtStartAsync(new WorkflowStarted(second, "work"), world, store, runs, Choice, [], () => At, CancellationToken.None);
+        WorkflowRunStart.Say([bound, later], events);
 
+        Assert.Equal((WorkflowBindCame.Bound, WorkflowBindCame.Already), (bound.Came, later.Came));
         Assert.Equal((1, At), (runs.Read("q1")!.Version, runs.Read("q1")!.At));
         Assert.False(runs.Bound("q2"));
         Assert.Equal(["workflow  #q1 → web-app: its run follows `docs-to-pr` v1, `web-app`'s default."], events);
         Assert.Equal(["workflow.chosen"], world.Said.Select(line => line.Event));
 
-        var unanswered = new List<string>();
-        await WorkflowRunStart.BindAsync(
-            [new WorkflowStarted(new QuestView("q3", "daoris", "web-app", "Later", "", "Open") { Parent = "q1" }, "work")],
-            new StartWorld(null), store, runs, Choice, [], () => At, unanswered, CancellationToken.None);
-        Assert.Equal(["workflow  #q3 → web-app: its run was not bound to a workflow at this start: the service did not answer"], unanswered);
+        var unanswered = await WorkflowRunStart.AtStartAsync(
+            new WorkflowStarted(new QuestView("q3", "daoris", "web-app", "Later", "", "Open") { Parent = "q1" }, "work"),
+            new StartWorld(null), store, runs, Choice, [], () => At, CancellationToken.None);
+        Assert.Equal(WorkflowBindCame.Failed, unanswered.Came);
+        Assert.Equal(
+            "its run was not bound to a workflow, and its quest is taken only once it is: the service did not answer", unanswered.Why);
     }
 
     /// <summary>
@@ -355,11 +358,12 @@ public sealed class WorkflowPortsTests
             WorkflowChoices = [chosen, new AskWorkflowChoiceView(null, null, At.AddMinutes(1))],
         };
         var world = new StartWorld([first, step, cleared]);
-        var events = new List<string>();
 
-        await WorkflowRunStart.BindAsync(
-            [new WorkflowStarted(first, "work"), new WorkflowStarted(step, "work"), new WorkflowStarted(cleared, "work")],
-            world, store, runs, config, [], () => At, events, CancellationToken.None);
+        foreach (var start in new[] { first, step, cleared })
+        {
+            Assert.Equal(WorkflowBindCame.Bound, (await WorkflowRunStart.AtStartAsync(
+                new WorkflowStarted(start, "work"), world, store, runs, config, [], () => At, CancellationToken.None)).Came);
+        }
 
         Assert.Equal(("docs-to-pr", WorkflowLevels.Task, 1), (runs.Read("q1")!.Workflow, runs.Read("q1")!.Level, runs.Read("q1")!.Version));
         Assert.Equal(("docs-to-pr", WorkflowLevels.Task), (runs.Read("q2")!.Workflow, runs.Read("q2")!.Level));
@@ -394,9 +398,7 @@ public sealed class WorkflowPortsTests
 
         // The look says the binding a start made, once; one a start found bound is not said again, and nothing is bound twice.
         var events = new List<string>();
-        await WorkflowRunStart.BindAsync(
-            [new WorkflowStarted(first, "work"), new WorkflowStarted(second, "work")], world, store, runs, Choice, [], () => At, events,
-            CancellationToken.None, made: [made, kept]);
+        WorkflowRunStart.Say([made, kept], events);
         Assert.Equal(["workflow  #q1 → web-app: its run follows `docs-to-pr` v1, `web-app`'s default."], events);
         Assert.Equal(["workflow.chosen"], world.Said.Select(line => line.Event));
 

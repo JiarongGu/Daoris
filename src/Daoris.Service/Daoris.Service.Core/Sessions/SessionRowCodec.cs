@@ -42,7 +42,6 @@ internal static class SessionRowCodec
         Entry = reader.IsDBNull(reader.GetOrdinal("entry")) ? null : reader.GetString(reader.GetOrdinal("entry")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         TookQuest = reader.IsDBNull(reader.GetOrdinal("took_quest")) ? null : reader.GetString(reader.GetOrdinal("took_quest")),
-        TookBind = reader.IsDBNull(reader.GetOrdinal("took_bind")) ? null : reader.GetString(reader.GetOrdinal("took_bind")),
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,

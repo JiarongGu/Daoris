@@ -18,20 +18,4 @@ internal static class StartTargets
     /// <summary>The go-aheads its repository's access setup asks for, from the setup this start resolved once: under <c>never</c>, the instruction asks only what the person's words demand.</summary>
     public static SessionTarget WithAccess(SessionTarget target, ResolvedAccess access) =>
         target with { NoGoAheads = access.Value(AccessRules.GoAheads) == AccessRules.Never };
-
-    /// <summary>
-    /// Why the graph named for a session's take did not bind it, or null: a line's extra word is never worth failing the end of a
-    /// run for, so a service that did not answer says nothing more than the line already did.
-    /// </summary>
-    public static async Task<string?> TookBindOrNullAsync(ServiceClient service, string sessionId, CancellationToken ct)
-    {
-        try
-        {
-            return await service.TookBindAsync(sessionId, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
-        {
-            return null;
-        }
-    }
 }

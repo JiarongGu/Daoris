@@ -36,10 +36,4 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
     /// <c>ready</c> on a step withdrawn or held for the person's choice.
     /// </summary>
     public bool SourceReopened { get; init; }
-
-    /// <summary>
-    /// What a take made of the closure graph named for it (FABRIC-CLOSE1o, §E5's cutover): <see cref="QuestTakeBind.None"/> on every
-    /// other move and on a take no graph was named for.
-    /// </summary>
-    public QuestTakeBind TakeBind { get; init; }
 }

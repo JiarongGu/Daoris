@@ -294,21 +294,6 @@ public sealed class ServiceClientClosureTests
         await Assert.ThrowsAsync<HttpRequestException>(() => client.CloseQuestsAsync("q7", "k-1", "ctk-1", [new("q7", "desk", 41)]));
     }
 
-    /// <summary>CLOSETAKE1 (FABRIC-CLOSE1o-ii): why a session's take went unbound is read off its record; nothing for a bound take or a host before it.</summary>
-    [Fact]
-    public async Task A_sessions_take_says_why_its_graph_did_not_bind_it()
-    {
-        const string Records = """
-            [ { "id": "ses-a", "took": true, "tookBind": "expired" }, { "id": "ses-b", "took": true }, { "id": "ses-c", "took": true, "tookBind": "" } ]
-            """;
-        using var client = new ServiceClient(new SessionChangesDoors(new Doors((_, _, _) => new ServiceReply(200, Records))));
-
-        Assert.Equal("expired", await client.TookBindAsync("ses-a"));
-        Assert.Null(await client.TookBindAsync("ses-b"));
-        Assert.Null(await client.TookBindAsync("ses-c"));
-        Assert.Null(await client.TookBindAsync("ses-none"));
-    }
-
     [Theory]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true }""", true)]
     // CLOSECAP1: a host from before the outcome door answers closure alone, and binds nothing.

@@ -200,13 +200,6 @@ public sealed record Session(
     public string? TookQuest { get; init; }
 
     /// <summary>
-    /// Why the closure graph named for this session's take did not bind it (CLOSETAKE1, FABRIC-CLOSE1o-ii): <c>expired</c>,
-    /// <c>replaced</c> or <c>remote</c>, as the take's own write judged it; null for a bound take and for a take no graph was named for.
-    /// Machine-local: it is read by the driver that started the session and travels nowhere.
-    /// </summary>
-    public string? TookBind { get; init; }
-
-    /// <summary>
     /// The person's words waiting for this record to go on with them, in the order said (MSG1a, D137 §2.4): an answer to
     /// a park (STANDDOWN2, ANSWER1b), or words to a session that ended, which reopen it. A second word joins the first and
     /// never replaces it. Kept until taken, by the resumed run's first prompt or the session a fallback handed them to;

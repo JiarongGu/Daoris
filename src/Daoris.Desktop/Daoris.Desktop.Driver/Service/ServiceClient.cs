@@ -241,8 +241,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     public Task<bool> TookAsync(string id, CancellationToken ct = default) => SessionList.TookAsync(id, ct);
 
-    public Task<string?> TookBindAsync(string id, CancellationToken ct = default) => SessionList.TookBindAsync(id, ct);
-
     public Task<string?> SessionQuestAsync(string id, CancellationToken ct = default) => SessionList.QuestAsync(id, ct);
 
     public Task<(string? Tree, string? BaseCommit)> SessionGroundAsync(string id, CancellationToken ct = default) => SessionList.GroundAsync(id, ct);

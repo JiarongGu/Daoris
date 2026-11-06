@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Knowledge;
+using Daoris.Service.Tests;
 
 namespace Daoris.Service.Http.Tests;
 
@@ -1020,28 +1021,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     /// call that is not one (400), an unknown quest (404) and a stale or closed one (409).
     /// </summary>
     /// <summary>
-    /// FABRIC-CLOSE1o: the exchange's bind reads the session a graph is named for at the take, and refuses a bind at the take that names none,
-    /// as a driver before it sends; a take through the respond door names no session, so it is not that session's, and goes unbound.
-    /// </summary>
-    [Fact]
-    public async Task A_bind_at_the_take_names_its_session_and_a_take_that_is_not_that_session_s_goes_unbound()
-    {
-        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the owned bind report for the weekly review." });
-        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
-        var published = await host.PostAsync($"/api/asks/{ask}/publish", new { to = "Keeper", title = "Write the owned bind report", body = "For the review." });
-        Assert.Equal(200, published.Status);
-        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
-        const string Graph = "gph-0f1e2d3c4b5a6978";
-
-        Assert.NotEqual(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, Graph, DateTimeOffset.UtcNow, atTake: true)).Refusal);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, Graph, DateTimeOffset.UtcNow, atTake: true, session: "ses-owned")).Refusal);
-
-        var take = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" });
-        Assert.Equal(200, take.Status);
-        Assert.False(take.Json.GetProperty("quest").TryGetProperty("closure", out var closure) && closure.ValueKind == JsonValueKind.String);
-    }
-
-    /// <summary>
     /// FABRIC-CLOSE1c5 (§E5): a submission on the wire names the commit its evidence was read at, once that is read for it, and
     /// leaves `commit` out before, so a quest no evidence was read for is answered as it was.
     /// </summary>
@@ -1065,7 +1044,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, published.Status);
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         var ready = await host.PostAsync($"/api/quests/{quest}/respond", new
         {
             action = "ready", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
@@ -1104,7 +1083,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains(("POST", "/api/quests/{id}/close"), host.Routes());
 
         const string Graph = "sha256:0f1e2d3c4b5a6978";
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, Graph, DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(quest, Graph, DateTimeOffset.UtcNow)).Moved);
 
         var answers = new[] { new { requirement = 1, met = "It is written." } };
         var done = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Written.", answers });
@@ -1220,7 +1199,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, published.Status);
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
         Assert.Equal(200, ready.Status);
         var submission = ready.Json.GetProperty("quest").GetProperty("submission");
@@ -1441,14 +1420,14 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         var ready = await host.PostAsync($"/api/quests/{quest}/respond", new { action = "ready", reason = "Written." });
         var submission = ready.Json.GetProperty("quest").GetProperty("submission");
         var named = new { machine = submission.GetProperty("machine").GetString(), sequence = submission.GetProperty("sequence").GetInt64() };
         var stepId = (await host.GetAsync("/api/quests")).Json.EnumerateArray()
             .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == quest).GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "take" })).Status);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(stepId, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(stepId, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
         var checkedOnce = await host.PostAsync($"/api/quests/{stepId}/respond", new { action = "ready", reason = "Looked." });
         Assert.True(checkedOnce.Json.GetProperty("quest").TryGetProperty("submission", out _));
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/reopen", new { submission = named, note = "Build it again." })).Status);
@@ -1480,7 +1459,7 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
-        Assert.Equal(QuestRespondRefusal.None, (await host.Composed.Exchange.BindAsync(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Refusal);
+        Assert.True((await host.Composed.Quests.SeedBound(quest, "sha256:0f1e2d3c4b5a6978", DateTimeOffset.UtcNow)).Moved);
 
         var said = await host.Composed.Exchange.RespondAsync(quest, "ready", "Written.", DateTimeOffset.UtcNow, session: "s0a1b2c3");
 

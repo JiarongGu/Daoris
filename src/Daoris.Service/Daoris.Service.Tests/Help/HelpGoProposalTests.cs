@@ -114,8 +114,8 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         var part = Of("part");
         Assert.Contains("search", part);
         Assert.DoesNotContain("lines under workspace", part);
-        // UX6g2c: the workspace page's six parts are named under projects.
-        foreach (var name in new[] { "workspace-details", "workspace-branches", "workspace-workflow", "workspace-setup", "workspace-defaults", "workspace-remote" })
+        // UX6g2c: the workspace page's five parts are named under projects.
+        foreach (var name in new[] { "workspace-details", "workspace-branches", "workspace-workflow", "workspace-defaults", "workspace-remote" })
             Assert.Contains(name, part);
         // UX6h4: a repository's Branches and History tabs, named apart from a workspace's Branches.
         Assert.Contains("branches (a repository's Branches)", part);
