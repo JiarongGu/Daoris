@@ -168,6 +168,9 @@ public static class PersonPresses
     /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
     public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
 
+    /// <summary><c>sessions pass &lt;ask&gt;</c>: a helper's answer kept for the person, passed to the session that asked.</summary>
+    public static InstanceRoute SessionHelperPass { get; } = Person("SESSION_HELPER_PASS");
+
     /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece (COAGENT1b).</summary>
     public static InstanceRoute SessionPartnerAsk { get; } = Person("SESSION_PARTNER_ASK");
 
@@ -341,6 +344,7 @@ public static class PersonPresses
         ("sessions helper <id> \"…\"", SessionHelperAsk),
         ("sessions helper --approve <ask>", SessionHelperApprove),
         ("sessions helper --decline <ask>", SessionHelperDecline),
+        ("sessions pass <ask>", SessionHelperPass),
         ("sessions partner <id> \"…\" --agent <name>", SessionPartnerAsk),
         ("sessions partner <piece> --stop", SessionStop),
     ];

@@ -21,6 +21,14 @@ public sealed record HelpProposal(
     /// </summary>
     public string? Repository { get; init; }
 
+    // The session kind's.
+
+    /// <summary>
+    /// The <c>helper</c> and <c>pass</c> doors' fields (COWORKUX1): the agent, the ask it asks again after or the answer to pass, and
+    /// that the answer is the person's; null for every other door and kind.
+    /// </summary>
+    public HelperProposalFields? Helper { get; init; }
+
     // The account kind's.
 
     /// <summary>An account's name, for an account's settings (HELP6).</summary>

@@ -37,6 +37,11 @@ internal static class HelpDoorRowsActs
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
         ("set an account's own model and effort", Agent + "Model and effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
+        // The `session` kind's helper doors.
+        ("ask another agent, read-only, one question about a session's work (or ask again after its answer, keeping the answer for "
+            + "you), and pass an answer kept for you to the session that asked",
+            "A session's page → Co-workers ⋯ → Bring in another agent…, a member's thread → Ask again… and Pass to the lead",
+            "`daoris session helper <id> \"…\" [--agent <name>] [--after <ask>] [--to-me]`, `daoris session pass <ask>`"),
         // The terminal's doors, the pages' and a session's acts, and Ask Daoris's `pause` kind, its `pause` and `resume` doors.
         ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
             + "starts until you resume it, which carries it on where it stood",

@@ -40,7 +40,7 @@
   "work.atWork.waitingOn": "在等{{what}}",
   "work.atWork.openAtWork": "打开分工",
   "work.atWork.open": "打开",
-  "work.atWork.coworkers": "协作者",
+  "work.atWork.coworkers": "同事",
   "work.atWork.coworker.helper": "{{agent}}，作为助手",
   "work.atWork.coworker.anyHelper": "一位助手",
   "work.atWork.coworker.partner": "{{agent}}，作为搭档",

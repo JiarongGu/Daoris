@@ -20,29 +20,83 @@ public static class SessionsHelperCommand
     private const string UsageProblem =
         "`helper` takes one session's id, the question in quotes, and `--agent <name>` where one agent is wanted.";
 
-    /// <summary>What the words ask: <c>helper &lt;id&gt; "…" [--agent &lt;name&gt;]</c>, or null with what is wrong with them.</summary>
+    /// <summary>
+    /// What the words ask: <c>helper &lt;id&gt; "…" [--agent &lt;name&gt;] [--after &lt;ask&gt;] [--to-me]</c> or <c>pass &lt;ask&gt;</c>, or null with
+    /// what is wrong with them.
+    /// </summary>
     public static TAsk? Read<TAsk>(IReadOnlyList<string> args, out string? problem, ParticipantsAskMaker<TAsk> make)
         where TAsk : class
     {
         problem = null;
         switch (args)
         {
+            case ["pass", var asked] when Word(asked):
+                return make("pass", [asked.Trim().TrimStart('#')], null, null, [], null, false);
+            case ["pass", ..]:
+                problem = "`pass` takes one ask's id, as `#<ask>` is said on its member's thread: the helper's answer kept for you, passed to its session.";
+                return null;
             case ["helper", "--approve", var ask] when Word(ask):
-                return make("helper-approve", [ask], null, null, []);
+                return make("helper-approve", [ask], null, null, [], null, false);
             case ["helper", "--decline", var ask] when Word(ask):
-                return make("helper-decline", [ask], null, null, []);
+                return make("helper-decline", [ask], null, null, [], null, false);
             case ["helper", "--approve" or "--decline", ..]:
                 problem = "`helper --approve` and `helper --decline` take one ask's id, as `#<ask>` is said on its session's page.";
                 return null;
-            case ["helper", var id, var question] when Word(id) && question.Trim().Length > 0:
-                return make("helper", [id], question.Trim(), null, []);
-            case ["helper", var id, var question, "--agent", var agent] when Word(id) && question.Trim().Length > 0 && Word(agent):
-                return make("helper", [id], question.Trim(), agent.Trim(), []);
+            case ["helper", var id, var question, ..] when Word(id) && question.Trim().Length > 0:
+            {
+                string? agent = null, after = null;
+                var toMe = false;
+                var rest = args.Skip(3).ToList();
+                for (var at = 0; at < rest.Count; at++)
+                {
+                    switch (rest[at])
+                    {
+                        case "--agent" when at + 1 < rest.Count && Word(rest[at + 1]) && agent is null:
+                            agent = rest[++at].Trim();
+                            break;
+                        case "--after" when at + 1 < rest.Count && Word(rest[at + 1]) && after is null:
+                            after = rest[++at].Trim().TrimStart('#');
+                            break;
+                        case "--to-me" when !toMe:
+                            toMe = true;
+                            break;
+                        default:
+                            problem = UsageProblem;
+                            return null;
+                    }
+                }
+
+                return make("helper", [id], question.Trim(), agent, [], after, toMe);
+            }
         }
 
         problem = UsageProblem;
         return null;
     }
+
+    /// <summary>
+    /// <c>pass &lt;ask&gt;</c> (COWORKUX1d, the co-worker design §7): a helper's answer kept for the person handed to the session that
+    /// asked, by the judge the page's <i>Pass to the lead</i> uses (<see cref="HelperPassToLead"/>). The driver's look hands it at its
+    /// next look. Exit 0 where it is passed, 1 where the judge refuses it.
+    /// </summary>
+    public static Task<int> RunPassAsync(IParticipantsWorld world, IParticipantsAsk ask, TextWriter output)
+    {
+        try
+        {
+            var answer = HelperPassToLead.Pass(new HelperFiles(world.Home), null, ask.Ids[0], DateTimeOffset.UtcNow);
+            output.WriteLine($"sessions: {answer.Message}{(answer.Stands ? "" : " Nothing was changed.")}");
+            return Task.FromResult(answer.Stands ? 0 : 1);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            output.WriteLine($"sessions: the word could not be written under the home ({error.Message}), so nothing was changed.");
+            return Task.FromResult(2);
+        }
+    }
+
+    /// <summary>The session that asked <paramref name="ask"/>, or null where this machine holds no such ask: what the press names beside the ask.</summary>
+    public static string? AskerOf(string home, string ask) =>
+        new HelperFiles(home).Asks().FirstOrDefault(each => each.Id == ask.Trim().TrimStart('#'))?.Asker;
 
     /// <summary>Write the ask for the driver's look, or say why not.</summary>
     public static async Task<int> RunAsync(IParticipantsWorld world, IParticipantsAsk ask, TextWriter output, CancellationToken ct = default)
@@ -84,7 +138,7 @@ public static class SessionsHelperCommand
             // COWORKUX1d: the person's ask keeps `helper.person-asked` on the session, their word on the line, as the page's door does.
             asked = HelperPersonAsk.Write(
                 new HelperFiles(world.Home), WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions)),
-                id, question, agent, after: null, toPerson: false, DateTimeOffset.UtcNow);
+                id, question, agent, ask.After, ask.ToMe, DateTimeOffset.UtcNow);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -92,10 +146,8 @@ public static class SessionsHelperCommand
             return 2;
         }
 
-        output.WriteLine(
-            $"sessions: asked `#{asked.Asked}` for session {id}: the driver takes it at its next look and starts a helper on another agent, "
-            + "read-only, within the limits; its answer comes back to that session as its next turn, marked as the helper's.");
-        return 0;
+        output.WriteLine($"sessions: {asked.Message}");
+        return asked.Asked is null ? 1 : 0;
     }
 
     /// <summary>

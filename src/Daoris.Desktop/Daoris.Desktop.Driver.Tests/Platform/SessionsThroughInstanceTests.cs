@@ -199,6 +199,32 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal(payload, press.GetProperty("payload").GetRawText());
     }
 
+    /// <summary>
+    /// COWORKUX1d: <c>helper --after --to-me</c> sends both in the press, and <c>pass</c> names the session that asked beside its ask, found
+    /// in the home's own files, so the press is the page's <i>Pass to the lead</i>.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_again_to_me_and_a_pass_are_the_pages_presses_through_the_instance()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var home = new InstanceTestHome();
+        var held = new HelperFiles(home.Home).WriteAsk("s1a2b3c4", "Why?", null, DateTimeOffset.UtcNow, null, true);
+        var standIn = home.Serve();
+        standIn.Confirming = true;
+        standIn.Data = new { said = new TreesSaid(["sessions: said."], [], 0).ToWire() };
+        var service = new EmptyService();
+
+        var again = new SessionsAsk("helper") { Ids = [Id], Text = "why?", After = "a1", ToMe = true };
+        Assert.Equal(0, await SessionsCommand.RunAsync(again, World(service, home.Home, home.World("sessions")), new StringWriter()));
+        Assert.Equal(0, await SessionsCommand.RunAsync(new SessionsAsk("pass") { Ids = [held] }, World(service, home.Home, home.World("sessions")), new StringWriter()));
+
+        Assert.Equal(2, standIn.Presses.Count);
+        Assert.Equal("SESSION_HELPER_ASK", standIn.Presses[0].GetProperty("type").GetString());
+        Assert.Equal($$"""{"id":"{{Id}}","question":"why?","after":"a1","toPerson":true,"said":true}""", standIn.Presses[0].GetProperty("payload").GetRawText());
+        Assert.Equal("SESSION_HELPER_PASS", standIn.Presses[1].GetProperty("type").GetString());
+        Assert.Equal($$"""{"ask":"{{held}}","session":"s1a2b3c4","said":true}""", standIn.Presses[1].GetProperty("payload").GetRawText());
+    }
+
     /// <summary>RPC1d: refused in the window, each verb is exit 1 with the instance's sentence, and this process did nothing.</summary>
     [Theory]
     [InlineData("stop", "refused")]

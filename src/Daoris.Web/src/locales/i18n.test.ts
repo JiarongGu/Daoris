@@ -115,8 +115,8 @@ describe('the catalogs', () => {
   it('name only views that exist: Work has been Sessions since D66', () => {
     // Except the Roles mode's section of that name, one of the nine kinds of work (COMPANYVIEW1b), and its filter (COMPANYVIEW1d), which are no view,
     // and the drawing's flag *Work done here* (SETUPUX1n) with the editor's press that sets it, *Work is done here* (FLOWCHART2b), the work a
-    // workflow does.
-    const work = ['nav.roles.work', 'agents.roles.filter.work', 'workflow.graph.end', 'workflow.edit.act.end'];
+    // workflow does, and the dialog's *Work alongside*, a second request working beside the first (COWORKUX1f).
+    const work = ['nav.roles.work', 'agents.roles.filter.work', 'workflow.graph.end', 'workflow.edit.act.end', 'work.team.door.alongside'];
     expect(Object.entries(en).filter(([key, value]) => !work.includes(key) && /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
     expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
   });

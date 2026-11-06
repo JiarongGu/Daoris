@@ -52,8 +52,91 @@ public sealed class SessionsHelperTests : IDisposable
     [Fact]
     public void The_usage_spells_the_verb_in_both_places_a_person_reads_it()
     {
-        Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", SessionsCommand.Usage);
-        Assert.Contains("session helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
+        Assert.Contains("session helper <id> \"<question>\" [--agent <name>] [--after <ask>] [--to-me]", SessionsCommand.Usage);
+        Assert.Contains("session helper <id> \"<question>\" [--agent <name>] [--after <ask>] [--to-me]", DriverCommand.Usage);
+        Assert.Contains("session pass <ask>", SessionsCommand.Usage);
+        Assert.Contains("session pass <ask>", DriverCommand.Usage);
+    }
+
+    [Fact]
+    public void The_verb_reads_an_ask_again_after_an_earlier_one_and_an_answer_kept_for_the_person_in_any_order()
+    {
+        var both = Read("helper", "s1", "And now?", "--to-me", "--after", "#a1b2c3d4", "--agent", "codex-acp");
+        Assert.Equal(("a1b2c3d4", true, "codex-acp"), (both.After, both.ToMe, both.Agent));
+
+        var plain = Read("helper", "s1", "Why?");
+        Assert.Equal((null, false), (plain.After, plain.ToMe));
+
+        var pass = Read("pass", "#a1b2c3d4");
+        Assert.Equal(("pass", "a1b2c3d4"), (pass.Verb, pass.Ids[0]));
+    }
+
+    [Theory]
+    [InlineData("helper", "s1", "Why?", "--after")]
+    [InlineData("helper", "s1", "Why?", "--to-me", "--to-me")]
+    [InlineData("helper", "s1", "Why?", "--after", "a1", "--after", "a2")]
+    public void A_flag_without_its_word_or_said_twice_is_a_usage_problem(params string[] words)
+    {
+        Assert.Null(SessionsCommand.Read(words, out var problem));
+        Assert.Contains("`helper` takes one session's id, the question", problem);
+    }
+
+    [Theory]
+    [InlineData("pass")]
+    [InlineData("pass", "a1", "a2")]
+    [InlineData("pass", "--now")]
+    public void A_pass_without_one_ask_is_a_usage_problem(params string[] words)
+    {
+        Assert.Null(SessionsCommand.Read(words, out var problem));
+        Assert.Contains("`pass` takes one ask's id", problem);
+    }
+
+    [Fact]
+    public async Task An_ask_again_to_me_keeps_its_answer_for_the_person_and_pass_sends_it_to_the_session_once()
+    {
+        var (world, _) = World();
+        var files = Held("a1b2c3d4", HelperStates.Answered, by: HelperAsk.ByPerson);
+        var output = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("helper", "s1", "And the other way?", "--after", "a1b2c3d4", "--to-me"), world, output));
+
+        var again = Assert.Single(files.Asks(), each => each.Id != "a1b2c3d4");
+        Assert.Equal(("a1b2c3d4", true), (again.After, again.ForPerson));
+        Assert.Contains("only once you pass it to the lead", output.ToString());
+
+        // The answer is kept for the person until the press; before it has answered there is nothing to pass.
+        var early = new StringWriter();
+        Assert.Equal(1, await SessionsCommand.RunAsync(Read("pass", again.Id), world, early));
+        Assert.Contains("has no answer to pass yet", early.ToString());
+
+        files.WriteState(new HelperState(again.Id, HelperStates.Answered, null, "h1", At) { Handed = HelperState.KeptForPerson });
+        var passed = new StringWriter();
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("pass", again.Id), world, passed));
+        Assert.NotNull(files.ReadState(again.Id)!.Passed);
+        Assert.Contains("is passed to session s1", passed.ToString());
+
+        var twice = new StringWriter();
+        Assert.Equal(0, await SessionsCommand.RunAsync(Read("pass", again.Id), world, twice));
+        Assert.Contains("already", twice.ToString());
+    }
+
+    [Fact]
+    public async Task An_ask_again_after_an_ask_that_has_not_answered_is_refused_and_a_pass_of_an_ask_for_the_lead_or_none_is_refused()
+    {
+        var (world, _) = World();
+        var files = Held("a1b2c3d4", HelperStates.Waiting, by: HelperAsk.ByPerson);
+        var refused = new StringWriter();
+        Assert.Equal(1, await SessionsCommand.RunAsync(Read("helper", "s1", "Again?", "--after", "a1b2c3d4"), world, refused));
+        Assert.Contains("has not answered yet", refused.ToString());
+        Assert.Single(files.Asks());
+
+        var lead = new StringWriter();
+        Assert.Equal(1, await SessionsCommand.RunAsync(Read("pass", "a1b2c3d4"), world, lead));
+        Assert.Contains("goes to session s1 already", lead.ToString());
+
+        var none = new StringWriter();
+        Assert.Equal(1, await SessionsCommand.RunAsync(Read("pass", "nope"), world, none));
+        Assert.Contains("No ask #nope", none.ToString());
     }
 
     private (SessionsWorld World, OpinionStandIn Host) World(Action<OpinionStandIn>? set = null)
