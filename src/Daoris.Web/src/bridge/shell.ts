@@ -13,6 +13,7 @@ export * from './sessions/asks';
 export * from './sessions/atWork';
 export * from './attention';
 export * from './browser';
+export * from './sessions/channelOutside';
 export * from './sessions/console';
 export * from './sessions/conversation';
 export * from './driver';

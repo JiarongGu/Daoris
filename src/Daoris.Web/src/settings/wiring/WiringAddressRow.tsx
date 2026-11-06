@@ -44,7 +44,7 @@ export function WiringAddressRow({ account, busy = false, onPress }: {
               disabled={busy}
               onChange={(event) => setTyped(event.target.value)}
               placeholder="http://127.0.0.1:5198"
-              className="w-full max-w-md rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-body text-ink"
+              className="w-full rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-body text-ink"
             />
           )}
           <InlineConfirm

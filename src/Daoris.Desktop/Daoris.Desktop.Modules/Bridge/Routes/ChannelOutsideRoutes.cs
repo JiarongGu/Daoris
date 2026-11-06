@@ -27,6 +27,7 @@ public sealed class ChannelOutsideRoutes(DriverLoop loop)
 
     /// <summary>The members still on the channel of an ask or of a session's line, each with when it joined and last read or posted.</summary>
     [DriverRoute("CHANNEL_MEMBERS", PipeClass.Open)]
+    [ByEvent("CHANNEL_MEMBERS", Untold = "the service's members on a channel, which a terminal's join or leave and the service's own expiry move and no scope or slice tells")]
     private async Task<object?> ChannelMembersAsync(ChannelMembersAsk press, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
