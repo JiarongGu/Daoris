@@ -22,4 +22,21 @@ public sealed class LineChannel(ChannelDesk desk, ChannelStore store)
         var receipts = await desk.Parts.ReceiptsAsync(origin, [.. messages.Where(m => m.Part is not null)], ct).ConfigureAwait(false);
         return new LineChannelRead(origin, messages, receipts);
     }
+
+    /// <summary>
+    /// The person's post on <paramref name="session"/>'s line's own channel (their words, to everyone on it or one of its repositories),
+    /// so a part of the line takes it at its look as it takes the person's words (a teammate's ask's line posts on that ask's channel,
+    /// which travels to its holder); null where <see cref="ReadAsync"/> would read none.
+    /// </summary>
+    public async Task<ChannelOutcome?> PostAsPersonAsync(
+        string session, string? text, string? to, bool urgent, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var (refusal, ask, speaker, _, origin) = await desk.SpeakerAsync(session, ct).ConfigureAwait(false);
+        if (refusal is not (ChannelRefusal.None or ChannelRefusal.NoAsk) || ask is not null || origin is null || speaker is null) return null;
+
+        // A line on a teammate's ask has that ask's channel, which the sync carries to its holder, so the person's words go there.
+        if (ChannelDesk.AskOfOrigin(origin) is { } teammates) return await desk.PostAsPersonAsync(teammates, text, to, null, now, ct, urgent).ConfigureAwait(false);
+
+        return await desk.Parts.PostAsPersonOnLineAsync(origin, speaker.Workspace, text, to, urgent, now, ct).ConfigureAwait(false);
+    }
 }

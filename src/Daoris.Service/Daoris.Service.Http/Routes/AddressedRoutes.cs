@@ -18,6 +18,20 @@ public sealed class AddressedRoutes(HostWiring host) : IRouteModule
         routes.Map<ReadAddressed, AddressedResponse>(ReadAsync);
         routes.Map<AcknowledgeAddressed, ChannelAckResponse>(AcknowledgeAsync);
         routes.Map<ReadLineChannel, LineChannelResponse>(ReadLineAsync);
+        routes.Map<PostLineChannelMessage, ChannelPostResponse>(PostLineAsync);
+    }
+
+    private async Task<Answer<ChannelPostResponse>> PostLineAsync(PostLineChannelMessage request, HttpContext http, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Session)
+            || await Service.Channel.Line.PostAsPersonAsync(request.Session.Trim(), request.Text, request.To, request.Urgent ?? true, DateTimeOffset.UtcNow, ct) is not { } posted)
+        {
+            return NoSession(request.Session);
+        }
+
+        if (posted.Refusal == ChannelRefusal.None) return new ChannelPostResponse(ChannelRoutes.ToChannelItem(posted.Message!));
+        var code = ChannelDesk.Spell(posted.Refusal);
+        return Refusal.BadRequest(code, code);
     }
 
     private async Task<Answer<LineChannelResponse>> ReadLineAsync(ReadLineChannel request, HttpContext http, CancellationToken ct)

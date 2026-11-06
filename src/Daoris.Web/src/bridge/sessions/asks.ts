@@ -134,6 +134,19 @@ export const usePostChannel = () =>
   });
 
 /**
+ * The person's words on a line's own channel (`CHANNEL_LINE_POST`, COMMS1k): to everyone on it or one repository, from *At work*. A
+ * refusal is an answer with the service's code, so it resolves rather than rejects. Its route publishes the asks, whose key holds each
+ * line's channel, so the words show at once in every window.
+ */
+export const usePostLineChannel = () =>
+  useMutation({
+    mutationFn: async ({ session, post }: { session: string; post: ChannelPost }): Promise<ChannelPosted> => postedOf(await call(
+      'CHANNEL_LINE_POST',
+      { session, text: post.text, ...(post.to ? { to: post.to } : {}) },
+    )),
+  });
+
+/**
  * *Send to its session* (`CHANNEL_FORWARD`, COWORK1d; the message-urgency design §4.2): a message of the ask's channel sent on to the
  * newest session here of the line of work in `repository`, as the agent's claim passed on by the person. A refusal is an answer with
  * its code, which the section words, so it resolves rather than rejects. Its route publishes the asks, whose key holds each channel,
