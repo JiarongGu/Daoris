@@ -220,7 +220,7 @@ public sealed class SessionTreesTests : IDisposable
     {
         // Outside the scratch (which lives inside the Daoris repository — where git would walk up and
         // find a repository): the OS temp root belongs to no checkout, which is the very thing under test.
-        var bare = Path.Combine(TestHomes.Root, $"daoris-norepo-{Guid.NewGuid():N}");
+        var bare = Path.Combine(Path.GetTempPath(), $"daoris-norepo-{Guid.NewGuid():N}");
         Directory.CreateDirectory(bare);
         try
         {
