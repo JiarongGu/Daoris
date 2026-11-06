@@ -12,7 +12,8 @@ namespace Daoris.Driver;
 /// <param name="Since">The watermark <c>--since</c> gave, checked, or null.</param>
 /// <param name="Kinds">The kinds printed: <c>--kinds</c>'s, else the first build's four.</param>
 /// <param name="SessionPid">The process whose exit ends the relay, printing nothing, or null.</param>
-public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? Since, IReadOnlySet<string> Kinds, int? SessionPid)
+/// <param name="NotBy">The poster whose own <c>channel.posted</c> frames are never printed (<c>--not-by</c>, CHANNELJOIN1d), or null.</param>
+public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? Since, IReadOnlySet<string> Kinds, int? SessionPid, string? NotBy = null)
 {
     /// <summary>The words read, or null with the sentence that refuses them.</summary>
     public static RelayAsk? Read(IReadOnlyList<string> args, out string? refused)
@@ -25,6 +26,7 @@ public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? 
         (string, long)? since = null;
         IReadOnlySet<string> kinds = RelayBatch.Default;
         int? session = null;
+        string? notBy = null;
         for (var at = 0; at < args.Count; at++)
         {
             var word = args[at];
@@ -55,6 +57,10 @@ public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? 
                     if (named.Length == 0 || named.Any(kind => !RelaySaid.Said.Contains(kind, StringComparer.Ordinal))) return null;
                     kinds = named.ToHashSet(StringComparer.Ordinal);
                     break;
+                case "--not-by" when notBy is null:
+                    if (!WorkEventGrammar.IsPoster(value)) return null;
+                    notBy = value;
+                    break;
                 case "--session-pid" when session is null:
                     if (!int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var pid) || pid <= 0) return null;
                     session = pid;
@@ -64,7 +70,7 @@ public sealed record RelayAsk(bool Where, string? Home, (string Run, long Seq)? 
             }
         }
 
-        return once ? Taken(new RelayAsk(false, home, since, kinds, session), out refused) : null;
+        return once ? Taken(new RelayAsk(false, home, since, kinds, session, notBy), out refused) : null;
     }
 
     private static RelayAsk Taken(RelayAsk ask, out string? refused)

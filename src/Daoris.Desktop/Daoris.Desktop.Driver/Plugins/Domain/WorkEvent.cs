@@ -33,6 +33,9 @@ public static class WorkEventKinds
     /// <summary>The line holds a session's work: the end keeping wrote its entry ended (D244's note on <c>work.ended</c>'s teller).</summary>
     public const string WorkEnded = "work.ended";
 
+    /// <summary>A message was kept on a channel: a part's, the person's, an outside member's or a teammate's (CHANNELJOIN1d).</summary>
+    public const string ChannelPosted = "channel.posted";
+
     /// <summary>
     /// Read the truth again: what moved before a teller's place, in a watch's baseline, or in an event whose required field failed its
     /// shape, is not told.
@@ -76,4 +79,16 @@ public sealed record WorkEvent(string Kind, DateTimeOffset At)
 
     /// <summary>How a press ended: <c>confirmed</c>, <c>refused</c>, <c>changed</c>, <c>withdrawn</c> or <c>lost</c>.</summary>
     public string? End { get; init; }
+
+    /// <summary>A message kept here: its 8-hex id; none for a mirrored one.</summary>
+    public string? Message { get; init; }
+
+    /// <summary>The poster's id: a session's, or an outside member's.</summary>
+    public string? Poster { get; init; }
+
+    /// <summary>The poster's class (<see cref="ChannelPosts.Classes"/>).</summary>
+    public string? By { get; init; }
+
+    /// <summary>Set only where the message was posted urgent.</summary>
+    public bool? Urgent { get; init; }
 }
