@@ -28,20 +28,19 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
             return;
         }
 
-        if (opening.By.EndsWith(":words:refused", StringComparison.Ordinal))
+        switch (opening.Access)
         {
-            _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value);
-            return;
+            case AccessDisposition.Refused:
+                _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value);
+                return;
+            case AccessDisposition.SignedOutByWords:
+                _driver.AccountSignedOut(SessionConclusion.Of("failed", DoorNotes.Failed(words)), adapter, selection, words);
+                return;
+            default:
+                // Read by a code the door declares (`AuthRequiredCode`, an access kind or status): its sign-in is what it says ended.
+                _context.Harnesses.SignedOut(adapter.Name, selection.Profile);
+                return;
         }
-
-        if (opening.By.EndsWith(":words:sign-in", StringComparison.Ordinal))
-        {
-            _driver.AccountSignedOut(SessionConclusion.Of("failed", DoorNotes.Failed(words)), adapter, selection, words);
-            return;
-        }
-
-        // Read by a code the door declares (`AuthRequiredCode`, an access kind or status): its sign-in is what it says ended.
-        _context.Harnesses.SignedOut(adapter.Name, selection.Profile);
     }
 
     /// <summary>
