@@ -23,6 +23,14 @@ describe('stepTitle', () => {
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('request'))).toBe('给另一个仓库的委托');
   });
 
+  // D245: the steps past a pull request, the watch on it and the tidy of the chain, named as the driver's title names them.
+  it('names the monitor and the tidy steps in English and in 中文', () => {
+    expect(stepTitle(i18n.getFixedT('en'), stepOf('monitor'))).toBe("The pull request's watch");
+    expect(stepTitle(i18n.getFixedT('zh'), stepOf('monitor'))).toBe('等待拉取请求合并');
+    expect(stepTitle(i18n.getFixedT('en'), stepOf('tidy'))).toBe("The chain's clean-up");
+    expect(stepTitle(i18n.getFixedT('zh'), stepOf('tidy'))).toBe('清理委托链');
+  });
+
   // INTEGRATE1r: Current's integrate step is named, said where it was read, and its limit said in the reader's words, not as recorded.
   it("says Current's integrate step: its press, its source and its limit in both languages", () => {
     for (const [language, title, limit] of [

@@ -172,6 +172,8 @@
   "workflow.edit.kind.handed": "Handed on",
   "workflow.edit.kind.push": "The push",
   "workflow.edit.kind.pull-request": "Completed on the host",
+  "workflow.edit.kind.monitor": "Watch the pull request",
+  "workflow.edit.kind.tidy": "Clean up the chain's branches",
   "workflow.edit.kind.line": "On the line",
   "workflow.edit.kind.human": "Your task",
   "workflow.edit.kind.look": "Your look",

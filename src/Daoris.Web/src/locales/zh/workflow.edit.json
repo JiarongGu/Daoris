@@ -172,6 +172,8 @@
   "workflow.edit.kind.handed": "已交接",
   "workflow.edit.kind.push": "推送",
   "workflow.edit.kind.pull-request": "在托管平台完成",
+  "workflow.edit.kind.monitor": "等待拉取请求合并",
+  "workflow.edit.kind.tidy": "清理委托链的分支",
   "workflow.edit.kind.line": "进入主线",
   "workflow.edit.kind.human": "你的任务",
   "workflow.edit.kind.look": "你的查看",

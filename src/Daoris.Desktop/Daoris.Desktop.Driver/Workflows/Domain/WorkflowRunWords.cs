@@ -67,7 +67,7 @@ public static class WorkflowRunWords
         NodeKinds.Review => "Your Accept",
         NodeKinds.Push => "The push",
         NodeKinds.Monitor => "The pull request's watch",
-        NodeKinds.Tidy => "The chain's tidy",
+        NodeKinds.Tidy => "The chain's clean-up",
         NodeKinds.Line => "On the line",
         NodeKinds.QuestClose => "The quest's close",
         NodeKinds.All => "The join",
