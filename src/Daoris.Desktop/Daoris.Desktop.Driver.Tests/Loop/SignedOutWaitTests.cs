@@ -41,7 +41,7 @@ public sealed class SignedOutWaitTests : IDisposable
         new HarnessSettings().WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
         _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         });
     }
@@ -56,14 +56,7 @@ public sealed class SignedOutWaitTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     private static DriverConfig Config => ActorChoices.With(
         ActorChoices.With(

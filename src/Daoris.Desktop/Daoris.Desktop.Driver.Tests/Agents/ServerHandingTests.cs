@@ -6,8 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// AGENTPROVIDER1 row p (the agent-provider design §4.4): a start's connectors are handed by the door's own carrier, asked once, never by
 /// a caller's test of the door. Claude Code's native door writes the plan's file in its own layout and names it, the same file as before;
-/// a door whose servers ride its wire, and one that takes none at its spawn, has no carrier there, and nothing is written for it. A
-/// plugin's or a test's pipe adapter, which declares none, keeps the file named by its own door.
+/// a door whose servers ride its wire, and one that takes none at its spawn, has no carrier there, and nothing is written for it.
 /// </summary>
 public sealed class ServerHandingTests : IDisposable
 {
@@ -37,15 +36,6 @@ public sealed class ServerHandingTests : IDisposable
 
         Assert.Null(AdapterSet.Built().Resolve("claude-code").ServerHanding()!.Hand(new ProcessStartInfo(), _home, new ConnectorPlan("s2", [])));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2.mcp.json")));
-    }
-
-    [Fact]
-    public void An_adapter_declaring_no_carrier_keeps_the_file_named_by_its_own_door_on_the_pipe_and_none_on_the_wire()
-    {
-        var info = new ProcessStartInfo();
-        var file = new Adapter(Transport.Native).ServerHanding()!.Hand(info, _home, Plan("s3"));
-        Assert.Equal(["servers:" + file], info.ArgumentList);
-        Assert.Null(new Adapter(Transport.Protocol).ServerHanding());
     }
 
     private static ServerEntry Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
@@ -128,11 +118,4 @@ public sealed class ServerHandingTests : IDisposable
         SpawnFiles.Remove(file);
     }
 
-    private sealed class Adapter(Transport wire) : ISessionAdapter
-    {
-        public string Name => "stand-agent";
-        public Transport Transport => wire;
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
-        public void HandServers(ProcessStartInfo info, string configFile) => info.ArgumentList.Add("servers:" + configFile);
-    }
 }

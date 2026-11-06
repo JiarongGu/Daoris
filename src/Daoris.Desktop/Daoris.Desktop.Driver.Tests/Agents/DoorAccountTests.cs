@@ -30,16 +30,7 @@ public sealed class DoorAccountTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => wire;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire) => TestDoors.Door(name, toolchain, transport: wire);
 
     /// <summary>A binary that is there, signed in when its home holds `credentials.json` or a key is set.</summary>
     private string Script()
@@ -62,13 +53,13 @@ public sealed class DoorAccountTests : IDisposable
         var script = Script();
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["owner-acp"] = new Adapter("owner-acp", new HarnessToolchain(
+            ["owner-acp"] = Adapter("owner-acp", new HarnessToolchain(
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "OWNER_HOME", AccountOf: "owner"), Transport.Protocol),
         };
         if (withOwner)
         {
-            adapters["owner"] = new Adapter("owner", new HarnessToolchain(
+            adapters["owner"] = Adapter("owner", new HarnessToolchain(
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "OWNER_HOME",
                 LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"),

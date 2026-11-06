@@ -40,14 +40,7 @@ public sealed class ReviewerPlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private static readonly string[] Agents = ["claude-code", "claude-code-acp", "codex-acp", "dsh"];
 
@@ -58,7 +51,7 @@ public sealed class ReviewerPlanTests : IDisposable
         foreach (var name in Agents)
         {
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
-            adapters[name] = new Adapter(name, new HarnessToolchain(
+            adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [absent?.Contains(name) == true ? Nowhere : Command], VersionArguments: [], ProfileVariable: real.ProfileVariable,
                 AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }

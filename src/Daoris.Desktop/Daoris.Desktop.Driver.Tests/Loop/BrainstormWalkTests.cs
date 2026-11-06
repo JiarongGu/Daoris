@@ -31,16 +31,8 @@ public sealed class BrainstormWalkTests : IDisposable
     private string Command => Path.Combine(_home, "agent-here");
 
     /// <summary>A real door's identity over a toolchain that is present by its file and asks nothing.</summary>
-    private sealed class Door(ISessionAdapter real, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => real.Name;
-
-        public Transport Transport => real.Transport;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Door(ISessionAdapter real, HarnessToolchain toolchain) =>
+        TestDoors.Door(real.Name, toolchain, real.Transport, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private HarnessToolchain Quiet(HarnessToolchain real) =>
         real with { Binary = [Command], VersionArguments = [], LoginCheck = null, ProbeByPresence = true, Install = null, Channel = null };
@@ -53,7 +45,7 @@ public sealed class BrainstormWalkTests : IDisposable
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            adapters[name] = new Door(built.Resolve(name), Quiet(built.Resolve(name).Toolchain!));
+            adapters[name] = Door(built.Resolve(name), Quiet(built.Resolve(name).Toolchain!));
         }
 
         var owners = new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = Quiet(CodexAccounts.Toolchain) };

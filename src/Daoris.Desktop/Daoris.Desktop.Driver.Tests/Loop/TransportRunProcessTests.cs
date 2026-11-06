@@ -112,29 +112,22 @@ public sealed class TransportRunProcessTests : IDisposable
     /// The scripted native harness: the Claude Code mapper over its stream, a resume that says its arguments and what its input carried, flags
     /// for its carriers.
     /// </summary>
-    private sealed class Scripted(string home, bool structured) : ISessionAdapter
+    private static ISessionAdapter Scripted(string home, bool structured) =>
+        TestDoors.Door("scripted", resumes: true, spawn: new ScriptedNative(home), dialect: structured ? TestDoors.StreamJson : null);
+
+    private sealed class ScriptedNative(string home) : ISpawn
     {
-        public string Name => "scripted";
+        public ProcessRecipe Start(SpawnRequest request) => Recipe("claude");
 
-        public bool Resumes => true;
+        public ProcessRecipe Chat(SpawnRequest request) => Recipe("claude");
 
-        public ProcessStartInfo Prepare(SpawnRequest request) => Start(request, "claude");
-
-        public ProcessStartInfo? PrepareResume(SpawnRequest request)
-        {
-            var info = Start(request, "resume", "--resume", request.Resume!);
-            info.RedirectStandardInput = true;
-            return info;
-        }
+        public ProcessRecipe? Resume(SpawnRequest request) => Recipe("resume", "--resume", request.Resume!) with { Input = true };
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) => info.ArgumentList.Add("--settings:" + settingsFile);
 
         public void HandServers(ProcessStartInfo info, string configFile) => info.ArgumentList.Add("--mcp-config:" + configFile);
 
-        public IStreamMapper? StructuredOutput() => structured ? new ClaudeStreamJson() : null;
-
-        private ProcessStartInfo Start(SpawnRequest request, params string[] arguments) =>
-            Shell.Start(new ProcessRecipe("node", [Path.Combine(home, "agent.cjs"), .. arguments]), request);
+        private ProcessRecipe Recipe(params string[] arguments) => new("node", [Path.Combine(home, "agent.cjs"), .. arguments]);
     }
 
     private TransportRun Over(ISessionAdapter adapter, ProcessStartInfo info, Func<TransportStart, TransportStart>? shape = null)
@@ -158,7 +151,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task A_native_start_is_tracked_captured_waited_for_and_ended_as_a_start_is()
     {
-        var adapter = new Scripted(_home, structured: false);
+        var adapter = Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("plain"));
         Hand(run);
 
@@ -189,7 +182,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task A_structured_native_start_keeps_the_conversation_it_names_and_says_its_opening_once()
     {
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"));
         Hand(run, keepAs: "scripted", own: new HarnessWords(), opening: [new SessionEvent { Kind = SessionEventKind.Note, Text = "started on `scripted`" }]);
 
@@ -217,7 +210,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task A_go_on_resumes_the_kept_conversation_under_the_carriers_and_appends_to_the_transcript()
     {
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         var named = 0;
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("claude"), start => start with { Named = () => named++ });
         Hand(run, keepAs: "scripted", own: new HarnessWords());
@@ -263,7 +256,7 @@ public sealed class TransportRunProcessTests : IDisposable
             "conv-1", [new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true)],
             Continuations.Opening("scripted", null, null, answer: false, findings: false, persons: true));
         var opening = resume.Opening();
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         var output = new SessionOutput();
         var onConsole = new List<string>();
         output.Lined += (_, line) =>
@@ -315,7 +308,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
-        var adapter = new Scripted(_home, structured: false);
+        var adapter = Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
         Hand(run, lineageHome: _home);
 
@@ -339,7 +332,7 @@ public sealed class TransportRunProcessTests : IDisposable
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
         var moved = ChildLineage.Opened(_home, "s1");
-        var adapter = new Scripted(_home, structured: false);
+        var adapter = Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"), start => start with { Moved = moved });
         Hand(run, lineageHome: _home);
 
@@ -358,7 +351,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task A_native_runs_prompt_goes_on_its_input_and_its_write_is_told()
     {
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         var info = adapter.Prepare(Target(), null).WithArguments("stdin");
         info.RedirectStandardInput = true;
         var written = 0;
@@ -381,7 +374,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task An_executor_spawns_first_then_hands_its_start_and_records_and_opens_over_the_same_process()
     {
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         var info = adapter.Prepare(Target(), null).WithArguments("stdin");
         info.RedirectStandardInput = true;
         var start = new TransportStart(info, StartClass.Person);
@@ -412,7 +405,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
-        var adapter = new Scripted(_home, structured: false);
+        var adapter = Scripted(_home, structured: false);
         await using var run = Over(adapter, adapter.Prepare(Target(), null).WithArguments("hangs"));
         Hand(run);
         await run.OpenAsync(Bound);
@@ -619,7 +612,7 @@ public sealed class TransportRunProcessTests : IDisposable
     [Fact]
     public async Task A_native_conversation_is_told_each_event_keeps_what_its_stream_names_at_once_and_closes_on_its_input()
     {
-        var adapter = new Scripted(_home, structured: true);
+        var adapter = Scripted(_home, structured: true);
         var info = adapter.Prepare(Target(), null).WithArguments("talks");
         info.RedirectStandardInput = true;
         var turns = 0;
@@ -657,7 +650,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var tokens = new LineageTokens(Environment.ProcessId, DateTime.UtcNow);
         using var within = LineageTokens.Within(tokens);
-        var adapter = new Scripted(_home, structured: false);
+        var adapter = Scripted(_home, structured: false);
         var never = Over(adapter, adapter.Prepare(Target(), null).WithArguments("token"));
         var unspawned = await never.BracketAsync("s1", Bound);
 

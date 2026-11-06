@@ -601,14 +601,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>A test double's agent that is never run (OpinionRecheckTests' machine): present by a file look on a command this test writes.</summary>
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, each present by a file look, so a recheck's reviewer walk asks no real binary.</summary>
     private (AdapterSet Adapters, HarnessRoster Roster) Machine()
@@ -619,7 +612,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
-            adapters[name] = new Adapter(name, new HarnessToolchain(
+            adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }

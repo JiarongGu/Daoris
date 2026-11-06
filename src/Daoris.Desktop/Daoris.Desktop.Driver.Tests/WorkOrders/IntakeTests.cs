@@ -925,7 +925,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -954,7 +954,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -966,20 +966,6 @@ public sealed class IntakeTests : IDisposable
             .Select(e => e.GetString()!).ToList();
         Assert.Contains("WebFetch", allowed);
         Assert.Contains("mcp__daoris-knowledge__quest_publish", allowed);
-    }
-
-    /// <summary>A pipe-door harness that takes a settings file, remembering what the intake was handed.</summary>
-    private sealed class RecordingIntakeAdapter : ISessionAdapter
-    {
-        public string Name => "recording-intake";
-        public bool TakesSettings => true;
-        public string? HandedText { get; private set; }
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            BuiltDoors.Stub.Prepare(request);
-
-        public void HandSettings(ProcessStartInfo info, string settingsFile) =>
-            HandedText = File.ReadAllText(settingsFile);
     }
 
     private DriverConfig Config() => StaffedRoles.Config("stub") with

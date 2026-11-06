@@ -293,16 +293,7 @@ public sealed class UsageTurnsTests : IDisposable
         Assert.Equal(Total, turn.Tokens);
     }
 
-    private sealed class Bare(string name) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => null;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Bare(string name) => TestDoors.Door(name, null, transport: Transport.Protocol);
 
     [Fact]
     public void Each_door_s_turn_report_means_per_turn_where_measured_and_codex_s_unknown_until_a_frame_is_recorded()
@@ -320,7 +311,7 @@ public sealed class UsageTurnsTests : IDisposable
             TurnBinding.Of(adapters, adapters.Resolve("codex-acp"), "account-2"));
         // The tool's own sign-in is named as its readings name it; an agent with no accounts has none to name.
         Assert.Equal(AccountWindows.Own, TurnBinding.Of(adapters, adapters.Resolve("claude-code"), null).Account);
-        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(adapters, new Bare("bare"), "account-1"));
+        Assert.Equal(new TurnBinding(null, null, "bare", UsageHistory.MeaningUnknown), TurnBinding.Of(adapters, Bare("bare"), "account-1"));
     }
 
     // ——— The model: what the door's split agrees on with the turn's total.

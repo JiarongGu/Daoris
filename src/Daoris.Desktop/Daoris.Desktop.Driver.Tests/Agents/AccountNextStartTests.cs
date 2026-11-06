@@ -38,16 +38,7 @@ public sealed class AccountNextStartTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Native;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
     private HarnessToolchain Toolchain(string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
@@ -56,8 +47,8 @@ public sealed class AccountNextStartTests : IDisposable
     private HarnessRoster Roster() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", Toolchain()),
-            ["fake-door"] = new Adapter("fake-door", Toolchain(accountOf: "fake")),
+            ["fake"] = Adapter("fake", Toolchain()),
+            ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),
         }), Settings)
         {
             Clock = () => _now,

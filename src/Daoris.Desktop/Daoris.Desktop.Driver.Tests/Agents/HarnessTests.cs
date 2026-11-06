@@ -762,23 +762,12 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
-    private sealed class FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native)
-        : ISessionAdapter
-    {
-        public string Name => "fake";
-
-        /// <summary>Which door — the protocol one asks for the Agent SDK's executable seam (ACP2).</summary>
-        public Transport Transport => wire;
-
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door("fake", toolchain, transport: wire);
 
     private static AdapterSet Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
         new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new FakeAdapter(toolchain, wire),
+            ["fake"] = FakeAdapter(toolchain, wire),
         });
 
     private string Present()

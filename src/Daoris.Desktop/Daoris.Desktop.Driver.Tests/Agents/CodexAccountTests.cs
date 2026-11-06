@@ -345,16 +345,7 @@ public sealed class CodexAccountTests : IDisposable
 
     private readonly List<string> _asked = [];
 
-    private sealed class Door(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Door(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     /// <summary>`fake-door` runs as `fake`'s accounts, and no `fake` door exists: `fake` is declared, as `codex` is.</summary>
     private HarnessRoster HolderRoster()
@@ -365,7 +356,7 @@ public sealed class CodexAccountTests : IDisposable
             new AdapterSet(
                 new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["fake-door"] = new Door("fake-door", new HarnessToolchain(
+                    ["fake-door"] = Door("fake-door", new HarnessToolchain(
                         Binary: [command], VersionArguments: [], ProfileVariable: "FAKE_HOME", AccountOf: "fake", ProbeByPresence: true)),
                 },
                 new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase)

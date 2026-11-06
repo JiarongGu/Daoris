@@ -188,7 +188,7 @@ public sealed class SpawnTableTests
     public void Claude_Code_s_seam_is_taken_where_the_door_runs_claude(string door, bool seam)
     {
         Assert.Equal(seam, AdapterSet.Built().Resolve(door).TakesClaudeSeam());
-        Assert.True(new UnmeasuredProtocolDoor().TakesClaudeSeam());
+        Assert.False(UnmeasuredProtocolDoor().TakesClaudeSeam());
     }
 
     /// <summary>The seam on the process: both variables where a managed <c>claude</c> is handed, neither where none is.</summary>
@@ -249,12 +249,5 @@ public sealed class SpawnTableTests
         Assert.True(info.Environment.ContainsKey("GH_CONFIG_DIR"));
     }
 
-    private sealed class UnmeasuredProtocolDoor : ISessionAdapter
-    {
-        public string Name => "plugin-door";
-
-        public Transport Transport => Transport.Protocol;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new NotSupportedException();
-    }
+    private static ISessionAdapter UnmeasuredProtocolDoor() => TestDoors.Door("plugin-door", transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("a test spawns nothing"));
 }

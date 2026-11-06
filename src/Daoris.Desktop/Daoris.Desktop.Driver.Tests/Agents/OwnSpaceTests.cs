@@ -36,14 +36,7 @@ public sealed class OwnSpaceTests : IDisposable
     private const string NoAccount =
         "No `fake` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `fake` sign-in";
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessToolchain Real => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
@@ -51,8 +44,8 @@ public sealed class OwnSpaceTests : IDisposable
     private HarnessRoster Roster() => new(
         new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", Real),
-            ["double"] = new Adapter("double", Real with { RunsInOwnHome = true }),
+            ["fake"] = Adapter("fake", Real),
+            ["double"] = Adapter("double", Real with { RunsInOwnHome = true }),
         }),
         Settings);
 

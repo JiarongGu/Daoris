@@ -74,7 +74,7 @@ public sealed class WalkAgentTickTests : IDisposable
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = new AcpOtherAdapter(),
+        ["acp-other"] = AcpOtherAdapter(),
     });
 
     /// <summary>The machine's choices with Build's <paramref name="order"/>.</summary>
@@ -280,25 +280,18 @@ public sealed class WalkAgentTickTests : IDisposable
     /// A door onto another tool's accounts (the way Codex's protocol door is onto Codex's): the protocol stand-in's own, as the
     /// agent <c>other</c>, so its accounts and its cool-offs are kept apart from the stub's.
     /// </summary>
-    internal sealed class AcpOtherAdapter : ISessionAdapter
-    {
-        public string Name => "acp-other";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            Shell.Start(ProcessRecipe.Of(request.Command!) with { Input = true }, request);
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => Shell.Chat(ProcessRecipe.Of(request.Command!), request);
-
-        public HarnessToolchain? Toolchain => new(
+    internal static ISessionAdapter AcpOtherAdapter() => TestDoors.Door(
+        "acp-other",
+        new HarnessToolchain(
             Binary: [],
             VersionArguments: [],
             ProfileVariable: StubProvider.ConfigVariable,
             AccountOf: "other",
             ProbeByPresence: true,
-            RunsInOwnHome: true);
-    }
+            RunsInOwnHome: true),
+        Transport.Protocol,
+        interactive: true,
+        spawn: new TestDoors.ScriptedSpawn(
+            request => ProcessRecipe.Of(request.Command!) with { Input = true },
+            request => ProcessRecipe.Of(request.Command!)));
 }

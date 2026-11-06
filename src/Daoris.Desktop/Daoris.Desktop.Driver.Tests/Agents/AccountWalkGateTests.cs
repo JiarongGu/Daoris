@@ -53,14 +53,7 @@ public sealed class AccountWalkGateTests : IDisposable
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
@@ -75,7 +68,7 @@ public sealed class AccountWalkGateTests : IDisposable
         Func<string, Task<IReadOnlyList<WindowReading>?>>? windows = null, TimeSpan? patience = null, bool asks = false) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 LoginCheck: asks ? new LoginQuestion(["auth", "status"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false") : null,
                 Usage: usage ? Question : null)),

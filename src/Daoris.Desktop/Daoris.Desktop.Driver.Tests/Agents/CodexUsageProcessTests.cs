@@ -60,16 +60,7 @@ public sealed class CodexUsageProcessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("server-stand-in", ["server-stand-in", "app-server"], CodexUsage.Question.Recorded);
 
@@ -80,7 +71,7 @@ public sealed class CodexUsageProcessTests : IDisposable
     private HarnessRoster Roster() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["door"] = new Adapter("door", Toolchain),
+            ["door"] = Adapter("door", Toolchain),
         }), Settings);
 
     // The explicit command names the server's harness, as `driver.json`'s `commands` may name `codex`.

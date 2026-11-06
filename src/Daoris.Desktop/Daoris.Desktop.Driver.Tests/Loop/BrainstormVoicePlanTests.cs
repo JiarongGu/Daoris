@@ -31,8 +31,8 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         var other = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["voice"] = new Adapter("voice", voice),
-            ["other"] = new Adapter("other", other),
+            ["voice"] = Adapter("voice", voice),
+            ["other"] = Adapter("other", other),
         });
         foreach (var agent in new[] { "voice", "other" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
@@ -44,14 +44,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private static readonly ActorEffective Entry = new("voice", "opus", null, "1");
 

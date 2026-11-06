@@ -45,9 +45,9 @@ public sealed class StartPlanTests : IDisposable
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["cool"] = new Adapter("cool", present),
-            ["fine"] = new Adapter("fine", present),
-            ["piped"] = new Adapter("piped", present, Transport.Native),
+            ["cool"] = Adapter("cool", present),
+            ["fine"] = Adapter("fine", present),
+            ["piped"] = Adapter("piped", present, Transport.Native),
         });
         _roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
     }
@@ -62,16 +62,7 @@ public sealed class StartPlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => wire;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>A quest's plan over <paramref name="choices"/> as the work's seeded role's order, its passes said under <c>quest:q1</c>.</summary>
     private StartPlan Plan(string work, params ActorChoice[] choices) => Plan(work, null, choices);

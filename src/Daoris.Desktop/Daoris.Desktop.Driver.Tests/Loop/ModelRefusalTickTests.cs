@@ -235,7 +235,7 @@ public sealed class ModelRefusalTickTests : IDisposable
     {
         var built = AdapterSet.Built();
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(
-            built.Names.Select(name => KeyValuePair.Create(name, built.Resolve(name))).Append(KeyValuePair.Create(PipeStub.Named, (ISessionAdapter)new PipeStub())),
+            built.Names.Select(name => KeyValuePair.Create(name, built.Resolve(name))).Append(KeyValuePair.Create(PipeStub.Named, PipeStub.Door())),
             StringComparer.OrdinalIgnoreCase));
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var config = ActorChoices.With(
@@ -258,20 +258,17 @@ public sealed class ModelRefusalTickTests : IDisposable
     /// A pipe door on the stub's accounts that speaks Claude Code's <c>stream-json</c>, its model handed as <c>--model</c> by the native
     /// carrier, as Claude Code's pipe door is.
     /// </summary>
-    private sealed class PipeStub : ISessionAdapter
+    private static class PipeStub
     {
         public const string Named = "pipe-stub";
 
-        public string Name => Named;
-
-        public IStreamMapper? StructuredOutput() => new ClaudeStreamJson();
-
-        public HarnessToolchain? Toolchain => new(
-            Binary: [], VersionArguments: [], ProfileVariable: StubProvider.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
-            RunsInOwnHome: true);
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            Shell.Start(ProcessRecipe.Of(request.Command!, request.Asked?.NativeArguments(request.Command!)), request);
+        public static ISessionAdapter Door() => TestDoors.Door(
+            Named,
+            new HarnessToolchain(
+                Binary: [], VersionArguments: [], ProfileVariable: StubProvider.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
+                RunsInOwnHome: true),
+            dialect: TestDoors.StreamJson,
+            spawn: new TestDoors.ScriptedSpawn(request => ProcessRecipe.Of(request.Command!, request.Asked?.NativeArguments(request.Command!))));
     }
 
     /// <summary>

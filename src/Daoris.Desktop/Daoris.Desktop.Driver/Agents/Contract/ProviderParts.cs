@@ -88,10 +88,6 @@ public sealed record DoorHome(string? Variable, bool OwnHome, string? TrustFile)
 {
     /// <summary>A start that names no account runs in the tool's own home: a test double's, or a tool no account can be handed to.</summary>
     public bool StartsInOwnHome => OwnHome || Variable is not { Length: > 0 };
-
-    public static DoorHome Of(HarnessToolchain? toolchain) => toolchain is null
-        ? new DoorHome(null, false, null)
-        : new DoorHome(toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.TrustFile);
 }
 
 /// <summary>

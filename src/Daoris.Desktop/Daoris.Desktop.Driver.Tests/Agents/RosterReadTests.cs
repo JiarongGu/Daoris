@@ -49,28 +49,21 @@ public sealed class RosterReadTests : IDisposable
 
     private string[] Asked => File.Exists(Path.Combine(_home, "asked.log")) ? File.ReadAllLines(Path.Combine(_home, "asked.log")) : [];
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain);
 
     private string Gone => Path.Combine(_home, "gone-agent");
 
     private HarnessRoster Roster(Func<string, string, CancellationToken, Task<LoginState>>? asking = null) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = new Adapter("agent", new HarnessToolchain(
+            ["agent"] = Adapter("agent", new HarnessToolchain(
                 Binary: ["node", Script],
                 VersionArguments: ["--version"],
                 ProfileVariable: "READ_HOME",
                 LoginCheck: new LoginQuestion(["--login-state"], "logged-in", "logged-out", @"logged-in as (\S+)"),
                 ProbeByPresence: true)),
             // An agent whose binary is a file that is not there until a test puts it there.
-            ["gone"] = new Adapter("gone", new HarnessToolchain(
+            ["gone"] = Adapter("gone", new HarnessToolchain(
                 Binary: [Gone], VersionArguments: ["--version"], ProfileVariable: "READ_HOME", ProbeByPresence: true)),
         }), Settings) { Clock = () => Ten, Asking = asking };
 

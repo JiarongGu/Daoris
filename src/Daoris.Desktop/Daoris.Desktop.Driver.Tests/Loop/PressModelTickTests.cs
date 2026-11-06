@@ -71,7 +71,7 @@ public sealed class PressModelTickTests : IDisposable
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
+        ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
     });
 
     private DriverConfig Config(IReadOnlyList<ActorChoice> order) => ActorChoices.With(

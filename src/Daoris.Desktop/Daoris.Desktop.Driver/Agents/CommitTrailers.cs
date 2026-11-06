@@ -11,8 +11,8 @@ internal static class CommitTrailers
     internal static string For(ISessionAdapter adapter, EarlierMaker? earlier = null) =>
         earlier is not null && !SameMaker(adapter, earlier) ? $"{Own(adapter)}\n\n{Left(earlier)}" : Own(adapter);
 
-    /// <summary>The maker a door's registration states (the door's own for a plugin's, else its provider's); an adapter of the old seam, its toolchain's.</summary>
-    internal static string? MakerOf(ISessionAdapter adapter) => adapter is LegacyDoor door ? door.Maker : adapter.Toolchain?.Maker;
+    /// <summary>The maker a door's registration states (the door's own for a plugin's, else its provider's).</summary>
+    internal static string? MakerOf(ISessionAdapter adapter) => LegacyDoor.Of(adapter).Maker;
 
     private static string Own(ISessionAdapter adapter)
     {

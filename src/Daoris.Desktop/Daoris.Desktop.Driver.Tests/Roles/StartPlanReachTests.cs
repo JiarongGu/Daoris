@@ -31,8 +31,8 @@ public sealed class StartPlanReachTests : IDisposable
         var present = new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["cool"] = new Adapter("cool", present),
-            ["fine"] = new Adapter("fine", present),
+            ["cool"] = Adapter("cool", present),
+            ["fine"] = Adapter("fine", present),
         });
         _roster = new HarnessRoster(_adapters, Settings);
     }
@@ -41,16 +41,7 @@ public sealed class StartPlanReachTests : IDisposable
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>The places a test opens, each to one provider.</summary>
     private sealed class Opened(params (string Provider, ReachPlace Place)[] places) : IReachOpenings

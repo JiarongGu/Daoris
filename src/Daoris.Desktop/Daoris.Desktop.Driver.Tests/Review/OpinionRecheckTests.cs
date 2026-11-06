@@ -31,14 +31,7 @@ public sealed class OpinionRecheckTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, present by a file look, or absent where <paramref name="absent"/> names them.</summary>
     private (AdapterSet Adapters, HarnessRoster Roster) Machine(params string[] absent)
@@ -47,7 +40,7 @@ public sealed class OpinionRecheckTests : IDisposable
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
-            adapters[name] = new Adapter(name, new HarnessToolchain(
+            adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [absent.Contains(name) ? "daoris-xagent1e-no-such-command" : Command], VersionArguments: [],
                 ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
                 // A test double whose own home is nobody's (OWNSPACE1a): the recheck is this file's subject, not the account.

@@ -230,16 +230,7 @@ public sealed class LineAccountTests : IDisposable
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Native;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Native);
 
     private static int _built;
 
@@ -263,9 +254,9 @@ public sealed class LineAccountTests : IDisposable
         var roster = new HarnessRoster(
             new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
-                ["fake"] = new Adapter("fake", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
-                ["elsewhere"] = new Adapter("elsewhere", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "ELSEWHERE_HOME", ProbeByPresence: true)),
-                ["plain"] = new Adapter("plain", null),
+                ["fake"] = Adapter("fake", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
+                ["elsewhere"] = Adapter("elsewhere", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "ELSEWHERE_HOME", ProbeByPresence: true)),
+                ["plain"] = Adapter("plain", null),
             }), settings)
         {
             Clock = () => Seen,

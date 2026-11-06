@@ -30,24 +30,10 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     /// A conversation's door with accounts, present by a look: nothing is probed or spawned. <paramref name="full"/> is its mode that
     /// asks nothing (HELPMODE1a1), none by default.
     /// </summary>
-    private sealed class Door(HarnessToolchain toolchain, string? full = null, string name = "door", bool interactive = true) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => interactive;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public string? FullPosture => full;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("a placing test spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            throw new InvalidOperationException("a placing test spawns nothing");
-    }
+    private static ISessionAdapter Door(HarnessToolchain toolchain, string? full = null, string name = "door", bool interactive = true) =>
+        TestDoors.Door(
+            name, toolchain, transport: Transport.Protocol, interactive: interactive,
+            postures: new PosturesPart(null, null, full, null), spawn: new TestDoors.RefusingSpawn("a placing test spawns nothing"));
 
     private ChatRunner Runner(ChatLedger ledger, string? full = null)
     {
@@ -55,10 +41,10 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
             new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["door"] = new Door(Toolchain("DOOR_HOME"), full),
+            ["door"] = Door(Toolchain("DOOR_HOME"), full),
             // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
-            ["full-door"] = new Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
-            ["mute"] = new Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false),
+            ["full-door"] = Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
+            ["mute"] = Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false),
         });
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         foreach (var account in new[] { "home", "office" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));

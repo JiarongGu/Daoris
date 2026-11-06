@@ -161,14 +161,7 @@ public sealed class StartRoleTests : IDisposable
         Assert.Equal("claude", StartPlan.ContinuedOn(record, Config, "design", bound: "designer", catalogue: RoleCatalog.Of([]), place: Machine));
     }
 
-    private sealed class Present(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Present(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>
     /// A home whose catalogue holds the repository's own Build role and a role the workflow's work step names, each staffed by its own
@@ -186,7 +179,7 @@ public sealed class StartRoleTests : IDisposable
         {
             Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
             settings = settings.WithDefault(agent, "account-1");
-            adapters[agent] = new Present(agent, present);
+            adapters[agent] = Present(agent, present);
         }
 
         settings.Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
