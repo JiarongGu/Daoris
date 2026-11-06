@@ -9,5 +9,5 @@ internal sealed class WorkplacePluginOperations : IWorkplacePluginOperations
 
     public IWorkplacePluginWire Wire(string home) => new LandingPlugins(home);
 
-    public IWorkplacePluginCatalog Load(string home) => PluginCatalog.Load(home, AdapterSet.Built().Names);
+    public IWorkplacePluginCatalog Load(string home) => PluginCatalog.Load(home, ProviderRegistry.Built().Names);
 }

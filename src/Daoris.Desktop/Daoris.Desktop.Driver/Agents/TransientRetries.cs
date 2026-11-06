@@ -13,7 +13,7 @@ internal static class TransientRetries
     /// </param>
     /// <param name="profile">The account the run is on, for the machine log; null for the tool's own sign-in.</param>
     internal static TransientRetry For(
-        AdapterSet adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
+        ProviderRegistry adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
         ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
         Func<CancellationToken, Task<bool>> wanted, int tries = 5, DateTimeOffset? deadline = null)
     {

@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class CommitTrailersRegistryTests
 {
-    private static AdapterSet With(params DeclaredDoor[] doors) => AdapterSet.Built().WithPlugins(new Declared(doors));
+    private static ProviderRegistry With(params DeclaredDoor[] doors) => ProviderRegistry.Built().WithPlugins(new Declared(doors));
 
     private static DeclaredDoor Door(string name, string? maker) =>
         new(name, "acme", ["acme-agent", "--acp"], Posture: "edits", ProfileVariable: null, AccountOf: null, Product: "Acme", Maker: maker);
@@ -25,7 +25,7 @@ public sealed class CommitTrailersRegistryTests
     [InlineData("alt-acp-stub", null)]
     public void A_built_in_door_s_maker_is_its_provider_s_and_the_same_one_its_toolchain_states(string door, string? maker)
     {
-        var adapter = AdapterSet.Built().Resolve(door);
+        var adapter = ProviderRegistry.Built().Resolve(door);
 
         Assert.Equal(maker, CommitTrailers.MakerOf(adapter));
         Assert.Equal(adapter.Toolchain?.Maker, CommitTrailers.MakerOf(adapter));
@@ -38,7 +38,7 @@ public sealed class CommitTrailersRegistryTests
     [InlineData("stub", "Co-Authored-By: AGENT (MAKER, MODEL) <your maker's attribution address>")]
     [InlineData("alt-stub", "Co-Authored-By: AGENT (MAKER, MODEL) <your maker's attribution address>")]
     public void Each_built_in_door_is_told_the_trailer_its_maker_gets(string door, string expected) =>
-        Assert.Contains(expected, CommitTrailers.For(AdapterSet.Built().Resolve(door)));
+        Assert.Contains(expected, CommitTrailers.For(ProviderRegistry.Built().Resolve(door)));
 
     [Fact]
     public void A_plugin_door_declaring_a_maker_is_told_that_maker_s_trailer_and_one_declaring_none_the_placeholder()

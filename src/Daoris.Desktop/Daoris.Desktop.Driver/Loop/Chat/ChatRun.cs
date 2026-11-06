@@ -119,7 +119,7 @@ internal sealed class ChatRun(
             if (place.Plugins)
             {
                 (skills, skillPlugins) = agent.HandSkills(
-                    info, home, sessionId, PluginCatalog.Load(home, AdapterSet.Built().Names), place.ServersTo);
+                    info, home, sessionId, PluginCatalog.Load(home, ProviderRegistry.Built().Names), place.ServersTo);
             }
 
             // What the conversation's agent may do, handed by each door's own way: a flag on the pipe, `session/new`'s `_meta` on the protocol

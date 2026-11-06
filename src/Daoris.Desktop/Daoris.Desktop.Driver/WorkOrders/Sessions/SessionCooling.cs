@@ -41,7 +41,7 @@ internal static class SessionCooling
     /// <summary>The home's cool-offs as a start reads them: by the account's owner, over the build's harnesses and the plugins'.</summary>
     internal static Func<string?, string?, CoolingEntry?> On(string home)
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var adapters = built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names));
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);

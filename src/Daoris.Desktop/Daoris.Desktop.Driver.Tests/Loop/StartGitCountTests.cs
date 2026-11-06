@@ -60,7 +60,7 @@ public sealed class StartGitCountTests : IDisposable
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

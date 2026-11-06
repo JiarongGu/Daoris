@@ -146,7 +146,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
         // Its words already judged unable to go on, as a refused resume leaves them: the line the press stands under. The loop's own
         // look as it comes up then leaves them waiting, so the press is judged alone (FLAKE2).
         if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Refused), DateTimeOffset.UtcNow);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = NoSpawn() });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = NoSpawn() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

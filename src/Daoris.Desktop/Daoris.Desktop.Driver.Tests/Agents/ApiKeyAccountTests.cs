@@ -48,7 +48,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     }
 
     private HarnessRoster Roster(HarnessToolchain toolchain) => new(
-        new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = FakeAdapter(toolchain),
         }),
@@ -170,6 +170,6 @@ public sealed class ApiKeyAccountTests : IDisposable
     public void An_agent_with_no_key_variable_takes_no_key()
     {
         Assert.Null(Toolchain(keyVariable: null).KeyVariable);
-        Assert.Equal("ANTHROPIC_API_KEY", AdapterSet.Built().Resolve("claude-code").Toolchain!.KeyVariable);
+        Assert.Equal("ANTHROPIC_API_KEY", ProviderRegistry.Built().Resolve("claude-code").Toolchain!.KeyVariable);
     }
 }

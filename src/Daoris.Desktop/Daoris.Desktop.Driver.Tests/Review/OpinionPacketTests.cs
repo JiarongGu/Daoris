@@ -253,7 +253,7 @@ public sealed class OpinionPacketTests : IDisposable
     [InlineData("stub", OpinionPosture.CopyAlone)]
     public void Claude_Code_by_either_door_reads_by_its_rules_and_its_copy_and_every_other_agent_by_its_copy_alone(string adapter, string posture)
     {
-        Assert.Equal(posture, OpinionPosture.Of(AdapterSet.Built().Resolve(adapter)));
+        Assert.Equal(posture, OpinionPosture.Of(ProviderRegistry.Built().Resolve(adapter)));
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public sealed class OpinionPacketTests : IDisposable
     [Fact]
     public void The_families_a_pass_names_are_the_owners_of_the_agents_that_wrote_the_work_each_once()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var working = new[] { AgentFamily.Of(built, "claude-code"), AgentFamily.Of(built, "codex-acp") };
 
         Assert.Equal(["claude-code", "codex"], OpinionPass.Families(working));

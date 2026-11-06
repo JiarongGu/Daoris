@@ -58,7 +58,7 @@ public sealed class HelperWaitTickTests : IDisposable
     /// <summary>The look's driver: the rule for helpers on, and the helper's tree, agent, capture and pass handed in as stand-ins.</summary>
     private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],

@@ -60,7 +60,7 @@ internal static class DriverChoicesConsole
         bool unadopted;
         try
         {
-            var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names));
+            var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(home, ProviderRegistry.Built().Names));
             unadopted = Adoption.Unadopted(ActorChoices.BuildAgent(config), adapters.AbilitiesOf);
         }
         catch (DriverException refused) when (refused is not UnknownDoorException)

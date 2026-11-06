@@ -130,7 +130,7 @@ public sealed class LateWordServiceProcessTests : IAsyncLifetime
         _atOpen.Before = async () =>
             late = (await _say!.SayAsync(driven!, "And use 9090.", ["trace.txt"], key: "press/late")).Word?.Id;
 
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = new ChatRunner(
             _client, adapters, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));

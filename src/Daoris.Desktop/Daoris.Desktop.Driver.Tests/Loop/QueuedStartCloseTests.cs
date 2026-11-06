@@ -196,7 +196,7 @@ public sealed class QueuedStartCloseTests : IDisposable
     private Daoris.Driver.Driver Driver() => new(
         _ledger.Client(),
         DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [Nowhere] } },
-        AdapterSet.Built(),
+        ProviderRegistry.Built(),
         _home);
 
     private string Tree(string name)

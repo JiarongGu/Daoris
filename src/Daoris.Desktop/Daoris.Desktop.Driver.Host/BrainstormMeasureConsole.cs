@@ -26,7 +26,7 @@ internal static class BrainstormMeasureConsole
         var configPath = DriverConfig.ResolvePath();
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var driver = new Daoris.Driver.Driver(service, DriverConfig.Load(configPath), AdapterSet.Built(), home, usage: new SessionUsage(home));
+        var driver = new Daoris.Driver.Driver(service, DriverConfig.Load(configPath), ProviderRegistry.Built(), home, usage: new SessionUsage(home));
         using var stop = new CancellationTokenSource();
         Console.CancelKeyPress += (_, press) =>
         {

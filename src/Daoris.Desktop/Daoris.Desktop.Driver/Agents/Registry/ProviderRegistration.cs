@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The registration of today's adapters as providers and doors (AGENTPROVIDER1 row a; the agent-provider design §2.2, §11): the one
-/// place that reads <see cref="AdapterSet"/> and its toolchains to make the contract's records, grouping the doors by the account
+/// place that reads <see cref="AdapterTable"/> and its toolchains to make the contract's records, grouping the doors by the account
 /// key each declares. It changes nothing it reads.
 /// </summary>
 /// <remarks>
@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// <item>the key names no door and no provider (<c>acme</c>, or a disabled plugin's harness): a provider of that id is made from the
 /// declarations that name it, every door naming it joined to it.</item>
 /// </list>
-/// <para>A name the set keeps for a disabled plugin (<see cref="AdapterSet.Agents"/>) with no door of any provider is an unavailable
+/// <para>A name the set keeps for a disabled plugin (<see cref="AdapterTable.Agents"/>) with no door of any provider is an unavailable
 /// descriptor: known, never started (C1-1.2).</para>
 /// </remarks>
 internal static class ProviderRegistration
@@ -35,7 +35,11 @@ internal static class ProviderRegistration
         public string? References { get; init; }
     }
 
-    public static ProviderRegistry Of(AdapterSet set)
+    /// <summary>What a table makes: the providers, the names no plugin may declare and each door's and holder's toolchain, with the table.</summary>
+    internal sealed record Made(
+        List<Provider> Providers, IReadOnlyList<string> Reserved, IReadOnlyDictionary<string, HarnessToolchain> Toolchains, AdapterTable Table);
+
+    public static Made Of(AdapterTable set)
     {
         var doors = set.Names;
         var held = new HashSet<string>(doors, StringComparer.OrdinalIgnoreCase);
@@ -82,11 +86,11 @@ internal static class ProviderRegistration
         providers.AddRange(unavailable);
 
         var reserved = set.Reserved.Where(name => DeclaredBy(set, name) is null).ToList();
-        return new ProviderRegistry([.. providers.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)], reserved, toolchains);
+        return new Made([.. providers.OrderBy(provider => provider.Id.Value, StringComparer.Ordinal)], reserved, toolchains, set);
     }
 
     /// <summary>The plugin a door of the set came from (D64), or null for one this build carries and for a name that is no door.</summary>
-    private static string? DeclaredBy(AdapterSet set, string name) =>
+    private static string? DeclaredBy(AdapterTable set, string name) =>
         set.Names.Contains(name, StringComparer.OrdinalIgnoreCase) && set.Resolve(name) is LegacyDoor { Declared: true } declared
             ? declared.Door.Identity.DeclaredBy
             : null;
@@ -98,7 +102,7 @@ internal static class ProviderRegistration
             .Append(provider.KeyOf().Value)
             .Concat(provider.Doors.Select(door => door.AccountOf?.Value).OfType<string>());
 
-    private static string KeyOf(AdapterSet set, string name) =>
+    private static string KeyOf(AdapterTable set, string name) =>
         set.Resolve(name).Toolchain?.AccountOf is { Length: > 0 } accountOf ? accountOf : name;
 
     private static Provider Descriptor(string agent)
@@ -114,7 +118,7 @@ internal static class ProviderRegistration
 
     private static Known<IDoorOffers> Absent() => Known<IDoorOffers>.Absent;
 
-    private static Provider BuildProvider(AdapterSet set, Group group)
+    private static Provider BuildProvider(AdapterTable set, Group group)
     {
         var id = new ProviderId(group.Id);
         var doors = group.Doors.Order(StringComparer.Ordinal).Select(name => BuildDoor(set, name, group.Id)).ToList();
@@ -175,7 +179,7 @@ internal static class ProviderRegistration
             Known<VocabularyPart>.Absent);
     }
 
-    private static AccountsPart Accounts(AdapterSet set, Group group, HarnessToolchain? declaring, string evidence)
+    private static AccountsPart Accounts(AdapterTable set, Group group, HarnessToolchain? declaring, string evidence)
     {
         if (group.References is { } named)
         {
@@ -189,7 +193,7 @@ internal static class ProviderRegistration
     private static bool Empty(TablesPart tables) =>
         tables.Limits is null && tables.Windows is null && tables.SignIn is null && tables.Refused is null && tables.ErrorWords is null;
 
-    private static AgentDoor BuildDoor(AdapterSet set, string name, string provider)
+    private static AgentDoor BuildDoor(AdapterTable set, string name, string provider)
     {
         var adapter = LegacyDoor.Of(set.Resolve(name));
         if (!adapter.Declared) return adapter.Door;

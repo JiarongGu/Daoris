@@ -48,7 +48,7 @@ public sealed class CapCountTickTests : IDisposable
     {
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {

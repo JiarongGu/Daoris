@@ -279,7 +279,7 @@ public sealed class AccountLimitsTests
     // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
 
     /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
-    private static LimitWords Codex => AdapterSet.Built().Registry.ToolchainOf("codex-acp")!.Limits!;
+    private static LimitWords Codex => ProviderRegistry.Built().ToolchainOf("codex-acp")!.Limits!;
 
     /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
     private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
@@ -483,7 +483,7 @@ public sealed class AccountLimitsTests
 
     private static IEnumerable<(string Agent, LimitWords Words)> Declared()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         foreach (var name in new[] { "stub", "acp-stub", "claude-code", "claude-code-acp", "dsh", "codex-acp" })
         {
             if (adapters.Resolve(name).Toolchain?.Limits is { } words) yield return (name, words);

@@ -142,7 +142,7 @@ public sealed class OpinionRulesTests
                 File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), plugin.Value.GetString());
             }
 
-            var built = AdapterSet.Built();
+            var built = ProviderRegistry.Built();
             var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
 
             Assert.True(same == OpinionRules.OneFamily(working, reviewer, adapters), name);

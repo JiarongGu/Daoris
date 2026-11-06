@@ -215,7 +215,7 @@ public sealed class LookWaitTests : IDisposable
             """);
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runner,
             Stops = runs.Stops,

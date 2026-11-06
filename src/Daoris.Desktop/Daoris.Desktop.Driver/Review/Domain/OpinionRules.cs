@@ -212,9 +212,9 @@ public static class OpinionRules
     /// The machine's set, a plugin's harnesses among them, so a maker a plugin declares counts at a door as it counts in the
     /// choice (XAGENT1b2); null is the built-in set alone.
     /// </param>
-    public static bool OneFamily(string a, string b, AdapterSet? adapters = null)
+    public static bool OneFamily(string a, string b, ProviderRegistry? adapters = null)
     {
-        var set = adapters ?? AdapterSet.Built();
+        var set = adapters ?? ProviderRegistry.Built();
         return AgentFamily.Of(set, a).Same(AgentFamily.Of(set, b));
     }
 
@@ -222,9 +222,9 @@ public static class OpinionRules
     /// The reviewers of <paramref name="rule"/> that are the family of <paramref name="working"/>, the agent this machine's work
     /// runs on, judged over <paramref name="adapters"/> as <see cref="OneFamily"/> judges them.
     /// </summary>
-    public static IReadOnlyList<string> SameAgent(OpinionRule rule, string working, AdapterSet? adapters = null)
+    public static IReadOnlyList<string> SameAgent(OpinionRule rule, string working, ProviderRegistry? adapters = null)
     {
-        var set = adapters ?? AdapterSet.Built();
+        var set = adapters ?? ProviderRegistry.Built();
         return [.. rule.Reviewers.Where(reviewer => OneFamily(working, reviewer, set))];
     }
 

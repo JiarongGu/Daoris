@@ -163,7 +163,7 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
             case "plugin-offer":
             {
                 var offer = PipeGround.Text(payload, "offer");
-                var offered = PluginOffers.Load(PluginOffers.FolderFor(loop.Home, AppContext.BaseDirectory), loop.Home, AdapterSet.Built().Names)
+                var offered = PluginOffers.Load(PluginOffers.FolderFor(loop.Home, AppContext.BaseDirectory), loop.Home, ProviderRegistry.Built().Names)
                     .FirstOrDefault(each => string.Equals(each.Id, offer, StringComparison.OrdinalIgnoreCase));
                 return Files(offered?.Folder, cancellationToken);
             }

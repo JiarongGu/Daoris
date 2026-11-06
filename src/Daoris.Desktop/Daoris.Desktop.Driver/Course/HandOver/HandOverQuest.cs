@@ -72,13 +72,13 @@ public static class QuestHandOver
     /// The roster as a driven start reads it: the accounts it holds for an agent and the wire its door rides, or null for an agent
     /// this set does not have. The look's and the terminal's both, so the ask and the take judge by one answer.
     /// </summary>
-    public static Func<string, HandOverAgent?> Roster(AdapterSet adapters, string home) => agent =>
+    public static Func<string, HandOverAgent?> Roster(ProviderRegistry adapters, string home) => agent =>
     {
         try
         {
             var resolved = adapters.Resolve(agent);
             IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
-                ? [.. HarnessSettings.Profiles(home, adapters.Registry.OwnerOfAgent(resolved.Name).Value)]
+                ? [.. HarnessSettings.Profiles(home, adapters.OwnerOfAgent(resolved.Name).Value)]
                 : [];
             return new HandOverAgent(accounts, Adoption.Unadopted(resolved.Abilities()));
         }

@@ -26,7 +26,7 @@ public sealed class AdapterTests
     [InlineData("acp-stub", "MAKER", false)]
     public void Each_start_and_conversation_names_its_own_maker_and_running_model(string name, string maker, bool automatic)
     {
-        var adapter = AdapterSet.Built().Resolve(name);
+        var adapter = ProviderRegistry.Built().Resolve(name);
         // A new start must replace the attribution an earlier maker left on the target.
         var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, adapter);
         var composed = TargetPrompt.Composed(target);
@@ -63,7 +63,7 @@ public sealed class AdapterTests
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [name] = ["node", "stand-in.mjs"] },
         };
-        var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), Path.GetFullPath("_fixtures/makertrail-unused"));
+        var driver = new Daoris.Driver.Driver(service, config, ProviderRegistry.Built(), Path.GetFullPath("_fixtures/makertrail-unused"));
         var spawn = driver.Prepare(adapter, Target() with { CommitTrailer = "old maker's instruction" }, new HarnessSelection(null));
         Assert.Equal(composed.Text, spawn.Info.Environment["DAORIS_TARGET"]);
     }
@@ -81,7 +81,7 @@ public sealed class AdapterTests
     public void A_carry_on_across_makers_names_the_earlier_makers_trailer_for_its_uncommitted_work(
         string runs, string ran, string? maker, string? model, string trailer)
     {
-        var adapter = AdapterSet.Built().Resolve(runs);
+        var adapter = ProviderRegistry.Built().Resolve(runs);
         var left = new EarlierMaker(ran, maker, model is null ? [] : [model]);
         var target = TargetPrompt.ForStart(Target() with { CutOff = "it ran out of credits.", InFlight = [" M src/app.cs"], LeftBy = left }, adapter);
         var words = TargetPrompt.Compose(target);
@@ -98,7 +98,7 @@ public sealed class AdapterTests
     [InlineData("claude-code-acp", "codex-acp", "OpenAI", false)]
     public void A_carry_on_within_a_maker_or_with_nothing_uncommitted_says_nothing_more(string runs, string ran, string? maker, bool uncommitted)
     {
-        var adapter = AdapterSet.Built().Resolve(runs);
+        var adapter = ProviderRegistry.Built().Resolve(runs);
         var left = new EarlierMaker(ran, maker, ["the-model"]);
         var target = TargetPrompt.ForStart(
             Target() with { CutOff = "it ended.", InFlight = uncommitted ? [" M src/app.cs"] : [], LeftBy = left }, adapter);
@@ -110,7 +110,7 @@ public sealed class AdapterTests
     [Fact]
     public void An_unknown_adapter_errors_naming_what_exists()
     {
-        var error = Assert.Throws<DriverException>(() => AdapterSet.Built().Resolve("codex"));
+        var error = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Resolve("codex"));
 
         Assert.Contains("codex", error.Message);
         Assert.Contains("stub", error.Message);
@@ -119,7 +119,7 @@ public sealed class AdapterTests
     [Fact]
     public void The_stub_adapter_is_built_in()
     {
-        Assert.Equal("stub", AdapterSet.Built().Resolve("stub").Name);
+        Assert.Equal("stub", ProviderRegistry.Built().Resolve("stub").Name);
     }
 
     /// <summary>
@@ -130,8 +130,8 @@ public sealed class AdapterTests
     [Fact]
     public void An_adapter_that_says_nothing_is_held_over_the_pipe()
     {
-        Assert.Equal(Transport.Native, AdapterSet.Built().Resolve("stub").Transport);
-        Assert.Equal(Transport.Native, AdapterSet.Built().Resolve("claude-code").Transport);
+        Assert.Equal(Transport.Native, ProviderRegistry.Built().Resolve("stub").Transport);
+        Assert.Equal(Transport.Native, ProviderRegistry.Built().Resolve("claude-code").Transport);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class AdapterTests
     [Fact]
     public void The_acp_stub_declares_the_protocol_door_and_opens_stdin()
     {
-        var adapter = AdapterSet.Built().Resolve("acp-stub");
+        var adapter = ProviderRegistry.Built().Resolve("acp-stub");
         var info = adapter.Prepare(Target(), ["node", "acp-agent.mjs"]);
 
         Assert.Equal(Transport.Protocol, adapter.Transport);
@@ -158,7 +158,7 @@ public sealed class AdapterTests
     public void The_acp_stub_needs_a_command_and_says_how_to_give_one()
     {
         var error = Assert.Throws<DriverException>(
-            () => AdapterSet.Built().Resolve("acp-stub").Prepare(Target(), command: null));
+            () => ProviderRegistry.Built().Resolve("acp-stub").Prepare(Target(), command: null));
 
         Assert.Contains("acp-stub", error.Message);
         Assert.Contains("driver.json", error.Message);
@@ -169,7 +169,7 @@ public sealed class AdapterTests
     public void The_stub_needs_a_command_and_says_how_to_give_one()
     {
         var error = Assert.Throws<DriverException>(
-            () => AdapterSet.Built().Resolve("stub").Prepare(Target(), command: null));
+            () => ProviderRegistry.Built().Resolve("stub").Prepare(Target(), command: null));
 
         Assert.Contains("command", error.Message);
     }
@@ -181,7 +181,7 @@ public sealed class AdapterTests
     [Fact]
     public void The_stub_spawns_in_the_root_with_the_target_in_the_environment()
     {
-        var info = AdapterSet.Built().Resolve("stub").Prepare(Target(), ["node", "agent.mjs"]);
+        var info = ProviderRegistry.Built().Resolve("stub").Prepare(Target(), ["node", "agent.mjs"]);
 
         Assert.Equal("node", info.FileName);
         Assert.Equal("agent.mjs", Assert.Single(info.ArgumentList));
@@ -197,7 +197,7 @@ public sealed class AdapterTests
     [Fact]
     public void The_claude_code_adapter_is_built_in()
     {
-        Assert.Equal("claude-code", AdapterSet.Built().Resolve("claude-code").Name);
+        Assert.Equal("claude-code", ProviderRegistry.Built().Resolve("claude-code").Name);
     }
 
     /// <summary>
@@ -210,7 +210,7 @@ public sealed class AdapterTests
     [Fact]
     public void Claude_code_spawns_headless_with_the_target_as_the_prompt_on_its_input()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), command: null);
+        var info = ProviderRegistry.Built().Resolve("claude-code").Prepare(Target(), command: null);
 
         Assert.Equal("claude", info.FileName);
         Assert.Equal("D:/fam/Game", info.WorkingDirectory);
@@ -233,7 +233,7 @@ public sealed class AdapterTests
     [Fact]
     public void Claude_code_takes_its_command_from_the_config_when_one_is_named()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), ["C:/tools/claude.exe"]);
+        var info = ProviderRegistry.Built().Resolve("claude-code").Prepare(Target(), ["C:/tools/claude.exe"]);
 
         Assert.Equal("C:/tools/claude.exe", info.FileName);
         Assert.Contains("-p", info.ArgumentList);
@@ -260,7 +260,7 @@ public sealed class AdapterTests
     [Fact]
     public void Claude_code_never_names_a_model()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), command: null);
+        var info = ProviderRegistry.Built().Resolve("claude-code").Prepare(Target(), command: null);
 
         Assert.DoesNotContain("--model", info.ArgumentList);
     }
@@ -356,7 +356,7 @@ public sealed class AdapterTests
     [Fact]
     public void The_attachments_directory_is_in_the_environment_only_when_a_file_is_here()
     {
-        var stub = AdapterSet.Built().Resolve("stub");
+        var stub = ProviderRegistry.Built().Resolve("stub");
 
         var carrying = stub.Prepare(Carrying(), ["node", "agent.mjs"]);
         var elsewhere = stub.Prepare(
@@ -376,8 +376,8 @@ public sealed class AdapterTests
     [Fact]
     public void The_built_adapters_declare_whether_they_can_hold_a_conversation()
     {
-        Assert.True(AdapterSet.Built().Resolve("stub").Interactive);
-        Assert.True(AdapterSet.Built().Resolve("claude-code").Interactive);
+        Assert.True(ProviderRegistry.Built().Resolve("stub").Interactive);
+        Assert.True(ProviderRegistry.Built().Resolve("claude-code").Interactive);
     }
 
     /// <summary>
@@ -387,7 +387,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_chat_is_spawned_with_the_person_s_channel_open()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+        var info = ProviderRegistry.Built().Resolve("claude-code").PrepareChat(Chat(), null);
 
         Assert.True(info.RedirectStandardInput);
         Assert.True(info.RedirectStandardOutput);
@@ -403,7 +403,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_chat_carries_no_quest_and_no_target_prompt()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+        var info = ProviderRegistry.Built().Resolve("claude-code").PrepareChat(Chat(), null);
 
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
         Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
@@ -425,7 +425,7 @@ public sealed class AdapterTests
     public void A_chat_s_spawn_names_its_session_on_every_door()
     {
         var chat = Chat("c1a2b3c4");
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var talking = adapters.Names.Where(name => adapters.Resolve(name).Interactive).ToList();
         Assert.Contains("acp-stub", talking);
         Assert.Contains("claude-code", talking);
@@ -446,7 +446,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_chat_with_no_session_named_carries_none()
     {
-        var info = AdapterSet.Built().Resolve("acp-stub").PrepareChat(Chat(), ["agent"]);
+        var info = ProviderRegistry.Built().Resolve("acp-stub").PrepareChat(Chat(), ["agent"]);
 
         Assert.False(info.Environment.ContainsKey(IntakeRoom.SessionVariable));
     }
@@ -482,7 +482,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_driven_session_asks_for_the_harnesss_structured_output()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         var arguments = adapter.Prepare(Target(), null).ArgumentList.ToList();
 
         Assert.Equal("stream-json", arguments[arguments.IndexOf("--output-format") + 1]);
@@ -490,14 +490,14 @@ public sealed class AdapterTests
         Assert.Contains("--include-partial-messages", arguments);
         Assert.NotNull(adapter.StructuredOutput());
         // A harness whose wire is not checked stays text.
-        Assert.Null(AdapterSet.Built().Resolve("stub").StructuredOutput());
+        Assert.Null(ProviderRegistry.Built().Resolve("stub").StructuredOutput());
     }
 
     /// <summary>The permission posture does not soften because a person is watching (D46 §5).</summary>
     [Fact]
     public void A_chat_runs_under_the_same_permission_posture_as_driven_work()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+        var info = ProviderRegistry.Built().Resolve("claude-code").PrepareChat(Chat(), null);
 
         Assert.Contains("--permission-mode", info.ArgumentList);
         Assert.Contains("acceptEdits", info.ArgumentList);
@@ -512,7 +512,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_chat_naming_its_permission_mode_runs_in_it_and_one_naming_none_keeps_accept_edits()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
 
         foreach (var target in new[] { Chat(), Chat() with { Resume = "0b5e7c1a" } })
         {
@@ -534,7 +534,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_driven_start_and_its_resume_run_in_the_permission_mode_their_setup_names()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         var cases = new[]
         {
             (AccessRules.Auto, "acceptEdits"), (AccessRules.Asking, "default"), (AccessRules.Unrestricted, "bypassPermissions"),

@@ -346,7 +346,7 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary><see cref="AgentAccountLines.Says"/>, for <c>agent list</c> (PUSH1f2e4).</summary>
-    internal static bool Says(AdapterSet set, string owner) => AgentAccountLines.Says(set, owner);
+    internal static bool Says(ProviderRegistry set, string owner) => AgentAccountLines.Says(set, owner);
 
     /// <inheritdoc cref="AgentAccountLines.UseLines"/>
     internal static (List<(string Label, string Value)> Rows, List<string> Notes) UseLines(

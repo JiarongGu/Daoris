@@ -73,10 +73,10 @@ public sealed class LimitWaitsProcessTests : IDisposable
         return config;
     }
 
-    private HarnessRoster Roster(AdapterSet adapters) =>
+    private HarnessRoster Roster(ProviderRegistry adapters) =>
         new(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now };
 
-    private ChatRunner Runner(ServiceClient client, AdapterSet adapters, HarnessRoster roster, SessionEvents events) =>
+    private ChatRunner Runner(ServiceClient client, ProviderRegistry adapters, HarnessRoster roster, SessionEvents events) =>
         new(client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);
 
     /// <summary>An account the stand-in refuses with the limit sentence until the gate is lifted.</summary>
@@ -164,7 +164,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
 
@@ -238,7 +238,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         string chat;
         string kept;
@@ -299,7 +299,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddHours(1));
         Cooling("account-2", _now.AddDays(1));
@@ -346,7 +346,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -384,7 +384,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -417,7 +417,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -443,7 +443,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var runner = new ChatRunner(client, adapters, _home, processes, events: events, harnesses: roster);
@@ -480,7 +480,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -520,7 +520,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Cooling("account-1", _now.AddDays(4));
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         // account-2 frees first, in a day, and a record on no pick goes on there; the picked one waits for account-1's four days.
@@ -550,7 +550,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         Cooling("account-2", _now.AddHours(4));
@@ -603,7 +603,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         AccountReads.Keep(_home, "stub", "account-3", LoginState.Out, _now);
@@ -649,7 +649,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -691,7 +691,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddDays(4));
         using var runner = Runner(client, adapters, roster, events);
@@ -746,7 +746,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         File.WriteAllText(Path.Combine(Gate, "gone-conv-account-1"), "");
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         Assert.Single(await runner.WakeLimitsAsync(config));
@@ -791,7 +791,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         File.WriteAllText(Path.Combine(Gate, "gone-conv-account-1"), "");
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
 
@@ -826,7 +826,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.True(AccountCooling.End(_home, "stub", "account-2", _now));
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
         var counted = roster.Mark();
@@ -882,7 +882,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
         var conversations = new HarnessConversations(_home);
@@ -913,7 +913,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         File.WriteAllText(Path.Combine(Gate, "refuse-resume"), "");
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         Assert.Single(await runner.WakeLimitsAsync(config));
@@ -944,7 +944,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Cooling("account-1", _now.AddDays(1));
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
 
@@ -994,7 +994,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         await runner.TakeUpAsync();
@@ -1038,7 +1038,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         };
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         var woke = Assert.Single(await runner.WakeLimitsAsync(config));
@@ -1070,7 +1070,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
         Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         await runner.TakeUpAsync();
@@ -1094,7 +1094,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Cooling("account-1", _now.AddHours(1));
         var config = Config();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events);
 
         Assert.Empty(await runner.WakeLimitsAsync(config));
@@ -1123,7 +1123,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
         var chat = await WaitingAsync(runner, ledger, events, roster, config, help: false);
@@ -1214,7 +1214,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
-    private static AdapterSet TwoAgents() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry TwoAgents() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,

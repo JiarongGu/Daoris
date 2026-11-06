@@ -59,7 +59,7 @@ public sealed class AccountReadingTickTests : IDisposable
     [Fact]
     public async Task A_frame_replayed_on_the_protocol_door_is_kept_and_the_next_start_passes_the_account_it_says_is_near()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();

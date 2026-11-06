@@ -23,7 +23,7 @@ internal static class RefusedAccounts
             return null;
         }
 
-        var owner = harnesses.Adapters.Registry.OwnerOfAgent(adapter.Name).Value;
+        var owner = harnesses.Adapters.OwnerOfAgent(adapter.Name).Value;
         harnesses.SignedOut(adapter.Name, profile);
         if (profile is null)
         {

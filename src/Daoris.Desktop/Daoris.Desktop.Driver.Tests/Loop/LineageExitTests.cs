@@ -88,5 +88,5 @@ public sealed class LineageExitTests : IDisposable
         [.. File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement)];
 
     private Daoris.Driver.Driver Driver() =>
-        new(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, AdapterSet.Built(), _home);
+        new(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, ProviderRegistry.Built(), _home);
 }

@@ -41,7 +41,7 @@ public sealed class BrainstormWalkTests : IDisposable
     private HarnessRoster Roster(bool installed = true)
     {
         if (installed) File.WriteAllText(Command, "");
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
@@ -49,7 +49,7 @@ public sealed class BrainstormWalkTests : IDisposable
         }
 
         var owners = new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = Quiet(CodexAccounts.Toolchain) };
-        return new HarnessRoster(new AdapterSet(adapters, owners), Settings) { Clock = () => Now, Zone = Zone };
+        return new HarnessRoster(new ProviderRegistry(adapters, owners), Settings) { Clock = () => Now, Zone = Zone };
     }
 
     /// <summary>The agent whose accounts the door runs as, and its account folders, with the first the default.</summary>

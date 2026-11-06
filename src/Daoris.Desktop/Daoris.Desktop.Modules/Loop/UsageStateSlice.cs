@@ -62,7 +62,7 @@ public static class UsageStateSlice
         };
 
     /// <summary>The agent each of the loop's doors is, its plugins' doors among them, read at each judgement.</summary>
-    public static AgentOfDoor AgentsOf(DriverLoop loop) => new(loop.Harnesses.Adapters.Registry);
+    public static AgentOfDoor AgentsOf(DriverLoop loop) => new(loop.Harnesses.Adapters);
 
     /// <summary>One judgement over the sessions read: each under its id, each account's share under its key, counted by agent.</summary>
     public static IReadOnlyList<SliceJudged> Judge(IReadOnlyList<UsageEntry> sessions, AgentOfDoor agents)

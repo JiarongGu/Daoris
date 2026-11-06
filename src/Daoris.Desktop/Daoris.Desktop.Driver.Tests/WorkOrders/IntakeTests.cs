@@ -591,7 +591,7 @@ public sealed class IntakeTests : IDisposable
         var now = new DateTimeOffset(2026, 10, 1, 14, 0, 0, TimeSpan.FromMinutes(345));
         var until = new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
         await using var service = StandInService.Start(Circle, Ask());
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = zone };
         var config = (Config() with
         {
@@ -681,7 +681,7 @@ public sealed class IntakeTests : IDisposable
             "intake", [new ActorChoice("acp-stub", "opus")]);
         Daoris.Driver.Driver Started()
         {
-            var adapters = AdapterSet.Built();
+            var adapters = ProviderRegistry.Built();
             return new Daoris.Driver.Driver(
                 new ServiceClient(service.Url, null), config, adapters, _home,
                 harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -925,7 +925,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -954,7 +954,7 @@ public sealed class IntakeTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
         }).StaffIntake(recording.Name);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording.Door });
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -978,7 +978,7 @@ public sealed class IntakeTests : IDisposable
 
     private Daoris.Driver.Driver Driver(DriverConfig config, StandInService service, SessionProcesses? processes = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

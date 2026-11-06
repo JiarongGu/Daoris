@@ -26,7 +26,7 @@ public sealed class ClaudeAcpTests : IDisposable
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
-    private static ISessionAdapter Adapter() => AdapterSet.Built().Resolve("claude-code-acp");
+    private static ISessionAdapter Adapter() => ProviderRegistry.Built().Resolve("claude-code-acp");
 
     [Fact]
     public void It_is_a_protocol_door_session_and_takes_stdin()
@@ -123,7 +123,7 @@ public sealed class ClaudeAcpTests : IDisposable
     public void The_protocol_door_and_the_pipe_door_are_pinned_separately()
     {
         var acp = Adapter().Toolchain;
-        var pipe = AdapterSet.Built().Resolve("claude-code").Toolchain;
+        var pipe = ProviderRegistry.Built().Resolve("claude-code").Toolchain;
 
         // Since AGT2b they do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
         // verified, and the adapter — which ships only on npm — from its package.
@@ -144,7 +144,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void Both_seams_reach_the_spawn_through_the_driver_s_one_line()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
         var info = adapter.Prepare(Target(_home), null);
 
         // Exactly what the driver does at spawn, with what the roster resolved.
@@ -170,7 +170,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_pipe_door_gains_no_executable_seam()
     {
-        var pipe = AdapterSet.Built().Resolve("claude-code");
+        var pipe = ProviderRegistry.Built().Resolve("claude-code");
         var info = pipe.Prepare(Target(_home), null);
         Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, seam: null);
 
@@ -184,7 +184,7 @@ public sealed class ClaudeAcpTests : IDisposable
     [Fact]
     public void The_pipe_door_is_still_there()
     {
-        var pipe = AdapterSet.Built().Resolve("claude-code");
+        var pipe = ProviderRegistry.Built().Resolve("claude-code");
 
         Assert.Equal(Transport.Native, pipe.Transport);
         Assert.True(pipe.Interactive);

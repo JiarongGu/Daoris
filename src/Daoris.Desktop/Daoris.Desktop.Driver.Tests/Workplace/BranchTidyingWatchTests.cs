@@ -23,7 +23,7 @@ public sealed class BranchTidyingWatchTests : BranchTidyingFixture
         using var log = Log();
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Log = log,
             Tidying = new BranchTidying(_home) { Pace = TimeSpan.FromMinutes(5) },

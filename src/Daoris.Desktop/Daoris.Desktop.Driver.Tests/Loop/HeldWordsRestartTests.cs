@@ -119,7 +119,7 @@ public sealed class HeldWordsRestartTests : IDisposable
     private (Daoris.Driver.Driver Driver, List<IReadOnlyList<string>> Began) Driver(ServiceClient service)
     {
         var began = new List<IReadOnlyList<string>>();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine"] };
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))

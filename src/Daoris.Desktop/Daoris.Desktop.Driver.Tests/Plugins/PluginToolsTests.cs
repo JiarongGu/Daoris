@@ -182,7 +182,7 @@ public sealed class PluginToolsTests : IDisposable
             { "id": "acme.later", "tools": [{ "id": "terraform" }], "harnesses": [ { "name": "claude-code", "command": ["claude"] } ] }
             """);
 
-        var refused = Assert.Single(PluginCatalog.Load(_home, AdapterSet.Built().Names).Plugins);
+        var refused = Assert.Single(PluginCatalog.Load(_home, ProviderRegistry.Built().Names).Plugins);
         var (written, problem) = PluginCatalog.ReadAsWritten("acme.later", Path.Combine(folder, PluginCatalog.ManifestName));
 
         Assert.NotNull(refused.Problem);

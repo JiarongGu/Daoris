@@ -26,7 +26,7 @@ public sealed class PinnedUpdatesTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private static HarnessToolchain ClaudeCode => AdapterSet.Built().Resolve("claude-code").Toolchain!;
+    private static HarnessToolchain ClaudeCode => ProviderRegistry.Built().Resolve("claude-code").Toolchain!;
 
     [Fact]
     public void Claude_code_declares_the_switch_it_was_measured_with()
@@ -65,7 +65,7 @@ public sealed class PinnedUpdatesTests : IDisposable
     [Fact]
     public void The_protocol_door_s_managed_claude_runs_with_updates_off()
     {
-        var door = AdapterSet.Built().Resolve("claude-code-acp");
+        var door = ProviderRegistry.Built().Resolve("claude-code-acp");
         var acp = door.Toolchain!;
         var pointed = new ProcessStartInfo("claude-agent-acp");
         var unpointed = new ProcessStartInfo("claude-agent-acp");

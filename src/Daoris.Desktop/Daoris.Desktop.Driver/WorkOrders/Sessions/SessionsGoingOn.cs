@@ -102,7 +102,7 @@ internal static class SessionsGoingOn
     /// <summary>This build's adapters with the home's plugins, as the loop lays them for a look: what a terminal with no roster of its own judges by.</summary>
     internal static Func<string, HandOverAgent?> DrivesBy(string home)
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         return QuestHandOver.Roster(built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)), home);
     }
 

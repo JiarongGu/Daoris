@@ -44,7 +44,7 @@ public sealed class HelpChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         var client = new ServiceClient(service.Url, null);
@@ -231,7 +231,7 @@ public sealed class HelpChatTests : IDisposable
             // with none named would run the `claude` on this machine's PATH.
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = agent, ["claude-code"] = agent },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),

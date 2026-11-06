@@ -52,7 +52,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         AccountOf: accountOf, Usage: usage);
 
     private HarnessRoster Roster(UsageQuestion? question = null) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
             // `codex-acp` does for `codex`.
@@ -347,7 +347,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     [Fact]
     public void The_question_is_its_owner_s_through_its_door_and_an_agent_speaks_where_either_its_door_or_its_server_says()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-codexuse-unused", "harnesses.json"));
 
         Assert.Equal(

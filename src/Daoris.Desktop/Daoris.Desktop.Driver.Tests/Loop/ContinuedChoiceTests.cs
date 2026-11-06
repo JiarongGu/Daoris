@@ -43,10 +43,10 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
-    private AdapterSet Adapters()
+    private ProviderRegistry Adapters()
     {
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        return new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        return new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["first"] = Adapter("first", present),
             ["second"] = Adapter("second", present),

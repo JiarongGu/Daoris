@@ -113,7 +113,7 @@ public sealed class StartRoleTests : IDisposable
             },
         };
         var ask = new HelperAsk("h1", "s1", "Read this.", "claude", HelperAsk.ByPerson, DateTimeOffset.UnixEpoch);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>());
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>());
         IReadOnlyList<ActorEffective> Order(RoleCatalog? catalogue) => HelperChoice.Order(ask, HelperRule.Default, adapters, null, config, catalogue);
 
         var today = Order(null);
@@ -183,7 +183,7 @@ public sealed class StartRoleTests : IDisposable
         }
 
         settings.Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        var set = new AdapterSet(adapters);
+        var set = new ProviderRegistry(adapters);
         var store = DesktopStore.LocationIn(_home);
         RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("engine-build", "build", new RoleScope(RoleScope.Repository, "engine"))), () => StoreSettled.Yes);
         RoleCatalog.Write(store, RoleChange.Set(RoleCatalogTests.Working("frontend", "build", new RoleScope(RoleScope.Workspace, "default"))), () => StoreSettled.Yes);

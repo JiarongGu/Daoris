@@ -232,7 +232,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     // what the plugin runs at that look, as it does any plugin. Nothing runs here.
     public void AddPlugin(string folder)
     {
-        PluginInstall.Add(_loop.Home, folder, AdapterSet.Built().Names);
+        PluginInstall.Add(_loop.Home, folder, ProviderRegistry.Built().Names);
         _loop.Nudge();
     }
 
@@ -246,7 +246,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
     // PLUGIN_INSTALL's own copy of one of the install's offers; nothing runs here.
     public void AddOffer(string id)
     {
-        PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, AdapterSet.Built().Names);
+        PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, ProviderRegistry.Built().Names);
         _loop.Nudge();
     }
 
@@ -256,7 +256,7 @@ internal sealed class HelpScreenDoors(DriverContext context, ServiceClient? serv
 
     // PLUGIN_ACTION's own help-approve and help-withdraw: the person's approval, written as the page writes it.
     public void ApproveHelp(string plugin, string server, IReadOnlyList<string> writes) =>
-        HelpGrants.Approve(_loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), plugin, server, writes);
+        HelpGrants.Approve(_loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), plugin, server, writes);
 
     public void WithdrawHelp(string plugin, string server) => HelpGrants.Withdraw(_loop.Home, plugin, server);
 }

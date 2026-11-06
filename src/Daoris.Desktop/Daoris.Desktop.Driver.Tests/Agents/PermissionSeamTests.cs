@@ -27,7 +27,7 @@ public sealed class PermissionSeamTests
     [Fact]
     public void The_pipe_door_takes_the_rules_as_its_settings_flag()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
 
         Assert.True(adapter.TakesSettings);
@@ -45,7 +45,7 @@ public sealed class PermissionSeamTests
     [Fact]
     public void A_pipe_door_conversation_takes_them_too()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         var info = adapter.PrepareChat(SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", null));
 
         adapter.HandSettings(info, File);
@@ -62,7 +62,7 @@ public sealed class PermissionSeamTests
     [Fact]
     public void The_protocol_door_takes_them_on_session_new()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
         var info = adapter.Prepare(Target(Path.GetTempPath()), command: null);
 
         Assert.True(adapter.TakesSettings);
@@ -85,7 +85,7 @@ public sealed class PermissionSeamTests
     [InlineData("dsh")]
     public void Every_other_harness_is_handed_nothing(string name)
     {
-        var adapter = AdapterSet.Built().Resolve(name);
+        var adapter = ProviderRegistry.Built().Resolve(name);
         var info = adapter.Prepare(Target(Path.GetTempPath()), command: ["node", "agent.mjs"]);
         var before = info.ArgumentList.ToList();
 

@@ -21,15 +21,15 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
     /// else the agent a door runs as where the set declares one (<see cref="ProviderRegistry.ToolchainOf"/>), else an owner of its own
     /// name with no maker.
     /// </summary>
-    public static AgentFamily Of(AdapterSet adapters, string name)
+    public static AgentFamily Of(ProviderRegistry adapters, string name)
     {
         var given = name.Trim();
         var carried = adapters.Names.FirstOrDefault(each => string.Equals(each, given, StringComparison.OrdinalIgnoreCase));
-        var toolchain = adapters.Registry.ToolchainOf(carried ?? given);
+        var toolchain = adapters.ToolchainOf(carried ?? given);
         var agent = carried ?? given;
         return new AgentFamily(
-            agent, adapters.Registry.OwnerOfAgent(agent).Value, Declared(toolchain?.Product), Declared(toolchain?.Maker),
-            carried is null ? null : adapters.Registry.DeclaredBy(carried));
+            agent, adapters.OwnerOfAgent(agent).Value, Declared(toolchain?.Product), Declared(toolchain?.Maker),
+            carried is null ? null : adapters.DeclaredBy(carried));
     }
 
     /// <summary>Whether this and <paramref name="other"/> are one family: one owner, or one maker both declare, in any case.</summary>
@@ -315,7 +315,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// <param name="tryEntry">One reviewer asked of the account walk: its selection where it may run, else what held it.</param>
     /// <param name="role">The role whose plan walks it, which its settled selection names.</param>
     internal static async Task<ReviewerChoice> WalkAsync(
-        AdapterSet adapters, IReadOnlyList<ActorEffective> order, IReadOnlyCollection<string> working,
+        ProviderRegistry adapters, IReadOnlyList<ActorEffective> order, IReadOnlyCollection<string> working,
         Func<Entry, Task<(HarnessSelection? Selection, ReviewerTried? Held)>> tryEntry, string role = "opinion")
     {
         var families = new List<AgentFamily>();

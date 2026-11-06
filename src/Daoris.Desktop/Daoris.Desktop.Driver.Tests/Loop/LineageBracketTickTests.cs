@@ -108,7 +108,7 @@ public sealed class LineageBracketTickTests : IDisposable
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), told, hangs ? "hangs" : "ends"] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(), output: new SessionOutput(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

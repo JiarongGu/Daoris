@@ -97,7 +97,7 @@ public static class PluginPage
     /// <exception cref="DriverException">This machine holds no such plugin.</exception>
     internal static (PluginEntry Entry, PluginManifest Manifest, PluginCatalog Catalog) Installed(string home, string id)
     {
-        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        var catalog = PluginCatalog.Load(home, ProviderRegistry.Built().Names);
         var entry = catalog.Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new DriverException(Unknown(id));
         var (written, _) = PluginCatalog.ReadAsWritten(entry.Manifest.Id, Path.Combine(entry.Folder, PluginCatalog.ManifestName));
@@ -123,7 +123,7 @@ public static class PluginPage
         if (source is null) return new("none", null, null, null, null, [], null);
 
         var (plan, refusal) = PluginInstall.PlanUpdate(
-            home, entry.Manifest.Id, AdapterSet.Built().Names, offers ?? PluginOffers.FolderFor(home, AppContext.BaseDirectory));
+            home, entry.Manifest.Id, ProviderRegistry.Built().Names, offers ?? PluginOffers.FolderFor(home, AppContext.BaseDirectory));
         return new(
             source.Offer is not null ? "offer" : "folder", source.Folder, source.Offer, null,
             plan is null ? null : plan.Changes.Count > 0 ? "waits" : "current",

@@ -89,7 +89,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         LeaveDead("run-gone", "other", "mine");
         var watch = new DriverWatch(
             _ledger.Client(), Configured(), _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses))) { Share = true };
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses))) { Share = true };
         watch.Running.Live["q-mine"] = "mine";
 
         await LookedAsync(watch, () => MoveFrom("mine") is { Stands: false }, () => $"mine stood at {MoveFrom("mine")?.PhaseWord}");
@@ -105,7 +105,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         LeaveDead("run-gone", "other", "mine");
         var watch = new DriverWatch(
             _ledger.Client(), Configured(), _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         watch.Running.Live["q-mine"] = "mine";
 
         await LookedAsync(watch, () => MoveFrom("mine") is { Stands: false }, () => $"mine stood at {MoveFrom("mine")?.PhaseWord}");
@@ -130,7 +130,7 @@ public sealed class DrivenMoveTakeUpWatchTests : IDisposable
         File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 60, "trees": ["engine"] }""");
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var watching = Task.Run(() => watch.RunAsync((_, _) => Task.CompletedTask, onError: null, _closing.Token));
         try

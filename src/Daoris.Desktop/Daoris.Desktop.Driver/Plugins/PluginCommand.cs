@@ -15,7 +15,7 @@ public sealed record PluginWorld
     /// <summary>Where the command runs from: a relative folder is named from here.</summary>
     public string WorkingDirectory { get; init; } = Environment.CurrentDirectory;
 
-    /// <summary>The harness names no plugin may declare; null for this build's (<see cref="AdapterSet.Built"/>).</summary>
+    /// <summary>The harness names no plugin may declare; null for this build's (<see cref="ProviderRegistry.Built"/>).</summary>
     public IReadOnlyList<string>? Reserved { get; init; }
 
     /// <summary>The install's offers folder; null for the one beside the home, where the CLI looked (<see cref="PluginOffers.BesideHome"/>).</summary>
@@ -111,7 +111,7 @@ public static class PluginCommand
     private static string RequireHome(PluginWorld world) =>
         world.Instance.Home ?? throw new PluginWords($"{DaorisHome.Sentence} (wanted: plugins/)");
 
-    private static IReadOnlyList<string> Reserved(PluginWorld world) => world.Reserved ?? AdapterSet.Built().Names;
+    private static IReadOnlyList<string> Reserved(PluginWorld world) => world.Reserved ?? ProviderRegistry.Built().Names;
 
     /// <summary>The install's offers, beside the home, where the CLI looked for them: in an install, its <c>app/plugin-offers/</c>.</summary>
     private static string Offers(PluginWorld world, string home) => world.Offers ?? PluginOffers.BesideHome(home);

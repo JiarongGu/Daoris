@@ -12,7 +12,7 @@ internal static class LinesWires
     /// slice pushes each repository's rows of it: one builder for both doors, so the pull and the push cannot drift.
     /// </summary>
     /// <param name="adapters">The loop's agents, the machine's plugins among them, which an opinion's <c>sameAgent</c> is judged by.</param>
-    public static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters)
+    public static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, ProviderRegistry adapters)
     {
         var gitLevels = GitLevelsOf(config);
         return new
@@ -125,7 +125,7 @@ internal static class LinesWires
     /// The loop's agents, the machine's plugins among them, so a maker a plugin declares counts on the screen as it counts at
     /// the terminal and at Ask Daoris's door.
     /// </param>
-    public static object OpinionWire(OpinionRule rule, string working, AdapterSet adapters) => new
+    public static object OpinionWire(OpinionRule rule, string working, ProviderRegistry adapters) => new
     {
         None = rule.IsNone,
         rule.On,

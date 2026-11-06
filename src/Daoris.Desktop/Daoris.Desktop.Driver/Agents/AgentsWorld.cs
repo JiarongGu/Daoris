@@ -19,9 +19,9 @@ public sealed record AgentsWorld
     public string UserHome { get; init; } = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     /// <summary>The agents this machine runs, read from a home: the build's and those its plugins declare (D64), as the window's roster reads them.</summary>
-    public Func<string, AdapterSet> Adapters { get; init; } = home =>
+    public Func<string, ProviderRegistry> Adapters { get; init; } = home =>
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names));
     };
 

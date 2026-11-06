@@ -42,8 +42,8 @@ public sealed class HelpAccessSwapTests : IDisposable
 
     // The roster's file is this home's, never the one the process's environment names.
     private ChatRunner Runner() => new(
-        new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), _output,
-        harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        new ChatLedger().Client(), ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), _output,
+        harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
     /// <summary>
     /// A conversation running under <paramref name="mode"/>, its start handed <paramref name="housekeeping"/> and

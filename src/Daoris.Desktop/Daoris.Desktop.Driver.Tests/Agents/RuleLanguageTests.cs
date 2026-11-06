@@ -19,7 +19,7 @@ public sealed class RuleLanguageTests : IDisposable
     [Fact]
     public void The_trust_preflight_reads_the_doors_own_home_and_trust_file_whichever_class_presents_it()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         foreach (var door in new[] { "claude-code", "claude-code-acp" })
         {
             var home = built.Resolve(door).Home();
@@ -36,7 +36,7 @@ public sealed class RuleLanguageTests : IDisposable
     [Fact]
     public void Each_built_door_takes_its_providers_language_and_a_provider_stating_none_takes_none()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         Assert.Same(ClaudeRules.Language, built.Resolve("claude-code").RuleLanguage());
         Assert.Same(ClaudeRules.Language, built.Resolve("claude-code-acp").RuleLanguage());
         foreach (var door in new[] { "codex-acp", "dsh", "stub", "acp-stub" })
@@ -45,7 +45,7 @@ public sealed class RuleLanguageTests : IDisposable
             Assert.False(built.Resolve(door).TakesSettings);
         }
 
-        var registry = ProviderRegistry.Of(built);
+        var registry = built;
         Assert.True(registry.Provider("claude-code").Rules.IsKnown);
         Assert.All(["codex", "dsh", "stub"], id => Assert.False(registry.Provider(id).Rules.IsKnown));
         Assert.All(["codex", "dsh", "stub"], id => Assert.False(registry.Provider(id).Skills.IsKnown));

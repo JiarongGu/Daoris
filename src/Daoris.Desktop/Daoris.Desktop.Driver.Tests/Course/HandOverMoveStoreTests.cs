@@ -181,7 +181,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         // Its turns are this shell's own (a record in a live state that no turn here holds is another process's, which a press refuses).
         ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
         ledger.Chat("q1s", "stopped", "talk", _root, kind: "driven", quest: "q1", profile: "account-1");
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = Talk(new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,

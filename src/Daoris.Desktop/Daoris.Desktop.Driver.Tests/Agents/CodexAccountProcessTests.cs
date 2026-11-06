@@ -96,7 +96,7 @@ public sealed class CodexAccountProcessTests : IDisposable
 
     private string[] Asked => File.Exists(Path.Combine(_home, "asked.log")) ? File.ReadAllLines(Path.Combine(_home, "asked.log")) : [];
 
-    private HarnessRoster Roster() => new(AdapterSet.Built(), Settings);
+    private HarnessRoster Roster() => new(ProviderRegistry.Built(), Settings);
 
     // Both named, so nothing on this machine's PATH is asked: the door's binary and the agent's.
     private DriverConfig Config => DriverConfig.Empty with
