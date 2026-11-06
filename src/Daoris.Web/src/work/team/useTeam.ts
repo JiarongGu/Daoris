@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useOutsideAgents, useRemoveOutsideAgent } from '../../bridge/sessions/channelMembers';
+import { useOutsideAgents, useRemoveOutsideAgent } from '../../bridge/sessions/channelOutside';
 import { usePassHelper, useAskHelper, useSessionHelpers } from '../../bridge/sessions/sessionHelpers';
 import type { Session } from '../../data/api';
 import type { Answered } from '../InlineConfirm';

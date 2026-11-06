@@ -3,6 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 import type { OutsideAgent } from '../../work/team/outsideAgents';
 import { call } from '../call';
+import { askHeld } from '../state/held';
 
 // The agents outside Daoris on a channel (CHANNELJOIN1c, the event-channel design §5.8): who is on a line's channel, for *At work*, and the
 // person's *Remove*. The driver's `ChannelOutsideRoutes` answers over the service's doors. Shell-only: a browser has no driver.
@@ -28,9 +29,11 @@ export function outsideAgentsOf(answer: unknown): OutsideAgent[] {
  */
 export const useOutsideAgents = (session: string | null | undefined) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = [...keys.allAsks, 'outside', session ?? 'none'] as const;
   return useQuery({
-    queryKey: [...keys.allAsks, 'outside', session ?? 'none'] as const,
-    queryFn: async () => outsideAgentsOf(await call('CHANNEL_MEMBERS', { line: session ?? '' })),
+    queryKey,
+    queryFn: () => askHeld('CHANNEL_MEMBERS', client, queryKey, { line: session ?? '' }, outsideAgentsOf),
     enabled: isAvailable && Boolean(session),
     refetchOnWindowFocus: false,
   });

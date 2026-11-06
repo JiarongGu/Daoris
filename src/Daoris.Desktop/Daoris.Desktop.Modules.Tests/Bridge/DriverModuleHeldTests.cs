@@ -20,6 +20,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     private static readonly Dictionary<string, object> Payloads = new(StringComparer.Ordinal)
     {
         ["SESSION_WHERE"] = new { sessions = Array.Empty<object>() },
+        ["CHANNEL_MEMBERS"] = new { line = "a1b2c3d4" },
         ["SESSION_OPENINGS"] = new { ids = new[] { "a1b2c3d4" } },
         ["SESSION_RECORD"] = new { id = "a1b2c3d4" },
         ["HEAVY_SLOT"] = new { repository = "engine" },

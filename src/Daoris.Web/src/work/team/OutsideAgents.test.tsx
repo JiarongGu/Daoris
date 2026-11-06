@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import { outsideAgentsOf } from '../../bridge/sessions/channelMembers';
+import { outsideAgentsOf } from '../../bridge/sessions/channelOutside';
 import { whoOf } from '../../asks/ChannelSection';
 import { CoWorkers } from './CoWorkers';
 import type { OutsideAgent } from './outsideAgents';
