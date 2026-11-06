@@ -168,9 +168,8 @@ public sealed class ConversationRoutes(DriverContext context)
     private async Task<object?> SessionStartFromAsync(SessionIdPress press, CancellationToken cancellationToken)
     {
         var id = press.Id;
-        // RPC1d: `sessions start-from` sent over the pipe asks for the verb's own words; the conversation opens in this window.
-        if (press.Said) return await SessionsVerbs.SaidAsync(context, new SessionsAsk("start-from") { Ids = [id] }, cancellationToken).ConfigureAwait(false);
-
+        // The terminal's `session start-from` sends this route as the window does, with `hold: true` beside it (RPC1g3, D238), and holds
+        // the conversation this answer names.
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A new conversation: Chat's order walked (MODELROLE1d, D205 §4.1).

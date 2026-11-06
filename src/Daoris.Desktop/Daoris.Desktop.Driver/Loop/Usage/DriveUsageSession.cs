@@ -30,11 +30,13 @@ internal static class DriveUsageSession
               who is at work on a session: its line's parts, what it waits on of others and its co-workers, as the
               window's *At work* draws them (COWORKVIEW1a, COMMS1i).
           session start-from <id>
-              words a session cannot go on with: start a conversation here with them, as `chat` does, without that
-              session's context; they leave that session, naming the conversation.
+              words a session cannot go on with: start a conversation in the running Daoris with them, which this
+              terminal holds as `chat` does, without that session's context; they leave that session, naming the
+              conversation.
           session hand-over <id> --agent <adapter> [--account <name>]
               a conversation goes on with another agent (D163): its own ends, and a new conversation in its tree
-              starts, told what Daoris kept of it. Conversations only; a quest's session comes later.
+              starts in the running Daoris, told what Daoris kept of it, which this terminal holds. Conversations
+              only; a quest's session comes later.
           session hand-over <id> --approve|--decline
               your yes or no to a session's agent's own ask to hand it over that waits on you (the `handOver` rule's
               `ask`), as its page takes it: a yes hands it to the agent named at the driver's next look; a no says so.

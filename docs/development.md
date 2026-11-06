@@ -235,7 +235,7 @@ The install's driven sessions build rows of this repository in their own trees. 
 place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
 - **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
-  `help resume`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
+  `chat --session`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
   whichever lands first.
 - **Land through Daoris's own `trees land`.** A squash done beside it, such as one to correct a commit's attribution, is read
   as its sessions' work by content (SQUASHSEEN1, D102's note), so those sessions are not reopened to rebase. Only a squash

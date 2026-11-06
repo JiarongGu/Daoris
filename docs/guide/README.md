@@ -42,10 +42,10 @@ group.
 | `help` | The tree's usage, or `help <group>` one group's |
 | `agent` | Agents (Claude Code, Codex, DeepSeek Harness as `dsh`) and the accounts they run as: `list`, `install`/`update`/`pin`/`unpin`/`which`/`login`/`key <agent>`, `rules`, `trust`, `settings`, and `account list\|add\|remove\|default\|order\|use\|ready\|rename\|join …`. **Spawns each agent's own tooling; keeps no sign-in** |
 | `ask` | Ask at a workspace (`ask "…"`), and an ask's acts: `publish`, `close`, `delete`, `pause`, `resume`, `abandon`, `clear`, `go-ahead`, `review`, `workflow`, `channel`, `at-work` |
-| `ask-daoris` | Ask Daoris's conversations: `list`, `resume`, `rename`, `pin`, `unpin`, `delete`, and its access `mode` |
+| `ask-daoris` | Ask Daoris's conversations: `list`, `rename`, `pin`, `unpin`, `delete`, and its access `mode` |
 | `brainstorm` | A question put to this machine's agents (D176): `brainstorm "<question>" [--repository R] [--agents A,B] [--source PATH]...`, then `show`, `send`, `stop`, `clear <id>` and `list`; `--kind meeting` makes it a meeting of agents of different makers; `measure <agent>` the account a pass would take |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`, `links system\|daoris`. **Edits files under the home** |
-| `chat` | A conversation in a repository at this terminal: `chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]` |
+| `chat` | A conversation of the running Daoris held at this terminal: `chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]` starts one, `chat --session <id>` holds one that is open |
 | `drive` | The headless loop: `drive [--once \| --until-idle] [--quiet-end <minutes>] [--share]` |
 | `gate` | A checkout's heavy gates under its repository's one slot (`gate run`), and a branch's or a commit's verification (`gate verify`) |
 | `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |

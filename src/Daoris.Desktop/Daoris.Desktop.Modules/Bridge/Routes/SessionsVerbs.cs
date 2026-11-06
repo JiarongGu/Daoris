@@ -26,21 +26,6 @@ internal static class SessionsVerbs
         var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
             CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
-            StartFrom = async (id, token) =>
-            {
-                var chat = loop.Chat ?? throw DriverArguments.NotReady();
-                var started = await chat.StartFromAsync(
-                    id, ActorChoices.FirstAgent("chat", config)!, config, onEnded: (session, state) => DriverLoop.Ended(context.Events, session, state), token).ConfigureAwait(false);
-                return SessionsCommand.Started(started, output) ?? 0;
-            },
-            HandOver = async (id, agent, account, token) =>
-            {
-                var chat = loop.Chat ?? throw DriverArguments.NotReady();
-                var handed = await chat.HandOverAsync(
-                    id, agent, account, HandOverWhy.Press, HandOverBy.Person, config,
-                    onEnded: (session, state) => DriverLoop.Ended(context.Events, session, state), token).ConfigureAwait(false);
-                return SessionsCommand.HandedOver(handed, output) ?? 0;
-            },
             // COAGENT1b: `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
             PieceBase = loop.PieceBases,
             // COWORK1a: `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.

@@ -185,7 +185,7 @@ internal static class HelpDoorRowsActs
         new("find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete "
             + "one; they are kept on this machine only",
             "Ask Daoris → History",
-            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris ask-daoris resume <id> \"…\"`, "
+            "`daoris ask-daoris list [--workspace <name> | --all] [--search \"…\"]`, `daoris session say <id> \"…\"`, "
             + "`daoris ask-daoris rename|pin|unpin|delete <id>`",
             new HelpDoorAsk.Never("the conversations are yours")),
         // A go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris never answers

@@ -161,9 +161,9 @@ public sealed class VerbLeasesTests
     [InlineData("ask --publish a-1 --to r")]
     [InlineData("ask channel a-1")]
     [InlineData("ask channel a-1 --ordinary when you can")]
-    // A conversation in the terminal, until RPC1g; and the loop, which holds it as an instance.
+    // A conversation held from the terminal (RPC1g); and the loop, which holds it as an instance.
     [InlineData("chat --repository r")]
-    [InlineData("help resume c-1")]
+    [InlineData("chat --session s-1")]
     [InlineData("sessions start-from s-1")]
     [InlineData("sessions hand-over s-1 --agent codex")]
     [InlineData("drive --once")]

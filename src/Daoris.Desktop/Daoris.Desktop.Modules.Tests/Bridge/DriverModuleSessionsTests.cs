@@ -1174,15 +1174,9 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             Assert.StartsWith("sessions: ", Assert.Single(said.Out));
         }
 
-        // A conversation a verb opens opens in a window's chat runner; with none up yet it is the same refusal as the page's press.
-        foreach (var (route, payload) in new (string, object)[]
-        {
-            ("SESSION_START_FROM", new { id = "nobody1", said = true }),
-            ("SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true }),
-        })
-        {
-            Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, route, payload));
-        }
+        // A terminal holds a conversation the window's runner opens (RPC1g3): no verb's words for one, so with none up it is the page's refusal.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_START_FROM", new { id = "nobody1", said = true }));
+        Assert.Equal(2, SaidOf(await AnswerAsync(module, "SESSION_HAND_OVER", new { id = "nobody1", agent = "codex", said = true })).Code);
     }
 
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)

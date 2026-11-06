@@ -6,6 +6,10 @@ namespace Daoris.Driver.Host;
 /// A conversation from a terminal: `daoris chat --repository <name> [--agent <name>]`.
 /// </summary>
 /// <remarks>
+/// <para><b>Held, not run here (RPC1g2, RPC1g3, D238).</b> The three doors below hand to <see cref="HeldChatConsole"/>, which holds the
+/// running Daoris's conversation. The terminal's own runner path under them (the private <c>ConverseAsync</c>, <c>FromAsync</c> and
+/// <c>HandedAsync</c>) is no longer reached by any verb; RPC1g4 deletes it with <c>TerminalOwner</c> and <c>TurnMarks</c>.</para>
+///
 /// <para><b>Why a headless door at all.</b> The desktop is where a person chats (D49 §3), and the
 /// console stream never leaves the machine that produced it (D47 §4) — but "the machine with no
 /// screen is just another machine" (D47), and D50 says no capability may be stranded on one. A
@@ -32,14 +36,14 @@ internal static class ChatConsole
     /// no service, a service that did not answer, a file it could not read — says so in one line and
     /// exits 2. It sat outside the host's catch, so each of those was a stack trace.
     /// </summary>
-    public static Task<int> RunAsync(string[] args) => DoorAsync("chat", () => ConverseAsync(args));
+    public static Task<int> RunAsync(string[] args) => DoorAsync("chat", () => HeldChatConsole.ChatAsync(args));
 
     /// <summary>
     /// `daoris session start-from <id>` (MSG1f3): a conversation here with the words a session
     /// could not go on with, on the machine's adapter, as the screen's press starts one; with the same
     /// contract as `chat`.
     /// </summary>
-    public static Task<int> StartFromAsync(string session) => DoorAsync("sessions", () => FromAsync(session));
+    public static Task<int> StartFromAsync(string session) => DoorAsync("sessions", () => HeldChatConsole.StartFromAsync(session));
 
     /// <summary>
     /// `daoris session hand-over <id> --agent <adapter> [--account <name>]` (MIXAGENT1a-i, D163): a conversation goes on
@@ -47,7 +51,7 @@ internal static class ChatConsole
     /// from the new conversation's first message on it is this door's conversation, with the same contract as `chat`.
     /// </summary>
     public static Task<int> HandOverAsync(string session, string agent, string? account) =>
-        DoorAsync("sessions", () => HandedAsync(session, agent, account));
+        DoorAsync("sessions", () => HeldChatConsole.HandOverAsync(session, agent, account));
 
     private static async Task<int> HandedAsync(string session, string agent, string? account)
     {

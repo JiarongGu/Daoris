@@ -48,15 +48,16 @@ internal sealed class InstanceTestHome : IAsyncDisposable
     }
 
     /// <summary>Where a verb looks for the instance: this home, its output and its error, and a bound a loaded machine cannot pass.</summary>
-    public InstanceWorld World(string verb = "daoris") => new()
+    public InstanceWorld World(string verb = "daoris", TextReader? input = null, TextWriter? output = null, TextWriter? error = null) => new()
     {
+        In = input ?? Console.In,
         Home = Home,
         // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).
         Environment = _ => null,
         BaseDirectory = _app,
         Status = _ => new ServiceStatus("lexical", Id),
-        Out = Out,
-        Error = Error,
+        Out = output ?? Out,
+        Error = error ?? Error,
         Verb = verb,
         Answer = TimeSpan.FromMinutes(2),
         Wait = TimeSpan.FromMinutes(2),
