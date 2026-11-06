@@ -301,5 +301,25 @@ internal static class EventJournal
                     || CASE WHEN NEW.origin IS NOT NULL THEN ',mirrored' ELSE '' END);
           {Trim}
         END;
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_member_joined AFTER INSERT ON channel_members
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, ask, workspace, entry, from_session, marks)
+          VALUES ({Now}, substr(NEW.id, 1, 64), 'channel', 'member', {MemberAsk}, substr(NEW.workspace, 1, 64), substr(NEW.entry, 1, 64),
+                  substr(NEW.id, 1, 64), 'joined');
+          {Trim}
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS event_journal_member_left AFTER UPDATE OF left_at ON channel_members
+        WHEN OLD.left_at IS NULL AND NEW.left_at IS NOT NULL
+        BEGIN
+          INSERT INTO event_journal (at, record, family, change, ask, workspace, entry, from_session, marks)
+          VALUES ({Now}, substr(NEW.id, 1, 64), 'channel', 'member', {MemberAsk}, substr(NEW.workspace, 1, 64), substr(NEW.entry, 1, 64),
+                  substr(NEW.id, 1, 64), lower(substr(COALESCE(NEW.why, 'left'), 1, 16)));
+          {Trim}
+        END;
         """;
+
+    /// <summary>The ask a member's channel is on, read from its origin (<c>ask:&lt;id&gt;</c>); null for a line's own channel.</summary>
+    private const string MemberAsk = "CASE WHEN NEW.origin LIKE 'ask:%' THEN substr(NEW.origin, 5, 64) END";
 }

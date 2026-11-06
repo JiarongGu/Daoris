@@ -20,6 +20,12 @@ public static class ChannelBounds
     /// judgement, within the part's <see cref="MaxPerPart"/>. A further urgent post is kept ordinary, and its poster told so.
     /// </summary>
     public const int UrgentPerPart = 3;
+
+    /// <summary>The most members outside Daoris one channel holds at once (CHANNELJOIN1, the event-channel design §5.6).</summary>
+    public const int MembersPerChannel = 3;
+
+    /// <summary>The most members outside Daoris this machine holds at once, across its channels.</summary>
+    public const int MembersHere = 8;
 }
 
 /// <summary>Why the channel did not do what was asked of it, by a code: a tool says it in a sentence, a door answers the code.</summary>
@@ -59,6 +65,9 @@ public enum ChannelRefusal
 
     /// <summary>A <c>to</c> naming a part on another machine: a message to one part never travels.</summary>
     PartElsewhere,
+
+    /// <summary>No member outside Daoris under that id holds a place on a channel: never admitted, or it left.</summary>
+    NotMember,
 }
 
 /// <summary>

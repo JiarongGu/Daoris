@@ -24,6 +24,9 @@ public sealed class ChannelDesk(
     /// <summary>A line's own channel and the messages to one part.</summary>
     public ChannelParts Parts => _parts ??= new(this, store, ledger, facts);
 
+    /// <summary>The agents outside Daoris on a channel, each a member of its own (CHANNELJOIN1).</summary>
+    public ChannelMembers Members => new(this, store, asks);
+
     /// <summary>A teammate's ask's channel, which the person and a session here on it post to and read (SESSONE2i).</summary>
     private TeammateAskChannel Teammates => new(store, StaleAsync);
 
@@ -472,6 +475,7 @@ public sealed class ChannelDesk(
         ChannelRefusal.TooMany => "too-many",
         ChannelRefusal.BadPart => "bad-part",
         ChannelRefusal.PartElsewhere => "part-elsewhere",
+        ChannelRefusal.NotMember => "not-member",
         _ => refusal.ToString().ToLowerInvariant(),
     };
 
@@ -479,7 +483,7 @@ public sealed class ChannelDesk(
     /// Daoris's lines for the ask (design §2.2), read from its quests as they stand and never stored: each quest asked by the ask or
     /// published by a session on it, published, and where it has moved, taken, done, declined, or done and awaiting the person's yes.
     /// </summary>
-    private async Task<IReadOnlyList<ChannelLine>> LinesAsync(Ask ask, CancellationToken ct)
+    internal async Task<IReadOnlyList<ChannelLine>> LinesAsync(Ask ask, CancellationToken ct)
     {
         var lines = new List<ChannelLine>();
         foreach (var quest in await QuestsOfAsync(ask, ct).ConfigureAwait(false))
@@ -551,7 +555,7 @@ public sealed class ChannelDesk(
     }
 
     /// <summary>The words trimmed and bounded, and where they are addressed and what they answer, each as the ask's channel holds it.</summary>
-    private async Task<(ChannelRefusal Refusal, string? Text, string? To, string? Re)> JudgeAsync(
+    internal async Task<(ChannelRefusal Refusal, string? Text, string? To, string? Re)> JudgeAsync(
         Ask ask, string? text, string? to, string? re, CancellationToken ct)
     {
         var words = text?.Trim() ?? "";

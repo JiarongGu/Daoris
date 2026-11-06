@@ -22,7 +22,7 @@ public static class ChannelRoutes
             Receipts: read?.Receipts.GetValueOrDefault(m.Id) is { } receipts
                 ? [.. receipts.Select(r => new ChannelReceiptResponse(r.Repository, r.State))]
                 : null,
-            Part: m.Part, Channel: m.Channel, Receipt: read?.AddressedReceipts.GetValueOrDefault(m.Id)),
+            Part: m.Part, Channel: m.Channel, Receipt: read?.AddressedReceipts.GetValueOrDefault(m.Id), Outside: m.Outside ? true : null),
         ChannelLine l => new ChannelItemResponse("line", l.At, From: l.From, To: l.To, Code: l.Code, Quest: l.Quest, Name: l.Name),
         _ => throw new InvalidOperationException("an item of the channel is a message or a line"),
     };

@@ -73,6 +73,14 @@
       "disagrees": {}
     },
     {
+      "name": "an outside agent's message on the channel, a member's, handed to a part as another session's claim (CHANNELJOIN1)",
+      "word": { "from": "agent", "channel": "c2" },
+      "event": { "origin": "target", "channel": "c2" },
+      "sender": "channel",
+      "today": { "persons": false, "drawn": "channel" },
+      "disagrees": {}
+    },
+    {
       "name": "a second opinion's findings",
       "word": { "by": "op1" },
       "event": { "origin": "target", "opinion": "op1" },

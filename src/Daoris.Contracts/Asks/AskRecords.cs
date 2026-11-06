@@ -89,7 +89,7 @@ public sealed record ChannelItemResponse(
     string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
     bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null,
     bool? Urgent = null, string? Ack = null, string? AckSession = null, IReadOnlyList<ChannelReceiptResponse>? Receipts = null,
-    string? Part = null, string? Channel = null, string? Receipt = null);
+    string? Part = null, string? Channel = null, string? Receipt = null, bool? Outside = null);
 
 /// <summary>
 /// The channel as one entry reads it: every item (or those after <c>since</c>), <c>Unread</c> against the entry's <c>Mark</c> (absent for
