@@ -116,6 +116,24 @@ public sealed class WorkEventWiringTests : IDisposable
     }
 
     [Fact]
+    public async Task An_end_the_home_s_end_keeping_writes_and_a_settled_press_are_told_to_the_lease_loop_s_plugin()
+    {
+        var channel = new EventChannel([HookPoints.Event]);
+        await using var set = new HookSet(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(channel), log: _log, holdsHome: () => true, clock: () => _now);
+        await set.ReconcileAsync(Catalog(("acme.relay", [HookPoints.Event])), CancellationToken.None);
+
+        WorkEnds.Said(_home, [("4b62a9fe", "48f8ed9121ec")]);
+        set.Tell(WorkEventPlugins.Settled("0123456789abcdef0123456789abcdef", nameof(PipeEndSpelled.Refused), _now));
+
+        var frames = await channel.HeardAsync(2);
+        Assert.Equal((WorkEventKinds.WorkEnded, "4b62a9fe", "48f8ed9121ec"), ((string)frames[0]["kind"]!, (string)frames[0]["session"]!, (string)frames[0]["quest"]!));
+        Assert.Equal((WorkEventKinds.ConfirmationEnded, "refused"), ((string)frames[1]["kind"]!, (string)frames[1]["end"]!));
+    }
+
+    // The ending's spelling as the pipe's enum names it, without the modules' type.
+    private enum PipeEndSpelled { Refused }
+
+    [Fact]
     public void A_busy_lease_read_keeps_the_answer_before_it()
     {
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);

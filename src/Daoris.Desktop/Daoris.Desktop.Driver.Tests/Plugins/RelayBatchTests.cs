@@ -144,6 +144,39 @@ public sealed class RelayBatchTests
         Assert.Equal("Daoris: 9 more events; read the sessions again [6c0f1a9e2b47 #60]", lines[^2]);
     }
 
+    /// <summary>EV-F's relay half: each kind of version 2 its sentence, read against the census, and left out by default with no gap.</summary>
+    [Fact]
+    public void The_quest_confirmation_and_end_kinds_each_have_their_sentence_and_the_default_leaves_them_out()
+    {
+        var all = new RelayBatch((Run, 12), new HashSet<string>(RelaySaid.Said, StringComparer.Ordinal), Build);
+        var fallback = new RelayBatch((Run, 12), RelayBatch.Default, Build);
+        string[] frames =
+        [
+            Frame(13, WorkEventKinds.QuestPublished, ("quest", "48f8ed9121ec")),
+            Frame(14, WorkEventKinds.QuestClosed, ("quest", "48f8ed9121ec"), ("state", "done")),
+            Frame(15, WorkEventKinds.QuestCloseLost, ("quest", "48f8ed9121ec"), ("state", "open")),
+            Frame(16, WorkEventKinds.ConfirmationEnded, ("confirmation", "0123456789abcdef0123456789abcdef"), ("end", "refused")),
+            Frame(17, WorkEventKinds.WorkEnded, ("session", "4b62a9fe"), ("quest", "48f8ed9121ec")),
+        ];
+        foreach (var batch in new[] { all, fallback })
+        {
+            batch.First(new RelayFirst(Run, 12, 2, Build));
+            foreach (var frame in frames) Take(batch, frame);
+        }
+
+        Assert.Equal(
+        [
+            "Daoris: quest 48f8ed9121ec published [6c0f1a9e2b47 #13]",
+            "Daoris: quest 48f8ed9121ec closed, done [6c0f1a9e2b47 #14]",
+            "Daoris: quest 48f8ed9121ec is open again: its close lost to another machine (open) [6c0f1a9e2b47 #15]",
+            "Daoris: confirmation 0123456789abcdef0123456789abcdef ended: refused [6c0f1a9e2b47 #16]",
+            "Daoris: session 4b62a9fe's work ended: the line holds it (quest 48f8ed9121ec) [6c0f1a9e2b47 #17]",
+            "Daoris: read up to [6c0f1a9e2b47 #17]",
+        ], all.Printed().Out);
+        Assert.All(all.Printed().Out, line => Assert.Matches(Sentence, line));
+        Assert.Equal(["Daoris: read up to [6c0f1a9e2b47 #17]"], fallback.Printed().Out);
+    }
+
     [Fact]
     public void A_plugin_of_another_build_ends_the_relay_with_its_update_line()
     {

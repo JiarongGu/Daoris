@@ -34,6 +34,14 @@ public static class WorkEventPlugins
     public static WorkEventHandshake Join(WorkEventPoint point, string plugin, string home) =>
         new(WorkEventGrammar.Version, point.Join(plugin), Build(home));
 
+    /// <summary>Each end the home's end keeping writes, told as <c>work.ended</c> with its session and quest (the event channel design §3.4).</summary>
+    public static IDisposable ListenEnds(string home, Action<WorkEvent> tell, Func<DateTimeOffset> clock) =>
+        WorkEnds.Listen(home, end => tell(new WorkEvent(WorkEventKinds.WorkEnded, clock()) { Session = end.Session, Quest = end.Quest }));
+
+    /// <summary>The press a pipe settled with no terminal waiting on its line, told as <c>confirmation.ended</c> by its own id (§3.3).</summary>
+    public static WorkEvent Settled(string confirmation, string end, DateTimeOffset at) =>
+        new(WorkEventKinds.ConfirmationEnded, at) { Confirmation = confirmation, End = end.ToLowerInvariant() };
+
     /// <summary>
     /// Whether this process holds <paramref name="home"/>, read once a look: a read the lease file's lock made busy keeps the answer before
     /// it, so a moment's lock neither stops a plugin nor counts its exit (P6).

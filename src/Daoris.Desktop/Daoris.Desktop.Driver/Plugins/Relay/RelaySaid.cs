@@ -86,13 +86,23 @@ public static class RelaySaid
             WorkEventKinds.QuestParked => $"quest {fields["quest"]} parked on its failed sessions{Of("strikes", "strikes")}{Of("session", "session")}",
             WorkEventKinds.SessionEnded => $"session {fields["session"]} ended: {fields["state"]}{quest}{Of("adapter", "adapter")}",
             WorkEventKinds.WorkLanded => $"session {fields["session"]}'s work {fields["code"]}{quest}",
+            // EVENTHOOK1d (the event channel design §3.6).
+            WorkEventKinds.QuestPublished => $"quest {fields["quest"]} published",
+            WorkEventKinds.QuestClosed => $"quest {fields["quest"]} closed, {fields["state"]}",
+            WorkEventKinds.QuestCloseLost => $"quest {fields["quest"]} is open again: its close lost to another machine ({fields["state"]})",
+            WorkEventKinds.ConfirmationEnded => $"confirmation {fields["confirmation"]} ended: {fields["end"]}",
+            WorkEventKinds.WorkEnded => $"session {fields["session"]}'s work ended: the line holds it{quest}",
             _ => throw new ArgumentOutOfRangeException(nameof(frame), "a kind the relay has no sentence for is a gap, never a line"),
         };
         return $"Daoris: {said} {Bracket(frame.Run, frame.Seq)}";
     }
 
     /// <summary>The kinds <see cref="Event"/> says; any other the grammar names is said as a gap.</summary>
-    public static readonly IReadOnlyList<string> Said = [WorkEventKinds.SessionParked, WorkEventKinds.QuestParked, WorkEventKinds.SessionEnded, WorkEventKinds.WorkLanded];
+    public static readonly IReadOnlyList<string> Said =
+    [
+        WorkEventKinds.SessionParked, WorkEventKinds.QuestParked, WorkEventKinds.SessionEnded, WorkEventKinds.WorkLanded, WorkEventKinds.QuestPublished,
+        WorkEventKinds.QuestClosed, WorkEventKinds.QuestCloseLost, WorkEventKinds.ConfirmationEnded, WorkEventKinds.WorkEnded,
+    ];
 
     private static string Bracket(string run, long seq) => $"[{run} #{seq}]";
 

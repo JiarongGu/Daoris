@@ -62,11 +62,27 @@ public sealed class HookSet(
     /// <c>work/event</c>'s teller (EVENTHOOK1b): every event minted here, told only while this loop holds the home. A plugin answering late
     /// <see cref="WorkEventPoint.LateInARow"/> times is stopped, its stop counted as an exit of its own.
     /// </summary>
-    public WorkEventPoint Events => LazyInitializer.EnsureInitialized(ref _events, () => new WorkEventPoint(
-        WorkEventPlugins.Adapters,
-        unsent: (kind, failed) => log?.Warn(PluginEvents.Unsent, ("kind", kind), ("field", failed)),
-        late: id => _ = StopLateAsync(id),
-        failed: (id, error) => Log.Failed(id, HookPoints.Event, PluginFailures.KindOf(error, PluginEvents.Errored), null, null, PluginEvents.ByLoop)));
+    public WorkEventPoint Events
+    {
+        get
+        {
+            lock (_eventsGate)
+            {
+                if (_events is not null) return _events;
+                _events = new WorkEventPoint(
+                    WorkEventPlugins.Adapters,
+                    unsent: (kind, failed) => log?.Warn(PluginEvents.Unsent, ("kind", kind), ("field", failed)),
+                    late: id => _ = StopLateAsync(id),
+                    failed: (id, error) => Log.Failed(id, HookPoints.Event, PluginFailures.KindOf(error, PluginEvents.Errored), null, null, PluginEvents.ByLoop));
+                // EVENTHOOK1d-iii (EV-F): each end the home's end keeping writes, whichever caller asked, heard from the point's first use.
+                _ends = WorkEventPlugins.ListenEnds(home, _events.Tell, _clock);
+                return _events;
+            }
+        }
+    }
+
+    private readonly Lock _eventsGate = new();
+    private IDisposable? _ends;
 
     /// <summary>One event told at <c>work/event</c>; never waits.</summary>
     public void Tell(WorkEvent told) => Events.Tell(told);
@@ -704,6 +720,7 @@ public sealed class HookSet(
         _changes.Writer.TryComplete();
         await _going.CancelAsync().ConfigureAwait(false);
         _work.Dispose();
+        _ends?.Dispose();
         if (_events is not null) await _events.DisposeAsync().ConfigureAwait(false);
         Task? telling;
         lock (_tellingGate) telling = _telling;

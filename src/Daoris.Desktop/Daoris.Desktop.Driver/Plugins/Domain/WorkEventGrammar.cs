@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 public static class WorkEventGrammar
 {
     /// <summary>Raised whenever a kind or a field's shape changes; the handshake says it.</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     /// <summary>A trial's <c>run</c> (§5.4): a sample is never taken for the live point's.</summary>
     public const string Sample = "sample";
@@ -31,10 +31,21 @@ public static class WorkEventGrammar
         [WorkEventKinds.SessionEnded] = new(["session", "state"], ["quest", "ask", "adapter"]),
         [WorkEventKinds.WorkLanded] = new(["session", "code"], ["quest"]),
         [WorkEventKinds.Missed] = new([], []),
+        // Version 2 (EVENTHOOK1d, the event channel design §3.5).
+        [WorkEventKinds.QuestPublished] = new(["quest"], []),
+        [WorkEventKinds.QuestClosed] = new(["quest", "state"], []),
+        [WorkEventKinds.QuestCloseLost] = new(["quest", "state"], []),
+        [WorkEventKinds.ConfirmationEnded] = new(["confirmation", "end"], []),
+        [WorkEventKinds.WorkEnded] = new(["session"], ["quest"]),
     };
 
     /// <summary>A landing's codes: landed, or a chain's branch moved on.</summary>
     public static readonly IReadOnlyList<string> LandedCodes = ["landed", "advanced"];
+
+    /// <summary>How a press ends, its five closed codes.</summary>
+    public static readonly IReadOnlyList<string> EndCodes = ["confirmed", "refused", "changed", "withdrawn", "lost"];
+
+    private static readonly Regex ConfirmationShape = new(@"\A[0-9a-f]{32}\z", RegexOptions.CultureInvariant);
 
     private const string Time = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
@@ -58,8 +69,13 @@ public static class WorkEventGrammar
 
     /// <summary>Whether <paramref name="value"/> is in <paramref name="field"/>'s shape; a field the grammar does not name is in none.</summary>
     /// <param name="adapters">This build's adapter names, the only ones an ending may carry.</param>
-    public static bool Fits(string field, object? value, IReadOnlySet<string> adapters) => field switch
+    /// <param name="of">The frame's kind, which a <c>state</c>'s codes depend on: a quest's close or its loss, else a session's ending.</param>
+    public static bool Fits(string field, object? value, IReadOnlySet<string> adapters, string? of = null) => field switch
     {
+        "state" when of == WorkEventKinds.QuestClosed => value is "done" or "declined",
+        "state" when of == WorkEventKinds.QuestCloseLost => value is "open" or "taken",
+        "confirmation" => value is string confirmation && ConfirmationShape.IsMatch(confirmation),
+        "end" => value is string end && EndCodes.Contains(end),
         "run" => value is string run && (run == Sample || (RunShape.IsMatch(run) && run != new string('0', 12))),
         "seq" => value is long or int && Convert.ToInt64(value, CultureInfo.InvariantCulture) >= 1,
         "missed" or "strikes" => value is long or int && Convert.ToInt64(value, CultureInfo.InvariantCulture) >= 0,
@@ -89,7 +105,7 @@ public static class WorkEventGrammar
             foreach (var (field, value) in frame.Where(pair => !Common.Contains(pair.Key)))
             {
                 if (!fields.Required.Contains(field) && !fields.Optional.Contains(field)) problems.Add($"`{field}` is not in `{kind}`'s list");
-                else if (!Fits(field, value, adapters)) problems.Add($"`{field}` is outside its shape");
+                else if (!Fits(field, value, adapters, kind)) problems.Add($"`{field}` is outside its shape");
             }
         }
 

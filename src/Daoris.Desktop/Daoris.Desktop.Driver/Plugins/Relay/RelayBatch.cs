@@ -11,8 +11,9 @@ namespace Daoris.Driver;
 /// <param name="build">This copy's build: a plugin of another ends the relay with its update line.</param>
 public sealed class RelayBatch((string Run, long Seq)? since, IReadOnlySet<string> kinds, string build)
 {
-    /// <summary>The kinds printed where <c>--kinds</c> names none: the first build's four.</summary>
-    public static readonly IReadOnlySet<string> Default = new HashSet<string>(RelaySaid.Said, StringComparer.Ordinal);
+    /// <summary>The kinds printed where <c>--kinds</c> names none: the first build's four, since a quest kind floods at a sync (§3.6).</summary>
+    public static readonly IReadOnlySet<string> Default = new HashSet<string>(
+        [WorkEventKinds.SessionParked, WorkEventKinds.QuestParked, WorkEventKinds.SessionEnded, WorkEventKinds.WorkLanded], StringComparer.Ordinal);
 
     /// <summary>The most event lines a batch prints; the rest are counted.</summary>
     public const int Events = 50;

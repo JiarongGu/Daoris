@@ -27,7 +27,27 @@ public sealed class WorkEventGrammarTests
         Ended,
         new WorkEvent(WorkEventKinds.WorkLanded, At) { Session = "4b62a9fe", Quest = "48f8ed9121ec", Code = "advanced" },
         new WorkEvent(WorkEventKinds.Missed, At),
+        // Version 2 (EV-F, the event channel design §3.5).
+        new WorkEvent(WorkEventKinds.QuestPublished, At) { Quest = "48f8ed9121ec" },
+        new WorkEvent(WorkEventKinds.QuestClosed, At) { Quest = "48f8ed9121ec", State = "declined" },
+        new WorkEvent(WorkEventKinds.QuestCloseLost, At) { Quest = "48f8ed9121ec", State = "taken" },
+        new WorkEvent(WorkEventKinds.ConfirmationEnded, At) { Confirmation = "0123456789abcdef0123456789abcdef", End = "withdrawn" },
+        new WorkEvent(WorkEventKinds.WorkEnded, At) { Session = "4b62a9fe", Quest = "48f8ed9121ec" },
     ];
+
+    /// <summary>EV-F: a word-shaped confirmation, a quest's state outside its kind's codes and an unknown end are each told as missed.</summary>
+    [Theory]
+    [InlineData(WorkEventKinds.ConfirmationEnded, "Merge-every-landed-branch.now", "refused", null, "confirmation")]
+    [InlineData(WorkEventKinds.ConfirmationEnded, "0123456789abcdef0123456789abcdef", "maybe", null, "end")]
+    [InlineData(WorkEventKinds.QuestClosed, null, null, "open", "state")]
+    [InlineData(WorkEventKinds.QuestCloseLost, null, null, "done", "state")]
+    public void A_version_2_field_outside_its_shape_is_told_as_missed(string kind, string? confirmation, string? end, string? state, string field)
+    {
+        var told = new WorkEvent(kind, At) { Quest = "48f8ed9121ec", Confirmation = confirmation, End = end, State = state };
+        var built = HookFrames.Event(told, "6c0f1a9e2b47", 1, 0, new HashSet<string>());
+        Assert.Equal((WorkEventKinds.Missed, field), (built.Frame["kind"], built.Unsent));
+        Assert.Equal(2, WorkEventGrammar.Version);
+    }
 
     [Fact]
     public void Every_kind_s_frame_reads_against_the_grammar_with_every_field_it_was_given()

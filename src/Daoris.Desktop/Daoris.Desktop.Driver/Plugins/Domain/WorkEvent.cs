@@ -27,6 +27,12 @@ public static class WorkEventKinds
     /// <summary>A quest told closed is open again: a rebase found this machine's close lost.</summary>
     public const string QuestCloseLost = "quest.close-lost";
 
+    /// <summary>A press no terminal waited on its line for settled, after its record said how (D244's note on the confirmation's kind).</summary>
+    public const string ConfirmationEnded = "confirmation.ended";
+
+    /// <summary>The line holds a session's work: the end keeping wrote its entry ended (D244's note on <c>work.ended</c>'s teller).</summary>
+    public const string WorkEnded = "work.ended";
+
     /// <summary>
     /// Read the truth again: what moved before a teller's place, in a watch's baseline, or in an event whose required field failed its
     /// shape, is not told.
@@ -64,4 +70,10 @@ public sealed record WorkEvent(string Kind, DateTimeOffset At)
 
     /// <summary>A landing's code: <c>landed</c> or <c>advanced</c>.</summary>
     public string? Code { get; init; }
+
+    /// <summary>A press's own id on the pipe, 32 hex, never the terminal's request id.</summary>
+    public string? Confirmation { get; init; }
+
+    /// <summary>How a press ended: <c>confirmed</c>, <c>refused</c>, <c>changed</c>, <c>withdrawn</c> or <c>lost</c>.</summary>
+    public string? End { get; init; }
 }

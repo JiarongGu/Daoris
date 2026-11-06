@@ -111,6 +111,8 @@ internal static class DriveConsole
             () => JournalFeed.RunAsync(
                 service,
                 [
+                    // EV-F: the quests' moves first, its sink never waiting.
+                    new WorkEventTeller(hooks.Tell, () => DateTimeOffset.UtcNow).Teller,
                     new JournalTeller(sessionLog.TellAsync),
                     WorkEventNews.Gapped(
                         new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position)), hooks.Tell, () => DateTimeOffset.UtcNow),

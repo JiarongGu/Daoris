@@ -97,6 +97,8 @@ internal sealed class LoopRun(
             () => JournalFeed.RunAsync(
                 service,
                 [
+                    // EV-F: the quests' moves first, its sink never waiting, so no wake waits on the news teller's reads of the service.
+                    new WorkEventTeller(told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow).Teller,
                     // EVENTHOOK1b (D244's note): the driven work's parks and ends told at `work/event` as they are claimed, and the teller's gaps.
                     WorkEventNews.Gapped(
                         NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct, told => shared.Hooks?.Tell(told)),
@@ -235,6 +237,9 @@ internal sealed class LoopRun(
         {
             // A press taken back after it was shown, or lost at the close, is kept in Done and failed.
             served.Confirmations.Noticed = loop.Notices.Ended;
+            // EV-F: a press no terminal waits on, told at `work/event` as it settles, after its record says how.
+            served.Confirmations.Settled = (shown, ending) =>
+                shared.Hooks?.Tell(WorkEventPlugins.Settled(shown.Id, ending.End.ToString(), DateTimeOffset.UtcNow));
             served.Grounds = new LoopGrounds(loop, served);
             // A finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
             served.StandingConfirmation.RunsHere = loop.Processes.AliveOnThisMachine;
