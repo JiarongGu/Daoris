@@ -919,7 +919,10 @@ public sealed class HarnessSelectionTests : IDisposable
         File.WriteAllText(claude, "");
         new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
 
-        var selection = await new HarnessRoster(Set(Toolchain(Present()), Transport.Protocol), Settings)
+        // The seam is the door's spawn's to take (AGENTPROVIDER1t): the fake door spawns as the ACP adapter's does.
+        var door = TestDoors.Door(
+            "fake", Toolchain(Present()), transport: Transport.Protocol, spawn: TestDoors.SpawnOf(ProviderRegistry.Built().Door("claude-code-acp")));
+        var selection = await new HarnessRoster(TestDoors.Registry(door), Settings)
             .SelectAsync("fake", Config(), workspace: null, chosen: null);
 
         Assert.True(selection.Allowed);

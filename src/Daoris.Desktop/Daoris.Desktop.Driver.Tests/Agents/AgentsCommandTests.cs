@@ -679,7 +679,8 @@ public sealed class AgentsCommandTests : IDisposable
                 [shell[0]], ["--version"], ProfileVariable: "STAND_IN_HOME",
                 LoginArguments: [.. shell.Skip(1), $"exit {exits}"],
                 LoginCheck: new LoginQuestion([.. shell.Skip(1), "echo Logged in as seat@work.example"], "Logged in", "Not logged in", Account: @"as (\S+)"));
-            return TestDoors.Registry(TestDoors.Holder("stand-in", toolchain));
+            // Its own door, since the home an account signs in to is its door's (a holder with no door has none).
+            return TestDoors.Registry(TestDoors.Door("stand-in", toolchain));
         }
 
         /// <summary>

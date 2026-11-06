@@ -18,6 +18,9 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class TransientRetryTickTests : IAsyncLifetime
 {
+    /// <summary>The count the transient hold says once, read from the run's tries (CONTEXTDRIVE1s), which goes with the release as Daoris's word.</summary>
+    private const string Counted = "Daoris's count for this line: 5 tries while the service did not answer; the next waits for the person.";
+
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "transient-tick", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
@@ -212,7 +215,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         Assert.True(last["resumed"]!.GetValue<bool>(), after);
         // Every word waiting goes with the person's release, once, and Daoris's word with it (the hold's word rule).
         Assert.Equal(
-            new[] { "Daoris's word.", "Go on where the overload stopped you." },
+            new[] { Counted, "Daoris's word.", "Go on where the overload stopped you." },
             last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()).Order(StringComparer.Ordinal));
         Assert.DoesNotContain(last["blocks"]!.AsArray(), block => block!.GetValue<string>().StartsWith("The last request failed", StringComparison.Ordinal));
     }
@@ -278,10 +281,10 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         Assert.True(service.State("s1") == "failed", seen);
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/new");
         Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/resume" && line["conversation"]!.GetValue<string>() == "conv-s1");
-        var first = Prompts().First(prompt => prompt["resumed"]!.GetValue<bool>());
-        Assert.StartsWith(
-            "The last request failed on the provider's side (Internal error: API Error: 529 Overloaded.",
-            Assert.Single(first["blocks"]!.AsArray())!.GetValue<string>());
+        var first = Prompts().First(prompt => prompt["resumed"]!.GetValue<bool>())["blocks"]!.AsArray().Select(block => block!.GetValue<string>()).ToList();
+        Assert.Equal(2, first.Count);
+        Assert.StartsWith("The last request failed on the provider's side (Internal error: API Error: 529 Overloaded.", first[0]);
+        Assert.Equal(Counted, first[1]);
         Assert.Equal(12, Prompts().Length);
         Assert.True(service.Said("s1").Count == 0, seen);
 
@@ -332,7 +335,9 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         var last = Prompts()[^1];
         Assert.True(last["resumed"]!.GetValue<bool>(), seen);
         var blocks = last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()).ToList();
-        Assert.StartsWith("The last request failed on the provider's side", Assert.Single(blocks));
+        Assert.Equal(2, blocks.Count);
+        Assert.StartsWith("The last request failed on the provider's side", blocks[0]);
+        Assert.Equal(Counted, blocks[1]);
         Assert.DoesNotContain(target, blocks);
     }
 
@@ -382,7 +387,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         var last = Prompts()[^1];
         Assert.True(last["resumed"]!.GetValue<bool>(), after);
         Assert.Equal(
-            ["Go on where the overload stopped you.", "The provider is back; go on."],
+            ["Go on where the overload stopped you.", "The provider is back; go on.", Counted],
             last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
     }
 

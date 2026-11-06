@@ -100,6 +100,8 @@ internal sealed class ChatRun(
                 Resume = agent.Abilities.ResumesByRestart ? goOn?.Ask.Conversation : null,
                 // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door.
                 Mode = place.PermissionMode,
+                // The runner's own home, not the process's, as a driven start's is the driver's.
+                Home = home,
             };
             var info = agent.Prepare(request, selection);
 
