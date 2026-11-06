@@ -208,7 +208,9 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             if (request.Method == HttpMethod.Post) lock (posts) posts.Add(request.RequestUri!.AbsolutePath);
-            var body = request.Method == HttpMethod.Get ? "[]" : """{"kept":true,"message":"Kept."}""";
+            var body = request.Method != HttpMethod.Get ? """{"kept":true,"message":"Kept."}"""
+                : request.RequestUri!.AbsolutePath == "/api/sessions/changes" ? """{"whole":true,"order":[],"mark":null,"changed":[]}"""
+                : "[]";
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),

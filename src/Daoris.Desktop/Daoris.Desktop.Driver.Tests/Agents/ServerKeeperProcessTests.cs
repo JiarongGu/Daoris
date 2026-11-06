@@ -129,7 +129,8 @@ public sealed class ServerKeeperProcessTests : IDisposable
                 var line = await keeper.StandardOutput.ReadLineAsync(timeout.Token) ?? throw new InvalidOperationException("the server closed");
                 var reply = JsonDocument.Parse(line).RootElement;
                 Assert.Equal(id, reply.GetProperty("id").GetInt32());
-                return reply.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+                var result = reply.GetProperty("result");
+                return result.TryGetProperty("content", out var content) ? content[0].GetProperty("text").GetString()! : result.GetRawText();
             }
 
             await Call(1, "initialize", new { protocolVersion = "2024-11-05", capabilities = new { }, clientInfo = new { name = "test", version = "1" } });

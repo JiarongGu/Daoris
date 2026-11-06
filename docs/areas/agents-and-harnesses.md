@@ -357,7 +357,8 @@ Agents page, and `orient-index` and `code-map` once files move.
   (`Install/ToolSpec.cs`; the old toolchain's facts reach it through `ToolSpecs.Of` until row t), the pin's install is one decision,
   `PinInstall.Plan`, which the window's actions and the terminal's `agent pin` and `agent update` both ask, each running what it names
   its own way (the terminal at its console and under the home's lease, the window redirected: s-ix f4); an unknown door id is refused
-  (`UnknownDoorException`), never the pipe, by `Adoption`, `BuildDoor` and the window's, set-up's and the terminal's reads; the commit
+  (`UnknownDoorException`), never the pipe, by `Adoption`, `BuildDoor` and the window's, set-up's and the terminal's reads, while the
+  loop's plan reads it as a door that may not drive and the start holds its quest on the refusal, so a tick still reports; the commit
   trailer reads the registration's maker (`CommitTrailers.MakerOf`); a door's spawn and the shell read the start's `SpawnRequest`
   alone, which Loop's executors compose (`SpawnRequests`) and hand the adapter seam's `Prepare`, `PrepareResume` and `PrepareChat`, a
   go-on's resume asking the start's own request again naming its conversation (`TransportStart.Request`), and every agent's completed

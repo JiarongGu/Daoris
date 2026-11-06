@@ -20,12 +20,26 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
             // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here.
             plan = Planner.Plan(
                 snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config,
-                BuildDoor.Drives(wiring.Home, config, wiring.Context.Adapters), window: wiring.Context.Browser is not null, roles: wiring.Context.Roles);
+                Unadopted(), window: wiring.Context.Browser is not null, roles: wiring.Context.Roles);
         }
 
         state.Snapshot = snapshot;
         state.Plan = plan;
         state.Starts = [.. plan.Where(c => c.Verdict == StartVerdict.Start).Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })];
         return Task.CompletedTask;
+    }
+
+    // A door nobody knows in Build's order (a typo in driver.json) may not drive; the start that resolves it holds its quest on the
+    // refusal, so every tick still runs and reports instead of throwing on it.
+    private bool Unadopted()
+    {
+        try
+        {
+            return BuildDoor.Drives(wiring.Home, wiring.Config, wiring.Context.Adapters);
+        }
+        catch (UnknownDoorException)
+        {
+            return false;
+        }
     }
 }

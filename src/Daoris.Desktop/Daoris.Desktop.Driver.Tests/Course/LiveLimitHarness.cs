@@ -131,6 +131,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var runner = new Opening(Client, context, atTheWrite);
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new LimitWaits(stand));
         stand.Add(new ChatHandOver(stand) { WireWait = Wire });
         var limit = stand.Add(new LimitMove(stand)
         {
@@ -216,7 +217,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         {
             ["talk"] = Talk(),
             ["acp-stub"] = CurveTalk(new HarnessToolchain(
-                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true)),
+                Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true), "acp-stub"),
         });
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
@@ -259,6 +260,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var runner = new Opening(Client, context, atTheWrite);
         var stand = new ExecutorStand(runner, context);
         stand.Add<IChatHelping>(new NoHelp());
+        stand.Add(new LimitWaits(stand));
         stand.Add(new ChatHandOver(stand) { WireWait = Wire });
         var limit = stand.Add(new LimitMove(stand)
         {
@@ -573,7 +575,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     /// <summary>The curve's agent on the protocol door with accounts and a usage question, so the curve judges it and nothing is probed or spawned.</summary>
-    private static ISessionAdapter CurveTalk(HarnessToolchain toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+    private static ISessionAdapter CurveTalk(HarnessToolchain toolchain, string door = "talk") => TestDoors.Door(door, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     // ——— The stub agent, as the limit's process cases run it.
 

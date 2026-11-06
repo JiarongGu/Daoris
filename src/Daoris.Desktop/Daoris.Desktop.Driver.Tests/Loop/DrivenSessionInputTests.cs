@@ -25,7 +25,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class DrivenSessionInputTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-driven-input-" + Guid.NewGuid().ToString("N")[..8]);
+        WorkspaceRoot.Folder, "_fixtures", "driven-input", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

@@ -149,7 +149,7 @@ public sealed class WorkflowBindStartTickTests : IDisposable
         };
         var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home,
+            new ServiceClient(service.Url, null, new HttpClient(new SessionChanges(new HttpClientHandler()))), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
