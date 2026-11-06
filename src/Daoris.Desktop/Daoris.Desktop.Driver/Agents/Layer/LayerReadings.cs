@@ -117,7 +117,7 @@ internal sealed class LayerReadings(
         TextDelta text =>
         [
             .. text.Text.Split('\n').Select(Shown),
-            Said(new SessionEvent { Kind = SessionEventKind.Message, Text = text.Text }),
+            Said(new SessionEvent { Kind = SessionEventKind.Message, Id = text.MessageId, Text = text.Text }),
         ],
         Thinking thought =>
         [

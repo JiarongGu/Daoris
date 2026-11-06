@@ -497,7 +497,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   adds, which the layer's tick does not carry (`LayerParityProcessTests`). A difference the oracle knows is a named gap, set apart
   before the rest is compared and failing once it sets nothing apart (`ParityGap`). Over every recorded Claude Code stream, today's
   door and the driven binding read alike (`ClaudeDrivenParityProcessTests`), the init's reading of what the harness loaded handed
-  before the conversation its frame names, but for a message's id on its words, which the layer's words do not carry. Their spawns hand
+  before the conversation its frame names, and a message's id on its words read from Lyntai's `TextDelta`. Their spawns hand
   Claude Code the same arguments on each driven mode, `default` among them, but for the three flow tools the layer's door always denies
   (`ClaudeDrivenSpawnParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
@@ -525,7 +525,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
-- Row d of the agent-layer adoption: its installed proof, and two gaps the sibling library answers: a message's id on its words, and a
+- Row d of the agent-layer adoption: its installed proof, and one gap the sibling library answers: a
   child's start and end and the streams beside, which the layer's members do not carry yet (AG18 with LQ7), so a layer run's lineage
   file holds the process's token but no child and a watched console no stream of a background task.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.

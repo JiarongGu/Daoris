@@ -86,7 +86,7 @@
   "src/Daoris.Service/Daoris.Service.Tests/Sessions/SaidSettledTests.cs": 59947,
   "src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs": 122704,
   "src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs": 45647,
-  "src/Daoris.Web/e2e/platform.spec.ts": 58111,
+  "src/Daoris.Web/e2e/platform.spec.ts": 58098,
   "src/Daoris.Web/src/agents/AgentsView.test.tsx": 120152,
   "src/Daoris.Web/src/agents/agents.test.ts": 43466,
   "src/Daoris.Web/src/app/App.test.tsx": 45835,
