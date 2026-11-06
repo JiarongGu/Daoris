@@ -172,7 +172,7 @@ public sealed class NodeWiresTests
             .. Nodes,
             Node("review", "acme.review/review") with { Rejectable = true },
             Node("checks", NodeKinds.All),
-            Node("audit", "acme.audit/audit") with { Inputs = Ports("landing", BuiltInNodes.EvidenceSchema(NodeKinds.Line)) },
+            Node("audit", "acme.audit/audit") with { Inputs = Ports("landing", NodeObserving.EvidenceSchema(NodeKinds.Line)) },
         ];
         Wire[] wires =
         [

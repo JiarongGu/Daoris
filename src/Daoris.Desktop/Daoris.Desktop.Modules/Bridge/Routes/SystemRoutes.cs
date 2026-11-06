@@ -45,6 +45,61 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken).ConfigureAwait(false);
     }
 
+    // WIRING1e (the this-Daoris design §4): *Open* on a folder or file row. The page sends the id the read gave it and this resolves
+    // the folder (`WiringFolderPaths`), so no path comes from the page; the launcher runs through the start gate, off the window's
+    // thread. A window's act: refused on the pipe. It changes nothing, so it declares nothing; an id with no place, or a folder the
+    // file manager could not open, is answered as data, `{ done: false, why, message }`.
+    [DriverRoute("SYSTEM_OPEN_FOLDER", PipeClass.Window)]
+    [Owner("SYSTEM_OPEN_FOLDER", None = OwnerNone.ActsOnNothing)]
+    private async Task<object?> OpenFolderAsync(OpenFolderPress press, CancellationToken cancellationToken)
+    {
+        var (folder, why) = WiringFolderPaths.Resolve(_context.WiringWorldOf(), press.Folder);
+        if (folder is null) return Said(SetupResult.Refused(why ?? "FOLDER_UNKNOWN", "This Daoris keeps no folder by that name."));
+        if (_context.OpenFolder is not { } open) return Said(SetupResult.Refused("FOLDER_NOT_OPENED", "This window has no file manager to open it in."));
+        try
+        {
+            if (!await Task.Run(() => Directory.Exists(folder), cancellationToken).ConfigureAwait(false))
+            {
+                return Said(SetupResult.Refused("FOLDER_NOT_OPENED", "That folder is not there yet."));
+            }
+
+            await open.OpenAsync(folder, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return Said(SetupResult.Refused("FOLDER_NOT_OPENED", "The file manager could not open it."));
+        }
+
+        return Said(SetupResult.Did(changed: false));
+    }
+
+    // WIRING1e: *Put on my PATH* / *Take off my PATH* (`AccountPath`): the install's launchers' folder added to, or removed from,
+    // the account's PATH, never the machine's; running programs are told the environment changed. The person's press, said first on the
+    // page and undone by the next; a window's act, refused on the pipe. A refusal is data and changed nothing.
+    [DriverRoute("SYSTEM_PATH", PipeClass.Window)]
+    [Owner("SYSTEM_PATH", None = OwnerNone.MachineSetting)]
+    [Publishes("SYSTEM_PATH", StateScopes.Wiring)]
+    private Task<object?> PathAsync(PathPress press, CancellationToken cancellationToken)
+    {
+        var on = press.On ?? throw new ArgumentException("`on` must be true or false.");
+        return Task.Run(() =>
+        {
+            var world = _context.WiringWorldOf();
+            var install = SystemWiring.InstallOf(world.Home) ?? DaorisHome.InstallOf(world.BaseDirectory);
+            return Said(AccountPath.Set(install, _context.Account, on));
+        }, cancellationToken);
+    }
+
+    // WIRING1e: *Change the service's address* (`AccountServiceAddress`): the account's DAORIS_SERVICE_URL set to an address of this
+    // machine, or cleared for the default (`url` null or absent). It takes effect when Daoris starts again, and a terminal reads it too.
+    [DriverRoute("SYSTEM_SERVICE_ADDRESS", PipeClass.Window)]
+    [Owner("SYSTEM_SERVICE_ADDRESS", None = OwnerNone.MachineSetting)]
+    [Publishes("SYSTEM_SERVICE_ADDRESS", StateScopes.Wiring)]
+    private Task<object?> ServiceAddressAsync(ServiceAddressPress press, CancellationToken cancellationToken) =>
+        Task.Run(() => Said(AccountServiceAddress.Set(_context.Account, press.Url)), cancellationToken);
+
+    private static object? Said(SetupResult result) => new { result.Done, result.Changed, result.Why, result.Message };
+
     // KEEP1c (D195 point 5, the cleanup design §4.4): the Disk space card's read through the driver library's `SystemSpace`, the reader
     // `daoris space` calls too: the free space, and each kind's size with when it was counted, its rule, its next and last clean,
     // and the run lock's holder. A read: it declares nothing and removes nothing. `{ measure: true }` counts every kind, `{ measure: [ids] }`

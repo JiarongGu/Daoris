@@ -311,9 +311,9 @@ public static class Involvement
 
         // LANDNODE1k: a `quest.holds` the chosen version no longer holds under its node id, or holds with its `yes` off, lands a done held for your
         // yes; one kept, or added, lowers nothing.
-        foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.QuestHolds && step.Field(HoldNodes.Yes) is not false))
+        foreach (var before in otherwise.Where(step => step.Kind == NodeKinds.QuestHolds && step.Field(QuestHoldsReading.Yes) is not false))
         {
-            if (chosen.FirstOrDefault(step => step.Kind == NodeKinds.QuestHolds && step.Id == before.Id) is not { } after || after.Field(HoldNodes.Yes) is false)
+            if (chosen.FirstOrDefault(step => step.Kind == NodeKinds.QuestHolds && step.Id == before.Id) is not { } after || after.Field(QuestHoldsReading.Yes) is false)
             {
                 lowered.Add("it lands a done held for your yes");
             }

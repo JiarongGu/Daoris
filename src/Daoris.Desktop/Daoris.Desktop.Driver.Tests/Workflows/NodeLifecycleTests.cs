@@ -407,7 +407,7 @@ public sealed class NodeLifecycleTests
 
         foreach (var state in typeof(OpinionGateStates).GetFields().Where(field => field.IsLiteral).Select(field => (string)field.GetRawConstantValue()!))
         {
-            seen.Add((NodeKinds.Opinion, state, OpinionNode.Observe(unit, Declared(NodeKinds.Opinion), Bind(1), new OpinionGateState(state, "engine") { Tip = "tip-1" })));
+            seen.Add((NodeKinds.Opinion, state, Reads.Opinion(unit, Declared(NodeKinds.Opinion), Bind(1), new OpinionGateState(state, "engine") { Tip = "tip-1" })));
         }
 
         foreach (var state in typeof(ReviewStates).GetFields().Where(field => field.IsLiteral).Select(field => (string)field.GetRawConstantValue()!))
@@ -420,14 +420,14 @@ public sealed class NodeLifecycleTests
             {
                 Tip = "tip-1", Verdict = new QuestReviewVerdictView(state == ReviewStates.NotYet ? ReviewVerdicts.NotYet : ReviewVerdicts.Reviewed) { Words = "the chart is cut off" },
             };
-            seen.Add((NodeKinds.Look, state, LookNode.Observe(unit, Declared(NodeKinds.Look), Bind(1), gate)));
+            seen.Add((NodeKinds.Look, state, Reads.Look(unit, Declared(NodeKinds.Look), Bind(1), gate)));
         }
 
         var goAhead = Declared(NodeKinds.GoAhead) with { Options = new Dictionary<string, string> { ["act"] = WorkflowSteps.Quoted("ship it") } };
         foreach (var (state, answer) in new (string, GoAheadAnswerView?)[] { ("waiting", null), ("yes", new(true, null, at)), ("no", new(false, "not yet", at)) })
         {
             GoAheadView[] asked = [new(1, "write", "production", "ship it", []) { Answer = answer }];
-            seen.Add((NodeKinds.GoAhead, state, GoAheadNode.Observe(unit, goAhead, Bind(1), asked)));
+            seen.Add((NodeKinds.GoAhead, state, Reads.GoAhead(unit, goAhead, Bind(1), asked)));
         }
 
         var moved = new HashSet<string>(StringComparer.Ordinal);

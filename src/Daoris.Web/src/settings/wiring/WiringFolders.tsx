@@ -34,10 +34,12 @@ function Size({ folder, measuring }: { folder: Pick<WiringFolder, 'present' | 'b
  * A molecule: drawn from props, so every state is reachable without a shell. The notices are the host's own sentences, passed
  * through as the Driver page passed them; the account's standing is read from the state's field, never from a notice's English.
  */
-export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDownloads }: {
+export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDownloads, onOpen }: {
   wiring: Pick<SystemWiring, 'folder' | 'folders' | 'leftOver' | 'measuring'>;
   busy?: boolean;
   onMeasure: () => void;
+  /** *Open* on the Daoris folder (`home`) or a top folder, by the id the read gave (WIRING1e); absent where the shell offers none. */
+  onOpen?: (id: string) => void;
   /** The Downloads row's clearing, open (CACHECLEAR1): drawn under that row in place of its press. */
   downloads?: ReactNode;
   /** Opens the clearing's list; absent where the shell offers none. */
@@ -58,6 +60,7 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
           {folder.accountNames === 'data' && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.account.data')}</p>}
           {folder.notice && <p className="m-0 border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">{folder.notice}</p>}
           {folder.hostNotice && <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">{folder.hostNotice}</p>}
+          {onOpen && folder.path && <p className="m-0"><Button variant="ghost" onClick={() => onOpen('home')}>{t('settings.daoris.button.openFolder')}</Button></p>}
         </div>
       </SettingRow>
       {folders.map((each) => (
@@ -77,6 +80,9 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
                 </li>
               ))}
             </ul>
+          )}
+          {onOpen && each.present && each.path && (
+            <p className="m-0"><Button variant="ghost" onClick={() => onOpen(each.id)}>{t('settings.daoris.button.openFolder')}</Button></p>
           )}
           {each.id === 'cache' && each.present && (downloads ?? (onDownloads && (
             <p className="m-0"><Button variant="ghost" onClick={onDownloads}>{t('settings.daoris.downloads.open')}</Button></p>

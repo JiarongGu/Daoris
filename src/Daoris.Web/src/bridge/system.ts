@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type {
-  DownloadCleared, DownloadedVersion, DownloadsListing, SpacePlan, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
+  DownloadCleared, DownloadedVersion, DownloadsListing, SetupAnswer, SpacePlan, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
 } from '../data/wiring';
 import { call } from './call';
 import { pollUnlessTold } from './state/published';
@@ -105,6 +105,18 @@ export const useClearDownloads = () =>
         versions: versions.map(({ kind, name, version, unfinished }) => ({ kind, name, version, unfinished })),
       }) as Promise<{ cleared: DownloadCleared[] }>,
   });
+
+/**
+ * Setting This Daoris up (WIRING1e, the this-Daoris design §4). *Open* sends the id of a folder row or a file row the read gave, never
+ * a path; *Put on my PATH* and *Take off my PATH* change the account's `PATH` alone; *Change the service's address* sets the account's
+ * `DAORIS_SERVICE_URL`, or clears it for `null`. Each answers `{ done, changed, why?, message? }`: a refusal is data, worded from its
+ * `why`. What a press changed is asked again by the state hub (the routes declare `wiring`), never by these hooks.
+ */
+export const useSetupWiring = () => ({
+  open: useMutation({ mutationFn: (folder: string) => call('SYSTEM_OPEN_FOLDER', { folder }) as Promise<SetupAnswer> }),
+  path: useMutation({ mutationFn: (on: boolean) => call('SYSTEM_PATH', { on }) as Promise<SetupAnswer> }),
+  address: useMutation({ mutationFn: (url: string | null) => call('SYSTEM_SERVICE_ADDRESS', { url }) as Promise<SetupAnswer> }),
+});
 
 /**
  * A listed unit as a press sends it back: its kind and id, why the list named it, whether it held files of its own, and a set-aside

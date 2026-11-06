@@ -93,23 +93,16 @@ public static class NodeGraphs
 
         problems.AddRange(NodeWires.Problems(graph.Nodes, graph.Wires));
 
-        var byId = new Dictionary<string, NodeDeclaration>(StringComparer.Ordinal);
-        foreach (var node in graph.Nodes) byId.TryAdd(node.Id, node);
-        // DECIDE1b: a `back` is a way back, which NodeWires judges; no rule below reads it, as an entry's wire, a reach or an order.
-        var local = graph.Wires
-            .Where(wire => wire.Kind is not (WireKinds.Wait or WireKinds.Back) && WireKinds.All.Contains(wire.Kind) && wire.From is { Unit: null } from && byId.ContainsKey(from.Node)
-                && wire.To.Unit is null && byId.ContainsKey(wire.To.Node))
-            .ToList();
-
-        var starts = new List<string>();
+        var standing = GraphStanding.Of(graph);
+        var (byId, local, starts) = (standing.ById, standing.Local, standing.Starts);
         if (graph.Entries.Count == 0) Say(GraphRefusal.NoEntry, null, null, "the graph has no entry, so nothing in it would start.");
+        var entered = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in graph.Entries)
         {
             if (!byId.ContainsKey(entry)) Say(GraphRefusal.Entry, null, entry, $"entry `{entry}` names no node of this graph.");
-            else if (starts.Contains(entry, StringComparer.Ordinal)) Say(GraphRefusal.Entry, null, entry, $"entry `{entry}` is named twice.");
+            else if (!entered.Add(entry)) Say(GraphRefusal.Entry, null, entry, $"entry `{entry}` is named twice.");
             else
             {
-                starts.Add(entry);
                 foreach (var wire in local.Where(wire => wire.To.Node == entry))
                 {
                     Say(GraphRefusal.EntryWired, wire.Id, entry, $"wire `{wire.Id}`: `{entry}` is an entry, which starts the graph and waits on nothing in it.");
@@ -161,8 +154,7 @@ public static class NodeGraphs
         // failure's or a rejection's path. The holds stay the rules' gate at the landing, no node yet. FABRIC-CUTOVER1b (the cutover design
         // §5.1): the opinion is not asked to reach a look, whose set-up the review gate holds while an agent reads the opinion.
         // DECIDE1b: a decision's route is an order too, so a landing on one outcome's route is judged by the gates on that route.
-        var ordered = local.Where(wire => WireKinds.Ordered.Contains(wire.Kind)).ToList();
-        var landings = byId.Values.Where(node => node.Kind == NodeKinds.Land).ToList();
+        var (ordered, landings) = (standing.Ordered, standing.Landings);
         var lands = landings;
         var looks = byId.Values.Where(node => node.Kind == NodeKinds.Look).ToList();
         var unreached = new HashSet<string>(StringComparer.Ordinal);
@@ -261,66 +253,10 @@ public static class NodeGraphs
         }
 
         // D247: each kind's own rules of where its node stands (a push after a branch landing, a monitor on a step that reports a state, a tidy
-        // on a monitor's merged route), said against the node they are about.
+        // on a monitor's merged route, a work.requests after a claimed and before every landing, a hold before it), said against the node they are about.
         foreach (var node in byId.Values)
         {
             if (NodeKit.Of(node.Kind) is { } unit) problems.AddRange(unit.Problems(graph, node));
-        }
-
-        // INTEGRATE1o (§17.3's graph rules): at most one `work.requests`, after a `claimed` and before every landing. After: a `claimed` of this graph
-        // reaches it through wires an order holds. Before: no landing can start with it unreached, by the look's own reading
-        // (StartsWithout), so a way to the landing past it is refused as an `anyOf` member or a bare wire alike. Each is said once,
-        // against the node it is about.
-        var holds = byId.Values.Where(node => node.Kind == NodeKinds.WorkRequests).ToList();
-        foreach (var again in holds.Skip(1))
-        {
-            Say(GraphRefusal.WorkRequestsTwice, null, again.Id, $"node `{again.Id}`: `{holds[0].Id}` and `{again.Id}` are both a `{NodeKinds.WorkRequests}`, and the graph holds the work on its requests once.");
-        }
-
-        if (holds.Count > 0)
-        {
-            var claimed = Reach(byId.Values.Where(node => node.Kind == NodeKinds.Claimed).Select(node => node.Id), ordered, forward: true);
-            foreach (var hold in holds.Where(hold => !claimed.Contains(hold.Id)))
-            {
-                Say(GraphRefusal.WorkRequestsUnclaimed, null, hold.Id, $"node `{hold.Id}`: a `{NodeKinds.WorkRequests}` holds the work a `{NodeKinds.Claimed}` observes, and no `{NodeKinds.Claimed}` of this graph comes before it.");
-            }
-
-            foreach (var hold in holds)
-            {
-                var early = StartsWithout(byId, starts, local, node => node.Id == hold.Id);
-                foreach (var landing in landings.Where(landing => early.Contains(landing.Id)))
-                {
-                    Say(GraphRefusal.WorkRequestsLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{NodeKinds.WorkRequests}` holds the work before every landing: "
-                        + $"every way to it passes `{hold.Id}`.");
-                }
-            }
-        }
-
-        // LANDNODE1k: each hold once, in a graph that lands, and before every landing by the work.requests reading (StartsWithout), so a hold after
-        // the landing or beside it in an `anyOf` is refused alike. Each is said once, against the hold.
-        foreach (var same in byId.Values.Where(node => HoldNodes.Options.ContainsKey(node.Kind)).GroupBy(node => node.Kind, StringComparer.Ordinal))
-        {
-            var each = same.ToList();
-            foreach (var again in each.Skip(1))
-            {
-                Say(GraphRefusal.HoldTwice, null, again.Id, $"node `{again.Id}`: `{each[0].Id}` and `{again.Id}` are both a `{again.Kind}`, and the graph judges each hold once.");
-            }
-
-            foreach (var hold in each)
-            {
-                if (landings.Count == 0)
-                {
-                    Say(GraphRefusal.HoldUnlanded, null, hold.Id, $"node `{hold.Id}`: a `{hold.Kind}` judges the work before it lands, and the graph holds no landing.");
-                    continue;
-                }
-
-                var early = StartsWithout(byId, starts, local, node => node.Id == hold.Id);
-                foreach (var landing in landings.Where(landing => early.Contains(landing.Id)))
-                {
-                    Say(GraphRefusal.HoldLate, null, hold.Id, $"node `{hold.Id}`: the landing `{landing.Id}` can start before `{hold.Id}` is reached, and a `{hold.Kind}` judges the work before it lands: "
-                        + $"every way to it passes `{hold.Id}`.");
-                }
-            }
         }
 
         // INTEGRATE1n, F47 (§17.4): every kind that observes the landing record is refused when saved where some way to it passes no `land`,

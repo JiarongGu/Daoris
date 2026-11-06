@@ -13,7 +13,7 @@ public sealed partial class NodeDispatchCensusTests
     private static readonly string[] Dispatching =
     [
         "Workflows/Nodes/NodeRuntime.cs",
-        "Workflows/Nodes/BuiltInNodes.cs",
+        "Workflows/Kinds/NodeObserving.cs",
         "Workflows/Nodes/RunNodeWords.cs",
         "Workflows/Nodes/WireEvaluation.cs",
         "Workflows/Nodes/NodeRunKeeping.cs",

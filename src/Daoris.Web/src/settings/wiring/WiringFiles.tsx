@@ -16,7 +16,7 @@ const FILE_NAME: Record<string, string> = {
 /** The doors a file may have: where it is edited. A door the page does not know has no press. */
 const DOORS = new Set(['driver', 'agents', 'tools', 'plugins', 'browser', 'workspace']);
 
-function FileRow({ file, onDoor }: { file: WiringFile; onDoor: (door: string) => void }) {
+function FileRow({ file, onDoor, onOpen }: { file: WiringFile; onDoor: (door: string) => void; onOpen?: (id: string) => void }) {
   const { t, i18n } = useTranslation();
   const holds = `settings.daoris.file.${file.id}`;
   const readable = file.present && !file.record;
@@ -35,6 +35,7 @@ function FileRow({ file, onDoor }: { file: WiringFile; onDoor: (door: string) =>
             )
             : <span className="text-small text-ink-faint">{t('settings.daoris.folder.absent')}</span>}
           {file.door && DOORS.has(file.door) && <Door label={t(`settings.daoris.button.${file.door}`)} onPress={() => onDoor(file.door!)} />}
+          {onOpen && file.present && <Door label={t('settings.daoris.button.openFolder')} onPress={() => onOpen(file.id)} />}
         </>
       )}
     >
@@ -60,18 +61,19 @@ function FileRow({ file, onDoor }: { file: WiringFile; onDoor: (door: string) =>
  * parses a file to say whether it reads, and the page carries the verdict.
  *
  * @remarks
- * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing.
+ * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing. *Open folder* (WIRING1e)
+ * sends the file's id, never its path, and the shell opens the folder it is in.
  */
-export function WiringFiles({ files, onDoor }: { files: SystemWiring['files']; onDoor: (door: string) => void }) {
+export function WiringFiles({ files, onDoor, onOpen }: { files: SystemWiring['files']; onDoor: (door: string) => void; onOpen?: (id: string) => void }) {
   const { t } = useTranslation();
   const settings = files.filter((file) => !file.record);
   const records = files.filter((file) => file.record);
   return (
     <WiringCard id="settings-daoris-files" title={t('settings.daoris.card.files')}>
-      {settings.map((file) => <FileRow key={file.id} file={file} onDoor={onDoor} />)}
+      {settings.map((file) => <FileRow key={file.id} file={file} onDoor={onDoor} onOpen={onOpen} />)}
       {records.length > 0 && (
         <Fold label={t('settings.daoris.files.records')}>
-          {records.map((file) => <FileRow key={file.id} file={file} onDoor={onDoor} />)}
+          {records.map((file) => <FileRow key={file.id} file={file} onDoor={onDoor} onOpen={onOpen} />)}
         </Fold>
       )}
     </WiringCard>

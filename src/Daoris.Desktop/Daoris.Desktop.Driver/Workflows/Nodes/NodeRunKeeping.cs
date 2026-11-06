@@ -31,7 +31,7 @@ internal sealed class NodeRunKeeping(
     public void KeepPullRequests(GovernedUnit governed)
     {
         if (pullRequests() is not { } kept || !holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
-        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || BuiltInNodes.LandingOf(unit) is not { } landed) return;
+        if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || NodeObserving.LandingOf(unit) is not { } landed) return;
         foreach (var node in governed.Declared.Values)
         {
             if (PullRequestSteps.PluginOf(node.Kind) is not { } plugin) continue;
