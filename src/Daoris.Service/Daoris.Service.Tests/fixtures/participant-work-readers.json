@@ -84,6 +84,10 @@
       "reads": "other",
       "note": "a brainstorm door's own ask call, with a repository argument; no record's mark tells a work"
     },
+    "WorkOrders/ChannelMemberVerb.cs": {
+      "reads": "other",
+      "note": "a channel ask's own ask field, the ask whose channel it joins; no record's mark tells a work"
+    },
     "WorkOrders/MeetingCommand.cs": {
       "reads": "other",
       "note": "a brainstorm door's own ask call, with a repository argument; no record's mark tells a work"
