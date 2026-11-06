@@ -29,6 +29,7 @@ import { anchorOf } from '../waits/anchors';
 import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitWaitSaid } from '../waits/limitWait';
 import { LimitWaitLine } from '../waits/LimitWaitLine';
 import type { useAttendedWaits } from '../waits/useAttendedWaits';
+import { type LineSupervision, supervisionChip } from './lineSupervision';
 import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
 import type { HeadLink } from './headRows';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
@@ -44,8 +45,10 @@ type Waits = ReturnType<typeof useAttendedWaits>;
 export function useAttendedHead({
   t, language, attended, here, live, quest, grouping, registry, roster, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
-  atWorkHeld, heavyPart, heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking,
+  atWorkHeld, heavyPart, heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision,
 }: {
+  /** The attended line's counts and its rules' acts: the head's chip where a rule holds the line or is one count from it. */
+  supervision: LineSupervision;
   t: TFunction;
   language: string;
   attended: Session | null;
@@ -260,6 +263,7 @@ export function useAttendedHead({
       // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}
       next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
+      chip={supervisionChip(t, supervision)}
       acts={headActs}
       primary={headPrimary}
       busy={actions.busy}

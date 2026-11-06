@@ -38,8 +38,10 @@ import { useWaitsOnScreen } from './waitsOnScreen';
  */
 export function useAttendedWaits({
   t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-  boxWords, openView, work, talking, centre,
+  boxWords, openView, work, talking, centre, onChangeRule,
 }: {
+  /** The door to the place whose supervisor rule held an answer: *Change the rule…* on the head and the strip; absent, it is not drawn. */
+  onChangeRule?: (place: string) => void;
   t: TFunction;
   notify: Notify;
   attended: Session | null;
@@ -164,6 +166,7 @@ export function useAttendedWaits({
       onError: (error) => answered.refused(sentence(error)),
     }),
     busy: answerAlone.isPending,
+    onChangeRule,
   } : null;
   // The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the rows What needs you was pushed, so the head, the foot and the
   // band read one judgement and press one door; its answer said where it was pressed, a refusal in the driver's words.

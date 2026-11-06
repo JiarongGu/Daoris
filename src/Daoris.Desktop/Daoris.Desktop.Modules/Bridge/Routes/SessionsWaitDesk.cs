@@ -72,8 +72,19 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         return Task.FromResult<object?>(new { Answered = answer.Stands, answer.Why, answer.Message });
     }
 
-    public Task<object?> SupervisorAsync(SessionSupervisor press) =>
-        Task.FromResult<object?>(new { Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList() });
+    public async Task<object?> SupervisorAsync(SessionSupervisor press, CancellationToken cancellationToken)
+    {
+        // The line's counts and the rules' acts ride beside the decisions: none where the service is not reached (the counts read unknown then).
+        var facts = _loop.Service is { } service
+            ? await LineCountsRead.FactsAsync(service, _loop.Home, press.Id, cancellationToken).ConfigureAwait(false)
+            : LineCountsRead.FactsOf(_loop.Home, press.Id, null);
+        return new
+        {
+            Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList(),
+            Counts = SessionCountsWire.Counts(facts),
+            Acts = SessionCountsWire.Acts(facts),
+        };
+    }
 
     /// <summary>One decision as the page reads it: never its receipt, its ticket nor its word's text.</summary>
     internal static object SupervisorDecisionRow(SupervisorDecisionView view) => new

@@ -89,7 +89,7 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
+  lists, layout: viewLayout, onOpenSessions, onChangeRule, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
   onOpenBranch, notifications, notificationsShow = 0, notificationsToggle = 0,
 }: {
   /**
@@ -128,6 +128,8 @@ export function WorkFrame({
   terminal?: boolean;
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
   onOpenSessions?: () => void;
+  /** *Change the rule…* on a hold a supervisor rule made: the page of the place whose rule held it, `repository` the attended line's. */
+  onChangeRule?: (place: string, repository: string | null) => void;
   /**
    * Another view in the frame (DOCK1a, D118 §5): its list pane where it has one, and its main area. Overview,
    * Quests and the rest keep the right side bar and the panel, with every view that stands in them, as VS
@@ -346,6 +348,7 @@ export function WorkFrame({
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre,
+    onChangeRule: onChangeRule && attended ? (place) => onChangeRule(place, attended.repository ?? null) : undefined,
   });
   const {
     partnerPieces, waits, answerBelow, standing, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
@@ -354,7 +357,7 @@ export function WorkFrame({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking,
+    heavyTitleOf, integration, entryOffered, landsNow, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 

@@ -273,22 +273,14 @@ export type RoleUse = {
 /** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
 export type RoleUseRead = { days: number; roles: RoleUse[] };
 
-/** A condition a choice cannot go on under (STAFFPOLICY1, the staff policy design §4); an absent one is *as today*. */
-export type StaffCondition = 'limit' | 'signed-out' | 'model-refused' | 'transient' | 'failed' | 'quiet' | 'budget';
-
-/** What a condition does: a code, the tries or failures before it, and how long a wait holds in minutes. */
-export type StaffMove = { do: string; after?: number; upTo?: number };
-
 /** A choice's entry in a role's policy: keyed by its tuple, with its weight, share, daily budget (starts or reported tokens) and works. */
 export type StaffPolicyChoice = {
   agent: string; model?: string | null; effort?: string | null; weight?: number; share?: number | null;
   budget?: { starts?: number; tokens?: number } | null; takes?: string[] | null;
 };
 
-/** A role's policy record as `ROLES` answers and `SET_ROLE` takes it (`policy`). The moves are a code or `{ do, after?, upTo? }`. */
-export type StaffPolicy = {
-  rule: 'order' | 'weight'; choices: StaffPolicyChoice[]; moves?: Partial<Record<StaffCondition, string | StaffMove>>; most?: number | null;
-};
+/** A role's policy record as `ROLES` answers and `SET_ROLE` takes it (`policy`): the rule and the choices; moves are the supervisor's rules. */
+export type StaffPolicy = { rule: 'order' | 'weight'; choices: StaffPolicyChoice[] };
 
 /** A role's next new start as its policy would take it: a probe that reserves nothing; null for a brainstorm. */
 export type RoleNext = { choice: string; by: string; said: string; agent: string; model?: string | null; effort?: string | null };
