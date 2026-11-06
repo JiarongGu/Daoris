@@ -5,8 +5,10 @@ namespace Daoris.Driver;
 /// (<see cref="LookReading"/>).
 /// </summary>
 [NodeKind(NodeKinds.Look, NodeGroup.You, NodeKinds.Review)]
-public sealed class LookNode : BuiltInNode, IObserves
+public sealed class LookNode : BuiltInNode, IObserves, IAsksReads
 {
+    public PassRead Asks => PassRead.Gates;
+
     public NodeObservation Observe(NodeReading reading) => LookReading.Observe(reading);
 
     /// <summary>

@@ -53,6 +53,9 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>The person's words: a rejection's reason, a skip's, a stop's where given.</summary>
     public string? Words { get; init; }
 
+    /// <summary>When the newest attempt started, as the move that started it was clocked; null on a node never started, or started unclocked.</summary>
+    public DateTimeOffset? Since { get; init; }
+
     /// <summary>The acceptance that counts now: only a reached node's. An invalidated one's is history, never current evidence.</summary>
     public NodeAcceptance? Current => State == NodeStates.Reached ? Acceptance : null;
 }
@@ -87,6 +90,9 @@ public sealed record NodeMove(string To, string By)
 
     /// <summary>The person's words: required for a rejection and a skip; a reach on their press keeps the note they gave with it.</summary>
     public string? Words { get; init; }
+
+    /// <summary>A start's moment, as the evaluation's clock read it: what <see cref="NodeStatus.Since"/> keeps.</summary>
+    public DateTimeOffset? At { get; init; }
 
     /// <summary>
     /// A skip's graph and run, or a start's: required of both, since a skip holds for its own alone and an attempt's outcome is a receipt in
@@ -436,6 +442,7 @@ public static class NodeLifecycle
                     Tries = status.Tries + 1,
                     Binding = binding with { Evidence = null, Outputs = NodeAcceptance.NoPorts, Outcome = null },
                     Scope = scope,
+                    Since = move.At,
                     Unreconciled = authority.Dispatches ? status.Attempt + 1 : null,
                 });
 
@@ -485,7 +492,7 @@ public static class NodeLifecycle
 
     /// <summary>A status with nothing of an attempt's record left: what a reset to ready or blocked, and a start, begin from.</summary>
     private static NodeStatus Reset(NodeStatus status) =>
-        status with { Binding = null, Acceptance = null, By = null, Code = null, Transient = false, Words = null, Scope = null };
+        status with { Binding = null, Acceptance = null, By = null, Code = null, Transient = false, Words = null, Scope = null, Since = null };
 
     /// <summary>Whether a move took away anything the status held, which the record writer keeps before it is gone (FABRIC-NODE1c).</summary>
     private static bool Clears(NodeStatus was, NodeStatus next)

@@ -310,6 +310,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (status.Code is { } code) writer.WriteString("code", code);
         if (status.Transient) writer.WriteBoolean("transient", true);
         if (status.Words is { } words) writer.WriteString("words", words);
+        if (status.Since is { } since) writer.WriteString("since", Moments.Write(since));
         writer.WriteEndObject();
     }
 
@@ -638,6 +639,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Code = Text(element, "code"),
             Transient = element.TryGetProperty("transient", out var transient) && transient.ValueKind == JsonValueKind.True,
             Words = Text(element, "words"),
+            Since = Moments.Read(element, "since"),
         };
     }
 

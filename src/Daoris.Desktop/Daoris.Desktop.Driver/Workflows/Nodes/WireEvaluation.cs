@@ -219,7 +219,7 @@ public static class WireEvaluation
                 slots[authority.Reach]--;
             }
 
-            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding, Scope = run.ScopeOf(judged.Node) })
+            starts.Add(new WireStart(judged.Node, new NodeMove(NodeStates.Active, NodeCause.Daoris) { Binding = judged.Binding, Scope = run.ScopeOf(judged.Node), At = run.Clock?.Invoke() })
             {
                 Firings = judged.Firings,
             });

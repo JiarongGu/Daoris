@@ -14,13 +14,14 @@ internal static class NodeEvaluations
     /// </summary>
     public static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) Evaluate(
         GovernedUnit governed, NodeRecord record, bool tipped = false, string? tip = null, NodeGitReads? git = null,
-        (OpinionGateState? Opinion, ReviewGateState? Review) gates = default)
+        (OpinionGateState? Opinion, ReviewGateState? Review) gates = default, Func<DateTimeOffset>? clock = null)
     {
         var unit = governed.Unit.Id;
         var nodes = governed.Graph.Nodes.Select(node => governed.Declared[node.Id]).ToList();
         var before = nodes.ToDictionary(node => node.Id, node => record.Statuses.GetValueOrDefault(node.Id) ?? NodeLifecycle.Start(unit, node.Id), StringComparer.Ordinal);
         var run = new WireRun(governed.GraphDigest, governed.Run)
         {
+            Clock = clock,
             Places = governed.Places,
             Legacy = NodeRuns.Of(unit, governed.GraphDigest),
             Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
@@ -46,7 +47,8 @@ internal static class NodeEvaluations
     /// tip (<paramref name="gates"/>).
     /// </summary>
     public static (Dictionary<string, NodeStatus> Before, WireEvaluated Evaluated) EvaluateRun(
-        GovernedUnit governed, NodeRecord record, string? tip, NodeGitReads? git, (OpinionGateState? Opinion, ReviewGateState? Review) gates)
+        GovernedUnit governed, NodeRecord record, string? tip, NodeGitReads? git, (OpinionGateState? Opinion, ReviewGateState? Review) gates,
+        Func<DateTimeOffset>? clock = null)
     {
         var scope = governed.Scope!;
         var self = governed.Unit;
@@ -91,6 +93,7 @@ internal static class NodeEvaluations
 
         var run = new WireRun(governed.GraphDigest, governed.Run)
         {
+            Clock = clock,
             Revisions = revisions,
             Subjects = subjects,
             NodeRevisions = own,
@@ -111,13 +114,23 @@ internal static class NodeEvaluations
         return (before, WireEvaluation.Evaluate(nodes, governed.Graph.Wires, before, run));
     }
 
+    /// <summary>Whether a node's kind waits on <paramref name="read"/>, which the kit's unit declares.</summary>
+    private static bool Asks(NodeDeclaration node, PassRead read) => NodeKit.Of(node.Kind) is IAsksReads kind && kind.Asks.HasFlag(read);
+
+    /// <summary>Whether a node of the unit whose kind waits on <paramref name="read"/> is active or unknown on its record.</summary>
+    private static bool Waits(GovernedUnit governed, NodeRecord record, PassRead read) =>
+        governed.Graph.Nodes.Any(node => Asks(node, read) && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
+
+    /// <summary>The graph's node whose kind makes the landing the nodes after it bind to.</summary>
+    private static NodeDeclaration? LandNodeOf(GovernedUnit governed) => governed.Graph.Nodes.FirstOrDefault(node => NodeKit.Of(node.Kind) is IMakesLanding);
+
     /// <summary>
     /// The landing a run's <c>handed</c> reached on: the branch unit its reach names and the tip its evidence names, the landing's own, which
     /// what follows binds; null while it is not reached, or its branch was not read.
     /// </summary>
     public static (WorkUnit Unit, string Tip)? Landed(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
     {
-        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } handed) return null;
+        if (governed.Scope is not { } scope || LandNodeOf(governed) is not { } handed) return null;
         if (statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance: { Subject: { } subject, Evidence.Revision: { } tip } }) return null;
         var unit = scope.Branch?.Id == subject ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == subject);
         return unit is null ? null : (unit, tip);
@@ -138,7 +151,7 @@ internal static class NodeEvaluations
                 : null;
         }
 
-        if (governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } handed
+        if (LandNodeOf(governed) is not { } handed
             || statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Revision: { } tip })
         {
             return null;
@@ -203,8 +216,7 @@ internal static class NodeEvaluations
     public static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
         GovernedUnit governed, NodeRecord record, string? tip, PassGates gates, CancellationToken ct)
     {
-        if (!governed.Graph.Nodes.Any(node => node.Kind is NodeKinds.Opinion or NodeKinds.Look
-                && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown))
+        if (!Waits(governed, record, PassRead.Gates))
         {
             return default;
         }
@@ -222,7 +234,7 @@ internal static class NodeEvaluations
         CancellationToken ct)
     {
         if (governed.Scope?.Branch is not { } branch || tip is null
-            || !governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.ContentHolds && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown))
+            || !Waits(governed, record, PassRead.Content))
         {
             return reads;
         }
@@ -248,9 +260,7 @@ internal static class NodeEvaluations
         // A run's `push` observes its branch at the landing `land` reached on.
         var unit = governed.Scope is null ? governed.Unit : Landed(governed, record.Statuses)?.Unit;
         if (unit?.Kind != WorkUnitKind.Branch || NodeObserving.LandingOf(unit) is not { } landing) return null;
-        var waits = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push
-            && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
-        if (!waits || !NodeObserving.AsksRemote(landing)) return null;
+        if (!Waits(governed, record, PassRead.Remote) || !NodeObserving.AsksRemote(landing)) return null;
 
         var tip = await git.RemoteAsync(governed.Watched.Root, landing.Branch, ct).ConfigureAwait(false);
         return new NodeGitReads(each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null);
@@ -261,7 +271,7 @@ internal static class NodeEvaluations
     {
         var branches = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
         var pushing = governed.Where(each => each.Unit.Kind is WorkUnitKind.Branch or WorkUnitKind.Run && each.Watched.Root.Length > 0
-                && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push))
+                && each.Graph.Nodes.Any(node => Asks(node, PassRead.Remote)))
             // A run's landed branches are its branches' landings, each read once a checkout with the rest.
             .SelectMany(each => (each.Scope?.Branches ?? [each.Unit]).Select(unit => (each.Watched.Root, Landing: NodeObserving.LandingOf(unit))))
             .Where(each => each.Landing is { } landing && NodeObserving.AsksRemote(landing));

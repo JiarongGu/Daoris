@@ -32,6 +32,17 @@ public sealed class HumanTaskRowsTests
     }
 
     [Fact]
+    public void A_waiting_task_row_says_since_when_it_waits()
+    {
+        var since = new DateTimeOffset(2026, 11, 6, 9, 30, 0, TimeSpan.Zero);
+        var written = System.Text.Json.JsonSerializer.SerializeToNode(
+            new HumanTask("q7", "sign", "engine", "aurora", [NodeWordActs.Done], "q7", since), Shenora.Core.Ipc.IpcJson.Options)!.AsObject();
+        var row = Assert.Single(Rows(new() { Tasks = [written] }));
+        Assert.Equal(written["since"]!.GetValue<string>(), row["since"]!.GetValue<string>());
+        Assert.Equal(since, DateTimeOffset.Parse(row["since"]!.GetValue<string>()));
+    }
+
+    [Fact]
     public void The_runtimes_task_is_written_as_its_row_reads_it()
     {
         var written = System.Text.Json.JsonSerializer.SerializeToNode(
