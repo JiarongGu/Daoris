@@ -42,14 +42,7 @@ public sealed class AccountRotationGoalTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessToolchain Toolchain(bool weekFixed = true, string? accountOf = null) => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
@@ -58,11 +51,11 @@ public sealed class AccountRotationGoalTests : IDisposable
     private HarnessRoster Roster() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", Toolchain()),
+            ["fake"] = Adapter("fake", Toolchain()),
             // A door onto the fake agent's accounts (AGT7): its sessions are the fake agent's.
-            ["fake-door"] = new Adapter("fake-door", Toolchain(accountOf: "fake")),
+            ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),
             // An agent whose maker was not read fixing its weekly reset (Codex's standing, §0.3).
-            ["loose"] = new Adapter("loose", Toolchain(weekFixed: false)),
+            ["loose"] = Adapter("loose", Toolchain(weekFixed: false)),
         }), Settings)
         {
             Clock = () => _now,

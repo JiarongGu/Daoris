@@ -53,28 +53,13 @@ public sealed class CurveMoveTests : IDisposable
     /// A conversation's agent on the protocol door with accounts and a usage question, answered in memory: nothing is probed or
     /// spawned. It refuses to prepare a conversation, after its record is open, so a start ends that record failed.
     /// </summary>
-    private sealed class Talk(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-    }
+    private static ISessionAdapter Talk(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     private HarnessRoster Roster()
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new Talk("talk", new HarnessToolchain(
+            ["talk"] = Talk("talk", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
                 Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });

@@ -156,7 +156,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
             var loop = Loop();
             var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
-                ["talk"] = new Refusing("talk"), ["other"] = new Refusing("other"),
+                ["talk"] = Refusing("talk"), ["other"] = Refusing("other"),
             });
             var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
             var chat = new ChatRunner(
@@ -178,18 +178,5 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     }
 
     /// <summary>An adapter on the protocol door that refuses to spawn, saying its own name, so a start's answer tells which it took.</summary>
-    private sealed class Refusing(string name) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException($"{name} spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            throw new InvalidOperationException($"{name} spawns nothing");
-    }
+    private static ISessionAdapter Refusing(string name) => TestDoors.Door(name, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn($"{name} spawns nothing"));
 }

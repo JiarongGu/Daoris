@@ -74,20 +74,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.Equal((null, null), (plain.Model, plain.Effort));
     }
 
-    private sealed class Talk(HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-    }
+    private static ISessionAdapter Talk(HarnessToolchain toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     private sealed class Turned : ITurnedChat
     {
@@ -196,7 +183,7 @@ public sealed class HandOverMoveStoreTests : IDisposable
         ledger.Chat("q1s", "stopped", "talk", _root, kind: "driven", quest: "q1", profile: "account-1");
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new Talk(new HarnessToolchain(
+            ["talk"] = Talk(new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
                 Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });

@@ -335,16 +335,7 @@ public sealed class AccountCoolingTests : IDisposable
 
     // ——— The roster: read before any probe (§3.3, §4).
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => wire;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     /// <summary>
     /// A harness whose presence is a PATH look, so asking it starts nothing. A test double whose own home is nobody's
@@ -367,7 +358,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_start_on_a_cooling_account_is_held_before_any_probe()
     {
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: null), _now);
 
         var held = await roster.SelectAsync("fake", Config, null, null);
@@ -390,7 +381,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_refusal_carries_its_parts_by_code_beside_its_unchanged_english()
     {
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: null), _now);
 
         var own = await roster.SelectAsync("fake", Config, null, null);
@@ -408,7 +399,7 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(("fake", "program"), (ownTooling.RefusalNote.Parts[0].Value("agent"), ownTooling.RefusalNote.Parts[1].By));
         Assert.Contains(ownTooling.RefusalNote.Parts[1].Words!, ownTooling.Refusal);
 
-        var installing = Roster(new Adapter("fake", Present() with { Install = ["fake-install"] }));
+        var installing = Roster(Adapter("fake", Present() with { Install = ["fake-install"] }));
         var absent = await installing.SelectAsync("fake", Config, null, null);
         Assert.Equal(absent.Refusal, absent.RefusalNote!.Note);
         Assert.Equal(("held.not-installed", "fake"), (absent.RefusalNote.Parts[0].Code, absent.RefusalNote.Parts[0].Value("agent")));
@@ -434,7 +425,7 @@ public sealed class AccountCoolingTests : IDisposable
     {
         Accounts("fake", "account-1", "account-2");
         new HarnessSettings().WithDefault("fake", "account-1").WithWorkspaceDefault("work", "fake", "account-2").Save(Settings);
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake"), _now);
 
         var machine = await roster.SelectAsync("fake", Config, null, null);
@@ -456,7 +447,7 @@ public sealed class AccountCoolingTests : IDisposable
     {
         Accounts("fake", "account-1", "account-2");
         new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1"), _now);
         AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-2"), _now);
 
@@ -478,7 +469,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_cool_off_ends_at_its_reset_with_nothing_said()
     {
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: null), _now);
 
         _now = Until.AddSeconds(1);
@@ -491,8 +482,8 @@ public sealed class AccountCoolingTests : IDisposable
     public async Task A_door_s_cool_off_is_its_owner_s_and_so_are_its_limits()
     {
         var roster = Roster(
-            new Adapter("fake", Present(limits: ClaudeLimits.Words)),
-            new Adapter("fake-acp", Present(accountOf: "fake"), Transport.Protocol));
+            Adapter("fake", Present(limits: ClaudeLimits.Words)),
+            Adapter("fake-acp", Present(accountOf: "fake"), Transport.Protocol));
 
         Assert.Same(ClaudeLimits.Words, roster.LimitsOf("fake-acp"));
         var limited = roster.Limited("fake-acp", null, Refusal, "s1");
@@ -513,7 +504,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_cool_off_the_file_will_not_take_is_kept_in_memory_and_passes_the_account_until_its_reset()
     {
-        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)));
+        var roster = Roster(Adapter("fake", Present(limits: ClaudeLimits.Words)));
         Directory.CreateDirectory(AccountCooling.PathOf(_home));
 
         var limited = roster.Limited("fake", null, Refusal, "s1");
@@ -551,7 +542,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public void A_failure_no_table_recognises_cools_nothing()
     {
-        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)), new Adapter("other", Present()));
+        var roster = Roster(Adapter("fake", Present(limits: ClaudeLimits.Words)), Adapter("other", Present()));
 
         Assert.Null(roster.Limited("fake", null, "the ACP agent refused the call: Internal error: Overloaded", "s1"));
         Assert.Null(roster.Limited("other", null, Refusal, "s1"));
@@ -562,7 +553,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public void A_limit_s_reset_is_read_at_the_roster_s_moment_in_the_roster_s_zone()
     {
-        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)));
+        var roster = Roster(Adapter("fake", Present(limits: ClaudeLimits.Words)));
 
         var limited = roster.Limited("fake", "account-1", Refusal.Replace($" ({Zone.Id})", ""), "s1");
 
@@ -577,7 +568,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public void A_limit_that_names_no_time_cools_for_the_cool_off_handed_over_and_an_hour_without_one()
     {
-        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)));
+        var roster = Roster(Adapter("fake", Present(limits: ClaudeLimits.Words)));
         const string noTime = "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit";
 
         var handed = roster.Limited("fake", "account-1", noTime, "s1", TimeSpan.FromMinutes(15));
@@ -596,7 +587,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task The_roster_s_refresh_ends_the_own_home_s_cool_off_and_no_named_account_s()
     {
-        var roster = Roster(new Adapter("fake", Present()));
+        var roster = Roster(Adapter("fake", Present()));
         AccountCooling.Cool(_home, Entry(agent: "fake", account: null), _now);
         AccountCooling.Cool(_home, Entry(agent: "fake"), _now);
 
@@ -668,7 +659,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_door_with_no_toolchain_and_no_owner_s_words_starts_as_it_always_did()
     {
-        var roster = Roster(new Adapter("bare", toolchain: null, Transport.Protocol));
+        var roster = Roster(Adapter("bare", toolchain: null, Transport.Protocol));
         AccountCooling.Cool(_home, Entry(agent: "bare", account: null), _now);
 
         Assert.Null(roster.LimitsOf("bare"));

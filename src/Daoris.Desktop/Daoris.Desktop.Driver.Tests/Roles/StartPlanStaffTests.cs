@@ -41,10 +41,10 @@ public sealed class StartPlanStaffTests : IDisposable
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["cool"] = new Adapter("cool", present),
-            ["fine"] = new Adapter("fine", present),
+            ["cool"] = Adapter("cool", present),
+            ["fine"] = Adapter("fine", present),
             // Runs in the person's own tool home: no Daoris account, so the roster counts nothing for its starts (Number 0).
-            ["bare"] = new Adapter("bare", present with { ProfileVariable = null }),
+            ["bare"] = Adapter("bare", present with { ProfileVariable = null }),
         });
         _roster = Roster();
 
@@ -68,16 +68,7 @@ public sealed class StartPlanStaffTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private StaffLedger Ledger => _roster.StaffFor(_home, () => StoreSettled.Yes);
 

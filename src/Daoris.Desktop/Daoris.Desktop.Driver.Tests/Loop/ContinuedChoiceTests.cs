@@ -41,24 +41,15 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns here");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private AdapterSet Adapters()
     {
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         return new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["first"] = new Adapter("first", present),
-            ["second"] = new Adapter("second", present),
+            ["first"] = Adapter("first", present),
+            ["second"] = Adapter("second", present),
         });
     }
 

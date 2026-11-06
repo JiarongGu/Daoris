@@ -49,21 +49,12 @@ public sealed class AccountRotationTests : IDisposable
     /// <summary>A file that is there, so the harness is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => wire;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     private HarnessRoster Roster(string binary) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [binary], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         }), Settings)
         {

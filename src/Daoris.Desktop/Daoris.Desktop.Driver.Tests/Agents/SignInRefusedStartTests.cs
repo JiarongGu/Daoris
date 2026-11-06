@@ -50,20 +50,13 @@ public sealed class SignInRefusedStartTests : IDisposable
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>An agent with accounts, present by a look, with no login question: only a reading says an account is signed out.</summary>
     private HarnessRoster Fake() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
         }), Settings)
         {
@@ -534,7 +527,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     private HarnessRoster FakeSigningIn() =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new Adapter("fake", new HarnessToolchain(
+            ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
                 SignIn: ClaudeSignIn.Words)),
         }), Settings)

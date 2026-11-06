@@ -67,20 +67,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         new(left, MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Curve, HandOverBy.Daoris);
 
     /// <summary>The conversation's agent on the protocol door with accounts and no usage question, so nothing is probed or spawned.</summary>
-    private sealed class Talk(HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-    }
+    private static ISessionAdapter Talk(HarnessToolchain toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     /// <summary>A conversation's turns over a door that writes nothing: <paramref name="wire"/> is told each message as its write is made.</summary>
     private sealed class Turned : ITurnedChat
@@ -196,7 +183,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         ledger.Chat("c1", "working", "talk", _root, profile: "account-1");
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new Talk(new HarnessToolchain(
+            ["talk"] = Talk(new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
                 Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });

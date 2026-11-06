@@ -90,14 +90,7 @@ public sealed class ProbeRaceTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessToolchain Toolchain(string? accountOf = null) => new(
         Binary: ["node", Script],
@@ -111,9 +104,9 @@ public sealed class ProbeRaceTests : IDisposable
     {
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = new Adapter("agent", Toolchain()),
+            ["agent"] = Adapter("agent", Toolchain()),
         };
-        if (door) adapters["agent-door"] = new Adapter("agent-door", Toolchain(accountOf: "agent"));
+        if (door) adapters["agent-door"] = Adapter("agent-door", Toolchain(accountOf: "agent"));
         return new HarnessRoster(new AdapterSet(adapters), Settings);
     }
 
@@ -218,7 +211,7 @@ public sealed class ProbeRaceTests : IDisposable
         var now = DateTimeOffset.UtcNow;
         var roster = new HarnessRoster(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = new Adapter("agent", Toolchain()),
+            ["agent"] = Adapter("agent", Toolchain()),
         }), Settings) { Clock = () => now };
 
         await roster.ReportAsync("agent", Config, refresh: true);

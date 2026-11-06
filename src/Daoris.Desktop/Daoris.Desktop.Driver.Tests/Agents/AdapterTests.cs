@@ -567,7 +567,7 @@ public sealed class AdapterTests
     public void A_non_interactive_adapter_says_so_rather_than_spawning_a_silent_process()
     {
         // Through the interface, which is where the default lives — and where every caller reaches it.
-        ISessionAdapter adapter = new OneShotAdapter();
+        ISessionAdapter adapter = OneShotAdapter();
 
         Assert.False(adapter.Interactive);
         var error = Assert.Throws<DriverException>(() => adapter.PrepareChat(Chat(), null));
@@ -576,10 +576,5 @@ public sealed class AdapterTests
     }
 
     /// <summary>A harness that takes its target once and runs to completion — the default shape.</summary>
-    private sealed class OneShotAdapter : ISessionAdapter
-    {
-        public string Name => "one-shot";
-
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
-    }
+    private static ISessionAdapter OneShotAdapter() => TestDoors.Door("one-shot");
 }

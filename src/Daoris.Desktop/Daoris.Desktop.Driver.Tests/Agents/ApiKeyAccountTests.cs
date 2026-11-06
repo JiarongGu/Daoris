@@ -28,14 +28,7 @@ public sealed class ApiKeyAccountTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private sealed class FakeAdapter(HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => "fake";
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter FakeAdapter(HarnessToolchain toolchain) => TestDoors.Door("fake", toolchain);
 
     /// <summary>A harness that is signed in exactly when its key variable is set — as Claude Code answers.</summary>
     private HarnessToolchain Toolchain(string? keyVariable = "FAKE_KEY")
@@ -57,7 +50,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     private HarnessRoster Roster(HarnessToolchain toolchain) => new(
         new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new FakeAdapter(toolchain),
+            ["fake"] = FakeAdapter(toolchain),
         }),
         Settings);
 

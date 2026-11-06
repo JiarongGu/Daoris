@@ -138,18 +138,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     }
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private sealed class Talk : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-    }
+    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     private sealed record World(ChatContext Context, Opening Runner, LimitMove Limit, ChatLedger Ledger, ServiceClient Client, Turned Old)
     {
@@ -181,7 +170,7 @@ public sealed class LimitMoveStoreTests : IDisposable
             Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
         });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var context = new ChatContext(
             client, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), events);

@@ -50,14 +50,7 @@ public sealed class ReviewerChoiceTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>
     /// The agent this build carries by <paramref name="name"/>, its family as declared (whose accounts, its product, its maker)
@@ -85,7 +78,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         foreach (var name in Agents)
         {
             var binary = absent?.Contains(name) == true ? Nowhere : bare?.Contains(name) == true ? name + "-pinned" : Command;
-            adapters[name] = new Adapter(name, Like(name, binary));
+            adapters[name] = Adapter(name, Like(name, binary));
         }
 
         var set = new AdapterSet(adapters).WithPlugins(PluginCatalog.Load(_home, adapters.Keys));

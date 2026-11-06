@@ -366,14 +366,7 @@ public sealed class OpinionLookTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, each present by a file look, as <c>OpinionRecheckTests</c> has them.</summary>
     /// <param name="pass">What each pass does, opened by the stand-in; null opens <c>op1</c> and raises nothing.</param>
@@ -383,7 +376,7 @@ public sealed class OpinionLookTests : IDisposable
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
-            adapters[name] = new Adapter(name, new HarnessToolchain(
+            adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [Command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 // A test double whose own home is nobody's (OWNSPACE1a): the look's pass is this file's subject, not the account.
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));

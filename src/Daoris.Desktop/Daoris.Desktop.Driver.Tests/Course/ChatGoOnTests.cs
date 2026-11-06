@@ -33,20 +33,7 @@ public sealed class ChatGoOnTests : IDisposable
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>A conversation's adapter on the protocol door with no toolchain, so nothing is probed.</summary>
-    private sealed class Talk : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-    }
+    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     /// <summary>What the course answered each go-on, by session (FOUNDATION1h branch 7), heard from the runner's go-on.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
@@ -71,7 +58,7 @@ public sealed class ChatGoOnTests : IDisposable
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new Talk(),
+            ["talk"] = Talk(),
             ["acp-stub"] = BuiltDoors.AcpStub,
         });
         var client = ledger.Client();
@@ -389,7 +376,7 @@ public sealed class ChatGoOnTests : IDisposable
         var events = Events;
         using var runner = Runner(ledger, events);
         // Its run has concluded the record and holds the conversation still, as its watch does until its last disposal.
-        runner.Context.Talking["c1"] = new ChatAgent(new Talk());
+        runner.Context.Talking["c1"] = new ChatAgent(Talk());
 
         events.Append("c1", Shown("w1", "Also log the port."));
         await Task.Delay(300);

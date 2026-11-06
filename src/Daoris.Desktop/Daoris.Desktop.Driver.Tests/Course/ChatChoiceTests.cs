@@ -33,24 +33,11 @@ public sealed class ChatChoiceTests : IDisposable
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The agent this machine has: on the protocol door, with no toolchain to ask, so nothing is probed.</summary>
-    private sealed class Talk : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
-            throw new InvalidOperationException("a judgement test spawns nothing");
-    }
+    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     private ChatRunner Runner(ChatLedger ledger)
     {
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

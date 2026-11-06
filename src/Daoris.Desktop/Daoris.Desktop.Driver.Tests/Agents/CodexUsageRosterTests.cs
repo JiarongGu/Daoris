@@ -43,16 +43,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => Transport.Protocol;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new CodexUsageQuestion("fake", ["fake-agent", "app-server"], CodexUsage.Question.Recorded);
 
@@ -65,10 +56,10 @@ public sealed class CodexUsageRosterTests : IDisposable
         {
             // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
             // `codex-acp` does for `codex`.
-            ["fake"] = new Adapter("fake", Toolchain()),
-            ["fake-door"] = new Adapter("fake-door", Toolchain(question ?? Question, accountOf: "fake")),
+            ["fake"] = Adapter("fake", Toolchain()),
+            ["fake-door"] = Adapter("fake-door", Toolchain(question ?? Question, accountOf: "fake")),
             // An agent whose door carries its windows asks nothing.
-            ["quiet"] = new Adapter("quiet", Toolchain()),
+            ["quiet"] = Adapter("quiet", Toolchain()),
         }), Settings)
         {
             Clock = () => _now,

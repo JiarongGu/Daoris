@@ -168,21 +168,16 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     {
         var access = AccessRules.ResolveLevels(
             new AccessSetting { Pauses = new Dictionary<string, string> { [AccessRules.Permissions] = permissions } }, null, null);
-        var refused = DrivenAccess.For(access, "engine", new NoModes());
+        var refused = DrivenAccess.For(access, "engine", NoModes());
         Assert.NotNull(refused.Refusal);
         Assert.Contains("`no-modes`", refused.Refusal, StringComparison.Ordinal);
-        Assert.Null(DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", new NoModes()).Refusal);
+        Assert.Null(DrivenAccess.For(AccessRules.ResolveLevels(null, null, null), "engine", NoModes()).Refusal);
 
-        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(new NoModes()));
+        var help = HelpAccess.For(HelpModes.Full, new ChatAgent(NoModes()));
         Assert.Contains("`no-modes`", help.Refusal, StringComparison.Ordinal);
     }
 
-    private sealed class NoModes : ISessionAdapter
-    {
-        public string Name => "no-modes";
-        public Transport Transport => Transport.Protocol;
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("no-modes");
-    }
+    private static ISessionAdapter NoModes() => TestDoors.Door("no-modes", transport: Transport.Protocol);
 
     [Fact]
     public void The_required_posture_is_the_one_value_the_protocol_door_reads()

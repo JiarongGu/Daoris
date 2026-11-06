@@ -123,7 +123,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var events = Events;
         Limited(events, "working", null);
 
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
@@ -170,7 +170,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new CurveTalk(new HarnessToolchain(
+            ["talk"] = CurveTalk(new HarnessToolchain(
                 Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
                 Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
         });
@@ -214,8 +214,8 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
 
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["talk"] = new Talk(),
-            ["acp-stub"] = new CurveTalk(new HarnessToolchain(
+            ["talk"] = Talk(),
+            ["acp-stub"] = CurveTalk(new HarnessToolchain(
                 Binary: [TalkCommand], VersionArguments: ["--version"], ProfileVariable: "STUB_HOME", AccountOf: "stub", ProbeByPresence: true)),
         });
         var context = new ChatContext(
@@ -252,7 +252,7 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
         var events = Events;
         Limited(events, "stopped", keep);
 
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var context = new ChatContext(
             Client, Home, new SessionProcesses(DaorisHome.Entry(Home, HomeEntry.Sessions)), output: null,
             new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)), events);
@@ -570,34 +570,10 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>The killed shell's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private sealed class Talk : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-    }
+    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     /// <summary>The curve's agent on the protocol door with accounts and a usage question, so the curve judges it and nothing is probed or spawned.</summary>
-    private sealed class CurveTalk(HarnessToolchain toolchain) : ISessionAdapter
-    {
-        public string Name => "talk";
-
-        public Transport Transport => Transport.Protocol;
-
-        public bool Interactive => true;
-
-        public HarnessToolchain? Toolchain => toolchain;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-
-        public ProcessStartInfo PrepareChat(SpawnRequest request) => throw new InvalidOperationException("nothing spawns");
-    }
+    private static ISessionAdapter CurveTalk(HarnessToolchain toolchain) => TestDoors.Door("talk", toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     // ——— The stub agent, as the limit's process cases run it.
 

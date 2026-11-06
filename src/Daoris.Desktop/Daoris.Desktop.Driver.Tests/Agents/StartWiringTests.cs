@@ -27,16 +27,7 @@ public sealed class StartWiringTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire) : ISessionAdapter
-    {
-        public string Name => name;
-
-        public Transport Transport => wire;
-
-        public ProcessStartInfo Prepare(SpawnRequest request) => new();
-
-        public HarnessToolchain? Toolchain => toolchain;
-    }
+    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire) => TestDoors.Door(name, toolchain, transport: wire);
 
     /// <summary>An agent that is there, signed in when its home holds `credentials.json` or a key is set.</summary>
     private HarnessRoster Roster()
@@ -57,8 +48,8 @@ public sealed class StartWiringTests : IDisposable
             Package: "agent-cli");
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = new Adapter("agent", toolchain, Transport.Native),
-            ["agent-acp"] = new Adapter("agent-acp", new HarnessToolchain(
+            ["agent"] = Adapter("agent", toolchain, Transport.Native),
+            ["agent-acp"] = Adapter("agent-acp", new HarnessToolchain(
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "AGENT_HOME", AccountOf: "agent"), Transport.Protocol),
         };
