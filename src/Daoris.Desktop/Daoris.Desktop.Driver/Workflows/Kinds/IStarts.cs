@@ -16,4 +16,10 @@ internal interface IStarts
     void Keep(NodeKept kept)
     {
     }
+
+    /// <summary>
+    /// The unit's <paramref name="record"/> with the attempts of this kind a lapse left unreconciled settled, as kept, before anything new starts on
+    /// it in a round; the record itself where none is.
+    /// </summary>
+    Task<NodeRecord> SettleAsync(NodeRecordFiles records, GovernedUnit governed, NodeRecord record, CancellationToken ct) => Task.FromResult(record);
 }
