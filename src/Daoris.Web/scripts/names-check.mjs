@@ -396,7 +396,7 @@ if (isMain(import.meta.url)) {
   }
   const kinds = readNodeKinds();
   if (!kinds) {
-    console.error('names-check: src/bridge/generated/routes.ts lists no node kinds: run `node tools/contracts.mjs`');
+    console.error('names-check: src/data/generated/service.ts lists no node kinds: run `node tools/contracts.mjs`');
     process.exit(2);
   }
   const findings = [

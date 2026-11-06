@@ -11,7 +11,7 @@ namespace Daoris.ContractsGen;
 /// </summary>
 public static class PageNodeKinds
 {
-    /// <summary>The block appended to the window routes' file.</summary>
+    /// <summary>The block appended to the service types' file, which the presentational components may read as they may its types.</summary>
     public static string Write()
     {
         var groups = NodeKit.Built.Order.ToDictionary(part => part.Name, part => part.Phase.ToString().ToLowerInvariant(), StringComparer.Ordinal);

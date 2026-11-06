@@ -13,8 +13,6 @@ public sealed class WorkEventPointTests
 
     private static readonly IReadOnlySet<string> Adapters = new HashSet<string>(["codex"], StringComparer.Ordinal);
 
-    private static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
-
     private static WorkEvent Parked(string session = "4b62a9fe") => new(WorkEventKinds.SessionParked, At) { Session = session };
 
     /// <summary>What one plugin heard, in order, and a wait for a count of it; a plugin that never answers where it is shut.</summary>
@@ -37,7 +35,7 @@ public sealed class WorkEventPointTests
 
         public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> Count(int count)
         {
-            var until = DateTime.UtcNow + Patience;
+            var until = DateTime.UtcNow + Poll.Patience;
             while (Frames.Count < count && DateTime.UtcNow < until) await Task.Delay(10);
             Assert.True(Frames.Count >= count, $"heard {Frames.Count} of {count}");
             return Frames;
@@ -212,7 +210,7 @@ public sealed class WorkEventPointTests
         for (var i = 0; i < 5; i++) point.Tell(Parked());
 
         Assert.Equal(5, (await fine.Count(5)).Count);
-        var until = DateTime.UtcNow + Patience;
+        var until = DateTime.UtcNow + Poll.Patience;
         while (stopped.Count == 0 && DateTime.UtcNow < until) await Task.Delay(10);
         Assert.Equal(["slow"], stopped);
         Assert.Equal(WorkEventPoint.LateInARow, calls);

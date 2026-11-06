@@ -188,7 +188,7 @@ public sealed class LayerUsageParityTests : IDisposable
         });
 
         var answer = await read.AskAsync(new UsageAsk(run, toolchain, home, null, each.Now) { Profile = "account-1" }, CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(20));
+            .WaitAsync(Poll.Patience);
         var spawned = Assert.Single(runner.Spawns);
         var variable = toolchain.ProfileVariable!;
         var accountHome = spawned.Environment?.GetValueOrDefault(variable) ?? seat!.Environment.GetValueOrDefault(variable);

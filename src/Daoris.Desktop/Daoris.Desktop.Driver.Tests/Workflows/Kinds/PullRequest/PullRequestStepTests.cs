@@ -26,7 +26,7 @@ public sealed class PullRequestStepTests : IDisposable
     [InlineData("pull-request", null)]
     [InlineData("/pull-request", null)]
     [InlineData("example.github/deploy", null)]
-    public void A_pull_request_step_names_its_plugin(string kind, string? plugin) => Assert.Equal(plugin, PullRequestStep.PluginOf(kind));
+    public void A_pull_request_step_names_its_plugin(string kind, string? plugin) => Assert.Equal(plugin, PullRequestKind.PluginOf(kind));
 
     [Theory]
     [InlineData("https://example.test/pull/7", true)]
