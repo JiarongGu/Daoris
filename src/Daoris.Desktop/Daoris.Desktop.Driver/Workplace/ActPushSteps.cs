@@ -74,6 +74,14 @@ internal static class ActPushSteps
             return run.End($"{NothingSent}origin refused it ({ContentHolds.Said(TreeGit.Failure(stderr))})");
         }
 
+        // Git's own stop (exit 1, `failed to push some refs`, no `fatal:` of a connection) comes before the pack is sent: the person's pre-push
+        // hook refusing is one, run once origin's refs are listed. A connection cut after that dies with `fatal:` and stays unknown.
+        if (run.Exit == 1 && stderr.Contains("failed to push some refs", StringComparison.Ordinal)
+            && !stderr.Contains("fatal:", StringComparison.Ordinal) && !stderr.Contains("hung up", StringComparison.Ordinal))
+        {
+            return run.End($"{NothingSent}git stopped it before anything was sent, as a pre-push hook of the repository does ({ContentHolds.Said(TreeGit.Failure(stderr))})");
+        }
+
         var git = WorkingTree.GitInUse(home);
         var failure = GitMove.Reclass(home, launch.Repository, workspace, "origin", address, GitFailures.Class(run.Stderr, GitAct.Write));
         if (GitHolds.Hold(home, launch.Root, launch.Repository, workspace, "origin", address, git, failure, run.Stderr, DateTimeOffset.UtcNow) is { } hold)

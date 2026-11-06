@@ -386,7 +386,15 @@ public static partial class GitIdentityActs
 
     /// <summary>The canonical host of an address, or null for one with none (a local path).</summary>
     public static string? GitAddressHost(string address) =>
-        GitHttps.HostOf(address) ?? (GitAddressKeys.Of(address) is { } key ? GitHosts.Canonical(key[..key.IndexOf('/')]) : null);
+        GitHttps.HostOf(address) ?? SshUrlHost(address) ?? (GitAddressKeys.Of(address) is { } key ? GitHosts.Canonical(key[..key.IndexOf('/')]) : null);
+
+    /// <summary>An <c>ssh://</c> address's host with its port where it names one other than 22, as an identity for that host is named and the door resolves it.</summary>
+    private static string? SshUrlHost(string address)
+    {
+        var text = address.StartsWith(GitRouting.Prefix, StringComparison.Ordinal) ? address[GitRouting.Prefix.Length..] : address;
+        if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) || uri.Scheme != "ssh" || uri.IsDefaultPort || uri.Host.Length == 0) return null;
+        return GitHosts.Canonical($"{uri.Host}:{uri.Port}");
+    }
 
     private static string? PointerOf(string home, string? value, string? host)
     {

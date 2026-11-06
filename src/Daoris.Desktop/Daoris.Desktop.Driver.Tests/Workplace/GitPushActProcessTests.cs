@@ -173,6 +173,51 @@ public sealed class GitPushActProcessTests : IClassFixture<GitSshHost>, IDisposa
     }
 
     [Fact]
+    public async Task A_push_cut_off_after_origin_took_it_is_said_unknown_and_never_retried()
+    {
+        var tip = await ReadyAsync();
+        _host.InterruptReceive = true;
+        ActRun run;
+        try
+        {
+            run = await GitPushActs.PushAsync(Runs(), new PushAsk("engine", Work, "branch", "work/fix", tip), "window", "window", CancellationToken.None);
+        }
+        finally
+        {
+            _host.InterruptReceive = false;
+        }
+
+        // The host applied the pack and dropped the connection before it said so: origin has the ref, and git did not hear it.
+        Assert.False(run.Refused, run.Said);
+        Assert.Equal(ActOutcomes.Unknown, run.Outcome);
+        Assert.Contains("could not tell whether this finished; nothing was retried", run.Said, StringComparison.Ordinal);
+        Assert.Equal(tip, await RefAsync("refs/heads/work/fix"));
+        var journal = new ActJournal(Home);
+        var step = Assert.Single(journal.Steps(run.Act!));
+        Assert.Equal(ActOutcomes.Unknown, ActPushSteps.Read(step));
+        Assert.Single(_host.Runs, each => each.Exit == GitSshHost.InterruptedExit && each.Command!.StartsWith("git-receive-pack", StringComparison.Ordinal));
+        // Nothing ran it again, and the grant went with the step.
+        Assert.Empty(Grants(Home));
+    }
+
+    [Fact]
+    public async Task A_pre_push_hook_that_refuses_stops_the_push_before_anything_is_sent_and_is_said_not_done()
+    {
+        var tip = await ReadyAsync();
+        var marker = Path.Combine(_root, "hook-ran").Replace('\\', '/');
+        File.WriteAllText(Path.Combine(Work, ".git", "hooks", "pre-push"), $"#!/bin/sh\necho ran > '{marker}'\necho 'hook says no' >&2\nexit 1\n".Replace("\r\n", "\n"));
+
+        var run = await GitPushActs.PushAsync(Runs(), new PushAsk("engine", Work, "branch", "work/fix", tip), "window", "window", CancellationToken.None);
+
+        Assert.True(File.Exists(marker), "the repository's own pre-push hook did not run");
+        Assert.False(run.Refused, run.Said);
+        Assert.Equal(ActOutcomes.NotDone, run.Outcome);
+        Assert.Contains("Nothing was pushed", run.Notes, StringComparison.Ordinal);
+        Assert.Null(await RefAsync("refs/heads/work/fix"));
+        Assert.Empty(Grants(Home));
+    }
+
+    [Fact]
     public async Task A_branch_that_moved_since_the_page_showed_it_is_refused_before_anything_is_written()
     {
         var tip = await ReadyAsync();
