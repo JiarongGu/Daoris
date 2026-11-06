@@ -10,6 +10,7 @@ import type { Attention, AttentionKind } from './AttentionRow';
 import { accountRowWorded } from './accountWords';
 import { endSentences, entryDetail, entryName, type GraphEnd, type UnreadableRecord } from '../head/milestone';
 import { heldWorded } from './heldWorded';
+import { taskRead } from './taskRead';
 import { boundMinutes } from '../waits/PermissionAsks';
 import { opinionSays } from '../gates/OpinionGate';
 import { placedFact } from '../rail/SessionRow';
@@ -40,6 +41,8 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'policy-hold': 'holding',
   // INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
+  // NODEKIT1 HUMAN: a run waiting on a person's task stands still until they press it.
+  task: 'holding',
   // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroup`).
   'go-ahead': 'holding',
   // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
@@ -172,6 +175,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     case 'policy-hold': return { quest: item.id };
     // INTEGRATE1o part o3: the run's newest work quest here, whose run the step waits in.
     case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
+    case 'task': return item.task?.work ? { quest: item.task.work } : null;
     default: return null;
   }
 }
@@ -180,7 +184,7 @@ export { ASKS_ONCE, attentionActs, attentionOffers, gitHeldOffers, heldActs } fr
 export type { AttentionActId, AttentionOffer } from './attentionOffers';
 
 export type {
-  AttentionPushed, DeclinedRequest, GitAskWait, GitHeld, GitHeldClass, GitServed, IntegrationWait, MemoryWait, PushedAttention,
+  AttentionPushed, DeclinedRequest, HumanTaskWait, GitAskWait, GitHeld, GitHeldClass, GitServed, IntegrationWait, MemoryWait, PushedAttention,
   PushedConfirmation, QuietWait, StaleSince,
 } from './attentionPushed';
 
@@ -206,7 +210,7 @@ const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === '
  * a volume below its floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'memory', 'integration', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -380,6 +384,9 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(declined ? { declined } : {}),
       };
     }
+    // NODEKIT1 HUMAN: the run's work as its quest names it, and the presses its task waits for.
+    case 'task':
+      return row.task ? { ...base, ...taskRead(row.task, questOf(row.task.work)?.title) } : { ...base, title: `#${row.id}` };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
     case 'trust':

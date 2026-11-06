@@ -2,6 +2,7 @@ import type { Attention } from './AttentionRow';
 import { CLOSE_SENDER, endOffersStop, type HeldAttempt, heldWords } from '../head/milestone';
 import { opinionState } from '../gates/opinion';
 import type { GitHeld, QuietWait } from './attentionPushed';
+import { isTaskAct, type TaskAct } from '../../workflow/TaskPress';
 
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
@@ -42,7 +43,12 @@ export type AttentionActId =
   // The run's own skip of its `work.requests` node, with the person's words.
   | 'pass-over'
   // A run's own declined request, asked again or gone on without, each the run's node word.
-  | 'ask-again' | 'go-on';
+  | 'ask-again' | 'go-on'
+  // A person's task's presses (NODEKIT1 HUMAN), each the run's node word with the person's note.
+  | 'task-done' | 'task-approve' | 'task-reject';
+
+/** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
+export const taskActOf = (act: AttentionActId): TaskAct | null => (act.startsWith('task-') ? act.slice('task-'.length) as TaskAct : null);
 
 /** The act each word offered on a held attempt is pressed by: a close's stop is not a step's. */
 export function heldActs(held: HeldAttempt): AttentionActId[] {
@@ -101,6 +107,8 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'pass-over',
   // Asking again publishes a quest anew, and going on without it keeps the person's words.
   'ask-again', 'go-on',
+  // A task's press sends the run on its route, with a note the person may give.
+  'task-done', 'task-approve', 'task-reject',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
@@ -150,6 +158,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'policy-hold': return plain('retry');
     // The run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
     case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
+    // The presses the run's task waits for, as the driver names them.
+    case 'task': return plain(...(item.task?.acts ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`));
     // Nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');

@@ -85,7 +85,7 @@ public sealed record NodeMove(string To, string By)
 
     public bool Transient { get; init; }
 
-    /// <summary>The person's words: required for a rejection and a skip.</summary>
+    /// <summary>The person's words: required for a rejection and a skip; a reach on their press keeps the note they gave with it.</summary>
     public string? Words { get; init; }
 
     /// <summary>
@@ -372,7 +372,10 @@ public static class NodeLifecycle
                 if (Outputs(node, accepted) is { } outputs) return Refuse(outputs);
                 // FABRIC-NODE1d: a port names the acceptance that produced it, which is what its consumers' invalidation follows.
                 if (Others(accepted.Evidence, accepted.Id) || accepted.Outputs.Values.Any(port => Others(port, accepted.Id))) return Refuse(NodeRefusal.OtherAcceptance);
-                return To(next with { Acceptance = Owned(accepted), By = move.Source, Code = null, Transient = false, Unreconciled = null });
+                return To(next with
+                {
+                    Acceptance = Owned(accepted), By = move.Source, Code = null, Transient = false, Unreconciled = null, Words = move.Words ?? next.Words,
+                });
 
             case NodeStates.Failed:
                 if (authority.FailureBy is null) return Refuse(NodeRefusal.NoFailureAuthority);

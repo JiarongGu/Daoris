@@ -120,6 +120,8 @@ export type PushedAttention = {
   quiet?: QuietWait;
   /** A run held at a declined request: its `work.requests` node, the quest declined and where it went. */
   declined?: DeclinedRequest;
+  /** A run waiting on a person's task: its `human` node and the presses it waits for. */
+  task?: HumanTaskWait;
   /** What memory waits on the person for a session: ends and replacements to approve, a stopped session's staged rows. */
   memory?: MemoryWait;
   /** An integration's wait on the owner: which, its line, and the candidate, commit or landing it is of. */
@@ -158,6 +160,12 @@ export type IntegrationWait = {
  * declined quest and the repository it was addressed to, and the run's newest work quest here (null where it has none), which its door reads.
  */
 export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null; request?: boolean };
+
+/**
+ * A run waiting on a person's task (NODEKIT1 HUMAN): the run and its `human` node the press is said on, the presses it waits for (`done`, or
+ * `approve` and `reject`), and the run's newest work quest here (null where it has none), which its door reads.
+ */
+export type HumanTaskWait = { run: string; node: string; acts: string[]; work?: string | null };
 
 /**
  * A press a terminal sent that waits for the window's Confirm: its route, the terminal as the system names it, and when a

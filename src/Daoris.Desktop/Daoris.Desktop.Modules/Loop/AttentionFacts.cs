@@ -63,6 +63,9 @@ public sealed record AttentionFacts
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the runtime last read them: each run, its node, the declined quest and where it went.</summary>
     public IReadOnlyList<JsonObject> Requests { get; init; } = [];
 
+    /// <summary>The runs waiting on a person's task (NODEKIT1 HUMAN), as the runtime last governed them: each run, its node and the presses it waits for.</summary>
+    public IReadOnlyList<JsonObject> Tasks { get; init; } = [];
+
     /// <summary>
     /// The integration's waits on the owner (INTEGRATE1h), as <see cref="AttentionStateSlice.IntegrationWaits"/> reads them: a candidate held for
     /// a decide, a superseded commit awaiting its answer, a landing whose integration waits for the owner's card, a declaration owed the

@@ -232,6 +232,8 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
+        rows.AddRange(HumanTaskRows.Of(facts.Tasks));
+
         // INTEGRATE1h (the integration design §5.8, §17.4): a candidate the policy held for the owner's decide, a superseded commit awaiting
         // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the
         // repository's Integration tab, where each is pressed. A held candidate holds its line's next, and a card's landing its unit's flow.

@@ -158,6 +158,12 @@ internal static class HelpDoorRowsActs
             "Sessions → the session's *Workflow* view, *Ask for changes…* under the review",
             "`daoris workflow changes <run> <node> \"…\"`",
             new HelpDoorAsk.Never("it is yours alone")),
+        // The person's press of a task a run waits on, or their answer to its approval. Never proposed: the press is theirs.
+        new("press your task a run waits on, or approve or reject it where it is an approval, with a note if you like: the run takes "
+            + "the route for what you pressed (kept on the run's record, and Daoris's next look applies it)",
+            "Sessions → the session's *Workflow* view, *Done…*, *Approve…* or *Reject…* under the step; or *What needs you*",
+            "`daoris workflow done <run> <node> [\"…\"]`, `daoris workflow approve <run> <node> [\"…\"]`, `daoris workflow reject <run> <node> [\"…\"]`",
+            new HelpDoorAsk.Never("it is yours alone")),
         // The person's presses at the second opinion's gate, the terminal's `daoris session opinion` and the screen's. None is
         // proposed: a pass spends an account at the person's choice and a stop is theirs, and going on, or reading it themselves,
         // is their judgement.

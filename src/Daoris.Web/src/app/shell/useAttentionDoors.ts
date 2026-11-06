@@ -30,6 +30,8 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     'policy-hold': (item) => openQuest(item.id),
     // A run held at a declined request (INTEGRATE1o part o3) opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
+    // A run waiting on a person's task (NODEKIT1 HUMAN) opens its work quest's page, where the run is read.
+    task: (item) => { if (item.task?.work) openQuest(item.task.work); },
     // A held git remote (GITAUTH1e, §7.4) leads to Settings → Git on its host, where its identity is set up, signed in again or
     // compared; one whose push was refused, or whose repository names its own authentication, to that repository's git remote row,
     // where another identity or the person's own sign-ins are chosen. A browser has no such page.

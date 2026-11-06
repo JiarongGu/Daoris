@@ -4,13 +4,15 @@ import { sentence } from '../locales/format';
 import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
+import { isTaskAct, TASK_ACTS, TaskPress } from './TaskPress';
 
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
+  'not-task', 'not-waiting',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes'];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS];
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -71,6 +73,12 @@ export function NodeWord({ run, step, onWord }: {
     <div className="grid min-w-0 gap-1.5">
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* NODEKIT1 HUMAN: a waiting task's Done, or an approval's Approve and Reject, lead. */}
+          {acts.filter(isTaskAct).map((act) => (
+            <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
+              {t(`workflow.run.node.${act}`)}
+            </Button>
+          ))}
           {acts.includes('changes') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('changes')}>
               {t('workflow.run.node.changes')}
@@ -104,6 +112,9 @@ export function NodeWord({ run, step, onWord }: {
             </Button>
           )}
         </div>
+      )}
+      {asking !== null && isTaskAct(asking) && (
+        <TaskPress block act={asking} node={node} words={words} onWords={setWords} onConfirm={(answered) => send(asking, answered)} onClose={close} />
       )}
       {asking === 'send' && (
         <InlineConfirm

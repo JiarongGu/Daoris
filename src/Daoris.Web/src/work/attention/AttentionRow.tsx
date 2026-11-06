@@ -9,12 +9,14 @@ import type { AccountRowFacts } from './accountWords';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import {
-  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
+  ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type HumanTaskWait, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
   type QuietWait,
   type StaleSince,
 } from './attention';
 import { Note } from '../Note';
 import type { Answered } from '../InlineConfirm';
+import type { TaskAct } from '../../workflow/TaskPress';
+import { taskActOf } from './attentionOffers';
 import { hasNote, type NoteRecord } from '../noteLines';
 import type { OpinionWait } from '../gates/opinion';
 import type { PermissionWait } from '../waits/PermissionAsks';
@@ -27,7 +29,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'steward-stopped' | 'policy-hold' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held' | 'git-ask'
-  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration';
+  | 'quiet' | 'helper-ended' | 'request-declined' | 'memory' | 'integration' | 'task';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -86,6 +88,8 @@ export type Attention = {
   trust?: TrustHold;
   /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
   declined?: DeclinedRequest;
+  /** A `task` row's run, its `human` node and the presses it waits for (NODEKIT1 HUMAN). */
+  task?: HumanTaskWait;
   /** The ask a `go-ahead` is on, or a `trust` row's held intake is for: what the door opens. */
   ask?: string;
   /** The quest a `trust` row holds: what the door opens. */
@@ -250,7 +254,7 @@ export type AttentionActs = {
    */
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
   /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it (INTEGRATE1o part o3). */
-  passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on') => void;
+  passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | TaskAct) => void;
 };
 
 /**
@@ -427,6 +431,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'pass-over': return t('workflow.run.node.skip');
       case 'ask-again': return t('workflow.run.node.askAgain');
       case 'go-on': return t('workflow.run.node.goOn');
+      // NODEKIT1 HUMAN: a person's task's presses, as its run's view says them.
+      case 'task-done': case 'task-approve': case 'task-reject': return t(`workflow.run.node.${taskActOf(act)}`);
     }
   };
 
@@ -544,6 +550,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               else if (asking === 'pass-over') acts.passOver?.(item, words.trim(), answered);
               else if (asking === 'ask-again') acts.passOver?.(item, '', answered, 'ask-again');
               else if (asking === 'go-on') acts.passOver?.(item, words.trim(), answered, 'go-on');
+              else if (taskActOf(asking)) acts.passOver?.(item, words.trim(), answered, taskActOf(asking)!);
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else if (asking === 'quiet-carry-on') acts.quiet?.(item, 'carry-on', answered);
               else if (asking === 'quiet-stop') acts.quiet?.(item, 'stop', answered);
