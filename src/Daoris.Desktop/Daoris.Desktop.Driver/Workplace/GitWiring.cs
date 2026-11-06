@@ -41,7 +41,7 @@ public static class GitWiring
     public static readonly IReadOnlyList<string> Removed =
     [
         "SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", ChildMarks.RoleKeyVariable,
-        PluginHostToken.Variable, .. ChildMarks.MessagingVariables,
+        GitRouting.HostTokenVariable, .. ChildMarks.MessagingVariables,
     ];
 
     /// <summary>

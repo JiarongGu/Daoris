@@ -52,7 +52,7 @@ internal sealed record NodeStarting
     /// </summary>
     public async Task<WorkPerformed?> StartAsync(CancellationToken ct) => NodeKit.Of(Node.Kind) switch
     {
-        IStarts starts => await starts.StartAsync(this, ct).ConfigureAwait(false),
+        IStarts kind => await kind.StartAsync(this, ct).ConfigureAwait(false),
         IObserves observes => observes.Begins(Governed) ? Begin() : null,
         BuiltInNode { Row.Reach: NodeReach.Observed } => Begin(),
         _ => null,
