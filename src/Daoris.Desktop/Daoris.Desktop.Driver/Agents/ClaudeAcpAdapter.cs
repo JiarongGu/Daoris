@@ -74,30 +74,12 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// <summary>The rules Daoris composed (PERM1, D72), taken on the wire rather than as an argument.</summary>
     public bool TakesSettings => true;
 
-    /// <summary>
-    /// 🔴 Read from the adapter's own source at 0.79.0 (`dist/acp-agent.js`): <c>session/new</c>'s
-    /// <c>_meta.claudeCode.options</c> is spread into the Agent SDK's options (l. 5934–6045), and a
-    /// <c>settings</c> string is a file read against the session's cwd (l. 6003–6010) — an absolute path
-    /// resolving to itself. The SDK's programmatic tier: the one <c>--settings</c> fills on the pipe door.
-    /// </summary>
-    public object? AcpSessionMeta(string settingsFile) =>
-        new { claudeCode = new { options = new { settings = settingsFile } } };
+    /// <summary>Its door's dialect (<see cref="ClaudeProtocolDialect"/>), which this class's <c>_meta</c> members are one-line doors to until row t.</summary>
+    private static readonly ClaudeProtocolDialect Dialect = new();
 
-    /// <summary>
-    /// The rules, and the harness plugins a spawn composed (HELPPLUG1b): the Agent SDK's <c>plugins</c> option, each
-    /// <c>{ type: "local", path }</c>, which the SDK passes to Claude Code as one <c>--plugin-dir</c> each. Read from
-    /// claude-agent-acp 0.91.0 (<c>dist/acp-agent.js</c>, l. 8115–8223: <c>_meta.claudeCode.options</c> spread into the SDK's
-    /// options) and the SDK 0.3.300 (<c>sdk.d.ts</c>, <c>plugins</c>, l. 2036–2049); the pipe door's flag is measured (D170).
-    /// </summary>
-    public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string> plugins) => plugins.Count == 0
-        ? AcpSessionMeta(settingsFile)
-        : new
-        {
-            claudeCode = new
-            {
-                options = new { settings = settingsFile, plugins = plugins.Select(path => new { type = "local", path }).ToArray() },
-            },
-        };
+    public object? AcpSessionMeta(string settingsFile) => Dialect.SessionMeta(settingsFile, []);
+
+    public object? AcpSessionMeta(string settingsFile, IReadOnlyList<string> plugins) => Dialect.SessionMeta(settingsFile, plugins);
 
     /// <summary>
     /// The pipe door's switch (HELP5), on this door's spawn: the Agent SDK runs <c>claude</c> with this

@@ -27,32 +27,6 @@ public sealed class DshAdapter : ISessionAdapter
 
     public SessionWire Wire => SessionWire.Acp;
 
-    /// <summary>
-    /// The profile dsh boots for the automation surface. Its ACP server is <b>automation-only by
-    /// their own decision</b> — they removed it as an editor UI — which is exactly the half Daoris
-    /// wants and none of the product half D53 declined.
-    /// </summary>
-    public const string Profile = "acp";
-
-    /// <summary>
-    /// dsh's permission posture, as an environment variable read at boot.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 <b>`workspace-write` is D37 in dsh's vocabulary</b>, read from its own shipped bundle: it
-    /// feeds both the sandbox policy's mode and the approval policy, which derives to <c>ask</c> for
-    /// every value except <c>danger-full-access</c>, where it becomes <c>never</c>. Writes inside the
-    /// workspace are sandbox-legal and proceed without asking; anything escalating past the sandbox
-    /// asks, which over ACP arrives as <c>session/request_permission</c> and is refused by
-    /// construction (D52). Failing closed on escalation is the behaviour, not a limitation.
-    ///
-    /// <para>It is stated even though it is <b>also dsh's default</b>. A posture that happens to match
-    /// somebody else's default is not one Daoris has set, and the default is theirs to change.</para>
-    /// </remarks>
-    public const string PermissionVariable = "DSH_PERMISSION_MODE";
-
-    /// <summary>The value that expresses D37 here. Never <c>danger-full-access</c>, which is approvals off.</summary>
-    public const string Posture = "workspace-write";
-
     /// <summary>Its door's spawn (<see cref="DshSpawn"/>), the posture its recipe's own variable, until row t.</summary>
     public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(new DshSpawn(), request);
 

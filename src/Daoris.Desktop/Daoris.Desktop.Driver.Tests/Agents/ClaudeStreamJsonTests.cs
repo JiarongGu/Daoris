@@ -364,7 +364,7 @@ public sealed class ClaudeStreamJsonTests
     [Fact]
     public void The_adapter_frames_an_interrupt_as_the_control_request_the_harness_answers()
     {
-        var framed = new ClaudeCodeAdapter().FrameInterrupt();
+        var framed = new ClaudeNativeDialect().FrameInterrupt();
 
         Assert.NotNull(framed);
         using var json = System.Text.Json.JsonDocument.Parse(framed!);
@@ -601,7 +601,7 @@ public sealed class ClaudeStreamJsonTests
     [Fact]
     public void The_adapter_frames_a_persons_message_as_a_user_line_the_harness_reads()
     {
-        var framed = new ClaudeCodeAdapter().FrameMessage("cap it — \"4\" per frame");
+        var framed = new ClaudeNativeDialect().FrameMessage("cap it — \"4\" per frame");
 
         using var json = System.Text.Json.JsonDocument.Parse(framed);
         Assert.Equal("user", json.RootElement.GetProperty("type").GetString());

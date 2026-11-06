@@ -64,7 +64,7 @@ internal static class ClaudeCodeProvider
             Known<ToolSpec>.Absent, home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: true), Evidence),
             new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
             Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
-            Known<IDialect>.Declared(new AdapterNativeDialect(new ClaudeCodeAdapter()), Evidence),
+            Known<IDialect>.Declared(new ClaudeNativeDialect(), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
@@ -83,7 +83,7 @@ internal static class ClaudeCodeProvider
             home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: false), Evidence),
             new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions", Reading: null),
             Known<ISpawn>.Declared(new ClaudeAcpSpawn(), Evidence),
-            Known<IDialect>.Declared(new AdapterProtocolDialect(new ClaudeAcpAdapter()), Evidence),
+            Known<IDialect>.Declared(new ClaudeProtocolDialect(), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
