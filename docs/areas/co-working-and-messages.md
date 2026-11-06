@@ -168,7 +168,11 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     verb and a run's `land` refuse it in one sentence naming the lead's merge (`PieceLandings`). The person's *Discard…* (a piece
     holding work or a copy, never one taken in) and *Hand over what it left* (an uncertain one) are an act file, `<id>.act.json`,
     from the page's `SESSION_PARTNER_ACT` or `sessions partner <piece> --discard | --hand-over`; the look removes the ref at the commit
-    it froze and the copy, or keeps, imports and hands the work, and is the one writer of the state. (from D199)
+    it froze and the copy, or keeps, imports and hands the work, and is the one writer of the state. A piece's ref
+    (`refs/daoris/pieces/<id>`) and its box (`data/partners/`) stand through a tidy, a sync, a landing, `git gc` and a clear: only the
+    *Discard…* removes the ref, and nothing removes the box. A clear of a closed quest keeps the unit as `needs-you` (context `piece`,
+    naming the lead, whose page the reason opens) while a piece one of its sessions asked for is anything but taken in, discarded or
+    refused, since the clear takes the lead's record the *Discard…* finds the checkout by (`HistoryPieces`). (from D199, D153)
 32. A partner starts only where its confinement was measured in the configuration a start would hand it. (from D199)
 33. A second opinion is the landing rule's to ask, never an agent's. Its findings are a solicited answer at ordinary, marked as another
     agent's claims. (from D155, D188)
@@ -238,7 +242,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
-`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PieceLandingsTests`, `PartnerProcessTests`, `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
+`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `PieceLandingsTests`, the `Piece*RetentionTests` (git half: tidy, sync, clear), `PartnerProcessTests`, `PartnerChatProcessTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`, `ChannelMemberVerbTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`, `ChannelMembersTests`, `ChannelMemberDoorsTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`, `ChannelJoinPipeTests`,
@@ -271,7 +275,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (row i): the lead's wait on its own partner. *Work alongside* in the dialog is a disabled choice that says a second request runs alongside by itself; a press that starts one has no home yet.
-- **COAGENT1b2**: the retention proof through tidy, clear and sync (a piece's ref and its box kept through each). The lead's own `partner_ask` has no row.
+- The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
   person's Confirm and the terminal's verb, the head's outside agents with *Remove*, the chip's *outside Daoris*, the card's `untold`
   words, the glossary's *outside agent* and the look's end of a membership; `channel.posted` told at `work/event` from each message

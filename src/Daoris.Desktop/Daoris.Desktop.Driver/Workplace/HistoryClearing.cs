@@ -326,7 +326,7 @@ public static class HistoryClearing
 
     /// <summary>
     /// This machine's half of a unit the service would clear (§1.2), in the order a person meets them: a process still running
-    /// here, a tree still here, a landing's branch still standing. Null when none holds it.
+    /// here, a tree still here, a landing's branch still standing, a piece not yet settled. Null when none holds it.
     /// </summary>
     private static HistoryKeep? MachineHalf(HistoryUnitView unit, Facts facts, Machine machine)
     {
@@ -354,7 +354,7 @@ public static class HistoryClearing
             };
         }
 
-        return null;
+        return HistoryPieces.Keep(unit.Sessions, machine.Pieces);
     }
 
     /// <summary>The records a judgement reads beside the service's word: every session record, quest and ask, closed ones included.</summary>
@@ -388,13 +388,15 @@ public static class HistoryClearing
             id is null ? null : Asks.FirstOrDefault(ask => string.Equals(ask.Id, id, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>This machine's facts a judgement reads: its processes, its automatic landings, its trees and its landings.</summary>
+    /// <summary>This machine's facts a judgement reads: its processes, its automatic landings, its trees, its landings and its pieces.</summary>
     internal sealed class Machine(HistoryWorld world)
     {
         private readonly SessionTrees _trees = new(world.Home);
         private readonly IReadOnlyList<LandedBranch> _standing = new LandedBranches(world.Home).All();
 
         public SessionHomeFiles Files { get; } = new(world.Home, world.Remover);
+
+        public PartnerFiles Pieces { get; } = new(world.Home);
 
         public SessionTrees Trees => _trees;
 

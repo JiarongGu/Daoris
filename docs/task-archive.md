@@ -23347,3 +23347,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **SESSWATCH1 — a quiet session seen, worded and set by one door** (driver, service, web): 1a, 1c (`quietMinutes`, the one quiet setting at every door, `settings_quiet`, Ask Daoris's answer) and 1b in most part (the watcher's one word on every door that takes words) are built. Left: **1b**'s rest, the session row's *told* line on the page and `LongCalls`' look folded into the watcher's. → `docs/2026-10-23-session-watch-design.md` §9; `docs/areas/driving.md`, Open
 
   **Outcome** 2026-11-07: 1a, 1b and 1c are built: the watcher's one word on every door that takes words, the session row's *told* line in en and zh, and `LongCalls`' look folded into the watcher's (`LongCallLook`, `CallBound`, BL78); 1d (measured on the install) and 1e (the automatic end, after 1d) stay open.
+
+## COAGENT1 (2026-11-07)
+
+- [x] **COAGENT1 — a partner of another maker in a line's work** (driver, web; D199): **COAGENT1b2** (the person's *Discard…* and *Hand over what it left* on a piece, a handed piece read taken in, every landing door refusing a piece's record, the partner's real-process case, the verdict at the landing where the lead's tree is gone, and a quest's session's hand-over waiting for what its outgoing part left running are built, BL75) its rest, retention through tidy, clear and sync, proven once the design's clearing of a closed quest's pieces (D153) is read against no tidy, clear or sync moving a piece's ref; COAGENT1e is AGENTPROVIDER1r. → `docs/2026-10-22-coagent-design.md`
+
+  **Outcome** 2026-11-07: b2 is whole: a piece's ref and box stand through a tidy, a sync and a clear (D199 point 3 read over the design's D153 line), and a clear waits, `needs-you` naming the lead, while a piece is not yet taken in, discarded or refused (`HistoryPieces`, the `Piece*RetentionTests`); COAGENT1e goes on as AGENTPROVIDER1r.
