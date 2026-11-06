@@ -255,6 +255,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-11-06-event-hook-measurements.md` | Evidence: EVENTHOOK1a, the installed Claude Code measured in a probe session (M1, M5, M8) and pipes across elevations (M9, M10), each outcome a pass, a named limit or a blocking failure, the decision rule read, the spend
 | `2026-11-06-node-kit-design.md` | Design: NODEKIT1, each node kind one folder registered once as the parts kit registers its parts, the shared runtime reading the registrations and the tables gone; the survey of where each kind lives, D245's monitor built first with its outcomes, chunks 1a to 3; proposed for the owner's yes (D247)
 | `2026-11-06-lyntai-requests.md` | Quest text: what Daoris's agent providers still need of Lyntai's agent layer, A-LQ3 to A-LQ17 read against Lyntai's built AG rows, each need with its evidence and the move that waits on it; for the steward to publish (D248)
+| `2026-11-07-backlog-plan-3.md` | Plan: the 76 open rows read against main, each buildable, installed, waiting on a named condition or done; the archive blocks for the seven done; chunks BL70 to BL82 in three waves of five on disjoint files; the conditional chunks; the installed batch's steps per row; where SCOPEVERIFY1, the comment sweeps, MERGETOOL1 and SCOPEVERIFY2 sit
 
 ## UI, browser, tools and plugin contracts
 
