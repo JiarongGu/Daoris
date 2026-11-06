@@ -208,9 +208,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
-    own tables first, then its owner's. The agent's own message is never read. Anything unread is fatal. (from D210, D125)
+    own tables first, then its owner's. The agent's own message is never read. Anything unread is fatal. An access failure
+    carries how it was read (a refused credential, a sign-in's words, or a code the door declares), and a refused resume's
+    open and the conclusion's sign-out read that, never the name of the entry. (from D210, D125)
 37. A limit cools that account until the reset the agent named, plus 2 minutes, with 15 minutes' grace and nothing believed
-    past 8 days, else 60 minutes. A limit is never a strike. (from D125)
+    past 8 days, else 60 minutes. The grace is a dated reset's alone, never a time of day's or a weekday's. One function
+    holds these bounds (`ResetBounds`), whoever read the reset. A limit is never a strike. (from D125)
 38. A limited line resumes by itself at the look: its own conversation on its own account when ready, else a briefed resume on
     another account or choice, else it waits showing the earliest reset. (from D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries
@@ -248,7 +251,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     Lyntai's local build: the desktop's package props import the service's ignored `local/lyntai-local.props`, and the driver
     references the layer only under `DaorisLyntaiLayer`, true when that build is in use. Without it the driver has no Lyntai
     assembly. In the driver the layer is named by `Agents/Layer/` and the providers' folders alone, a vendor's registration and
-    options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). (from D213, D248)
+    options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). `Agents/Layer/` and its
+    tests compile only under `DaorisLyntaiLayer`. A layer door's failure enters as a `NormalizedFailure`, built in
+    `Agents/Layer/` alone and answered by `AgentErrors.OfNormalized` with no table read. (from D213, D248)
 
 ## Where a change goes
 
@@ -410,8 +415,15 @@ Agents page, and `orient-index` and `code-map` once files move.
   `provider-vocabulary.json` (the service's, page's and tools' censuses read it, so each needs a source out of the registrations
   first); and every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
-  agent-provider library, built against its local build. The reference and its census are in (rule 47); nothing names a layer
-  type yet. The adapter (1b-i) is next; the moves wait on the capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
+  agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
+  layer door stands on Daoris's own types, used by no door yet: the access evidence each account reader reads (`AccessEvidence`), the
+  trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
+  readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
+  (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
+  failure ingress (`LayerFailures`) and the translations of claims (`LayerClaims`) and accounts (`LayerAccounts`). Left of the adapter
+  (1b-i): the registry's and each spawn's containers, `LauncherRunner`, `LayerRun`, the events' translation, the registry's layer view,
+  the suite's fourth view, the two-path oracle and the pending lines' re-pointing; the moves wait on the capabilities requested in
+  `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the

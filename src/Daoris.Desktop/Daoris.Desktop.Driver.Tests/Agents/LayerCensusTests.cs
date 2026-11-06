@@ -28,6 +28,9 @@ public sealed class LayerCensusTests
     /// <summary>The generic protocol registration: the layer's folder and the providers' folders, which a plugin's or dsh's door takes.</summary>
     private static readonly Regex Generic = new(@"\bAddAcpAgentSession\b", RegexOptions.CultureInvariant);
 
+    /// <summary>The trusted ingress's input, built in the layer's folder alone, so a raw failure never reaches the trusted entries.</summary>
+    private static readonly Regex Normalized = new(@"\bnew\s+NormalizedFailure\s*\(", RegexOptions.CultureInvariant);
+
     /// <summary>A vendor's registration, options and namespace, each named by that vendor's folder alone.</summary>
     private static readonly (string Folder, Regex Pattern)[] Vendors =
     [
@@ -49,6 +52,7 @@ public sealed class LayerCensusTests
             if (GlobalUsing.IsMatch(code)) problems.Add($"{file}: global using Lyntai, which reaches every file of the driver");
             if (!inLayer && !inProviders && Library.IsMatch(code)) problems.Add($"{file}: Lyntai, outside Agents/Layer/ and the providers' folders");
             if (!inLayer && !inProviders && Generic.IsMatch(code)) problems.Add($"{file}: AddAcpAgentSession, outside Agents/Layer/ and the providers' folders");
+            if (!inLayer && Normalized.IsMatch(code)) problems.Add($"{file}: new NormalizedFailure, the trusted ingress's input, outside Agents/Layer/");
             foreach (var (vendor, pattern) in Vendors)
             {
                 var found = pattern.Match(code);
@@ -85,6 +89,7 @@ public sealed class LayerCensusTests
         { "Daoris.Desktop.Driver/Agents/Layer/Planted.cs", "global using Lyntai.Agents;", "global using" },
         { "Daoris.Desktop.Modules/Platform/Planted.cs", "using Lyntai.Processes;", "Lyntai" },
         { "Daoris.Desktop.Driver.Host/Planted.cs", "using Turn = Lyntai.Agents.AgentTurn;", "Lyntai" },
+        { "Daoris.Desktop.Driver/Loop/Planted.cs", "var read = new NormalizedFailure(kind, failure, by, null, null, null, default);", "NormalizedFailure" },
     };
 
     [Theory]

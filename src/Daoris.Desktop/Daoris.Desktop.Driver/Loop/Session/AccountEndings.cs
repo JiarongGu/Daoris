@@ -182,12 +182,11 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
             : conclusion;
 
     /// <summary>
-    /// Whether the refusal a run ended on reads access by a code or kind its door declares: the one reader's, its words read apart,
-    /// since a credential its provider refused by its words is <see cref="Refused"/>'s.
+    /// Whether the refusal a run ended on reads access by a code or kind its door declares: the one reader's disposition, its words read
+    /// apart, since a credential its provider refused by its words is <see cref="Refused"/>'s.
     /// </summary>
     private bool AccessByCode(ISessionAdapter adapter, HarnessEnding? ended) =>
         ended?.Refusal is { } refused
         && AgentErrors.Read(context.Adapters, adapter, DoorFailures.OfPrompt(refused), context.Harnesses.Clock(), context.Harnesses.Zone)
-            is { Kind: AgentErrorKind.Access } read
-        && !read.By.Contains(":words:", StringComparison.Ordinal);
+            .Access == AccessDisposition.SignedOutByCode;
 }

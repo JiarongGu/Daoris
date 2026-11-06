@@ -23,6 +23,15 @@ internal static class RefusedAccounts
             return null;
         }
 
+        return SignOut(harnesses, adapter, profile);
+    }
+
+    /// <summary>
+    /// <see cref="SignInRefused"/>'s writes, reading no words (the agent-lyntai design §5.2, round 4): the account reads signed out, the
+    /// tool's own sign-in is held until a person looks again, and the line comes back. The trusted entry a bound kind's sign-in takes.
+    /// </summary>
+    internal static Noted SignOut(HarnessRoster harnesses, ISessionAdapter adapter, string? profile)
+    {
         var owner = harnesses.Adapters.OwnerOfAgent(adapter.Name).Value;
         harnesses.SignedOut(adapter.Name, profile);
         if (profile is null)

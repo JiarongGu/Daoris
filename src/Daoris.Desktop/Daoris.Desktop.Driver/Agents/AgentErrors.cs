@@ -23,7 +23,8 @@ public enum AgentErrorKind
 /// the machine log names with where it came from (<c>own:code:-32000</c>, <c>owner:kind:overloaded</c>, <c>owner:words:transient-1</c>).
 /// </summary>
 /// <param name="Limit">A limit's reading: the table's, or, read by its code with no sentence, D125's unstated reset (§3.1).</param>
-public sealed record AgentError(AgentErrorKind Kind, DoorFailure Failure, string By, LimitSeen? Limit = null)
+/// <param name="Access">An access failure's disposition, from the entry that matched; null for every other kind. No reader reads policy from <see cref="By"/>.</param>
+public sealed record AgentError(AgentErrorKind Kind, DoorFailure Failure, string By, LimitSeen? Limit = null, AccessDisposition? Access = null)
 {
     /// <summary>The kind as the machine log and a test say it.</summary>
     public string Spelled => Kind.ToString().ToLowerInvariant();
@@ -119,7 +120,7 @@ public static class AgentErrors
         {
             return (own?.Refused ?? owner?.Refused) is { Length: > 0 } words
                    && failure.Words?.Contains(words, StringComparison.OrdinalIgnoreCase) == true
-                ? new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused")
+                ? new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused)
                 : new AgentError(AgentErrorKind.Fatal, failure, Unread);
         }
 
@@ -139,20 +140,26 @@ public static class AgentErrors
         // 2. Access: the door's own authentication-required code, never an owner's; then the codes; then the sign-in and refusal words.
         if (failure.Code is { } code && own?.ErrorWords?.AuthRequiredCode == code)
         {
-            return new AgentError(AgentErrorKind.Access, failure, $"{Own}:code:{code}");
+            return new AgentError(AgentErrorKind.Access, failure, $"{Own}:code:{code}", Access: AccessDisposition.SignedOutByCode);
         }
 
-        if (ByCode(tables, failure, AgentErrorKind.Access) is { } byAccess) return new AgentError(AgentErrorKind.Access, failure, byAccess);
+        if (ByCode(tables, failure, AgentErrorKind.Access) is { } byAccess)
+        {
+            return new AgentError(AgentErrorKind.Access, failure, byAccess, Access: AccessDisposition.SignedOutByCode);
+        }
+
         if (SignInRefusals.Read(own?.SignIn ?? owner?.SignIn, failure.Words))
         {
-            return new AgentError(AgentErrorKind.Access, failure, $"{(own?.SignIn is not null ? Own : Owner)}:words:sign-in");
+            return new AgentError(
+                AgentErrorKind.Access, failure, $"{(own?.SignIn is not null ? Own : Owner)}:words:sign-in", Access: AccessDisposition.SignedOutByWords);
         }
 
         // AGT3b's refused credential, which AccountRefused reads with no owner's fallback today (§1.2): closed here.
         if ((own?.Refused ?? owner?.Refused) is { Length: > 0 } refused
             && failure.Words?.Contains(refused, StringComparison.OrdinalIgnoreCase) == true)
         {
-            return new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused");
+            return new AgentError(
+                AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused", Access: AccessDisposition.Refused);
         }
 
         // 3. Transient by code, then by the recorded sentences.
@@ -175,6 +182,13 @@ public static class AgentErrors
         // 4. Fatal: anything no table reads, as today.
         return new AgentError(AgentErrorKind.Fatal, failure, ByCode(tables, failure, AgentErrorKind.Fatal) ?? Unread);
     }
+
+    /// <summary>
+    /// A bound kind's failure, which arrives already read (the agent-lyntai design §5.3): its own reading, with no table and no word read
+    /// again, its access disposition the opening's reading of the evidence kept apart.
+    /// </summary>
+    public static AgentError OfNormalized(NormalizedFailure failure) =>
+        new(failure.Kind, failure.Failure, failure.By, failure.Limit, failure.Access?.Opening);
 
     /// <summary>
     /// The entry that reads <paramref name="failure"/>'s kind word or status as <paramref name="kind"/>, own first: a word the

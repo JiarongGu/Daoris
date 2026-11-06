@@ -136,6 +136,10 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null, LimitSeen? byCode = null)
         => Cooling.Limited(adapter, profile, failure, session, coolOff, byCode);
 
+    /// <inheritdoc cref="RosterCooling.LimitedTrusted"/>
+    public (CoolingEntry Entry, LimitSeen Seen)? LimitedTrusted(string adapter, string? profile, LimitSeen seen, string session)
+        => Cooling.LimitedTrusted(adapter, profile, seen, session);
+
     /// <inheritdoc cref="RosterCooling.Ready"/>
     public bool Ready(string adapter, string? profile) => Cooling.Ready(adapter, profile);
 

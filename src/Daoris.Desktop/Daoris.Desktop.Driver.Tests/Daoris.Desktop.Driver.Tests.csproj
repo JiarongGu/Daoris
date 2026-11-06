@@ -34,4 +34,9 @@
          builds of one project fight over its obj folder. `RealServiceHost` builds its own copy on first use, under this project's obj. -->
   </ItemGroup>
 
+  <!-- The agent layer's adapter compiles only where Lyntai's local build is in use (D248), and so do its tests. -->
+  <ItemGroup Condition="'$(DaorisLyntaiLayer)' != 'true'">
+    <Compile Remove="Agents\Layer\**" />
+  </ItemGroup>
+
 </Project>
