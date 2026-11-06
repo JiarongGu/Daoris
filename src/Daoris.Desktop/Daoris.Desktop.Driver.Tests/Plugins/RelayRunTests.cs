@@ -56,13 +56,21 @@ public sealed class RelayRunTests : IDisposable
     private async Task<string> PipeAsync()
     {
         var file = Path.Combine(RelayRun.Subscribers(_home), $"{Environment.ProcessId}.json");
-        for (var tries = 0; !File.Exists(file); tries++)
+        var until = DateTime.UtcNow + Poll.Patience;
+        while (true)
         {
-            Assert.True(tries < 500, "the relay wrote no subscriber file");
+            // The file shows before the relay has let go of it, so a read that finds it held is read again.
+            try
+            {
+                if (File.Exists(file)) return JsonDocument.Parse(await File.ReadAllTextAsync(file)).RootElement.GetProperty("pipe").GetString()!;
+            }
+            catch (IOException)
+            {
+            }
+
+            Assert.True(DateTime.UtcNow < until, "the relay wrote no subscriber file");
             await Task.Delay(20);
         }
-
-        return JsonDocument.Parse(await File.ReadAllTextAsync(file)).RootElement.GetProperty("pipe").GetString()!;
     }
 
     private async Task<NamedPipeClientStream> ConnectAsync(string? first = null)
