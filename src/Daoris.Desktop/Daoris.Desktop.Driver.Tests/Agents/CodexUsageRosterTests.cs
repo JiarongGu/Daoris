@@ -353,10 +353,10 @@ public sealed class CodexUsageRosterTests : IDisposable
         Assert.Equal(
             ["claude-code", "codex-acp"],
             adapters.Names.Where(name => adapters.Resolve(name).Toolchain is { Usage: not null }).Order(StringComparer.Ordinal));
-        Assert.Same(CodexUsage.Question, roster.UsageOf("codex-acp"));
-        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code"));
+        Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
+        Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code"));
         // The protocol door reads its owner's (AGT7).
-        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code-acp"));
+        Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code-acp"));
         Assert.True(roster.Speaks("codex-acp"));
         Assert.True(roster.Speaks("claude-code-acp"));
         Assert.False(roster.Speaks("dsh"));

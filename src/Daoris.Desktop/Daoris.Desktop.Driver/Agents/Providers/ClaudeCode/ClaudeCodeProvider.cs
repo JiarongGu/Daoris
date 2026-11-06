@@ -54,7 +54,7 @@ internal static class ClaudeCodeProvider
             // What it prints when its provider refuses the credential (AGT3b), measured on 2.1.280.
             Refused: "API Error: 401",
             ErrorWords: ClaudeErrors.Words);
-        var usage = new UsagePart(ClaudeUsage.Question);
+        var usage = new UsagePart(UsageReads.Of(ClaudeUsage.Question));
         var home = new DoorHome(ConfigVariable, OwnHome: false, TrustFile: ClaudeTrust.FileName);
         var skills = new InstructionsPart(LoadsTreeSkills: true, FileLimit: null);
 

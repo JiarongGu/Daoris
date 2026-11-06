@@ -161,8 +161,7 @@ internal sealed class LegacyDoor : ISessionAdapter
             WeekFixed: pool.WeekFixed,
             Windows: tables.Windows,
             SignIn: tables.SignIn,
-            Usage: usage.Question is null ? null : usage.Question as UsageQuestion
-                ?? throw new DriverException($"door '{_door.Id}' declares a usage question that is no UsageQuestion — until row t, the toolchain holds the contract's type."),
+            Usage: usage.Read,
             Mark: identity.Item3,
             RunsInOwnHome: _door.Home.OwnHome,
             TurnReport: _door.Tables.TurnReport,

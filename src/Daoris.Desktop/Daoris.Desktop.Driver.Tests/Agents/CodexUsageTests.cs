@@ -17,11 +17,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class CodexUsageTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
+    internal static readonly DateTimeOffset Now = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset In(double hours) => DateTimeOffset.FromUnixTimeSeconds((Now + TimeSpan.FromHours(hours)).ToUnixTimeSeconds());
 
-    private static long Seconds(double hours) => In(hours).ToUnixTimeSeconds();
+    internal static long Seconds(double hours) => In(hours).ToUnixTimeSeconds();
 
     /// <summary>The recorded answer, its resets (<c>&lt;reset&gt;</c>, in order) placed <paramref name="hours"/> after now.</summary>
     internal static string Recorded(params double[] hours)
@@ -39,7 +39,7 @@ public sealed class CodexUsageTests
     private static IReadOnlyList<WindowReading> Read(string answer) => CodexUsage.Read(JsonDocument.Parse(answer).RootElement.Clone());
 
     /// <summary>One window as the answer writes it.</summary>
-    private static string Window(object? used, object? minutes, object? resets) =>
+    internal static string Window(object? used, object? minutes, object? resets) =>
         "{" + string.Join(",", new[]
         {
             used is null ? null : $"\"usedPercent\":{Json(used)}",
@@ -49,7 +49,7 @@ public sealed class CodexUsageTests
 
     private static string Json(object value) => value is string text ? text : JsonSerializer.Serialize(value);
 
-    private static string Answer(string? primary, string? secondary = null) =>
+    internal static string Answer(string? primary, string? secondary = null) =>
         """{"rateLimits":{"limitId":"codex","primary":""" + (primary ?? "null") + ""","secondary":""" + (secondary ?? "null")
         + ""","rateLimitReachedType":null}}""";
 
@@ -77,7 +77,7 @@ public sealed class CodexUsageTests
     {
         var question = ProviderRegistry.Built().ToolchainOf("codex-acp")!.Usage;
 
-        Assert.Same(CodexUsage.Question, question);
+        Assert.Same(UsageReads.Of(CodexUsage.Question), question);
         Assert.Equal("codex", question!.Harness);
         Assert.Equal(["codex", "app-server"], question.Command);
         Assert.Equal("account/rateLimits/read", CodexUsage.Method);
@@ -136,12 +136,21 @@ public sealed class CodexUsageTests
         Assert.Equal(1, answer.Reader);
     }
 
+    /// <summary>The account's own limit beside another, whose second window states no length; the plan named.</summary>
+    internal static string OtherLimit
+    {
+        get
+        {
+            var limit = $$"""{"limitId":"codex","planType":"pro","primary":{{Window(1, 300, Seconds(3))}},"secondary":{{Window(15.5, 10080, Seconds(90))}}}""";
+            var other = $$"""{"limitId":"codex_spark","primary":{{Window(60, 10080, Seconds(50))}},"secondary":{{Window(5, null, Seconds(2))}}}""";
+            return $$$"""{"rateLimits":{{{limit}}},"rateLimitsByLimitId":{"codex":{{{limit}}},"codex_spark":{{{other}}}}}""";
+        }
+    }
+
     [Fact]
     public void Another_limit_s_windows_are_kept_for_the_history_by_its_scope_and_the_plan_is_never_read()
     {
-        var limit = $$"""{"limitId":"codex","planType":"pro","primary":{{Window(1, 300, Seconds(3))}},"secondary":{{Window(15.5, 10080, Seconds(90))}}}""";
-        var other = $$"""{"limitId":"codex_spark","primary":{{Window(60, 10080, Seconds(50))}},"secondary":{{Window(5, null, Seconds(2))}}}""";
-        var answer = Kept($$$"""{"rateLimits":{{{limit}}},"rateLimitsByLimitId":{"codex":{{{limit}}},"codex_spark":{{{other}}}}}""");
+        var answer = Kept(OtherLimit);
 
         Assert.Equal([new WindowReading("session", 0.01, In(3)), new WindowReading("weekly", 0.155, In(90))], answer);
         Assert.Equal(
