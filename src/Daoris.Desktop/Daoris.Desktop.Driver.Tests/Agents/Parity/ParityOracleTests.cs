@@ -26,7 +26,7 @@ public sealed class ParityOracleTests
     /// <summary>One scenario as a path saw it: <paramref name="by"/> its provenance, its ids, times and failure its own.</summary>
     private static ParityObservation Scenario(
         string path, DateTimeOffset start, string by, string call = "call-1", string? clock = null, string delivery = "Taken",
-        string hit = "the five-hour limit", int? until = 5, string access = "none")
+        string hit = "the five-hour limit", int? until = 5, string access = "none", string? proc = "4345b86d1eb9f5b2")
     {
         var seen = new ParityObservation(path, start);
         seen.Add(ParityChannel.Conversation, "named", ("conversation", "conv-1"));
@@ -35,6 +35,7 @@ public sealed class ParityOracleTests
         seen.Add(ParityChannel.Transcript, "line", ("text", "→ Read"));
         seen.Add(ParityChannel.Events, "said", ("kind", "Tool"), (ParityProjection.Id, call), ("status", "in_progress"));
         seen.Add(ParityChannel.Events, "said", ("kind", "Tool"), (ParityProjection.Id, call), ("status", "completed"));
+        seen.Add(ParityChannel.Events, "ChildSeen", ("reading", "{\"Child\":\"a1\",\"Run\":\"s1\"}"), (ParityProjection.Process, proc));
         seen.Add(ParityChannel.Stdin, "written", ("text", "the prompt"), (ParityProjection.At, start.AddSeconds(1).ToString("O")));
         List<(string, string?)> failure =
         [
@@ -52,7 +53,7 @@ public sealed class ParityOracleTests
 
     private static ParityObservation Layer(Func<ParityObservation, ParityObservation>? plant = null)
     {
-        var layer = Scenario("layer", LayerStart, "layer:acp.data.errorKind=rate_limit", call: "toolu_9");
+        var layer = Scenario("layer", LayerStart, "layer:acp.data.errorKind=rate_limit", call: "toolu_9", proc: "440b003a79032646");
         return plant is null ? layer : plant(layer);
     }
 
@@ -62,7 +63,8 @@ public sealed class ParityOracleTests
     [Fact]
     public void Two_paths_that_differ_only_in_the_projection_are_equal_by_its_correspondences()
     {
-        // A renamed id, a provenance by a declared pair the scenario expects, and times at the same interval from each run's start.
+        // A renamed id and lineage token, a provenance by a declared pair the scenario expects, and times at the same interval from each
+        // run's start.
         ParityOracle.Equal(Daoris(), Layer(), Relation, [Expected]);
     }
 
@@ -97,6 +99,7 @@ public sealed class ParityOracleTests
         { "what was hit changed", "hit" },
         { "an access disposition changed", "access" },
         { "one id of one path mapped onto two of the other's", "first appearance" },
+        { "a reading its run did not stamp with its process", "first appearance" },
         { "an undeclared pair", "in no pair the relation declares" },
         { "a declared pair the scenario does not expect", "the scenario expects" },
     };
@@ -118,6 +121,7 @@ public sealed class ParityOracleTests
             "what was hit changed" => Scenario("layer", LayerStart, Expected.Layer, call: "toolu_9", hit: "the weekly limit"),
             "an access disposition changed" => Scenario("layer", LayerStart, Expected.Layer, call: "toolu_9", access: "Refused"),
             "one id of one path mapped onto two of the other's" => Layer(seen => seen.With(all => SecondCall(all, "toolu_10"))),
+            "a reading its run did not stamp with its process" => Scenario("layer", LayerStart, Expected.Layer, call: "toolu_9", proc: null),
             "an undeclared pair" => Scenario("layer", LayerStart, "layer:acp.data.errorKind=overloaded", call: "toolu_9"),
             "a declared pair the scenario does not expect" => Scenario("layer", LayerStart, "layer:acp.words.limit", call: "toolu_9"),
             _ => throw new ArgumentOutOfRangeException(nameof(plant), plant, null),

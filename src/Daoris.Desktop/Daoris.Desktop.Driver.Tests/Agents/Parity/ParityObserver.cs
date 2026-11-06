@@ -30,19 +30,22 @@ internal static class ParityObserver
                 seen.Add(ParityChannel.Windows, "windows", ("windows", windows.Windows.GetRawText()));
                 break;
             case WireReading.StreamOpened or WireReading.StreamSaid or WireReading.StreamEnded:
-                seen.Add(ParityChannel.Streams, reading.GetType().Name, ("reading", JsonSerializer.Serialize<object>(reading)));
+                seen.Add(ParityChannel.Streams, reading.GetType().Name, Whole(reading));
                 break;
             case WireReading.Failed:
                 break;
-            case WireReading.Loaded loaded:
-                // What the init says the harness loaded, never the run's stamp on it, which each path gives its own run.
-                seen.Add(ParityChannel.Events, nameof(WireReading.Loaded), ("init", JsonSerializer.Serialize(loaded.Init)));
-                break;
             default:
-                seen.Add(ParityChannel.Events, reading.GetType().Name, ("reading", JsonSerializer.Serialize<object>(reading)));
+                seen.Add(ParityChannel.Events, reading.GetType().Name, Whole(reading));
                 break;
         }
     }
+
+    /// <summary>
+    /// A reading whole, its run's stamp with it, but for its process: the lineage token each process is issued is a generated id, compared by
+    /// first appearance, where the session, the generation and the place in the run's order are compared exactly.
+    /// </summary>
+    private static (string Name, string? Value)[] Whole(WireReading reading) =>
+        [("reading", JsonSerializer.Serialize<object>(reading with { Process = null })), (ParityProjection.Process, reading.Process)];
 
     /// <summary>The transcript's lines, in order.</summary>
     public static void Transcript(ParityObservation seen, string file)
