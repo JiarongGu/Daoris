@@ -436,21 +436,26 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
   });
 
   // SETUPUX1r (D221 §2.3): the inspector's options in the page's words, a method's tail, and a pattern's preview.
-  it("words a landing's options, brings a pull request's tail in one change, previews a pattern and keeps the option names under Details", async () => {
+  it("words a landing's options, brings an integrate's tail in one change, previews a pattern and keeps the option names under Details", async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
     await user.click(step('The landing'));
     const inspector = await screen.findByRole('dialog', { name: 'The landing' });
 
-    // A merge makes no branch to name nor plugin to push it: neither is offered, and the method says what it adds.
+    // A merge makes no branch to name: none is offered, and the method says what it adds.
     expect(within(inspector).getByRole('combobox', { name: 'How it lands' })).toHaveTextContent('Merge into the line');
     expect(within(inspector).getByText('Adds nothing after it.')).toBeInTheDocument();
     expect(within(inspector).queryByRole('textbox', { name: "The branch's name" })).toBeNull();
 
-    await chooseByPointer('How it lands', 'Push it and open a pull request');
-    expect(live()).toHaveTextContent('The landing now lands by: Push it and open a pull request. Added The push, Completed on the host after it.');
-    expect(within(inspector).getByText('Adds after it: The push, Completed on the host.')).toBeInTheDocument();
-    expect(within(screen.getByRole('list', { name: 'How the steps go on', hidden: true })).getAllByRole('listitem', { name: /^The push|^Completed on the host/, hidden: true })).toHaveLength(2);
+    // Only the driver's methods are offered: a push and a pull request are steps after a branch landing.
+    await user.click(within(inspector).getByRole('combobox', { name: 'How it lands' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['Not set', 'Merge into the line', 'Leave a branch for you to push', 'Integrate it into the line']);
+    await user.keyboard('{Escape}');
+
+    await chooseByPointer('How it lands', 'Integrate it into the line');
+    expect(live()).toHaveTextContent('The landing now lands by: Integrate it into the line. Added The integration request after it.');
+    expect(within(inspector).getByText('Adds after it: The integration request.')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'How the steps go on', hidden: true })).getAllByRole('listitem', { name: /^The integration request/, hidden: true })).toHaveLength(1);
     expect(within(inspector).getByRole('textbox', { name: "The branch's name" })).toBeInTheDocument();
 
     await user.click(within(inspector).getByRole('textbox', { name: "The branch's name" }));
@@ -461,23 +466,23 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
 
     // The names the saved step uses sit under Details, not on the controls.
     await user.click(within(inspector).getByText('Details'));
-    expect(within(inspector).getByText('Its options are saved as:').parentElement).toHaveTextContent('method, target, pattern, plugin, squash, message');
+    expect(within(inspector).getByText('Its options are saved as:').parentElement).toHaveTextContent('method, target, pattern, message');
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Hosted');
     await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     const graph = saved();
-    expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>push', 'after:push>pull-request', 'after:pull-request>line']));
+    expect(graph.wires.map(said)).toEqual(expect.arrayContaining(['after:landing>integrate', 'after:integrate>line']));
     expect((graph.nodes as { id: string; options?: Record<string, unknown> }[]).find((node) => node.id === 'landing')!.options)
-      .toEqual({ method: 'pull-request', pattern: 'feature/{quest}-{slug}/{nope}' });
+      .toEqual({ method: 'integrate', pattern: 'feature/{quest}-{slug}/{nope}' });
     expect(graph.end).toBe('line');
 
     // And back: the tail goes, and the options a merge refuses with it.
     await user.click(step('The landing'));
     await chooseByPointer('How it lands', 'Merge into the line');
-    expect(live()).toHaveTextContent('The landing now lands by: Merge into the line. Took out The push, Completed on the host.');
-    expect(screen.queryByRole('listitem', { name: 'The push' })).toBeNull();
+    expect(live()).toHaveTextContent('The landing now lands by: Merge into the line. Took out The integration request.');
+    expect(screen.queryByRole('listitem', { name: 'The integration request' })).toBeNull();
     await i18n.changeLanguage('zh');
     expect(await screen.findByRole('combobox', { name: '落地的方式' })).toHaveTextContent('并入主线');
   });
@@ -517,14 +522,14 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await user.click(step('The landing'));
-    await chooseByPointer('How it lands', 'Push the branch');
+    await chooseByPointer('How it lands', 'Leave a branch for you to push');
     await user.click(screen.getByRole('button', { name: 'Close' }));
     await user.type(screen.getByRole('textbox', { name: 'Its name' }), 'Kept');
     await saveNew();
     await screen.findByText(/v1, a new workflow, from the page\./);
     const written = saved() as unknown as { cleanup: unknown; nodes: Record<string, unknown>[]; wires: Record<string, unknown>[] };
     expect(written.cleanup).toEqual({ keep: true });
-    expect(written.nodes.find((node) => node.id === 'landing')).toMatchObject({ future: [1], options: { method: 'push', soon: 'x' } });
+    expect(written.nodes.find((node) => node.id === 'landing')).toMatchObject({ future: [1], options: { method: 'branch', soon: 'x' } });
     expect(written.wires.find((wire) => wire.id === 'a')).toMatchObject({ delay: 5 });
     expect(written.wires.find((wire) => wire.kind === 'data' && wire.to === 'publish.release')).toMatchObject({ from: 'release.release' });
   });

@@ -2005,7 +2005,7 @@ describe('Ask Daoris’s access and what it has', () => {
     expect(screen.getByText(/runs on claude-code-acp with full access: it runs commands and edits files/)).toBeInTheDocument();
   });
 
-  it('offers no choice on a shell older than the mode', async () => {
+  it('offers no choice where the snapshot names no mode', async () => {
     SESSIONS = [HELP];
     bridge();
     show();

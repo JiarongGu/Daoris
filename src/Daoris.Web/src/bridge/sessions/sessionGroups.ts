@@ -168,7 +168,7 @@ export const useSessionGroups = (ids?: readonly string[], { enabled = true }: { 
 /**
  * The session list's entries (D167 point 5): one line of work in one repository, its records its parts, in the
  * reader's group order. The same answer as `useSessionGroups`, under the same key, so asking both asks once, pushed where it
- * is. Undefined while no answer has come and from a host older than entries, and then the list is the records it always was;
+ * is. Undefined while no answer has come and where the answer carries no entries, and then the list is the records;
  * shell-only.
  */
 export const useSessionEntries = (ids?: readonly string[], { enabled = true }: { enabled?: boolean } = {}) => {

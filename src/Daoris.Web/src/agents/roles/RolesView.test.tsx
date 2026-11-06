@@ -412,7 +412,7 @@ describe('Intake in the Roles mode', () => {
   });
 
   /** A shell that answers no actors has never heard of them: no row, not a disabled one. */
-  it('offers no Intake row on a shell older than the actors', async () => {
+  it('offers no Intake row where the snapshot names no actors', async () => {
     invoke.mockImplementation(async (module: string, type: string, request?: unknown) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'PLACES') return PLACES(((request as { payload?: object })?.payload ?? {}) as Parameters<typeof PLACES>[0]);

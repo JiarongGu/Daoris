@@ -111,7 +111,7 @@ describe('sittingSentence', () => {
   /**
    * SESSUX1b, SESSUX1d (D126 §3.3): a quest the person's stop holds says so in 中文 too, naming the session from the
    * tick's `heldBy` rather than out of the driver's English, with the terminal's door that releases it. With no session
-   * named (a shell older than the fact), the driver's words stand.
+   * named, the driver's words stand.
    */
   it('says a stop’s hold in 中文, naming the session the tick says holds it', async () => {
     const reason = 'you stopped session `s1a2b3c4`; Try again carries it on — `daoris quest retry 9a9492 --session s1a2b3c4`.';
@@ -183,7 +183,7 @@ describe('sittingSentence', () => {
   /**
    * SESSUX1i (D126 §4.6): a quest parked on its failed sessions is *What needs you*'s row, and its detail is this
    * sentence. The tick carries the number the planner parked it at (`strikes`), so 中文 says it, with the terminal's
-   * door. With no number (a shell older than the fact, or a park not read yet), the driver's words stand.
+   * door. With no number (a park not read yet), the driver's words stand.
    */
   it('says a park in 中文, with the number the tick says failed', async () => {
     const reason = '3 session(s) have failed on `#9a9492` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 9a9492` starts it again once you know why.';
@@ -330,7 +330,7 @@ describe('sittingSentence', () => {
 
   /**
    * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
-   * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (a shell older than the
+   * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (the
    * fact), the driver's words stand.
    */
   it('says a pause in 中文, naming the ask or the quest whose pause the tick says holds it', async () => {
@@ -355,7 +355,7 @@ describe('sittingSentence', () => {
    * CARRY2c (D80's CARRY2b note): a quest whose take is not this machine's said the driver's English in both languages. The
    * tick now names whose the take is (`takenBy`): the machine and its session where a record named them, a take made here,
    * and the session here not carried on, so 中文 says it from those facts in each of its three forms. English is the driver's
-   * own sentence; with no facts (a shell older than them), the driver's words stand in both.
+   * own sentence; with no facts, the driver's words stand in both.
    */
   it('says a take elsewhere in 中文 from the machine and session the tick names, and the driver’s words without them', async () => {
     const named = 'Quest `#9a9492` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s1` is not carried on over it.';

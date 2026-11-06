@@ -40,7 +40,7 @@ export function useShellFigures({ repositories, driver, attached, attention, pre
 }) {
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
 
-  // Ready once the driver's service is up, not merely its file (LOOK2a); a shell older than the field says nothing, and reads ready.
+  // Ready once the driver's service is up, not merely its file (LOOK2a); a snapshot without the field says nothing, and reads ready.
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : attached ? 'starting' : 'absent';

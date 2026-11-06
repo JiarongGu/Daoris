@@ -272,7 +272,7 @@ describe('the permissions held for the person', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 'd1', request: '900', option: 'yes' } });
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: PERMISSION_WAITS_KEY }));
 
-    // A refusal is the answer, by its code; a shell older than the route answers nothing answered.
+    // A refusal is the answer, by its code; an answer that says nothing is nothing answered.
     invoke.mockImplementation(async () => ({ answered: false, why: 'unheld', message: 'Nothing was answered.' }));
     expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'yes' }))
       .toEqual({ answered: false, why: 'unheld', message: 'Nothing was answered.' });

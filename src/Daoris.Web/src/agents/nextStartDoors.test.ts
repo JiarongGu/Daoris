@@ -27,7 +27,7 @@ describe('the next start card’s doors', () => {
     expect(nextStartSaid(owed, labelOf)?.doors).toEqual(['在 `p-claude-bare` 上的启动运行在它自己的配置目录中，那里不是任何人的登录：它不需要账户。']);
   });
 
-  it('says nothing where the own-home reason has no other door, and nothing of an older shell that names none', () => {
+  it('says nothing where the own-home reason has no other door, and nothing of an answer that names none', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)?.doors).toEqual([]);
   });

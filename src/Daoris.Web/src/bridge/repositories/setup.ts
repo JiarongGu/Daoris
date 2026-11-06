@@ -65,7 +65,7 @@ export const reconcilePlanKey = (repository: string) => ['reconcile-plan', repos
 /**
  * A repository's reconcile planned (`RECONCILE_PLAN`, D230 point 2): what the doctrine tool's status said of its checkout, whether that offers
  * the press, and the set-up press's own refusals. Told by event (NOBLOCK1), since it runs the doctrine tool; read each time the place's page
- * shows it, an older shell's none read as nothing offered. Shell-only.
+ * shows it, a none read as nothing offered. Shell-only.
  */
 export const useReconcilePlan = (repository: string | null, { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();

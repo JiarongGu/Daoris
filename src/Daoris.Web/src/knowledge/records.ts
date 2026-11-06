@@ -61,7 +61,7 @@ export function findingTitle(finding: Pick<Convergence, 'entries'>): string {
 
 /**
  * Which tier made a search's answer (TIER1, D24): the one that ANSWERED, from the service's header, never the one
- * configured; a host older than the header answers none, and the configured tier is then all there is to say. `none`
+ * configured; an answer without the header names none, and the configured tier is then all there is to say. `none`
  * is no half answering, which is not the same as nothing matching.
  */
 export function answeredBy(tier: string | null, semantic: boolean): { byMeaning: boolean; nothing: boolean } {

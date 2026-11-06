@@ -138,7 +138,7 @@ describe('the shell push channel (ShellSignals)', () => {
     });
     expect(await screen.findByText('sitting — engine is not drivable on this machine')).toBeTruthy();
 
-    // A tick, with whatever an older shell still put in it, writes none of it: the line stays until a push moves it.
+    // A tick, with whatever it still carries, writes none of it: the line stays until a push moves it.
     eventHandlers.get('DAORIS.DRIVER_TICK')!({
       events: ['engine  spawned s1a2b3c4'],
       considered: [{ quest: 'abc123', repository: 'engine', verdict: 'Start', reason: 'starting' }],
@@ -331,7 +331,7 @@ describe('the shell push channel (ShellSignals)', () => {
     }
   });
 
-  /** An older shell, or a reworded payload: the console must tolerate any shape (SES1's rule). */
+  /** A reworded payload: the console must tolerate any shape (SES1's rule). */
   it('an attention event with nothing to say is not a blank toast', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);

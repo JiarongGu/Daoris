@@ -13,12 +13,12 @@ export interface Consideration {
   reason: string;
   /**
    * For a quest the person's stop holds (verdict `Stopped`, SESSUX1b): the session they stopped, which *Try again*
-   * releases and the sentence names (SESSUX1d). Absent for every other verdict, and on a shell older than the fact.
+   * releases and the sentence names (SESSUX1d). Absent for every other verdict.
    */
   heldBy?: string;
   /**
    * For a quest parked on its failed sessions (verdict `Exhausted`, SESSUX1i): how many failed, as the planner counted to
-   * park it, which the sentence names. Absent for every other verdict, a park the shell has not read yet, and an older shell.
+   * park it, which the sentence names. Absent for every other verdict and a park the shell has not read yet.
    */
   strikes?: number;
   /** The number of failed sessions its line's failures rule parks it at (CONTEXTDRIVE1g), which the sentence names with the count. */

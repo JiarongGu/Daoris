@@ -1572,7 +1572,7 @@ describe('the Agents place', () => {
     expect(onOpenPlugin).toHaveBeenCalledWith('acme.gate');
   });
 
-  /** A shell older than this place answers something else; the page lists nothing and stands. */
+  /** An answer that is no roster: the page lists nothing and stands. */
   it('an answer that is not a roster lists no agents, and takes the page down with it nowhere', async () => {
     invoke.mockImplementation(async () => WIRING);
     place();
@@ -2207,7 +2207,7 @@ describe('how accounts are used', () => {
     expect(within(accounts).queryByText(/next start/)).toBeNull();
     unmount();
 
-    // An older shell names no next start: nothing is guessed from the list's head, and no row is marked first.
+    // An answer naming no next start: nothing is guessed from the list's head, and no row is marked first.
     invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
     place();
     const older = await screen.findByRole('region', { name: 'Accounts' });

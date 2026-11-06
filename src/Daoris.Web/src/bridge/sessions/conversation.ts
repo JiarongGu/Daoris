@@ -456,7 +456,7 @@ const reachOf = (answer: unknown): Reach => {
 
 /**
  * The reach a shell that tells it live carries (MSG1f2): `reach`, an object present whenever the shell says it, `{}` for a
- * word that would start a turn at once, since the bridge leaves a null out. Undefined from an older shell, which carries
+ * word that would start a turn at once, since the bridge leaves a null out. Undefined where the shell carries
  * none, and where nothing is known yet.
  */
 const toldReach = (answer: unknown): Reach | undefined => {
@@ -474,7 +474,7 @@ const toldReach = (answer: unknown): Reach | undefined => {
  * once per session and then taken from the events, never asked again as the session moves. An event that carries none
  * changes nothing.
  *
- * **An older shell is asked again whenever what it reads moves**: keyed by the session's state and whether its inbox
+ * **It is asked again whenever what it reads moves**: keyed by the session's state and whether its inbox
  * listens, so a session that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so
  * whatever asks the listing again (a word kept, a tick) asks this too. Desktop-only, as a conversation is.
  */

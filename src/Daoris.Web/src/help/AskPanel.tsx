@@ -46,7 +46,7 @@ export type AskConversationSlot = {
   onHistory?: () => void;
   /**
    * Ask Daoris's access (HELPMODE1b, the modes design §5): its chip, the press that opens *What it has*, and full access's
-   * confirmation, in a strip of its own right above the box. Absent on a shell older than the mode, which offers no choice.
+   * confirmation, in a strip of its own right above the box. Absent where the snapshot names no mode, which offers no choice.
    */
   access?: ReactNode;
   /** *What it has* (HELPMODE1b, design §6), drawn in the conversation's place while it is open, the box still below it. */

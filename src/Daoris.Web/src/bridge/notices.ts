@@ -147,7 +147,7 @@ export function messageOf(value: unknown): MessageArrived | null {
 
 /**
  * The partitions composed: every notice newest first, and each ask's entry by its newest message, newest first; nothing until the
- * owner judged. A shell older than Messages pushes no such partition, and composes none, so the page pulls each channel as before.
+ * owner judged. Where the shell pushes no such partition, none is composed, and the page pulls each channel.
  */
 export function composeNotices(partitions: ReadonlyMap<string, unknown>, judged: boolean): NoticesRead | undefined {
   const news = keyed(partitions.get(NEWS));

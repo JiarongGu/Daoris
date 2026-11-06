@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorkflowPaletteAnswer } from '../../bridge/repositories/workflowEdit';
 import { PALETTE } from './editFixtures';
 import {
-  addStep, addWire, askedInputs, carryOf, choiceOf, commit, connect, copySteps, type DraftWire, draftOf, duplicateStep, earlierThan, emptyDraft, entriesOf,
+  addStep, addWire, askedInputs, LAND_METHODS, carryOf, choiceOf, commit, connect, copySteps, type DraftWire, draftOf, duplicateStep, earlierThan, emptyDraft, entriesOf,
   type GraphDraft, type GraphJson, graphOf, historyOf, insertStep, joinModeOf, joinOf, leavesOf, moveInChain, movePlan, moreWaysOf, pasteSteps,
   optionOf, redo, removeStep, removeWire, retarget, rowsOf, setCarry, setEnd, setJoinMode, setLandMethod, setOption, sourcesOf, stepChoices, targetsOf, triggerTargetsOf,
   undo, type WayRowKey, wayTo, workflowIdFor,
@@ -487,68 +487,57 @@ function tailProblems(graph: GraphJson): string[] {
     else if (held.length === 0) problems.push(`${kind}: none held`);
     else problems.push(...held.filter((id) => !after.has(id)).map((id) => `${id}: not after the landing`));
   };
-  check('push', method === 'push' || method === 'pull-request');
-  check('pull-request', method === 'pull-request');
   check('integrate', method === 'integrate');
-  const pushes = graph.nodes.filter((node) => node.kind === 'push').map((node) => node.id as string);
-  if (method === 'pull-request' && pushes.length > 0) {
-    const afterPush = reach(pushes);
-    problems.push(...graph.nodes.filter((node) => node.kind === 'pull-request' && !afterPush.has(node.id as string)).map((node) => `${String(node.id)}: before the push`));
-  }
   return problems;
 }
 
 describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
-  const METHODS = ['merge', 'branch', 'push', 'pull-request', 'integrate'];
+  const METHODS = ['merge', 'branch', 'integrate'];
 
-  it('adds the pushed and the pull request after the landing for a pull request, between the landing and what followed it', () => {
-    const merge = shipped('merge-after-accept');
-    const made = setLandMethod(PALETTE, merge, 'landing', 'pull-request');
-    expect(made.added).toEqual(['push', 'pull-request']);
-    expect(made.removed).toEqual([]);
-    expect(optionOf(made.draft.nodes.find((node) => node.id === 'landing')!, 'method')).toBe('pull-request');
-    expect(made.draft.wires.filter((each) => each.kind === 'after' && ['landing', 'push', 'pull-request'].includes(each.from!)).map(said))
-      .toEqual(['after:landing>push', 'after:push>pull-request', 'after:pull-request>line']);
-    expect(made.draft.end).toBe('line');
-    expect(tailProblems(graphOf(made.draft))).toEqual([]);
+  it('offers the driver\'s methods only: a push and a pull request are steps after a branch landing', () => {
+    expect(LAND_METHODS).toEqual(['merge', 'branch', 'integrate']);
+    expect(choice('land').options.find((field) => field.name === 'method')!.choices).toEqual(['merge', 'branch', 'integrate']);
+    expect(choice('land').options.map((field) => field.name)).not.toContain('plugin');
+    expect(stepChoices(PALETTE).map((each) => each.kind)).not.toContain('pull-request');
+    expect(choice('push').offered).toBe('alone');
   });
 
-  it('takes the tail back out on the way to another method, joining what it stood between, so merge comes back to the graph it was', () => {
+  it('takes the integrate back out on the way to another method, joining what it stood between, so merge comes back to the graph it was', () => {
     const merge = shipped('merge-after-accept');
-    const there = setLandMethod(PALETTE, merge, 'landing', 'pull-request').draft;
+    const there = setLandMethod(PALETTE, merge, 'landing', 'integrate').draft;
     const back = setLandMethod(PALETTE, there, 'landing', 'merge');
-    expect([...back.removed].sort()).toEqual(['pull-request', 'push']);
+    expect(back.removed).toEqual(['integrate']);
     expect(graphOf(back.draft)).toEqual(graphOf(merge));
-    // A push keeps its push and drops the request.
-    const pushOnly = setLandMethod(PALETTE, there, 'landing', 'push');
-    expect(pushOnly.removed).toEqual(['pull-request']);
-    expect(pushOnly.added).toEqual([]);
-    expect(pushOnly.draft.nodes.map((node) => node.kind).filter((kind) => ['push', 'pull-request'].includes(kind))).toEqual(['push']);
   });
 
-  it('moves the end to the last of the tail where the landing was the end, and back to the landing when the end was a tail step', () => {
+  it('moves the end to the integrate where the landing was the end, and back to the landing when the end was the integrate', () => {
     const branch = shipped('branch-to-push');
     expect(branch.end).toBe('landing');
-    const request = setLandMethod(PALETTE, branch, 'landing', 'pull-request');
-    expect(request.draft.end).toBe('pull-request');
-    expect(tailProblems(graphOf(request.draft))).toEqual([]);
-    const push = setLandMethod(PALETTE, request.draft, 'landing', 'push');
-    expect(push.draft.end).toBe('push');
-    expect(setLandMethod(PALETTE, push.draft, 'landing', 'branch').draft.end).toBe('landing');
+    const integrate = setLandMethod(PALETTE, branch, 'landing', 'integrate');
+    expect(integrate.draft.end).toBe('integrate');
+    expect(tailProblems(graphOf(integrate.draft))).toEqual([]);
+    expect(setLandMethod(PALETTE, integrate.draft, 'landing', 'branch').draft.end).toBe('landing');
+  });
+
+  it('leaves a push the graph holds beside its landing as it is, whatever the method', () => {
+    const branch = shipped('pull-request');
+    const merge = setLandMethod(PALETTE, branch, 'landing', 'merge');
+    expect(merge.added).toEqual([]);
+    expect(merge.removed).toEqual([]);
+    expect(graphOf(merge.draft).nodes.map((node) => node.kind)).toContain('push');
   });
 
   it('adds an integrate between the landing and the line, and drops the options its method refuses', () => {
     const merge = shipped('merge-after-accept');
-    const withOptions = setOption(setOption(setOption(merge, 'landing', 'squash', true), 'landing', 'plugin', 'host'), 'landing', 'pattern', 'x/{quest}');
+    const withOptions = setOption(setOption(merge, 'landing', 'squash', true), 'landing', 'pattern', 'x/{quest}');
     const integrate = setLandMethod(PALETTE, withOptions, 'landing', 'integrate');
     expect(integrate.added).toEqual(['integrate']);
     expect(integrate.draft.wires.filter((each) => each.from === 'landing' || each.from === 'integrate').map(said)).toEqual(['after:landing>integrate', 'after:integrate>line']);
     const land = integrate.draft.nodes.find((node) => node.id === 'landing')!;
-    expect(optionOf(land, 'plugin')).toBeUndefined();
     expect(optionOf(land, 'squash')).toBeUndefined();
     expect(optionOf(land, 'pattern')).toBe('x/{quest}');
     const onMerge = setLandMethod(PALETTE, withOptions, 'landing', 'merge').draft.nodes.find((node) => node.id === 'landing')!;
-    expect([optionOf(onMerge, 'pattern'), optionOf(onMerge, 'plugin'), optionOf(onMerge, 'squash')]).toEqual([undefined, undefined, true]);
+    expect([optionOf(onMerge, 'pattern'), optionOf(onMerge, 'squash')]).toEqual([undefined, true]);
   });
 
   it.each(SHIPPED.filter((each) => each.graph.nodes.some((node) => node.kind === 'land')).map((each) => [each.id] as const))(
@@ -568,18 +557,17 @@ describe('a landing method brings its tail, in one change (SETUPUX1r)', () => {
       schemaVersion: 2, entries: ['work'], end: 'landing', cleanup: { keep: true }, note: 'kept',
       nodes: [
         { id: 'work', kind: 'claimed', version: 1, reach: 'observed', retry: { times: 2 } },
-        { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'branch', future: 'x', plugin: 'none' }, extra: [1] },
+        { id: 'landing', kind: 'land', version: 1, reach: 'performed', options: { method: 'branch', future: 'x' }, extra: [1] },
       ],
       wires: [{ id: 'a', kind: 'after', from: 'work', to: 'landing', delay: 5 }],
     };
     const written = graphOf(setLandMethod(PALETTE, draftOf(graph), 'landing', 'branch').draft);
     expect(written).toEqual({ ...graph, nodes: [graph.nodes[0], { ...graph.nodes[1] }] });
-    const request = graphOf(setLandMethod(PALETTE, draftOf(graph), 'landing', 'pull-request').draft);
-    expect(request).toMatchObject({ cleanup: { keep: true }, note: 'kept', entries: ['work'] });
-    expect(request.nodes[0]).toEqual(graph.nodes[0]);
-    // A pull request is a plugin's to push, so the `none` a branch left is the one option it refuses.
-    expect(request.nodes[1]).toEqual({ ...graph.nodes[1], options: { method: 'pull-request', future: 'x' } });
-    expect(request.wires.find((each) => each.id === 'a')).toEqual(graph.wires[0]);
+    const integrate = graphOf(setLandMethod(PALETTE, draftOf(graph), 'landing', 'integrate').draft);
+    expect(integrate).toMatchObject({ cleanup: { keep: true }, note: 'kept', entries: ['work'] });
+    expect(integrate.nodes[0]).toEqual(graph.nodes[0]);
+    expect(integrate.nodes[1]).toEqual({ ...graph.nodes[1], options: { method: 'integrate', future: 'x' } });
+    expect(integrate.wires.find((each) => each.id === 'a')).toEqual(graph.wires[0]);
   });
 });
 
@@ -628,8 +616,8 @@ describe('an input is proposed from the step it is routed from, and asked where 
 // WORKFLOWCLEAN1 1b: the palette says how each kind is offered, and the page keeps no list of its own.
 describe('how the palette offers each kind', () => {
   it('reads `offered` from the palette: a landing\'s tail with its method, every other step alone', () => {
-    expect([choice('push').offered, choice('pull-request').offered, choice('integrate').offered]).toEqual(['tail:push', 'tail:pull-request', 'tail:integrate']);
-    expect(['claimed', 'review', 'land', 'line', 'check'].map((kind) => choice(kind).offered)).toEqual(Array(5).fill('alone'));
+    expect(choice('integrate').offered).toBe('tail:integrate');
+    expect(['claimed', 'review', 'land', 'line', 'check', 'push'].map((kind) => choice(kind).offered)).toEqual(Array(6).fill('alone'));
     expect(choice('local-release/find').offered).toBe('alone');
   });
 

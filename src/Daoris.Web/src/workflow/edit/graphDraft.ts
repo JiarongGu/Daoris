@@ -598,7 +598,7 @@ export { LAND_METHODS, landOptionApplies, tailOf } from './landMethods';
 
 /**
  * A landing's method set and its tail brought in one change (SETUPUX1r; the land node design §2): the steps the new method brings are put
- * after the landing (a pull request's pushed, then its request; a push's pushed; an integrate), between it and what followed it; the tail
+ * after the landing (an integrate's), between it and what followed it; the tail
  * steps the method does not bring go, each joined over; the options it refuses are cleared; and the end follows the tail where the landing
  * or a removed tail step was the end. Everything else the graph holds is kept as written.
  */
@@ -606,9 +606,6 @@ export function setLandMethod(palette: WorkflowPaletteAnswer, draft: GraphDraft,
   if (!nodeById(draft, id)) return { draft, added: [], removed: [] };
   let next = setOption(draft, id, 'method', method);
   for (const name of REFUSED[method] ?? []) next = setOption(next, id, name, undefined);
-  if (method === 'push' || method === 'pull-request') {
-    if (optionOf(nodeById(next, id)!, 'plugin') === 'none') next = setOption(next, id, 'plugin', undefined);
-  }
   const brought = tailOf(method);
   const removed: string[] = [];
   const gone = new Set<string>();
