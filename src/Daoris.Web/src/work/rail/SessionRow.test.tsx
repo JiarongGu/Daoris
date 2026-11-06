@@ -605,6 +605,29 @@ describe("a row as the list's reader places it", () => {
     expect(screen.queryByText(/past its bound/)).toBeNull();
   });
 
+  /**
+   * SESSWATCH1b (the session-watch design §2.1, §5.1): a quiet session Daoris's one word was kept for says it was told beside the quiet
+   * it speaks of, and one it was not kept for says only that it is quiet. In both languages.
+   */
+  it('says a quiet session was told, only where the watcher kept its word, in en and zh', async () => {
+    const quiet = '2026-09-21T11:46:00Z';
+    const calling = { title: '', since: quiet, quiet };
+    const { rerender } = render(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, quietTold: true } })} />);
+    expect(screen.getByText(/quiet · 14m · Daoris told it · /)).toBeInTheDocument();
+
+    rerender(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling })} />);
+    expect(screen.getByText(/quiet · 14m · /)).toBeInTheDocument();
+    expect(screen.queryByText(/Daoris told it/)).toBeNull();
+
+    await i18n.changeLanguage('zh');
+    try {
+      rerender(<SessionRow session={session()} place="engine" grouping={placed({ group: 'working', shown: 'working', calling: { ...calling, quietTold: true } })} />);
+      expect(screen.getByText(/无动静 · 14 分钟 · Daoris 已提醒它/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** WAITSAY1c2: a pushed call arrives once, so its time steps by the row's own clock with no new record. */
   it('steps a call\'s elapsed time on its own while it is said', () => {
     const calling = { title: 'npm test', since: '2026-09-21T11:52:00Z' };

@@ -47,6 +47,9 @@ public sealed record QuietRow(string Session, string Kind, string? Quest, int Mi
     public string? Heavy { get; init; }
 }
 
+/// <summary>A session marked quiet now: when it was last heard, by the wall clock, and whether Daoris's word to it was kept (§2.1).</summary>
+public sealed record QuietMark(DateTimeOffset Since, bool Told);
+
 /// <summary>One step the watcher took this look, written as a coded note, a console line and <c>session.quiet</c>.</summary>
 /// <param name="State">The state it was judged in: <c>A</c> (a turn, its door's own) or <c>C</c> (waiting on its own work).</param>
 /// <param name="Step"><see cref="SessionWatch.Marked"/>, <see cref="SessionWatch.Brought"/>, <see cref="SessionWatch.Ended"/>, or <c>over</c>.</param>
@@ -255,14 +258,27 @@ public sealed class SessionWatch
     /// Every session marked quiet now, with when it was last heard by the wall clock (§5.1): what the rail and the head say as
     /// <i>quiet · 14 min</i> while its episode lasts, a busy row's session among them once it is brought to the person.
     /// </summary>
-    public IReadOnlyDictionary<string, DateTimeOffset> QuietNow()
+    public IReadOnlyDictionary<string, QuietMark> QuietNow()
     {
         lock (_gate)
         {
             return _watched.Values
                 .Where(watched => watched.Episode is { Marked: true } or { Row: not null })
-                .ToDictionary(watched => watched.Session, watched => watched.Episode!.Since, StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(watched => watched.Session, watched => new QuietMark(watched.Episode!.Since, watched.Episode.Told), StringComparer.OrdinalIgnoreCase);
         }
+    }
+
+    /// <summary>Daoris's word to a session was kept for its open episode: the rail's row says it was told. False where the episode is over.</summary>
+    public bool MarkTold(string session, int episode)
+    {
+        lock (_gate)
+        {
+            if (!_watched.TryGetValue(session, out var watched) || watched.Episode is not { } open || open.Number != episode) return false;
+            open.Told = true;
+        }
+
+        Changed?.Invoke(session);
+        return true;
     }
 
     /// <summary>The minutes a headless <c>--quiet-end</c> ended a run after, read by its conclusion; null where the watcher ended nothing.</summary>
@@ -575,6 +591,7 @@ public sealed class SessionWatch
         public DateTimeOffset Since { get; } = since;
         public bool Marked { get; set; }
         public bool Busy { get; set; }
+        public bool Told { get; set; }
         public QuietRow? Row { get; set; }
     }
 }

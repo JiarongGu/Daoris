@@ -45,6 +45,13 @@ describe('the running calls, pushed (WAITSAY1c2)', () => {
     expect(callsSlice.compose(new Map<string, unknown>([['calling', {}], ['quiet', {}]]), true)).toEqual({});
   });
 
+  // SESSWATCH1b: whether Daoris's word to a quiet session was kept rides its mark; a mark that says not, says nothing.
+  it('carries that Daoris told a quiet session only where its mark says so', () => {
+    const since = '2026-10-20T07:50:00+00:00';
+    expect(callsSlice.compose(new Map<string, unknown>([['quiet', { a: { since, told: true }, b: { since, told: false } }]]), true))
+      .toEqual({ a: { title: '', since, quiet: since, quietTold: true }, b: { title: '', since, quiet: since } });
+  });
+
   // COWORKVIEW1a rule 18 (§3.7): when a session was last heard, laid beside its call, or beside a call of no title.
   it("lays when a session was last heard beside its call, and takes the partition for no call", () => {
     const call = { title: 'npm test', since: '2026-10-20T08:00:00+00:00' };

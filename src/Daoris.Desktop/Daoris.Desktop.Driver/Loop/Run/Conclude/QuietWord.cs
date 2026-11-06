@@ -121,6 +121,7 @@ public sealed class QuietWord : IDisposable
         }
 
         _told[step.Episode] = kept.Said?.Word?.Id;
+        _watch.MarkTold(_session, step.Episode);
         return true;
     }
 
