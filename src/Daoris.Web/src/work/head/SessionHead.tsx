@@ -31,7 +31,9 @@ import type { EntryPress } from '../review/EntryAccept';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
 import { type HeadLink, linkRow, requestRow } from './headRows';
-import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from '../waits/HelperAsks';
+import type { HelperWaits } from '../waits/HelperAsks';
+import { CoWorkers } from '../team/CoWorkers';
+import { MemberThread } from '../team/MemberThread';
 import { type PieceSection, Pieces } from '../pieces/Pieces';
 import { hasNote } from '../noteLines';
 import { processCommitsSays, type SessionProcess } from './process';
@@ -347,6 +349,8 @@ export function SessionHead({
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {terminalHold}
+      {/* A member's thread (COWORKUX1b, d): whom it works for, *Back to lead*, and once it answered, *Ask again…* and the pass. */}
+      {helpers?.team?.thread && <MemberThread {...helpers.team.thread} lead={helps?.title ?? helpers.team.thread.lead} />}
       {answered !== null && <AnsweredPark answer={answered} />}
       {/* COMMS1i: what the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
       {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}
@@ -475,23 +479,19 @@ export function SessionHead({
         </section>
       )}
 
-      {/* The helpers it asked for that are still on their way (MIXAGENT2b, D163): an agent's ask that waits on the person's yes
-          says so here, with the yes and the no. A settled one is said where it settled, in the conversation and the timeline.
-          Marked a wait's section while one waits on the person's word (MIXAGENT2c), so the strip stands aside for it too. */}
-      {helpers && openAsks(helpers.asks).length > 0 && (
-        <section
-          aria-labelledby={`helpers-${session.id}`}
-          data-wait-section={helpers.onApprove && helpers.asks.some(waitsOnWord) ? '' : undefined}
-          className="grid gap-1"
-        >
-          <h3 id={`helpers-${session.id}`} className="m-0 text-small font-semibold">{t('work.helper.heading')}</h3>
-          <HelperAsks
-            {...helpers}
-            asks={openAsks(helpers.asks)}
-            inConversation={toEvent?.helpers}
-            marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
-          />
-        </section>
+      {/* Its co-workers (COWORKUX1, the co-worker design §6.2): the lead and each member, its thread's door and the pass, an agent's
+          ask that waits on the person's yes with the yes and the no, a wait's section while one does (MIXAGENT2c). */}
+      {helpers && (
+        <CoWorkers
+          session={session.id}
+          helpers={helpers}
+          lead={helpers.team?.lead ?? session.adapter}
+          onPass={helpers.team?.onPass}
+          passing={helpers.team?.passing}
+          choices={helpers.team?.choices}
+          inConversation={toEvent?.helpers}
+          marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
+        />
       )}
 
       {/* Its pieces (COAGENT1b, D199): what other agents write for it, each in a clone of its own, and the ask of one. */}

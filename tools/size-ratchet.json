@@ -112,7 +112,7 @@
   "src/Daoris.Web/src/work/attention/attention.test.ts": 91992,
   "src/Daoris.Web/src/work/conversation/ConversationView.test.tsx": 79696,
   "src/Daoris.Web/src/work/conversation/conversation.test.ts": 78015,
-  "src/Daoris.Web/src/work/head/SessionHead.test.tsx": 73787,
+  "src/Daoris.Web/src/work/head/SessionHead.test.tsx": 73779,
   "src/Daoris.Web/src/work/noteLines.test.ts": 107219,
   "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": 57861,
   "src/Daoris.Web/src/work/rail/SessionRow.test.tsx": 48020,

@@ -6,7 +6,7 @@
   "work.helper.anyAgent": "Let Daoris choose",
   "work.helper.meanIt": "Ask",
   "work.helper.asked": "Asked another agent: its answer comes back to this session as its next turn, marked as the helper’s.",
-  "work.helper.heading": "Helpers",
+  "work.helper.heading": "Co-workers",
   "work.helper.by.person": "You asked",
   "work.helper.by.agent": "The agent asked",
   "work.helper.of": "of {{agent}}",

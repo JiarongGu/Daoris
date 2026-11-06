@@ -5,7 +5,7 @@
   "work.head.request": "请求",
   "work.head.openQuest": "打开委托 #{{id}}",
   "work.head.continues": "接续自",
-  "work.head.helping": "协助对象",
+  "work.head.helping": "为谁工作",
   "work.head.commits": "提交",
   "work.head.openSession": "打开会话",
   "work.head.tool": "智能体",

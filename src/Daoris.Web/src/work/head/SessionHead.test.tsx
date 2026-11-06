@@ -362,7 +362,7 @@ describe('the attended session\'s head', () => {
       expect(within(row).getByText('Why the hydrator drops frames')).toBeInTheDocument();
       fireEvent.click(within(row).getByRole('button', { name: 'Open session' }));
       expect(onOpenSession).toHaveBeenCalledWith(earlier);
-      expect(screen.queryByText('Helping')).toBeNull();
+      expect(screen.queryByText(/Works/)).toBeNull();
     });
 
     it('names the session a helper helps by its title, with a door to it', () => {
@@ -376,7 +376,7 @@ describe('the attended session\'s head', () => {
         />,
       );
       details();
-      const row = screen.getByText('Helping').nextElementSibling as HTMLElement;
+      const row = screen.getByText(/Works/).nextElementSibling as HTMLElement;
       fireEvent.click(within(row).getByRole('button', { name: 'Open session' }));
       expect(onOpenSession).toHaveBeenCalledWith(asker);
     });
@@ -398,7 +398,7 @@ describe('the attended session\'s head', () => {
           headed
         />,
       );
-      expect(within(screen.getByText('Helping').nextElementSibling as HTMLElement).getByText('Expose a streaming budget')).toBeInTheDocument();
+      expect(within(screen.getByText(/Works/).nextElementSibling as HTMLElement).getByText('Expose a streaming budget')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
     });
 
@@ -406,7 +406,7 @@ describe('the attended session\'s head', () => {
       render(<SessionHead session={session()} continues={{ session: earlier, title: 'x' }} headed onOpenSession={vi.fn()} />);
       details();
       expect(screen.queryByText('Continues')).toBeNull();
-      expect(screen.queryByText('Helping')).toBeNull();
+      expect(screen.queryByText(/Works/)).toBeNull();
     });
 
     it('says them in 中文', async () => {
@@ -422,7 +422,7 @@ describe('the attended session\'s head', () => {
         );
         details();
         expect(screen.getByText('接续自')).toBeInTheDocument();
-        expect(screen.getByText('协助对象')).toBeInTheDocument();
+        expect(screen.getByText('为谁工作')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: '打开会话' })).toBeInTheDocument();
       } finally {
         await i18n.changeLanguage('en');
