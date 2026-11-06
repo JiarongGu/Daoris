@@ -517,7 +517,7 @@ use cases keep no forward to them (FLAT1b-i).
 `Workflows/Nodes/` (once `Trees/Nodes/`), beside the work unit in `WorkOrders/Inventory/`, holds the fabric's node contract (FABRIC-NODE1, D173's note): the
 one lifecycle every kind of node shares (`NodeLifecycle`), who may report each outcome by kind (`NodeAuthorities`), the
 acceptances and their transitive invalidation (`NodeAcceptances`), and the built-ins observed from the records a `WorkUnit` was
-read from (`BuiltInNodes`). It is pure and writes nothing: a move returns what it cleared, and `NodeAcceptances.Keep` judges one
+read from (`NodeObserving`, handing each node to its kind's reading). It is pure and writes nothing: a move returns what it cleared, and `NodeAcceptances.Keep` judges one
 result per binding, for whichever writer keeps a node's attempts (FABRIC-NODE1c). The wires between nodes are judged there too:
 `NodeWires` names what a save refuses (FABRIC-WIRE1a), and `WireEvaluation` evaluates them over the nodes' statuses, moving each
 node through `NodeLifecycle.Apply` and proposing the starts within a dispatch limit (FABRIC-WIRE1b), on a complete snapshot of the
@@ -529,8 +529,8 @@ lapsing as `subject` once it moves, while a subject not found or a branch not re
 `run:<run>`, `claimed` observes its quest and reaches at its chain's last step here, and the gates and `handed` observe its branch,
 `handed` reached by a landing made at its bound tip or squashing it. A decoded `stop` is
 reached on the receipt of the path into it, and an `opinion` is read from the second opinion's gate as its caller judged it
-(`OpinionNode`, FABRIC-WIRE1g), a `look` from its gate's verdict and a `go-ahead` from D135's answers (`LookNode`, `GoAheadNode`,
-FABRIC-NODE1b). All are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
+(`OpinionGateReading`, FABRIC-WIRE1g), a `look` from its gate's verdict and a `go-ahead` from D135's answers (`LookReading`,
+`GoAheadReading`, FABRIC-NODE1b). All are pure as well. `WorkPerformer` is what writes: a plugin's performed node dispatched
 durably on its unit's record (`NodeRecordFiles`, `<home>/workflows/units/`), the attempt written with its start before
 `work/perform` is sent, reconciled before any new attempt, retried only for a declared transient code after a persisted delay, an
 answer taken from the plugin's current process alone (FABRIC-PERFORM1b, D173's note). Each change of the record is one locked

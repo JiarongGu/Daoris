@@ -35,7 +35,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts
             ? new(WorkflowKinds.Landing, WorkflowParticipation.Automatic, WorkflowExecutor.Daoris, Lowered: WorkflowKinds.Landing)
             : new(WorkflowKinds.Landing, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept, WorkflowKinds.Landing);
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Land);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Land);
 
     public override string? Title => "The landing";
 
@@ -44,7 +44,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts
     public override bool EndsByTheLine => true;
 
     /// <summary>Reached where the landing record holds the bound tip, by the landing's authority (LANDNODE1c).</summary>
-    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Handed(reading, NodeSource.Landing);
+    public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Landing);
 
     /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass (WORKFLOWCLEAN1 1c).</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) =>

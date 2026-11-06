@@ -1003,7 +1003,7 @@ public sealed class WireEvaluationTests
         var quest = QuestOf();
         NodeDeclaration[] nodes =
         [
-            Node("claimed", NodeKinds.Claimed), Node("deploy") with { Inputs = Ports("claim", BuiltInNodes.EvidenceSchema(NodeKinds.Claimed)) },
+            Node("claimed", NodeKinds.Claimed), Node("deploy") with { Inputs = Ports("claim", NodeObserving.EvidenceSchema(NodeKinds.Claimed)) }
         ];
         var run = RunOver(quest, BranchOf("unit-b1"), "t1");
         var g = new Graph(nodes, [Data("d", "claimed", WireEnd.Evidence, "deploy", "claim")], RunRecord)

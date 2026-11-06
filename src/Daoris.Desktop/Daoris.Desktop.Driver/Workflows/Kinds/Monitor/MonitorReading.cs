@@ -9,15 +9,15 @@ internal static class MonitorReading
 {
     public static NodeObservation Observe(NodeReading reading)
     {
-        if (BuiltInNodes.NotBound(reading) is { } refused) return refused;
-        if (Watched(reading.Follows) is not { } watched) return BuiltInNodes.Seen(reading, null, "it follows no one step that reports a state");
+        if (NodeObserving.NotBound(reading) is { } refused) return refused;
+        if (Watched(reading.Follows) is not { } watched) return NodeObserving.Seen(reading, null, "it follows no one step that reports a state");
 
         var read = watched.Read(reading);
-        if (read.Refused is { } why) return BuiltInNodes.Seen(reading, null, read.Said) with { Refused = why };
-        if (read.Unknown) return BuiltInNodes.Seen(reading, NodeStates.Unknown, read.Said);
-        if (read.State is not { } state) return BuiltInNodes.Seen(reading, null, read.Said);
+        if (read.Refused is { } why) return NodeObserving.Seen(reading, null, read.Said) with { Refused = why };
+        if (read.Unknown) return NodeObserving.Seen(reading, NodeStates.Unknown, read.Said);
+        if (read.State is not { } state) return NodeObserving.Seen(reading, null, read.Said);
 
-        var reached = BuiltInNodes.Reached(reading, NodeSource.Watched, read.Revision, read.Record, read.Artifact, read.Said);
+        var reached = NodeObserving.Reached(reading, NodeSource.Watched, read.Revision, read.Record, read.Artifact, read.Said);
         return reached with { Acceptance = reached.Acceptance! with { Outcome = state } };
     }
 

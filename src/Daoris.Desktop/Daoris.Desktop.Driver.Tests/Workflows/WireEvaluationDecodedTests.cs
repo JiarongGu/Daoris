@@ -162,7 +162,7 @@ public sealed class WireEvaluationDecodedTests
         Assert.Equal(gate.LetsGo, expected != NodeStates.Active);
         Assert.Equal(expected == NodeStates.Active ? NodeStates.Blocked : NodeStates.Ready, g.State("look"));
         if (expected != NodeStates.Active) Assert.Equal((NodeSource.Opinion, (string?)null), (opinion.By, opinion.Words));
-        if (expected == NodeStates.Reached) Assert.StartsWith(OpinionNode.GateRecord + "#", opinion.Current!.Evidence!.Ref, StringComparison.Ordinal);
+        if (expected == NodeStates.Reached) Assert.StartsWith(OpinionGateReading.GateRecord + "#", opinion.Current!.Evidence!.Ref, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -208,7 +208,7 @@ public sealed class WireEvaluationDecodedTests
         NodeDeclaration[] nodes =
         [
             Node("opinion", NodeKinds.Opinion), Node("look", NodeKinds.Look),
-            Node("deploy") with { Inputs = Ports("opinion", BuiltInNodes.EvidenceSchema(NodeKinds.Opinion)) },
+            Node("deploy") with { Inputs = Ports("opinion", NodeObserving.EvidenceSchema(NodeKinds.Opinion)) },
         ];
         Wire[] wires = [After("a", "opinion", "look"), Data("b", "opinion", WireEnd.Evidence, "deploy", "opinion")];
         Graph Skipped()

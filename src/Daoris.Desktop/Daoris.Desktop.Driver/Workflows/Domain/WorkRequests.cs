@@ -21,7 +21,7 @@ public static class WorkRequests
     /// close's note, and whether a quest of the <paramref name="work"/> waits on it, <see cref="QuestView.Awaits"/>, until it closes), then each of
     /// the <paramref name="helpers"/> a session of the work asked, as a request to an agent.
     /// </summary>
-    /// <param name="published">The quests the work's sessions published (<see cref="WorkRequestsNode.Published"/>).</param>
+    /// <param name="published">The quests the work's sessions published (<see cref="WorkRequestsReading.Published"/>).</param>
     /// <param name="work">The run's own work quests here: the one a session waits with is the one naming its question.</param>
     /// <param name="helpers">The helpers' records, each naming the session of the work it serves.</param>
     public static IReadOnlyList<WorkflowRunRequest> Draw(IEnumerable<QuestView> published, IEnumerable<QuestView> work, IEnumerable<TracedSession> helpers)

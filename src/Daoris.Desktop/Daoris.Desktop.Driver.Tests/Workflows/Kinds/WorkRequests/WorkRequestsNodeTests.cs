@@ -32,7 +32,7 @@ public sealed class WorkRequestsNodeTests
 
         // s1 and a teammate's record of s2 ("peer/s2", spelled s2 by their machine) publish; q3 names a session this run holds no record of,
         // and q6 is the run's own work.
-        var found = WorkRequestsNode.Published(every, ["s1", "peer/s2"], new HashSet<string>(["q6"], StringComparer.OrdinalIgnoreCase));
+        var found = WorkRequestsReading.Published(every, ["s1", "peer/s2"], new HashSet<string>(["q6"], StringComparer.OrdinalIgnoreCase));
 
         Assert.Equal(["q1", "q2"], found.Select(quest => quest.Id));
     }
@@ -71,7 +71,7 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void It_is_active_while_one_is_open_or_taken_and_names_it()
     {
-        var open = WorkRequestsNode.Observe(Self, Node, Binding, [Quest("q1", "Done"), Quest("q2", "Taken")]);
+        var open = Reads.WorkRequests(Self, Node, Binding, [Quest("q1", "Done"), Quest("q2", "Taken")]);
 
         Assert.Null(open.Refused);
         Assert.Null(open.Outcome);
@@ -82,7 +82,7 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void A_decline_holds_it_active_never_failed_and_says_whose_it_is_to_pass_over()
     {
-        var declined = WorkRequestsNode.Observe(Self, Node, Binding, [Quest("q1", "Done"), Quest("q2", "Declined", note: "not here"), Quest("q3", "Open")]);
+        var declined = Reads.WorkRequests(Self, Node, Binding, [Quest("q1", "Done"), Quest("q2", "Declined", note: "not here"), Quest("q3", "Open")]);
 
         Assert.Null(declined.Refused);
         Assert.Null(declined.Outcome);
@@ -95,7 +95,7 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void It_is_reached_once_each_is_done_with_the_quests_named_as_its_evidence_through_the_one_table()
     {
-        var seen = WorkRequestsNode.Observe(Self, Node, Binding, [Quest("q2", "Done"), Quest("q1", "Done")]);
+        var seen = Reads.WorkRequests(Self, Node, Binding, [Quest("q2", "Done"), Quest("q1", "Done")]);
 
         Assert.Equal(NodeStates.Reached, seen.Outcome);
         Assert.Equal(NodeSource.Requests, seen.Source);
@@ -111,7 +111,7 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void A_run_whose_sessions_published_nothing_has_nothing_to_wait_on()
     {
-        var seen = WorkRequestsNode.Observe(Self, Node, Binding, []);
+        var seen = Reads.WorkRequests(Self, Node, Binding, []);
 
         Assert.Equal(NodeStates.Reached, seen.Outcome);
         Assert.Equal("quests#none", seen.Acceptance!.Evidence!.Ref);
@@ -120,10 +120,8 @@ public sealed class WorkRequestsNodeTests
     [Fact]
     public void Quests_that_were_not_read_wait_and_a_binding_for_another_subject_or_node_is_refused()
     {
-        Assert.Null(WorkRequestsNode.Observe(Self, Node, Binding, null).Outcome);
-        Assert.Equal(NodeRefusal.NotBound, WorkRequestsNode.Observe(Self, Node, Binding with { Subject = "unit-other" }, []).Refused);
-        Assert.Equal(NodeRefusal.NotObserved,
-            WorkRequestsNode.Observe(Self, Node with { Kind = NodeKinds.GoAhead }, Binding, []).Refused);
+        Assert.Null(Reads.WorkRequests(Self, Node, Binding, null).Outcome);
+        Assert.Equal(NodeRefusal.NotBound, Reads.WorkRequests(Self, Node, Binding with { Subject = "unit-other" }, []).Refused);
     }
 
     /// <summary>Through the evaluation: the run's published quests handed in by its unit move the node, and what is wired after it follows.</summary>

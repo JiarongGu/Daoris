@@ -247,10 +247,10 @@ internal static class NodeEvaluations
     {
         // A run's `push` observes its branch at the landing `land` reached on.
         var unit = governed.Scope is null ? governed.Unit : Landed(governed, record.Statuses)?.Unit;
-        if (unit?.Kind != WorkUnitKind.Branch || BuiltInNodes.LandingOf(unit) is not { } landing) return null;
+        if (unit?.Kind != WorkUnitKind.Branch || NodeObserving.LandingOf(unit) is not { } landing) return null;
         var waits = governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push
             && record.Statuses.GetValueOrDefault(node.Id)?.State is NodeStates.Active or NodeStates.Unknown);
-        if (!waits || !BuiltInNodes.AsksRemote(landing)) return null;
+        if (!waits || !NodeObserving.AsksRemote(landing)) return null;
 
         var tip = await git.RemoteAsync(governed.Watched.Root, landing.Branch, ct).ConfigureAwait(false);
         return new NodeGitReads(each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null);
@@ -263,8 +263,8 @@ internal static class NodeEvaluations
         var pushing = governed.Where(each => each.Unit.Kind is WorkUnitKind.Branch or WorkUnitKind.Run && each.Watched.Root.Length > 0
                 && each.Graph.Nodes.Any(node => node.Kind == NodeKinds.Push))
             // A run's landed branches are its branches' landings, each read once a checkout with the rest.
-            .SelectMany(each => (each.Scope?.Branches ?? [each.Unit]).Select(unit => (each.Watched.Root, Landing: BuiltInNodes.LandingOf(unit))))
-            .Where(each => each.Landing is { } landing && BuiltInNodes.AsksRemote(landing));
+            .SelectMany(each => (each.Scope?.Branches ?? [each.Unit]).Select(unit => (each.Watched.Root, Landing: NodeObserving.LandingOf(unit))))
+            .Where(each => each.Landing is { } landing && NodeObserving.AsksRemote(landing));
         foreach (var same in pushing.GroupBy(each => each.Root, StringComparer.Ordinal))
         {
             branches[same.Key] = same.Select(each => each.Landing!.Branch).Distinct(StringComparer.Ordinal).ToList();

@@ -28,7 +28,7 @@ internal sealed class TidyNode : BuiltInNode, IObserves, IStarts
         }
     }
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Tidy);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Tidy);
 
     public override string? Title => "The chain's clean-up";
 
