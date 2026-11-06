@@ -23298,3 +23298,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **COAGENT1c** a conversation as the lead, and the head's menu; **COAGENT1g** a hand-over waits for the outgoing part's background work and children (D199). → `docs/2026-10-22-coagent-design.md`
 
   **Outcome** 2026-11-06: BL46: one rule decides who leads pieces, so a conversation in its own tree shows the Pieces section and its head's ⋯ asks another agent to work on a piece (`PartnerChatProcessTests`); a conversation's hand-over and an account move take the outgoing part's job before the stop, then end and wait for what it still holds, up to 30 seconds, and the old record says so (`chat.left-ended`, `chat.left-running`; `HandOverLeftProcessTests`). A quest's session's hand-over stays on COAGENT1.
+
+## REVIEW2-LEFT1 (2026-11-07)
+
+- [x] **REVIEW2-LEFT1 — what REVIEW2's fixes left** (tests): about 48 tick classes still root their homes under the OS temp, and the modules' `Bridge` home has no fixture. Proof: no test home under the OS temp, by the census. → `docs/2026-11-02-review2-findings.md`
+
+  **Outcome** 2026-11-07: every desktop test home roots under the checkout's `_fixtures/test-homes` (`TestHomes.Root`, 457 files moved by a count-asserted edit) and the modules' `Bridge` homes under `_fixtures/bridge-homes`; `TestHomesCensusTests` pins no `GetTempPath` or `GetTempFileName` in either test project but three named exceptions that create nothing there or need a folder outside any repository.
