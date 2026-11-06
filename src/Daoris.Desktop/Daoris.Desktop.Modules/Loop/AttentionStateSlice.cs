@@ -75,7 +75,7 @@ public static class AttentionStateSlice
             "departed", "setUp", "local", "environment", "shows", "opinion", "placed", "sitting", "trust", "quest", "proposal", "title",
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
-            "convert", "gitAsk", "obligation",
+            "convert", "gitAsk", "obligation", "task",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -130,6 +130,8 @@ public static class AttentionStateSlice
         ["quiet"] = ["minutes", "busy", "intake", "words", "heavy"],
         // INTEGRATE1o part o3: a run held at a declined request, its node and the quest declined.
         ["declined"] = ["node", "quest", "to", "work", "request"],
+        // NODEKIT1 HUMAN: a run waiting on a person's task, its node and the presses it waits for.
+        ["task"] = ["run", "node", "acts", "work"],
         // KNOWCENTRAL2e: what memory waits on the person for one session: ends and replacements to approve, a stopped session's staged rows.
         ["memory"] = ["ends", "replacements", "staged"],
         // INTEGRATE1h: an integration's wait on the owner: which (decide, superseded, card, declaration), its line and what it names; a
@@ -174,6 +176,7 @@ public static class AttentionStateSlice
         ["row.gitAsk"] = "gitAsk",
         ["row.convert"] = "convert",
         ["row.declined"] = "declined",
+        ["row.task"] = "task",
         ["row.memory"] = "memory",
         ["row.integration"] = "integration",
     };

@@ -26,6 +26,9 @@ public sealed class HumanTaskRowsTests
         Assert.Equal(["task:q7/release", "task:q7/sign"], Keys(rows).Order(StringComparer.Ordinal));
         Assert.Equal("default", Assert.Single(rows, row => row["id"]!.GetValue<string>() == "q7/release")["workspace"]!.GetValue<string>());
         Assert.Empty(Rows(new() { Tasks = [] }));
+
+        // Every field of the row is one the slice pushes to the page.
+        foreach (var row in rows) Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
     [Fact]

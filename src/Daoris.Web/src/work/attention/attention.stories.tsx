@@ -42,7 +42,7 @@ const ACTS: Required<AttentionActs> = {
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
-  parked: () => {}, 'parked-quest': () => {}, 'steward-stopped': () => {}, 'request-declined': () => {}, task: () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
+  parked: () => {}, 'parked-quest': () => {}, 'steward-stopped': () => {}, 'request-declined': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
   'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {}, quiet: () => {},
 };
