@@ -4,7 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// One reader of Claude Code's <c>stream-json</c> (AGENTPROVIDER1l): the capture reads each line into one <see cref="NativeFrame"/>, and the
-/// lineage, the streams beside and the dialect's mapper each take that frame, never the text to parse again.
+/// children it says (<see cref="NativeChildren"/>), the streams beside and the dialect's mapper each take that frame, never the text to parse
+/// again.
 /// </summary>
 public sealed class NativeFrameTests : IDisposable
 {
@@ -26,11 +27,10 @@ public sealed class NativeFrameTests : IDisposable
 
         await HarnessCapture.CaptureStructuredAsync(
             new StringReader(lines), new StringReader(""), Path.Combine(_home, "s1.log"), new WatchedSink(), readers, prompt: null,
-            CancellationToken.None, lineage: readers);
+            CancellationToken.None);
 
-        Assert.Equal(3, readers.Lineage.Count);
-        Assert.Equal(readers.Lineage, readers.Taken);
-        Assert.Equal(readers.Lineage, readers.Read);
+        Assert.Equal(3, readers.Taken.Count);
+        Assert.Equal(readers.Taken, readers.Read);
         Assert.Equal(
             ["""{"type":"system","subtype":"init","session_id":"c1"}""", "warming up", """{"type":"assistant","message":{"content":[]}}"""],
             readers.Read.Select(frame => frame.Line));
@@ -60,9 +60,8 @@ public sealed class NativeFrameTests : IDisposable
         }
     }
 
-    private sealed class Readers : IStreamMapper, IStreamsReader, ILineageWriter
+    private sealed class Readers : IStreamMapper, IStreamsReader
     {
-        public List<NativeFrame> Lineage { get; } = [];
         public List<NativeFrame> Taken { get; } = [];
         public List<NativeFrame> Read { get; } = [];
         public AcpUsage? Usage => null;
@@ -82,11 +81,5 @@ public sealed class NativeFrameTests : IDisposable
         }
 
         public Task EndAllAsync() => Task.CompletedTask;
-
-        public void Stream(NativeFrame frame) => Lineage.Add(frame);
-
-        public void Spawned(LineageAnnouncement said) => throw new InvalidOperationException("the native door announces no child");
-
-        public void Ended(string agent, string? state) => throw new InvalidOperationException("the native door ends no announced child");
     }
 }

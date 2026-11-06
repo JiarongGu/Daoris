@@ -22,7 +22,7 @@ public enum ReadingBy
 /// What a run's door said happened, as one closed set of readings beside <see cref="SessionEvent"/>, which <see cref="Said"/> carries
 /// (the agent-provider design §3.1, row l). A transport reads its wire and writes each reading to its run's <see cref="IReadingSink"/>, composed
 /// where the run's executor is built of its owners' parts: Context keeps the event file and the console, Participants the binding's
-/// conversation, Agents the account's windows. Every payload is Events' own or lower, so a reading names no Agents type; the provider mints
+/// conversation and the lineage, Agents the account's windows. Every payload is Events' own or lower, so a reading names no Agents type; the provider mints
 /// nothing, and what it does not say is never a reading.
 /// </summary>
 /// <remarks>
@@ -50,6 +50,12 @@ public abstract record WireReading
     /// <summary>Its place in its run's order, from 1; 0 before its run stamped it.</summary>
     public long Sequence { get; init; }
 
+    /// <summary>
+    /// The lineage token of the process that said it (COWORKVIEW1a), so a part keeping what a process did names that process; null before its
+    /// run stamped it, or where its process ran under none.
+    /// </summary>
+    public string? Process { get; init; }
+
     /// <summary>An event the session's record keeps, of today's kinds: the person's words, the agent's, a tool, a turn, usage, a note.</summary>
     public sealed record Said(SessionEvent Event) : WireReading;
 
@@ -73,6 +79,34 @@ public abstract record WireReading
 
     /// <summary>A stream beside the run ended, with the state its agent gave it, or none.</summary>
     public sealed record StreamEnded(string Stream, string? State) : WireReading;
+
+    /// <summary>
+    /// A child the agent runs beside itself started, said once per child: its native id and the signal that said it, with its place and label
+    /// in its wire's own words, unbounded.
+    /// </summary>
+    public sealed record ChildSeen(string Child, ChildSignal Signal) : WireReading
+    {
+        /// <summary>The child that started it, where a child did and the wire said which.</summary>
+        public string? Parent { get; init; }
+
+        /// <summary>How far below the part's own agent it is, where its wire said: 1 for one the part's own agent started.</summary>
+        public int? Depth { get; init; }
+
+        /// <summary>The kind of agent, where its harness named one.</summary>
+        public string? Type { get; init; }
+
+        /// <summary>Its name, where its wire gave one.</summary>
+        public string? Name { get; init; }
+
+        /// <summary>What it was asked to do, as its wire described it.</summary>
+        public string? Task { get; init; }
+    }
+
+    /// <summary>
+    /// A child's end its wire said, with the word it said it in, or none; said once, and only for a child whose start was seen. A child's end
+    /// that only its session's close implies is no reading: its process's own end says it.
+    /// </summary>
+    public sealed record ChildEnded(string Child, ChildSignal Signal, string? Word) : WireReading;
 
     /// <summary>
     /// A turn or an open ended on its door's failure: the one reading every failure is, on either door, which the account's reader reads

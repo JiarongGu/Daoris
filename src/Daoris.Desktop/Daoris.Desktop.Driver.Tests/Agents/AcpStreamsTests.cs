@@ -4,18 +4,19 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 2: what the protocol door tells a part's lineage of each child, through the port <see cref="AcpStreams"/>
-/// is handed. The recording port here names no lineage type: it is all <see cref="AcpStreams"/> sees.
+/// COWORKVIEW1a rule 2, AGENTPROVIDER1l: what the protocol door says of each child, as the readings <see cref="AcpStreams"/> writes to the
+/// sink it is handed. The recording sink here names no lineage type: it is all <see cref="AcpStreams"/> sees.
 /// </summary>
 public sealed class AcpStreamsTests
 {
     [Fact]
-    public void An_announcement_tells_its_child_once_its_label_bounded_and_its_place()
+    public void An_announcement_is_said_once_in_its_wire_s_words_with_its_place()
     {
         var told = new Told();
         var streams = Streams(told);
+        var task = new string('t', 210) + "\nthe rest of the task";
 
-        Take(streams, "s-1", Spawned("a1", new string('n', 130), new string('t', 210) + "\nthe rest of the task"));
+        Take(streams, "s-1", Spawned("a1", new string('n', 130), task));
         Take(streams, "s-1", Spawned("a1", "again", "again"));
         Take(streams, "a1", Spawned("a2", "Nested", "look"));
         Take(streams, "x-9", Spawned("a3", null, null));
@@ -23,10 +24,10 @@ public sealed class AcpStreamsTests
 
         Assert.Equal(
             [
-                new LineageAnnouncement("a1", new string('n', 120), new string('t', 200)) { ByRoot = true },
-                new LineageAnnouncement("a2", "Nested", "look") { Parent = "a1" },
-                new LineageAnnouncement("a3", null, null),
-                new LineageAnnouncement("a4", "Rooted", null) { ByRoot = true },
+                new WireReading.ChildSeen("a1", ChildSignal.Announced) { Depth = 1, Name = new string('n', 130), Task = task },
+                new WireReading.ChildSeen("a2", ChildSignal.Announced) { Parent = "a1", Name = "Nested", Task = "look" },
+                new WireReading.ChildSeen("a3", ChildSignal.Announced),
+                new WireReading.ChildSeen("a4", ChildSignal.Announced) { Depth = 1, Name = "Rooted", Task = "  \nsecond" },
             ],
             told.Spawns);
     }
@@ -60,9 +61,9 @@ public sealed class AcpStreamsTests
         Assert.Empty(told.Ends);
     }
 
-    private static AcpStreams Streams(ILineageWriter lineage) => new(
+    private static AcpStreams Streams(IReadingSink children) => new(
         new SessionStreams(new SessionOutput(), "d-1"), new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet,
-        lineage: lineage);
+        children: children);
 
     private static void Take(AcpStreams streams, string? from, string update) => Assert.True(Taken(streams, from, update));
 
@@ -81,12 +82,17 @@ public sealed class AcpStreamsTests
         ? JsonSerializer.Serialize(new { sessionUpdate = "subagent_state_update", subagentSessionId = id })
         : JsonSerializer.Serialize(new { sessionUpdate = "subagent_state_update", subagentSessionId = id, state });
 
-    private sealed class Told : ILineageWriter
+    private sealed class Told : IReadingSink
     {
-        public List<LineageAnnouncement> Spawns { get; } = [];
+        public List<WireReading.ChildSeen> Spawns { get; } = [];
         public List<(string, string?)> Ends { get; } = [];
-        public void Stream(NativeFrame frame) => throw new InvalidOperationException("the protocol door has no stream lines");
-        public void Spawned(LineageAnnouncement said) => Spawns.Add(said);
-        public void Ended(string agent, string? state) => Ends.Add((agent, state));
+        public bool Watched => false;
+
+        public void Read(WireReading reading)
+        {
+            if (reading is WireReading.ChildSeen seen) Spawns.Add(seen);
+            else if (reading is WireReading.ChildEnded { Signal: ChildSignal.Announced } ended) Ends.Add((ended.Child, ended.Word));
+            else throw new InvalidOperationException($"the streams said {reading.GetType().Name}, which is no child's");
+        }
     }
 }

@@ -8,7 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// lineage hook: <c>tools/fabric-probe/launch.mjs --connector … --lineage-hook …</c>). Each fixture's lineage file is the one the
 /// connector and the hook wrote, as they wrote it; each stream file is Claude Code's <c>task_*</c> lines off its
 /// <c>stream-json</c>, cut to their ids (its other fields carry the subagents' prompts and an output path), which this driver
-/// reads as <see cref="ChildLineage.Writer"/> does at run time. Claude Code 2.1.299 on <c>claude-sonnet-5-5</c>; Codex 0.160.0
+/// reads as a run does: each line's children read once (<see cref="NativeChildren"/>) and written by the lineage's part
+/// (<see cref="ChildBindings.ChildLine"/>). Claude Code 2.1.299 on <c>claude-sonnet-5-5</c>; Codex 0.160.0
 /// on <c>gpt-6.1-sol</c>, effort low; D173's note has the receipts.
 /// </summary>
 /// <remarks>Files only: the suite's fast half.</remarks>
@@ -25,9 +26,10 @@ public sealed class ChildLineageReceiptTests
     /// </summary>
     private static ChildBindings Run(string name, bool? clean = null, string? kind = ChildBindings.Chat)
     {
-        var agents = new HashSet<string>(StringComparer.Ordinal);
+        var agents = new NativeChildren();
         var stream = File.Exists(Path.Combine(Fixtures, $"{name}.stream.jsonl"))
-            ? Lines($"{name}.stream.jsonl").Select(line => ChildBindings.StreamLine(NativeFrame.Of(line), DateTimeOffset.UnixEpoch, agents)).OfType<string>()
+            ? Lines($"{name}.stream.jsonl").Select(line => agents.Read(NativeFrame.Of(line)) is { } said ? ChildBindings.ChildLine(said, DateTimeOffset.UnixEpoch) : null)
+                .OfType<string>()
             : [];
         var end = clean is { } ended ? [ChildBindings.EndLine(ended, DateTimeOffset.UnixEpoch)] : Array.Empty<string>();
         return ChildBindings.Fold([.. Lines($"{name}.lineage.jsonl"), .. stream, .. end], kind);

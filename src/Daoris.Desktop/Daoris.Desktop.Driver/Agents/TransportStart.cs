@@ -27,9 +27,6 @@ internal sealed record TransportStart(ProcessStartInfo Info, StartClass Whose)
     /// <summary>A fact about how the run was set up, written ahead of anything the process says; null says none.</summary>
     public string? Preamble { get; init; }
 
-    /// <summary>The home whose lineage file is told each subagent's start and end (FABRIC-C1a); null tells none.</summary>
-    public string? LineageHome { get; init; }
-
     /// <summary>Where the harness's own words are kept for its ending (AGT3c), which its executor reads after; null keeps the run's own.</summary>
     public HarnessWords? Own { get; init; }
 

@@ -306,7 +306,6 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             Session = sessionId,
             Transcript = transcript,
-            LineageHome = home,
             Own = own,
 
             // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note; the
@@ -316,10 +315,12 @@ internal sealed class SessionHold(IRunWiring wiring)
         });
 
         // The run's readings, each kept by its owner: the record and its console, the conversation the harness named under the adapter a
-        // quest's session keeps it as (ANSWER1a), and what the stream says of the account's windows (TOOL6c).
+        // quest's session keeps it as (ANSWER1a), each child its door says in the part's lineage (COWORKVIEW1a), and what the stream says
+        // of the account's windows (TOOL6c).
         run.HandSink(ReadingSinks.Of(
             new RecordReadings(sessionId, output, context.Events),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
+            new LineageReadings(home, sessionId),
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
             limits,
             offers is null ? null
