@@ -14,7 +14,7 @@ public sealed record ResolveSession(string Id, string State, string? Note, bool 
 public sealed record SessionHelperAsk(string Id, string? Question, string? Agent, bool Said = false, string? After = null, bool ToPerson = false);
 
 /// <summary><i>Pass to the lead</i> on an answer kept for the person (COWORKUX1d): the ask, and the session the page names.</summary>
-public sealed record SessionHelperPass(string Ask, string Session);
+public sealed record SessionHelperPass(string Ask, string Session, bool Said = false);
 
 public sealed record SessionHelpers(string Id);
 

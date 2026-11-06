@@ -112,6 +112,9 @@ under *Done at a terminal* (below), name its command for the person to run.
   A session still running, in Waiting on you or in To review is never archived: archive never hides what
   needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,
   on the session's page, where `go_propose` takes them.
+  Door `helper` asks another agent, read-only, one question about one session's work (`question`, and `agent` to
+  name it); `ask` asks again after an answered one, and `toMe` keeps the answer for the person, who passes it on.
+  Door `pass` sends an answer kept for the person to the session that asked, naming the ask.
 - `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or
   the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it
   until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a
@@ -231,6 +234,7 @@ session named; never propose adding one that has not landed.
 | end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent account ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in) |
 | update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
+| ask another agent, read-only, one question about a session's work (or ask again after its answer, keeping the answer for you), and pass an answer kept for you to the session that asked | A session's page → Co-workers ⋯ → Bring in another agent…, a member's thread → Ask again… and Pass to the lead | `daoris session helper <id> "…" [--agent <name>] [--after <ask>] [--to-me]`, `daoris session pass <ask>` |
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → Pause quest…, Pause ask…, Resume quest, Resume ask | `daoris ask pause|--resume <id>`, `daoris quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | Quests → the ask's page or the quest's page → Abandon… | `daoris ask abandon <id> [--reason "…" --yes]`, `daoris quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris quest delete <id>`, `daoris ask delete <id>` |

@@ -48,7 +48,7 @@ describe('COMMS1i co-workers', () => {
   it('COMMS1i says the co-workers in Chinese', async () => {
     await i18n.changeLanguage('zh');
     const { container } = render(<AtWorkView held={COWORKERS} nameOf={nameOf} />);
-    expect(screen.getByText('协作者')).toBeTruthy();
+    expect(screen.getByText('同事')).toBeTruthy();
     expect(container.querySelector('[data-coworker="helper:h8"]')?.textContent).toContain('Codex，作为助手');
     expect(container.querySelector('[data-coworker="helper:h8"]')?.textContent).toContain('已回答 · 已收下');
   });

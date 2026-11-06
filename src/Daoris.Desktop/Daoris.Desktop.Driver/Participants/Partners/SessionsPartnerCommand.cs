@@ -27,13 +27,13 @@ public static class SessionsPartnerCommand
         switch (args)
         {
             case ["partner", var id, "--list"] when Word(id):
-                return make("partner-list", [id], null, null, []);
+                return make("partner-list", [id], null, null, [], null, false);
             case ["partner", var piece, "--stop"] when Word(piece):
-                return make("partner-stop", [piece.TrimStart('#')], null, null, []);
+                return make("partner-stop", [piece.TrimStart('#')], null, null, [], null, false);
             case ["partner", var piece, "--discard"] when Word(piece):
-                return make("partner-discard", [piece.TrimStart('#')], null, null, []);
+                return make("partner-discard", [piece.TrimStart('#')], null, null, [], null, false);
             case ["partner", var piece, "--hand-over"] when Word(piece):
-                return make("partner-hand-over", [piece.TrimStart('#')], null, null, []);
+                return make("partner-hand-over", [piece.TrimStart('#')], null, null, [], null, false);
             case ["partner", var id, var words, ..] when Word(id) && Word(words):
             {
                 var rest = args.Skip(3).ToList();
@@ -61,7 +61,7 @@ public static class SessionsPartnerCommand
                     return null;
                 }
 
-                return make("partner", [id], words.Trim(), agent, paths);
+                return make("partner", [id], words.Trim(), agent, paths, null, false);
             }
         }
 

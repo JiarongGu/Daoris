@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IParticipantsAsk
 {
-    /// <summary><c>helper</c>, <c>helper-approve</c>, <c>helper-decline</c>, <c>partner</c>, <c>partner-list</c> or <c>partner-stop</c>.</summary>
+    /// <summary><c>helper</c>, <c>helper-approve</c>, <c>helper-decline</c>, <c>pass</c>, <c>partner</c>, <c>partner-list</c> or <c>partner-stop</c>.</summary>
     string Verb { get; }
 
     /// <summary>The sessions, asks or pieces the verb names.</summary>
@@ -21,6 +21,12 @@ public interface IParticipantsAsk
 
     /// <summary>A piece's paths, each repository-relative as the person named it.</summary>
     IReadOnlyList<string> Paths { get; }
+
+    /// <summary>The answered ask a helper's ask follows (<c>--after</c>), or null for a first ask.</summary>
+    string? After { get; }
+
+    /// <summary>That the helper's answer is the person's, reaching the session only by <c>pass</c> (<c>--to-me</c>).</summary>
+    bool ToMe { get; }
 }
 
 /// <summary>What the helper's and the partner's verbs touch of the terminal's world: the service, the home and how a piece's base is read.</summary>
@@ -37,4 +43,5 @@ public interface IParticipantsWorld
 }
 
 /// <summary>Makes the terminal's ask from what a participants' verb read of the words.</summary>
-public delegate TAsk ParticipantsAskMaker<out TAsk>(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths);
+public delegate TAsk ParticipantsAskMaker<out TAsk>(
+    string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths, string? after, bool toMe);

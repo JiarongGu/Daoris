@@ -36,7 +36,7 @@ public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
     }
 
     [Theory]
-    [InlineData("rename", "s1", false, "a reason", "archive or unarchive")]
+    [InlineData("rename", "s1", false, "a reason", "archive, unarchive, helper or pass")]
     [InlineData("archive", null, false, "a reason", "name exactly one")]
     [InlineData("archive", "s1", true, "a reason", "name exactly one")]
     [InlineData("unarchive", null, true, "a reason", "only with archive")]
@@ -50,6 +50,50 @@ public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
+    }
+
+    [Fact]
+    public void A_helper_door_is_written_with_its_question_its_agent_the_ask_it_follows_and_whom_the_answer_is_for()
+    {
+        var (id, message) = Box().ProposeSession(
+            "helper", "s1", false, "the person wants a second reading", "h1", Now, new SessionHelperProposal(" Why? ", "codex-acp", "#a1b2c3d4", true));
+
+        var written = Written(id!);
+        Assert.Equal(
+            ("session", "helper", "s1", "Why?", "codex-acp", "a1b2c3d4", true),
+            (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString(),
+                written.GetProperty("value").GetString(), written.GetProperty("agent").GetString(), written.GetProperty("ask").GetString(),
+                written.GetProperty("toMe").GetBoolean()));
+        Assert.Contains($"Proposed `#{id}`", message);
+    }
+
+    [Fact]
+    public void A_pass_door_is_written_with_the_ask_to_pass_and_nothing_else()
+    {
+        var (id, _) = Box().ProposeSession("pass", "s1", false, "the person read it", "h1", Now, new SessionHelperProposal(null, null, "a1b2c3d4", false));
+
+        var written = Written(id!);
+        Assert.Equal(("pass", "a1b2c3d4"), (written.GetProperty("door").GetString(), written.GetProperty("ask").GetString()));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("value").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("helper", "s1,s2", "Why?", null, null, false, "exactly one session")]
+    [InlineData("helper", "s1", "  ", null, null, false, "none was given")]
+    [InlineData("helper", "s1", "Why?", "two words", null, false, "is one word")]
+    [InlineData("helper", "s1", "Why?", null, "a 1", false, "is one word")]
+    [InlineData("pass", "s1", null, null, null, false, "names the ask to pass")]
+    [InlineData("pass", "s1", "Why?", null, "a1", false, "the session and the ask alone")]
+    [InlineData("pass", "s1", null, null, "a1", true, "the session and the ask alone")]
+    [InlineData("archive", "s1", "Why?", null, null, false, "the helper and pass doors take a question")]
+    public void A_malformed_helper_or_pass_proposal_is_refused_with_nothing_written(
+        string door, string sessions, string? question, string? agent, string? ask, bool toMe, string says)
+    {
+        var (id, message) = Box().ProposeSession(door, sessions, false, "a reason", "h1", Now, new SessionHelperProposal(question, agent, ask, toMe));
+
+        Assert.Null(id);
+        Assert.Contains(says, message);
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 

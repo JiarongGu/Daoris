@@ -58,7 +58,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [GroundSession("SESSION_HELPER_PASS", "session")]
     [Says("SESSION_HELPER_PASS", "session:session")]
     [Publishes("SESSION_HELPER_PASS", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
-    private Task<object?> SessionHelperPassAsync(SessionHelperPass press, CancellationToken cancellationToken) => _asks.HelperPassAsync(press);
+    private Task<object?> SessionHelperPassAsync(SessionHelperPass press, CancellationToken cancellationToken) => _asks.HelperPassAsync(press, cancellationToken);
 
     // The asks a session made of helpers, oldest first, each as the driver's look left it: its state and code, the
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
