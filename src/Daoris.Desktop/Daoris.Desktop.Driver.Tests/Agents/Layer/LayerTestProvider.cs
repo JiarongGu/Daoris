@@ -41,19 +41,24 @@ internal static class LayerTestProvider
         ],
     };
 
-    /// <summary>The provider's registration under <paramref name="door"/>, its program <paramref name="command"/>.</summary>
-    public static LayerRegistration Registration(IReadOnlyList<string> command, string door = Id)
+    /// <summary>
+    /// The provider's registration under <paramref name="door"/>, its program <paramref name="command"/>; <paramref name="plant"/>, where
+    /// given, rewrites what its reader yields, a regression planted on the layer path alone for the oracle to catch (§6.3 point 5).
+    /// </summary>
+    public static LayerRegistration Registration(
+        IReadOnlyList<string> command, string door = Id, Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>>? plant = null)
     {
         var descriptor = Descriptor(door);
         return new(door, builder => builder.AddAgentProvider(
-            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command))));
+            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command, plant))));
     }
 
     /// <summary>A scenario's program in <paramref name="scratch"/>, saying what <paramref name="spec"/> says, as a command.</summary>
     /// <remarks>
     /// The spec's fields: <c>out</c>, lines said at once (a string as written, an object as its JSON); <c>err</c>, stderr lines first;
     /// <c>wait</c>, milliseconds before <c>after</c>'s lines; <c>hang</c>, never ending by itself; <c>echo</c>, its stdin said back;
-    /// <c>exit</c>, its code. A resume's conversation is said first, as <c>resumed id</c>.
+    /// <c>argv</c>, its arguments after the spec said back; <c>exit</c>, its code. A resume's conversation is said first, as
+    /// <c>resumed id</c>.
     /// </remarks>
     public static IReadOnlyList<string> Scenario(string scratch, object spec, string name = "scenario")
     {
@@ -76,6 +81,7 @@ internal static class LayerTestProvider
         process.stdin.on('data', (chunk) => { heard += chunk; });
         process.stdin.on('end', async () => {
           if (resume >= 0) say(`resumed ${args[resume + 1]}`);
+          if (spec.argv) say(`argv ${JSON.stringify(args.slice(1))}`);
           if (spec.echo) say(`heard ${heard}`);
           for (const line of spec.err ?? []) console.error(line);
           for (const line of spec.out ?? []) say(line);
@@ -86,10 +92,25 @@ internal static class LayerTestProvider
         });
         """;
 
-    private sealed class Session(IProcessRunner runner, IReadOnlyList<string> command) : IAgentSession
+    private sealed class Session(
+        IProcessRunner runner, IReadOnlyList<string> command, Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>>? plant)
+        : IAgentSession
     {
         public async IAsyncEnumerable<AgentStreamEvent> StreamAsync(
             AgentSessionOptions options, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            if (plant is null)
+            {
+                await foreach (var each in ReadAsync(options, ct).ConfigureAwait(false)) yield return each;
+                yield break;
+            }
+
+            var read = new List<AgentStreamEvent>();
+            await foreach (var each in ReadAsync(options, ct).ConfigureAwait(false)) read.Add(each);
+            foreach (var each in plant(read)) yield return each;
+        }
+
+        private async IAsyncEnumerable<AgentStreamEvent> ReadAsync(AgentSessionOptions options, [EnumeratorCancellation] CancellationToken ct)
         {
             List<string> args = [.. command.Skip(1)];
             if (options.ResumeToken is { } token) args.AddRange(["--resume", token]);
@@ -185,7 +206,10 @@ internal static class LayerTestProvider
                 case "end" when Text("kind") is { } kind:
                     yield return new SessionEnded(ProviderVerdict.Failed, true, Text("subtype"), Text("id"), null, Text("why"))
                     {
-                        Failure = new AgentFailure(Enum.Parse<AgentFailureKind>(kind), Text("by") ?? "tests:failed"),
+                        Failure = new AgentFailure(Enum.Parse<AgentFailureKind>(kind), Text("by") ?? "tests:failed")
+                        {
+                            Delivery = Text("delivery") is { } delivery ? Enum.Parse<AgentDelivery>(delivery) : default,
+                        },
                     };
                     break;
                 case "end":
