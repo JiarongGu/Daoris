@@ -254,9 +254,10 @@ internal sealed class PendingCasePasses(string message) : XunitException(message
 internal sealed class NotAnsweredYet(string reader) : Exception($"no reader answers this case yet: {reader}");
 
 /// <summary>
-/// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c>, a
-/// beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>, or, for a provider with no folder, under the tests'
-/// <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and edits none shared.
+/// The pending layout (D213's row b part 2 note): one <c>pending.json</c> per provider, an array of <c>{ case, door, row, why }</c> with
+/// an optional <c>run</c> (the agent-lyntai design §6.2), beside its <c>provider.json</c> in its folder under <c>Agents/Providers/</c>,
+/// or, for a provider with no folder, under the tests' <c>fixtures/providers/&lt;id&gt;/</c>. A new provider brings its own file and
+/// edits none shared. Its twin is <c>tools/stand-ins.mjs</c>'s reader.
 /// </summary>
 internal static class ConformancePending
 {

@@ -288,8 +288,8 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   transport is the thing asked: the transports, the providers and the shim.
 
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
-- contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `ProviderRegistryTests`,
-  `ProvidersBuiltTests`, `StandInShimProcessTests`;
+- contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `PendingRowsTests`,
+  `ParityOracleTests`, `ProviderRegistryTests`, `ProvidersBuiltTests`, `StandInShimProcessTests`;
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
   `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
   readings and the sink, each door's event file as before, a subagent's card `think` on both doors);
@@ -428,8 +428,15 @@ Agents page, and `orient-index` and `code-map` once files move.
   (`AgentRun` over one turn per call, a resume a start of its own, an operation the layer's members do not carry refused before a
   write) and the registry's layer view (`LayerView`: bound doors by the registry's spelling and by run kind, their layer doors and
   claims). The conformance suite's fourth view runs the registry through that view on its run kind (`LayerConformanceTests`). All of it
-  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). Left of the adapter (1b-i): the two-path oracle
-  and the pending lines' re-pointing; the moves wait on the capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
+  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). A move's parity is the oracle's
+  (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
+  projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
+  first appearance, a time by its interval from the run's start, a named library clock within its interval), a held case holding
+  alike only on the same missing reader. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
+  scenario alike but for a tool step's kind, which the Claude reader derives from the tool's name (`LayerParityProcessTests`). A
+  pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
+  waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). The moves wait on the
+  capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
