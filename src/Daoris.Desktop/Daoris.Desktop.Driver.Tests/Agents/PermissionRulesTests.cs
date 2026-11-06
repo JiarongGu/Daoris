@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PermissionRulesTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-permissions-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-permissions-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PermissionRulesTests() => Directory.CreateDirectory(_home);
 

@@ -18,7 +18,7 @@ public sealed class SessionRequestsTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-requests-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-requests-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionRequestsTests() => Directory.CreateDirectory(_home);
 

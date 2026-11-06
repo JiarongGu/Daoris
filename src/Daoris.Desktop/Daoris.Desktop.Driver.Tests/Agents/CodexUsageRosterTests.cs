@@ -18,7 +18,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 {
     private static readonly DateTimeOffset Seen = new(2026, 10, 7, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-codexuse-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-codexuse-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 
@@ -348,7 +348,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     public void The_question_is_its_owner_s_through_its_door_and_an_agent_speaks_where_either_its_door_or_its_server_says()
     {
         var adapters = ProviderRegistry.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-codexuse-unused", "harnesses.json"));
+        var roster = new HarnessRoster(adapters, Path.Combine(TestHomes.Root, "daoris-codexuse-unused", "harnesses.json"));
 
         Assert.Equal(
             ["claude-code", "codex-acp"],

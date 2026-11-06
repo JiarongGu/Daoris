@@ -921,7 +921,7 @@ public sealed class SessionGroupsTests
     [Fact]
     public void A_conversation_is_between_turns_by_its_runners_word_else_by_its_record_of_its_turns()
     {
-        var directory = Path.Combine(Path.GetTempPath(), "daoris-between-" + Guid.NewGuid().ToString("N")[..8]);
+        var directory = Path.Combine(TestHomes.Root, "daoris-between-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var events = new SessionEvents(directory);

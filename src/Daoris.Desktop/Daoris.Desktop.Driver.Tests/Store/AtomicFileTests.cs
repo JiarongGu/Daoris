@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AtomicFileTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-atomic-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-atomic-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AtomicFileTests() => Directory.CreateDirectory(_folder);
 

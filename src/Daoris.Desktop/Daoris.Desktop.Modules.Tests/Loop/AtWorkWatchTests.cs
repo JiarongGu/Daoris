@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,7 +13,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class AtWorkWatchTests : IDisposable
 {
     private readonly string P1;
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-atwork-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-atwork-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly EventBus _bus = new(NullLogger<EventBus>.Instance);
     private readonly LineageTokens _tokens = new(4242, new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc));
     private readonly StateSlice _groups;

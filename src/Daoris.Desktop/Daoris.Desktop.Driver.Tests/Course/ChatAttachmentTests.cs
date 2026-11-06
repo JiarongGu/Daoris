@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ChatAttachmentTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-attach-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-attach-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ChatAttachmentTests()
     {

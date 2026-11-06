@@ -353,7 +353,7 @@ public sealed class AcpResumeTests
     [Fact]
     public async Task The_files_said_with_the_words_are_links_after_their_blocks()
     {
-        var path = Path.Combine(Path.GetTempPath(), "daoris-home", "sessions", "s-1", "files", "0123456789ab-trace.txt");
+        var path = Path.Combine(TestHomes.Root, "daoris-home", "sessions", "s-1", "files", "0123456789ab-trace.txt");
         KeptFile[] files = [new("trace.txt", path)];
         var driven = Answering(Both);
 

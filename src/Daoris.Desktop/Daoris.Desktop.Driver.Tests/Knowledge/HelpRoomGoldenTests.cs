@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -285,7 +286,7 @@ public sealed class HelpRoomGoldenTests
     [Fact]
     public void The_rooms_settings_are_the_ones_it_wrote_before()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-golden-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-golden-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var room = HelpRoom.Prepare(home, Empty);

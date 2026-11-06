@@ -25,7 +25,7 @@ public sealed class PartnerProcessTests : IDisposable
     private const string Version = "0.0.0-stand-in";
 
     private readonly GitTree _repository = new("partner-pass");
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-partner-pass-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-partner-pass-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly string _home;
     private readonly string _base;
 

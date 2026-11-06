@@ -12,7 +12,7 @@ public sealed class SetupPressTests : IDisposable
 {
     private static readonly DateOnly Day = new(2026, 10, 1);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-setup-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-setup-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SetupPressTests() => Directory.CreateDirectory(_home);
 

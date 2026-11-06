@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class BranchTidyingTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tidying-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-tidying-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
 
@@ -24,7 +24,7 @@ public sealed class BranchTidyingTests : IDisposable
 
     private string HomeTree => DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-1a2b3c4d");
 
-    private string OutsideTree => Path.Combine(Path.GetTempPath(), "a-checkout-of-the-persons", "engine");
+    private string OutsideTree => Path.Combine(TestHomes.Root, "a-checkout-of-the-persons", "engine");
 
     /// <summary>Where the row's tree is: none, one this home opened, or one a person checked the branch out in.</summary>
     public enum At { None, Home, Outside }
@@ -672,7 +672,7 @@ public sealed class BranchTidyingTests : IDisposable
         var trees = DaorisHome.Entry(_home, HomeEntry.Trees);
         var served = Path.Combine(trees, "default", "engine", "s-1a2b3c4d", "app", "dist");
         var waiting = Path.Combine(trees, "tools", "studio", "s-5e6f7a8b");
-        var checkout = Path.Combine(Path.GetTempPath(), "a-checkout", "engine");
+        var checkout = Path.Combine(TestHomes.Root, "a-checkout", "engine");
 
         var inUse = BranchTidying.TreesOf(trees, [served, waiting, checkout]);
 

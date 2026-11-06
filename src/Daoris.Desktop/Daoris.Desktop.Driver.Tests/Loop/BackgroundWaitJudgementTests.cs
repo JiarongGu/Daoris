@@ -100,7 +100,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     {
         if (_tree is null)
         {
-            _tree = Path.Combine(Path.GetTempPath(), "daoris-turn-carry-" + Guid.NewGuid().ToString("N")[..8]);
+            _tree = Path.Combine(TestHomes.Root, "daoris-turn-carry-" + Guid.NewGuid().ToString("N")[..8]);
             Directory.CreateDirectory(_tree);
             Git("init", "-q", "-b", "main");
             Git("config", "user.email", "turn-carry@example.com");
@@ -261,7 +261,7 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     public async Task A_tree_that_cannot_be_read_owes_nothing()
     {
         _ledger.Move("q1", "Done");
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-turn-carry-none-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-turn-carry-none-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(folder);
         try
         {

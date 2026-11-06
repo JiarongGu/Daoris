@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AskAndWaitTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-ask-wait-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-ask-wait-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

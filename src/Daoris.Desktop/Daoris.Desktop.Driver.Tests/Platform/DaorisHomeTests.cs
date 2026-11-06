@@ -525,7 +525,7 @@ public sealed class DaorisHomeTests
 
     private static string Scratch()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         return home;
     }
@@ -533,7 +533,7 @@ public sealed class DaorisHomeTests
     /// <summary>An install's shape on disk (D93): the marker at its root, and the application under <c>app/</c>.</summary>
     internal static string Install()
     {
-        var install = Path.Combine(Path.GetTempPath(), "daoris-install-tests", Guid.NewGuid().ToString("N")[..8]);
+        var install = Path.Combine(TestHomes.Root, "daoris-install-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Path.Combine(install, "app", "daoris-driver"));
         File.WriteAllText(Path.Combine(install, "INSTALLED.md"), "# Daoris — installed desktop\n");
         return install;

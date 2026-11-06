@@ -21,7 +21,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class PluginPackageTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-plugin-package-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-plugin-package-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Home => Path.Combine(_root, "home");
 

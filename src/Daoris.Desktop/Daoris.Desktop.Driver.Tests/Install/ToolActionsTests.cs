@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Nothing here reaches a network: a host is a stand-in, and one of them stalls until it is stopped.</remarks>
 public sealed class ToolActionsTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-toolactions-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-toolactions-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly byte[] Bytes = ToolInstallTests.Archive.Build("zip", "bin/pwsh.exe=pwsh", "");
 

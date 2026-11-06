@@ -32,7 +32,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class AgentSettingsTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-agent-settings-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-agent-settings-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AgentSettingsTests() => Directory.CreateDirectory(_home);
 

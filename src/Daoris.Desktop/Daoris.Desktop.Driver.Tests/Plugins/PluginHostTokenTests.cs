@@ -14,7 +14,7 @@ public sealed class PluginHostTokenTests : IDisposable
     private const string Origin = "https://git.example.invalid/acme/app.git";
     private const string Secret = "throwaway-api-token";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-host-token-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-host-token-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

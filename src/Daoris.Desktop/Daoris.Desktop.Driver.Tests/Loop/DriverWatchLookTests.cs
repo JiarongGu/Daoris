@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class DriverWatchLookTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-look-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     public DriverWatchLookTests() => Directory.CreateDirectory(_home);
 

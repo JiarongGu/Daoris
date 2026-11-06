@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -81,7 +82,7 @@ public sealed class DriverModuleRegistryTests : DriverModuleBridge
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            var gone = Path.Combine(Path.GetTempPath(), "daoris-registry-gone-" + Guid.NewGuid().ToString("N")[..8]).Replace("\\", "\\\\");
+            var gone = Path.Combine(TestHomes.Root, "daoris-registry-gone-" + Guid.NewGuid().ToString("N")[..8]).Replace("\\", "\\\\");
             var body = request.RequestUri!.AbsolutePath == "/api/registry"
                 ? $$"""[{"repository":"game","workspace":"aurora","adopted":false,"root":"{{gone}}"},{"repository":"engine","workspace":"aurora","adopted":true}]"""
                 : "[]";

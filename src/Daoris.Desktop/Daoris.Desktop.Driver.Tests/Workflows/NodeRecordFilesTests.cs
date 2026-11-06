@@ -13,7 +13,7 @@ public sealed class NodeRecordFilesTests : IDisposable
 
     private static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-noderecord-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-noderecord-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

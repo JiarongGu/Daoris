@@ -23,7 +23,7 @@ public sealed class GatedStartsTests : IDisposable
     [ThreadStatic]
     private static bool t_calling;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-gated-starts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-gated-starts-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<(string File, bool OnCaller)> _seen = [];
 

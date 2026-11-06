@@ -23,7 +23,7 @@ public sealed class PluginToolSetUpTests : IDisposable
             { "run": ["pwsh", "account", "show", "--output", "none"], "says": "Signed in", "fix": "pwsh login", "signin": true } ] }
         """;
 
-    private readonly string _scratch = Path.Combine(Path.GetTempPath(), "daoris-tool-setup-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-tool-setup-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginToolSetUpTests()
     {

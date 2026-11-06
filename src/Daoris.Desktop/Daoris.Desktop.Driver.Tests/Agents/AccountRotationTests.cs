@@ -29,7 +29,7 @@ public sealed class AccountRotationTests : IDisposable
 
     private const string Nowhere = "daoris-tool4f-no-such-command";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-rotation-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-rotation-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = Seen;
 

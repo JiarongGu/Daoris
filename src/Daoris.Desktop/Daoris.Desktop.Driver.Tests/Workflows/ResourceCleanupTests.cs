@@ -25,7 +25,7 @@ public sealed class ResourceCleanupTests : IDisposable
     private static readonly IReadOnlyList<PluginResource> Declared =
         [new(Preview, PluginResourceRoles.Temporary, PluginSteps.CleanupPoint), new(Site, PluginResourceRoles.Result, PluginSteps.CleanupPoint)];
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-resources-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-resources-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Port _port = new();
 

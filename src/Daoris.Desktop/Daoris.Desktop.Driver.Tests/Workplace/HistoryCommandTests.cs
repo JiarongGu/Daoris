@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>A scratch home and the in-process stand-in HIST1c's tests read (<see cref="HistoryStandIn"/>): the suite's fast half.</remarks>
 public sealed class HistoryCommandTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-history-verbs-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-history-verbs-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HistoryCommandTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

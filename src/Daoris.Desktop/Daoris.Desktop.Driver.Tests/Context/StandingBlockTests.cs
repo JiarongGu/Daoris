@@ -13,7 +13,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 11, 3, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-standing-block-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-standing-block-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

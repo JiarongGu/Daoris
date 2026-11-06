@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ProcessJobTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-job-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-job-" + Guid.NewGuid().ToString("N")[..8]);
 
     public ProcessJobTests() => Directory.CreateDirectory(_home);
 

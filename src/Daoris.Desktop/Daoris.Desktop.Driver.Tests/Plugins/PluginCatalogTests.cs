@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PluginCatalogTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-plugins-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-plugins-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

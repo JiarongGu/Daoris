@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class TraceTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-trace-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-trace-" + Guid.NewGuid().ToString("N")[..8]);
 
     public TraceTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -206,7 +207,7 @@ public sealed class EngineProfileTests : Bridge
     [Fact]
     public void The_home_is_found_from_the_profile_folder_the_shell_hands_over()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-home");
+        var home = Path.Combine(TestHomes.Root, "daoris-home");
 
         Assert.Equal(home, EngineBrowser.HomeOf(EngineBrowser.ProfileFolder(home)));
     }

@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class TidyEffectTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tidy-effect-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-tidy-effect-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly HashSet<string> _inUse = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _tidied = [];
     private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);

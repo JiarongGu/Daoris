@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -143,7 +144,7 @@ public sealed class HelpRoomMayDoTests
             HelpRoom.Render(HelpRoomFixture.Machine with { PluginSkills = ["acme.tickets:triage", "acme.tickets:write-up"] }));
         Assert.DoesNotContain("hand you these skills", HelpRoom.Render(HelpRoomFixture.Machine));
 
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-skills-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-skills-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var folder = DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tickets");
@@ -215,7 +216,7 @@ public sealed class HelpRoomMayDoTests
     [Fact]
     public void Waiting_servers_and_ones_an_update_would_bring_are_described_from_the_approvals_and_the_offers()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-waiting-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-waiting-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var installed = DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools");
@@ -271,7 +272,7 @@ public sealed class HelpRoomMayDoTests
     [Fact]
     public void The_servers_it_is_handed_are_described_from_the_persons_approvals()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools"));
@@ -355,7 +356,7 @@ public sealed class HelpRoomMayDoTests
     [Fact]
     public void In_full_access_the_servers_it_is_handed_are_every_one_declared_here()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-full-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-full-servers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools"));

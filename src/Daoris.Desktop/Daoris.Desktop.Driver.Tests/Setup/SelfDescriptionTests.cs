@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SelfDescriptionTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-self-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-self-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SelfDescriptionTests() => Directory.CreateDirectory(_root);
 

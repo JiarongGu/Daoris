@@ -21,7 +21,7 @@ public sealed class CurveMoveProcessTests : IDisposable
     /// <summary>Ten minutes after the ledger's records are made (<c>2026-10-03T08:00:00Z</c>): a move made then holds until 08:30.</summary>
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 8, 10, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-curve-proc-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-curve-proc-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 

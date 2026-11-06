@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process (DEV3).</remarks>
 public sealed class WorkflowBindingLookTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workflow-look-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workflow-look-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

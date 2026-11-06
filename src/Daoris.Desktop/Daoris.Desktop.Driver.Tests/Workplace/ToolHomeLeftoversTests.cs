@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 
 namespace Daoris.Driver.Tests.Platform;
@@ -11,7 +12,7 @@ namespace Daoris.Driver.Tests.Platform;
 public sealed class ToolHomeLeftoversTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-toolhome-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-toolhome-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Now = new(2026, 10, 16, 12, 0, 0, TimeSpan.Zero);
 

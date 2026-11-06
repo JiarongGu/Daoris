@@ -14,7 +14,7 @@ public sealed class RecordListTests : IDisposable
     private static readonly object Gate = new();
 
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-recordlist-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-recordlist-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

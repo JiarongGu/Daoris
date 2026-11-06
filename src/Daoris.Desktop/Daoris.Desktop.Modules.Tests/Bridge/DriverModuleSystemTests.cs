@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -47,7 +48,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     {
         var tree = DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1");
         var mine = Project(tree);
-        var theirs = Project(Path.Combine(Path.GetTempPath(), "somebody", "app"));
+        var theirs = Project(Path.Combine(TestHomes.Root, "somebody", "app"));
         var module = WiredModule(new WiringSizes(), [new ToolOrigin(tree, "tree", null)]);
 
         var listed = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome");

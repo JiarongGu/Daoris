@@ -12,7 +12,7 @@ public sealed class SessionsPartnerTests : IDisposable
 {
     private const string Head = "3333333333333333333333333333333333333333";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sessions-partner-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-sessions-partner-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsPartnerTests() => Directory.CreateDirectory(_home);
 

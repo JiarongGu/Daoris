@@ -15,7 +15,7 @@ public sealed class LineageRaceProcessTests : IDisposable
     /// <summary>Which start a request is asked for, so the doors hold one start's and answer the other's.</summary>
     private static readonly AsyncLocal<string?> Whose = new();
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lineage-race-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-lineage-race-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly string _root;
     private readonly string _signals;
     private readonly string _script;

@@ -14,7 +14,7 @@ public sealed class ReopenTellingTests : IDisposable
 {
     private const string Note = "The bridge is wrong.\nUse the v3 one.";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-reopen-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-reopen-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly CancellationTokenSource _closing = new(Poll.Patience);
 

@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>A service and git standing in, in process: the fast half (MOD8).</remarks>
 public sealed class EvidenceCheckTests : IDisposable
 {
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-evidence-check-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-evidence-check-" + Guid.NewGuid().ToString("N")[..8]);
 
     public EvidenceCheckTests() => Directory.CreateDirectory(_tree);
 

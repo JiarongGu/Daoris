@@ -18,7 +18,7 @@ internal sealed class GitTree : IDisposable
 
     public GitTree(string name, string branch = "main")
     {
-        Root = Path.Combine(Path.GetTempPath(), $"daoris-{name}-" + Guid.NewGuid().ToString("N")[..8]);
+        Root = Path.Combine(TestHomes.Root, $"daoris-{name}-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Root);
         Git("init -q");
         Git($"symbolic-ref HEAD refs/heads/{branch}");

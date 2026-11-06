@@ -16,7 +16,7 @@ public sealed class NativePromptProcessTests : IDisposable
 {
     private const string Prompt = "报告 😀 Serve the report\n端口 8080 \U0001F600";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-native-prompt-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-native-prompt-" + Guid.NewGuid().ToString("N")[..8]);
 
     public NativePromptProcessTests() => Directory.CreateDirectory(_root);
 

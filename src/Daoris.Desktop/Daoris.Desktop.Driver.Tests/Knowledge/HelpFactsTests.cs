@@ -23,7 +23,7 @@ public sealed class HelpFactsTests : IDisposable
     /// <summary>A part of the trees that judged none.</summary>
     private static readonly HelpTrees NoTrees = new(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-facts-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-facts-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpFactsTests() => Directory.CreateDirectory(_home);
 

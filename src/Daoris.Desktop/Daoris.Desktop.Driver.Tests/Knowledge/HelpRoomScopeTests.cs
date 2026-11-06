@@ -11,7 +11,7 @@ namespace Daoris.Driver.Tests;
 /// <remarks>No process and no git: the facts are the fixture's (<see cref="HelpRoomScopeFixture"/>).</remarks>
 public sealed class HelpRoomScopeTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-scope-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-scope-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpRoomScopeTests() => Directory.CreateDirectory(_home);
 

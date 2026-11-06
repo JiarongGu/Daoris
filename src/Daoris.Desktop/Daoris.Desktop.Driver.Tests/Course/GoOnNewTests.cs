@@ -15,7 +15,7 @@ public sealed class GoOnNewTests : IDisposable
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 4, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-go-on-new-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-go-on-new-" + Guid.NewGuid().ToString("N")[..8]);
 
     public GoOnNewTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

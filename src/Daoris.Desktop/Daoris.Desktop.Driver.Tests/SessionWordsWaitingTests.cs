@@ -17,7 +17,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
 
     private static readonly DateTimeOffset Reset = T0.AddHours(2);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-waiting-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-waiting-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionWordsWaitingTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

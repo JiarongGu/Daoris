@@ -19,7 +19,7 @@ public sealed class ToolsChildProcessTests : IDisposable
 {
     private const string Answer = "stub-git";
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-tools-child-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-tools-child-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Home => Path.Combine(_root, "data");
 

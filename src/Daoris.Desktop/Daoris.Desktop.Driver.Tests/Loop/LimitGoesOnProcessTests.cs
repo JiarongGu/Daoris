@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class LimitGoesOnProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-limit-proc-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-limit-proc-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 

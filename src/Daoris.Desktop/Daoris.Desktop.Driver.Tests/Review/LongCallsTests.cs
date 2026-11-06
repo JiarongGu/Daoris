@@ -17,7 +17,7 @@ public sealed class LongCallsTests : IDisposable
 
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(LongCalls.CallMinutes);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-long-calls-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-long-calls-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly CancellationTokenSource _closing = new(Poll.Patience);
 

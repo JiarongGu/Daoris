@@ -34,7 +34,7 @@ public sealed class AccountRotationTickTests : IDisposable
         "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask "
         + $"your admin for a higher limit · your weekly limit resets Oct 3, 4pm ({Zone.Id})";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-rotation-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-rotation-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 

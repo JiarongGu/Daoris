@@ -81,7 +81,7 @@ public sealed partial class HolderKeyStripTests
 
         var tool = new ProcessStartInfo("node") { UseShellExecute = false, CreateNoWindow = true };
         tool.Environment[HolderKey.Variable] = Sentinel;
-        Tools.Hand(tool, Path.Combine(Path.GetTempPath(), "daoris-holder-strip-" + Guid.NewGuid().ToString("N")[..8]));
+        Tools.Hand(tool, Path.Combine(TestHomes.Root, "daoris-holder-strip-" + Guid.NewGuid().ToString("N")[..8]));
         Assert.False(tool.Environment.ContainsKey(HolderKey.Variable));
     }
 
@@ -100,7 +100,7 @@ public sealed partial class HolderKeyStripTests
         Assert.Null(inherited);
         Assert.Null(HolderKey.Read(inherited));
 
-        var home = Path.Combine(Path.GetTempPath(), "daoris-holder-strip-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-holder-strip-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             using var service = new ServiceClient("http://127.0.0.1:9", null);

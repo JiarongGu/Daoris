@@ -12,7 +12,7 @@ public sealed class RefWatchTests : IDisposable
 {
     private static readonly TimeSpan Deadline = TimeSpan.FromMinutes(5);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-refs-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-refs-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly FakeChangeSource _source = new();
 

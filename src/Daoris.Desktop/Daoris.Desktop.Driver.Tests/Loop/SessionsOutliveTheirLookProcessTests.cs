@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-outlive-process-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-outlive-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
     private readonly string _engine;

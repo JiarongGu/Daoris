@@ -108,7 +108,7 @@ public sealed class SignInRefusalsTests
     [Fact]
     public void A_door_reads_its_owner_s_words()
     {
-        var roster = new HarnessRoster(ProviderRegistry.Built(), Path.Combine(Path.GetTempPath(), "daoris-signin-" + Guid.NewGuid().ToString("N")[..8], "harnesses.json"));
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Path.Combine(TestHomes.Root, "daoris-signin-" + Guid.NewGuid().ToString("N")[..8], "harnesses.json"));
 
         Assert.Same(Claude, roster.SignInOf("claude-code-acp"));
         Assert.Same(Claude, roster.SignInOf("acp-stub"));

@@ -17,7 +17,7 @@ public sealed class HomeFilesKeepTests
     public void An_edit_changes_only_what_it_edits(
         string name, string file, string edit, string start, string? between, string? refused, string expected, string? reads)
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-keepall-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-keepall-" + Guid.NewGuid().ToString("N")[..8]);
         var path = Path.Combine(home, file);
         try
         {

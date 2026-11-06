@@ -24,7 +24,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class TurnStopTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
 
     public TurnStopTests()
     {

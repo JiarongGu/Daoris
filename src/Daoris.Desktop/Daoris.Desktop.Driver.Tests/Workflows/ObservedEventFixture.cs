@@ -25,7 +25,7 @@ public abstract class ObservedEventFixture : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
     };
 
-    protected readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-observed-" + Guid.NewGuid().ToString("N")[..8]);
+    protected readonly string _home = Path.Combine(TestHomes.Root, "daoris-observed-" + Guid.NewGuid().ToString("N")[..8]);
 
     private protected readonly ObservedPort _port = new();
 

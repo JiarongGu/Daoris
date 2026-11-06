@@ -158,7 +158,7 @@ public sealed class GitBranchesParseTests
     [Fact]
     public void The_git_directory_is_the_roots_own_or_none()
     {
-        var scratch = Path.Combine(Path.GetTempPath(), "daoris-gitdir-" + Guid.NewGuid().ToString("N")[..8]);
+        var scratch = Path.Combine(TestHomes.Root, "daoris-gitdir-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var plain = Directory.CreateDirectory(Path.Combine(scratch, "plain")).FullName;
@@ -190,7 +190,7 @@ public sealed class GitBranchesParseTests
     [Fact]
     public void The_last_fetch_is_fetch_heads_time()
     {
-        var scratch = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "daoris-fetch-" + Guid.NewGuid().ToString("N")[..8])).FullName;
+        var scratch = Directory.CreateDirectory(Path.Combine(TestHomes.Root, "daoris-fetch-" + Guid.NewGuid().ToString("N")[..8])).FullName;
         try
         {
             Assert.Null(GitBranches.FetchOf(scratch));

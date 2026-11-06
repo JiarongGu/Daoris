@@ -22,7 +22,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     /// <summary>AGT3b's measured line (Claude Code 2.1.280, an invalid key).</summary>
     private const string Measured = "Failed to authenticate. API Error: 401 API key is invalid.";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-refused-own-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-refused-own-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

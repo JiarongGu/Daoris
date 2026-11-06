@@ -21,7 +21,7 @@ public sealed class DriverStartFailureTests : IDisposable
     private const string Key = "hoststart2-a-key-nobody-may-read";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-hoststart2-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-hoststart2-" + Guid.NewGuid().ToString("N")[..8]);
 
     public DriverStartFailureTests() => Directory.CreateDirectory(_home);
 

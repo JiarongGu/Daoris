@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class HomeTopicsTests
 {
     // Never created: an answer only says where a topic's files are, and a place's folder is read when its stamps are.
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-home-topics-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-home-topics-" + Guid.NewGuid().ToString("N")[..8]);
 
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
