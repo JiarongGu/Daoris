@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Lyntai;
 using Lyntai.Agents;
 
@@ -8,7 +7,8 @@ namespace Daoris.Driver;
 /// Claude Code's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under
 /// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder as today's (Lyntai's AG22),
 /// and the reading named as <see cref="ClaudeUsage"/> names it, a window not yet opened turning over a window's length after the read.
-/// Bound in place of today's question when the driver loads, where the driver carries the layer (D248).
+/// Not bound in place of today's question: the layer's reader reads a real answer's object <c>scope</c> as unknown and so answers nothing
+/// (D248's note of 2026-11-07); the oracle reads it, and it is bound again when Lyntai's reader keeps such an answer.
 /// </summary>
 internal static class ClaudeUsageLayer
 {
@@ -22,9 +22,6 @@ internal static class ClaudeUsageLayer
         (builder, command) => builder.AddClaudeCliAgentSession(command: command, id: Door, agent: Door),
         options => options.WorkingDirectory = account => Path.Combine(account.Home!, "usage-read"),
         Answer);
-
-    [ModuleInitializer]
-    internal static void Install() => UsageReads.Bind(ClaudeUsage.Question, new LayerUsageRead(ClaudeUsage.Question, Vendor));
 
     /// <summary>The reading under today's names: <c>five_hour</c>, <c>seven_day</c> and <c>seven_day_&lt;scope&gt;</c>, and the server's rows as <c>limits:&lt;kind&gt;</c>.</summary>
     private static LayerUsageAnswer Answer(AgentAllowanceReading reading, DateTimeOffset now)
