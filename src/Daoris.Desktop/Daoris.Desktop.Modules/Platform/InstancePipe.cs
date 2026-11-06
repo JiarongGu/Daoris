@@ -496,9 +496,9 @@ public sealed class InstancePipe : IDisposable
         Lifetime.Dispose();
     }
 
-    /// <summary>The pipe's security (§4.1, PIPEOWNER1): <see cref="PipeListener.Security"/>.</summary>
+    /// <summary>The pipe's security (§4.1, PIPEOWNER1): the driver's rule for this user's pipes, <see cref="UserPipe.Security"/>.</summary>
     [SupportedOSPlatform("windows")]
-    public static PipeSecurity Security() => PipeListener.Security();
+    public static PipeSecurity Security() => UserPipe.Security();
 
     /// <summary>A connection ended: its place freed, its presses' cards told no terminal waits on them now, and its hold ended.</summary>
     internal void Ended(PipeConnection connection)

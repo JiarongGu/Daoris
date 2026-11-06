@@ -47,6 +47,7 @@ group.
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`, `links system\|daoris`. **Edits files under the home** |
 | `chat` | A conversation of the running Daoris held at this terminal: `chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]` starts one, `chat --session <id>` holds one that is open |
 | `drive` | The headless loop: `drive [--once \| --until-idle] [--quiet-end <minutes>] [--share]` |
+| `events` | The work cycle's events for a session outside Daoris, through the `event-relay` plugin: `events relay --where` lays the relay's copy out and prints its command; `events relay --once` prints one batch of fixed lines and ends |
 | `gate` | A checkout's heavy gates under its repository's one slot (`gate run`), and a branch's or a commit's verification (`gate verify`) |
 | `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
 | `history` | What this machine keeps of finished work, and a workspace's `clear` |

@@ -38,6 +38,13 @@ public static class RelaySaid
     /// <summary>A relay started anywhere but its build's folder, or from a build being removed (exit 1).</summary>
     public const string NotFromCopy = "Daoris: the relay runs only from its laid-out copy; run events relay --where for its command";
 
+    /// <summary>Words the verb does not take (exit 2).</summary>
+    public const string Usage =
+        "Daoris: events relay takes --where, or --once with --home <home>, --since <run>:<seq>, --kinds <kind,...> and --session-pid <pid>; nothing was served";
+
+    /// <summary>A junction or a symbolic link met under the relay's folders: said, and never followed or removed through.</summary>
+    public const string Linked = "Daoris: a link under the relay's folders was left, never followed";
+
     /// <summary>A <c>--since</c> that is not a bracket a batch closed with (exit 2).</summary>
     public const string SinceRefused = "Daoris: --since takes the bracket of the last batch's closing line as <run>:<seq>; nothing was served";
 
