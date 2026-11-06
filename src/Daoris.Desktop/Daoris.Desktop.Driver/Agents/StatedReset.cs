@@ -17,6 +17,9 @@ public enum ResetPrecision
 
     /// <summary>A wait from now (<i>try again in 5 minutes</i>): never graced.</summary>
     RelativeWait,
+
+    /// <summary>An instant another reader resolved, how it was stated not kept: never graced, until the statement itself is handed.</summary>
+    Resolved,
 }
 
 /// <summary>

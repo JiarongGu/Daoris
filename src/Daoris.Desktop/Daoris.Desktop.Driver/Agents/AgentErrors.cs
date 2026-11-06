@@ -184,6 +184,13 @@ public static class AgentErrors
     }
 
     /// <summary>
+    /// A bound kind's failure, which arrives already read (the agent-lyntai design §5.3): its own reading, with no table and no word read
+    /// again, its access disposition the opening's reading of the evidence kept apart.
+    /// </summary>
+    public static AgentError OfNormalized(NormalizedFailure failure) =>
+        new(failure.Kind, failure.Failure, failure.By, failure.Limit, failure.Access?.Opening);
+
+    /// <summary>
     /// The entry that reads <paramref name="failure"/>'s kind word or status as <paramref name="kind"/>, own first: a word the
     /// adapter's own table names is read there alone, so an owner's reading of the same word never overrides it.
     /// </summary>

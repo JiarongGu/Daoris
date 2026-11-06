@@ -30,6 +30,7 @@ public sealed class HostPolicyResetTests
     [InlineData(ResetPrecision.WeekdayAndTime, false)]
     [InlineData(ResetPrecision.TimeOfDay, false)]
     [InlineData(ResetPrecision.RelativeWait, false)]
+    [InlineData(ResetPrecision.Resolved, false)]
     public void Host_policy_gives_a_reset_just_past_the_grace_only_where_it_is_dated(ResetPrecision precision, bool graced)
     {
         var justPast = new StatedReset(Seen.AddSeconds(-30), precision, AssumedZone: false);
