@@ -112,7 +112,7 @@ public sealed class GitSshHoldsProcessTests : IClassFixture<GitSshHost>, IDispos
         WorkingTree.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
         try
         {
-            var (failed, _) = await TreeRefs.FetchAsync(Repo, "main", CancellationToken.None, "engine", "work");
+            var (failed, _) = await TreeRefs.FetchAsync(Home, Repo, "main", CancellationToken.None, "engine", "work");
             return (failed, fetches);
         }
         finally

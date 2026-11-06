@@ -10,7 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the process's home is a scratch one of this run's.
 /// </summary>
 /// <remarks>
-/// A spawn handed no home reads this process's (<see cref="SpawnRequest.Home"/>), and so do the driver's own git runs and tools. Inherited
+/// A spawn handed no home reads this process's (<see cref="SpawnRequest.Home"/>); the driver's own git runs and tools read the home a
+/// program named (<see cref="ProgramHome"/>), which no test names, so theirs is the system's. Inherited
 /// from a developer's shell, that home was the person's install's: a test's sessions made folders under it and its git read the install's
 /// profile, and a class that passed in that shell failed in the gate's, which names none. Here every run has a home, and never the
 /// person's. The one variable of the process the suite sets outside a collection that runs alone (<see cref="ProcessEnvironmentCensusTests"/>).

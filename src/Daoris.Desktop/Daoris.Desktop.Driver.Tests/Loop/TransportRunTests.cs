@@ -325,7 +325,7 @@ internal sealed class RecordingTransportHost(string home, SessionProcesses proce
 
     public IReadOnlyList<string>? Command(string adapter) => Commands;
 
-    public ProcessStartInfo Prepared(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
+    public ProcessStartInfo Prepared(ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next)
     {
         Asked.Add($"prepare {adapter.Id.Value}");
         return next;

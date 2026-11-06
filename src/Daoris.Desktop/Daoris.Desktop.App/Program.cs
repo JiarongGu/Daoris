@@ -60,6 +60,8 @@ internal static class Program
         // scratch home stays the dev loop's. An install's older home is moved into D172's places here too
         // (HOMELAYOUT3), before anything resolves a path: the log and the window's memory among them.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
+        // Named once for what carries no home of its own (Daoris's own git, a probe's tools): never the variable a process inherited.
+        Daoris.Driver.ProgramHome.Named = Daoris.Driver.DaorisHome.Resolve();
         stages.Mark(StartStages.Home);
 
         // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
