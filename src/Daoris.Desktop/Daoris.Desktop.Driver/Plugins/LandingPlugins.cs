@@ -57,7 +57,7 @@ public sealed class LandingPlugins(
     public DateTimeOffset Now => _clock();
 
     /// <summary>The home's plugins, read as the driver reads them — a harness name this build carries refused.</summary>
-    public PluginCatalog Catalog() => PluginCatalog.Load(home, AdapterSet.Built().Names);
+    public PluginCatalog Catalog() => PluginCatalog.Load(home, ProviderRegistry.Built().Names);
 
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="ProblemOf"/>).</summary>
     public string? Problem(string plugin) => ProblemOf(plugin, Catalog());

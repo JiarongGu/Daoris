@@ -43,8 +43,8 @@ public sealed class DriverWatch(
     // that drives it is not handed.
     IInAppBrowser? browser = null,
     // The adapters every look's driver and the default roster are built over (AGENTPROVIDER1m-i, the agent-layer design §6.3 point 1): the
-    // seam the parity oracle builds a look over for either path. Null is today's, `AdapterSet.Built()`.
-    AdapterSet? adapters = null)
+    // seam the parity oracle builds a look over for either path. Null is today's, `ProviderRegistry.Built()`.
+    ProviderRegistry? adapters = null)
 {
     private readonly WatchWakes _wakes = new();
 
@@ -104,16 +104,16 @@ public sealed class DriverWatch(
 
     internal IInAppBrowser? Browser => browser;
 
-    internal AdapterSet Adapters => _adapters;
+    internal ProviderRegistry Adapters => _adapters;
 
     /// <summary>
     /// The adapters this loop runs on (AGENTPROVIDER1m-i): the set it was handed, or the built one. Each static read on a look's path reads
-    /// names alone (<c>AdapterSet.Built().Names</c>), as <c>ChatRunner</c>'s plugin catalogue does, so a set handed in is the one that runs.
+    /// names alone (<c>ProviderRegistry.Built().Names</c>), as <c>ChatRunner</c>'s plugin catalogue does, so a set handed in is the one that runs.
     /// </summary>
-    private readonly AdapterSet _adapters = adapters ?? AdapterSet.Built();
+    private readonly ProviderRegistry _adapters = adapters ?? ProviderRegistry.Built();
 
     /// <summary>This machine's harnesses, as the loop sees them — also what a roster surface reads.</summary>
-    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters ?? AdapterSet.Built(), HarnessSettings.ResolvePath(home));
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters ?? ProviderRegistry.Built(), HarnessSettings.ResolvePath(home));
 
     /// <inheritdoc cref="_harnesses"/>
     public HarnessRoster Harnesses => _harnesses;

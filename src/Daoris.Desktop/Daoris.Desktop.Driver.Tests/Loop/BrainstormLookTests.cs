@@ -106,7 +106,7 @@ public sealed class BrainstormLookTests : IDisposable
         var service = new Service();
         var turns = new Turns();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), config ?? DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), config ?? DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap }, ProviderRegistry.Built(), _home)
         {
             BrainstormTurns = turns.RunAsync,
         };
@@ -134,7 +134,7 @@ public sealed class BrainstormLookTests : IDisposable
         var read = 0;
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
-            AdapterSet.Built(), _home)
+            ProviderRegistry.Built(), _home)
         {
             BrainstormTurns = new Turns().RunAsync,
             BrainstormCheckouts = (_, ct) =>
@@ -170,7 +170,7 @@ public sealed class BrainstormLookTests : IDisposable
         var read = 0;
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
-            AdapterSet.Built(), _home)
+            ProviderRegistry.Built(), _home)
         {
             BrainstormTurns = new Turns().RunAsync,
             BrainstormCheckouts = (_, _) =>
@@ -377,7 +377,7 @@ public sealed class BrainstormLookTests : IDisposable
         var asked = new List<(string Words, string Repository)>();
         var long_ = new string('x', 13_000);
         var looked = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, ProviderRegistry.Built(), _home)
         {
             BrainstormSearches = (words, repository, _) =>
             {
@@ -497,7 +497,7 @@ public sealed class BrainstormLookTests : IDisposable
         var turns = new Turns();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Service())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
-            AdapterSet.Built(), _home)
+            ProviderRegistry.Built(), _home)
         {
             BrainstormTurns = turns.RunAsync,
             BrainstormCheckouts = (_, _) => Task.FromResult<(string? Root, string? Revision)>((null, null)),

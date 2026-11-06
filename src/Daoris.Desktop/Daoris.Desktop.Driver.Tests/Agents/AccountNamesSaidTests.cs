@@ -58,7 +58,7 @@ public sealed class AccountNamesSaidTests : IDisposable
     private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     private HarnessRoster Fake() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
@@ -68,7 +68,7 @@ public sealed class AccountNamesSaidTests : IDisposable
             Zone = Zone,
         };
 
-    private HarnessRoster Built() => new(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
+    private HarnessRoster Built() => new(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
     private static DriverConfig FakeConfig => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
@@ -81,7 +81,7 @@ public sealed class AccountNamesSaidTests : IDisposable
     };
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>
-        new(service, Config, AdapterSet.Built(), _home, harnesses: roster);
+        new(service, Config, ProviderRegistry.Built(), _home, harnesses: roster);
 
     /// <summary>The agent's accounts, a folder each, and the names the person gave them, by the driver's own writer.</summary>
     private void Accounts(string agent, params string[] ids)
@@ -250,7 +250,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         File.WriteAllText(transcript, "working on it\nFailed to authenticate. API Error: 401 API key is invalid.\n");
 
         var conclusion = Driver(service, roster).AccountRefused(
-            new SessionConclusion("failed", "exit 1 before taking its quest."), AdapterSet.Built().Resolve("stub"),
+            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Resolve("stub"),
             new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Contains("the `stub` account `account-1` (401)", conclusion.Note);
@@ -273,7 +273,7 @@ public sealed class AccountNamesSaidTests : IDisposable
         const string refusal = "the ACP agent refused the call: Authentication required";
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            Observation.Conclude(0, "Open", turnFailed: refusal), AdapterSet.Built().Resolve("acp-stub"),
+            Observation.Conclude(0, "Open", turnFailed: refusal), ProviderRegistry.Built().Resolve("acp-stub"),
             new HarnessSelection(null, "account-1"), refusal);
 
         Assert.Contains("the `stub` account `account-1` for its sign-in", conclusion.Note);

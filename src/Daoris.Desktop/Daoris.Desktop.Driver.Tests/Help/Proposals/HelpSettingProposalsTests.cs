@@ -260,7 +260,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         var proposal = Setting("opinion", "engine", null, "--agents codex-acp,acme-other");
 
         Assert.Contains("`acme-other` is the same agent as the one that does the work here",
-            HelpProposals.Plan(proposal, config, Facts with { Plugins = PluginCatalog.Load(_home, AdapterSet.Built().Names) }).Describe);
+            HelpProposals.Plan(proposal, config, Facts with { Plugins = PluginCatalog.Load(_home, ProviderRegistry.Built().Names) }).Describe);
         // With no plugin on the machine, nothing declares its maker: it is its own family by name.
         Assert.DoesNotContain("the same agent as the one", HelpProposals.Plan(proposal, config, Facts).Describe);
     }

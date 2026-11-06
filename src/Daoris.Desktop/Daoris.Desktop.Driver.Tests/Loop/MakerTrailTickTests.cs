@@ -69,7 +69,7 @@ public sealed class MakerTrailTickTests : IDisposable
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         service.KeepsAdapter = true;
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
 
@@ -116,13 +116,13 @@ public sealed class MakerTrailTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, string adapter)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return Driver(new ServiceClient(service.Url, null), adapters, new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), adapter);
     }
 
     /// <param name="build">Build's order, where the case names one; none runs every role on <paramref name="adapter"/>.</param>
     private Daoris.Driver.Driver Driver(
-        ServiceClient client, AdapterSet adapters, HarnessRoster roster, string adapter, IReadOnlyList<ActorChoice>? build = null)
+        ServiceClient client, ProviderRegistry adapters, HarnessRoster roster, string adapter, IReadOnlyList<ActorChoice>? build = null)
     {
         var config = DriverConfig.Empty with
         {

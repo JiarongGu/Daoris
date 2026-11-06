@@ -66,7 +66,7 @@ public sealed class DoorAccountTests : IDisposable
                 KeyVariable: "OWNER_KEY"), Transport.Native);
         }
 
-        return new HarnessRoster(new AdapterSet(adapters), Settings);
+        return new HarnessRoster(new ProviderRegistry(adapters), Settings);
     }
 
     private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("owner-acp") };

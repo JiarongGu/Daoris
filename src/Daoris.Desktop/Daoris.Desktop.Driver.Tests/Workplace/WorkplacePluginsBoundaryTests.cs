@@ -48,7 +48,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
         Install("acme.gate", points: [HookPoints.QuestConsider]);
         Install("acme.lands", points: [HookPoints.Perform]);
         Install("acme.states", points: [HookPoints.State]);
-        return PluginCatalog.Load(_home, AdapterSet.Built().Names);
+        return PluginCatalog.Load(_home, ProviderRegistry.Built().Names);
     }
 
     // ——— The refusal sentences
@@ -246,7 +246,7 @@ public sealed class WorkplacePluginsBoundaryTests : IDisposable
 
     // ——— Helpers
 
-    private PluginCatalog Catalog() => PluginCatalog.Load(_home, AdapterSet.Built().Names);
+    private PluginCatalog Catalog() => PluginCatalog.Load(_home, ProviderRegistry.Built().Names);
 
     private static LandedBranch Entry(string branch) =>
         new("engine", "aurora", branch, "main", new string('b', 40), "s1", "q1", "Fix", At.AddDays(-1));

@@ -125,7 +125,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void The_registry_over_the_built_set_equals_the_one_over_the_registration_list()
     {
-        var built = ProviderRegistry.Of(AdapterSet.Built());
+        var built = ProviderRegistry.Built();
         var listed = new ProviderRegistry(Providers.Built(), []);
 
         foreach (var provider in listed.Providers) Assert.Empty(Compared(built.Provider(provider.Id), provider));
@@ -145,7 +145,7 @@ public sealed class ProvidersBuiltTests
     public void Codex_s_limit_words_and_usage_question_are_the_agent_s_and_its_door_reads_them_through_it()
     {
         var door = new DoorId("codex-acp");
-        foreach (var registry in new[] { new ProviderRegistry(Providers.Built(), []), ProviderRegistry.Of(AdapterSet.Built()) })
+        foreach (var registry in new[] { new ProviderRegistry(Providers.Built(), []), ProviderRegistry.Built() })
         {
             var codex = registry.Provider("codex");
             Assert.Same(CodexLimits.Words, codex.Tables.Required.Limits);
@@ -169,7 +169,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void A_door_keyed_by_its_provider_or_by_its_key_declares_no_account_words_of_its_own()
     {
-        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        var registry = ProviderRegistry.Built();
         foreach (var name in new[] { "claude-code", "claude-code-acp", "dsh" })
         {
             var own = registry.Door(name).Tables.Own;
@@ -185,7 +185,7 @@ public sealed class ProvidersBuiltTests
     [InlineData("acp-stub")]
     public void A_stand_in_door_answers_the_readers_with_no_model_behind_it(string name)
     {
-        var door = AdapterSet.Built().Resolve(name);
+        var door = ProviderRegistry.Built().Resolve(name);
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
         var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
         IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
@@ -219,7 +219,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void A_built_in_door_reads_its_provider_s_identity()
     {
-        var set = AdapterSet.Built();
+        var set = ProviderRegistry.Built();
 
         Assert.Equal(("Claude Code", "Anthropic", "CC"), Identity(set.Resolve("claude-code-acp").Toolchain!));
         Assert.Equal(("Codex", "OpenAI", "Cx"), Identity(set.Resolve("codex-acp").Toolchain!));
@@ -233,8 +233,8 @@ public sealed class ProvidersBuiltTests
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
         IReadOnlyList<string> command = ["node", "agent.mjs"];
 
-        Assert.False(AdapterSet.Built().Resolve("stub").Prepare(target, command).RedirectStandardInput);
-        Assert.True(AdapterSet.Built().Resolve("acp-stub").Prepare(target, command).RedirectStandardInput);
+        Assert.False(ProviderRegistry.Built().Resolve("stub").Prepare(target, command).RedirectStandardInput);
+        Assert.True(ProviderRegistry.Built().Resolve("acp-stub").Prepare(target, command).RedirectStandardInput);
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public sealed class ProvidersBuiltTests
     [Fact]
     public void Both_missing_command_messages_name_the_door_and_read_alike()
     {
-        var shimmed = AdapterSet.Built();
+        var shimmed = ProviderRegistry.Built();
         var target = new SessionTarget("q-1", "t", "b", "a", "repo", "/root", "http://x");
         var chat = SpawnRequests.Chat("repo", "/root", "http://x", null);
 
@@ -297,7 +297,7 @@ public sealed class ProvidersBuiltTests
         Assert.False(Providers.IsStandIn("acme"));
         Assert.False(Providers.IsStandIn(""));
         // The registry over the built set reads the same flag for every provider it makes.
-        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        var registry = ProviderRegistry.Built();
         Assert.Equal(["alt-stub", "stub"], registry.Providers.Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
     }
 

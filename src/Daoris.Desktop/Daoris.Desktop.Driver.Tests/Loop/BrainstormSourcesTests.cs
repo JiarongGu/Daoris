@@ -51,7 +51,7 @@ public sealed class BrainstormSourcesTests : IDisposable
         var id = Files.WriteRequest(Question, "daoris", [], At, null, sources);
         var asked = new List<string>();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new NoService())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new NoService())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, ProviderRegistry.Built(), _home)
         {
             BrainstormSearches = (words, _, _) =>
             {

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// Nothing here starts a process. Each agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>) on a
 /// command this test writes, and is asked nobody's sign-in; its owner, product and maker are copied from the declaration this
-/// build carries (<see cref="AdapterSet.Built"/>), so the families are the real ones.
+/// build carries (<see cref="ProviderRegistry.Built"/>), so the families are the real ones.
 /// </remarks>
 public sealed class ReviewerChoiceTests : IDisposable
 {
@@ -58,7 +58,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     /// </summary>
     private static HarnessToolchain Like(string name, string binary)
     {
-        var real = AdapterSet.Built().Resolve(name).Toolchain!;
+        var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
         // A test double whose own home is nobody's (OWNSPACE1a): the reviewer walk is this file's subject, and its holds are read
         // off the own home's cool-off; a real agent's start in a Daoris account is OwnSpaceTests'.
         return new HarnessToolchain(
@@ -81,7 +81,7 @@ public sealed class ReviewerChoiceTests : IDisposable
             adapters[name] = Adapter(name, Like(name, binary));
         }
 
-        var set = new AdapterSet(adapters).WithPlugins(PluginCatalog.Load(_home, adapters.Keys));
+        var set = new ProviderRegistry(adapters).WithPlugins(PluginCatalog.Load(_home, adapters.Keys));
         return new HarnessRoster(set, Settings) { Clock = () => Now, Zone = Zone };
     }
 
@@ -220,7 +220,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     [InlineData("nobody-here", "claude-code", false)]
     public void One_family_is_one_owner_or_one_declared_maker(string a, string b, bool one)
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
 
         Assert.Equal(one, AgentFamily.Of(built, a).Same(AgentFamily.Of(built, b)));
         Assert.Equal(one, OpinionRules.OneFamily(a, b));
@@ -229,7 +229,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     [Fact]
     public void A_family_names_its_owner_product_and_maker_and_a_maker_not_declared_is_none()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
 
         Assert.Equal(new AgentFamily("claude-code-acp", "claude-code", "Claude Code", "Anthropic"), AgentFamily.Of(built, "claude-code-acp"));
         Assert.Equal(new AgentFamily("codex-acp", "codex", "Codex", "OpenAI"), AgentFamily.Of(built, "codex-acp"));

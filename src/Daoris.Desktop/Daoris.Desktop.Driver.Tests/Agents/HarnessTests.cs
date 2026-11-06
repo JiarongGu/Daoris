@@ -470,7 +470,7 @@ public sealed class HarnessProbeTests : IDisposable
     public async Task A_door_with_nothing_to_run_on_this_machine_is_not_on_the_roster()
     {
         var roster = new HarnessRoster(
-            new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
                 ["stub"] = BuiltDoors.Stub,
             }),
@@ -764,7 +764,7 @@ public sealed class HarnessSelectionTests : IDisposable
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
     private static ISessionAdapter FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door("fake", toolchain, transport: wire);
 
-    private static AdapterSet Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
+    private static ProviderRegistry Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
         new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = FakeAdapter(toolchain, wire),

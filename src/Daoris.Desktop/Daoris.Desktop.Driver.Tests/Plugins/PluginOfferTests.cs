@@ -16,7 +16,7 @@ public sealed class PluginOfferTests : IDisposable
 
     private string Offers => Path.Combine(_root, "app", "plugin-offers");
 
-    private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
+    private static IReadOnlyCollection<string> Reserved => ProviderRegistry.Built().Names;
 
     public PluginOfferTests()
     {

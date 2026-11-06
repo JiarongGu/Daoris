@@ -45,7 +45,7 @@ public sealed class HelpGoOnTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger, Native native, SessionEvents events)
     {
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             [native.Door.Name] = native.Door,
         });
@@ -136,7 +136,7 @@ public sealed class HelpGoOnTests : IDisposable
         AccountCooling.Cool(
             _home, new CoolingEntry("stub", "account-1", DateTimeOffset.UtcNow.AddHours(2), true, "session", DateTimeOffset.UtcNow, "s0"),
             DateTimeOffset.UtcNow);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["acp-stub"] = BuiltDoors.AcpStub,
         });

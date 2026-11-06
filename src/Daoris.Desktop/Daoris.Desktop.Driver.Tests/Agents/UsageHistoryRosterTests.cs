@@ -41,7 +41,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
     private string Command => Path.Combine(_home, "agent-here");
 
     private HarnessRoster Doors() =>
-        new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now };
+        new(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now };
 
     private static JsonElement Frame(string text) => JsonDocument.Parse(text).RootElement.Clone();
 
@@ -100,7 +100,7 @@ public sealed class UsageHistoryRosterTests : IDisposable
     private static UsageQuestion Codex => new CodexUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded);
 
     private HarnessRoster Asked(UsageQuestion question) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,

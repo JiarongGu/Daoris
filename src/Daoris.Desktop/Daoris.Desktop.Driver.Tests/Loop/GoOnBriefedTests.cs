@@ -32,7 +32,7 @@ public sealed class GoOnBriefedTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger)
     {
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             events: new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),

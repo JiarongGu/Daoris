@@ -26,7 +26,7 @@ internal sealed record AccountVerbContext(
         var named = AgentsCommand.Named(World, Path);
         if (given is not { Length: > 0 }) throw new AgentWords($"`agent {Verb}` needs an agent — one of: {string.Join(", ", named)}");
         var (name, _, _, roster) = AgentsCommand.Agent(Args, Verb, "<agent>", World, Path, at: 2);
-        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         return owner;
     }

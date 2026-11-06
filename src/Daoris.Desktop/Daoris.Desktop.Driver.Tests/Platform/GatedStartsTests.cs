@@ -109,7 +109,7 @@ public sealed class GatedStartsTests : IDisposable
     public async Task A_sessions_process_passes_the_gate_before_anything_is_held()
     {
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Empty()));
-        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, AdapterSet.Built(), _home);
+        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, ProviderRegistry.Built(), _home);
         var spawned = false;
 
         using var _ = Refusing();
@@ -131,7 +131,7 @@ public sealed class GatedStartsTests : IDisposable
     public async Task A_sessions_start_whose_loop_closed_while_it_waited_starts_nothing()
     {
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Empty()));
-        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, AdapterSet.Built(), _home);
+        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, ProviderRegistry.Built(), _home);
         var spawned = false;
         using var closed = new CancellationTokenSource();
         await closed.CancelAsync();
@@ -147,7 +147,7 @@ public sealed class GatedStartsTests : IDisposable
         Assert.Empty(_seen);
     }
 
-    private static ISessionAdapter Stub => AdapterSet.Built().Resolve("stub");
+    private static ISessionAdapter Stub => ProviderRegistry.Built().Resolve("stub");
 
     private SessionTarget Target() => new("q-1", "title", "body", "asker", "repo", _home, "http://svc");
 

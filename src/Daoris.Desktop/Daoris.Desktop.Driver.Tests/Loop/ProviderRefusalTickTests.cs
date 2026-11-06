@@ -77,7 +77,7 @@ public sealed class ProviderRefusalTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(AnswerContinuesTickTests.ParkStandIn service, string mode)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],

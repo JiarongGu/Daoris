@@ -63,7 +63,7 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     public StandingFacts OnHarness(StandingFacts facts, string tree) => AgentContext.Current.OnHarness(facts, adapter, tree);
 
     /// <summary>Its turns' binding in the usage history, under the account <paramref name="profile"/> it runs as.</summary>
-    public TurnBinding Binding(AdapterSet adapters, string? profile) => TurnBinding.Of(adapters, adapter, profile);
+    public TurnBinding Binding(ProviderRegistry adapters, string? profile) => TurnBinding.Of(adapters, adapter, profile);
 
     /// <summary>The structured wire's mapper where the door says where a turn ends; null for a text-only pipe.</summary>
     public IStreamMapper? StructuredOutput() => adapter.StructuredOutput();
@@ -75,7 +75,7 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     public string? FrameInterrupt() => adapter.FrameInterrupt();
 
     /// <summary>A refused call read as one kind, from this door's tables and, through <paramref name="adapters"/>, its owner's.</summary>
-    public AgentError Read(AdapterSet adapters, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone) =>
+    public AgentError Read(ProviderRegistry adapters, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone) =>
         AgentErrors.Read(adapters, adapter, failure, seen, zone);
 
     /// <summary>A refused call read for the sign-in of the account <paramref name="profile"/>, signing it out where the door's table says so.</summary>

@@ -85,7 +85,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
         using var client = ledger.Client();
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);
@@ -151,7 +151,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);
@@ -188,7 +188,7 @@ public sealed class LimitGoesOnProcessTests : IDisposable
         using var client = ledger.Client();
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);

@@ -107,7 +107,7 @@ public sealed class ProbeRaceTests : IDisposable
             ["agent"] = Adapter("agent", Toolchain()),
         };
         if (door) adapters["agent-door"] = Adapter("agent-door", Toolchain(accountOf: "agent"));
-        return new HarnessRoster(new AdapterSet(adapters), Settings);
+        return new HarnessRoster(new ProviderRegistry(adapters), Settings);
     }
 
     private static DriverConfig Config => DriverConfig.Empty with { Actors = StaffedRoles.On("agent") };
@@ -209,7 +209,7 @@ public sealed class ProbeRaceTests : IDisposable
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-2"));
         new HarnessSettings().WithDefault("agent", "account-1").Save(Settings);
         var now = DateTimeOffset.UtcNow;
-        var roster = new HarnessRoster(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var roster = new HarnessRoster(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["agent"] = Adapter("agent", Toolchain()),
         }), Settings) { Clock = () => now };

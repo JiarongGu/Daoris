@@ -49,7 +49,7 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     };
 
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
-    private static AdapterSet Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
         ["stub"] = BuiltDoors.Stub,
         ["acp-stub"] = BuiltDoors.AcpStub,

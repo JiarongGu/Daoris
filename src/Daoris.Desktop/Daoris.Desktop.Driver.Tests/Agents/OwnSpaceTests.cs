@@ -42,7 +42,7 @@ public sealed class OwnSpaceTests : IDisposable
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
 
     private HarnessRoster Roster() => new(
-        new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Real),
             ["double"] = Adapter("double", Real with { RunsInOwnHome = true }),
@@ -220,7 +220,7 @@ public sealed class OwnSpaceTests : IDisposable
     [Fact]
     public void Only_the_stand_ins_and_their_protocol_twins_are_exempt_among_the_build_s_agents()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var exempt = built.Names
             .Where(name => built.Resolve(name).Toolchain is { RunsInOwnHome: true })
             .Order(StringComparer.Ordinal);
@@ -270,7 +270,7 @@ public sealed class OwnSpaceTests : IDisposable
     [Fact]
     public void The_next_start_of_an_owner_no_adapter_is_named_after_follows_the_rule()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Settings);
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Settings);
 
         Assert.Equal(((string?)null, NextReason.NoAccount), roster.Next("codex") is var waits ? (waits.Account, waits.Reason) : default);
 

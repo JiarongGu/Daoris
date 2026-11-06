@@ -27,7 +27,7 @@ internal static class PlaceConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var plugins = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        var plugins = PluginCatalog.Load(home, ProviderRegistry.Built().Names);
         var unadopted = SetupWorld.Unadopted(config, home);
         // An apply alone edits the driver's file as the window's press does: read, edited and written under its own lock.
         var apply = new PlaceApplyDoors(

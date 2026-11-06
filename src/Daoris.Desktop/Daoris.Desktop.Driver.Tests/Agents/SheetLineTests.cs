@@ -34,7 +34,7 @@ public sealed class SheetLineTests
     [Fact]
     public void An_agent_s_line_is_its_own_door_s_sheet()
     {
-        var facts = ProviderRegistry.Of(AdapterSet.Built()).Facts;
+        var facts = ProviderRegistry.Built().Facts;
 
         Assert.Equal(
             "what it can do: conversation yes, resume yes, words at the next step no, steering not known, postures default · bypassPermissions, "

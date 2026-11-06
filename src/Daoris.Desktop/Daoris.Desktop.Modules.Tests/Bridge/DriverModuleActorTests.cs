@@ -154,7 +154,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
         {
             var service = new DriverModuleStartFromTests.StandIn(root);
             var loop = Loop();
-            var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
                 ["talk"] = Refusing("talk"), ["other"] = Refusing("other"),
             });

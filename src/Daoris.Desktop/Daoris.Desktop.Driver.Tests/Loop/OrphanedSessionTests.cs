@@ -193,7 +193,7 @@ public sealed class OrphanedSessionTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Conversing()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var processes = new SessionProcesses(Markers);
         string? id;
 
@@ -231,7 +231,7 @@ public sealed class OrphanedSessionTests : IDisposable
         var errors = new List<Exception>();
         var watch = new DriverWatch(
             client, DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home, new SessionProcesses(Markers), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await watch.RunAsync(
             (report, _) => { reports.Add(report); stop.Cancel(); return Task.CompletedTask; },
@@ -261,7 +261,7 @@ public sealed class OrphanedSessionTests : IDisposable
         var errors = new List<Exception>();
         var watch = new DriverWatch(
             client, config, _home, new SessionProcesses(Markers), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var running = watch.RunAsync(
             (report, _) => { reports.Add(report); stop.Cancel(); return Task.CompletedTask; },

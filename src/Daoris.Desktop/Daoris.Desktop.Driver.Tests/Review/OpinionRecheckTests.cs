@@ -34,12 +34,12 @@ public sealed class OpinionRecheckTests : IDisposable
     private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, present by a file look, or absent where <paramref name="absent"/> names them.</summary>
-    private (AdapterSet Adapters, HarnessRoster Roster) Machine(params string[] absent)
+    private (ProviderRegistry Adapters, HarnessRoster Roster) Machine(params string[] absent)
     {
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = AdapterSet.Built().Resolve(name).Toolchain!;
+            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
             adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [absent.Contains(name) ? "daoris-xagent1e-no-such-command" : Command], VersionArguments: [],
                 ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
@@ -47,7 +47,7 @@ public sealed class OpinionRecheckTests : IDisposable
                 RunsInOwnHome: true));
         }
 
-        var set = new AdapterSet(adapters);
+        var set = new ProviderRegistry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 

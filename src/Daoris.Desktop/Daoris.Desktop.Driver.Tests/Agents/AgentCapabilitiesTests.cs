@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class AgentCapabilitiesTests
 {
-    private static readonly ProviderRegistry Registry = ProviderRegistry.Of(AdapterSet.Built());
+    private static readonly ProviderRegistry Registry = ProviderRegistry.Built();
 
     private static AgentCapabilities SheetOf(string door) => Registry.Facts.Of(door)!.Door(door)!;
 

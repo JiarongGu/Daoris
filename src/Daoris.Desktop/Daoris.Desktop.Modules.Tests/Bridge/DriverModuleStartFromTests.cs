@@ -134,7 +134,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         // alone (FLAKE2). Waiting for that look's line was not enough: it holds the chat until after its line is kept, and a
         // press inside that hold was answered that the conversation is going on with its words already.
         if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

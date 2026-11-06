@@ -72,7 +72,7 @@ public sealed class TransportRunProcessTests : IDisposable
         File.WriteAllText(Path.Combine(_home, "agent.cjs"), Script);
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
         _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        _driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, AdapterSet.Built(), _home, _processes);
+        _driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), _home, _processes);
         _events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         _events.Evented += (_, e) =>
         {
@@ -423,7 +423,7 @@ public sealed class TransportRunProcessTests : IDisposable
     {
         var seen = Path.Combine(_home, $"seen-{scenario}.txt");
         var command = ProviderFiles.Of("stub").Command("acp-stub", "--scenario", scenario, "--seen", seen);
-        var adapter = AdapterSet.Built().Resolve("acp-stub");
+        var adapter = ProviderRegistry.Built().Resolve("acp-stub");
         var run = Over(adapter, adapter.Prepare(Target(), command), start => start with { Protocol = protocol });
         Hand(run, keepAs: "acp-stub");
         return (run, seen);

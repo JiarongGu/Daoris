@@ -31,7 +31,7 @@ internal static class HelpRoomScopeFixture
 
     private static HelpMachine Describe(IReadOnlyList<string> unread) => HelpRoom.Describe(
         Config, new Snapshot(Quests, Registry, Active), Lines(unread), Roster, asks: 2, Standing,
-        facts: ProviderRegistry.Of(AdapterSet.Built()).Facts, landed: Landed, parked: [new ParkedQuest("qa1", "engine"), new ParkedQuest("qb1", "console")],
+        facts: ProviderRegistry.Built().Facts, landed: Landed, parked: [new ParkedQuest("qa1", "engine"), new ParkedQuest("qb1", "console")],
         held: [new HeldQuest("qb2", "console", "sb9")], sessions: Sessions, history: History, work: Work,
         workUnread:
         [

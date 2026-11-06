@@ -160,7 +160,7 @@ public sealed class StartInSyncTickTests : IDisposable
     public async Task Words_going_on_in_the_sessions_own_conversation_start_on_the_line_and_say_so_after_the_words()
     {
         await using var service = AnswerContinuesTickTests.ParkStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
@@ -222,7 +222,7 @@ public sealed class StartInSyncTickTests : IDisposable
             Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, "ask"] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses)));
@@ -243,7 +243,7 @@ public sealed class StartInSyncTickTests : IDisposable
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, mode] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

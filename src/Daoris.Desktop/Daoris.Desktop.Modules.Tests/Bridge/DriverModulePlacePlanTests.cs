@@ -89,7 +89,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
             .GetProperty("said");
         var config = DriverConfig.Load(DriverConfigPath);
         var alone = await PlacePlans.PlanAsync(
-            new PlaceWorld(client), config, Home, PluginCatalog.Load(Home, AdapterSet.Built().Names), true,
+            new PlaceWorld(client), config, Home, PluginCatalog.Load(Home, ProviderRegistry.Built().Names), true,
             new PlaceAsk(["atlas", "tools"], SetupPresets.Merge) { Opinion = true, Adoption = true, Builds = SetupBuilds.Library, Drive = true });
 
         Assert.Equal(PlaceCommand.Lines(alone), said.GetProperty("out").EnumerateArray().Select(line => line.GetString()));

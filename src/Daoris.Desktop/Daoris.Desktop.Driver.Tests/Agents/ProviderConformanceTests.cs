@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// AGENTPROVIDER1 row b, part 2 (the agent-provider design §10; D213's row b part 2 note): the conformance suite, the contract's meter. A
-/// theory over every provider and door the registry holds (<c>ProviderRegistry.Of(AdapterSet.Built())</c>), every provider the registration
+/// theory over every provider and door the registry holds (<c>ProviderRegistry.Built()</c>), every provider the registration
 /// list holds (<c>Providers.Built()</c>) and a plugin's provider made in a test home, run per provider, so a provider that answers the
 /// contract wrongly fails here rather than in a caller. Each case a provider cannot pass yet is held in its own <c>pending.json</c>, named
 /// with the row of §11 that makes it pass; a pending case that passes fails the suite until its line goes, and a line naming no case the
@@ -37,7 +37,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
     [Fact]
     public void The_suite_runs_over_every_provider_and_door_the_registry_holds()
     {
-        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        var registry = ProviderRegistry.Built();
         var rows = Conformance.Runs().ToList();
 
         Assert.Equal(

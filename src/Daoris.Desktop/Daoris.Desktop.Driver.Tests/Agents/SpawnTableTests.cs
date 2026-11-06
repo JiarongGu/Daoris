@@ -46,7 +46,7 @@ public sealed class SpawnTableTests
     public void A_driven_start_is_its_door_s_recipe_completed_by_the_shell(
         string door, string[]? command, string program, string[] arguments, bool input, string? own)
     {
-        var info = AdapterSet.Built().Resolve(door).Prepare(Target(), command);
+        var info = ProviderRegistry.Built().Resolve(door).Prepare(Target(), command);
 
         Assert.Equal(program, info.FileName);
         Assert.Equal(arguments, info.ArgumentList);
@@ -64,7 +64,7 @@ public sealed class SpawnTableTests
     [MemberData(nameof(Chats))]
     public void A_conversation_is_its_door_s_recipe_with_stdin_open_and_no_target(string door, string[]? command, string program, string[] arguments)
     {
-        var info = AdapterSet.Built().Resolve(door).PrepareChat(Chat(), command);
+        var info = ProviderRegistry.Built().Resolve(door).PrepareChat(Chat(), command);
 
         Assert.Equal(program, info.FileName);
         Assert.Equal(arguments, info.ArgumentList);
@@ -77,19 +77,19 @@ public sealed class SpawnTableTests
     [Fact]
     public void The_native_door_resumes_its_kept_conversation_and_the_protocol_doors_know_none()
     {
-        var info = AdapterSet.Built().Resolve("claude-code").PrepareResume(Target(), null, "conversation-1")!;
+        var info = ProviderRegistry.Built().Resolve("claude-code").PrepareResume(Target(), null, "conversation-1")!;
 
         Assert.Equal("claude", info.FileName);
         Assert.Equal(["-p", "--resume", "conversation-1", "--permission-mode", "acceptEdits", .. Stream], info.ArgumentList);
         Assert.True(info.RedirectStandardInput);
         Shelled(info);
-        Assert.Null(AdapterSet.Built().Resolve("codex-acp").PrepareResume(Target(), null, "conversation-1"));
+        Assert.Null(ProviderRegistry.Built().Resolve("codex-acp").PrepareResume(Target(), null, "conversation-1"));
     }
 
     [Fact]
     public void Dsh_holds_no_conversation_as_before()
     {
-        var refused = Assert.Throws<DriverException>(() => AdapterSet.Built().Resolve("dsh").PrepareChat(Chat(), null));
+        var refused = Assert.Throws<DriverException>(() => ProviderRegistry.Built().Resolve("dsh").PrepareChat(Chat(), null));
         Assert.Contains("cannot hold a conversation", refused.Message);
     }
 
@@ -152,16 +152,16 @@ public sealed class SpawnTableTests
     [Fact]
     public void A_door_s_recipe_names_none_of_Daoris_s_variables_and_the_carriers_are_its_own()
     {
-        foreach (var name in AdapterSet.Built().Names)
+        foreach (var name in ProviderRegistry.Built().Names)
         {
-            var door = AdapterSet.Built().Registry.Door(name);
+            var door = ProviderRegistry.Built().Door(name);
             Assert.True(door.Spawn.IsKnown, $"{name} states no spawn");
             var command = name.EndsWith("stub", StringComparison.Ordinal) ? new[] { "node", "agent.mjs" } : null;
             var recipe = door.Spawn.Required.Start(SpawnRequests.Of(Target(), command));
             Assert.DoesNotContain(recipe.Variables.Keys, Spawning.Daoris);
         }
 
-        var pipe = AdapterSet.Built().Resolve("claude-code");
+        var pipe = ProviderRegistry.Built().Resolve("claude-code");
         var info = pipe.Prepare(Target(), null);
         pipe.HandServers(info, "servers.json");
         pipe.HandSettings(info, "settings.json");
@@ -170,8 +170,8 @@ public sealed class SpawnTableTests
             ["--mcp-config", "servers.json", "--settings", "settings.json", "--plugin-dir", "one", "--plugin-dir", "two"],
             info.ArgumentList.Skip(3 + Stream.Length));
         Assert.Equal("false", pipe.ToolsUpFront["ENABLE_TOOL_SEARCH"]);
-        Assert.Equal("false", AdapterSet.Built().Resolve("claude-code-acp").ToolsUpFront["ENABLE_TOOL_SEARCH"]);
-        Assert.Empty(AdapterSet.Built().Resolve("codex-acp").ToolsUpFront);
+        Assert.Equal("false", ProviderRegistry.Built().Resolve("claude-code-acp").ToolsUpFront["ENABLE_TOOL_SEARCH"]);
+        Assert.Empty(ProviderRegistry.Built().Resolve("codex-acp").ToolsUpFront);
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public sealed class SpawnTableTests
     [InlineData("acp-stub", true)]
     public void Claude_Code_s_seam_is_taken_where_the_door_runs_claude(string door, bool seam)
     {
-        Assert.Equal(seam, AdapterSet.Built().Resolve(door).TakesClaudeSeam());
+        Assert.Equal(seam, ProviderRegistry.Built().Resolve(door).TakesClaudeSeam());
         Assert.False(UnmeasuredProtocolDoor().TakesClaudeSeam());
     }
 
@@ -195,13 +195,13 @@ public sealed class SpawnTableTests
     [Fact]
     public void The_seam_sets_both_variables_or_neither()
     {
-        var acp = AdapterSet.Built().Resolve("claude-code-acp");
+        var acp = ProviderRegistry.Built().Resolve("claude-code-acp");
         var pointed = acp.Prepare(Target(), null);
         Shell.Equip(pointed, acp.Toolchain!, profileHome: null, seam: each => acp.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.Equal("C:/toolchain/claude-code/2.1.300/claude.exe", pointed.Environment[ClaudeAcp.ExecutableVariable]);
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
 
-        var codex = AdapterSet.Built().Resolve("codex-acp");
+        var codex = ProviderRegistry.Built().Resolve("codex-acp");
         var plain = codex.Prepare(Target(), null);
         plain.Environment.Remove(ClaudeAcp.ExecutableVariable);
         Shell.Equip(plain, codex.Toolchain!, profileHome: null, seam: each => codex.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
@@ -222,7 +222,7 @@ public sealed class SpawnTableTests
         {
             var shim = Path.Combine(folder, "claude.cmd");
             File.WriteAllText(shim, "@echo off\r\n");
-            var pipe = AdapterSet.Built().Resolve("claude-code");
+            var pipe = ProviderRegistry.Built().Resolve("claude-code");
             var info = pipe.Prepare(Target(), [shim]);
             Shell.Equip(info, pipe.Toolchain!, profileHome: null);
             pipe.HandServers(info, @"C:\one&two\servers.json");

@@ -122,7 +122,7 @@ public sealed class UsageTests : IDisposable
     }
 
     /// <summary>The machine's agents as the built set registers them.</summary>
-    private static AgentOfDoor Agents => new(AdapterSet.Built().Registry);
+    private static AgentOfDoor Agents => new(ProviderRegistry.Built());
 
     /// <summary>
     /// AGENTPROVIDER1 s-vii: usage is counted by agent. Before, one account used through <c>claude-code</c> and <c>claude-code-acp</c> was

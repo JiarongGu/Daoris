@@ -197,7 +197,7 @@ public sealed class SessionServersTests : IDisposable
     public void A_pinned_adapter_starts_as_its_node_and_script_never_its_shim()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
         var toolchain = adapter.Toolchain!;
         var prefix = HarnessSettings.ManagedHome(_home, adapter.Name, "0.91.0");
         var package = Path.Combine([prefix, "node_modules", .. toolchain.Package!.Split('/')]);

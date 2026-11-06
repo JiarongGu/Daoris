@@ -58,7 +58,7 @@ public sealed class AccessSwapTickTests : IDisposable
     }
 
     /// <summary>A look's driver, as the watch builds one: the file as it reads now, and its path for a run to read again.</summary>
-    private Daoris.Driver.Driver Look(SaidStandIn service, AdapterSet adapters, SessionProcesses processes) => new(
+    private Daoris.Driver.Driver Look(SaidStandIn service, ProviderRegistry adapters, SessionProcesses processes) => new(
         new ServiceClient(service.Url, null), DriverConfig.Load(ConfigPath), adapters, _home, processes: processes,
         harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
     {
@@ -83,8 +83,8 @@ public sealed class AccessSwapTickTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", ProtocolAgent(), Log, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
         await using var service = SaidStandIn.Start(_repository);
-        var built = AdapterSet.Built();
-        var adapters = new AdapterSet(built.Names.ToDictionary(
+        var built = ProviderRegistry.Built();
+        var adapters = new ProviderRegistry(built.Names.ToDictionary(
             name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
         var processes = new SessionProcesses();
 
@@ -145,7 +145,7 @@ public sealed class AccessSwapTickTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", NativeHarness(), Log, Taken, Go] },
         }).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] }).Save(ConfigPath);
         await using var service = SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var processes = new SessionProcesses();
 
         var tick = Look(service, adapters, processes).RunOnceAsync();
