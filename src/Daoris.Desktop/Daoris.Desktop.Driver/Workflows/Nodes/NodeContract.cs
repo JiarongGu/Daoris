@@ -230,6 +230,9 @@ public static class NodeSource
     /// </summary>
     public const string Requests = "requests";
 
+    /// <summary>The state the step a <c>monitor</c> watches reports through its own reading (<see cref="IWatchable"/>; D245's note).</summary>
+    public const string Watched = "watched";
+
     /// <summary>
     /// What Daoris reads at the bound tip for a hold before the landing (LANDNODE1k): the quest's record, and git's proof of what the line and the
     /// person's branches hold. A hold that does not let go reaches nothing and fails nothing: it keeps the node active with its reason.
@@ -322,7 +325,7 @@ public static class NodeDeclarations
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
     /// fail, a timeout not above zero, an output named <c>evidence</c> (the evidence port's name, <see cref="WireEnd.Evidence"/>), or a
     /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's), or outcomes on a
-    /// built-in or a plugin's that break <see cref="NodeOutcomes.Problem"/> (DECIDE1b). Then the kind's own checks (<see cref="INodeKind.Problem"/>).
+    /// built-in whose kind is reached with none (<see cref="BuiltInNode.Outcomes"/>), or any that break <see cref="NodeOutcomes.Problem"/> (DECIDE1b). Then the kind's own checks (<see cref="INodeKind.Problem"/>).
     /// Then FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
     /// <see cref="NodePerform.CodeShape"/> or named twice, transient codes with no retry to take them, and a plugin's retry of more
     /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled. The graph's rules about where a
@@ -345,8 +348,8 @@ public static class NodeDeclarations
         if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
-        // DECIDE1b: no built-in kind is a decision, and a plugin's outcomes keep the names a route is followed by.
-        if (node.Outcomes.Count > 0 && (builtIn || NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
+        // DECIDE1b: outcomes keep the names a route is followed by; a built-in declares them only where its kind is reached with them (a monitor).
+        if (node.Outcomes.Count > 0 && ((builtIn && ((BuiltInNode)unit).Outcomes.Count == 0) || NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
         if (unit.Problem(node) is { } own) return own;
 
         // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where

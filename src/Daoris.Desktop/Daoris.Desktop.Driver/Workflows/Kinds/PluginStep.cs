@@ -24,6 +24,8 @@ public record PluginStep : INodeKind, IStarts
     /// <summary>None of its own: a plugin's declaration is held to the checks every declaration is.</summary>
     public string? Problem(NodeDeclaration node) => null;
 
+    public IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node) => [];
+
     public virtual NodePart Part(NodeDeclaration node) => new(node.Kind, WorkflowParticipation.Automatic, WorkflowExecutor.Plugin);
 
     public string Offered => PaletteKind.Alone;

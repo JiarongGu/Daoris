@@ -12,6 +12,27 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Landing;
 
+    /// <summary>It pushes the branch a <c>land</c> of the <c>branch</c> method made, so a way from each landing of a method reaches it.</summary>
+    public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
+    {
+        var ordered = graph.Wires.Where(wire => WireKinds.Ordered.Contains(wire.Kind) && wire.From is { Unit: null } && wire.To.Unit is null).ToList();
+        foreach (var land in graph.Nodes.Where(each => each.Kind == NodeKinds.Land))
+        {
+            if (NodeOptions.Text(land, "method") is not { } method || !LandNodes.Methods.Contains(method, StringComparer.Ordinal)) continue;
+            if (!NodeGraphStarts.Reach([land.Id], ordered, forward: true).Contains(node.Id))
+            {
+                yield return new WireProblem(GraphRefusal.LandTail, null, node.Id,
+                    $"node `{node.Id}`: a `{NodeKinds.Push}` pushes the branch `{land.Id}` made, and no way from `{land.Id}` reaches it.");
+            }
+
+            if (method != LandNodes.Branch)
+            {
+                yield return new WireProblem(GraphRefusal.LandTail, null, node.Id, $"node `{node.Id}` is a `{NodeKinds.Push}`, which pushes the branch of a `land` "
+                    + $"whose method is `{LandNodes.Branch}`: choose that method on the landing.");
+            }
+        }
+    }
+
     public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Push);
 
     public override string? Title => "The push";
@@ -22,7 +43,7 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts
 
     public override bool EndsByTheLine => true;
 
-    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Pushed(reading);
+    public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 
     /// <summary>The push act of the act journal, under the loop's lease and drain rules.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => new PushDoor(wiring.Home, said => wiring.Say("push.run", said), wiring.MayStart);

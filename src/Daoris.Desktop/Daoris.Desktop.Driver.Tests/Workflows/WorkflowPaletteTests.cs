@@ -40,8 +40,8 @@ public sealed class WorkflowPaletteTests
         Assert.Equal([NodeKinds.Review, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human], rejected);
         Assert.Null(Bare.Wires.Single(each => each.Kind == WireKinds.After).From);
         Assert.Equal(NodeKinds.WaitUnit, Bare.Wires.Single(each => each.Kind == WireKinds.Wait).To);
-        // WORKFLOWEDIT1b: no built-in kind is a decision, and a wait's source is another unit's, never a node of this graph.
-        Assert.Empty(Bare.Wires.Single(each => each.Kind == WireKinds.When).From!);
+        // WORKFLOWEDIT1b: a monitor is the one built-in decision (D245's note), and a wait's source is another unit's, never a node of this graph.
+        Assert.Equal([NodeKinds.Monitor], Bare.Wires.Single(each => each.Kind == WireKinds.When).From!);
         Assert.Empty(Bare.Wires.Single(each => each.Kind == WireKinds.Wait).From!);
     }
 
@@ -56,7 +56,9 @@ public sealed class WorkflowPaletteTests
         Assert.Contains(WireKinds.Back, Kind(NodeKinds.Review).Leaves);
         Assert.Contains(WireKinds.Failed, Kind(NodeKinds.Check).Leaves);
         Assert.DoesNotContain(WireKinds.Rejected, Kind(NodeKinds.Claimed).Leaves);
-        Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.When, each.Leaves));
+        Assert.All(Bare.Kinds.Where(each => each.Kind != NodeKinds.Monitor), each => Assert.True(each.Outcomes.Count == 0 && !each.Leaves.Contains(WireKinds.When)));
+        Assert.Equal([PullRequestReading.Merged, PullRequestReading.Closed], Kind(NodeKinds.Monitor).Outcomes);
+        Assert.Contains(WireKinds.When, Kind(NodeKinds.Monitor).Leaves);
         Assert.All(Bare.Kinds, each => Assert.DoesNotContain(WireKinds.Wait, each.Leaves));
 
         var find = new NodeDeclaration("find", "local-release/find", 1, NodeReach.Performed)

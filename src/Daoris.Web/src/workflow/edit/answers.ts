@@ -54,6 +54,8 @@ export type PaletteKind = {
   evidenced: boolean; skipBy: string | null; options: OptionField[]; leaves: string[]; roleTakes: string[];
   /** How the editor offers the kind (WORKFLOWCLEAN1 1b): `alone`, `tail:<method>` for a step a landing's method brings. Absent: `alone`. */
   offered?: string;
+  /** The outcomes a step of the kind is reached with, which an added step declares (a monitor's, D245's note). Absent or empty: none. */
+  outcomes?: string[];
 };
 
 /** A wire kind: whether it makes its target eligible, and the kinds that may leave it (null: any node). */

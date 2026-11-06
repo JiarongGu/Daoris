@@ -72,29 +72,12 @@ public sealed class BuiltInNodesTests
         }
     }
 
-    /// <summary>
-    /// <c>push</c> (G8) is Daoris's own push read against git's remote-tracking ref: unread, it is unknown; read at the pushed tip it is reached
-    /// by git; elsewhere it is not yet. Nothing pushed is no outcome.
-    /// </summary>
-    [Fact]
-    public void Push_is_reached_by_gits_ref_at_the_commit_the_push_act_left()
-    {
-        var unit = Unit(Grown(), Landed(pushed: true));
-
-        Assert.Equal(NodeStates.Unknown, Applied(unit, NodeKinds.Push).Status.State);
-        var reached = Applied(unit, NodeKinds.Push, new NodeGitReads(RemoteTip: _ => "t1"));
-        Assert.Equal((NodeStates.Reached, NodeSource.Git), (reached.Status.State, reached.Status.By));
-        var elsewhere = BuiltInNodes.Observe(unit, Node(NodeKinds.Push), Graph, 1, new NodeGitReads(RemoteTip: _ => "t0"));
-        Assert.Null(elsewhere.Outcome);
-        Assert.Null(BuiltInNodes.Observe(Unit(Grown(), Landed()), Node(NodeKinds.Push), Graph, 1).Outcome);
-    }
-
     /// <summary>Not yet is pending, never failed: a branch nothing handed on or held is observed with no outcome, and stays active.</summary>
     [Fact]
     public void Not_yet_is_no_outcome_and_an_unknown_owner_is_unknown()
     {
         var unit = Unit(Grown());
-        foreach (var kind in new[] { NodeKinds.Land, NodeKinds.Line, NodeKinds.Push })
+        foreach (var kind in new[] { NodeKinds.Land, NodeKinds.Line })
         {
             var observed = BuiltInNodes.Observe(unit, Node(kind), Graph, 1);
             Assert.Equal((kind, (string?)null, (NodeMove?)null), (kind, observed.Outcome, observed.Move));
