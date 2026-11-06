@@ -105,10 +105,14 @@ public sealed class LineageRaceProcessTests : IDisposable
     }
 
     /// <summary>
-    /// The design's Codex ordering (C7-2.1): the second start held at its record read while the first's process exits, its
+    /// The design's Codex ordering (C7-2.1): the second start held before its advance while the first's process exits, its
     /// continuation starts and ends, and the record concludes; then the second's advance refused by the finished record. Its child reads
     /// working at every step before its own exit, none of those moving it, and lost at the end its refusal writes.
     /// </summary>
+    /// <remarks>
+    /// The hold is on the advance, the one door of the second's that is its own: a start's record read is the driver's kept list, whose
+    /// readers take turns, so holding it would hold the continuation's read behind it.
+    /// </remarks>
     [Fact]
     public async Task A_second_start_held_before_its_advance_keeps_its_child_working_through_the_firsts_exit_continuation_and_conclusion()
     {
@@ -125,10 +129,10 @@ public sealed class LineageRaceProcessTests : IDisposable
         var a = await AgentAsync("a");
         await Poll.Until(() => State() == "working", Seen, Poll.Patience);
 
-        Hold("b", "read");
+        Hold("b", "move");
         var second = Run(driver, "b", "y1", _window);
         var b = await AgentAsync("b");
-        await Poll.Until(() => Reached("b", "read"), Seen, Poll.Patience);
+        await Poll.Until(() => Reached("b", "move"), Seen, Poll.Patience);
         Holds("both starts' children", ("x1", a, ChildBindings.Working), ("y1", b, ChildBindings.Working));
 
         Signal("a", "end");
@@ -147,7 +151,7 @@ public sealed class LineageRaceProcessTests : IDisposable
             "the record concluded",
             ("x1", a, ChildBindings.Ended), ("y1", b, ChildBindings.Working), ("z1", c, ChildBindings.Ended));
 
-        Release("b", "read");
+        Release("b", "move");
         var refused = await Assert.ThrowsAsync<DriverException>(() => second.WaitAsync(Poll.Patience));
         Assert.Contains("a finished session goes on only with the person's words", refused.Message, StringComparison.Ordinal);
         await b.Process.WaitForExitAsync().WaitAsync(Poll.Patience);
