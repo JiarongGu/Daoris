@@ -31,9 +31,17 @@ export const OUTPUTS = Object.freeze({
 export const SOURCES = Object.freeze([
   'src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/List/', 'tools/contracts/',
 ]);
+// The node kinds' list is read from the kit, by the files that declare a kind's reading, its step and its enums' words, named here so a
+// change to a kind's door or its checks stales no page file.
+export const KINDS_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/';
+const KIND_FILE = /(?:Node|Step|NodeGroup|NodeLook|PullRequestReading)\.cs$/;
 const GENERATOR = 'tools/contracts';
 const SOURCE_FILE = /\.(?:cs|csproj)$/;
 const SKIPPED = new Set(['bin', 'obj']);
+
+/** Whether a repository path is a declaring source: under a source folder, or a kind's declaring file by its name. */
+const declares = (file) => !file.split('/').some((part) => SKIPPED.has(part))
+  && (SOURCES.some((folder) => file.startsWith(folder)) && SOURCE_FILE.test(file) || file.startsWith(KINDS_FOLDER) && KIND_FILE.test(file));
 const STAMP = /^\/\/ contracts: ([0-9a-f]{64})\r?$/;
 const WRITE = 'node tools/contracts.mjs';
 
@@ -51,20 +59,19 @@ export function sourceFiles(root) {
       const path = `${folder}${entry.name}`;
       if (entry.isDirectory()) {
         if (!SKIPPED.has(entry.name)) walk(`${path}/`);
-      } else if (SOURCE_FILE.test(entry.name)) {
+      } else if (declares(path)) {
         files.push(path);
       }
     }
   };
-  for (const folder of SOURCES) walk(folder);
+  for (const folder of [...SOURCES, KINDS_FOLDER]) walk(folder);
   return files;
 }
 
 /** The hash of the declaring sources: each path and its text with LF endings, in code-unit order; `read` is a test's. */
 export function sourceHash(files, read) {
   const hash = createHash('sha256');
-  for (const path of [...files].filter((file) => SOURCES.some((folder) => file.startsWith(folder))
-    && !file.split('/').some((part) => SKIPPED.has(part)) && SOURCE_FILE.test(file)).sort()) {
+  for (const path of [...files].filter(declares).sort()) {
     hash.update(`${path}\0`).update(read(path).replace(/\r\n/g, '\n')).update('\0');
   }
   return hash.digest('hex');

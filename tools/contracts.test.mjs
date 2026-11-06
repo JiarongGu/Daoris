@@ -32,6 +32,18 @@ test('CODESHAPE1: the stamp is the declaring sources\' hash, the same with eithe
   assert.notEqual(hashOf({ ...sources, 'src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs': '[DriverRoute("SET_CAPS", PipeClass.Person)]\n' }), hash);
 });
 
+test('NODEKIT1: a kind\'s own file stales the page, read by its name; its door and its tests stale nothing', () => {
+  const kinds = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/';
+  const hash = hashOf(sources);
+  const monitor = { ...sources, [`${kinds}Monitor/MonitorNode.cs`]: 'class MonitorNode;\n' };
+  assert.notEqual(hashOf(monitor), hash);
+  assert.notEqual(hashOf({ ...sources, [`${kinds}NodeGroup.cs`]: 'enum NodeGroup;\n' }), hash);
+  assert.equal(hashOf({
+    ...sources, [`${kinds}Monitor/MonitorReading.cs`]: 'x', [`${kinds}Tidy/TidyDoor.cs`]: 'x', [`${kinds}Monitor/obj/MonitorNode.cs`]: 'x',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/NodeRuntime.cs': 'x',
+  }), hash);
+});
+
 test('CODESHAPE1: a file whose stamp is the hash is fresh; one missing, unstamped or stamped otherwise names itself and the command', () => {
   const hash = hashOf(sources);
   for (const output of Object.values(OUTPUTS)) {

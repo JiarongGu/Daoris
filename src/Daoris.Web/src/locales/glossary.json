@@ -101,11 +101,11 @@
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title", "work.start.recent",
         "work.sync.inConflict", "work.trace.title", "work.head.details",
         "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
-        "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
+        "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.claimed", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
-        "workflow.step.pullRequest", "workflow.step.goAhead", "workflow.step.task", "workflow.step.push", "workflow.step.line",
-        "workflow.step.questClose", "workflow.step.join", "workflow.step.stop", "workflow.step.waitUnit", "workflow.step.check",
-        "workflow.step.integrate", "workflow.step.workRequests", "workflow.step.request", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title",
+        "workflow.step.pullRequest", "workflow.step.go-ahead", "workflow.step.human", "workflow.step.push", "workflow.step.line",
+        "workflow.step.quest.close", "workflow.step.all", "workflow.step.stop", "workflow.step.wait.unit", "workflow.step.check",
+        "workflow.step.integrate", "workflow.step.work.requests", "workflow.step.request", "workflow.step.review", "workflow.step.land", "workflow.step.pluginNode", "workflow.repositories.title", "settings.daoris.card.*", "quests.flow.title",
         "workflow.compose.title", "workflow.edit.title", "workflow.edit.kind.*", "workflow.edit.save.title", "workflow.edit.next.title",
         "workflow.edit.carries.title", "workflow.edit.more.title", "workflow.edit.picker.title", "workflow.edit.inspector.details"
       ]

@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { NODE_KINDS } from '../bridge/generated/routes';
 import {
   flagOf, KNOWN_KINDS, KNOWN_LIMITS, namesOf, textOf, type CurrentWorkflow, type WorkflowStep, yourPart,
 } from './current';
@@ -13,33 +14,8 @@ const ticked = (names: readonly string[]) => names.map((name) => `\`${name}\``);
 
 const known = <T extends string>(list: readonly T[], value: string): value is T => (list as readonly string[]).includes(value);
 
-/**
- * The titles of the kinds a graph run's node may be that no step of today's Current is (FABRIC-CUTOVER1e), a named version's go-ahead
- * among them, which this page drew as a step it had no words for: the driver's `WorkflowRunWords.Title` says these in the terminal, and
- * a go-ahead there by its id, as it always has.
- */
-const NODE_TITLES: Record<string, string> = {
-  'go-ahead': 'workflow.step.goAhead',
-  human: 'workflow.step.task',
-  push: 'workflow.step.push',
-  // D245: the watch on the pull request and the tidy of the chain past it.
-  monitor: 'workflow.step.monitor',
-  tidy: 'workflow.step.tidy',
-  handed: 'workflow.step.handed',
-  line: 'workflow.step.line',
-  'quest.close': 'workflow.step.questClose',
-  all: 'workflow.step.join',
-  stop: 'workflow.step.stop',
-  'wait.unit': 'workflow.step.waitUnit',
-  check: 'workflow.step.check',
-  integrate: 'workflow.step.integrate',
-  'work.requests': 'workflow.step.workRequests',
-  // INTEGRATE1p (§17.5): another repository asked, as a step.
-  request: 'workflow.step.request',
-  // LANDNODE1k: what a landing's start judged, as steps before `land`.
-  'quest.holds': 'workflow.step.questHolds',
-  'content.holds': 'workflow.step.contentHolds',
-};
+/** The kinds the driver's kit declares, each titled `workflow.step.<kind>`, and `handed`, a step a run draws that is no kind. */
+const TITLED = new Set([...NODE_KINDS.map((row) => row.kind), 'handed']);
 
 /** A plugin's own node's kind, `<plugin>/<node>`, both parts named: the driver's `NodeKinds.IsPlugin`. */
 const pluginNode = (kind: string): { plugin: string; node: string } | null => {
@@ -49,17 +25,16 @@ const pluginNode = (kind: string): { plugin: string; node: string } | null => {
 
 /** A step's title: its kind's name, a landing by its form, the look by its environment; a graph run's node by its kind or its plugin's. */
 export function stepTitle(t: TFunction, step: WorkflowStep): string {
-  if (NODE_TITLES[step.kind]) return t(NODE_TITLES[step.kind]);
+  if (step.kind === 'look') {
+    const environment = textOf(step, 'environment');
+    return environment ? t('workflow.step.look', { environment }) : t('workflow.step.lookAnywhere');
+  }
+  if (TITLED.has(step.kind)) return t(`workflow.step.${step.kind}`);
   const plugin = pluginNode(step.kind);
   if (plugin) return t('workflow.step.pluginNode', plugin);
   if (!known(KNOWN_KINDS, step.kind)) return t('workflow.step.unknown', { kind: step.kind });
   switch (step.kind) {
-    case 'work': return t('workflow.step.work');
-    case 'opinion': return t('workflow.step.opinion');
-    case 'look': {
-      const environment = textOf(step, 'environment');
-      return environment ? t('workflow.step.look', { environment }) : t('workflow.step.lookAnywhere');
-    }
+    case 'work': return t('workflow.step.claimed');
     case 'landing': return textOf(step, 'form') === 'branch' ? t('workflow.step.landingBranch') : t('workflow.step.landingMerge');
     default: return t('workflow.step.pullRequest');
   }
