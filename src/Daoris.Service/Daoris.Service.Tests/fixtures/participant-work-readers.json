@@ -529,6 +529,10 @@
       "reads": "other",
       "note": "an ask's own field or a scope's ask, not a record's mark"
     },
+    "Core/Asks/IntakeTransients.cs": {
+      "reads": "tells",
+      "note": "reads an intake record's ask to tell whether an earlier intake of the same ask ended transient, so the ask stays bound to the failed record; no row of this design moves it"
+    },
     "Core/Help/CheckoutBox.cs": {
       "reads": "tells",
       "note": "lets only Ask Daoris's record call its box, its store's own guard; the call layer's table (row 1r, §2.3) refuses the same cells first"
