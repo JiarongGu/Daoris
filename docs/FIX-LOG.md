@@ -23,7 +23,7 @@ repository.
   `local/lyntai-local.props` belongs (`tools/lyntai-local.mjs` writes that one). The sensitive gate's private patterns named no
   development folder, so nothing refused the path.
 - **Fix:** the file is gone from every commit of main: on the owner's call the history was rewritten without it (`git filter-repo
-  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushes the
+  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushed the
   remote's main (`leak-repair`). Records citing a rewritten commit cite its new SHA. The private patterns refuse the development folder's
   absolute path. The path named a folder, no user, account or private name.
 - **Verify:** `node tools/test-map.mjs --check`; the sensitive gate over the tree, which names nothing.
