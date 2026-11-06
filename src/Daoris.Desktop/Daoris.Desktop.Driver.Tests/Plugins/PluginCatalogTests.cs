@@ -32,6 +32,8 @@ public sealed class PluginCatalogTests : IDisposable
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
+    private static ProviderRegistry Built() => ProviderRegistry.Built();
+
     [Fact]
     public void A_home_with_no_plugins_folder_is_an_empty_catalogue_not_a_crash()
     {
@@ -262,12 +264,12 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("shadow", """{ "id": "shadow", "harnesses": [ { "name": "claude-code", "command": ["evil"] } ] }""");
 
-        var catalog = PluginCatalog.Load(_home, ProviderRegistry.Built().Names);
+        var catalog = PluginCatalog.Load(_home, Built().Names);
         var entry = Assert.Single(catalog.Plugins);
 
         Assert.Contains("claude-code", entry.Problem);
         Assert.Contains("this build", entry.Problem);
-        Assert.Null(Assert.IsType<LegacyDoor>(ProviderRegistry.Built().WithPlugins(catalog).Resolve("claude-code")).Door.Identity.DeclaredBy);
+        Assert.Null(Assert.IsType<LegacyDoor>(Built().WithPlugins(catalog).Resolve("claude-code")).Door.Identity.DeclaredBy);
     }
 
     /// <summary>
@@ -280,7 +282,7 @@ public sealed class PluginCatalogTests : IDisposable
         var reserved = ReservedTable().GetProperty("reserved").EnumerateArray().Select(each => each.GetString()!).ToList();
 
         Assert.Contains("codex", reserved);
-        Assert.Equal(reserved, ProviderRegistry.Built().Reserved);
+        Assert.Equal(reserved, Built().Reserved);
         Assert.Equal(reserved, PluginCatalog.Reserved);
     }
 
@@ -305,7 +307,7 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("example.agent", $$"""{ "id": "example.agent", "harnesses": [ { "name": "{{name}}", "command": ["agent"] } ] }""");
 
-        foreach (var handed in new[] { null, ProviderRegistry.Built().Names })
+        foreach (var handed in new[] { null, Built().Names })
         {
             var catalog = PluginCatalog.Load(_home, handed);
             var entry = Assert.Single(catalog.Plugins);
@@ -313,7 +315,7 @@ public sealed class PluginCatalogTests : IDisposable
             else Assert.True(entry.Problem is null, why);
             Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
             // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
-            var built = ProviderRegistry.Built();
+            var built = Built();
             if (refused) Assert.Same(built.ToolchainOf(name), built.WithPlugins(catalog).ToolchainOf(name));
         }
     }
@@ -332,7 +334,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(catalog.Plugins[0].Problem);
         Assert.Contains("a.one", catalog.Plugins[1].Problem);
         Assert.Contains("shared", catalog.Plugins[1].Problem);
-        Assert.Equal("one", ProviderRegistry.Built().WithPlugins(catalog).Resolve("shared").Prepare(Target(_home), null).FileName);
+        Assert.Equal("one", Built().WithPlugins(catalog).Resolve("shared").Prepare(Target(_home), null).FileName);
     }
 
     /// <summary>A fifth harness arrives as a file: a configuration of the ACP door, with the seam's own fields.</summary>
@@ -346,7 +348,7 @@ public sealed class PluginCatalogTests : IDisposable
                                "install": ["npm", "install", "-g", "@acme/agent"], "versionArguments": ["--version"] } ] }
             """);
 
-        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
         var adapter = adapters.Resolve("acme-agent");
 
         Assert.Contains("acme-agent", adapters.Names);
@@ -380,7 +382,7 @@ public sealed class PluginCatalogTests : IDisposable
     {
         var folder = Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["${plugin}/agent.mjs"] } ] }""");
         File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// would wait on stdin forever if it were run\n");
-        var adapter = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
+        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
         Assert.True(adapter.Toolchain!.ProbeByPresence);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -403,7 +405,7 @@ public sealed class PluginCatalogTests : IDisposable
     {
         Plugin("plain", """{ "id": "plain", "harnesses": [ { "name": "plain-agent", "command": ["plain"] } ] }""");
 
-        var adapter = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
+        var adapter = Built().WithPlugins(PluginCatalog.Load(_home)).Resolve("plain-agent");
 
         Assert.Null(adapter.AcpPosture);
         Assert.Null(adapter.Toolchain!.ProfileVariable);
@@ -416,11 +418,11 @@ public sealed class PluginCatalogTests : IDisposable
         Plugin("future", """{ "id": "future", "apiVersion": 99, "harnesses": [ { "name": "future-agent", "command": ["f"] } ] }""");
         PluginState.Disable(_home, "off");
 
-        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home));
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home));
 
         Assert.DoesNotContain("off-agent", adapters.Names);
         Assert.DoesNotContain("future-agent", adapters.Names);
-        Assert.Equal(ProviderRegistry.Built().Names, adapters.Names);
+        Assert.Equal(Built().Names, adapters.Names);
     }
 
     [Fact]
@@ -458,7 +460,7 @@ public sealed class PluginCatalogTests : IDisposable
             [("acme-agent", "Acme Agent", "Acme"), ("older-agent", null, null), ("odd-agent", null, null)],
             entry.Manifest.Harnesses.Select(harness => (harness.Name, harness.Product, harness.Maker)));
 
-        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
         Assert.Equal(("Acme Agent", "Acme"), (adapters.Resolve("acme-agent").Toolchain!.Product, adapters.Resolve("acme-agent").Toolchain!.Maker));
         Assert.Equal(((string?)null, (string?)null), (adapters.Resolve("older-agent").Toolchain!.Product, adapters.Resolve("older-agent").Toolchain!.Maker));
     }
@@ -484,7 +486,7 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(entry.Problem);
         Assert.Equal([true, false, false], entry.Manifest.Harnesses.Select(harness => harness.OwnHome));
 
-        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
+        var adapters = Built().WithPlugins(PluginCatalog.Load(_home, Built().Names));
         Assert.Equal(
             [true, false, false],
             new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.Resolve(name).Toolchain!.RunsInOwnHome));
@@ -781,11 +783,11 @@ public sealed class PluginCatalogTests : IDisposable
         // Claude Code takes it as `--mcp-config <file>` — verified against `claude --help`, like every
         // other claim about somebody else's tool. The default adapter takes nothing and says nothing.
         var info = new ProcessStartInfo();
-        ProviderRegistry.Built().Resolve("claude-code").HandServers(info, path);
+        Built().Resolve("claude-code").HandServers(info, path);
         Assert.Equal(["--mcp-config", path], info.ArgumentList);
 
         var stub = new ProcessStartInfo();
-        ProviderRegistry.Built().Resolve("stub").HandServers(stub, path);
+        Built().Resolve("stub").HandServers(stub, path);
         Assert.Empty(stub.ArgumentList);
 
         SpawnFiles.Remove(path);
