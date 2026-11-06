@@ -55,7 +55,7 @@ public sealed class StashActs(ActJournal journal)
         var hooks = await ActWorkSteps.HooksAsync(root, Hooks, ct).ConfigureAwait(false);
         var why = state.Head is null ? "this checkout has no commit yet" : state.Tracked == 0 && state.Untracked == 0 ? "there is nothing to save" : null;
         return new(new StashPlan(state.Head, state.Branch, state.Stash, state.Tracked, state.Untracked, state.SharedWith, why, hooks,
-            await CommitActs.IdentityAsync(root, author, ct).ConfigureAwait(false), await EntriesAsync(root, repository, ct).ConfigureAwait(false),
+            await CommitActs.IdentityAsync(root, author, ct).ConfigureAwait(false), await EntriesAsync(root, state.Stash, repository, ct).ConfigureAwait(false),
             state.Head is null ? "this checkout has no commit yet" : state.Unmerged ? "a file in conflict stands in the index, so it is resolved first"
             : state.Tracked > 0 ? "tracked files are changed here, so save or discard them first" : null), GitReadRefusal.None, null) { Commands = commands };
     }
@@ -106,18 +106,23 @@ public sealed class StashActs(ActJournal journal)
 
     internal static async Task<IReadOnlyList<(string Id, string Message)>?> ListAsync(string root, CancellationToken ct)
     {
-        // The stash list is refs/stash's reflog; `log -g` reads it, where `stash list` is a name the census of writers counts.
         var tip = await ActWorkSteps.StashTipAsync(root, ct).ConfigureAwait(false);
-        if (tip.Unread) return null;
-        if (tip.Id is null) return [];
+        return tip.Unread ? null : await ListAsync(root, tip.Id, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The list where the shared stash's tip is already read (null: no stash), so the plan asks <c>refs/stash</c> once.</summary>
+    internal static async Task<IReadOnlyList<(string Id, string Message)>?> ListAsync(string root, string? tip, CancellationToken ct)
+    {
+        // The stash list is refs/stash's reflog; `log -g` reads it, where `stash list` is a name the census of writers counts.
+        if (tip is null) return [];
         var (code, listed, _) = await WorkingTree.GitAsync(root, ["log", "-g", "-n", Listed.ToString(), "--format=%H%x1f%gs", "refs/stash"], environment: null, GitBounds.Question, ct).ConfigureAwait(false);
         if (code != 0) return null;
         return [.. listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.TrimEnd('\r').Split('\x1f')).Where(parts => parts.Length == 2 && WorkingTree.IsCommitId(parts[0])).Select(parts => (parts[0], parts[1]))];
     }
 
-    private async Task<IReadOnlyList<StashEntry>> EntriesAsync(string root, string? repository, CancellationToken ct)
+    private async Task<IReadOnlyList<StashEntry>> EntriesAsync(string root, string? stash, string? repository, CancellationToken ct)
     {
-        if (await ListAsync(root, ct).ConfigureAwait(false) is not { Count: > 0 } listed) return [];
+        if (await ListAsync(root, stash, ct).ConfigureAwait(false) is not { Count: > 0 } listed) return [];
         var tracked = await TrackedAsync(root, ct).ConfigureAwait(false);
         var mine = repository is null ? new HashSet<string>() : StashDrops.SavedHere(journal, repository, root);
         var entries = new List<StashEntry>();
