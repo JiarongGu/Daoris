@@ -286,7 +286,7 @@ internal sealed class RosterReport(HarnessRoster roster)
 
         // A door's account is its owner's (AGT7), asked the way the owner asks when this build has it.
         var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
-        var asker = AccountAgent(resolved.Id.Value, toolchain);
+        var asker = AnswersFor(resolved.Id.Value, toolchain);
         var answer = await HarnessProbe.AskAccountAsync(
             asker.Name, asker, config.Commands.GetValueOrDefault(asker.Name), roster.Settings, roster.Home,
             HarnessSettings.ProfileHome(roster.Home, owner, profile), ct, ProbeLock.PathOf(roster.Home, owner, profile), key: null).ConfigureAwait(false);

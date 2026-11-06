@@ -87,7 +87,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         }
 
         // Full access on an agent with no mode that asks nothing is refused before anything is opened.
-        var access = HelpAccess.For(config.HelpMode, new ChatAgent(resolved));
+        var access = HelpAccess.For(config.HelpMode, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved));
         if (access.Refusal is { } refused) return new(null, refused);
 
         // The account its workspace names, then the machine's, as a start in that workspace takes one.
@@ -174,7 +174,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
             // A replacement of this start runs as this run does, on the machine's reading, its end told to the same listener.
             if (placed.Pending is { } pending) pending.Open = (owner, token) => RunReplacementAsync(owner, config, machine, onEnded, token);
             return await wiring.RunAsync(
-                    "ask-daoris", sessionId, placed.Message, new ChatAgent(resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace), onEnded, ct,
+                    "ask-daoris", sessionId, placed.Message, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved), selection, config, wiring.HelpPlace(room, reads, placed.Workspace), onEnded, ct,
                     chosen: placed.Chosen, pending: placed.Pending)
                 .ConfigureAwait(false);
         }
@@ -204,7 +204,7 @@ internal sealed class HelpStart(IExecutorWiring wiring) : IExecutor
         string? workspace, string? carries, CancellationToken ct, ChatPending? pending = null, IReadOnlyList<ActorEffective>? order = null)
     {
         var context = wiring.Context;
-        var access = HelpAccess.For(config.HelpMode, new ChatAgent(resolved));
+        var access = HelpAccess.For(config.HelpMode, new ChatAgent(wiring.Context.Harnesses.Adapters, resolved));
 
         // Its workspace's own room, which its record keeps as its tree: the folder its harness keeps it by. With the mode its start gets,
         // which its run reads from the same file.

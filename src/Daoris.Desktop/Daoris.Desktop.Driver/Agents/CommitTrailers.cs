@@ -8,15 +8,14 @@ internal static class CommitTrailers
     // The registration declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
     // MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
-    internal static string For(AgentDoor adapter, EarlierMaker? earlier = null) =>
-        earlier is not null && !SameMaker(adapter, earlier) ? $"{Own(adapter)}\n\n{Left(earlier)}" : Own(adapter);
-
-    /// <summary>The maker a door's registration states (the door's own for a plugin's, else its provider's).</summary>
-    internal static string? MakerOf(AgentDoor adapter) => LegacyDoor.Of(adapter).Maker;
-
-    private static string Own(AgentDoor adapter)
+    internal static string For(ProviderRegistry adapters, AgentDoor adapter, EarlierMaker? earlier = null)
     {
-        var maker = MakerOf(adapter);
+        var maker = adapters.MakerOf(adapter);
+        return earlier is not null && !SameMaker(maker, adapter, earlier) ? $"{Own(maker, adapter)}\n\n{Left(earlier)}" : Own(maker, adapter);
+    }
+
+    private static string Own(string? maker, AgentDoor adapter)
+    {
         if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
             return $"This start runs on `{adapter.Id.Value}`, made by Anthropic. Use the model actually running this session for commit attribution. "
                 + "Your Claude harness adds its Co-Authored-By trailer; let it do so and do not add a duplicate or another maker's trailer.";
@@ -56,8 +55,8 @@ internal static class CommitTrailers
     }
 
     /// <summary>One maker where both harnesses name theirs; else one harness, since a maker this build does not know is told apart by its harness.</summary>
-    private static bool SameMaker(AgentDoor adapter, EarlierMaker earlier) =>
-        MakerOf(adapter) is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
+    private static bool SameMaker(string? own, AgentDoor adapter, EarlierMaker earlier) =>
+        own is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
             ? string.Equals(maker, earlier.Maker, StringComparison.OrdinalIgnoreCase)
             : string.Equals(adapter.Id.Value, earlier.Adapter, StringComparison.OrdinalIgnoreCase);
 }

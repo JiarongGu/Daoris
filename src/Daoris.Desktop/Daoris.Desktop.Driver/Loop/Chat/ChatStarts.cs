@@ -291,7 +291,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         }
 
         // The agent the walk settled on, as the conversation reads it from here on: what it is told, and the run that holds it.
-        var agent = new ChatAgent(resolved);
+        var agent = new ChatAgent(harnesses.Adapters, resolved);
 
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs its new maker's
         // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or

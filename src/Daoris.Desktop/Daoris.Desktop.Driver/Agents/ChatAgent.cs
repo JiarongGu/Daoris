@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// conversation's runner, its turns, its account reads and what it is told hold this and the <see cref="TransportRun"/> it makes, never the
 /// adapter seam, so row t replaces what is beneath a conversation here, as it does beneath the run.
 /// </summary>
-internal sealed class ChatAgent(AgentDoor adapter)
+internal sealed class ChatAgent(ProviderRegistry adapters, AgentDoor adapter)
 {
     /// <summary>The door's name, which a record, a reading and a log line name the agent by.</summary>
     public string Name => adapter.Id.Value;
@@ -29,18 +29,18 @@ internal sealed class ChatAgent(AgentDoor adapter)
     public string? FullPosture => adapter.Postures.Full;
 
     /// <summary>Whether the protocol door reads a failure by its typed code before its words.</summary>
-    public bool TypedFailures => adapter.Toolchain?.ErrorWords?.TypedFailures == true;
+    public bool TypedFailures => adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true;
 
     /// <summary>The conversation's process as the door makes it for its runner's request, then equipped as every session's is (D230 point 3).</summary>
     public ProcessStartInfo Prepare(SpawnRequest request, HarnessSelection selection)
     {
-        var info = adapter.PrepareChat(request);
-        SpawnEquipment.Equip(adapter, info, selection);
+        var info = adapters.Chat(adapter, request);
+        SpawnEquipment.Equip(adapters, adapter, info, selection);
         return info;
     }
 
     /// <summary>The run over today's transports that holds the conversation's process from its bracket to its close.</summary>
-    public TransportRun Run(ITransportHost host, TransportStart start) => new(host, adapter, start);
+    public TransportRun Run(ITransportHost host, TransportStart start) => new(host, adapters, adapter, start);
 
     /// <summary>The rules file named on the pipe's command line.</summary>
     public void HandSettings(ProcessStartInfo info, string rules) => adapter.Spawned().HandSettings(info, rules);
@@ -51,13 +51,13 @@ internal sealed class ChatAgent(AgentDoor adapter)
     /// <summary>The skills the plugins hand <paramref name="to"/>, composed under the home and handed by the door's session-only way.</summary>
     public (string? Folder, IReadOnlyList<string> Plugins) HandSkills(
         ProcessStartInfo info, string home, string sessionId, IAgentPlugins catalog, string to) =>
-        SpawnSkills.Hand(adapter, info, home, sessionId, catalog, to);
+        SpawnSkills.Hand(adapters, adapter, info, home, sessionId, catalog, to);
 
     /// <summary>How its door takes a start's servers at its spawn, or null where they ride its wire or it takes none there.</summary>
     public IServerHanding? Servers => adapter.ServerHanding();
 
     /// <summary>The language its rules are written in, or null where the person's rules reach none of its sessions.</summary>
-    public IRuleLanguage? Rules => adapter.RuleLanguage();
+    public IRuleLanguage? Rules => adapters.RuleLanguage(adapter);
 
     /// <summary>A standing block bound to this agent in <paramref name="tree"/>.</summary>
     public StandingFacts OnHarness(StandingFacts facts, string tree) => AgentContext.Current.OnHarness(facts, adapter, tree);
@@ -83,5 +83,5 @@ internal sealed class ChatAgent(AgentDoor adapter)
         RefusedAccounts.SignInRefused(harnesses, adapter, profile, failure);
 
     /// <summary>The maker's trailer a commit of this agent carries, and the earlier maker's where it left work in the tree.</summary>
-    public string Trailers(EarlierMaker? earlier = null) => CommitTrailers.For(adapter, earlier);
+    public string Trailers(EarlierMaker? earlier = null) => CommitTrailers.For(adapters, adapter, earlier);
 }

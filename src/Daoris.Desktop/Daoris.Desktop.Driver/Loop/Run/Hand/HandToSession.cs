@@ -245,13 +245,13 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
             var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // The skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
             // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block
             // went through, where it went through one.
-            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
+            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
             var rules = wiring.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
                 continued: blockFolder is null ? brief?.Kept : [.. brief?.Kept ?? [], blockFolder], heavy: heavy);

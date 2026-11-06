@@ -149,7 +149,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
                 listed.State, Adapter: record?.Adapter, Profile: record?.Profile, Tree: tree, Conversation: record is null || record.Kind == "chat" || record.Quest is null,
                 Teammate: never == WordsNever.Teammate, Intake: never == WordsNever.Intake, StoodDown: never == WordsNever.StoodDown,
                 SupersededBy: never == WordsNever.Superseded ? last ?? "" : never == WordsNever.Continued ? next ?? "" : null, Waiting: waiting,
-                Session: sessionId, QuestStatus: carried.Status, AskDaoris: help, AgentGone: record is not null && resolved is not { Interactive: true },
+                Session: sessionId, QuestStatus: carried.Status, AskDaoris: help, AgentGone: record is not null && resolved?.Can.Interactive != true,
                 Judged: lost?.Code),
             listed.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited,
             // An account the person picked stays the one account (§3.5(d)): the course says it as the pick the new part keeps.

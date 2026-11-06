@@ -9,9 +9,9 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class SpawnEquipment
 {
-    public static void Equip(AgentDoor adapter, ProcessStartInfo info, HarnessSelection selection)
+    public static void Equip(ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, HarnessSelection selection)
     {
-        if (adapter.Toolchain is { } toolchain)
+        if (adapters.AgentNamed(adapter.Id.Value) is { } toolchain)
         {
             Action<ProcessStartInfo>? seam = selection.ClaudeExecutable is { Length: > 0 } claude ? each => adapter.Spawned().PointAtClaude(each, claude) : null;
             Shell.Equip(info, toolchain, selection.ProfileHome, selection.Binary, seam, selection.Environment);

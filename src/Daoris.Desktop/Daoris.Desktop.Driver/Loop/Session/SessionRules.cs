@@ -29,14 +29,14 @@ internal static class SessionRules
     /// <param name="heavy">What its run's checks hand it: under <c>light</c>, each heavy gate's declared command denied exactly beside the
     /// person's rules, and auto mode's classifier told the heavy gates are the verification's.</param>
     public static (string? File, object? Meta, HandedSection Handed) Hand(
-        string home, AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
+        string home, ProviderRegistry adapters, AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job, AcrossReach? across, string? said,
         bool opinion, bool helper, IReadOnlyList<string>? plugins, string? brainstorm,
         IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner)
     {
         // The record of the git access this session holds, begun at its start for every harness; the doors judge by it.
         GitSessionAccess.Begin(home, sessionId, repository, workspace);
-        if (adapter.RuleLanguage() is not { } language)
+        if (adapters.RuleLanguage(adapter) is not { } language)
         {
             return (null, null, Handed(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
         }

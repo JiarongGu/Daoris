@@ -76,7 +76,7 @@ internal sealed class RosterNext(HarnessRoster roster)
         if (toolchain is not null) scope = roster.Walked(scope, agent, toolchain);
         // The card speaks for the account's own door; each other door whose answer differs is said apart (s-ix o1 to o3).
         var doors = toolchain is null ? [] : DoorsDiffering(agent, toolchain.Home.StartsInOwnHome);
-        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []) { Doors = doors };
+        if (toolchain is { Home.StartsInOwnHome: false } &&scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []) { Doors = doors };
 
         var now = roster.Clock();
         IReadOnlyList<string> present;

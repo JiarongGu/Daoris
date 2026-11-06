@@ -215,7 +215,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, though not their servers: a skill is words, and one that
             // allows itself tools is handed nowhere, so the reviewer's rules below stand. Gone with the pass.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What it may do (§5.2): the person's composition under the opinion's rules, held to its copy by the tree guard,

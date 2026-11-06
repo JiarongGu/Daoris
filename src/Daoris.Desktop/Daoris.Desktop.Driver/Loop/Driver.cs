@@ -482,7 +482,7 @@ public sealed class Driver(
 
     internal (ProcessStartInfo Info, string? Notice) Prepare(
         AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
-        Equipment.Prepare(adapter, target, selection, prepared);
+        Equipment.Prepare(Context.Adapters, adapter, target, selection, prepared);
 
     internal bool HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool) =>
         Equipment.HandedConnector(adapter, workspace, repository, tool);
@@ -493,7 +493,7 @@ public sealed class Driver(
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
         IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false) =>
         SessionRules.Hand(
-            home, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
+            home, Context.Adapters, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
             continued, heavy, partner);
 
     internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>

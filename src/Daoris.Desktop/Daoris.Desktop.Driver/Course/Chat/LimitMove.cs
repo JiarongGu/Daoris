@@ -289,7 +289,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
-                            leftBy: LeftBy(prior, agent), moves: moves)
+                            leftBy: LeftBy(context.Harnesses.Adapters, prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
@@ -540,7 +540,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
 
         var (room, reads) = await help.HelpRoomNowAsync(id, KnowledgeRoomPaths.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
         return await runner.RunAsync(
-                prior.Actor ?? "ask-daoris", id, placed.Message, new ChatAgent(resolved), selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
+                prior.Actor ?? "ask-daoris", id, placed.Message, new ChatAgent(context.Harnesses.Adapters, resolved), selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
                 chosen: placed.Chosen)
             .ConfigureAwait(false);
     }
@@ -583,8 +583,8 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>The part it moves from, as its record says it ran (MAKERTRAIL2): its harness, that harness's maker and its models.</summary>
-    internal static EarlierMaker LeftBy(PriorSession prior, AgentDoor ran) =>
-        new(ran.Id.Value, ran.Toolchain?.Maker, prior.Ran?.Models ?? []);
+    internal static EarlierMaker LeftBy(ProviderRegistry adapters, PriorSession prior, AgentDoor ran) =>
+        new(ran.Id.Value, adapters.AgentNamed(ran.Id.Value)?.Maker, prior.Ran?.Models ?? []);
 
     /// <summary>What <see cref="ElsewhereAsync"/> came to: the choices to walk, or the line its conversation waits under and why.</summary>
     internal sealed record Elsewhere(IReadOnlyList<ActorEffective>? Order, Noted? Stays, string Why);

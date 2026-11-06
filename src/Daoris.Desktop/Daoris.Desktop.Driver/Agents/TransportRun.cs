@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
-internal sealed class TransportRun(ITransportHost host, AgentDoor adapter, TransportStart start) : AgentRun, IAsyncDisposable
+internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapters, AgentDoor adapter, TransportStart start) : AgentRun, IAsyncDisposable
 {
     /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
     public const string LinesAbility = "a line written to a protocol door's process";
@@ -221,7 +221,7 @@ internal sealed class TransportRun(ITransportHost host, AgentDoor adapter, Trans
         if (!GoesOn) throw Unsupported("a go-on");
 
         var (target, selection) = (_start.Target!, _start.Selection!);
-        var next = adapter.PrepareResume(_start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
+        var next = adapters.Resume(adapter, _start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
         if (_carriers.Settings is not null) adapter.Spawned().HandSettings(next, _carriers.Settings);
         if (_carriers.Servers is not null) adapter.Spawned().HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);

@@ -184,7 +184,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
-                            leftBy: LimitMove.LeftBy(prior, agent), moves: moves)
+                            leftBy: LimitMove.LeftBy(context.Harnesses.Adapters, prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,

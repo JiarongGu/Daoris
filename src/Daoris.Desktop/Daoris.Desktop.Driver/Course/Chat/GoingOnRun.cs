@@ -232,7 +232,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
                     // COWORK1b: Daoris's own words alone are no agent's answer.
                     ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
                     : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
-            new ChatAgent(adapter), selection, config, placed, onEnded, ct, new GoingOn(record, ask) { Answering = answering, Proc = proc }).ConfigureAwait(false);
+            new ChatAgent(_context.Harnesses.Adapters, adapter), selection, config, placed, onEnded, ct, new GoingOn(record, ask) { Answering = answering, Proc = proc }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -308,7 +308,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             .ConfigureAwait(false);
         handed = true;
         return await _runner.RunAsync(
-            record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", new ChatAgent(adapter), selection, config,
+            record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", new ChatAgent(_context.Harnesses.Adapters, adapter), selection, config,
             _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask) { Proc = proc }).ConfigureAwait(false);
     }
 }

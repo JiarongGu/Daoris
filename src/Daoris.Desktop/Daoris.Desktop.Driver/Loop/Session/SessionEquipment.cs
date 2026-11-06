@@ -11,13 +11,13 @@ internal sealed class SessionEquipment(string home, DriverConfig config, Func<st
     /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
     /// <param name="prepared">The process a resume prepared, given the same environment; null prepares a start.</param>
     public (ProcessStartInfo Info, string? Notice) Prepare(
-        AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
+        ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
-        target = TargetPrompt.ForStart(target, adapter);
+        target = TargetPrompt.ForStart(target, adapters, adapter);
         // A standing block past what the first prompt carries goes through its file, written before the spawn reads it.
         if (prepared is null) StandingBlocks.Hand(target);
-        var info = prepared ?? adapter.Prepare(Request(adapter, target with { Home = target.Home ?? DaorisHome.Resolve(variable) }));
-        SpawnEquipment.Equip(adapter, info, selection);
+        var info = prepared ?? adapters.Start(adapter, Request(adapter, target with { Home = target.Home ?? DaorisHome.Resolve(variable) }));
+        SpawnEquipment.Equip(adapters, adapter, info, selection);
 
         // Only a dsh home Daoris made is written to; anywhere else the notice says what happens, and a home holding somebody
         // else's patch layer is reported rather than overwritten.

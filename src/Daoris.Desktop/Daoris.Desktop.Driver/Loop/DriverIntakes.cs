@@ -290,7 +290,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an

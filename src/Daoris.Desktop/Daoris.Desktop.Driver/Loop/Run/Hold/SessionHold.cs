@@ -99,7 +99,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Request = request, Selection = goesOnAs,
         };
-        await using var run = new TransportRun(wiring.Transport, adapter, start);
+        await using var run = new TransportRun(wiring.Transport, context.Adapters, adapter, start);
         await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
         spawned?.Invoke();
 
@@ -146,7 +146,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         // Each door ends the same way: the record is concluded from the exit code and what the session was for, never from what the
         // session said about itself. A resume's prompt is the answer as it is, the conversation already holding the target; after it,
         // the answers to the go-aheads it asked since its start.
-        var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, adapter)) : null;
+        var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, context.Adapters, adapter)) : null;
         var prompt = resume?.Prompt ?? composed!.Text;
 
         // What the target was composed of, kept beside it on its event with the rules handed beside it. A resume composes nothing, so
@@ -228,24 +228,24 @@ internal sealed class SessionHold(IRunWiring wiring)
             : async refusal =>
             {
                 // The refusal is a reading the run said before this re-ask, which the offers store's part of its sink kept (below).
-                log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Name), ("model", refusal.Value),
+                log?.Write("info", "actor.refused", [("actor", actor), ("session", sessionId), ("agent", adapter.Id.Value), ("model", refusal.Value),
                     ("code", refusal.Code)]);
                 if (await reask(refusal).ConfigureAwait(false) is not { } later) return null;
 
                 // The same-account move: the record's choice and asked move through their later door, and the opening note says both,
                 // the refused entry passed on this account.
-                var refusedEntry = new ActorEffective(adapter.Name, refusal.Value, null, choice);
-                var ranEntry = new ActorEffective(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value, later.Choice);
+                var refusedEntry = new ActorEffective(adapter.Id.Value, refusal.Value, null, choice);
+                var ranEntry = new ActorEffective(adapter.Id.Value, later.Asked.NamedModel, later.Asked.Effort.Value, later.Choice);
                 var why = $"`{offers.Account ?? "its own sign-in"}` did not offer `{refusal.Value}`";
                 RotatedOpening.SayActor(context.Events, sessionId, actor, ranEntry, [new BuildPass(refusedEntry, refusal.Code, why)]);
                 ActorMoves.Write(log, actor, sessionId, refusedEntry.From, later.Choice, "model-refused");
                 if (target.QuestId is { } movedLine)
                 {
-                    wiring.CountMove(movedLine, actor, StaffConditions.ModelRefused, new ActorEffective(adapter.Name, refusal.Value, asked.Effort.Value, choice), later.Choice);
+                    wiring.CountMove(movedLine, actor, StaffConditions.ModelRefused, new ActorEffective(adapter.Id.Value, refusal.Value, asked.Effort.Value, choice), later.Choice);
                 }
 
                 choice = later.Choice;
-                UsageTurns.ChoiceBound(home, context.Events, sessionId, new StaffKey(adapter.Name, later.Asked.NamedModel, later.Asked.Effort.Value).Text);
+                UsageTurns.ChoiceBound(home, context.Events, sessionId, new StaffKey(adapter.Id.Value, later.Asked.NamedModel, later.Asked.Effort.Value).Text);
                 await service.TryKeepActorAsync(
                         sessionId, log, choice, later.Asked, ct: CancellationToken.None,
                         chosen: new ActorChosen(prior?.Chosen?.Rule ?? StaffRules.Order, StaffBy.Moved, "model-refused", refusedEntry.From))
@@ -296,7 +296,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
-                typedFailures: adapter.Toolchain?.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
+                typedFailures: context.Adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
 
         // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first

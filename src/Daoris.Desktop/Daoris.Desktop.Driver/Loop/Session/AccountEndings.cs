@@ -113,7 +113,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// <param name="ended">What the harness said of its ending, by its door.</param>
     public SessionConclusion Refused(SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, HarnessEnding ended)
     {
-        if (conclusion.State != "failed" || context.Harnesses.Adapters.AgentNamed(adapter.Id.Value) is not { Refused: { Length: > 0 } refusedWords }
+        if (conclusion.State != "failed" || context.Harnesses.Adapters.AgentNamed(adapter.Id.Value) is not { Tables.Refused: { Length: > 0 } refusedWords }
             || !Observation.Refused(ended, refusedWords))
         {
             return conclusion;

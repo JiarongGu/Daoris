@@ -57,8 +57,8 @@ public static class DoorPorts
         /// <summary>The native door's resume, null where the door knows none.</summary>
         public ProcessStartInfo? Resume(AgentDoor door, SpawnRequest request) => DoorStarts.Resumed(door.Spawned(), request, registry.Stripped(door));
 
-        /// <summary>The maker the door's provider states (<see cref="CommitTrailers"/> reads it so).</summary>
-        public string? MakerOf(AgentDoor door) => registry.ProviderOfDoor(door).Identity.Maker;
+        /// <summary>The maker a door's registration states: a plugin's door its own, any other its provider's (<see cref="CommitTrailers"/>).</summary>
+        public string? MakerOf(AgentDoor door) => door.Declared ? door.Identity.Maker : registry.ProviderOfDoor(door).Identity.Maker;
 
         /// <summary>The language the door's rules are written in, or null where the person's rules reach none of its sessions.</summary>
         public IRuleLanguage? RuleLanguage(AgentDoor door) => registry.ProviderOfDoor(door).Rules.TryGet(out var language) ? language : null;
