@@ -1,6 +1,6 @@
 # Events from records, a relay that lives for the session, and an outside agent on a channel (EVENTHOOK1d, EVENTHOOK1e, CHANNELJOIN1)
 
-Design, proposed for the owner's yes (D244). Written by Claude Opus 5.5 from the code on main at `df7f178bf`. It is the later round
+Design, accepted by the owner (D244). Written by Claude Opus 5.5 from the code on main at `df7f178bf`. It is the later round
 the event hook design (`docs/2026-10-24-event-hook-design.md`) leaves to rows 1d and 1e (its §4.2, §6.2, §7, §9), and the design
 CHANNELJOIN1 is named for in the integration design (`docs/2026-10-28-integration-design.md` §7.1). Read with that design's §4.3 (the
 frame), §6.1 (the relay) and §8 (what a subscriber may do), the foundation design's §4 (the journal), and
