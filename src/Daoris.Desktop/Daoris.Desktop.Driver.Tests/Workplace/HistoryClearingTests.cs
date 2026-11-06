@@ -47,7 +47,6 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, $"{id}.log"), "the transcript\n");
         Directory.CreateDirectory(Path.Combine(Sessions, id, "files"));
         File.WriteAllText(Path.Combine(Sessions, id, "files", "shot.png"), "png");
-        File.WriteAllText(Path.Combine(Sessions, id + HarnessConversations.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + ".pid"), "1 1");
         File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + ReopenMarks.Suffix), "{}");
@@ -66,7 +65,7 @@ public sealed class HistoryClearingTests : IDisposable
 
     private string[] KeptOf(string id) =>
     [
-        .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
+        .. new[] { ".events.jsonl", ".log", ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
             .Concat(Boxes)
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),

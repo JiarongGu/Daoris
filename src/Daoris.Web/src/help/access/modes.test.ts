@@ -7,8 +7,8 @@ import { chipOf, fullAdds, lackDoor } from './modes';
 // names, as values.
 
 const receipt = (over: Partial<HelpReceipt>): HelpReceipt => ({
-  at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', harness: 'claude-code-acp', version: null, account: null,
-  door: 'acp', posture: 'default', permissionMode: null, folder: 'room', tools: [], skills: [], servers: [], rules: null,
+  at: '2026-10-19T10:00:00+00:00', start: 'new', mode: 'restricted', door: 'claude-code-acp', version: null, account: null,
+  transport: 'protocol', posture: 'default', permissionMode: null, folder: 'room', tools: [], skills: [], servers: [], rules: null,
   guarded: false, checkouts: [], lacks: [], ...over,
 });
 

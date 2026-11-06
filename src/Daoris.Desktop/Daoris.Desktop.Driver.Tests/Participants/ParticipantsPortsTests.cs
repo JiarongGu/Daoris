@@ -28,21 +28,6 @@ public sealed class ParticipantsPortsTests : IDisposable
     }
 
     [Fact]
-    public void A_conversation_file_is_the_two_fields_written_whole_and_read_back_by_the_store_s_own_files()
-    {
-        var store = new HarnessConversations(_home);
-        var path = store.PathOf("a1b2c3d1");
-
-        HarnessConversationFiles.Write(path, "claude-code-acp", "c-1");
-
-        Assert.Equal(new HarnessConversation("claude-code-acp", "c-1"), HarnessConversationFiles.Read(path));
-        Assert.Equal(new HarnessConversation("claude-code-acp", "c-1"), store.Read("a1b2c3d1"));
-        Assert.Null(HarnessConversationFiles.Read(Path.Combine(_home, "gone.harness.json")));
-        File.WriteAllText(path, "{\"adapter\":\"claude-code-acp\"}");
-        Assert.Null(HarnessConversationFiles.Read(path));
-    }
-
-    [Fact]
     public void The_page_s_no_keeps_its_note_and_transcript_line_through_the_supplied_interfaces()
     {
         var files = Held("a1");

@@ -42,7 +42,7 @@ public sealed class HelpCheckoutsGitTests : IAsyncLifetime
     {
         new HelpWired(_home).Keep("h1", new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home), Checkouts = [new HelpRead("engine", "default", Root)],
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home), Checkouts = [new HelpRead("engine", "default", Root)],
         });
         return new HousekeepingLedger { Records = [("h1", HelpRoom.Repository, "default", null)], Registry = [("engine", "default", Root)] };
     }

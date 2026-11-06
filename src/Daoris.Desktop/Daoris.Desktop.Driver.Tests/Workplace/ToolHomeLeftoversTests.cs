@@ -268,19 +268,6 @@ public sealed class ToolHomeLeftoversTests : IDisposable
     }
 
     [Fact]
-    public void A_conversation_record_that_cannot_be_read_is_not_absent_and_marks_the_folder()
-    {
-        var (home, tool, projects) = Homes();
-        var legacy = Tree(home, "s-dddd7777");
-        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Sessions));
-        File.WriteAllText(new HarnessConversations(home).PathOf("legacy"), "{ this is not json");
-        var origins = ToolHomeLeftovers.Origins(home, Records(Record("legacy", legacy, profile: null)));
-        Project(projects, ToolHomeLeftovers.Flatten(legacy), Old);
-
-        Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.List(WorldOf(home, tool, origins)).Folders).Keeps);
-    }
-
-    [Fact]
     public void An_ancestor_that_is_a_link_lists_nothing_under_it()
     {
         var (home, _, _) = Homes();
