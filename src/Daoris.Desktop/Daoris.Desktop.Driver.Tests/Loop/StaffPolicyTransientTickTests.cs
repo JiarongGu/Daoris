@@ -64,8 +64,8 @@ public sealed class StaffPolicyTransientTickTests : IAsyncLifetime
     {
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["stub"] = BuiltDoors.Of("stub"),
-            ["acp-stub"] = BuiltDoors.Of("acp-stub"),
+            ["stub"] = BuiltDoors.Stub,
+            ["acp-stub"] = BuiltDoors.AcpStub,
             ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
         });
         var config = ActorChoices.With(

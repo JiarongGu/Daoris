@@ -377,8 +377,6 @@ public sealed class ResumeAccountTests : IDisposable
     {
         public string Name => name;
 
-        public Transport Transport => Transport.Native;
-
         public HarnessToolchain? Toolchain => toolchain;
 
         public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");

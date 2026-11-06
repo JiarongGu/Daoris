@@ -26,9 +26,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `LegacyDoor`, `AdapterAbilities`, `AdapterClaudeSeam`, `RegisteredVariables` | `Registry/` | Presents a contract door to today's readers as an adapter and a toolchain, its spawn the door's recipe completed by the shell and its stream reader and session `_meta` its door's dialect (Claude Code's `ClaudeNativeDialect` and `ClaudeProtocolDialect`); `adapter.Abilities()`, a contract door's from its record and a plugin's or a test's adapter from its declarations and wire; whether a start takes Claude Code's seam (a contract door's spawn says, any other protocol adapter does); what every registration declared of a spawn's environment, and the refusal of a declared name of Daoris's list |
 | `SpawnRequest`, `DoorStarts`, `ProcessRecipe`, `ISpawn`, `Shell`, `ISessionGit` | `Contract/SpawnRequest.cs`, `DoorStarts.cs`, `Contract/ProcessRecipe.cs`, `Contract/Ports.cs`, `Transports/` | What a start asks of a door's spawn (the machine's command, the mode, the asked choice, the conversation it goes on in, whose work it serves), composed by the start's executor in Loop (`Loop/Session/SpawnRequests.cs`: a driven start's and a resume's from its target, a conversation's from its place) and handed to the adapter seam's `Prepare`, `PrepareResume` and `PrepareChat`; a door's spawn reads it and answers a recipe (program, arguments, input, its own variables); the transports' one shell completes the recipe from the request alone into every kind of session's process and holds the account half every probe and usage question takes too; the session's git a port the shell declares and Workplace installs, unset throwing |
 | `ClaudeCodeProvider`, `CodexProvider`, `DshProvider`, `StubProvider`, `AltStubProvider` | `Providers/<Name>/` | Each provider written on the contract, its facts declared in its folder: Claude Code's two doors, `codex` with its door `codex-acp` and its account facts (`CodexAccounts`), dsh, and the stand-ins `stub` (pipe) and `acp-stub` (protocol), which run a configured command and no model, and `alt-stub` with `alt-acp-stub`, the second pair, whose limit, window and sign-in words (`AltStubWords`) and home variable are its own; each door's spawn its own there (`ClaudeCodeSpawn`, `ClaudeAcpSpawn` with `ClaudeAcp`'s seam, `CodexAcpSpawn`, `DshSpawn` with `DshProfile`, `StandInSpawn`) |
-| `ISessionAdapter`, `SessionWire`, `AdapterSet` | same names | The adapter seam with its silent defaults; the built set, every door of it through `LegacyDoor` from the registration list; `Resolve` refuses an unknown name |
-| `ClaudeCodeAdapter`, `StubAdapter`, `AcpStubAdapter` | same names | Read by tests alone: Claude Code's native door and the stand-ins as their classes declared them, their spawn and stream members one-line doors to their door's spawn and dialect, the old side a test holds equal to the registrations until row t |
-| `StubAdapter`, `AcpStubAdapter`, `Spawning`, `CommitTrailers`, `PinNewest` | `StubAdapters.cs`, same names | The stand-in adapters; Daoris's own variables, a list (the identity variables and what the session's git answers it sets); the maker's trailer a commit carries; the newest release a pin moves to, asked one way for the window and the terminal |
+| `ISessionAdapter`, `AdapterSet` | same names | The adapter seam with its silent defaults, its door's transport the contract's `Transport`; the built set, every door of it through `LegacyDoor` from the registration list; `Resolve` refuses an unknown name. Tests that need a shipped door read it from `BuiltDoors.Of(id)` |
+| `Spawning`, `CommitTrailers`, `PinNewest` | same names | Daoris's own variables, a list (the identity variables and what the session's git answers it sets); the maker's trailer a commit carries; the newest release a pin moves to, asked one way for the window and the terminal |
 | `SessionServers`, `ServerPackages`, `PackageStarts`, `NpxCommand`, `PackageBin` | same names; the last two in `Domain/` | The servers a session is handed, as the harness starts them; a server's package installed once into the toolchain; a package's program started as node and its script; `npx` read as npm reads it; the script a package's manifest names |
 | `SessionTarget`, `EarlierMaker` | same names | What a driven start's executor composes, its spawn request composed from it |
 | `TargetPrompt` | same name (hub, 11 KB) | The composed first prompt: its doors, the head, the beneath and the tail; the pieces come from the units below |
@@ -273,8 +272,8 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - What a session is handed at spawn: `Driver.Prepare`, `Equip` and `HandRules` in Loop; a door's arguments, own variables and
   carriers on its spawn in its provider's folder; Daoris's own variables in `Shell`, never in a door's recipe.
 - A branch on what a door can do: ask its ability (`adapter.Abilities()`, `DoorAbilities`), never its wire; whether it may drive an
-  unadopted repository is `Adoption`'s. Only the transports, the providers and the shim name
-  `SessionWire`, each a named exception of the provider census.
+  unadopted repository is `Adoption`'s. A door's transport is the contract's `Transport` (`Native` or `Protocol`), read where a
+  transport is the thing asked: the transports, the providers and the shim.
 
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
 - contract: `ProviderCensusTests`, `ProviderConformanceTests` (and its process and live cases), `ProviderRegistryTests`,
@@ -304,7 +303,7 @@ Agents page, and `orient-index` and `code-map` once files move.
    (the suggestions name `sonnet` and `opus`; starts carry the role's model). D205 reads right.
 3. D205 point 7 (the suggestion leads Build with `opus` · high) vs its note of 2026-10-25 and `Roles/ActorSuggestion.cs:23`
    (`sonnet` · high, then `opus` · high). The note and the code read right.
-4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeAdapter.cs:161` (bypass by a repository's unrestricted
+4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeSpawn.cs:137` (bypass by a repository's unrestricted
    setup). D184 reads right; D81 holds only for the auto setup.
 5. D184 point 5 (the person's deny rules hold in every setup) vs `CodexAcpAdapter.cs:46-47` (Codex takes no rules file, so no deny
    reaches it in any mode). The code reads right, and is said (D233 choice 3).
@@ -324,7 +323,7 @@ Agents page, and `orient-index` and `code-map` once files move.
     (refused). The refusal reads right (D57, D121).
 13. `Registry/ProviderRegistry.cs:12-13` (nothing reads the registry but its tests) vs `RosterReport.cs:376` and
     `AgentsCommand.cs:282`. The callers read right.
-14. `ClaudeCodeAdapter.cs:19-22` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
+14. `ClaudeCodeSpawn.cs:89` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
     `Loop/Driver.cs:3323` and `:5209` (Daoris offers its connector at every spawn). The spawn reads right.
 15. `CodexAcpAdapter.cs:10-15` (codex-acp offers three modes, "no third reading") vs `CodexAcpAdapter.cs:57` (`workspace-write` read in
     codex-acp 2.1.1). The property reads right.
@@ -391,11 +390,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   walk reads `Reach` (`ProviderReach`) with the pass code `not-opened`, a brainstorm voice by its workspace, Ask Daoris by the
   machine's room, and a meeting's participant and a role holder's harness refused; a chat's walk is handed its workspace, not its
   repository, so it reads the workspace's opening until its place carries the repository. Left: the rest of D213's design.
-- **AGENTPROVIDER1t**: the old seam ends. No provider reads an adapter class; `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter` and
-  the two dialect bridges are gone. Left: `ISessionAdapter`, `HarnessToolchain` (the probes', actions' and pins' type, which
-  `Registry.ToolchainOf` answers), `SessionWire`, `AdapterSet`, `LegacyDoor`, `AdapterAbilities`, `AdapterClaudeSeam`,
-  `AdapterChoiceVariables`, `ClaudeCodeAdapter` and the stand-in classes (tests' fakes implement the seam), the shell's
-  `ClaudeAcp` seam by type, `provider-vocabulary.json` (the service's, page's and tools' censuses read it); and every record
+- **AGENTPROVIDER1t**: the old seam ends. No provider reads an adapter class; `ClaudeAcpAdapter`, `CodexAcpAdapter`, `DshAdapter`,
+  the two dialect bridges, `ClaudeCodeAdapter`, `StubAdapter` and `AcpStubAdapter` are gone, `SessionWire` is the contract's
+  `Transport`, and the shell applies the seam a door's own spawn states (`ISpawn.PointAtClaude`), naming no provider; the census's
+  exceptions under this row are none. Left: `ISessionAdapter` (79 test fakes implement it; the shipped doors reach it through
+  `LegacyDoor`), `HarnessToolchain` (the probes', actions' and pins' type, which `Registry.ToolchainOf` answers), `AdapterSet`,
+  `LegacyDoor`, `AdapterAbilities`, `AdapterParts`, `AdapterClaudeSeam`, `AdapterChoiceVariables`, and `provider-vocabulary.json`
+  (the service's, page's and tools' censuses read it, so each needs a source out of the registrations first); and every record
   still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30): Daoris's providers consumed from the sibling
   agent-provider library as a package. Its rows wait on that library's releases; nothing is referenced by the driver yet.

@@ -6,4 +6,10 @@ namespace Daoris.Desktop.Driver.Tests;
 internal static class BuiltDoors
 {
     public static ISessionAdapter Of(string id) => AdapterSet.Built().Resolve(id);
+
+    public static ISessionAdapter Stub => Of("stub");
+
+    public static ISessionAdapter AcpStub => Of("acp-stub");
+
+    public static ISessionAdapter Claude => Of("claude-code");
 }

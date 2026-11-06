@@ -47,7 +47,7 @@ public sealed class NativePromptProcessTests : IDisposable
 
     /// <summary>The real adapter's resume start, built as the driver builds it, over <paramref name="script"/>.</summary>
     private ProcessStartInfo Resume(string script) =>
-        BuiltDoors.Of("claude-code").PrepareResume(Target(_root), ["node", script], "0b5e7c1a")!;
+        BuiltDoors.Claude.PrepareResume(Target(_root), ["node", script], "0b5e7c1a")!;
 
     [Fact]
     public async Task The_prompt_arrives_whole_as_bom_less_utf8_and_the_input_is_closed()
@@ -59,7 +59,7 @@ public sealed class NativePromptProcessTests : IDisposable
         _ = process.StandardError.ReadToEndAsync();
 
         // FOUNDATION1f-iv part b: the write's return is what a carry-on's moved words' `sent` waits for.
-        Assert.True(await NativePrompt.WriteAsync(process, BuiltDoors.Of("claude-code"), Prompt, CancellationToken.None));
+        Assert.True(await NativePrompt.WriteAsync(process, BuiltDoors.Claude, Prompt, CancellationToken.None));
 
         // The reader ends only once its input is closed: an unclosed input fails this by its bound.
         var said = (await read.WaitAsync(Poll.Patience)).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -121,7 +121,7 @@ public sealed class NativePromptProcessTests : IDisposable
         await process.WaitForExitAsync().WaitAsync(Poll.Patience);
 
         // FOUNDATION1f-iv part b: a write the pipe refused never returned, so a moved word it carried reads unsent.
-        Assert.False(await NativePrompt.WriteAsync(process, BuiltDoors.Of("claude-code"), new string('x', 1 << 20), CancellationToken.None));
+        Assert.False(await NativePrompt.WriteAsync(process, BuiltDoors.Claude, new string('x', 1 << 20), CancellationToken.None));
 
         Assert.Equal(3, process.ExitCode);
     }
@@ -150,7 +150,7 @@ public sealed class NativePromptProcessTests : IDisposable
             var read = process.StandardOutput.ReadToEndAsync();
             _ = process.StandardError.ReadToEndAsync();
 
-            await NativePrompt.WriteAsync(process, BuiltDoors.Of("claude-code"), Prompt, CancellationToken.None);
+            await NativePrompt.WriteAsync(process, BuiltDoors.Claude, Prompt, CancellationToken.None);
 
             var said = (await read.WaitAsync(Poll.Patience)).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             await process.WaitForExitAsync().WaitAsync(Poll.Patience);

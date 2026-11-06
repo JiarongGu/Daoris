@@ -353,10 +353,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
-    /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
+    /// <summary>The protocol stub with Claude's words for its auto, asking and unrestricted modes.</summary>
     private sealed class PosturedStub : ISessionAdapter
     {
-        private readonly ISessionAdapter _stub = BuiltDoors.Of("acp-stub");
+        ISessionAdapter _stub => BuiltDoors.AcpStub;
 
         public string Name => _stub.Name;
 

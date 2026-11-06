@@ -56,8 +56,8 @@ public sealed class ContinuedChoiceTickTests : IDisposable
 
     private static AdapterSet Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        ["stub"] = BuiltDoors.Of("stub"),
-        ["acp-stub"] = BuiltDoors.Of("acp-stub"),
+        ["stub"] = BuiltDoors.Stub,
+        ["acp-stub"] = BuiltDoors.AcpStub,
         ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
     });
 

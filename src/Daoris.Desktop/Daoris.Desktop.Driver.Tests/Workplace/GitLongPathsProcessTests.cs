@@ -94,7 +94,7 @@ public sealed class GitLongPathsProcessTests : IDisposable
         var tree = await DeepTreeAsync();
         var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", tree, "http://localhost:5177") { Home = Home };
 
-        var handed = BuiltDoors.Of("stub").Prepare(target, Status);
+        var handed = BuiltDoors.Stub.Prepare(target, Status);
         var bare = new ProcessStartInfo("git")
         {
             WorkingDirectory = tree,
@@ -122,7 +122,7 @@ public sealed class GitLongPathsProcessTests : IDisposable
         await Git(Repo, "config", "core.longpaths", "false");
 
         Assert.False(await GitLongPaths.NeededAsync(Repo, CancellationToken.None));
-        var info = BuiltDoors.Of("stub").Prepare(target, Status);
+        var info = BuiltDoors.Stub.Prepare(target, Status);
         var count = info.Environment.TryGetValue("GIT_CONFIG_COUNT", out var held) && int.TryParse(held, out var number) ? number : 0;
         Assert.Single(Enumerable.Range(0, count), index => info.Environment[$"GIT_CONFIG_KEY_{index}"] == GitLongPaths.Key);
     }

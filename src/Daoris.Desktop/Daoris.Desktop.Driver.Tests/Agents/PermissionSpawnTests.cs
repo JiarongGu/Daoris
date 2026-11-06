@@ -336,7 +336,7 @@ public sealed class PermissionSpawnTests : IDisposable
         public ProcessStartInfo Prepare(SpawnRequest request)
         {
             Prompt = request.Identity["DAORIS_TARGET"] ?? "";
-            return BuiltDoors.Of("stub").Prepare(request);
+            return BuiltDoors.Stub.Prepare(request);
         }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile)
@@ -357,7 +357,7 @@ public sealed class PermissionSpawnTests : IDisposable
 
         public ProcessStartInfo Prepare(SpawnRequest request)
         {
-            var info = BuiltDoors.Of("stub").Prepare(request);
+            var info = BuiltDoors.Stub.Prepare(request);
             info.RedirectStandardInput = true;
             return info;
         }

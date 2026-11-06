@@ -20,7 +20,7 @@ public sealed class AccountReadingsTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
-    private static readonly WindowWords Claude = BuiltDoors.Of("claude-code").Toolchain!.Windows!;
+    private static readonly WindowWords Claude = BuiltDoors.Claude.Toolchain!.Windows!;
 
     /// <summary>The frame this branch's evidence recorded (§1.1), its moments placed against <paramref name="seen"/>.</summary>
     internal static string Recorded(DateTimeOffset seen) => Placed(Claude.Recorded[0].Frame, seen);

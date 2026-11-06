@@ -143,7 +143,7 @@ public sealed class HelpGoOnTests : IDisposable
             DateTimeOffset.UtcNow);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["acp-stub"] = BuiltDoors.Of("acp-stub"),
+            ["acp-stub"] = BuiltDoors.AcpStub,
         });
         var events = Events;
         using var runner = new ChatRunner(
