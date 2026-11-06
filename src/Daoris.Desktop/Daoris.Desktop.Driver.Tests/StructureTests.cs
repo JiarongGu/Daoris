@@ -378,22 +378,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     /// <summary>The one analysis of the driver's own tree the cases over it share: the compile is the gate's cost, measured here.</summary>
-    private static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Tree = new(() =>
-    {
-        var map = StructureMap.Read(File.ReadAllText(MapFile()));
-        var driver = SourceFiles.Project(SourceFiles.DriverProject);
-        // Layer/ folders name Lyntai's assembly, which the analysis's references do not carry and a build without Lyntai's local build does not compile.
-        var sources = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
-            .Select(path => (Path.GetRelativePath(driver, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
-            .Where(source => !("/" + source.Item1).Contains("/Layer/", StringComparison.Ordinal))
-            .ToList();
-        var tests = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs")
-            .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverTestsProject), path).Replace(Path.DirectorySeparatorChar, '/'))
-            .ToList();
-        var clock = Stopwatch.StartNew();
-        var analysis = StructureAnalysis.Of(sources);
-        return (map, sources, tests, analysis, clock.Elapsed);
-    });
+    private static readonly Lazy<(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took)> Tree = DriverTree.Shared;
 
     [Fact]
     public void Agents_reads_no_Help_type_for_its_required_posture_marker()

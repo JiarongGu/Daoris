@@ -120,7 +120,16 @@ public sealed class LineAccountTests : IDisposable
             "|", resume.Selection.Refusal, resume.Waiting?.Note, string.Join(",", resume.Waiting?.Parts.Select(part => part.Code) ?? []),
             resume.Selection.RefusalNote?.Note, resume.Elsewhere?.Code, resume.Elsewhere?.Detail?.Note, resume.Selection.Profile));
 
-    private async Task<Outcome> Today(Case each, bool picked = false)
+    // Three grid tests ask the same case of the same side; a case is built from its key alone, so it is read once for the class.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Key, bool Picked), Lazy<Task<Outcome>>> Todays = new();
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Key, bool Picked), Lazy<Task<Outcome>>> Rules = new();
+
+    private Task<Outcome> Today(Case each, bool picked = false) => Todays.GetOrAdd((each.Key, picked), _ => new(() => ReadToday(each, picked))).Value;
+
+    private Task<Outcome> Rule(Case each, bool picked = false) => Rules.GetOrAdd((each.Key, picked), _ => new(() => ReadRule(each, picked))).Value;
+
+    private async Task<Outcome> ReadToday(Case each, bool picked)
     {
         var (roster, _) = Build(each);
         var (selected, marked) = (roster.Selected, roster.Mark());
@@ -135,7 +144,7 @@ public sealed class LineAccountTests : IDisposable
 
     // ——— The rule: the same case read by LineAccount.Decide, its walk handed lazily to a roster that counts what it is asked.
 
-    private async Task<Outcome> Rule(Case each, bool picked = false)
+    private async Task<Outcome> ReadRule(Case each, bool picked)
     {
         var (roster, home) = Build(each);
         var constraint = picked ? LineConstraint.Pick(each.Account) : LineConstraint.None;
@@ -309,11 +318,9 @@ public sealed class LineAccountTests : IDisposable
     {
         var failures = new List<string>();
         var cases = 0;
-        foreach (var each in Grid())
+        foreach (var (each, (today, rule)) in await GridRun.InOrder(Grid(), async each => (await Today(each), await Rule(each))))
         {
             cases++;
-            var today = await Today(each);
-            var rule = await Rule(each);
             if (today.Answer != rule.Answer || today.Walks != rule.Walks || today.Starts != rule.Starts)
             {
                 failures.Add($"{each.Key}\n    today {today.Today}\n    rule  {rule.Shaped}");
@@ -369,9 +376,8 @@ public sealed class LineAccountTests : IDisposable
     {
         var table = Table();
         var failures = new List<string>();
-        foreach (var each in Grid())
+        foreach (var (each, today) in await GridRun.InOrder(Grid(), each => Today(each)))
         {
-            var today = await Today(each);
             var expected = Expected(table, each);
             if (!expected.StartsWith(today.Today, StringComparison.Ordinal)) failures.Add($"{each.Key}\n    expected {expected}\n    today    {today.Today}");
         }
@@ -385,9 +391,8 @@ public sealed class LineAccountTests : IDisposable
     {
         var table = Table();
         var failures = new List<string>();
-        foreach (var each in Grid())
+        foreach (var (each, rule) in await GridRun.InOrder(Grid(), each => Rule(each)))
         {
-            var rule = await Rule(each);
             var expected = Expected(table, each);
             if (Regex.Replace(expected, @" text=\S+", "") != rule.Shaped) failures.Add($"{each.Key}\n    expected {expected}\n    rule     {rule.Shaped}");
         }
@@ -497,11 +502,9 @@ public sealed class LineAccountTests : IDisposable
         var failures = new List<string>();
         var byOwn = new Dictionary<(OwnState, StartKind), (string Key, Answered Answer)>();
         var cases = 0;
-        foreach (var each in Grid())
+        foreach (var (each, (today, rule)) in await GridRun.InOrder(Grid(), async each => (await Today(each, picked: true), await Rule(each, picked: true))))
         {
             cases++;
-            var today = await Today(each, picked: true);
-            var rule = await Rule(each, picked: true);
             if (today.Answer != rule.Answer || today.Walks != rule.Walks || today.Starts != rule.Starts)
             {
                 failures.Add($"{each.Key}\n    today {today.Today}\n    rule  {rule.Shaped}");

@@ -7,6 +7,7 @@ import { chmodSync, closeSync, existsSync, lstatSync, mkdirSync, openSync, readd
 import { delimiter, dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, PATIENCE } from '../test/_fixture.ts';
+import { folderSet } from './support/folder-set.ts';
 
 /**
  * MOD9 (`docs/2026-09-30-parallel-development-design.md` §3 rule 6): the parent's one merge tool. It
@@ -2389,11 +2390,6 @@ function namedReads(text: string, files: readonly string[]): string[] {
   }
   if (/\bSourceFiles\.Driver\(\s*\$/.test(text)) reads.add(`${under(driver)}probe.cs`);
   return [...reads];
-}
-
-/** Every folder that holds a tracked file, at any depth. */
-function folderSet(files: readonly string[]): Set<string> {
-  return new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
 }
 
 /** MOD9d: a read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */

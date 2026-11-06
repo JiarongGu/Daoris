@@ -49,5 +49,8 @@ export default defineConfig({
     // owner's machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs
     // failed on 20 s timeouts in files that passed alone. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.
     maxWorkers: process.env.DAORIS_WEB_WORKERS ?? '25%',
+    // Transforming the modules was 40-71% of a run's tracked time and was redone by every gate that runs vitest (the rules, the unit
+    // run): the transformed modules persist under node_modules and are reused by the next process, keyed by the sources' content.
+    fsModuleCache: true,
   },
 });
