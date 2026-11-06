@@ -46,11 +46,25 @@ public sealed class PluginKitTests : IDisposable
 
     // ——— the points, and the frames the samples are
 
+    /// <summary>EVENTHOOK1b: the kit's entry for <c>work/event</c> is an observation whose sample is the driver's own frame under the sample run, and it scaffolds a handler.</summary>
+    [Fact]
+    public void The_events_point_has_a_kit_entry_whose_sample_is_the_frame_under_the_sample_run()
+    {
+        var point = PluginKit.Find(HookPoints.Event)!;
+        var built = HookFrames.Event(PluginKit.SampleEvent, WorkEventGrammar.Sample, 1, 0, new HashSet<string>());
+
+        Assert.Equal("observation", point.Kind);
+        Assert.Null(built.Unsent);
+        Assert.Equal("sample", point.Frame["run"]!.GetValue<string>());
+        Assert.Equal(JsonSerializer.SerializeToNode(built.Frame)!.ToJsonString(), point.Frame.ToJsonString());
+        Assert.Contains("'work/event'", PluginKit.Plan("acme.listener", [HookPoints.Event], _scratch).Files.Single(file => file.Name == PluginKit.Script).Content);
+    }
+
     [Fact]
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act"], PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal(["decision", "observation", "query", "observation", "observation", "event", "act", "observation"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]

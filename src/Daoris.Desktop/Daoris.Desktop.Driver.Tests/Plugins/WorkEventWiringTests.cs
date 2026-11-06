@@ -184,6 +184,24 @@ public sealed class WorkEventWiringTests : IDisposable
         Assert.Null(WorkEventNews.Of(new AttentionEvent(AttentionKind.Waiting, "", "engine"), _now));
     }
 
+    /// <summary>An ending carries the adapter its record opened on, which the frame keeps only where it is one of this build's.</summary>
+    [Fact]
+    public void An_end_carries_the_adapter_its_record_opened_on_and_the_frame_keeps_it_only_for_a_known_adapter()
+    {
+        var record = new SessionView("4b62a9fe", "engine") { Adapter = "claude-code" };
+        var piece = new NewsTold(AttentionKind.Ended, "4b62a9fe", 8, "store", null, "failed", "ended.failed", "failed", _now);
+
+        var ended = WorkEventNews.Of(piece, record)!;
+        var known = HookFrames.Event(ended, "5d2e8c1a7b30", 1, 0, new HashSet<string> { "claude-code" });
+        var unknown = HookFrames.Event(ended, "5d2e8c1a7b30", 2, 0, new HashSet<string> { "other" });
+
+        Assert.Equal("claude-code", ended.Adapter);
+        Assert.Null(WorkEventNews.Of(piece, null)!.Adapter);
+        Assert.Equal("claude-code", known.Frame["adapter"]);
+        Assert.False(unknown.Frame.ContainsKey("adapter"));
+        Assert.Equal(WorkEventKinds.SessionEnded, unknown.Frame["kind"]);
+    }
+
     [Fact]
     public async Task The_news_teller_s_gaps_are_one_missed_at_a_first_place_with_no_cursor_and_one_at_an_incomplete_batch()
     {

@@ -68,6 +68,7 @@ internal static class SessionReads
                 Ask = session.Ask,
                 Tree = session.Tree,
                 Quest = session.Quest,
+                Adapter = session.Adapter is { Length: > 0 } adapter ? adapter : null,
                 // Where its tree stood when it opened: what the sweep reads a lost done's evidence as changed from.
                 BaseCommit = session.BaseCommit is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code, handed on wherever the note is; null for a record from before parts.
