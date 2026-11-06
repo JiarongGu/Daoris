@@ -51,6 +51,8 @@ internal sealed class ReviewRanges(TreeContext context)
         {
             foreach (var (reference, isOrigin) in new[] { ($"refs/heads/{line}", false), ($"refs/remotes/origin/{line}", true) })
             {
+                // Origin's copy of the line, where the repository's files hold none, is not asked of git (as the graph does not).
+                if (isOrigin && rootCode == 0 && RefFiles.Absent(commonDir, reference)) continue;
                 var (code, shared, _) = await WorkingTree.GitAsync(full, ["merge-base", "HEAD", reference], ct).ConfigureAwait(false);
                 if (ReviewChoices.Shared(code, shared) is not { } found) continue;
                 known.Add(reference);
