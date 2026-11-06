@@ -1583,8 +1583,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // PARKVIEW1: a park's question as each reader takes it, the driver's QuestionFilesTests and the page's parkQuestion.test.ts.
     ['the park question table', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/park-question.json'], [...BASE, 'driver', 'web-unit']],
     // AGENTPROVIDER1a: the provider census's exceptions the four censuses share: the driver's ProviderCensusTests and the service's
-    // twin beside it (ServiceProviderCensusTests), the page's providerCensus.test.ts and the tools' provider-census.test.ts.
-    ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'web-unit', 'tool-tests']],
+    // twin beside it (ServiceProviderCensusTests), the page's providerCensus.test.ts and the tools' provider-census.test.ts; the
+    // service's CallLineageTests reads its call keys.
+    ['the provider census', ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/provider-census.json'], [...BASE, 'driver', 'service', 'web-unit', 'tool-tests']],
     // AGENTPROVIDER1b part 3, placed by INTEGRATE1d part 4: the stand-ins' reader is the tools' (its tool test and the family rehearsal
     // import it), and each provider's own files are the driver's, which the tool test and the rehearsal read too.
     ["the stand-ins' reader", ['tools/stand-ins.mjs'], [...BASE, 'tool-tests', 'rehearse-family']],
