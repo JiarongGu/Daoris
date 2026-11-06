@@ -132,10 +132,11 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     [Fact]
     public async Task A_retry_writes_the_same_file_the_terminal_edits()
     {
-        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first.
+        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first, at the failures rule's
+        // number as the planner's park carries it (CONTEXTDRIVE1l).
         var loop = Loop();
         loop.Look.Record([new Consideration(
-            new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked")]);
+            new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked") { ParksAt = 3 }]);
         var module = new DriverModule(Bus, loop);
 
         Assert.Equal(3, (await AnswerAsync(module, "STATE")).GetProperty("strikes").GetInt32());
