@@ -625,7 +625,7 @@ export type GitStashPlan = {
   hooks: string[];
   identity: string | null;
   /** The shared stash newest first, each by its commit id (GITAPP2l); `collides` counts its paths already standing untracked here. */
-  entries: { id: string; message: string; untracked: boolean; collides: number }[];
+  entries: { id: string; message: string; untracked: boolean; collides: number; mine: boolean }[];
   /** Why no stash could be applied now, in the driver's sentence; null where one could. */
   applyWhy: string | null;
 };
@@ -650,7 +650,7 @@ const readSwitchPlan = readPlanOf<GitSwitchPlan>((value) => ({
 const readStashPlan = readPlanOf<GitStashPlan>((value) => ({
   head: value.head ?? null, branch: value.branch ?? null, stash: value.stash ?? null, tracked: value.tracked ?? 0, untracked: value.untracked ?? 0,
   sharedWith: value.sharedWith ?? 0, why: value.why ?? null, hooks: value.hooks ?? [], identity: value.identity ?? null,
-  entries: value.entries ?? [], applyWhy: value.applyWhy ?? null,
+  entries: (value.entries ?? []).map((entry) => ({ ...entry, mine: entry.mine === true })), applyWhy: value.applyWhy ?? null,
 }));
 
 /** The switch's plan for a branch, read again with the Changes tab and whenever the page asks; not asked while no branch is chosen. */
@@ -750,6 +750,13 @@ export const useGitStashApplyAct = (repository: string | null, workspace: string
   useMutation({
     mutationFn: async (press: GitStashApplyPress): Promise<GitActAnswer> =>
       readAct(await call('GIT_STASH_APPLY', { repository, ...(workspace ? { workspace } : {}), id: press.id, head: press.head })),
+  });
+
+/** *Drop a stash*: by commit id, only of a stash a Save of Daoris's made; the answer names the commit that stores it again. */
+export const useGitStashDropAct = (repository: string | null, workspace: string) =>
+  useMutation({
+    mutationFn: async (id: string): Promise<GitActAnswer> =>
+      readAct(await call('GIT_STASH_DROP', { repository, ...(workspace ? { workspace } : {}), id })),
   });
 
 /**

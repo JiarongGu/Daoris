@@ -65,8 +65,30 @@ describe('the switch box', () => {
 describe('the stash box', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  const box = (value: StashPlanValue, onPress = vi.fn(), busy = false, onApply = vi.fn()) =>
-    render(<StashBox read={{ state: 'read', value }} busy={busy} onPress={onPress} onApply={onApply} />);
+  const box = (value: StashPlanValue, onPress = vi.fn(), busy = false, onApply = vi.fn(), onDrop = vi.fn()) =>
+    render(<StashBox read={{ state: 'read', value }} busy={busy} onPress={onPress} onApply={onApply} onDrop={onDrop} />);
+
+  it('offers Drop for a stash Daoris saved by its commit id, and says the other is dropped where it was made', async () => {
+    const onDrop = vi.fn();
+    box(stashPlan(), vi.fn(), false, vi.fn(), onDrop);
+
+    expect(screen.getAllByRole('button', { name: /^Drop stash/ })).toHaveLength(1);
+    expect(screen.getByText('Made outside Daoris: drop it where it was made.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Drop stash 3fa91c0e2b7d' }));
+
+    expect(onDrop).toHaveBeenCalledWith(GIT_STASH_PLAN_ENGINE.entries[0]!.id);
+  });
+
+  it('holds Drop while an act runs and says it in Chinese', async () => {
+    const { unmount } = box(stashPlan(), vi.fn(), true);
+    expect(screen.getByRole('button', { name: 'Drop stash 3fa91c0e2b7d' })).toBeDisabled();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    box(stashPlan());
+    expect(screen.getByRole('button', { name: '丢弃贮藏 3fa91c0e2b7d' })).toBeEnabled();
+    expect(screen.getByText('并非由 Daoris 创建：请在创建它的地方丢弃。')).toBeInTheDocument();
+  });
 
   it('says the stash is shared with every linked tree and counts what a Save would take', () => {
     box(stashPlan());
@@ -168,7 +190,7 @@ describe('the last switch and stash in the Changes tab', () => {
   const acts = (last: ChangesActs['last']): ChangesActs => ({
     busy: false, last, press: vi.fn(), undo: vi.fn(), Hunks: () => null,
     Switch: ({ busy }) => <SwitchBox branches={['main', 'release']} chosen="" onChoose={vi.fn()} read={null} busy={busy} onPress={vi.fn()} />,
-    Stash: ({ busy }) => <StashBox read={{ state: 'read', value: stashPlan() }} busy={busy} onPress={vi.fn()} onApply={vi.fn()} />,
+    Stash: ({ busy }) => <StashBox read={{ state: 'read', value: stashPlan() }} busy={busy} onPress={vi.fn()} onApply={vi.fn()} onDrop={vi.fn()} />,
   });
   const tab = (given: ChangesActs) => render(<ChangesTab repository="engine" read={{ state: 'read', value: GIT_CHANGES_ENGINE }} acts={given} />);
 

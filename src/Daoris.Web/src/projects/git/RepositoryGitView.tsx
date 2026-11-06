@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   type GitActAnswer, type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitActs,
   useGitBranches, useGitChanges, useGitCommitAct, useGitCommitPlan, useGitConflict, useGitGraphPages, useGitHistoryEdits, useGitHunks, useGitRefActs,
-  useGitDeletes, useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
+  useGitDeletes, useGitFetchPlan, useGitStashAct, useGitStashApplyAct, useGitStashDropAct, useGitStashPlan, useGitSwitchAct, useGitSwitchPlan,
 } from '../../bridge/repositories/git';
 import { useGitPush, useGitPushPlan } from '../../bridge/repositories/gitPush';
 import { useWorkState } from '../../bridge/repositories/lines';
@@ -203,6 +203,12 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     onSuccess: (answered) => setLast({ verb: 'stashApply', path: null, act: answered.act, done: answered.done, said: answered.said, notes: answered.notes }),
     onError: (error) => setLast({ verb: 'stashApply', path: null, act: null, done: false, said: sentence(error) }),
   });
+  const dropping = useGitStashDropAct(repository, workspace);
+  const pressDrop = useRef<(id: string) => void>(() => {});
+  pressDrop.current = (id) => dropping.mutate(id, {
+    onSuccess: (answered) => setLast({ verb: 'stashDrop', path: null, act: answered.act, done: answered.done, said: answered.said, notes: answered.notes }),
+    onError: (error) => setLast({ verb: 'stashDrop', path: null, act: null, done: false, said: sentence(error) }),
+  });
   const Stash = useMemo(() => function Stash({ busy }: { busy: boolean }) {
     const planned = useGitStashPlan(repository, workspace);
     const answered = planned.data;
@@ -213,7 +219,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : refusal ? { state: 'refused', sentence: sentence(refusal) }
       : !answered.value ? { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) }
       : { state: 'read', value: answered.value };
-    return <StashBox read={planRead} busy={busy} onPress={(box, done) => pressStash.current(box, done)} onApply={(box) => pressApply.current(box)} />;
+    return <StashBox read={planRead} busy={busy} onPress={(box, done) => pressStash.current(box, done)} onApply={(box) => pressApply.current(box)} onDrop={(id) => pressDrop.current(id)} />;
   }, [repository, workspace]);
   const acts: ChangesActs = {
     busy: press.isPending || undo.isPending || commit.isPending || resolve.isPending || switching.isPending || stashing.isPending || applying.isPending,

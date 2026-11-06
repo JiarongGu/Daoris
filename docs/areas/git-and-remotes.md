@@ -41,7 +41,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
-| The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
+| The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, `StashDrops.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash (save, apply, drop); each with its terminal twin where one exists |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
 | Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; its record names the recovery ref the door kept at the commit |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
@@ -192,7 +192,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     held, the ref moved since shown, or the branch is `daoris/*`; a tag's Dangerous value is the door's to judge. It has no Undo; an end
     with no exit is unknown and never retried. A workflow's `push` step (G8) is the same act. (from D204, D241)
 37. Behind Setup's *Daoris may change this checkout's files* (`checkoutWrites`, off by default): stage by file, hunk or
-    line, commit, amend, resolve, switch and stash save or apply. (from D204)
+    line, commit, amend, resolve, switch and stash save, apply or drop (a drop of Daoris's own saves alone). (from D204)
 38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal; an act
     reached inside a flow that holds that lock alone already (a tidy, a removal) runs under it. A reconciler settles an open act;
     nothing is re-run. (from D204)
@@ -340,7 +340,11 @@ catalogues (`i18n:check`).
   reaching an origin (`settings.sync.notFetched.ssh` and `.https`) still names a key its own ssh reads and a credential helper, from
   before the identities.
 - **GITAUTH1h:** the install, seen (the owner).
-- **GITAPP2:** Stash Drop stays deferred. The push's interruption (origin took the pack and the connection dropped before it said so:
+- **GITAPP2:** Stash Drop is built (`StashDrops.cs`, `StashDropSteps.cs`, `GIT_STASH_DROP`): it is offered only for a stash a done Save of
+  Daoris's own made, read from the Save step's journaled words (the commit saved; a message proves no ownership), by commit id, never
+  its place; the step finds the place as it runs and, where git names another commit it dropped, stores that one again and reports
+  not done. It has no Undo: its answer and its record keep the commit and `git stash store -m <message> <id>`, good until git clears
+  unused objects. The push's interruption (origin took the pack and the connection dropped before it said so:
   unknown, never retried) and the person's `pre-push` hook refusing (not done, nothing sent) are proved against the stand-in SSH
   host (`GitPushActProcessTests`).
 - **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone. Left: the doors

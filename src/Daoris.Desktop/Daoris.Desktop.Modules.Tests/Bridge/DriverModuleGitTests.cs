@@ -207,11 +207,13 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         var stashed = await AnswerAsync(module, "GIT_STASH", new { repository = "engine", workspace = "aurora", head = before, untracked = true });
         var applied = await AnswerAsync(module, "GIT_STASH_APPLY", new { repository = "engine", workspace = "aurora", head = before, id = before });
 
+        var dropped = await AnswerAsync(module, "GIT_STASH_DROP", new { repository = "engine", workspace = "aurora", id = before });
+
         Assert.Equal("other", switchPlan.GetProperty("to").GetString());
         Assert.True(switchPlan.GetProperty("dirty").GetBoolean());
         Assert.Equal(1, stashPlan.GetProperty("tracked").GetInt32());
         Assert.Equal(0, stashPlan.GetProperty("entries").GetArrayLength());
-        foreach (var refused in new[] { switched, stashed, applied })
+        foreach (var refused in new[] { switched, stashed, applied, dropped })
         {
             Assert.True(refused.GetProperty("refused").GetBoolean());
             Assert.Contains("may not change", refused.GetProperty("said").GetString());

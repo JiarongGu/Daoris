@@ -7,13 +7,14 @@ public static class StashVerbs
 {
     public const string Save = "stash";
     public const string Apply = "stash-apply";
+    public const string Drop = "stash-drop";
 }
 
 /// <summary>A stash Apply as the page pressed it: the stash's commit id, never its ordinal (a Save in between moves every ordinal), and the commit HEAD named when the page read.</summary>
 public sealed record StashApplyPress(string Id, string Head);
 
-/// <summary>One stash on the shared list: its commit id, its message, whether it holds untracked files and how many of its paths stand in the way in this checkout now.</summary>
-public sealed record StashEntry(string Id, string Message, bool Untracked, int Collides);
+/// <summary>One stash on the shared list: its commit id, its message, whether it holds untracked files, how many of its paths stand in the way in this checkout now, and whether a Save of Daoris's made it (the only kind a Drop is offered for).</summary>
+public sealed record StashEntry(string Id, string Message, bool Untracked, int Collides, bool Mine = false);
 
 /// <summary>A stash Save as the page pressed it: untracked files too or not, an optional message, the commit HEAD named and the tip of the shared stash when the page read.</summary>
 public sealed record StashPress(bool Untracked, string? Message, string Head, string? Stash);
@@ -30,8 +31,8 @@ public sealed record StashPlan(
 /// <summary>
 /// **Stash Save** (GITAPP2k, D204, the git-writes design §8). One <c>stash</c> step of the act journal, <c>git stash push</c>, tracked files only
 /// unless the press asks for untracked ones too, never forced. The stash is <c>refs/stash</c>, shared by every linked tree, the sessions' included,
-/// so the plan says so and the press is refused where the stash moved since the page read it. Apply is a later act and Drop is deferred; the
-/// answer names the commit saved so the person can put it back by id.
+/// so the plan says so and the press is refused where the stash moved since the page read it. Apply and Drop are acts of their own
+/// (<see cref="StashDrops"/>); the answer names the commit saved so the person can put it back by id.
 /// </summary>
 public sealed class StashActs(ActJournal journal)
 {
@@ -40,7 +41,7 @@ public sealed class StashActs(ActJournal journal)
     internal ActRuns Runs { get; } = new(journal);
 
     /// <summary>The plan: what a Save would rest on, read fresh and changing nothing.</summary>
-    public async Task<GitAnswer<StashPlan>> PlanAsync(string root, CancellationToken ct)
+    public async Task<GitAnswer<StashPlan>> PlanAsync(string root, CancellationToken ct, string? repository = null)
     {
         IReadOnlyList<string> commands = ["git rev-parse HEAD", "git rev-parse refs/stash", "git status --porcelain", "git ls-files --others --exclude-standard", "git worktree list --porcelain"];
         if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false))
@@ -54,15 +55,14 @@ public sealed class StashActs(ActJournal journal)
         var hooks = await ActWorkSteps.HooksAsync(root, Hooks, ct).ConfigureAwait(false);
         var why = state.Head is null ? "this checkout has no commit yet" : state.Tracked == 0 && state.Untracked == 0 ? "there is nothing to save" : null;
         return new(new StashPlan(state.Head, state.Branch, state.Stash, state.Tracked, state.Untracked, state.SharedWith, why, hooks,
-            await CommitActs.IdentityAsync(root, author, ct).ConfigureAwait(false), await EntriesAsync(root, ct).ConfigureAwait(false),
+            await CommitActs.IdentityAsync(root, author, ct).ConfigureAwait(false), await EntriesAsync(root, repository, ct).ConfigureAwait(false),
             state.Head is null ? "this checkout has no commit yet" : state.Unmerged ? "a file in conflict stands in the index, so it is resolved first"
             : state.Tracked > 0 ? "tracked files are changed here, so save or discard them first" : null), GitReadRefusal.None, null) { Commands = commands };
     }
 
     /// <summary>
     /// <b>Stash Apply</b> (GITAPP2l, D204, the git-writes design §8): <c>git stash apply &lt;id&gt;</c> by the stash commit's id, never <c>pop</c>, to a
-    /// checkout with no tracked change and no untracked file in the way. A conflict stays in the index for Resolve; the stash is kept either way,
-    /// since Drop is deferred.
+    /// checkout with no tracked change and no untracked file in the way. A conflict stays in the index for Resolve; the stash is kept either way.
     /// </summary>
     public async Task<ActRun> ApplyAsync(StageContext context, StashApplyPress press, CancellationToken ct)
     {
@@ -104,7 +104,7 @@ public sealed class StashActs(ActJournal journal)
 
     private const int Listed = 20;
 
-    private static async Task<IReadOnlyList<(string Id, string Message)>?> ListAsync(string root, CancellationToken ct)
+    internal static async Task<IReadOnlyList<(string Id, string Message)>?> ListAsync(string root, CancellationToken ct)
     {
         // The stash list is refs/stash's reflog; `log -g` reads it, where `stash list` is a name the census of writers counts.
         var tip = await ActWorkSteps.StashTipAsync(root, ct).ConfigureAwait(false);
@@ -115,15 +115,16 @@ public sealed class StashActs(ActJournal journal)
         return [.. listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.TrimEnd('\r').Split('\x1f')).Where(parts => parts.Length == 2 && WorkingTree.IsCommitId(parts[0])).Select(parts => (parts[0], parts[1]))];
     }
 
-    private static async Task<IReadOnlyList<StashEntry>> EntriesAsync(string root, CancellationToken ct)
+    private async Task<IReadOnlyList<StashEntry>> EntriesAsync(string root, string? repository, CancellationToken ct)
     {
         if (await ListAsync(root, ct).ConfigureAwait(false) is not { Count: > 0 } listed) return [];
         var tracked = await TrackedAsync(root, ct).ConfigureAwait(false);
+        var mine = repository is null ? new HashSet<string>() : StashDrops.SavedHere(journal, repository, root);
         var entries = new List<StashEntry>();
         foreach (var (id, message) in listed)
         {
             var (untracked, collides) = await CollisionsAsync(root, id, tracked, ct).ConfigureAwait(false);
-            entries.Add(new StashEntry(id, message, untracked, collides.Count));
+            entries.Add(new StashEntry(id, message, untracked, collides.Count, mine.Contains(id)));
         }
 
         return entries;
