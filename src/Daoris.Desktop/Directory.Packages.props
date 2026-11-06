@@ -16,7 +16,29 @@
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lyntai's released pin for the driver, its own and not the service's (D248). 3.5.3 carries no agent layer, so a build on it
+         references none. -->
+    <DaorisLyntaiReleased>3.5.3</DaorisLyntaiReleased>
   </PropertyGroup>
+
+  <!-- The service's released-or-local mechanism, one for both trees (D22's LYNTAILOCAL1 note, D248): the ignored file
+       tools/lyntai-local.mjs writes sets the version and the feed; without it the released pin stands. -->
+  <Import Project="$(MSBuildThisFileDirectory)../../local/lyntai-local.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)../../local/lyntai-local.props')" />
+
+  <PropertyGroup>
+    <DaorisLyntaiVersion Condition="'$(DaorisLyntaiVersion)' == ''">$(DaorisLyntaiReleased)</DaorisLyntaiVersion>
+    <!-- Only Lyntai's local build carries the agent layer (D248), so the driver takes it only there. When a release carries it, the pin
+         moves to that release and this condition goes. -->
+    <DaorisLyntaiLayer Condition="'$(DaorisLyntaiVersion)' != '$(DaorisLyntaiReleased)'">true</DaorisLyntaiLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lyntai's agent layer (AGENTLYNTAI1, D213): its two packages and not the metapackage, which brings storage and an MCP host the
+         driver does not use (the agent-lyntai design §7.1). -->
+    <PackageVersion Include="Lyntai.Core" Version="$(DaorisLyntaiVersion)" />
+    <PackageVersion Include="Lyntai.Providers.Basic" Version="$(DaorisLyntaiVersion)" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The desktop runtime sibling, consumed as a LIBRARY at a RELEASED version (D22). 0.25.0 restored
