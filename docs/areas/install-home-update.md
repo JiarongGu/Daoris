@@ -191,8 +191,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
 54. This release's steps: the staffing into the store, the caps into the supervisor's rules, `driver.json`'s keys no code
     writes, `harnesses.json`'s old names and pooled sections, a waiting say's `now`, unkeyed solicited attempts, held presses
-    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, and the session
-    records' `answer` column. The next release that changes a shape replaces them. (from D232)
+    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, the session
+    records' `answer` column, and the desktop store's names (store step 22: a binding's `door`, the staffing's projection
+    tables dropped). The next release that changes a shape replaces them. (from D232)
 55. A read still kept until its chunk deletes it is one register entry with `// transitional: <id>` at the site; the gate
     fails a marker with no entry, an entry with no marker, and an entry whose row is closed. (from D228, D232)
 

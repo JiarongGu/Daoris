@@ -4588,15 +4588,14 @@ const portParkRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--once'
 const portPark = (await portRecords()).find((s) => s.id !== portCutId) ?? null;
 let portKept = null;
 try {
-  const file = JSON.parse(readFileSync(homeEntry(acpHome, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
-  portKept = { door: file.adapter, conversation: file.conversation };
+  portKept = JSON.parse(readFileSync(homeEntry(acpHome, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
 } catch {
-  // Not a file: FOUNDATION1 z-iii keeps a conversation in the desktop store once a look has imported the home's binding files.
+  // Not a file: the store keeps it once a look imported the binding files, its door read as the file's key.
   try {
     const { DatabaseSync } = await import('node:sqlite');
     const store = new DatabaseSync(homeEntry(acpHome, 'desktop-db'), { readOnly: true });
     try {
-      portKept = store.prepare('SELECT door, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
+      portKept = store.prepare('SELECT door AS adapter, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
     } finally {
       store.close();
     }
@@ -4608,7 +4607,7 @@ check(
   'the driver carries the cut-off on, and that session asks which port and parks holding the quest, its conversation id kept',
   portCut.status === 200 && portParkRun.code === 0 && portPark?.state === 'awaiting-person'
     && /Which port should the report listen on\?/.test(portPark?.note ?? '')
-    && portKept?.door === 'acp-stub' && portKept?.conversation === 'acp-session-1',
+    && portKept?.adapter === 'acp-stub' && portKept?.conversation === 'acp-session-1',
   `${portParkRun.out}\n${JSON.stringify(portPark)}\n${JSON.stringify(portKept)}`,
 );
 
