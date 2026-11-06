@@ -50,13 +50,13 @@ public sealed class ReviewerPlanTests : IDisposable
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in Agents)
         {
-            var real = AdapterSet.Built().Resolve(name).Toolchain!;
+            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
             adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [absent?.Contains(name) == true ? Nowhere : Command], VersionArguments: [], ProfileVariable: real.ProfileVariable,
                 AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        return new HarnessRoster(new AdapterSet(adapters), Settings) { Clock = () => Now, Zone = Zone };
+        return new HarnessRoster(new ProviderRegistry(adapters), Settings) { Clock = () => Now, Zone = Zone };
     }
 
     private void Cool(string agent) =>

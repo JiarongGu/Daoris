@@ -65,7 +65,7 @@ public sealed class AgentsRoutes(DriverContext context)
             Harnesses = Doors(_loop.Harnesses, roster),
             // The sheet's half (COAGENT1e, the agent-provider design §6): each agent once, from its registration, with its account
             // acts and each door's sheet. The page reads every agent fact here, never a door standing for its agent.
-            Agents = _loop.Harnesses.Adapters.Registry.Facts.Agents.Where(agent => agent.Doors.Count > 0).ToArray(),
+            Agents = _loop.Harnesses.Adapters.Facts.Agents.Where(agent => agent.Doors.Count > 0).ToArray(),
         };
     }
 
@@ -136,7 +136,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     toolchain?.Product,
                     toolchain?.Maker,
                     // Its transport in the page's word, as its sheet says it (COAGENT1e).
-                    Wire = harnesses.Adapters.Registry.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Wire: var wire } ? wire : null,
+                    Wire = harnesses.Adapters.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Wire: var wire } ? wire : null,
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = harnesses.Structured(report.Adapter),
@@ -145,7 +145,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     TakesRules = harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
-                    Plugin = harnesses.Adapters.Registry.DeclaredBy(report.Adapter),
+                    Plugin = harnesses.Adapters.DeclaredBy(report.Adapter),
                     // The profile HOME is a machine path, and this bridge is the one surface
                     // allowed to carry one (D47 §4) — the page renders it so a person can find
                     // the directory they were told Daoris owns.
@@ -158,7 +158,7 @@ public sealed class AgentsRoutes(DriverContext context)
                         : new { AgentSettings.Models, AgentSettings.Efforts },
                     // What a session on this door may carry (the agent-provider design, row n): the scope the page's actors offer, apart
                     // from the account's settings above, with `max` only where a session may carry it.
-                    SessionChoices = SessionChoices.Of(harnesses.Home, harnesses.Adapters.Registry, report.Adapter),
+                    SessionChoices = SessionChoices.Of(harnesses.Home, harnesses.Adapters, report.Adapter),
                     // Whether this agent takes an API key at all — the control is absent where
                     // it does not, by the rule `Pinnable` and `SignsIn` follow.
                     TakesKey = accountActs.TakesKey,
@@ -243,7 +243,7 @@ public sealed class AgentsRoutes(DriverContext context)
                 continue;
             }
 
-            if (toolchain is null || !string.Equals(_loop.Harnesses.Adapters.Registry.OwnerOfAgent(name).Value, agent, StringComparison.OrdinalIgnoreCase)) continue;
+            if (toolchain is null || !string.Equals(_loop.Harnesses.Adapters.OwnerOfAgent(name).Value, agent, StringComparison.OrdinalIgnoreCase)) continue;
             if (string.Equals(name, agent, StringComparison.OrdinalIgnoreCase)) return name;
             first ??= name;
         }
@@ -362,7 +362,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var profile = press.Profile;
         // 🔴 Whose accounts an action on this door touches (AGT7): a door's accounts, defaults
         // and keys are its OWNER's. Its pin and its installer stay its own.
-        var owner = _loop.Harnesses.Adapters.Registry.OwnerOfAgent(harness).Value;
+        var owner = _loop.Harnesses.Adapters.OwnerOfAgent(harness).Value;
 
         // 🔴 An account that is an API key (AGT3, D67 §1). The key crosses this bridge once,
         // inward, and is answered only by its handle — here, on the roster, and in any event.

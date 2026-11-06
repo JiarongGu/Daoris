@@ -93,7 +93,7 @@ public sealed class WorkflowEditRoutes(DriverContext context)
     /// <summary>What a step graph may hold under <paramref name="home"/>: the built-in kinds and the steps its plugins contribute.</summary>
     internal static WorkflowPalette PaletteOf(string home)
     {
-        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        var catalog = PluginCatalog.Load(home, ProviderRegistry.Built().Names);
         return WorkflowPalette.Build(catalog.Contributing.Select(entry => (entry.Manifest.Id, entry.Manifest.Steps)));
     }
 }

@@ -208,7 +208,7 @@ public sealed class ActorChoicesTests
         Directory.CreateDirectory(home);
         try
         {
-            var registry = ProviderRegistry.Of(AdapterSet.Built());
+            var registry = ProviderRegistry.Built();
 
             var native = SessionChoices.Of(home, registry, "claude-code");
             var protocol = SessionChoices.Of(home, registry, "claude-code-acp");

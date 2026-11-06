@@ -407,7 +407,7 @@ public sealed class DrivenSessionInputTests : IDisposable
                     : ["node", ProtocolAgent(), heard],
             },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), configure?.Invoke(config) ?? config, adapters, _home, processes: processes, sync: sync,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), browser: browser);

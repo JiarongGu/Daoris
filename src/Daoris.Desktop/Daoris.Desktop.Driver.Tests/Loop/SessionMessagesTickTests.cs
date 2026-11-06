@@ -49,7 +49,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null,
         Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? goesOnLost = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
@@ -451,7 +451,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var go = Path.Combine(_home, "go.flag");
         await using var service = SaidStandIn.Start(_repository);
         var processes = new SessionProcesses();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
@@ -501,7 +501,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var go = Path.Combine(_home, "go.flag");
         await using var service = SaidStandIn.Start(_repository);
         service.Retell("报告 \U0001F600 Serve the report", "端口 8080 \U0001F600");
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
@@ -702,7 +702,7 @@ public sealed class SessionMessagesTickTests : IAsyncLifetime
         var go = Path.Combine(_home, "go.flag");
         File.WriteAllText(go, "");
         await using var service = SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],

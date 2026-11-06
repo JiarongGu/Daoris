@@ -46,7 +46,7 @@ public sealed class AccountRotationHoldTests : IDisposable
     }
 
     private HarnessRoster Roster() =>
-        new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
+        new(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
 
     private static DriverConfig Config => DriverConfig.Empty with
     {
@@ -58,7 +58,7 @@ public sealed class AccountRotationHoldTests : IDisposable
     };
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>
-        new(service, Config, AdapterSet.Built(), _home, harnesses: roster);
+        new(service, Config, ProviderRegistry.Built(), _home, harnesses: roster);
 
     private void Cool(string account, DateTimeOffset until) =>
         AccountCooling.Cool(_home, new CoolingEntry("stub", account, until, true, "weekly", Seen, "s1"), _now);

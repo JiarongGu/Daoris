@@ -70,7 +70,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

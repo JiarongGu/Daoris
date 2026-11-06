@@ -103,7 +103,7 @@ public static class AgentErrors
     /// <param name="seen">When the failure arrived: a limit's reset is read from it.</param>
     /// <param name="zone">This machine's zone, for a limit's sentence (D125 §2.1).</param>
     public static AgentError Read(
-        AdapterSet adapters, ISessionAdapter adapter, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone)
+        ProviderRegistry adapters, ISessionAdapter adapter, DoorFailure failure, DateTimeOffset seen, TimeZoneInfo zone)
     {
         var own = adapter.Toolchain;
         var owner = OwnerOf(adapters, adapter);
@@ -222,9 +222,9 @@ public static class AgentErrors
     /// The owner's toolchain (AGT7, the design §4.1): <see cref="HarnessToolchain.AccountOf"/>'s adapter in this set, or null where it
     /// names none, itself, or an agent this set has no door for.
     /// </summary>
-    private static HarnessToolchain? OwnerOf(AdapterSet adapters, ISessionAdapter adapter)
+    private static HarnessToolchain? OwnerOf(ProviderRegistry adapters, ISessionAdapter adapter)
     {
-        var owner = adapter.Toolchain is null ? null : adapters.Registry.OwnerOfAgent(adapter.Name).Value;
+        var owner = adapter.Toolchain is null ? null : adapters.OwnerOfAgent(adapter.Name).Value;
         return owner is not null
                && !string.Equals(owner, adapter.Name, StringComparison.OrdinalIgnoreCase)
                && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)

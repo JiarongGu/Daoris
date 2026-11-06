@@ -29,7 +29,7 @@ public sealed class PluginInstallTests : IDisposable
         return folder;
     }
 
-    private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
+    private static IReadOnlyCollection<string> Reserved => ProviderRegistry.Built().Names;
 
     [Fact]
     public void A_folder_is_copied_in_under_its_id_and_the_data_folder_is_left_alone()

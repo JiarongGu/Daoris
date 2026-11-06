@@ -46,7 +46,7 @@ public sealed class HelpWiredTests : IDisposable
         File.WriteAllText(
             Path.Combine(folder, "skills", "triage", SpawnSkills.SkillFile),
             "---\nname: triage\ndescription: Sort the issues by what they block.\n---\n\nRead the board first.\n");
-        HelpGrants.Approve(_home, PluginCatalog.Load(_home, AdapterSet.Built().Names), "acme.tickets", "tickets", readsOnly: false);
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home, ProviderRegistry.Built().Names), "acme.tickets", "tickets", readsOnly: false);
     }
 
     /// <summary>A plugin whose one server drives Daoris's own browser, approved for Ask Daoris.</summary>
@@ -59,7 +59,7 @@ public sealed class HelpWiredTests : IDisposable
                 { "name": "browser", "command": ["node", "server.js", "--cdp", "${browser}"], "to": ["sessions", "help"],
                   "allow": ["browser_snapshot"] } ] }
             """);
-        HelpGrants.Approve(_home, PluginCatalog.Load(_home, AdapterSet.Built().Names), "in-app-browser", "browser", readsOnly: false);
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home, ProviderRegistry.Built().Names), "in-app-browser", "browser", readsOnly: false);
     }
 
     private sealed record Spawned(ProcessStartInfo Info, string? Settings, string? Servers);
@@ -72,7 +72,7 @@ public sealed class HelpWiredTests : IDisposable
         StandInService service, string id, string adapter, string mode, IReadOnlyDictionary<string, string>? environment = null)
     {
         service.Seed(id, "queued");
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
@@ -287,7 +287,7 @@ public sealed class HelpWiredTests : IDisposable
         await StartAsync(service, "help0004", "claude-code", HelpModes.Restricted);
         var was = Assert.Single(new HelpWired(_home).Read("help0004"));
 
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
@@ -330,7 +330,7 @@ public sealed class HelpWiredTests : IDisposable
         await StartAsync(service, "help0008", "claude-code", HelpModes.Restricted);
         ConfiguredAccess.Choose(_home, ConfiguredAccess.HousekeepingGrant, ConfiguredAccess.CleanUp, chosen: true);
 
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),

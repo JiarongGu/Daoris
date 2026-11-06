@@ -173,7 +173,7 @@ public sealed class ReviewTreeTests : IDisposable
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
         var rule = new OpinionRule(["stub"], [OpinionRules.Landing], Minutes: 30);
@@ -243,7 +243,7 @@ public sealed class ReviewTreeTests : IDisposable
             TestBound = 2,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home);
         // A tick loads the catalogue at its top; a pass called alone is handed the plugins as that tick would.
         driver.Context.Catalog = PluginCatalog.Load(_home, adapters.Names);
@@ -273,7 +273,7 @@ public sealed class ReviewTreeTests : IDisposable
             Actors = StaffedRoles.On("claude-code"),
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home);
         var choice = new ReviewerChoice("stub", ReviewerLabels.MakerNotDeclared, ReviewerUnavailable.NotIndependent, "x")
         {
@@ -312,7 +312,7 @@ public sealed class ReviewTreeTests : IDisposable
                 Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingReviewer(), "account-1:opus"] },
             },
             "opinion", [new ActorChoice("acp-stub", "opus")]);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
         var rule = new OpinionRule(["acp-stub"], [OpinionRules.Landing], Minutes: 30);
@@ -359,7 +359,7 @@ public sealed class ReviewTreeTests : IDisposable
             TestBound = 30,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
         var rule = new OpinionRule(["acp-stub"], [OpinionRules.Landing], Minutes: 30);

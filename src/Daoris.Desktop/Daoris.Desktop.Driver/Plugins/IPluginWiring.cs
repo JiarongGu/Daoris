@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 internal interface IPluginWiring : ILookWiring
 {
     /// <summary>The adapters this build carries, before any plugin's.</summary>
-    AdapterSet Built { get; }
+    ProviderRegistry Built { get; }
 
     /// <summary>The loop's hooks, reconciled with each read catalogue.</summary>
     HookSet? Hooks { get; }

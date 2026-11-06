@@ -144,7 +144,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
             && AgentOffers.Offers(roster.Home, resolved.Name, (await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false))?.Version,
                 account.Trim(), roster.Clock()).Session.Judge(model) is not null;
 
-        var owner = roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
         // A record on a Daoris account is judged against the set a start walks (POOL1a2, the account-pool design §2.4), whatever its
         // workspace; one that began in the tool's own home is judged against no scope (F1, ResumeAccount.Judge).
         var settled = roster.Settings.Set(owner);

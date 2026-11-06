@@ -119,7 +119,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
             return conclusion;
         }
 
-        return conclusion.Then(" ", Refuse(adapter, selection, context.Harnesses.Adapters.Registry.OwnerOfAgent(adapter.Name).Value));
+        return conclusion.Then(" ", Refuse(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value));
     }
 
     /// <summary>

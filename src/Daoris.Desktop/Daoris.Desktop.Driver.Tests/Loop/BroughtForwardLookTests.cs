@@ -177,7 +177,7 @@ public sealed class BroughtForwardLookTests : IDisposable
     {
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             service, Config(), adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {

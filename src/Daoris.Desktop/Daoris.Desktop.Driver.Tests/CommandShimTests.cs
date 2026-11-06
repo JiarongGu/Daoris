@@ -78,8 +78,8 @@ public sealed class CommandShimTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         NpmShim("claude-agent-acp");
         NpmShim("claude");
-        var acp = AdapterSet.Built().Resolve("claude-code-acp");
-        var pipe = AdapterSet.Built().Resolve("claude-code");
+        var acp = ProviderRegistry.Built().Resolve("claude-code-acp");
+        var pipe = ProviderRegistry.Built().Resolve("claude-code");
 
         var driven = acp.Prepare(Target(), command: null);
         var chat = pipe.PrepareChat(SpawnRequests.Chat("Game", _folder, "http://localhost:5177", null));
@@ -104,7 +104,7 @@ public sealed class CommandShimTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         NpmShim("claude");
-        var pipe = AdapterSet.Built().Resolve("claude-code");
+        var pipe = ProviderRegistry.Built().Resolve("claude-code");
         var info = pipe.Prepare(Target(), command: null);
         info.Environment["PATH"] = _folder;
 

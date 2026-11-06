@@ -82,7 +82,7 @@ public sealed class AccountRotationTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         // The line is on ask #a1 by its entry's origin (COMMS1c), as the service keys a quest's sessions an ask asked.
         service.Entries["q1"] = "ask:a1/engine";
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
@@ -178,7 +178,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task A_limit_on_the_protocol_door_cools_stub_account_1_and_the_carry_on_opens_on_stub_account_2()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
@@ -273,7 +273,7 @@ public sealed class AccountRotationTickTests : IDisposable
     [Fact]
     public async Task A_signed_out_default_the_order_lists_is_walked_past_to_the_next_account()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         await roster.ReportAsync("stub", Config(signedOut: "account-1"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1"), "default", null);
@@ -290,7 +290,7 @@ public sealed class AccountRotationTickTests : IDisposable
     [Fact]
     public async Task An_order_all_signed_out_is_refused_naming_each_account_and_its_sign_in()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         await roster.ReportAsync("stub", Config(signedOut: "account-1,account-2"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1,account-2"), "default", null);
@@ -336,7 +336,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_go_on_on_its_own_account_where_the_walk_would_start_on_another()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -366,7 +366,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_an_ended_session_whose_account_cools_go_on_at_once_briefed_on_the_ready_account()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -410,7 +410,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_an_ended_session_with_every_account_cooling_wait_for_the_earliest_reset_then_go_on_there()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var now = Seen;
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
@@ -458,7 +458,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_of_a_closed_quest_whose_account_cools_go_on_through_the_runner_on_the_ready_account()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var handed = new List<(string Session, string Why)>();
@@ -499,7 +499,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_of_a_closed_quest_with_every_account_cooling_wait_for_the_earliest_reset()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var handed = new List<string>();
@@ -543,7 +543,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_of_a_closed_quest_still_wait_for_their_own_account_with_another_ready()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -579,7 +579,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Daoris_s_rebase_word_to_a_closed_quests_session_whose_account_cools_goes_on_through_the_runner_on_the_ready_account()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var handed = new List<(string Session, string Why)>();
@@ -618,7 +618,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Daoris_s_rebase_word_to_a_closed_quests_session_with_every_account_cooling_waits_for_the_earliest_reset_of_any()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var handed = new List<string>();
@@ -666,7 +666,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Daoris_s_rebase_word_to_an_ended_session_whose_account_cools_goes_on_at_once_briefed_on_the_ready_account()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -702,7 +702,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Daoris_s_rebase_word_whose_commit_the_line_holds_is_settled_and_not_held_for_any_reset()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var handed = new List<string>();
@@ -747,7 +747,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_whose_account_is_cooling_wait_for_its_reset_until_the_person_chooses_a_new_session()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -820,7 +820,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Words_to_a_session_whose_account_is_signed_out_are_carried_on_at_once_on_the_next_account()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         var first = new Daoris.Driver.Driver(
             client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(),
@@ -857,7 +857,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task A_line_limited_on_one_account_goes_on_briefed_on_the_free_one_with_the_held_words_and_no_limit_word()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("limited"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -890,7 +890,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task Two_limited_full_resumes_then_another_account_free_go_on_briefed_with_no_word_of_Daoris_s_left()
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var now = Seen;
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);

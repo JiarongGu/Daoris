@@ -34,7 +34,7 @@ public sealed class ChatAgentTests : IDisposable
     [InlineData("acp-stub")]
     public void It_reads_its_door_as_the_adapter_beneath_it_says_it(string door)
     {
-        var adapter = AdapterSet.Built().Resolve(door);
+        var adapter = ProviderRegistry.Built().Resolve(door);
         var agent = new ChatAgent(adapter);
 
         Assert.Equal(adapter.Name, agent.Name);
@@ -47,14 +47,14 @@ public sealed class ChatAgentTests : IDisposable
         Assert.Equal(adapter.FrameInterrupt(), agent.FrameInterrupt());
         Assert.Equal(adapter.StructuredOutput() is null, agent.StructuredOutput() is null);
         Assert.Equal(CommitTrailers.For(adapter), agent.Trailers());
-        Assert.Equal(TurnBinding.Of(AdapterSet.Built(), adapter, "account-1"), agent.Binding(AdapterSet.Built(), "account-1"));
+        Assert.Equal(TurnBinding.Of(ProviderRegistry.Built(), adapter, "account-1"), agent.Binding(ProviderRegistry.Built(), "account-1"));
     }
 
     /// <summary>The conversation's process is its door's own, then equipped by the one call every session's is (D230 point 3).</summary>
     [Fact]
     public void Its_process_is_its_doors_own_equipped_as_every_sessions_is()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         var request = SpawnRequests.Chat("engine", Path.GetTempPath(), "http://localhost:5177", "c1");
         var selection = new HarnessSelection(null);
 
@@ -77,7 +77,7 @@ public sealed class ChatAgentTests : IDisposable
     [InlineData("acp-stub")]
     public void Its_run_is_the_one_over_its_door_and_goes_on_through_a_start_of_its_own(string door)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var agent = new ChatAgent(adapters.Resolve(door));
         var start = new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person);
 

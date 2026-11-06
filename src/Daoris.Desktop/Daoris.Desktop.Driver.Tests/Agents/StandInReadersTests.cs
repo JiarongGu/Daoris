@@ -15,20 +15,20 @@ public sealed class StandInReadersTests
     /// <summary>The sets the readers are held over: the built one, and one with a plugin's door of the stand-in's kind.</summary>
     public static TheoryData<string> Sets => new() { "built", "plugin" };
 
-    private static AdapterSet Set(string which) => which switch
+    private static ProviderRegistry Set(string which) => which switch
     {
-        "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
-        _ => AdapterSet.Built(),
+        "plugin" => ProviderRegistry.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
+        _ => ProviderRegistry.Built(),
     };
 
     /// <summary>The roster's listing as the code spelled it: skip a door that names no binary and that the home configures no command for.</summary>
-    private static List<string> OldListing(AdapterSet set, IReadOnlyDictionary<string, IReadOnlyList<string>> commands) => [.. set.Names.Where(name =>
+    private static List<string> OldListing(ProviderRegistry set, IReadOnlyDictionary<string, IReadOnlyList<string>> commands) => [.. set.Names.Where(name =>
         !(set.Resolve(name).Toolchain is { Binary.Count: 0 } && commands.GetValueOrDefault(name) is not { Count: > 0 }))];
 
     /// <summary>The verbs' operands as the code spelled them: each door that names a real program and each agent a door runs as.</summary>
-    private static List<string> OldOperands(AdapterSet set)
+    private static List<string> OldOperands(ProviderRegistry set)
     {
-        HarnessToolchain? Of(string each) => set.Registry.ToolchainOf(each);
+        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
         return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
     }
 
@@ -37,7 +37,7 @@ public sealed class StandInReadersTests
     public void The_roster_lists_what_it_listed_with_and_without_a_stand_in_s_command_configured(string which)
     {
         var set = Set(which);
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
         foreach (var commands in new[]
         {
             new Dictionary<string, IReadOnlyList<string>>(),
@@ -58,7 +58,7 @@ public sealed class StandInReadersTests
     {
         var set = Set(which);
 
-        var operands = ProviderRegistry.Of(set).Operands();
+        var operands = set.Operands();
 
         Assert.Equal(OldOperands(set), operands);
         Assert.DoesNotContain("stub", operands);
@@ -68,7 +68,7 @@ public sealed class StandInReadersTests
     [Fact]
     public void The_stand_ins_name_no_program_so_the_two_rules_differ_only_by_the_command()
     {
-        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        var registry = ProviderRegistry.Built();
 
         Assert.False(registry.Listed(new DoorId("stub"), configured: false));
         Assert.True(registry.Listed(new DoorId("stub"), configured: true));
@@ -106,8 +106,8 @@ public sealed class StandInReadersTests
     public void A_made_provider_s_id_is_never_reserved()
     {
         var harness = new PluginHarness("acme-agent", ["acme"], AccountOf: "acme");
-        var set = AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(harness, "acme-plugin")));
-        var registry = ProviderRegistry.Of(set);
+        var set = ProviderRegistry.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(harness, "acme-plugin")));
+        var registry = set;
 
         Assert.Contains(registry.Providers, provider => provider.Id.Value == "acme" && provider.Identity.DeclaredBy.Count > 0);
         Assert.DoesNotContain("acme", registry.Reserved);

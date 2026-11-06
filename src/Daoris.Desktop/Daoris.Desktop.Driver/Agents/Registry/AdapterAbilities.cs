@@ -9,7 +9,7 @@ public static class AdapterAbilities
     public static DoorAbilities Abilities(this ISessionAdapter adapter) => DoorAbilities.Of(LegacyDoor.Of(adapter).Door);
 
     /// <summary>The abilities of the door named <paramref name="name"/> in <paramref name="adapters"/>, null where none is.</summary>
-    public static DoorAbilities? AbilitiesOf(this AdapterSet adapters, string name)
+    public static DoorAbilities? AbilitiesOf(this ProviderRegistry adapters, string name)
     {
         try
         {

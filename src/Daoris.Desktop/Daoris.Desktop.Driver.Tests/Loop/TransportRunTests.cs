@@ -32,7 +32,7 @@ public sealed class TransportRunTests : IDisposable
     /// <summary>A run over a door's adapter that was never started: a program that does not exist, which nothing here reaches.</summary>
     private TransportRun Over(string door)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, adapters, _home, _processes);
         return new TransportRun(new DriverTransportHost(driver), adapters.Resolve(door), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
     }
@@ -148,7 +148,7 @@ public sealed class TransportRunTests : IDisposable
     public async Task The_runs_spawn_keeps_what_its_start_is_handed_then_brackets_and_starts_it_through_its_host()
     {
         var host = new RecordingTransportHost(_home, _processes);
-        var run = new TransportRun(host, AdapterSet.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        var run = new TransportRun(host, ProviderRegistry.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
         await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.SpawnAsync("s1", CancellationToken.None));
@@ -165,7 +165,7 @@ public sealed class TransportRunTests : IDisposable
     public async Task A_run_bracketed_first_keeps_and_brackets_once_and_its_spawn_starts_under_that_token()
     {
         var host = new RecordingTransportHost(_home, _processes);
-        var run = new TransportRun(host, AdapterSet.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
+        var run = new TransportRun(host, ProviderRegistry.Built().Resolve("stub"), new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person));
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
         Assert.Equal("p1", await run.BracketAsync("s1", CancellationToken.None));
@@ -196,7 +196,7 @@ public sealed class TransportRunTests : IDisposable
     public void A_go_on_is_admitted_on_a_native_door_that_resumes_and_was_handed_what_its_resume_is_prepared_from()
     {
         var host = new RecordingTransportHost(_home, _processes);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
 
         Assert.True(GoingOn(host, BuiltDoors.Claude).GoesOn);
         Assert.False(GoingOn(host, BuiltDoors.Claude, handed: false).GoesOn);

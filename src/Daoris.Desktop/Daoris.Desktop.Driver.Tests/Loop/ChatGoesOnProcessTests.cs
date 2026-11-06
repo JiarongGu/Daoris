@@ -52,7 +52,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
 
     private ChatRunner Runner(ServiceClient client, SessionEvents events, SessionProcesses? processes = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new ChatRunner(
             client, adapters, _home, processes ?? new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

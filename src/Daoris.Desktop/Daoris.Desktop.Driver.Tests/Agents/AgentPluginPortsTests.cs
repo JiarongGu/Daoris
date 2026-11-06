@@ -21,14 +21,14 @@ public sealed class AgentPluginPortsTests : IDisposable
         Plugin("acme.a", "a-agent", "a-owner");
         Plugin("acme.off", "off-agent", "off-owner");
         PluginState.Disable(_home, "acme.off");
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var catalog = AgentPluginReads.Current.Load(_home, built.Names);
         Assert.Equal(["a-agent", "z-agent"], catalog.Doors.Select(door => door.Name));
         Assert.Equal(["a-agent", "a-owner", "off-agent", "off-owner", "z-agent", "z-owner"], catalog.DeclaredAgents);
         foreach (var set in new[] { built.WithPlugins(catalog), World().Adapters(_home) })
         {
-            Assert.Equal("acme.a", set.Registry.DeclaredBy("a-agent"));
-            Assert.Null(set.Registry.DeclaredBy("stub"));
+            Assert.Equal("acme.a", set.DeclaredBy("a-agent"));
+            Assert.Null(set.DeclaredBy("stub"));
             Assert.DoesNotContain("off-agent", set.Names);
             Assert.Contains("off-owner", set.Agents);
             Assert.Equal("stand-command", set.Resolve("a-agent").Prepare(Target(), null).FileName);
@@ -59,18 +59,18 @@ public sealed class AgentPluginPortsTests : IDisposable
         {
             AgentPluginReads.Current = read;
             Assert.Contains("kept-off-owner", HarnessSettings.AgentsKnown(_home));
-            Assert.Equal("stand.plugin", World().Adapters(_home).Registry.DeclaredBy("stand-agent"));
+            Assert.Equal("stand.plugin", World().Adapters(_home).DeclaredBy("stand-agent"));
             Assert.Equal(2, read.Homes.Count);
             Assert.All(read.Homes, home => Assert.Equal(_home, home));
-            Assert.All(read.Reserved, names => Assert.Equal(AdapterSet.Built().Names, names));
+            Assert.All(read.Reserved, names => Assert.Equal(ProviderRegistry.Built().Names, names));
             AgentPluginReads.Current = null!;
             Assert.Throws<InvalidOperationException>(() => HarnessSettings.AgentsKnown(_home));
             Assert.Throws<InvalidOperationException>(() => World().Adapters(_home));
-            var built = AdapterSet.Built();
+            var built = ProviderRegistry.Built();
             var direct = built.WithPlugins(catalog);
             Assert.Same(built.Resolve("stub"), direct.Resolve("stub"));
-            Assert.Null(direct.Registry.DeclaredBy("stub"));
-            Assert.Equal("stand.plugin", direct.Registry.DeclaredBy("stand-agent"));
+            Assert.Null(direct.DeclaredBy("stub"));
+            Assert.Equal("stand.plugin", direct.DeclaredBy("stand-agent"));
             // A plugin's adapter declares no layout, so it is handed the copies every such adapter was: in the order the catalogue gave.
             Plugin("acme.second", "second-agent", "second-owner");
             Plugin("acme.first", "first-agent", "first-owner");

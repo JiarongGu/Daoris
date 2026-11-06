@@ -69,7 +69,7 @@ public static class LinesStateSlice
     /// its checkout's guess was judged; null where the service's answers were never judged, which judges nothing. Reads nothing
     /// outside <paramref name="facts"/>, <paramref name="config"/> and <paramref name="adapters"/>: no git, no service.
     /// </summary>
-    public static IReadOnlyList<SliceJudged>? Judge(MachineFactsSnapshot facts, DriverConfig config, AdapterSet adapters)
+    public static IReadOnlyList<SliceJudged>? Judge(MachineFactsSnapshot facts, DriverConfig config, ProviderRegistry adapters)
     {
         if (facts.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is not { } whole) return null;
         return

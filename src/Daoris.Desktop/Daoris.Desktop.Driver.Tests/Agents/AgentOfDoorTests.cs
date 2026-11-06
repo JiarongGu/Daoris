@@ -16,12 +16,12 @@ public sealed class AgentOfDoorTests : IDisposable
         if (Directory.Exists(_home)) GitSeed.Discard(_home);
     }
 
-    private AdapterSet WithPlugin(string id, string harnesses)
+    private ProviderRegistry WithPlugin(string id, string harnesses)
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""{ "id": "{{id}}", "harnesses": [ {{harnesses}} ] }""");
-        return AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        return ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ public sealed class AgentOfDoorTests : IDisposable
     [Fact]
     public void One_agent_s_two_doors_are_one_agent_and_another_agent_is_not()
     {
-        var agents = new AgentOfDoor(AdapterSet.Built().Registry);
+        var agents = new AgentOfDoor(ProviderRegistry.Built());
 
         Assert.True(agents.Same("claude-code", "claude-code-acp"));
         Assert.True(agents.Same("stub", "acp-stub"));
@@ -52,7 +52,7 @@ public sealed class AgentOfDoorTests : IDisposable
             { "name": "p-b", "command": ["agent"], "accountOf": "claude-code-acp" },
             { "name": "p-joined", "command": ["agent"], "accountOf": "claude-code" }
             """);
-        var registry = adapters.Registry;
+        var registry = adapters;
         var agents = new AgentOfDoor(registry);
 
         Assert.Equal(registry.OwnerOf(new DoorId("p-a")), registry.OwnerOf(new DoorId("p-b")));

@@ -27,7 +27,7 @@ public sealed class ToolsAtTheStartTests
     [Fact]
     public void No_Claude_door_defers_the_connectors_tools()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var claude = new List<string>();
         foreach (var name in adapters.Names)
         {
@@ -60,7 +60,7 @@ public sealed class ToolsAtTheStartTests
     [InlineData("acp-stub", false)]
     public void Every_driven_spawn_on_a_Claude_door_loads_its_tools_at_the_start(string name, bool loads)
     {
-        var adapter = AdapterSet.Built().Resolve(name);
+        var adapter = ProviderRegistry.Built().Resolve(name);
         using var service = new ServiceClient("http://ledger.test", null);
         var driver = Driver(service, name);
         var target = Target();
@@ -80,7 +80,7 @@ public sealed class ToolsAtTheStartTests
     [Fact]
     public void An_accounts_own_variables_do_not_defer_the_tools_again()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
         using var service = new ServiceClient("http://ledger.test", null);
         var account = new HarnessSelection(null, Environment: new Dictionary<string, string> { [Variable] = "true" });
 
@@ -92,7 +92,7 @@ public sealed class ToolsAtTheStartTests
     private static Daoris.Driver.Driver Driver(ServiceClient service, string name) => new(
         service,
         DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [name] = Command } },
-        AdapterSet.Built(),
+        ProviderRegistry.Built(),
         Path.GetFullPath("_fixtures/toolsatstart-unused"));
 
     private static string? Said(ProcessStartInfo info) => info.Environment.TryGetValue(Variable, out var value) ? value : null;

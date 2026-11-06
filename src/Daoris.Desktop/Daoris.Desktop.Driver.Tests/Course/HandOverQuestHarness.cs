@@ -78,7 +78,7 @@ internal sealed class HandOverQuestHarness : IAsyncDisposable
     /// <summary>A driver for a look: the home's one running-sessions record and processes, its move holder the run's own where it is handed one.</summary>
     public Daoris.Driver.Driver Driver(ConversationMoves? moves = null, Func<string, Noted, bool>? stops = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
@@ -106,7 +106,7 @@ internal sealed class HandOverQuestHarness : IAsyncDisposable
 
     /// <summary>Ask the quest's hand-over of <c>s1</c> to the stub, on an account the first run is not on, decided in <paramref name="moves"/>'s store.</summary>
     public Task<HandOverAnswer> AskAsync(ConversationMoves moves, string account) =>
-        QuestHandOver.AskAsync(Client, moves, QuestHandOver.Roster(AdapterSet.Built(), Home), "s1", "acp-stub", account, HandOverWhy.Press, HandOverBy.Person);
+        QuestHandOver.AskAsync(Client, moves, QuestHandOver.Roster(ProviderRegistry.Built(), Home), "s1", "acp-stub", account, HandOverWhy.Press, HandOverBy.Person);
 
     /// <summary>A killed driver's look, run on a task that blocks at <paramref name="cut"/> or in the stop and is never let go until the case is over.</summary>
     public async Task KilledLookAsync(Daoris.Driver.Driver driver, Func<bool> reached)

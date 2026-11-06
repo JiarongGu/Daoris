@@ -80,7 +80,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["door"] = Adapter("door", Toolchain),
         }), Settings);

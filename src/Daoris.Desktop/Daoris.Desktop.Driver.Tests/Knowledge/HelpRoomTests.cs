@@ -128,7 +128,7 @@ public sealed class HelpRoomTests : IDisposable
         ];
 
         var machine = HelpRoom.Describe(
-            DriverConfig.Empty, new Snapshot([], [], []), [], roster, asks: 0, [], facts: ProviderRegistry.Of(AdapterSet.Built()).Facts);
+            DriverConfig.Empty, new Snapshot([], [], []), [], roster, asks: 0, [], facts: ProviderRegistry.Built().Facts);
         var room = HelpRoom.Render(machine);
 
         Assert.Contains(
@@ -303,7 +303,7 @@ public sealed class HelpRoomTests : IDisposable
             new("a2", "work", "stream the tiles", "Published", "named") { Quests = ["q1"] },
         ];
         var machine = HelpRoom.Describe(
-            config, snapshot, lines, roster, asks: 1, standing, facts: ProviderRegistry.Of(AdapterSet.Built()).Facts);
+            config, snapshot, lines, roster, asks: 1, standing, facts: ProviderRegistry.Built().Facts);
 
         var report = Assert.Single(machine.Repositories, repository => repository.Name == "console-ui");
         Assert.True(report.Drivable && report.OwnTree && report.Checkout && !report.Held);

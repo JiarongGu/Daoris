@@ -57,7 +57,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void Which_doors_can_resume()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
 
         Assert.True(adapters.Resolve("claude-code").Resumes);
         Assert.True(adapters.Resolve("claude-code-acp").Resumes);
@@ -282,7 +282,7 @@ public sealed class NativeResumeTests
         var going = fresh with { Resume = "0b5e7c1a" };
 
         Assert.DoesNotContain("--resume", BuiltDoors.Claude.PrepareChat(fresh, ["claude"]).ArgumentList);
-        Assert.DoesNotContain("--resume", AdapterSet.Built().Resolve("claude-code-acp").PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
+        Assert.DoesNotContain("--resume", ProviderRegistry.Built().Resolve("claude-code-acp").PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
         Assert.DoesNotContain("--resume", BuiltDoors.AcpStub.PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
     }
 

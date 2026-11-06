@@ -316,5 +316,5 @@ internal static class AgentAccountUse
     }
 
     /// <summary>The toolchain an agent's accounts are said by: its door's, or the agent a door runs as.</summary>
-    private static HarnessToolchain? Toolchain(AccountVerbContext at, string agent) => at.World.Adapters(at.Home).Registry.ToolchainOf(agent);
+    private static HarnessToolchain? Toolchain(AccountVerbContext at, string agent) => at.World.Adapters(at.Home).ToolchainOf(agent);
 }

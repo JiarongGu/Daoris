@@ -251,7 +251,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // person's; an agent's pick and a record from before hold none.
         else if (from is not null && context.Conversations.PickedOn(from.Session, selection.Profile)
             && await service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
-            && new AgentOfDoor(harnesses.Adapters.Registry).Same(pickedAgent, resolved.Name))
+            && new AgentOfDoor(harnesses.Adapters).Same(pickedAgent, resolved.Name))
         {
             context.Conversations.Pick(sessionId, selection.Profile);
         }

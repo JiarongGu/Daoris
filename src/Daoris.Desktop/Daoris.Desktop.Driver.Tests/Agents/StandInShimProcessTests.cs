@@ -76,7 +76,7 @@ public sealed class StandInShimProcessTests : IDisposable
     [Fact]
     public async Task The_pipe_stand_in_starts_hears_and_stops()
     {
-        var door = AdapterSet.Built().Resolve("stub");
+        var door = ProviderRegistry.Built().Resolve("stub");
         var command = Command(Text());
 
         var started = await Ran(door.Prepare(Target(), command));
@@ -99,7 +99,7 @@ public sealed class StandInShimProcessTests : IDisposable
     [InlineData(true)]
     public async Task The_protocol_stand_in_opens_sends_and_resumes(bool resume)
     {
-        var door = AdapterSet.Built().Resolve("acp-stub");
+        var door = ProviderRegistry.Built().Resolve("acp-stub");
 
         var methodsNew = await Wire(door, "new.txt", resume);
 
@@ -124,7 +124,7 @@ public sealed class StandInShimProcessTests : IDisposable
     [Fact]
     public async Task The_protocol_stand_in_is_stopped_by_ending_its_process()
     {
-        var door = AdapterSet.Built().Resolve("acp-stub");
+        var door = ProviderRegistry.Built().Resolve("acp-stub");
         using var process = Process.Start(door.Prepare(Target(), Command(Acp(), Path.Combine(_home, "stopped.txt"))))!;
         await Task.Delay(200);
         process.Kill(entireProcessTree: true);

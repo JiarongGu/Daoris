@@ -29,7 +29,7 @@ public sealed class SetupRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var ask = PlaceAskOf(read.Repositories, read.Repository, read.Preset, read.Opinion, read.Look, read.Adoption, read.Builds, read.Drive, read.AtOnce, read.Pilot);
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        var plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names);
         var world = new PlaceWorld(service);
         if (read.Said)
         {
@@ -64,7 +64,7 @@ public sealed class SetupRoutes(DriverContext context)
         IReadOnlyList<PlaceAccept> accepted = [.. (press.Accept ?? []).Select(each => new PlaceAccept(each.Repository ?? "", each.Purpose ?? ""))];
         var config = DriverConfig.Load(_loop.ConfigPath);
         var doors = new PlaceApplyDoors(
-            new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), _context.Unadopted(config),
+            new PlaceWorld(service), _context.SetupWorldOf(service), _loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), _context.Unadopted(config),
             () => DriverConfig.Load(_loop.ConfigPath), _context.Change, DateOnly.FromDateTime(DateTime.Now));
         // AGENTSPLACE1b3: `daoris place … --apply` in the verb's own words, which plans now and applies that plan; the person's Confirm
         // on the window's card has already pinned the plan between the terminal's ask and here (`PipeGrounds`).

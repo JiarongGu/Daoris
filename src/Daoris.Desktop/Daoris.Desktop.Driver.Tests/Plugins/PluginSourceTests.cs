@@ -25,7 +25,7 @@ public sealed class PluginSourceTests : IDisposable
 
     private string Installed(string id) => DaorisHome.Entry(Home, HomeEntry.Plugins,id);
 
-    private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
+    private static IReadOnlyCollection<string> Reserved => ProviderRegistry.Built().Names;
 
     public PluginSourceTests() => Directory.CreateDirectory(Home);
 

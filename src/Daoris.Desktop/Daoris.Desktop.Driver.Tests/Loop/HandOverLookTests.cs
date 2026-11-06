@@ -58,7 +58,7 @@ public sealed class HandOverLookTests : IDisposable
     private Daoris.Driver.Driver Driver()
     {
         var service = _ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(service, Config(), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Moves = Moves(),
@@ -82,7 +82,7 @@ public sealed class HandOverLookTests : IDisposable
     /// <summary>The ask as the terminal or an agent's go makes it: judged, and decided as a driven move in the store, no box.</summary>
     private async Task Ask(string session, string agent = "codex-acp") =>
         Assert.True((await QuestHandOver.AskAsync(
-            _ledger.Client(), Moves(), QuestHandOver.Roster(AdapterSet.Built(), _home), session, agent, null, HandOverWhy.Limit, HandOverBy.Person)).Kept);
+            _ledger.Client(), Moves(), QuestHandOver.Roster(ProviderRegistry.Built(), _home), session, agent, null, HandOverWhy.Limit, HandOverBy.Person)).Kept);
 
     /// <summary>
     /// 🔴 A running quest session with a move decided is stopped at once with its own coded line, the quest is held on the named agent, and the

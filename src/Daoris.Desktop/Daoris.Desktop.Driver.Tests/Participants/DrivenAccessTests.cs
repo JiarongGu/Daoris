@@ -25,7 +25,7 @@ public sealed class DrivenAccessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name) => AdapterSet.Built().Resolve(name);
+    private static ISessionAdapter Adapter(string name) => ProviderRegistry.Built().Resolve(name);
 
     /// <summary>A repository's setup with its permission prompts set to <paramref name="value"/> at the repository, the rest today's.</summary>
     private static ResolvedAccess Permissions(string value) => AccessRules.ResolveLevels(
@@ -159,7 +159,7 @@ public sealed class DrivenAccessTests : IDisposable
     {
         PermissionRules.Save(
             _home, PermissionRules.Add(PermissionFile.Empty, RuleScope.Machine, null, RuleList.Deny, "Read(//c/secrets/**)"));
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
         var adapter = adapters.Resolve(name);
         var tree = Path.Combine(_home, "engine");

@@ -24,7 +24,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// </param>
     public void Refuse(string adapter, string? profile, string reason, Noted? note = null)
     {
-        var owner = roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? roster.Adapters.Registry.OwnerOfAgent(adapter).Value : adapter;
+        var owner = roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) ? roster.Adapters.OwnerOfAgent(adapter).Value : adapter;
         roster._refused[HarnessRoster.AccountKey(owner, profile)] = (reason, note is { } coded && coded.Note == reason ? coded : null);
     }
 
@@ -38,13 +38,13 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7); null for an adapter
     /// that declares no toolchain, which has no accounts and reads no limit.
     /// </summary>
-    internal string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain is null ? null : roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
+    internal string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain is null ? null : roster.Adapters.OwnerOfAgent(resolved.Name).Value;
 
     /// <summary>
     /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a
     /// door's limits are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
     /// </summary>
-    public LimitWords? LimitsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.LimitsOf(door) : null;
+    public LimitWords? LimitsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.LimitsOf(door) : null;
 
     /// <summary>The registry's door for a name this set carries, else null (an unknown name reads no words).</summary>
     private DoorId? Held(string adapter) =>
@@ -54,7 +54,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// The words this adapter's agent refuses a start for its sign-in in (ROSTER1b): its own entry, else its owner's, since a
     /// door's refusals are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
     /// </summary>
-    public SignInWords? SignInOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.SignInOf(door) : null;
+    public SignInWords? SignInOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.SignInOf(door) : null;
 
     /// <summary>
     /// A start on this adapter as <paramref name="profile"/> was refused for its sign-in (ROSTER1b, D150 §5.3): that account,
@@ -89,7 +89,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// How this adapter says an account's windows (TOOL6c, D130 §5.2): its own entry, else its owner's, since a door's readings
     /// are its owner's as its accounts are (AGT7). Null says nothing.
     /// </summary>
-    public WindowWords? WindowsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.Registry.WindowsOf(door) : null;
+    public WindowWords? WindowsOf(string adapter) => Held(adapter) is { } door ? roster.Adapters.WindowsOf(door) : null;
 
     /// <summary>
     /// What a session's door said about the windows of the account it runs as (TOOL6c, D130 §5.2): read by the adapter's

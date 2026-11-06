@@ -269,7 +269,7 @@ public sealed class LookParallelTests : IDisposable
         // that starts the second check late under load does not cost the first its answer.
         var service = _ledger.Client(Poll.Patience);
         var runs = new StandInRuns(service, _ledger);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine", "tools"], Actors = StaffedRoles.On("stub"), Cap = 3, PollSeconds = 1, Trees = ["engine", "tools"] };
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
@@ -419,7 +419,7 @@ public sealed class LookParallelTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)), hooks: hooks)
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)), hooks: hooks)
         {
             Runner = gate?.Over(runs) ?? runs.Runner,
             Stops = runs.Stops,

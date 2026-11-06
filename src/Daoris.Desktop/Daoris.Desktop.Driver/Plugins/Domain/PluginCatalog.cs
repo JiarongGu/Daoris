@@ -145,11 +145,11 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
 
     /// <summary>
     /// The harness names this build runs, which no plugin may declare (PLUGINRESERVE1, D64 rule 3): the built set's
-    /// <see cref="AdapterSet.Reserved"/>, each door and each agent a door runs as, `codex` among them since CODEXACCT1 made it
+    /// <see cref="ProviderRegistry.Reserved"/>, each door and each agent a door runs as, `codex` among them since CODEXACCT1 made it
     /// a holder rather than a door. Twin: the CLI's <c>reservedHarnesses()</c>; both suites hold their list to the driver
     /// suite's <c>fixtures/reserved-harnesses.json</c>.
     /// </summary>
-    public static IReadOnlyList<string> Reserved => AdapterSet.Built().Reserved;
+    public static IReadOnlyList<string> Reserved => ProviderRegistry.Built().Reserved;
 
     /// <summary>
     /// Read the home's plugins.

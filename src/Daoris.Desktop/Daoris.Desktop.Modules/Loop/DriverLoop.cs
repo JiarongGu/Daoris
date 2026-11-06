@@ -279,14 +279,14 @@ public sealed class DriverLoop(
     /// what is installed and log a profile in while the host is still coming up — which is exactly the
     /// moment a machine being set up has the question.
     /// </remarks>
-    public HarnessRoster Harnesses { get; } = new(WithPlugins(AdapterSet.Built()));
+    public HarnessRoster Harnesses { get; } = new(WithPlugins(ProviderRegistry.Built()));
 
     /// <summary>
     /// The build's adapters plus whatever the home's plugins declare (D64) — read at construction so
     /// the roster a person opens before the loop's first tick already knows a declared harness; every
     /// tick re-reads the catalogue and hands the roster the live set.
     /// </summary>
-    private static AdapterSet WithPlugins(AdapterSet built) =>
+    private static ProviderRegistry WithPlugins(ProviderRegistry built) =>
         built.WithPlugins(PluginCatalog.Load(HomeOfChoices(), built.Names));
 
     /// <summary>

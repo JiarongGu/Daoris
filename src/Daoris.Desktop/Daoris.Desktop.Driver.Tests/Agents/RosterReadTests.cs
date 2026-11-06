@@ -54,7 +54,7 @@ public sealed class RosterReadTests : IDisposable
     private string Gone => Path.Combine(_home, "gone-agent");
 
     private HarnessRoster Roster(Func<string, string, CancellationToken, Task<LoginState>>? asking = null) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["agent"] = Adapter("agent", new HarnessToolchain(
                 Binary: ["node", Script],

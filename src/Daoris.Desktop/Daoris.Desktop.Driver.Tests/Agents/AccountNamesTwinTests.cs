@@ -294,7 +294,7 @@ public sealed class AccountNamesTwinTests : IDisposable
         Assert.Equal("account-1", HarnessSettings.Load(wiring).Resolve("claude-code", "work", null));
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "claude-code").Accounts["account-1"].Login);
         Assert.NotNull(AccountCooling.Of(_home, "claude-code", "account-1", now));
-        Assert.Equal(1200, usage.ByAccount(new AgentOfDoor(AdapterSet.Built().Registry)).Single(each => each.Profile == "account-1").Used);
+        Assert.Equal(1200, usage.ByAccount(new AgentOfDoor(ProviderRegistry.Built())).Single(each => each.Profile == "account-1").Used);
         // The name the person types reaches the account. (A session record's count by its id is the modules' table.)
         Assert.Equal("account-1", AccountNames.Resolve(HarnessSettings.Profiles(_home, "claude-code"), AccountNames.Of(_home, "claude-code"), "You@Work.example"));
     }

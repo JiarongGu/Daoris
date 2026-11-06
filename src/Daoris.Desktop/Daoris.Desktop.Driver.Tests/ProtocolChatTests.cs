@@ -46,7 +46,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -97,7 +97,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -135,7 +135,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var output = new SessionOutput();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -168,7 +168,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         using var client = new ServiceClient(service.Url, null);
@@ -209,7 +209,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -243,7 +243,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -279,7 +279,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -317,7 +317,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, "session"] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
@@ -345,7 +345,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
@@ -381,7 +381,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, "numeric"] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -416,7 +416,7 @@ public sealed class ProtocolChatTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", echo] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
@@ -566,7 +566,7 @@ public sealed class ProtocolChatTests : IDisposable
                 ["acp-stub"] = mode is null ? ["node", Agent(), Heard] : ["node", Agent(), Heard, mode],
             },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(

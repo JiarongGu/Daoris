@@ -36,7 +36,7 @@ internal static class HelpConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
 
         // RPC1e: the running Daoris's client where one answers, its presses confirmed in its window.
         var world = new SessionsWorld(service, home, config, SessionsConsole.Unadopted(config), log) { Instance = InstanceHost.World(home, "help") };
@@ -44,7 +44,7 @@ internal static class HelpConsole
     }
 
     /// <summary>Whether an adapter this build carries resumes a conversation by its id; one it does not carry cannot.</summary>
-    private static bool Resumes(AdapterSet adapters, string adapter)
+    private static bool Resumes(ProviderRegistry adapters, string adapter)
     {
         try
         {
