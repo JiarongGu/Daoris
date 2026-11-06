@@ -208,7 +208,6 @@ describe('a row in what needs you', () => {
           ...PARKED,
           detail: undefined,
           note: {
-            note: 'It stopped with its quest still taken, to ask you: Which branch?',
             parts: [
               { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
               { words: 'Which branch?', by: 'agent' },
@@ -222,7 +221,7 @@ describe('a row in what needs you', () => {
       expect([...clamped.classList].filter((name) => /^(block|inline|flex|grid|inline-block)$/.test(name))).toEqual([]);
       unmount();
 
-      render(<AttentionRow item={{ ...PARKED, detail: undefined, note: { note: 'two ways forward.', parts: [{ words: 'two ways forward.', by: 'before' }] } }} />);
+      render(<AttentionRow item={{ ...PARKED, detail: undefined, note: { parts: [{ words: 'two ways forward.', by: 'before' }] } }} />);
       expect(screen.getByText('按原文显示')).toBeInTheDocument();
       expect(screen.getByText('two ways forward.')).toBeInTheDocument();
     } finally {

@@ -66,7 +66,7 @@ export type QuestClose = { as: 'done'; note: string | null };
  * analysis and one with none are both reachable by passing them.
  */
 export function AwaitingPerson({
-  note, parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, pick, onConversation,
+  parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, pick, onConversation,
 }: {
   /**
    * Its question as its agent asked it through the connector (PARKVIEW1, the park's ask design §3): shown in place of its whole last
@@ -75,8 +75,6 @@ export function AwaitingPerson({
   question?: ParkQuestion | null;
   /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
   onConversation?: () => void;
-  /** The session's note: its English, shown as kept where it has no parts. */
-  note?: string | null;
   /**
    * Its lines (LANG1a): Daoris's lead-in worded in the reader's language, and the agent's analysis beneath it word for
    * word (LANG1b, `Note`).
@@ -161,7 +159,7 @@ export function AwaitingPerson({
             />
           </div>
         )
-        : <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />}
+        : <Note parts={parts} className="mt-1.5 text-body leading-relaxed" />}
 
       <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
         <span>{t('work.awaiting.hint')}</span>

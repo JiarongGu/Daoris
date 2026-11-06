@@ -14,16 +14,15 @@ const NOTE_LINES = 3;
  * The record's note about how the session stands (LANG1b): Daoris's lines worded in the reader's language, someone's
  * words as written, a record from before as it was kept. Long is judged on what is shown, a block at least a line each.
  */
-export function Said({ note, parts }: { note?: string | null; parts?: Session['noteParts'] }) {
+export function Said({ parts }: { parts?: Session['noteParts'] }) {
   const { t, i18n } = useTranslation();
   const [whole, setWhole] = useState(false);
-  const blocks = noteBlocks(t, noteLines(t, { note, parts }, i18n.language));
+  const blocks = noteBlocks(t, noteLines(t, { parts }, i18n.language));
   const shown = blocks.reduce((count, block) => count + block.text.split('\n').length, 0);
   const long = blocks.reduce((count, block) => count + block.text.length, 0) > 280 || shown > NOTE_LINES;
   return (
     <div className="grid justify-items-start gap-1">
       <Note
-        note={note}
         parts={parts}
         clamp={whole ? undefined : NOTE_LINES}
         className="w-full text-body leading-relaxed text-ink-soft"

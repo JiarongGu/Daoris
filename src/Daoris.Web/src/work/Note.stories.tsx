@@ -33,7 +33,6 @@ const ENDED: NotePart[] = [
     text: 'The `claude-code` account it ran on hit its weekly limit and is cooling until Oct 3, 16:00 (UTC), as the agent said, and nothing starts on it until then.',
   },
 ];
-const ENDED_NOTE = ENDED.map((part) => ('text' in part ? part.text : '')).join(' ');
 
 /** The language design §3's example: Daoris's lead-in, the agent's question, the ledger's *Answered:* and the person's word. */
 const ASKED: NotePart[] = [
@@ -49,7 +48,7 @@ const ASKED: NotePart[] = [
 const meta: Meta<typeof Note> = {
   title: 'Work/Note',
   component: Note,
-  args: { note: ENDED_NOTE, parts: ENDED, className: 'text-body leading-relaxed text-ink-soft' },
+  args: { parts: ENDED, className: 'text-body leading-relaxed text-ink-soft' },
   // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1), where its head draws the note: wide by default.
   decorators: [sessionWidths.wide],
 };
@@ -64,7 +63,7 @@ export const Coded: Story = {};
 export const CodedChinese: Story = { decorators: [chinese] };
 
 /** A split note: the lead-in worded, the agent's question beneath it as written, its own formatting kept. */
-export const AgentQuestion: Story = { args: { note: 'It stopped with its quest still taken, to ask you: …', parts: ASKED } };
+export const AgentQuestion: Story = { args: { parts: ASKED } };
 
 /** The split note in 中文: Daoris's lines change, the agent's and the person's words do not. */
 export const AgentQuestionChinese: Story = { ...AgentQuestion, decorators: [chinese] };
@@ -72,7 +71,6 @@ export const AgentQuestionChinese: Story = { ...AgentQuestion, decorators: [chin
 /** A code this page does not know (a newer driver's): its own English, marked *shown as recorded*, beside a worded line. */
 export const UnknownCode: Story = {
   args: {
-    note: 'The quest reached done. It handed its tree to the next step.',
     parts: [
       { code: 'ended.done', values: {}, text: 'The quest reached done.' },
       { code: 'ended.handed-on', values: { step: '2' }, text: 'It handed its tree to the next step.' },
@@ -84,7 +82,6 @@ export const UnknownCode: Story = {
 /** A sentence the driver wrote with no code, carried whole as one part: its English as kept, marked. */
 export const UncodedSentence: Story = {
   args: {
-    note: 'It stopped with its quest still taken, to ask you: should the budget live on the chunk API or in the scheduler?',
     parts: [{ words: 'It stopped with its quest still taken, to ask you: should the budget live on the chunk API or in the scheduler?', by: 'before' }],
   },
   decorators: [chinese],
@@ -96,7 +93,6 @@ export const UncodedSentenceEnglish: Story = { ...UncodedSentence, decorators: [
 /** A program's words passed through as written, beneath the line that leads into them. */
 export const ProgramWords: Story = {
   args: {
-    note: 'Daoris could not record where its branch started, …: fatal: not a valid object name',
     parts: [
       {
         code: 'started.tree-unrecorded',
@@ -119,6 +115,6 @@ export const AgentQuestionDark: Story = { ...AgentQuestion, decorators: [dark] }
 
 /** One run, for a row too narrow for blocks: the band's two lines, the question inline. */
 export const Compact: Story = {
-  args: { note: null, parts: ASKED, compact: true, clamp: 2, className: 'text-small text-ink-soft' },
+  args: { parts: ASKED, compact: true, clamp: 2, className: 'text-small text-ink-soft' },
   decorators: [chinese, (Story) => <div className="w-80"><Story /></div>],
 };

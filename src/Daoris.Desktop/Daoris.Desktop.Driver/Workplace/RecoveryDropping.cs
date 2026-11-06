@@ -32,6 +32,10 @@ public sealed record RecoveryDrops(IReadOnlyList<RecoveryDropped> Dropped, IRead
 /// absence); the commit then stays reachable from that holder, and what the delete removed is the recovery ref alone.</para>
 ///
 /// <para><b>Only the lease's holder acts</b> (<see cref="WithoutHome"/>), as the end's keeping does (FABRIC-END2).</para>
+///
+/// <para><b>Transitional (ONEWAY1r, D228):</b> the journal lists every delete with its Undo (<see cref="DeletedBranches"/>), so this press is
+/// kept only for the recovery refs no journal record names. It ends with <see cref="RecoveryRetention"/>'s reader, when none stands; ONEWAY1af
+/// deletes it.</para>
 /// </remarks>
 public static class RecoveryDropping
 {

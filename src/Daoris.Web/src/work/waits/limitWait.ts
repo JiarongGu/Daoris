@@ -186,5 +186,5 @@ export function chatLimitWaitSaid(t: Translate, { held, wait, label, language, n
 }): string[] | null {
   if (wait) return limitWaitSaid(t, wait, label);
   if (!(Date.parse(held.until) > now.getTime())) return null;
-  return [noteText(t, { note: null, parts: [held.part] }, language, names)];
+  return [noteText(t, { parts: [held.part] }, language, names)];
 }

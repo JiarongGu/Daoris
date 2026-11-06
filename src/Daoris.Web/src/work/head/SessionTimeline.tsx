@@ -53,7 +53,7 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
   const note = event.kind === 'quest' && !coded ? event.note : null;
   // Long is judged on what is shown: the note's blocks as `Note` draws them, or the closer's words.
   const shown = coded && (event.kind === 'state' || event.kind === 'quest')
-    ? noteBlocks(t, noteLines(t, { note: event.note, parts: event.noteParts }, i18n.language)).map((block) => block.text)
+    ? noteBlocks(t, noteLines(t, { parts: event.noteParts }, i18n.language)).map((block) => block.text)
     : note ? [note] : [];
   const long = linesTaken(shown, MEASURE) > NOTE_LINES;
   const folded = long && !whole;
@@ -74,7 +74,6 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       )}
       {coded && (event.kind === 'state' || event.kind === 'quest') && (
         <Note
-          note={event.note}
           parts={event.noteParts}
           clamp={folded ? NOTE_LINES : undefined}
           className="mt-0.5 text-small italic text-ink-soft"

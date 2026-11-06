@@ -474,7 +474,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
         {item.note && hasNote(item.note)
           ? (
             <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft">
-              <Note note={item.note.note} parts={item.note.parts} compact />
+              <Note parts={item.note.parts} compact />
             </p>
           )
           : item.detail && (

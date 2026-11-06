@@ -133,7 +133,7 @@ function Answer({ quest }: { quest: Quest }) {
     const label = t(quest.status === 'Done' ? 'work.relations.answer' : 'work.relations.declined', { note: '' }).trimEnd();
     return (
       <p className="m-0 text-small text-ink-soft">
-        {label}{t('work.note.join', { first: '', second: '' })}<Note note={quest.note} parts={quest.noteParts} compact clamp={2} />
+        {label}{t('work.note.join', { first: '', second: '' })}<Note parts={quest.noteParts} compact clamp={2} />
       </p>
     );
   }

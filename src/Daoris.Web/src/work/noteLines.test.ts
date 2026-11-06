@@ -25,9 +25,9 @@ describe('noteLines', () => {
   /** §2: Daoris's line is chrome, worded from its code and values in the reader's language, never from its English. */
   it('words a coded part in the reader’s language, with its values', () => {
     const parts = [coded('ended.taken-exit', 'exit 2 with the quest still taken.', { exit: 2 })];
-    expect(noteLines(t, { note: 'exit 2 with the quest still taken.', parts }, 'en'))
+    expect(noteLines(t, { parts }, 'en'))
       .toEqual([{ kind: 'said', text: 'Exit 2 with the quest still taken.' }]);
-    expect(noteLines(zh, { note: 'exit 2 with the quest still taken.', parts }, 'zh'))
+    expect(noteLines(zh, { parts }, 'zh'))
       .toEqual([{ kind: 'said', text: '退出码 2，委托仍已接下。' }]);
   });
 
@@ -41,7 +41,7 @@ describe('noteLines', () => {
       words('main', 'person'),
     ];
 
-    expect(noteLines(zh, { note: 'ignored', parts }, 'zh')).toEqual([
+    expect(noteLines(zh, { parts }, 'zh')).toEqual([
       { kind: 'said', text: '它停了下来，委托仍已接下，想问你：' },
       { kind: 'words', text: question, by: 'agent' },
       { kind: 'said', text: '已答复：' },
@@ -65,9 +65,9 @@ describe('noteLines', () => {
   /** §6: a record with no parts has no line, however its English reads; no table re-reads it. */
   it('draws a record with no parts as nothing, and a sentence the driver wrote with no code as recorded', () => {
     const note = 'the quest reached done.';
-    expect(noteLines(zh, { note, parts: null }, 'zh')).toEqual([]);
-    expect(noteLines(zh, { note, parts: [] }, 'zh')).toEqual([]);
-    expect(hasNote({ note, parts: null })).toBe(false);
+    expect(noteLines(zh, { parts: null }, 'zh')).toEqual([]);
+    expect(noteLines(zh, { parts: [] }, 'zh')).toEqual([]);
+    expect(hasNote({ parts: null })).toBe(false);
     // Carried whole into a note as one part, it is the same English, and shown marked.
     expect(noteLines(zh, {
       parts: [words(note, 'before'), coded('working.goes-on', 'It goes on with your words in its own conversation.')],

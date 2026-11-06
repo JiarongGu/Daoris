@@ -334,7 +334,7 @@ export function SessionHead({
   const waiting = parked && !answered;
   const intake = isIntake(session);
   const shown = shownState(session, taking);
-  const noted = hasNote({ note: session.note, parts: session.noteParts });
+  const noted = hasNote({ parts: session.noteParts });
   const proposed = rulesAsked(rules?.proposals, session.id);
   const held = heldFor(permissions?.waits ?? [], session.id);
   const alone = answerFor(answers?.waits ?? [], session.id);
@@ -358,7 +358,7 @@ export function SessionHead({
           while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (
         <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
-          <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
+          <AwaitingIntake ask={session.ask!} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
         </div>
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
@@ -367,7 +367,6 @@ export function SessionHead({
               carried into the next parked one, ready to decline it with somebody else's reason (REV3). */}
           <AwaitingPerson
             key={session.id}
-            note={session.note}
             parts={session.noteParts}
             question={question}
             // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
@@ -390,7 +389,7 @@ export function SessionHead({
           (PARKANSWER1): the card says where it is answered. */}
       {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && (noted || !intake) && (
         <WaitingCard title={t('work.head.waiting')}>
-          <Note note={session.note} parts={session.noteParts} className="mt-1.5 text-body leading-relaxed" />
+          <Note parts={session.noteParts} className="mt-1.5 text-body leading-relaxed" />
           {!intake && (
             <p className="m-0 mt-2 text-small text-ink-faint">
               {t(sessionOrigin(session) !== null ? 'work.awaiting.cannot.teammate' : 'work.awaiting.cannot.elsewhere')}
@@ -521,7 +520,7 @@ export function SessionHead({
           sentence, quiet, in place of the failure's note: the account it was refused on here, none on a teammate's mirror. */}
       {shown === 'not-started'
         ? <p className="m-0 text-body leading-relaxed text-ink-soft">{notStartedLine(t, session)}</p>
-        : !running && noted && <Said note={session.note} parts={session.noteParts} />}
+        : !running && noted && <Said parts={session.noteParts} />}
 
       {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}

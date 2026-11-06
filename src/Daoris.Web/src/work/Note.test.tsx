@@ -23,11 +23,11 @@ describe('a session’s note', () => {
       { code: 'ended.untouched-exit', values: { exit: 3 }, text: 'Exit 3 before taking its quest.' },
       { code: 'started.other-account', values: {}, text: 'It runs on another account.' },
     ];
-    const { rerender } = render(<Note note="Exit 3 before taking its quest. It runs on another account." parts={parts} />);
+    const { rerender } = render(<Note parts={parts} />);
     expect(screen.getByText('Exit 3 before taking its quest. It runs on another account.')).toBeInTheDocument();
 
     await i18n.changeLanguage('zh');
-    rerender(<Note note="Exit 3 before taking its quest. It runs on another account." parts={parts} />);
+    rerender(<Note parts={parts} />);
     expect(screen.getByText('退出码 3，未接下委托。它改用另一个账户运行。')).toBeInTheDocument();
     expect(screen.queryByText(/Exit 3/)).toBeNull();
     // Worded, so nothing says it is shown as recorded.
@@ -37,7 +37,7 @@ describe('a session’s note', () => {
   /** §2, §9: a split note — the lead-in worded, the agent's question beneath it as a quote, its formatting kept. */
   it('sets the agent’s words apart beneath the lead-in, as written', async () => {
     await i18n.changeLanguage('zh');
-    render(<Note note="…" parts={ASKED} />);
+    render(<Note parts={ASKED} />);
 
     const lead = screen.getByText('它停了下来，委托仍已接下，想问你：');
     const question = screen.getByText(/Which branch\?/);
@@ -54,7 +54,6 @@ describe('a session’s note', () => {
     await i18n.changeLanguage('zh');
     render(
       <Note
-        note="The quest reached done. It handed its tree on."
         parts={[
           { code: 'ended.done', values: {}, text: 'The quest reached done.' },
           { code: 'ended.handed-on', values: {}, text: 'It handed its tree on.' },
@@ -68,19 +67,18 @@ describe('a session’s note', () => {
     expect(screen.getAllByText('按原文显示')).toHaveLength(1);
   });
 
-  /** §6: a record with no parts draws nothing, in either language; its English is never read. */
-  it('draws nothing for a record with a note and no parts', async () => {
-    const note = 'the quest reached done.\nIn the tree it worked in.';
-    const { container, rerender } = render(<Note note={note} />);
+  /** §6: a record with no parts draws nothing, in either language. */
+  it('draws nothing for a record with no parts', async () => {
+    const { container, rerender } = render(<Note />);
     expect(container).toBeEmptyDOMElement();
 
     await i18n.changeLanguage('zh');
-    rerender(<Note note={note} parts={[]} />);
+    rerender(<Note parts={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('draws nothing for a record with no note', () => {
-    const { container } = render(<Note note={null} parts={null} />);
+  it('draws nothing for a record with null parts', () => {
+    const { container } = render(<Note parts={null} />);
     expect(container).toBeEmptyDOMElement();
   });
 

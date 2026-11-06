@@ -319,8 +319,8 @@ export type NoteLine =
   | { kind: 'recorded'; text: string }
   | { kind: 'words'; text: string; by: string };
 
-/** A record's note: its parts, which are all the page draws; its English rides beside them and is never read. */
-export type NoteRecord = { note?: string | null; parts?: readonly NotePart[] | null };
+/** A record's note: its parts, which are all the page draws. */
+export type NoteRecord = { parts?: readonly NotePart[] | null };
 
 const text = (value: unknown): string | null =>
   typeof value === 'string' && value.length > 0 ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : null;

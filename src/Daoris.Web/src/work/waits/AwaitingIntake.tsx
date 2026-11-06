@@ -27,14 +27,12 @@ import { InConversation } from './WaitAnchor';
  * A molecule: it is handed the ask and the question and reports its door. Where nothing can act
  * (a story, a mirrored record) it is handed none, and still says where the answer lives.
  */
-export function AwaitingIntake({ ask, note, parts, onAnswer, onConversation }: {
+export function AwaitingIntake({ ask, parts, onAnswer, onConversation }: {
   /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
   onConversation?: () => void;
   /** The ask this intake serves — the id the record's door opens. */
   ask: string;
-  /** The intake's parked note: its English, shown as kept where it has no parts. */
-  note?: string | null;
-  /** Its lines (LANG1a), Daoris's worded in the reader's language and the agent's as written (LANG1b, `Note`). */
+  /** The intake's parked note's lines (LANG1a), Daoris's worded in the reader's language and the agent's as written (LANG1b, `Note`). */
   parts?: readonly NotePart[] | null;
   /** Open the ask's record, where it is answered. Absent where nothing can open it. */
   onAnswer?: (ask: string) => void;
@@ -44,7 +42,7 @@ export function AwaitingIntake({ ask, note, parts, onAnswer, onConversation }: {
   return (
     <WaitingCard title={t('work.intake.waiting')}>
 
-      <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
+      <Note parts={parts} className="mt-1.5 text-body leading-relaxed" />
 
       <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
         <span>{t('work.intake.hint')}</span>

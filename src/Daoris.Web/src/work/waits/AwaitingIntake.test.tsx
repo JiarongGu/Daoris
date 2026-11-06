@@ -11,7 +11,7 @@ import { AwaitingIntake } from './AwaitingIntake';
 const QUESTION = 'published nothing: two repositories could own the loading screen, so it asks you rather than guess.';
 
 const show = (props: Partial<Parameters<typeof AwaitingIntake>[0]> = {}) =>
-  render(<AwaitingIntake ask="0fda18" note={QUESTION} parts={[{ words: QUESTION, by: 'before' }]} onAnswer={() => {}} {...props} />);
+  render(<AwaitingIntake ask="0fda18" parts={[{ words: QUESTION, by: 'before' }]} onAnswer={() => {}} {...props} />);
 
 describe('a parked intake', () => {
   it('shows the intake\'s own words, verbatim', () => {
@@ -52,14 +52,14 @@ describe('a parked intake', () => {
 
   /** Where nothing can open the ask, it still says where the answer lives. */
   it('offers no door where nothing can act, and still says where the answer is', () => {
-    render(<AwaitingIntake ask="0fda18" note={QUESTION} />);
+    render(<AwaitingIntake ask="0fda18" />);
 
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByText(/publish it to a repository, or close it/)).toBeInTheDocument();
   });
 
   it('renders with nothing said — a park with no words is still waiting on the ask', () => {
-    show({ note: null, parts: null });
+    show({ parts: null });
     expect(screen.getByRole('button', { name: 'Answer ask #0fda18' })).toBeInTheDocument();
   });
 

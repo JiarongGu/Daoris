@@ -49,7 +49,7 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
 
       {quest.note && (quest.noteParts?.length
         // Daoris's lines in the reader's language, the person's words as theirs; a note without parts as kept (QUESTCLOSE1b2).
-        ? <Note note={quest.note} parts={quest.noteParts} className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic" />
+        ? <Note parts={quest.noteParts} className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic" />
         : <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>)}
 
       {session && (
@@ -72,7 +72,6 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
           {limitWait && limitWait.length > 0 && <p className="m-0 mt-2 text-body text-ink-soft">{joinLines(t, limitWait)}</p>}
           {/* A working session's past ending is left out of the reading, never of the record (WAITSHOWN1, D137 §2.3). */}
           <Note
-            note={session.state === 'working' ? (session.noteParts?.length ? undefined : session.note) : session.note}
             parts={session.state === 'working' ? liveParts(session.noteParts) : session.noteParts}
             className="mt-2 text-body text-ink-soft"
           />
