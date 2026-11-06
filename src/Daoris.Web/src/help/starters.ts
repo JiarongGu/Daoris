@@ -26,6 +26,8 @@ export type StarterDoor = {
   compose?: Compose;
   /** A repository page's tab (UX6f). */
   tab?: ProjectTab;
+  /** The host Settings → Git opens its Add a git identity form on (GITAUTH1e): a sync card's door for a fetch that was not made. */
+  gitHost?: string;
   /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page (SETUPUX1h). */
   placeOf?: string;
   placeSection?: PlaceSection;

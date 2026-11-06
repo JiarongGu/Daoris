@@ -263,7 +263,7 @@ merge ending a two-part chain once with an Undo), `RemoteSyncTests`, `RemoteTarg
 
 **The remotes they reach** are stand-ins in the test process on free loopback ports, one per test class, with nothing installed
 (D241 point 8): `GitSshHost` (an SSH host from Microsoft's dev-tunnels library serving `git-upload-pack` and `git-receive-pack`,
-verifying RSA and ECDSA keys, never ed25519), `GitTlsHost` (`GitHttpBackendHost` behind TLS, its certificate trusted per command, asking Basic where a test sets `Basic`)
+verifying RSA and ECDSA keys, never ed25519; its `InterruptReceive` has a receive-pack list its refs, take and apply the pack, then drop the connection with no report), `GitTlsHost` (`GitHttpBackendHost` behind TLS, its certificate trusted per command, asking Basic where a test sets `Basic`)
 and `PullRequestApiHost` (GitHub's and Azure DevOps' pull-request calls, admitting a test's token). Each counts what it was asked.
 
 **Gates that bite:** `driver`, `driver-process-git` (real git), `driver-process` (the doors' processes), `censuses`,
@@ -287,13 +287,20 @@ catalogues (`i18n:check`).
 
 - **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
-- **GITAUTH1b:** the doors' classes run with the pinned MinGit beside the runner's git (G1's rest; the toolchain has no pinned
-  MinGit fetch yet).
+- **GITAUTH1b:** the doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`) run twice, with the runner's git and with the
+  MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/` and held to the list's
+  size and SHA-256); `GitHttpsProcessTests` still runs the runner's git alone, since which TLS backend the pinned MinGit trusts a
+  test certificate through is not measured, and MinGit ships no `git-http-backend`, so the HTTP host serves with the runner's.
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
-- **GITAUTH1e:** the sync card's screen door. The browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241).
+- **GITAUTH1e:** built: Ask Daoris's sync card, for each host a fetch over SSH or HTTPS did not reach, offers *Add a git identity for
+  host…*, which opens Settings → Git on its Add form with the host filled (`HelpSyncUnfetched.Host`, `StarterDoor.gitHost`). The
+  browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241). The card's and the screen's advice on
+  reaching an origin (`settings.sync.notFetched.ssh` and `.https`) still names a key its own ssh reads and a credential helper, from
+  before the identities.
 - **GITAUTH1h:** the install, seen (the owner).
-- **GITAPP2:** Stash Drop stays deferred. Ask Daoris's fetch card is not built. The push's interruption (an end with no exit, said
-  unknown) and the person's `pre-push` hook have no proof of their own yet.
+- **GITAPP2:** Stash Drop stays deferred. The push's interruption (origin took the pack and the connection dropped before it said so:
+  unknown, never retried) and the person's `pre-push` hook refusing (not done, nothing sent) are proved against the stand-in SSH
+  host (`GitPushActProcessTests`).
 - **ONEWAY1r:** the doors' own recovery refs and undo records (`RecoveryRetention`, `RecoveryDropping`) give way to the journal's,
   their reader kept until the last record from before ONEWAY1r passes its retention; the git page lists no journal of deletes yet.
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop

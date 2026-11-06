@@ -271,7 +271,7 @@ public sealed class HelpRoutes(DriverContext context)
     {
         sync.Looked,
         Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray(),
-        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach }).ToArray(),
+        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach, line.Host }).ToArray(),
         Apart = sync.Besides.Apart.ToArray(),
     };
 

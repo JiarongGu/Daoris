@@ -48,6 +48,7 @@
   "help.proposal.plugin.replaced": "Apply replaces its folder from where it came from, and what it kept stays. Nothing it runs starts at the press: the driver starts it again at its next look.",
   "help.proposal.titleSync": "Ask Daoris proposes updates",
   "help.proposal.syncLook": "Looking fetches each line from origin, as you, and moves only origin's own refs; the card then lists what the press would do. Nothing of yours moves until you apply, and Daoris never pushes.",
+  "help.proposal.syncAddIdentity": "Add a git identity for {{host}}…",
   "help.proposal.syncRows": "what the press would do",
   "help.proposal.syncNote": "Apply does only the rows that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.",
   "help.proposal.look": "Look for updates",

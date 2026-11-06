@@ -625,4 +625,16 @@ public sealed class GitIdentitiesTests : IDisposable
         GitIdentityActs.CommitsAs(Home, "Day job", null, null);
         Assert.Null(GitIdentities.Read(Home)[0].CommitsName);
     }
+
+    /// <summary>The host an identity is named by keeps an ssh:// address's own port, as the door resolves it, and drops the scheme's.</summary>
+    [Theory]
+    [InlineData("ssh://git@127.0.0.1:2222/org/engine.git", "127.0.0.1:2222")]
+    [InlineData("ssh://git@github.com:22/org/engine.git", "github.com")]
+    [InlineData("ssh://git@github.com/org/engine.git", "github.com")]
+    [InlineData("git@github.com:org/engine.git", "github.com")]
+    [InlineData("https://git.example.com:8443/org/engine.git", "git.example.com:8443")]
+    public void An_addresss_host_is_the_one_an_identity_for_it_is_named_by(string address, string host)
+    {
+        Assert.Equal(host, GitIdentityActs.GitAddressHost(address));
+    }
 }

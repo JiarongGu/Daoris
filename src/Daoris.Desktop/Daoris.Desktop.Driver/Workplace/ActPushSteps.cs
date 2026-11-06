@@ -10,7 +10,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// A push's end state is origin's, which no local read knows. A step that ended with exit 0 is done; one refused before anything was sent
-/// (the door's refusal, git's own <c>rejected</c>, or a hold on origin) is not done; any other end is unknown, never done and never retried.
+/// (the door's refusal, git's own <c>rejected</c>, git's own stop before it sends such as a <c>pre-push</c> hook refusing, or a hold on origin)
+/// is not done; any other end, a connection cut after origin was reached included, is unknown, never done and never retried.
 /// </remarks>
 internal static class ActPushSteps
 {
