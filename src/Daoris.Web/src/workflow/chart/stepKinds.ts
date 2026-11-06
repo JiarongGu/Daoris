@@ -32,6 +32,8 @@ export const VARIANT_GLYPH: Record<StepVariant, IconName> = {
 /** One outcome of a decision, drawn as a port on the node's lower edge. */
 export type ChartPort = {
   outcome: string;
+  /** The outcome in the words of the kind that declares it; the raw name is the port's identity. */
+  said?: string;
   /** Some route follows it; else it ends at a ◎ *No further step*. */
   routed: boolean;
   /** A run's decision returned this outcome. */

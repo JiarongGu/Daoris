@@ -43,7 +43,7 @@ export function PortRow({ node, ported, onFollow, edit }: {
           data-flow-port={`${node}:${port.outcome}`}
           data-routed={String(port.routed)}
           data-taken={port.taken ? 'true' : undefined}
-          aria-label={edit ? edit.label(port.outcome) : foot ? plain(foot.text) : port.outcome}
+          aria-label={edit ? edit.label(port.said ?? port.outcome) : foot ? plain(foot.text) : port.said ?? port.outcome}
           onClick={() => {
             if (edit) edit.onPress(port.outcome);
             else if (foot) onFollow(node, foot.to);
@@ -55,7 +55,7 @@ export function PortRow({ node, ported, onFollow, edit }: {
           )}
         >
           <span aria-hidden>{port.routed ? '●' : '○'}</span>
-          <span className="min-w-0 font-mono [overflow-wrap:anywhere]">{port.outcome}</span>
+          <span className="min-w-0 font-mono [overflow-wrap:anywhere]">{port.said ?? port.outcome}</span>
         </button>
       ))}
     </div>

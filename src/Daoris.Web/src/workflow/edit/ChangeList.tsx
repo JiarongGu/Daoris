@@ -37,8 +37,14 @@ const wiresOf = (graph: unknown) => (Array.isArray(record(graph).wires) ? (recor
 
 /** A step's title by its id, from the proposal's graph or, for one it removes, the draft it was proposed against; its id where neither holds it. */
 function titleIn(t: TFunction, i18n: I18n, palette: WorkflowPaletteAnswer | null, proposal: DraftProposal, id: string): string {
+  const kind = kindOf(proposal, id);
+  return kind ? stepTitle(t, i18n, palette, { kind }) : id;
+}
+
+/** The kind of a step of the proposal, or of the base where the proposal dropped it. */
+function kindOf(proposal: DraftProposal, id: string | null): string | undefined {
   const node = nodesOf(proposal.proposed).find((each) => each.id === id) ?? nodesOf(proposal.base).find((each) => each.id === id);
-  return typeof node?.kind === 'string' ? stepTitle(t, i18n, palette, { kind: node.kind }) : id;
+  return typeof node?.kind === 'string' ? node.kind : undefined;
 }
 
 /** A way's fields as their names, an option's by its own. */
@@ -70,7 +76,7 @@ export function changeSaid(t: TFunction, i18n: I18n, palette: WorkflowPaletteAns
   }
   if (change.what === 'way') {
     const wire = wayOf(proposal, change);
-    const words = { from: wire?.from ? title(wire.from) : '—', to: wire ? title(wire.to) : '—', how: wire ? howSaid(t, wire) : change.kind ?? '' };
+    const words = { from: wire?.from ? title(wire.from) : '—', to: wire ? title(wire.to) : '—', how: wire ? howSaid(t, wire, kindOf(proposal, wire.from)) : change.kind ?? '' };
     if (change.change === 'added') return t('workflow.edit.proposal.said.wayAdded', words);
     if (change.change === 'removed') return t('workflow.edit.proposal.said.wayRemoved', words);
     return t('workflow.edit.proposal.said.wayChanged', { ...words, fields: fieldsSaid(change.fields) });

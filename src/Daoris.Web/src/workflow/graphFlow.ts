@@ -105,8 +105,15 @@ export function drawnFromJson(t: TFunction, i18n: I18n, json: unknown): DrawnGra
   return { nodes, wires, entries: names(graph.entries), end: text(graph.end) };
 }
 
-/** A wire's edge: what it waits on, said; a failure's and a refusal's path in their own style; a decision's route labelled with its outcome. */
-function wireEdge(t: TFunction, wire: DrawnWire): FlowEdge {
+/**
+ * An outcome in the words of the kind that declares it (`workflow.outcome.‹kind›.‹outcome›`: the monitor's *merged*, a task's *done*), its
+ * raw name where the page has none, as a plugin's or a custom decision's is. The raw name stays the port's and the wire's identity.
+ */
+export const outcomeSaid = (t: TFunction, kind: string | undefined, outcome: string): string =>
+  kind ? t(`workflow.outcome.${kind}.${outcome}`, { defaultValue: outcome }) : outcome;
+
+/** A wire's edge: what it waits on, said; a failure's and a refusal's path in their own style; a decision's route labelled with its outcome (`kind` is the step it leaves). */
+function wireEdge(t: TFunction, wire: DrawnWire, kind?: string): FlowEdge {
   const base = { id: wire.id, from: wire.from, to: wire.to };
   const own = wire.says === undefined ? {} : { says: wire.says };
   const edge = ((): FlowEdge => {
@@ -116,13 +123,14 @@ function wireEdge(t: TFunction, wire: DrawnWire): FlowEdge {
       case 'rejected': return { ...base, style: 'rejected', says: t('workflow.flow.refused'), label: t('workflow.flow.refusedLabel') };
       case 'when': {
         const outcome = wire.outcome ?? '';
-        return { ...base, style: 'when', port: outcome, says: t('workflow.run.flow.when', { outcome }), label: outcome };
+        const said = outcomeSaid(t, kind, outcome);
+        return { ...base, style: 'when', port: outcome, says: t('workflow.run.flow.when', { outcome: said }), label: said };
       }
       case 'data': return { ...base, style: 'data', says: t('workflow.flow.wire.data'), ...(wire.output ? { label: wire.output } : {}) };
       case 'back': {
         const on = wire.on ?? '';
         const says = on === 'rejected' ? t('workflow.run.flow.back.rejected') : on === 'failed' ? t('workflow.run.flow.back.failed')
-          : t('workflow.run.flow.back.outcome', { outcome: on });
+          : t('workflow.run.flow.back.outcome', { outcome: outcomeSaid(t, kind, on) });
         return { ...base, style: 'back', says, label: t('workflow.run.flow.back.label') };
       }
       case 'wait': case 'trigger': return { ...base, says: t(`workflow.flow.wire.${wire.kind}`) };
@@ -189,12 +197,13 @@ const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, ...node 
  * A node's ports: each outcome it declares, then any a way on names that it does not (a run's answer holds only the outcome its decision
  * returned). An outcome is routed where a `when` wire follows it or a `back` wire returns on it; else it ends at a ◎.
  */
-function portsOf(node: DrawnNode, wires: DrawnWire[]): ChartPort[] {
+function portsOf(t: TFunction, node: DrawnNode, wires: DrawnWire[]): ChartPort[] {
   const own = wires.filter((wire) => wire.from === node.id);
   const named = own.flatMap((wire) => (wire.kind === 'when' && wire.outcome ? [wire.outcome] : []));
   const declared = [...new Set([...(node.outcomes ?? []), ...named])];
   return declared.map((outcome) => ({
     outcome,
+    ...(outcomeSaid(t, node.kind, outcome) === outcome ? {} : { said: outcomeSaid(t, node.kind, outcome) }),
     routed: own.some((wire) => (wire.kind === 'when' && wire.outcome === outcome) || (wire.kind === 'back' && wire.on === outcome)),
     ...(node.outcome == null ? {} : { taken: node.outcome === outcome }),
   }));
@@ -212,7 +221,8 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
   const dataWires = graph.wires.filter((wire) => wire.kind === 'data' && known.has(wire.from) && known.has(wire.to));
   const groups = holdGroups(graph, wires);
   const folded = options.holds?.open !== true;
-  const ports = new Map(graph.nodes.map((node) => [node.id, portsOf(node, wires)]));
+  const ports = new Map(graph.nodes.map((node) => [node.id, portsOf(t, node, wires)]));
+  const kindOf = new Map(graph.nodes.map((node) => [node.id, node.kind]));
 
   const groupOf = new Map<string, { id: string; members: DrawnNode[] }>();
   for (const members of groups) for (const member of members) groupOf.set(member.id, { id: `holds:${members[0]!.id}`, members });
@@ -257,7 +267,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     const from = rep(wire.from);
     const to = rep(wire.to);
     if (from === to && wire.from !== wire.to) continue;
-    const edge = wireEdge(t, { ...wire, from, to });
+    const edge = wireEdge(t, { ...wire, from, to }, kindOf.get(wire.from));
     // A return on one of the step's own outcomes leaves by that outcome's route, so the outcome is a routed port, not a ◎.
     const returns = wire.kind === 'back' && wire.on != null && ports.get(wire.from)?.some((port) => port.outcome === wire.on);
     edges.push(returns ? { ...edge, port: wire.on! } : edge);
@@ -279,7 +289,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
   // A declared outcome nothing follows: a drawing-only node, never saved and never a success.
   const nowhere: ChartNode[] = [];
   for (const node of graph.nodes) {
-    for (const { outcome, routed } of ports.get(node.id) ?? []) {
+    for (const { outcome, said = outcome, routed } of ports.get(node.id) ?? []) {
       if (routed) continue;
       const id = `${node.id}:none:${outcome}`;
       // A run that knows which outcome came: that route is reached, any other is not taken (never *not reached*).
@@ -291,7 +301,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
         step: { kind: 'none', variant: 'other', ports: [], terminal: 'none' },
       });
       edges.push({
-        id: `${node.id}>${id}`, from: rep(node.id), to: id, style: 'when', port: outcome, label: outcome, says: t('workflow.graph.noFurtherSays', { outcome }),
+        id: `${node.id}>${id}`, from: rep(node.id), to: id, style: 'when', port: outcome, label: said, says: t('workflow.graph.noFurtherSays', { outcome: said }),
       });
     }
   }

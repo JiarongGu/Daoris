@@ -27,16 +27,16 @@ import { AttentionBand } from './AttentionBand';
 import { obligationOf } from './attention';
 
 /** A run waiting on its `human` node, as .NET pushes the row (`HumanTaskRows`). */
-const waiting = (acts: string[]) => ({
-  kind: 'task', id: 'q7/sign', since: null, workspace: 'aurora', where: 'engine', task: { run: 'q7', node: 'sign', acts, work: 'q7' },
+const waiting = (acts: string[], since: string | null = null) => ({
+  kind: 'task', id: 'q7/sign', since, workspace: 'aurora', where: 'engine', task: { run: 'q7', node: 'sign', acts, work: 'q7' },
 });
 
-function start(acts: string[]) {
+function start(acts: string[], since: string | null = null) {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
   invoke.mockImplementation(async (_target: string, route: string, ask?: { payload?: { act?: string } }) =>
     route === 'WORKFLOW_NODE' ? { run: 'q7', node: 'sign', act: ask?.payload?.act, done: true } : {});
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([['rows', { 'task:q7/sign': waiting(acts) }], ['sessions', {}]]), true));
+  client.setQueryData(keys.attention, composeAttention(new Map<string, unknown>([['rows', { 'task:q7/sign': waiting(acts, since) }], ['sessions', {}]]), true));
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
@@ -58,6 +58,12 @@ afterEach(async () => {
 describe("a person's task on What needs you", () => {
   it('is keyed by its run and node, as the other waits are', () => {
     expect(obligationOf(waiting(['done']))).toBe('task:q7/sign');
+  });
+
+  it.each([['en', /waiting 3 ?h/i], ['zh', /已等待.*3/]])('says since when it has waited, in %s', async (language, said) => {
+    await i18n.changeLanguage(language);
+    start(['done'], new Date(Date.now() - 3 * 3_600_000).toISOString());
+    expect(await screen.findByRole('listitem', { name: '#q7' })).toHaveTextContent(said);
   });
 
   it('presses Done with the note the person gave, as the run’s node word', async () => {
