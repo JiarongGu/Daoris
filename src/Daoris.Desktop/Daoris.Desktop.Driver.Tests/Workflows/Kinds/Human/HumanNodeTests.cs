@@ -123,6 +123,19 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
+    public void The_terminal_says_each_press_with_a_note_if_given()
+    {
+        foreach (var act in new[] { NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject })
+        {
+            Assert.True(WorkflowNodeCommand.Asks([act, RunId, "sign"]));
+            Assert.Equal(new WorkflowNodeAsk(act, RunId, "sign", null), WorkflowNodeCommand.Read([act, "#" + RunId, "sign"], out _));
+        }
+
+        Assert.Equal(new WorkflowNodeAsk(NodeWordActs.Reject, RunId, "sign", "the notes miss it"), WorkflowNodeCommand.Read(["reject", RunId, "sign", "the notes miss it"], out _));
+        Assert.Contains("workflow done <run> <node>", WorkflowNodeCommand.Usage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_person_s_task_declares_a_tasks_outcome_or_an_approvals_two_and_no_other()
     {
         Assert.Null(NodeDeclarations.Problem(Declared()));

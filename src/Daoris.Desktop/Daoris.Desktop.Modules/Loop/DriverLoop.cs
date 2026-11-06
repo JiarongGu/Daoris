@@ -315,6 +315,9 @@ public sealed class DriverLoop(
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), for <i>What needs you</i> to judge; none before a pass has read.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _state.Watch?.RequestHolds ?? [];
 
+    /// <summary>The runs waiting on a person's task (NODEKIT1 HUMAN), for <i>What needs you</i>; none before a pass has read.</summary>
+    public IReadOnlyList<HumanTask> HumanTasks => _state.Watch?.HumanTasks ?? [];
+
     /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), for <i>What needs you</i> and the Integration tab; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _state.Watch?.CardWaits ?? [];
 

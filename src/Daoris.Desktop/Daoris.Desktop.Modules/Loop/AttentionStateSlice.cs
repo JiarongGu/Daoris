@@ -322,6 +322,8 @@ public static class AttentionStateSlice
             {
                 hold.Run, hold.Node, hold.Repository, hold.Workspace, hold.Quest, hold.To, hold.Work, hold.Request, Since = Moments.Write(hold.Since),
             })),
+            // NODEKIT1 HUMAN: each run waiting on a person's task, from the node runtime's last look and its node records.
+            Tasks = Written(loop.HumanTasks),
             // INTEGRATE1h: the integration's waits on the owner, from the home's integration record and the node runtime's last look.
             Integration = Written(IntegrationWaits(loop.Home, loop.CardWaits, loop.DeclarationsOwed)),
             // SESSWATCH1a: each session the watcher brings to the person, from its memory.
