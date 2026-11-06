@@ -25,7 +25,7 @@ finishes first and the whole set runs once.
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
 | The settings list | the driver's `Settings/List/MachineSettings.cs`; the page's `SETTINGS` | every machine setting declared once, with the one key each of its doors spells; the modules' `MachineSettingsCensusTests` and the page's `settings/everySetting.test.tsx` hold the doors to it |
 | The parts kit | `src/Daoris.Contracts/Parts/`, each root's `<Root>PartsTests`, `docs/index/registered.md` | a module's parts registered with its seam's `PartAttribute`, found, ordered and built by the root that runs them |
-| The quick checks | `npm run quick` | what a builder runs: typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
+| The quick checks | `npm run quick` | what a builder runs: the page's generated types written, typecheck, `daoris check`, the ratchet, partials, markers, optional locks |
 | `npm run verify` | `package.json` | the baseline: the CLI, doctrine, documents and the universal gates |
 | The gates' declaration | `daoris.gates.json` | each component gate, its command and what may run unasked |
 | The merge tool | `tools/merge-branch.mjs` | merges a branch, runs the gates its paths reach, runs the CI (`--ci`) and stages the install |
@@ -59,8 +59,10 @@ finishes first and the whole set runs once.
    is `[OptionalBody]`; a POST's `[FromQuery]` value travels in its query. The driver sends the record through
    `ServiceClient.SendAsync`, its views read in `Service/Wire/<Domain>Views.cs`. The page's types and `ROUTES` table are written from the
    records into the ignored `src/Daoris.Web/src/data/generated/service.ts` by `tools/contracts.mjs` (`tools/contracts/`), whose
-   first line stamps a hash of the declaring sources: `--check` in `quick` and `verify` fails a stale file, and the web's
-   pre-scripts write it with `--if-stale`, so the web loop needs `dotnet` after a contract changes. The generator builds into
+   first line stamps a hash of the declaring sources: `--check` in `verify` fails a stale file, and `quick` and the web's
+   pre-scripts write it with `--if-stale` first, so a fresh worktree's `quick` passes and the web loop needs `dotnet` after a
+   contract changes. The same file carries the node kinds (`NODE_KINDS`) and the provider censuses' table (`PROVIDER_VOCABULARY`),
+   read off the driver's kit and its registrations, whose declaring files the hash covers. The generator builds into
    `_fixtures/contracts-build/` (`--artifacts-path`), never the contracts' or the modules' own `obj/`, so a web gate's pre-script
    builds beside the service's and the desktop's gates. Its runs take turns under `_fixtures/contracts-build.lock`
    (`tools/run-lock.mjs`, stale once its process is gone), and one that waited reads the files again and builds nothing fresh. `api.ts` sends a declared
