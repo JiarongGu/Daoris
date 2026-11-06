@@ -5,7 +5,8 @@ import i18n from '../locales/i18n';
 import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../data/api';
 import { aQuest } from '../quests/aQuest';
 import {
-  askName, inTree, isHelp, isHelper, isPartner, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,
+  askName, inTree, isHelp, isHelper, isPartner, leadsPieces, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened,
+  treeName,
 } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -383,5 +384,18 @@ describe('the sessions of Ask Daoris (HELP1a)', () => {
     expect(isHelp(session({ kind: 'chat' }))).toBe(false);
     expect(sessionTitle(help)).toBe(i18n.t('help.title'));
     expect(sessionTitle(help, null, 'how do I drive a repository?')).toBe('how do I drive a repository?');
+  });
+});
+
+describe('who leads a piece (COAGENT1c)', () => {
+  // The driver's `StartAdmission.LeadsPiece`: a working session in a tree of its own, driven or a conversation, and no other.
+  it('is a session in a tree of its own, driven or a conversation, never a co-worker, an intake, Ask Daoris’s nor one with no tree', () => {
+    const tree = 'C:/somewhere/data/trees/engine/s-1';
+    expect(leadsPieces(session({ tree }))).toBe(true);
+    expect(leadsPieces(session({ kind: 'chat', tree }))).toBe(true);
+    expect(leadsPieces(session({ kind: 'chat' }))).toBe(false);
+    for (const other of [{ serves: 's9' }, { serves: 's9', piece: 'p1' }, { opinion: 'o1' }, { ask: 'a1' }, { repository: HELP_REPOSITORY }]) {
+      expect(leadsPieces(session({ kind: 'chat', tree, ...other }))).toBe(false);
+    }
   });
 });

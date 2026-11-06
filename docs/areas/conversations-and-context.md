@@ -281,8 +281,6 @@ of everything it handed, section by section.
 - **LIMITGOON1 (row i):** the limit move seen on the installed window.
 - **LIMITRESUME1 (ONEWAY1g row f):** the limit resume's remaining row on the installed doors.
 - **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow.
-- **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and
-  children.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
   is accepted (D238): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
   The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),

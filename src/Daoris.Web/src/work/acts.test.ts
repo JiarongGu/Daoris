@@ -164,7 +164,7 @@ describe('the acts a session is offered', () => {
   it('offers a conversation of this machine its hand-over after its stop, working or not, and no other session', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
     expect(offeredActs({ session: chat, root: ROOT }, 'header'))
-      .toEqual(['handOver', 'askHelper', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['handOver', 'askHelper', 'askPiece', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
     // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none (MIXAGENT1a-i, D163).
     expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
@@ -182,7 +182,7 @@ describe('the acts a session is offered', () => {
     const driven = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
     // SESSWATCH1a: a live quest session's head offers *Hand over…* too, through the judge its terminal's verb shares.
     expect(offeredActs(driven, 'header'))
-      .toEqual(['stop', 'handOver', 'askHelper', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['stop', 'handOver', 'askHelper', 'askPiece', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs(driven, 'row')).not.toContain('handOver');
     expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).not.toContain('handOver');
     expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).toContain('askHelper');
@@ -192,6 +192,23 @@ describe('the acts a session is offered', () => {
     for (const other of [{ serves: 's9z8y7x6' }, { opinion: 'o1p2q3' }, { ask: '0fda18' }, { repository: 'daoris:help' }, { id: 'person@machine-b/c1' }]) {
       expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askHelper');
     }
+  });
+
+  /**
+   * COAGENT1c (the co-agent design §6.1): *Ask another agent to work on a piece…* in the header of a session of this machine's that leads
+   * pieces, driven or a conversation, working in a tree of its own; never on a row, and never for a helper, a partner, a reviewer, an
+   * intake, Ask Daoris's, a teammate's, or one with no tree.
+   */
+  it('offers the piece’s ask in the header of a session that leads pieces, a conversation too, and nowhere else', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'working', tree: TREE });
+    expect(offeredActs({ session: chat, root: ROOT }, 'header')).toContain('askPiece');
+    expect(offeredActs({ session: session(), root: ROOT }, 'header')).toContain('askPiece');
+    expect(offeredActs({ session: chat, root: ROOT }, 'row')).not.toContain('askPiece');
+    const others = [
+      { serves: 's9z8y7x6' }, { serves: 's9z8y7x6', piece: 'p1a2b3c4' }, { opinion: 'o1p2q3' }, { ask: '0fda18' },
+      { repository: 'daoris:help' }, { id: 'person@machine-b/c1' }, { tree: null },
+    ];
+    for (const other of others) expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askPiece');
   });
 
   /** HELPERACTS1 (D163's MIXAGENT2a-i note): a helper's and a reviewer's records are refused words and resume, so no act takes any. */

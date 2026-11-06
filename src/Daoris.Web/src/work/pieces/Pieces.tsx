@@ -17,6 +17,9 @@ export type PieceSection = {
     roster: { harnesses: readonly string[]; labels?: Readonly<Record<string, string>>; names?: Readonly<Record<string, string>> };
     busy?: boolean;
     onAsk: (asked: PieceAsk, answered: Answered) => void;
+    /** Whether the ask stands open, where the frame holds it so the head's ⋯ opens the same ask (COAGENT1c); absent, the section holds it. */
+    open?: boolean;
+    onOpen?: (open: boolean) => void;
   };
   /** Attend a partner's own session. */
   onOpen?: (partner: string) => void;
@@ -62,8 +65,10 @@ export function pieceLine(t: TFunction, row: PieceRow, nameOf: (agent: string) =
  */
 export function Pieces({ section, headingId }: { section: PieceSection; headingId: string }) {
   const { t } = useTranslation();
-  const [asking, setAsking] = useState(false);
   const { pieces, ask } = section;
+  const [own, setOwn] = useState(false);
+  const asking = ask?.open ?? own;
+  const setAsking = (open: boolean) => (ask?.onOpen ? ask.onOpen(open) : setOwn(open));
 
   return (
     <section aria-labelledby={headingId} className="mt-2.5 grid gap-1.5">
