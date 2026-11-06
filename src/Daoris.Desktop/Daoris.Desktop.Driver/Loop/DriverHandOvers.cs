@@ -149,8 +149,10 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
             }
             else
             {
-                var answer = await SessionMoves.StopAsync(_context.Processes, service, id, ct, note).ConfigureAwait(false);
+                // COAGENT1g: what the part left running is ended and waited for before the move's old end is written below.
+                var (answer, left) = await QuestPartStop.StopAsync(_context.Processes, service, id, note, ct).ConfigureAwait(false);
                 stopped = answer.Stopped;
+                if (left?.Note(PartLeftovers.Bound) is { } said) Say(id, said);
             }
 
             if (!stopped)
