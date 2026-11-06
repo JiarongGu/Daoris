@@ -32,6 +32,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Tools and sign-in | `Plugins/Domain/PluginTools.cs`, `PluginToolChecks.cs`, `PluginToolSetUp.cs` | Declared tools, their checks on a press, a fix in a console the person sees |
 | Ask Daoris grants | `Plugins/HelpGrants.cs` | `<home>/plugin-approvals.json`: a server's tools the person approved |
 | Health and log | `PluginHealth.cs`, `PluginLog.cs`, `PluginActivity.cs`, `Domain/PluginEvents.cs` | `plugin.*` lines; the loop's record of each plugin's health |
+| Work events' sources | `Plugins/WorkEventTeller.cs`, `Plugins/Domain/WorkEvent.cs`; `Workplace/WorkEnds.cs`; `Modules/Platform/PipeConfirmations.cs` (`Settled`) | The kinds read from records, each handed to a sink no loop wires yet: the journal's `quests` rows as `quest.published`, `quest.closed` and `quest.close-lost` with one `events.missed` at the teller's first place and at each incomplete batch; each end the end keeping writes, whichever caller asked; a press no terminal waits on, as it settles |
 | Switch | `Plugins/PluginState.cs` | `<home>/plugins.json`: the disabled rows |
 | Doors | `PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
@@ -129,7 +130,9 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 **Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`,
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`, `LandingPluginTests`,
-`PluginToolsTests`, `PluginToolSetUpTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`);
+`PluginToolsTests`, `PluginToolSetUpTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`);
+`Workplace/WorkEndsGitTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
+`Quests/QuestJournalTests`;
 `Daoris.Desktop.Modules.Tests/Bridge/` (`DriverModulePlugins*Tests`, `PluginsBothWaysTests`, `PluginRecordWiringTests`,
 `HelpPluginApprovalDoorTests`); the page's `plugins/*.test.ts(x)` and `settings/plugins/PluginSettings.test.tsx`; each
 example's `node --test`.
@@ -156,7 +159,8 @@ example's `node --test`.
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
 - EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris events relay`.
-- EVENTHOOK1d, EVENTHOOK1e: the quest kinds, `person.answered` and `work.ended` read from records, and a relay that lives for the session (`docs/2026-11-06-event-channel-design.md` §3, §4, proposed; chunks EV-A to EV-E).
+- EVENTHOOK1d: the quest kinds, `confirmation.ended` and `work.ended` told at `work/event` from their sources, the grammar's fields and the relay's words (`docs/2026-11-06-event-channel-design.md` §3, D244; chunk EV-F, after 1b and 1c).
+- EVENTHOOK1e: a relay that lives for the session (the same design §4; chunks EV-C to EV-E).
 - No row: D120's workshop (`<home>/plugins/.workshop/`, `plugin-sources.json`, `daoris plugin workshop`, *Send to a repository…*).
 - No row: D120's NuGet source (find, show, install by id, update from a source, *Available*, another publisher's installing off, pinned `plugin-offers.json`).
 - No row: PLUGUI1f, the ready and failing states on the page from the loop's health.
