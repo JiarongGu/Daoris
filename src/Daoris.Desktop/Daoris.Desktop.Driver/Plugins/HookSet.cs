@@ -56,33 +56,14 @@ public sealed class HookSet(
 
     // FABRIC-PERFORM1a: the work wire's side, its lease and its clock. Its own writer of the same lines, since a field cannot read `Log`.
     private readonly Func<bool> _holdsHome = holdsHome ?? WorkEventPlugins.Held(home);
-    private WorkEventPoint? _events;
+    private readonly Lock _eventsGate = new();
+    private WorkEventMade? _events;
 
-    /// <summary>
-    /// <c>work/event</c>'s teller (EVENTHOOK1b): every event minted here, told only while this loop holds the home. A plugin answering late
-    /// <see cref="WorkEventPoint.LateInARow"/> times is stopped, its stop counted as an exit of its own.
-    /// </summary>
+    /// <summary><c>work/event</c>'s teller (EVENTHOOK1b), made at its first use: told only while this loop holds the home.</summary>
     public WorkEventPoint Events
     {
-        get
-        {
-            lock (_eventsGate)
-            {
-                if (_events is not null) return _events;
-                _events = new WorkEventPoint(
-                    WorkEventPlugins.Adapters,
-                    unsent: (kind, failed) => log?.Warn(PluginEvents.Unsent, ("kind", kind), ("field", failed)),
-                    late: id => _ = StopLateAsync(id),
-                    failed: (id, error) => Log.Failed(id, HookPoints.Event, PluginFailures.KindOf(error, PluginEvents.Errored), null, null, PluginEvents.ByLoop));
-                // EVENTHOOK1d-iii (EV-F): each end the home's end keeping writes, whichever caller asked, heard from the point's first use.
-                _ends = WorkEventPlugins.ListenEnds(home, _events.Tell, _clock);
-                return _events;
-            }
-        }
+        get { lock (_eventsGate) return (_events ??= WorkEventPlugins.Made(home, log, Log, id => _ = StopLateAsync(id), _clock)).Point; }
     }
-
-    private readonly Lock _eventsGate = new();
-    private IDisposable? _ends;
 
     /// <summary>One event told at <c>work/event</c>; never waits.</summary>
     public void Tell(WorkEvent told) => Events.Tell(told);
@@ -720,8 +701,7 @@ public sealed class HookSet(
         _changes.Writer.TryComplete();
         await _going.CancelAsync().ConfigureAwait(false);
         _work.Dispose();
-        _ends?.Dispose();
-        if (_events is not null) await _events.DisposeAsync().ConfigureAwait(false);
+        if (_events is { } made) await made.DisposeAsync().ConfigureAwait(false);
         Task? telling;
         lock (_tellingGate) telling = _telling;
         if (telling is not null) await telling.ConfigureAwait(false);
