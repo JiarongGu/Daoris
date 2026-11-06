@@ -362,7 +362,7 @@ public sealed class ClaudeStreamJsonTests
 
     /// <summary>The native door's stop, as the one line the binary answered in the probe.</summary>
     [Fact]
-    public void The_adapter_frames_an_interrupt_as_the_control_request_the_harness_answers()
+    public void The_dialect_frames_an_interrupt_as_the_control_request_it_answers()
     {
         var framed = new ClaudeNativeDialect().FrameInterrupt();
 
