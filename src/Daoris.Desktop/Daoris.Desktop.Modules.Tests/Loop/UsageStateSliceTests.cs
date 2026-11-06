@@ -65,7 +65,7 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         Assert.Equal([UsageStateSlice.Accounts, UsageStateSlice.Sessions], snapshot.Partitions.Select(each => each.Partition));
         Assert.Equal(UsageStateSlice.Accounts, answered.GetProperty("partitions")[0].GetProperty("partition").GetString());
 
-        // The pull's answer and the push's, written alike: each session under its id, each account under its door and account.
+        // The pull's answer and the push's, written alike: each session under its id, each account under its agent and account.
         var sessions = Written(snapshot.Partitions.Single(each => each.Partition == UsageStateSlice.Sessions).Data);
         Assert.Equal(["s1", "s2", "s3", "s4"], sessions.Select(each => each.Key).Order(StringComparer.Ordinal));
         foreach (var row in route["sessions"]!.AsArray())
@@ -77,7 +77,7 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
         Assert.Equal(["claude-code", "claude-code/work", "codex/home"], accounts.Select(each => each.Key).Order(StringComparer.Ordinal));
         foreach (var row in route["accounts"]!.AsArray())
         {
-            var key = row!["profile"] is { } profile ? $"{row["harness"]!.GetValue<string>()}/{profile.GetValue<string>()}" : row["harness"]!.GetValue<string>();
+            var key = row!["profile"] is { } profile ? $"{row["agent"]!.GetValue<string>()}/{profile.GetValue<string>()}" : row["agent"]!.GetValue<string>();
             Assert.Equal(row.ToJsonString(), accounts[key]!.ToJsonString());
         }
 
@@ -99,6 +99,25 @@ public sealed partial class UsageStateSliceTests : DriverModuleBridge
 
         Assert.Equal(["s2", "s1"], usage.GetProperty("sessions").EnumerateArray().Select(each => each.GetProperty("session").GetString()));
         Assert.Single(usage.GetProperty("accounts").EnumerateArray());
+    }
+
+    /// <summary>
+    /// AGENTPROVIDER1 s-vii: an account's share is counted by agent. Before, a conversation moved from <c>claude-code</c> to
+    /// <c>claude-code-acp</c> on one account was two shares, one per door; now it is one, under the agent, each session keeping its door.
+    /// </summary>
+    [Fact]
+    public async Task One_account_used_through_both_of_an_agent_s_doors_is_one_share_under_the_agent()
+    {
+        Measured("s1", "work", 48_000, 0);
+        Measured("s2", "work", 12_000, 5, harness: "claude-code-acp");
+
+        var usage = await AnswerAsync(Module(), "USAGE");
+
+        var account = Assert.Single(usage.GetProperty("accounts").EnumerateArray());
+        Assert.Equal(("claude-code", "work", 2, 60_000L), (
+            account.GetProperty("agent").GetString(), account.GetProperty("profile").GetString(), account.GetProperty("sessions").GetInt32(),
+            account.GetProperty("used").GetInt64()));
+        Assert.Equal(["claude-code", "claude-code-acp"], usage.GetProperty("sessions").EnumerateArray().Select(each => each.GetProperty("harness").GetString()).Order(StringComparer.Ordinal));
     }
 
     /// <summary>

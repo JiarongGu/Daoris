@@ -120,11 +120,13 @@ public sealed class ChatHandOverTests : IDisposable
     }
 
     /// <summary>
-    /// PICKCARRY1: a hand-over of a conversation the person picked an account for to another agent opens a part on that agent's account, which
-    /// is not the one the person picked (its name may be the same), so the part keeps no pick.
+    /// PICKCARRY1, as AGENTPROVIDER1 s-vii reads it: a hand-over of a conversation the person picked an account for to its agent's other door
+    /// (<c>acp-stub</c> to <c>stub</c>, both the stub's, as <c>claude-code-acp</c> and <c>claude-code</c> are Claude Code's) opens a part on the
+    /// account the person picked, one account of one agent, so the part keeps the pick. Before, the record's door was compared with the new
+    /// part's and the pick was dropped; two providers sharing a pool are two agents and keep it apart (<c>AgentOfDoorTests</c>).
     /// </summary>
     [Fact]
-    public async Task A_hand_over_of_a_picked_conversation_to_another_agent_keeps_no_pick()
+    public async Task A_hand_over_of_a_picked_conversation_to_its_agent_s_other_door_on_the_picked_account_keeps_the_pick()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = Config();
@@ -137,13 +139,13 @@ public sealed class ChatHandOverTests : IDisposable
         await Poll.Until(() => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, old));
         await Poll.Until(() => !runner.Taking(old), () => Seen(ledger, events, old));
 
-        // The other agent's walk lands on account-1, the name the person picked, which is another agent's account.
+        // The other door's walk lands on account-1, the account the person picked: the stub's doors share the stub's accounts.
         AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", DateTimeOffset.UtcNow.AddDays(4), Stated: true, "weekly", DateTimeOffset.UtcNow, null), DateTimeOffset.UtcNow);
         var handed = await runner.HandOverAsync(old, "stub", account: null, HandOverWhy.Press, HandOverBy.Person, config);
 
         Assert.True(handed.Kept, handed.Message);
         Assert.Equal("account-1", (await client.RecordAsync(handed.SessionId!))!.Profile);
-        Assert.False(Conversations.PickedOn(handed.SessionId!, "account-1"), Seen(ledger, events, handed.SessionId!));
+        Assert.True(Conversations.PickedOn(handed.SessionId!, "account-1"), Seen(ledger, events, handed.SessionId!));
         Assert.True(Conversations.PickedOn(old, "account-1"));
     }
 

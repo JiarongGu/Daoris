@@ -246,11 +246,12 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
         if (picked) context.Conversations.Pick(sessionId, selection.Profile);
         // A pick belongs to the conversation, so a new part any move opens on the account the person picked, on the same agent, keeps it and
-        // the rule reads it there as on the part it came from. A part on another account or agent is no pick of the person's; an agent's pick
-        // and a record from before hold none.
+        // the rule reads it there as on the part it came from. The same agent is the same provider (s-vii), so a move between one agent's two
+        // doors keeps it, and one between two providers sharing a pool does not. A part on another account or agent is no pick of the
+        // person's; an agent's pick and a record from before hold none.
         else if (from is not null && context.Conversations.PickedOn(from.Session, selection.Profile)
             && await service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
-            && string.Equals(pickedAgent, resolved.Name, StringComparison.OrdinalIgnoreCase))
+            && new AgentOfDoor(harnesses.Adapters.Registry).Same(pickedAgent, resolved.Name))
         {
             context.Conversations.Pick(sessionId, selection.Profile);
         }
