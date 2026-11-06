@@ -51,33 +51,33 @@ public sealed class AnswersAloneHold(
     {
         words ??= record.Waiting;
         if (record.Teammate || !SessionEventText.IsLocalId(record.Session) || words.Count == 0 || !words.All(AnswersAlone.Solicited)) return false;
-        if (Admits(record, records, words)) return false;
+        if (Admission(record, records, words) is not { Admitted: false } refused) return false;
 
         // Every answer waiting on it, those handed under another ask included: going on with any of them alone would be the same third.
         var answers = record.Waiting.Concat(words).Where(AnswersAlone.Solicited).Select(word => word.Id).OfType<string>()
             .Distinct(StringComparer.Ordinal).ToList();
         if (answers.Count == 0) return true;
-        if (marks.Read(record.Session) is { Why: GoOnMarks.AnswersAlone } held && answers.All(id => held.Said.Contains(id, StringComparer.Ordinal)))
-        {
-            return true;
-        }
+        var held = marks.Read(record.Session) is { Why: GoOnMarks.AnswersAlone } mark ? mark : null;
+        if (held is not null && answers.All(id => held.Said.Contains(id, StringComparer.Ordinal))) return true;
 
         var agent = AgentOf(words, records);
         marks.Mark(record.Session, answers, GoOnMarks.AnswersAlone, at, agent);
+        // A line already waiting is one hold: a new answer joins the mark, and the hold is said and kept once.
+        if (held is not null) return true;
         events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers), say: null);
-        Acted(record, records, at);
+        Acted(record, records, refused.Count, at);
         return true;
     }
 
-    // The hold is the answers-alone rule's act: said on the line by its rule and kept in the decision record (the context counters design §4.7).
-    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, DateTimeOffset at)
+    // The hold is the answers-alone rule's act at the count its admission read: said on the line by its rule and kept in the decision record.
+    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, AloneCount count, DateTimeOffset at)
     {
         if (acts is null) return;
         var book = rules ?? SupervisorRuleBook.Seed;
         var line = LineKeys.Of(record.Session, records).Key;
         var effective = RuledLine.Of(home, records.GetValueOrDefault(record.Session) ?? record, line).In(book);
         if (SupervisorRuleBook.Acting(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold) is not { } rule) return;
-        acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), rule.At, Known: true, "go-on", at));
+        acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), count.N, count.Known == LineCounts.Exact, "go-on", at));
     }
 
     /// <summary>
@@ -143,15 +143,15 @@ public sealed class AnswersAloneHold(
         ContinuationAdmissions.History(session, records, part => LineCountsRead.EventsOf(events, part));
 
     /// <summary>
-    /// Whether the line admits the go-on now: judged and reserved inside its admission at its rule's number, the line read
-    /// by its one key. Without the service's records, or without the admissions, it is admitted: nothing counts it.
+    /// The go-on judged and reserved inside its line's admission at its rule's number, the line read by its one key. Without the service's
+    /// records, or without the admissions, none: nothing counts it, and it goes on.
     /// </summary>
-    private bool Admits(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
+    private AloneAdmission? Admission(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
     {
         var ids = Keys(record, words);
-        return !records.ContainsKey(record.Session)
-            || admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records)) is not { } admission
-            || admission.Admitted;
+        return records.ContainsKey(record.Session)
+            ? admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records))
+            : null;
     }
 
     /// <summary>Each word's id, and for a word from before ids its record and when it was said.</summary>

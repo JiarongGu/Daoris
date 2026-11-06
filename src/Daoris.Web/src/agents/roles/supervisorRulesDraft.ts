@@ -88,16 +88,79 @@ export function placeKey(kind: 'machine' | 'workspace' | 'repository', id: strin
   return kind === 'machine' ? MACHINE : `${kind}:${id ?? ''}`;
 }
 
-/** The wider place's rules on the count and role of `row`, which this place's own rule replaces. */
-export function replaced(row: RuleDraft, wider: readonly SupervisorRuleWire[]): SupervisorRuleWire[] {
-  return wider.filter((rule) => rule.count === row.count && sameRoles(rolesOf(rule), row.roles));
+/** A wider place's rule, with the place it is read from. */
+export type PlacedRule = { place: string; rule: SupervisorRuleWire };
+
+/** The places `place`'s lines read, narrow to wide: itself, its wider places as `ROLES` answers them, then this machine. */
+export function chainOf(read: SupervisorRulesRead | undefined, place: string): string[] {
+  return place === MACHINE ? [MACHINE] : [place, ...(read?.wider?.[place] ?? []).filter((each) => each !== place && each !== MACHINE), MACHINE];
 }
 
-/** The machine's rules a repository or workspace reads on the counts it holds none of its own. */
-export function inheritedFrom(read: SupervisorRulesRead | undefined, place: string, rows: readonly RuleDraft[]): SupervisorRuleWire[] {
-  if (place === MACHINE) return [];
-  const machine = setOf(read, MACHINE)?.rules ?? [];
-  return machine.filter((rule) => !rows.some((row) => row.count === rule.count));
+type Placed = { place: string; rules: readonly SupervisorRuleWire[] };
+
+/**
+ * A line's rules per count along `chain` for `role` (null for a line with no working role), as the driver's `SupervisorRules.Effective`
+ * reads them: the most specific place holding a rule on the count that applies to the role decides, its rules naming the role before
+ * those naming none, and an `off` there leaves the count unruled.
+ */
+function effective(sets: readonly Placed[], chain: readonly string[], role: string | null): Map<string, PlacedRule[]> {
+  const decided = new Map<string, PlacedRule[]>();
+  for (const count of new Set(sets.flatMap((set) => set.rules.map((rule) => rule.count)))) {
+    for (const place of chain) {
+      const applying = sets.filter((set) => set.place === place).flatMap((set) => set.rules)
+        .filter((rule) => rule.count === count && (rolesOf(rule).length === 0 || (role !== null && rolesOf(rule).includes(role))));
+      if (applying.length === 0) continue;
+      const named = applying.filter((rule) => rolesOf(rule).length > 0);
+      const deciding = named.length > 0 ? named : applying;
+      if (deciding.every((rule) => rule.do !== 'off')) decided.set(count, deciding.map((rule) => ({ place, rule })));
+      break;
+    }
+  }
+  return decided;
+}
+
+/** Every place's set with `draft` in its place's stead, as the lines would read them once saved. */
+function withDraft(read: SupervisorRulesRead | undefined, draft: RulesDraft): Placed[] {
+  const rules = draft.rows.map((row): SupervisorRuleWire => ({ count: row.count, at: Number(row.at), do: row.do, roles: row.roles.length > 0 ? [...row.roles] : null }));
+  return [...(read?.sets ?? []).filter((set) => set.place !== draft.place), { place: draft.place, rules }];
+}
+
+/** The roles a line here may go on under: each working role, and none. */
+const linesOf = (roles: readonly string[]): (string | null)[] => [...roles, null];
+
+/**
+ * The wider places' rules `row` replaces: for each role whose lines here it decides for, the rule a wider place decides by for them,
+ * each once with its place.
+ */
+export function replaced(read: SupervisorRulesRead | undefined, draft: RulesDraft, row: RuleDraft, roles: readonly string[]): PlacedRule[] {
+  const chain = chainOf(read, draft.place);
+  const sets = withDraft(read, draft);
+  const found: PlacedRule[] = [];
+  for (const role of linesOf(roles)) {
+    const here = effective(sets, chain, role).get(row.count) ?? [];
+    if (!here.some((each) => each.place === draft.place && sameRoles(rolesOf(each.rule), row.roles))) continue;
+    for (const wider of effective(sets, chain.slice(1), role).get(row.count) ?? []) {
+      if (!found.some((each) => each.place === wider.place && each.rule === wider.rule)) found.push(wider);
+    }
+  }
+  return found;
+}
+
+/** The wider places' rules some role's lines here still read with the draft as it stands, each once with its place. */
+export function inheritedFrom(read: SupervisorRulesRead | undefined, draft: RulesDraft, roles: readonly string[]): PlacedRule[] {
+  const chain = chainOf(read, draft.place);
+  const sets = withDraft(read, draft);
+  const found: PlacedRule[] = [];
+  for (const role of linesOf(roles)) {
+    for (const rules of effective(sets, chain, role).values()) {
+      for (const each of rules) {
+        if (each.place !== draft.place && !found.some((kept) => kept.place === each.place && kept.rule === each.rule)) found.push(each);
+      }
+    }
+  }
+  // Narrow to wide, and within a place as its set holds them.
+  const order = (each: PlacedRule) => sets.find((set) => set.place === each.place)?.rules.indexOf(each.rule) ?? 0;
+  return found.sort((a, b) => chain.indexOf(a.place) - chain.indexOf(b.place) || order(a) - order(b));
 }
 
 /** The rules of `role` among a set: what the role editor says of the role's moves and bound. */

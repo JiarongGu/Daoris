@@ -19,8 +19,8 @@ public sealed record CountFact(string Count, int? N, string Known, string? Why, 
 }
 
 /// <summary>What Daoris does on a count once it stands at <see cref="At"/>: one of the rules' acts (<see cref="SupervisorRules"/>).</summary>
-/// <param name="Place">The place of the person's rule that sets it; none where it is Daoris's own number.</param>
-public sealed record CountWatch(int At, string Do, string? Place = null);
+/// <param name="Place">The place of the person's rule that sets it.</param>
+public sealed record CountWatch(int At, string Do, string Place);
 
 /// <summary>A part of a line, oldest first, and why it began: its record's <c>from</c> why, none for the line's first.</summary>
 public sealed record LinePartFact(string Session, string? Why);
@@ -52,6 +52,9 @@ public sealed record LineFacts(IReadOnlyList<CountFact> Counts, IReadOnlyList<Li
 
     /// <summary>The acts the person's rules made on the line's parts, oldest first (<see cref="SupervisorRuleActs"/>); none where no rule acted.</summary>
     public IReadOnlyList<RuleActed> Acts { get; init; } = [];
+
+    /// <summary>Whether the line's rules read: false where the records did not, so no count names a rule.</summary>
+    public bool RulesRead { get; init; } = true;
 }
 
 /// <summary>
@@ -74,6 +77,7 @@ public static class CountTexts
         [SupervisorRules.AnswersAlone] = "Answers alone in a row",
         [SupervisorRules.Failures] = "Failed sessions on this quest",
         [SupervisorRules.FailuresOnChoice] = "Failures in a row on one agent and model",
+        [SupervisorRules.Tries] = "Tries its last part made while the service did not answer",
         [SupervisorRules.Quiet] = "Its last part ended quiet",
         [SupervisorRules.Limits] = "Its last part ended at a limit",
         [SupervisorRules.Moves] = "Moves to another choice in 24 hours",
@@ -97,6 +101,7 @@ public static class CountTexts
         ["events"] = "its events",
         ["records"] = "the service's records",
         ["ended.quiet"] = "its last part's end",
+        ["ended.transient"] = "its last part's end",
         ["role_moves"] = "the moves kept here",
         ["from-why"] = "its parts' links",
     };
@@ -136,9 +141,7 @@ public static class CountTexts
     private static string WhyOf(CountFact count) => count.Why is { } why && Missing.TryGetValue(why, out var said) ? said : "part of its history is missing";
 
     private static string Watched(CountFact count) => count.Watch is { } watch && Does(watch.Do) is { } does
-        ? watch.Place is { } place
-            ? $" The person's rule for {PlaceOf(place)}: Daoris {does} after {watch.At}."
-            : $" Daoris {does} after {watch.At}."
+        ? $" The person's rule for {PlaceOf(watch.Place)}: Daoris {does} after {watch.At}."
         : "";
 
     private static string? Does(string act) => act switch
@@ -180,6 +183,7 @@ public static class CountTexts
             SupervisorRules.AnswersAlone => $"{least}{n} go-on{many} by answers alone in a row",
             SupervisorRules.Failures => $"{least}{n} failed session{many} on this quest",
             SupervisorRules.FailuresOnChoice => $"{least}{n} failure{many} in a row on one agent and model",
+            SupervisorRules.Tries => $"{least}{n} tr{(n == 1 ? "y" : "ies")} while the service did not answer",
             SupervisorRules.Quiet => "its last part ended quiet",
             SupervisorRules.Limits => "its last part ended at a limit",
             SupervisorRules.Moves => $"{least}{n} move{many} to another choice in 24 hours",
@@ -227,15 +231,17 @@ public static class CountTexts
             if (count.Known != "exact") text.Append($"; {WhyOf(count)}");
             if (count.Watch is { } watch && Does(watch.Do) is { } does)
             {
-                text.Append(watch.Place is { } place ? $"; the person's rule for {PlaceOf(place)}: Daoris {does} after {watch.At}" : $"; Daoris's own number: it {does} after {watch.At}");
+                text.Append($"; the person's rule for {PlaceOf(watch.Place)}: Daoris {does} after {watch.At}");
             }
 
             text.Append('\n');
         }
 
-        text.Append(worded.Any(count => count.Watch?.Place is not null)
-            ? "The rules in force on this line are the person's, named beside each count.\n"
-            : "No rule of the person's is in force on this line: Daoris acts on its own numbers, named beside each count.\n");
+        text.Append(!facts.RulesRead
+            ? "The person's rules for this line did not read, so none is named here; each acts where its executor reads it.\n"
+            : worded.Any(count => count.Watch is not null)
+                ? "The rules in force on this line are the person's, named beside each count.\n"
+                : "No rule of the person's watches a count of this line.\n");
         text.Append("Its parts, oldest first:\n");
         foreach (var part in facts.Parts)
         {

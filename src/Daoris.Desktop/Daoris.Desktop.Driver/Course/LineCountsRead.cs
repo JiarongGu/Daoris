@@ -52,9 +52,11 @@ public sealed class LineCountsRead(
             config.Forgiven);
         var parts = LineCounts.Parts(session, evidence);
         var acts = new SupervisorRuleActs(home);
-        return new LineFacts(LineCounts.Facts(LineCounts.Of(session, evidence), Ruled(home, session, evidence)), parts, LineCounts.GoOns(session, evidence))
+        var ruled = Ruled(home, session, evidence);
+        return new LineFacts(LineCounts.Facts(LineCounts.Of(session, evidence), ruled), parts, LineCounts.GoOns(session, evidence))
         {
             Acts = [.. parts.SelectMany(part => acts.Of(part.Session)).OrderBy(act => act.At)],
+            RulesRead = ruled is not null,
         };
     }
 

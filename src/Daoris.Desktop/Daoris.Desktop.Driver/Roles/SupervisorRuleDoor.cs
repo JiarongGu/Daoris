@@ -58,9 +58,9 @@ public static class SupervisorRuleDoor
 
     /// <summary>
     /// The world a press is judged in: the catalogue's working roles, and each repository's workspace as its wider place, so a workspace's
-    /// write is judged on its repositories' lines and a repository's on its workspace's rules.
+    /// write is judged on its repositories' lines and a repository's on its workspace's rules, as the store keeps them in every process.
     /// </summary>
-    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: RuleWiderPlaces.Read(home).Of);
+    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: new RuleWiderPlaceStore(home).Read().Of);
 
     /// <summary>The judge's refusal of <paramref name="press"/> against the rules stored now, or null: what a door says before anything is sent.</summary>
     public static RuleRefusal? Judge(string home, SupervisorRulesPress press) =>
