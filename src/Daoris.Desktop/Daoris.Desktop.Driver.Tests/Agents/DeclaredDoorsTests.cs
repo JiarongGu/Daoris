@@ -61,7 +61,7 @@ public sealed class DeclaredDoorsTests : IDisposable
         var set = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Reserved));
         var abilities = set.Resolve("named-door").Abilities();
 
-        Assert.Equal("named", set.DeclaredBy("named-door"));
+        Assert.Equal("named", set.Registry.DeclaredBy("named-door"));
         Assert.True(abilities.Interactive);
         Assert.False(abilities.TakesSettings);
         Assert.Null(set.Resolve("named-door").RuleLanguage());

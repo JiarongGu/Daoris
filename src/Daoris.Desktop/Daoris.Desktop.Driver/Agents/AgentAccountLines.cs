@@ -26,8 +26,8 @@ internal static class AgentAccountLines
     /// </summary>
     public static bool Says(AdapterSet set, string owner)
     {
-        IEnumerable<HarnessToolchain?> theirs = [set.ToolchainOf(owner), .. set.Names
-            .Select(name => (Name: name, Toolchain: set.Resolve(name).Toolchain))
+        IEnumerable<HarnessToolchain?> theirs = [set.Registry.ToolchainOf(owner), .. set.Names
+            .Select(name => (Name: name, Toolchain: set.Registry.ToolchainOf(name)))
             .Where(each => each.Toolchain is not null && string.Equals(set.Registry.OwnerOfAgent(each.Name).Value, owner, StringComparison.OrdinalIgnoreCase))
             .Select(each => each.Toolchain)];
         return theirs.Any(toolchain => toolchain?.Windows is not null || toolchain?.Usage is not null);

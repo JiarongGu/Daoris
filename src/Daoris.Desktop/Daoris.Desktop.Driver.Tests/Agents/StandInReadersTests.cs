@@ -22,7 +22,7 @@ public sealed class StandInReadersTests
             ["stub"] = new StubAdapter(),
             ["acp-stub"] = new AcpStubAdapter(),
             ["claude-code"] = new ClaudeCodeAdapter(),
-            ["codex-acp"] = new CodexAcpAdapter(),
+            ["codex-acp"] = AdapterSet.Built().Resolve("codex-acp"),
         }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain }),
         "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
         _ => AdapterSet.Built(),
@@ -35,7 +35,7 @@ public sealed class StandInReadersTests
     /// <summary>The verbs' operands as the code spelled them: each door that names a real program and each agent a door runs as.</summary>
     private static List<string> OldOperands(AdapterSet set)
     {
-        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
+        HarnessToolchain? Of(string each) => set.Registry.ToolchainOf(each);
         return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
     }
 

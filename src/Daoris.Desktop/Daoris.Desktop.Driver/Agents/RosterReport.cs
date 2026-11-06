@@ -319,7 +319,7 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// <summary>
     /// Which agent answers for a door's ACCOUNTS (AGT7): its owner when this build carries a door of it — the owner has the
     /// login question and the key variable — else the owner as the set declares it where it carries no door of it
-    /// (<see cref="AdapterSet.ToolchainOf"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
+    /// (<see cref="ProviderRegistry.ToolchainOf"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
     /// </summary>
     /// <remarks>
     /// 🔴 A declared owner is no adapter: its name is never handed to <see cref="ReportAsync"/> or a press, which resolve
@@ -334,7 +334,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             return (roster.Adapters.Resolve(owner).Name, ownerToolchain);
         }
 
-        return roster.Adapters.ToolchainOf(owner) is { } holder ? (owner, holder) : (name, toolchain);
+        return roster.Adapters.Registry.ToolchainOf(owner) is { } holder ? (owner, holder) : (name, toolchain);
     }
 
     /// <summary>

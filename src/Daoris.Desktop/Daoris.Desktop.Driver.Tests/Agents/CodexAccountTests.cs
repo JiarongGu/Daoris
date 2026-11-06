@@ -104,8 +104,8 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Value.Name);
         Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Value.Name);
         var built = AdapterSet.Built();
-        Assert.Same(CodexAccounts.Toolchain, built.ToolchainOf("codex"));
-        Assert.Null(built.ToolchainOf("nobody"));
+        Assert.Same(CodexAccounts.Toolchain, built.Registry.ToolchainOf("codex"));
+        Assert.Null(built.Registry.ToolchainOf("nobody"));
         Assert.Equal(CodexAccounts.Agent, built.Registry.OwnerOfAgent("codex-acp").Value);
         Assert.Equal("claude-code", built.Registry.OwnerOfAgent("claude-code-acp").Value);
         Assert.Equal(CodexAccounts.Agent, built.Registry.ProviderOf(new DoorId("codex-acp")).Value);

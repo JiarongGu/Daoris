@@ -23,12 +23,19 @@ public sealed class ProviderRegistry
 {
     private readonly Dictionary<string, Provider> _providers = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, (AgentDoor Door, Provider Provider)> _doors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly IReadOnlyDictionary<string, HarnessToolchain> _toolchains;
 
     /// <summary>Registers providers, refusing a set that breaks the identity rules (design §2.2).</summary>
     /// <param name="providers">The providers, each with its doors.</param>
     /// <param name="reserved">The ids a plugin may not declare: the built set's (D64's rule 3).</param>
-    public ProviderRegistry(IEnumerable<Provider> providers, IReadOnlyList<string> reserved)
+    /// <param name="toolchains">
+    /// Each door's toolchain and each holder's, as the set the registry was made over declared them (<see cref="ToolchainOf"/>); none for
+    /// a registry made over providers alone.
+    /// </param>
+    public ProviderRegistry(
+        IEnumerable<Provider> providers, IReadOnlyList<string> reserved, IReadOnlyDictionary<string, HarnessToolchain>? toolchains = null)
     {
+        _toolchains = toolchains ?? new Dictionary<string, HarnessToolchain>();
         foreach (var provider in providers)
         {
             if (!_providers.TryAdd(provider.Id.Value, provider))
@@ -89,6 +96,16 @@ public sealed class ProviderRegistry
     public IAgentFacts Facts => LazyInitializer.EnsureInitialized(ref _facts, () => new ProviderFacts(this, Measurement.Table))!;
 
     private IAgentFacts? _facts;
+
+    /// <summary>
+    /// The toolchain of a door, or of an agent a door runs as with no door of its own here (CODEXACCT1, <c>codex</c>): its binary,
+    /// sign-in, status question and account seam, what the roster's probes and the agent verbs hand on. Null for an agent nobody
+    /// declared. The one reader of a toolchain by name, until the probes read the contract's parts.
+    /// </summary>
+    public HarnessToolchain? ToolchainOf(string agent) => _toolchains.TryGetValue(agent, out var toolchain) ? toolchain : null;
+
+    /// <summary>The plugin a door came from (D64), or null for a door this build carries and for a name that is no door.</summary>
+    public string? DeclaredBy(string door) => _doors.TryGetValue(door, out var entry) ? entry.Door.Identity.DeclaredBy : null;
 
     /// <summary>Every door, in id order.</summary>
     public IReadOnlyList<DoorId> Doors => [.. _doors.Values.Select(entry => entry.Door.Id).OrderBy(id => id.Value, StringComparer.Ordinal)];

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="holders">
 /// The agents whose accounts a door runs as (<see cref="HarnessToolchain.AccountOf"/>) where this set carries no door of that
-/// agent, each by its toolchain (CODEXACCT1): see <see cref="ToolchainOf"/>. None by default, so a set a test builds asks nobody.
+/// agent, each by its toolchain (CODEXACCT1): see <see cref="Holder"/>. None by default, so a set a test builds asks nobody.
 /// </param>
 /// <param name="declared">
 /// Every agent an installed plugin's harness names, enabled or not (POOLSTRAY1): see <see cref="Agents"/>. None by default.
@@ -39,9 +39,9 @@ public sealed class AdapterSet(
 
     /// <summary>
     /// Every name this set runs as a harness, in a stable order (PLUGINRESERVE1): each door it carries and each agent a door
-    /// runs as with no door here (<see cref="ToolchainOf"/>). Of the built set, what no plugin may declare
+    /// runs as with no door here (<see cref="Holder"/>). Of the built set, what no plugin may declare
     /// (<see cref="PluginCatalog.Reserved"/>): a plugin's harness named for a holder would be a door of that agent, and
-    /// <see cref="ToolchainOf"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
+    /// <see cref="Holder"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
     /// </summary>
     public IReadOnlyList<string> Reserved =>
     [
@@ -51,33 +51,21 @@ public sealed class AdapterSet(
     ];
 
     /// <summary>
-    /// The toolchain of an agent whose accounts a door runs as, where this set carries no door of it (CODEXACCT1): its own
-    /// binary, sign-in, status question and account seam, so a door onto it signs its accounts in and asks them as the
-    /// agent itself does, the way <c>claude-code-acp</c> reaches <c>claude-code</c>'s (AGT7). Null for an agent this set
-    /// carries a door of, which answers for itself, and for one nobody declared.
+    /// The toolchain of an agent whose accounts a door runs as, where this set carries no door of it (CODEXACCT1), for the registry
+    /// made over this set to hold (<see cref="ProviderRegistry.ToolchainOf"/>, the one reader by name). Null for a door's name and for
+    /// an agent nobody declared. Not a door: no session starts on it (D23).
     /// </summary>
-    /// <remarks>
-    /// Not a door: it is no adapter, the roster lists it nowhere, and no session starts on it (D23: an adapter arrives
-    /// deliberately). A plugin's door that names the same agent reads the same holder.
-    /// </remarks>
-    public HarnessToolchain? ToolchainOf(string agent) =>
-        adapters.TryGetValue(agent, out var door)
-            ? door.Toolchain
-            : holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
+    internal HarnessToolchain? Holder(string agent) =>
+        !adapters.ContainsKey(agent) && holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
 
     /// <summary>
     /// The providers and doors this set carries, made once (<see cref="ProviderRegistry.Of"/>): the one reader of whose accounts an
-    /// agent runs as is its <see cref="ProviderRegistry.OwnerOfAgent"/>, a door's account key, a provider's own, else the name itself.
+    /// agent runs as is its <see cref="ProviderRegistry.OwnerOfAgent"/>, a door's account key, a provider's own, else the name itself;
+    /// of an agent's toolchain, <see cref="ProviderRegistry.ToolchainOf"/>; of the plugin a door came from, <see cref="ProviderRegistry.DeclaredBy"/>.
     /// </summary>
     public ProviderRegistry Registry => LazyInitializer.EnsureInitialized(ref _registry, () => ProviderRegistry.Of(this))!;
 
     private ProviderRegistry? _registry;
-
-    /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
-    public string? DeclaredBy(string name) =>
-        adapters.TryGetValue(name, out var adapter) && adapter is LegacyDoor { Declared: true } declared
-            ? declared.Door.Identity.DeclaredBy
-            : null;
 
     /// <summary>
     /// This set plus <paramref name="more"/> doors and the agents they declare. A name this set carries is kept as it is, so nothing here can

@@ -145,7 +145,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     TakesRules = harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
-                    Plugin = harnesses.Adapters.DeclaredBy(report.Adapter),
+                    Plugin = harnesses.Adapters.Registry.DeclaredBy(report.Adapter),
                     // The profile HOME is a machine path, and this bridge is the one surface
                     // allowed to carry one (D47 §4) — the page renders it so a person can find
                     // the directory they were told Daoris owns.

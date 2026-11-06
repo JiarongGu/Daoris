@@ -2,9 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Claude Code written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): provider <c>claude-code</c> with its
-/// two doors, <c>claude-code</c> on the pipe and <c>claude-code-acp</c> on the protocol, which runs as its accounts. Its facts are what
-/// <see cref="ClaudeCodeAdapter"/> and <see cref="ClaudeAcpAdapter"/> declare until row t takes the classes away; the shim
-/// (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
+/// two doors, <c>claude-code</c> on the pipe and <c>claude-code-acp</c> on the protocol, which runs as its accounts. The shim
+/// (<see cref="LegacyDoor"/>) presents them to the adapter seam's readers; a test holds the native door equal to
+/// <see cref="ClaudeCodeAdapter"/> while that class stands.
 /// </summary>
 /// <remarks>
 /// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's until rows i and k. The
@@ -64,7 +64,7 @@ internal static class ClaudeCodeProvider
             Known<ToolSpec>.Absent, home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: true), Evidence),
             new PosturesPart(null, Asking: "default", Full: "bypassPermissions", Reading: null),
             Known<ISpawn>.Declared(new ClaudeCodeSpawn(), Evidence),
-            Known<IDialect>.Declared(new AdapterNativeDialect(new ClaudeCodeAdapter()), Evidence),
+            Known<IDialect>.Declared(new ClaudeNativeDialect(), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 // It resumes a conversation it kept by its id (`--resume`), measured (AGENTLYNTAI1s-i).
@@ -83,7 +83,7 @@ internal static class ClaudeCodeProvider
             home, LentPart.None, Known<IDoorOffers>.Declared(new SettingsOffers(SessionOnlyEfforts: false), Evidence),
             new PosturesPart("auto|acceptEdits", Asking: "default", Full: "bypassPermissions", Reading: null),
             Known<ISpawn>.Declared(new ClaudeAcpSpawn(), Evidence),
-            Known<IDialect>.Declared(new AdapterProtocolDialect(new ClaudeAcpAdapter()), Evidence),
+            Known<IDialect>.Declared(new ClaudeProtocolDialect(), Evidence),
             new AbilitiesPart(
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),

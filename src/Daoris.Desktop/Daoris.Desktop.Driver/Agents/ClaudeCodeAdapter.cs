@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 
 namespace Daoris.Driver;
 
@@ -43,34 +42,19 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 
     public ProcessStartInfo Prepare(SpawnRequest request) => DoorStarts.Started(Spawn, request);
 
-    public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
+    /// <summary>Its door's dialect (<see cref="ClaudeNativeDialect"/>), which this class's stream members are one-line doors to until row t.</summary>
+    private static readonly ClaudeNativeDialect Dialect = new();
+
+    public IStreamMapper StructuredOutput() => Dialect.Mapper();
 
     /// <summary>The harness's own resume (ANSWER1a, D131 §1): <c>--resume &lt;id&gt;</c>, the id its <c>init</c> line named.</summary>
     public bool Resumes => true;
 
     public ProcessStartInfo PrepareResume(SpawnRequest request) => DoorStarts.Resumed(Spawn, request)!;
 
-    /// <summary>
-    /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
-    /// per line, in the probe the evidence records.
-    /// </summary>
-    public string FrameMessage(string text) => JsonSerializer.Serialize(new
-    {
-        type = "user",
-        message = new { role = "user", content = new[] { new { type = "text", text } } },
-    });
+    public string FrameMessage(string text) => Dialect.FrameMessage(text);
 
-    /// <summary>
-    /// The turn's stop as a <c>control_request</c> of subtype <c>interrupt</c> — answered by the binary in
-    /// the probe with a <c>control_response</c>, the turn ending <c>aborted_streaming</c> or
-    /// <c>aborted_tools</c>, and the session taking the next turn (stream-json evidence, § Stopping a turn).
-    /// </summary>
-    public string FrameInterrupt() => JsonSerializer.Serialize(new
-    {
-        type = "control_request",
-        request_id = $"daoris-{Guid.NewGuid():N}",
-        request = new { subtype = "interrupt" },
-    });
+    public string FrameInterrupt() => Dialect.FrameInterrupt();
 
     /// <summary>
     /// A conversation: no target prompt, because the person supplies the first message.

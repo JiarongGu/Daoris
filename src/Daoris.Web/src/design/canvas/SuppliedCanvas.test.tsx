@@ -60,6 +60,8 @@ describe('a supplied world below the canvas floor', () => {
     expect([...cards, ...lines].filter((each) => each.getAttribute('tabindex') === '0')).toEqual([cards[0]]);
     // A source that is no place is drawn and named, and is no button.
     expect(screen.getByRole('img', { name: 'the source' })).toBeInTheDocument();
+    // The cards are one list of the stops: the source is not counted.
+    expect(screen.getAllByRole('listitem').map((item) => [item.getAttribute('aria-posinset'), item.getAttribute('aria-setsize')])).toEqual([['1', '3'], ['2', '3'], ['3', '3']]);
   });
 
   it('chooses a card or a line on a press, and releases it on a second press or Escape', async () => {
@@ -205,6 +207,12 @@ describe('a supplied world in the viewport', () => {
     expect(document.querySelector('[data-flow-node="n0"]')).toHaveAttribute('tabindex', '0');
     // The selected stays mounted wherever it lies.
     expect(document.querySelector('[data-flow-node="n899"]')).not.toBeNull();
+    // Each mounted card says its place among all 900, so a reader knows what culling left out.
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(mounted.length);
+    expect(items.every((item) => item.getAttribute('aria-setsize') === '900')).toBe(true);
+    expect(document.querySelector('[data-flow-node="n899"]')!.closest('[role="listitem"]')).toHaveAttribute('aria-posinset', '900');
+    expect(document.querySelector('[data-flow-node="n0"]')!.closest('[role="listitem"]')).toHaveAttribute('aria-posinset', '1');
   });
 
   it('says once that the selection kept under a changed graph is gone, until something is chosen again (trap 18)', async () => {

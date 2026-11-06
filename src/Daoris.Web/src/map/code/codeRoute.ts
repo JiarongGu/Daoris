@@ -19,9 +19,14 @@ const REACH = 160;
 const BEND = 64;
 /** The corner's radius, in world units. */
 const CORNER = 6;
-/** Bounds on the work: the lines of one scene routed round, and the cards a route is found among. */
-export const ROUTED_MAX = 200;
+/**
+ * Bounds on the work, in grid cells searched: what one scene spends in all, and the cards one search holds at a time. A route's cost
+ * is its grid's size, so a scene of many short routes is all routed and a few long ones in a crowd are not.
+ */
+export const ROUTE_CELLS = 2_000_000;
 const OBSTACLES_MAX = 64;
+/** How many times a route that crossed a card left out of its search is found again with it in. */
+const REFINE = 4;
 
 const grow = (box: Box, by: number): Box => ({ x: box.x - by, y: box.y - by, w: box.w + 2 * by, h: box.h + 2 * by });
 const spanOf = (points: readonly Point[]): Box => {
@@ -239,7 +244,7 @@ function halfway(points: readonly Point[]): Point {
  */
 export function createRouter(boxes: ReadonlyMap<string, Box>): { route: (from: string, to: string, lane: number) => Routed } {
   const grid = buildGrid(boxes);
-  let routed = 0;
+  let spent = 0;
   return {
     route(from, to, lane) {
       const [a, b] = [boxes.get(from)!, boxes.get(to)!];
@@ -253,13 +258,25 @@ export function createRouter(boxes: ReadonlyMap<string, Box>): { route: (from: s
       };
       const blockers = [...queryGrid(grid, grow(spanOf(points), CLEAR))].filter((id) => id !== from && id !== to).map((id) => grow(boxes.get(id)!, CLEAR / 2));
       if (!blockers.some((box) => points.some((point, at) => at > 0 && crosses(points[at - 1]!, point, box)))) return direct;
-      if (routed >= ROUTED_MAX) return direct;
       const region = grow(spanOf([ends.s1, ends.e1]), REACH);
-      const near = [...queryGrid(grid, region)];
-      if (near.length > OBSTACLES_MAX) return direct;
-      const path = orthogonal(ends.s1, ends.e1, near.map((id) => grow(boxes.get(id)!, CLEAR)), region, ends.vertical);
+      // A crowded region is searched among the cards nearest the direct shape, then again with any card the found route still crosses.
+      const near = [...queryGrid(grid, region)].filter((id) => id !== from && id !== to);
+      const mid = { x: (ends.s1.x + ends.e1.x) / 2, y: (ends.s1.y + ends.e1.y) / 2 };
+      const gap = (id: string) => { const box = boxes.get(id)!; return Math.hypot(box.x + box.w / 2 - mid.x, box.y + box.h / 2 - mid.y); };
+      const held = new Set([from, to, ...near.sort((p, q) => gap(p) - gap(q)).slice(0, OBSTACLES_MAX)]);
+      let path: Point[] | null = null;
+      for (let round = 0; round <= REFINE; round += 1) {
+        const cells = (2 * held.size + 4) ** 2;
+        if (spent + cells > ROUTE_CELLS) return direct;
+        spent += cells;
+        path = orthogonal(ends.s1, ends.e1, [...held].map((id) => grow(boxes.get(id)!, CLEAR)), region, ends.vertical);
+        if (!path) return direct;
+        const left = near.filter((id) => !held.has(id) && path!.some((point, at) => at > 0 && crosses(path![at - 1]!, point, grow(boxes.get(id)!, CLEAR))));
+        if (left.length === 0) break;
+        if (round === REFINE) return direct;
+        for (const id of left) held.add(id);
+      }
       if (!path) return direct;
-      routed += 1;
       const all = simplify([ends.s, ...path, ends.e]);
       return { d: polylineD(all), mid: halfway(all), points: all };
     },
