@@ -193,7 +193,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         trees = Trees(world);
         var graph = new ReviewGraph();
         var held = new HeldReads();
-        var rounds = new Dictionary<ReviewGraphNode, int>();
+        var rounds = new Dictionary<ReviewRead, int>();
         using var owned = new CancellationTokenSource();
         Task<string>? read = null;
         Exception? failed = null;
@@ -274,7 +274,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
     {
         private readonly Lock _gate = new();
         private readonly Queue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)> _held = [];
-        private readonly Dictionary<ReviewGraphNode, GitBudget> _calls = [];
+        private readonly Dictionary<ReviewRead, GitBudget> _calls = [];
         private bool _settling;
         private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -307,7 +307,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
         public void RecordCall(ReviewGraph graph, IReadOnlyList<string> arguments, GitBudget budget)
         {
-            static string CommandName(ReviewGraphNode node) => node.Name switch { "K′" => "K", "N↑" => "N1", "N↓" => "N2", _ => node.Name };
+            static string CommandName(ReviewRead node) => node.Name switch { "K′" => "K", "N↑" => "N1", "N↓" => "N2", _ => node.Name };
             lock (_gate)
             {
                 // After an assertion fails, teardown runs the scripted reads freely; it no longer measures a held frontier.
@@ -375,17 +375,17 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     // An injective DAG match, extended by backtracking through indistinguishable peers. Needs refer to mapped node identities,
     // not recursive strings: two U nodes with the same label/needs remain two nodes, and shared versus separate parents differ.
-    private static Dictionary<ReviewGraphNode, ReviewGraphNode>? MatchTopology(
-        IReadOnlyList<ReviewGraphNode> actual, IReadOnlyList<ReviewGraphNode> reference, bool complete = false)
+    private static Dictionary<ReviewRead, ReviewRead>? MatchTopology(
+        IReadOnlyList<ReviewRead> actual, IReadOnlyList<ReviewRead> reference, bool complete = false)
     {
         if (actual.Count > reference.Count || (complete && actual.Count != reference.Count)) return null;
-        var heights = new Dictionary<ReviewGraphNode, int>();
-        int Height(ReviewGraphNode node) => heights.TryGetValue(node, out var height) ? height
+        var heights = new Dictionary<ReviewRead, int>();
+        int Height(ReviewRead node) => heights.TryGetValue(node, out var height) ? height
             : heights[node] = 1 + node.Needs.Select(Height).DefaultIfEmpty(0).Max();
         // Only traversal is topological; neither creation order nor Start.Order is used as identity.
         var nodes = actual.OrderBy(Height).ToArray();
-        var map = new Dictionary<ReviewGraphNode, ReviewGraphNode>();
-        var taken = new HashSet<ReviewGraphNode>();
+        var map = new Dictionary<ReviewRead, ReviewRead>();
+        var taken = new HashSet<ReviewRead>();
         bool Match(int at)
         {
             if (at == nodes.Length) return true;
@@ -414,8 +414,8 @@ public sealed class ReviewGraphCensusTests : IDisposable
     // Completeness comes from the settled scripted topology, never an elapsed quiet interval. Each started node in this census
     // makes one held git call. Wait for those arrivals as well as starts; Order is published before the stand-in is entered.
     private static async Task<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)[]> FrontierAsync(
-        ReviewGraph graph, HeldReads held, Task read, World world, IReadOnlyList<ReviewGraphNode> reference, int round,
-        Action? waitingForStarts = null, Dictionary<ReviewGraphNode, int>? rounds = null, TimeProvider? clock = null)
+        ReviewGraph graph, HeldReads held, Task read, World world, IReadOnlyList<ReviewRead> reference, int round,
+        Action? waitingForStarts = null, Dictionary<ReviewRead, int>? rounds = null, TimeProvider? clock = null)
     {
         using var stop = new CancellationTokenSource();
         var expired = Task.Delay(Poll.Patience, clock ?? TimeProvider.System, stop.Token);
@@ -507,7 +507,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         var held = new HeldReads();
         var actual = Script(parentRelease.Task, registration.Task, childRelease.Task,
             producerPaused, childStarted, held, childRelease);
-        var rounds = new Dictionary<ReviewGraphNode, int> { [actual.Graph.Nodes[0]] = 1 };
+        var rounds = new Dictionary<ReviewRead, int> { [actual.Graph.Nodes[0]] = 1 };
         Task? frontier = null;
         try
         {
@@ -545,12 +545,12 @@ public sealed class ReviewGraphCensusTests : IDisposable
     [Fact]
     public void Topology_matching_keeps_duplicate_identities_and_sharing_without_creation_order()
     {
-        static ReviewGraphNode Node(string name, params ReviewGraphNode[] needs) => new(name, needs, false, false, GitBudget.Review);
+        static ReviewRead Node(string name, params ReviewRead[] needs) => new(name, needs, false, false, GitBudget.Review);
         var a = Node("U");
         var b = Node("U");
         var x = Node("X", a);
         var y = Node("Y", b);
-        ReviewGraphNode[] reference = [a, b, x, y];
+        ReviewRead[] reference = [a, b, x, y];
         var first = Node("U");
         var second = Node("U");
         var otherX = Node("X", second);
@@ -573,9 +573,9 @@ public sealed class ReviewGraphCensusTests : IDisposable
     [InlineData("needs")]
     public void Topology_matching_rejects_changed_node_contracts(string change)
     {
-        var parent = new ReviewGraphNode("E", [], false, false, GitBudget.Review);
-        var reference = new ReviewGraphNode("K′", [parent], false, true, GitBudget.Review);
-        var changed = new ReviewGraphNode(change == "name" ? "K" : "K′", change == "needs" ? [] : [parent],
+        var parent = new ReviewRead("E", [], false, false, GitBudget.Review);
+        var reference = new ReviewRead("K′", [parent], false, true, GitBudget.Review);
+        var changed = new ReviewRead(change == "name" ? "K" : "K′", change == "needs" ? [] : [parent],
             change == "program", change != "speculation", change == "budget" ? GitBudget.Untracked : GitBudget.Review);
         Assert.Null(MatchTopology([parent, changed], [parent, reference], complete: true));
     }
@@ -690,7 +690,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
             await release.Task;
             return true;
         });
-        var rounds = new Dictionary<ReviewGraphNode, int>();
+        var rounds = new Dictionary<ReviewRead, int>();
         try
         {
             await FrontierAsync(actual, held, answer, new World(), reference.Nodes, round, rounds: rounds);

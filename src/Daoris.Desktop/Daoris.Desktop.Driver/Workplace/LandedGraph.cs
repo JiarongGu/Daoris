@@ -11,16 +11,16 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string root, LandedBranch entry, bool speculative, CancellationToken ct)
 {
-    private readonly List<ReviewGraphNode> _made = [];
+    private readonly List<ReviewRead> _made = [];
 
     /// <summary>The nodes it made: the standing review, asked before D decides its use, marks them used or wasted as one.</summary>
-    internal IReadOnlyList<ReviewGraphNode> Made => _made;
+    internal IReadOnlyList<ReviewRead> Made => _made;
 
     /// <summary>
     /// <see cref="LandedReviews.LandedReviewAsync"/>'s answer, read as a graph; <paramref name="speculative"/> where its use is decided
     /// later (the standing review beside D).
     /// </summary>
-    internal static async Task<(LandedReview Review, IReadOnlyList<ReviewGraphNode> Made)> ReadAsync(
+    internal static async Task<(LandedReview Review, IReadOnlyList<ReviewRead> Made)> ReadAsync(
         ReviewGraph graph, TreeContext context, string? root, LandedBranch entry, bool changes, bool speculative, CancellationToken ct)
     {
         if (root is null) return (new(entry, LandedState.NoCheckout), []);
@@ -28,7 +28,7 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
         return (await reads.ReviewAsync(changes).ConfigureAwait(false), reads.Made);
     }
 
-    private (ReviewGraphNode Node, Task<T> Answer) Run<T>(string name, ReviewGraphNode?[] needs, Func<Task<T>> read, bool ahead = false)
+    private (ReviewRead Node, Task<T> Answer) Run<T>(string name, ReviewRead?[] needs, Func<Task<T>> read, bool ahead = false)
     {
         var run = graph.Run(name, needs, read, speculative || ahead, GitBudget.Landed);
         lock (_made) _made.Add(run.Node);
@@ -89,7 +89,7 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
     /// <c>LandedFromAsync</c>'s order (<see cref="ReviewChoices.LandedFrom"/>): the recorded start while the branch holds it, its full
     /// id read beside that question; else where the branch leaves the line.
     /// </summary>
-    private async Task<(string? From, ReviewGraphNode? Node)> FromAsync(string tip, ReviewGraphNode tipNode)
+    private async Task<(string? From, ReviewRead? Node)> FromAsync(string tip, ReviewRead tipNode)
     {
         if (entry.From is { } recorded && WorkingTree.IsCommitId(recorded))
         {
@@ -110,7 +110,7 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
     }
 
     /// <summary>The line in this checkout, as <see cref="TreeContext.LineAsync"/> names it, else the landing's record of it.</summary>
-    private async Task<(string? Line, ReviewGraphNode? Node)> LineAsync(ReviewGraphNode?[] needs)
+    private async Task<(string? Line, ReviewRead? Node)> LineAsync(ReviewRead?[] needs)
     {
         var made = graph.Nodes.Count;
         var (line, node) = await ReviewGraphReads.GuessAsync(
@@ -122,7 +122,7 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
     /// <summary>
     /// <c>ComparableAsync</c>'s order: the line here, else origin's, where git has it; both asked together (origin's speculatively).
     /// </summary>
-    private async Task<(string? Reference, ReviewGraphNode Node)> ComparableAsync(string line, ReviewGraphNode?[] needs)
+    private async Task<(string? Reference, ReviewRead Node)> ComparableAsync(string line, ReviewRead?[] needs)
     {
         var refs = ReviewRanges.LineRefs(line);
         var here = Run("Lc1", needs, () => Git(["rev-parse", "--verify", "--quiet", refs[0] + "^{commit}"]));
@@ -138,14 +138,14 @@ internal sealed class LandedGraph(ReviewGraph graph, TreeContext context, string
     }
 
     /// <summary><c>ReadsAsync</c>: whether a gone branch's work reads on the line, the content proof (Π) on its forms.</summary>
-    private async Task<LandedReads> ReadsAsync(ReviewGraphNode need)
+    private async Task<LandedReads> ReadsAsync(ReviewRead need)
     {
         var held = Run("Lcommit", [need], () => Git(["cat-file", "-e", $"{entry.Tip}^{{commit}}"]));
         if ((await held.Answer.ConfigureAwait(false)).Code != 0) return new(LandedReads.CommitsGone, null, [], null);
 
         var (line, lineNode) = await LineAsync([held.Node]).ConfigureAwait(false);
         var forms = new List<LandedProofs.LineForm>();
-        ReviewGraphNode?[] proofNeeds = [held.Node, lineNode];
+        ReviewRead?[] proofNeeds = [held.Node, lineNode];
         if (line is not null)
         {
             // Both forms are asked today whatever the first answers, so both run together and neither is speculative.

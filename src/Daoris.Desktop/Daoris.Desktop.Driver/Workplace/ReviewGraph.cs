@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// configured program (Π) and whether it was started before the condition that decides its use (speculative). What the census
 /// generates depth and starts from.
 /// </summary>
-internal sealed class ReviewGraphNode(string name, IReadOnlyList<ReviewGraphNode> needs, bool program, bool speculative, GitBudget budget)
+internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, bool program, bool speculative, GitBudget budget)
 {
     private readonly TaskCompletionSource _answered = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _order = -1;
@@ -15,7 +15,7 @@ internal sealed class ReviewGraphNode(string name, IReadOnlyList<ReviewGraphNode
     public string Name { get; } = name;
 
     /// <summary>The nodes whose answers it waits for; a Π node's Π predecessor among them.</summary>
-    public IReadOnlyList<ReviewGraphNode> Needs { get; } = needs;
+    public IReadOnlyList<ReviewRead> Needs { get; } = needs;
 
     /// <summary>Whether it reads file content through git's diff or merge machinery, so a configured program may run (Π).</summary>
     public bool Program { get; } = program;
@@ -66,13 +66,13 @@ internal sealed class ReviewGraphNode(string name, IReadOnlyList<ReviewGraphNode
 internal sealed class ReviewGraph
 {
     private readonly object _gate = new();
-    private readonly List<ReviewGraphNode> _nodes = [];
+    private readonly List<ReviewRead> _nodes = [];
     private readonly List<Task> _tracked = [];
-    private ReviewGraphNode? _lastProgram;
+    private ReviewRead? _lastProgram;
     private int _started;
 
     /// <summary>Every node made so far, in the order they were made.</summary>
-    public IReadOnlyList<ReviewGraphNode> Nodes
+    public IReadOnlyList<ReviewRead> Nodes
     {
         get
         {
@@ -91,8 +91,8 @@ internal sealed class ReviewGraph
     /// A node outside Π: started once each of <paramref name="needs"/> has answered (a null need is one that did not run), counted in
     /// <paramref name="budget"/>. Its answer is <paramref name="read"/>'s.
     /// </summary>
-    internal (ReviewGraphNode Node, Task<T> Answer) Run<T>(
-        string name, IEnumerable<ReviewGraphNode?> needs, Func<Task<T>> read, bool speculative = false, GitBudget budget = GitBudget.Review)
+    internal (ReviewRead Node, Task<T> Answer) Run<T>(
+        string name, IEnumerable<ReviewRead?> needs, Func<Task<T>> read, bool speculative = false, GitBudget budget = GitBudget.Review)
     {
         var node = Add(name, needs, program: false, speculative, budget);
         return (node, StartAsync(node, read));
@@ -103,9 +103,9 @@ internal sealed class ReviewGraph
     /// node before it, never speculatively.
     /// </summary>
     internal async Task<T> ProgramAsync<T>(
-        string name, IEnumerable<ReviewGraphNode?> needs, Func<Task<T>> read, GitBudget budget = GitBudget.Review)
+        string name, IEnumerable<ReviewRead?> needs, Func<Task<T>> read, GitBudget budget = GitBudget.Review)
     {
-        ReviewGraphNode node;
+        ReviewRead node;
         lock (_gate)
         {
             node = Add(name, [.. needs, _lastProgram], program: true, speculative: false, budget);
@@ -148,14 +148,14 @@ internal sealed class ReviewGraph
         }
     }
 
-    private ReviewGraphNode Add(string name, IEnumerable<ReviewGraphNode?> needs, bool program, bool speculative, GitBudget budget)
+    private ReviewRead Add(string name, IEnumerable<ReviewRead?> needs, bool program, bool speculative, GitBudget budget)
     {
-        var node = new ReviewGraphNode(name, [.. needs.OfType<ReviewGraphNode>().Distinct()], program, speculative, budget);
+        var node = new ReviewRead(name, [.. needs.OfType<ReviewRead>().Distinct()], program, speculative, budget);
         lock (_gate) _nodes.Add(node);
         return node;
     }
 
-    private async Task<T> StartAsync<T>(ReviewGraphNode node, Func<Task<T>> read)
+    private async Task<T> StartAsync<T>(ReviewRead node, Func<Task<T>> read)
     {
         try
         {

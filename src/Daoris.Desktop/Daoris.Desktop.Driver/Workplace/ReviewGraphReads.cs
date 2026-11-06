@@ -74,7 +74,7 @@ internal static class ReviewGraphReads
         {
             var (from, against, behind, sigma) = range is null
                 // A tree outside this home keeps the record's word, with no line and no start (ReviewRanges.cs:37).
-                ? (baseCommit!, null, Task.FromResult<LineBehind?>(null), Array.Empty<ReviewGraphNode>())
+                ? (baseCommit!, null, Task.FromResult<LineBehind?>(null), Array.Empty<ReviewRead>())
                 : await range.AnswerAsync().ConfigureAwait(false);
             var reads = new ReviewRange(from, null, against).Reads;
             TreeDiff? diff = null;
@@ -139,7 +139,7 @@ internal static class ReviewGraphReads
     }
 
     /// <summary>The standing landing's review (changes: false), all of it speculative: used where D answers, else wasted.</summary>
-    private static async Task<(LandedReview Review, IReadOnlyList<ReviewGraphNode> Made)> StandingAsync(
+    private static async Task<(LandedReview Review, IReadOnlyList<ReviewRead> Made)> StandingAsync(
         ReviewGraph graph, TreeContext context, Lazy<Task<string?>> checkout, LandedBranch landing, CancellationToken ct) =>
         await LandedGraph.ReadAsync(graph, context, await checkout.Value.ConfigureAwait(false), landing, changes: false, speculative: true, ct)
             .ConfigureAwait(false);
@@ -149,7 +149,7 @@ internal static class ReviewGraphReads
     /// W fails or S fails, and then no window opens.
     /// </summary>
     private static async Task<TreeDiff?> UncommittedAsync(
-        ReviewGraph graph, string tree, (ReviewGraphNode Node, Task<bool> Answer) top, int window, CancellationToken ct)
+        ReviewGraph graph, string tree, (ReviewRead Node, Task<bool> Answer) top, int window, CancellationToken ct)
     {
         if (!await top.Answer.ConfigureAwait(false)) return null;
         var tracked = await graph.ProgramAsync(
@@ -189,11 +189,11 @@ internal static class ReviewGraphReads
         private readonly string _full;
         private readonly string _recorded;
         private readonly CancellationToken _ct;
-        private readonly Task<(string? Record, ReviewGraphNode?[] Nodes)> _record;
-        private readonly Task<(string? Line, ReviewGraphNode? Node)> _line;
-        private readonly Task<(string? Here, string? Origin, List<string> Known, ReviewGraphNode?[] Nodes)> _bases;
+        private readonly Task<(string? Record, ReviewRead?[] Nodes)> _record;
+        private readonly Task<(string? Line, ReviewRead? Node)> _line;
+        private readonly Task<(string? Here, string? Origin, List<string> Known, ReviewRead?[] Nodes)> _bases;
         private readonly Task<LineBehind?> _behind;
-        private readonly TaskCompletionSource<ReviewGraphNode?> _counts = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<ReviewRead?> _counts = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         internal RangeReads(ReviewGraph graph, TreeContext context, string tree, string recorded, CancellationToken ct)
         {
@@ -204,20 +204,20 @@ internal static class ReviewGraphReads
             var (workspace, repository) = context.OwnerOf(_full);
             _record = graph.Track(RecordAsync(context, repository));
             _line = graph.Track(LineAsync(context, repository, workspace));
-            var bases = new TaskCompletionSource<(string? Here, string? Origin, List<string> Known, ReviewGraphNode?[] Nodes)>(
+            var bases = new TaskCompletionSource<(string? Here, string? Origin, List<string> Known, ReviewRead?[] Nodes)>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             _bases = bases.Task;
             _behind = graph.Track(BehindAsync(bases));
             _select = graph.Track(SelectAsync());
         }
 
-        private readonly Task<(string From, (string Line, string Record)? Merge, Task<LineBehind?> Behind, ReviewGraphNode[] Sigma, ReviewGraphNode? Independent)> _select;
+        private readonly Task<(string From, (string Line, string Record)? Merge, Task<LineBehind?> Behind, ReviewRead[] Sigma, ReviewRead? Independent)> _select;
 
         /// <summary>The node whose answer said how far the tree is ahead (the offer's need), where the counts ran.</summary>
-        internal ReviewGraphNode? Counts => _counts.Task.IsCompletedSuccessfully ? _counts.Task.Result : null;
+        internal ReviewRead? Counts => _counts.Task.IsCompletedSuccessfully ? _counts.Task.Result : null;
 
         /// <summary>K, then E and K′ beside it: the record's base by <see cref="ReviewChoices.RecordedBase"/>'s order.</summary>
-        private async Task<(string? Record, ReviewGraphNode?[] Nodes)> RecordAsync(TreeContext context, string repository)
+        private async Task<(string? Record, ReviewRead?[] Nodes)> RecordAsync(TreeContext context, string repository)
         {
             var asksRecord = ReviewChoices.Id(_recorded);
             var held = asksRecord ? _graph.Run("K", [], () => Ancestor(_recorded)) : default;
@@ -240,11 +240,11 @@ internal static class ReviewGraphReads
             return (ReviewChoices.RecordedBase(_recorded, recordHeld, grown, grownAnswer), [held.Node, branch.Node, node]);
         }
 
-        private static async Task WastedAsync(Task<(string? Grown, ReviewGraphNode? Node, bool? Held)> grownHeld) =>
+        private static async Task WastedAsync(Task<(string? Grown, ReviewRead? Node, bool? Held)> grownHeld) =>
             (await grownHeld.ConfigureAwait(false)).Node?.Use(false);
 
-        private async Task<(string? Grown, ReviewGraphNode? Node, bool? Held)> GrownAsync(
-            TreeContext context, string repository, (ReviewGraphNode Node, Task<(int Code, string Stdout, string Stderr)> Answer) branch, bool speculative)
+        private async Task<(string? Grown, ReviewRead? Node, bool? Held)> GrownAsync(
+            TreeContext context, string repository, (ReviewRead Node, Task<(int Code, string Stdout, string Stderr)> Answer) branch, bool speculative)
         {
             var (_, abbrev, _) = await branch.Answer.ConfigureAwait(false);
             if (ReviewChoices.Grown(context.Grown, repository, abbrev) is not { } grown) return (null, null, null);
@@ -256,7 +256,7 @@ internal static class ReviewGraphReads
             (await WorkingTree.GitAsync(_full, ["merge-base", "--is-ancestor", commit, "HEAD"], _ct).ConfigureAwait(false)).Code == 0;
 
         /// <summary>P, and the line: what is set, else git's guess in the checkout P names (G1-G3 together, today's order).</summary>
-        private async Task<(string? Line, ReviewGraphNode? Node)> LineAsync(TreeContext context, string repository, string workspace)
+        private async Task<(string? Line, ReviewRead? Node)> LineAsync(TreeContext context, string repository, string workspace)
         {
             var common = _graph.Run("P", [], () => WorkingTree.GitAsync(_full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], _ct));
             _common = common.Node;
@@ -269,13 +269,13 @@ internal static class ReviewGraphReads
             return (line, node ?? common.Node);
         }
 
-        private ReviewGraphNode? _common;
+        private ReviewRead? _common;
 
         /// <summary>
         /// B1 and B2 once the line is known, with N↑ and N↓ beside them on both refs, speculatively. The counts are used where both B
         /// answered; else asked again on the refs that did, as today, and the first two wasted.
         /// </summary>
-        private async Task<LineBehind?> BehindAsync(TaskCompletionSource<(string? Here, string? Origin, List<string> Known, ReviewGraphNode?[] Nodes)> bases)
+        private async Task<LineBehind?> BehindAsync(TaskCompletionSource<(string? Here, string? Origin, List<string> Known, ReviewRead?[] Nodes)> bases)
         {
             try
             {
@@ -344,7 +344,7 @@ internal static class ReviewGraphReads
         /// Σ, then M in Π where the line's base and the record's are incomparable (REVIEWBASE3): the range as <c>ReviewRangeAsync</c>
         /// answers it, and the nodes D needs.
         /// </summary>
-        internal async Task<(string From, string? Against, Task<LineBehind?> Behind, ReviewGraphNode[] Sigma)> AnswerAsync()
+        internal async Task<(string From, string? Against, Task<LineBehind?> Behind, ReviewRead[] Sigma)> AnswerAsync()
         {
             var (from, merge, behind, sigma, independentNode) = await _select.ConfigureAwait(false);
             string? against = null;
@@ -366,15 +366,15 @@ internal static class ReviewGraphReads
         }
 
         /// <summary>Σ outside Π, started with the rest: K, K′, B and I answered, the base chosen; the merge M would read, where incomparable.</summary>
-        private async Task<(string From, (string Line, string Record)? Merge, Task<LineBehind?> Behind, ReviewGraphNode[] Sigma, ReviewGraphNode? Independent)> SelectAsync()
+        private async Task<(string From, (string Line, string Record)? Merge, Task<LineBehind?> Behind, ReviewRead[] Sigma, ReviewRead? Independent)> SelectAsync()
         {
             var (record, recordNodes) = await _record.ConfigureAwait(false);
             var (here, origin, _, baseNodes) = await _bases.ConfigureAwait(false);
             var (line, _) = await _line.ConfigureAwait(false);
             var candidates = ReviewBase.Candidates(here, origin, record);
-            var sigma = new List<ReviewGraphNode?>([.. recordNodes, .. baseNodes, _common]);
+            var sigma = new List<ReviewRead?>([.. recordNodes, .. baseNodes, _common]);
             IReadOnlyList<string>? maximal = null;
-            ReviewGraphNode? independentNode = null;
+            ReviewRead? independentNode = null;
             if (candidates.Count >= 2)
             {
                 var independent = _graph.Run(
@@ -388,7 +388,7 @@ internal static class ReviewGraphReads
 
             var (from, merge) = ReviewChoices.Choose(candidates, maximal, record, _recorded);
             // The counts are the answer's, never D's need: D starts without them.
-            return (from, merge, line is null ? Task.FromResult<LineBehind?>(null) : _behind, [.. sigma.OfType<ReviewGraphNode>()], independentNode);
+            return (from, merge, line is null ? Task.FromResult<LineBehind?>(null) : _behind, [.. sigma.OfType<ReviewRead>()], independentNode);
         }
     }
 
@@ -397,8 +397,8 @@ internal static class ReviewGraphReads
     /// asked together (G1, then G2 and G3 beside it, speculative) and chosen in <c>DefaultBranchAsync</c>'s order. Within a look, or
     /// under a test's seam, asked as today.
     /// </summary>
-    internal static async Task<(string? Line, ReviewGraphNode? Node)> GuessAsync(
-        ReviewGraph graph, TreeContext context, string root, string repository, string workspace, ReviewGraphNode?[] needs, CancellationToken ct,
+    internal static async Task<(string? Line, ReviewRead? Node)> GuessAsync(
+        ReviewGraph graph, TreeContext context, string root, string repository, string workspace, ReviewRead?[] needs, CancellationToken ct,
         GitBudget budget = GitBudget.Review)
     {
         var set = CanonicalLine.Choose(context.Config(), repository, workspace, guess: null);
