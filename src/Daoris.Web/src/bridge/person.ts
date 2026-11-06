@@ -35,6 +35,8 @@ export type PipeConfirmation = {
   restored?: boolean | null;
   /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1); absent before it. */
   hold?: boolean | null;
+  /** Where its terminal stands, as the pipe's code, where that is to be said (CHANNELJOIN1c); absent before it. */
+  standing?: string | null;
 };
 
 /** What waits, whole, numbered so the newest telling is kept (as `UNDER_WAY` is). */
@@ -68,6 +70,7 @@ const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   waitedOn: typeof waiting.waitedOn === 'boolean' ? waiting.waitedOn : null, checking: waiting.checking === true,
   checkWithin: typeof waiting.checkWithin === 'number' ? waiting.checkWithin : null,
   keyed: waiting.keyed === true, restored: waiting.restored === true, hold: waiting.hold === true,
+  standing: typeof waiting.standing === 'string' ? waiting.standing : null,
 });
 
 /**

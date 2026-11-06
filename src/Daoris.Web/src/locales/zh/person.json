@@ -127,7 +127,7 @@
   "person.route.CHANNEL_POST": "以你的名义在一个需求的频道里发言",
   "person.route.CHANNEL_LINE_POST": "以你的名义在一条工作线自己的频道里发言",
   "person.route.CHANNEL_FORWARD": "将一个需求的消息转给某个仓库的会话",
-  "person.route.CHANNEL_JOIN": "让一个外部代理加入频道：它阅读频道并以自己的身份发言，从不代表你，也不能启动、停止或引导任何会话",
+  "person.route.CHANNEL_JOIN": "让一个外部智能体加入频道：它阅读频道并以自己的身份发言，从不代表你，也不能启动、停止或引导任何会话",
   "person.route.START_CHAT": "用你的话开始一段对话",
   "person.route.START_HELP": "与问道衍开始一段对话",
   "person.route.HELP_START_FROM": "从之前的对话开始与问道衍的新对话",
@@ -209,5 +209,6 @@
   "person.route.REGISTRY.WRITE_DECLARATION": "将一份声明写入仓库",
   "person.route.REMOTES.SET": "将一个工作区接到远端",
   "person.route.REMOTES.REMOVE": "将一个工作区从所接的远端断开",
-  "person.route.PIPE.HOLD": "持有一段对话"
+  "person.route.PIPE.HOLD": "持有一段对话",
+  "person.standing.untold": "Daoris 无法判断这个终端是否运行在它自己启动的智能体里。只有这个智能体是你自己启动的，才确认。"
 }

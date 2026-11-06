@@ -32,11 +32,11 @@ public sealed class DriverPartsTests : IDisposable
             ["kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
                 "reviews", "opinions", "helpers", "partners", "brainstorms", "meetings", "plan",
-                "answered", "intakes", "start", "rule-acts", "bind", "endings", "landing"],
+                "answered", "intakes", "start", "rule-acts", "bind", "endings", "landing", "members"],
             order.Select(part => part.Name));
         Assert.Equal(
             [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
-                LookPhase.Planned, LookPhase.Planned, LookPhase.Planned, LookPhase.Planned, LookPhase.Begun, LookPhase.Begun, LookPhase.After],
+                LookPhase.Planned, LookPhase.Planned, LookPhase.Planned, LookPhase.Planned, LookPhase.Begun, LookPhase.Begun, LookPhase.After, LookPhase.After],
             order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -86,7 +86,10 @@ public sealed class DriverPartsTests : IDisposable
             driver.LookPasses.In(LookPhase.Begun),
             pass => Assert.IsType<BindRunsLook>(pass),
             pass => Assert.IsType<EndingsLook>(pass));
-        Assert.IsType<UnresolvedDeliveries>(Assert.Single(driver.LookPasses.In(LookPhase.After)));
+        Assert.Collection(
+            driver.LookPasses.In(LookPhase.After),
+            pass => Assert.IsType<UnresolvedDeliveries>(pass),
+            pass => Assert.IsType<ChannelMembersLook>(pass));
     }
 
     [Fact]

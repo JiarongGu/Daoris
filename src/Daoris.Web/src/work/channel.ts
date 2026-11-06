@@ -43,6 +43,8 @@ export type ChannelItem = {
   channel?: string | null;
   /** What a message to one part reached in that part's line, as the person reads it (COMMS1k): a receipt's state. */
   receipt?: string | null;
+  /** That its poster is an agent outside Daoris, a member of the channel of its own (CHANNELJOIN1): never the person's, never a session's. */
+  outside?: boolean;
 };
 
 /**

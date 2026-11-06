@@ -4,6 +4,7 @@ import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/u
 import { ago, clockOf, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
+import { standingSaid } from './standingSaid';
 
 /**
  * One value a press carries, as the card shows it (RPC1c, PERSONDOOR1b): its JSON pointer, its JSON type, and a string as it is
@@ -55,6 +56,8 @@ export type Confirmation = {
   restored?: boolean;
   /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238). */
   hold?: boolean;
+  /** The pipe's code for where its terminal stands where that is to be said, as `untold` (CHANNELJOIN1c); null or absent otherwise. */
+  standing?: string | null;
 };
 
 /**
@@ -416,6 +419,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
             ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
             : null}
         </p>
+        {standingSaid(t, waiting.standing) && <p data-standing className="m-0 text-small text-warn">{standingSaid(t, waiting.standing)}</p>}
         {/* ONEWAY1n-ii: one request row, the host's and a terminal's alike, waiting until the person answers or its asker takes it back. */}
         <p className="m-0 text-small text-warn">
           {t('person.waits')}

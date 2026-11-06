@@ -1,9 +1,12 @@
 import { useTranslation } from 'react-i18next';
+import { useOutsideAgents, useRemoveOutsideAgent } from '../../bridge/sessions/channelMembers';
 import { usePassHelper, useAskHelper, useSessionHelpers } from '../../bridge/sessions/sessionHelpers';
 import type { Session } from '../../data/api';
 import type { Answered } from '../InlineConfirm';
 import type { BringInChoice } from './BringInAgent';
 import type { MemberThreadProps } from './MemberThread';
+import type { OutsideAgent } from './outsideAgents';
+import type { RemoveOutside } from './OutsideAgentRow';
 import { askOfMember, teamSaid } from './teamRows';
 
 /** What the head's *Co-workers* and a member's thread are handed beyond the asks (COWORKUX1): the frame's facts and presses. */
@@ -15,6 +18,10 @@ export type TeamFacts = {
   choices?: readonly BringInChoice[];
   /** Where the attended record is a helper: its thread head. */
   thread?: MemberThreadProps | null;
+  /** The agents outside Daoris on its line's channel, and the person's *Remove* (CHANNELJOIN1c). */
+  outside?: readonly OutsideAgent[];
+  onRemoveOutside?: RemoveOutside;
+  removingOutside?: boolean;
 };
 
 /**
@@ -36,6 +43,9 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
   const member = attended && here && attended.serves && !attended.opinion ? attended : null;
   const lead = member?.serves ?? null;
   const leadAsks = useSessionHelpers(lead);
+  // Outside agents belong to a line's own record, never to a helper's, which has no channel.
+  const outside = useOutsideAgents(attended && here && !attended.serves && !attended.opinion ? attended.id : null);
+  const remove = useRemoveOutsideAgent();
   if (!attended || !here) return null;
 
   const passOn = (session: string) => (id: string, answered: Answered) => pass.mutate(
@@ -74,5 +84,11 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
       { door: 'goOn', onChoose: () => open('handOver') },
     ] : [],
     thread,
+    outside: outside.data ?? [],
+    onRemoveOutside: (member, removed) => remove.mutate(member, {
+      onSuccess: (answer) => (answer.removed ? removed.done() : removed.refused(t('work.team.outside.why', { code: answer.code ?? 'other' }))),
+      onError: (error) => removed.refused(error instanceof Error ? error.message : String(error)),
+    }),
+    removingOutside: remove.isPending,
   };
 }

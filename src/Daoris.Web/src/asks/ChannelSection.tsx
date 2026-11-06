@@ -29,9 +29,13 @@ export type ChannelForward = (message: string, repository: string, answered: Cha
 const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
 
 /** Who wrote a message: the person, or a session by its repository and agent (the agent's adapter, never a model), else a session. */
-export const whoOf = (t: TFunction, item: ChannelItem) => item.person
-  ? item.origin ? t('asks.channel.who.teammate', { machine: item.origin }) : t('asks.channel.who.you')
-  : [item.repository, item.agent].filter(Boolean).join(' · ') || t('asks.channel.who.session');
+export const whoOf = (t: TFunction, item: ChannelItem) => {
+  if (item.person) return item.origin ? t('asks.channel.who.teammate', { machine: item.origin }) : t('asks.channel.who.you');
+  const named = [item.repository, item.agent].filter(Boolean).join(' · ');
+  // An agent outside Daoris is said as itself, that it is outside, and never as a session (CHANNELJOIN1c).
+  if (item.outside) return named ? t('asks.channel.who.outside', { who: named }) : t('asks.channel.who.outsideAgent');
+  return named || t('asks.channel.who.session');
+};
 
 /** A message cut to the one line a choice and a quote have room for. */
 const firstWords = (text: string | null | undefined, limit = 60) => {

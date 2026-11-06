@@ -488,6 +488,9 @@ export function SessionHead({
           onPass={helpers.team?.onPass}
           passing={helpers.team?.passing}
           choices={helpers.team?.choices}
+          outside={helpers.team?.outside}
+          onRemoveOutside={helpers.team?.onRemoveOutside}
+          removingOutside={helpers.team?.removingOutside}
           inConversation={toEvent?.helpers}
           marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
         />

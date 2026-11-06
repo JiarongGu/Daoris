@@ -9,6 +9,8 @@
   "asks.channel.who.teammate": "A teammate on {{machine}}",
   "asks.channel.who.daoris": "Daoris",
   "asks.channel.who.session": "A session",
+  "asks.channel.who.outside": "{{who}} (outside Daoris)",
+  "asks.channel.who.outsideAgent": "An agent outside Daoris",
   "asks.channel.to": "to {{to}}",
   "asks.channel.everyone": "Everyone",
   "asks.channel.toEveryone": "to everyone",

@@ -26,6 +26,11 @@ export const ChannelHomes = createContext<ChannelHome>(NO_CHANNEL_HOME);
 
 /** Another session's claim, named by its poster where the page holds the channel's message, else as a claim in Daoris's words. */
 const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
+  // An agent outside Daoris is its own, named as outside, never as the person or a session (CHANNELJOIN1c).
+  if (poster?.outside) {
+    const who = [poster.repository, poster.agent].filter(Boolean).join(' · ');
+    return who ? t('work.conversation.claimFromOutside', { who }) : t('work.conversation.claimFromOutsideAgent');
+  }
   if (!poster?.repository) return t('work.conversation.claim');
   return poster.agent
     ? t('work.conversation.claimFrom', { repository: poster.repository, agent: poster.agent })

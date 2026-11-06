@@ -9,6 +9,8 @@
   "asks.channel.who.teammate": "{{machine}} 上的队友",
   "asks.channel.who.daoris": "Daoris",
   "asks.channel.who.session": "某个会话",
+  "asks.channel.who.outside": "{{who}}（Daoris 之外）",
+  "asks.channel.who.outsideAgent": "Daoris 之外的智能体",
   "asks.channel.to": "发给 {{to}}",
   "asks.channel.everyone": "所有人",
   "asks.channel.toEveryone": "发给所有人",
