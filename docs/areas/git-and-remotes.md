@@ -234,6 +234,45 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     transaction, then the kept session goes on in its tree. It may lose again; Daoris never retries. (from D178)
 51. A take that reached the remote after the reopen stays a loss. The quest remote carries no git objects. (from D178)
 
+## Git's starts, counted
+
+Every git of Daoris's own reads starts through `GitRuns` and `GitLaunch`, which count it for a flow (`GitLaunch.Count`,
+`WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in (`GitStartTally`). Measured on
+2026-11-06 on the count classes' fixtures, and held there as budgets. *Again* is the same command in the same folder asked again in the
+pass with no write between; *object* is what one held `git cat-file --batch` of the repository could answer instead (a name or an id
+read as its object), *by id* those naming an id alone.
+
+| View or landing | Starts | Again | Object (by id) | Held by |
+|---|---|---|---|---|
+| Branches (`GIT_BRANCHES`, one repository) | 3 | 0 | 1 (0) | `ViewGitCountTests` |
+| The checkout's branch (`CHECKOUT_BRANCH`) | 1 | 0 | 0 | `ViewGitCountTests` |
+| Changes (`GIT_CHANGES`), a file's hunks (`GIT_HUNKS`) | 5 each | 0 | 1 (0) each | `ViewGitCountTests` |
+| Graph, a file's history, blame (first open; kept by id after) | 1 each | 0 | 0 | `ViewGitCountTests` |
+| A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
+| The commit, switch and stash plans | 10, 7, 11 | 0, 0, 1 (`refs/stash`) | 2 (1), 2 (0), 3 (0) | `ViewGitCountTests` |
+| The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
+| Review, a tree ahead of its line, its second open | 23 | 0 | 2 (1) | `ReviewGitCountTests` |
+| Review, a tree the line holds by content | 24 | 0 | 3 (1) | `ReviewGitCountTests` |
+| A landed session's review | 7 | 1 (`--show-toplevel`) | 2 (1) | `ViewGitCountTests` |
+| The Accept offer of a tree of work | 12 | 0 | 2 (1) | `OfferGitCountTests` |
+| The look's tidy, six trees (two) | 26 (14) | 1 (`worktree list`, the judgement's own) | 7 (6) | `TidyGitCountTests` |
+| A session's start, to its spawn | 15 | 0 | 3 (0) | `StartGitCountTests` |
+| A squash press's landing | 29 | 2 (the head, the refs listed) | 6 (1) | `LandGitCountTests` |
+| A merge press's landing | 43 | 5 (the line's commit 3, the head, the refs listed) | 12 (2) | `LandGitCountTests` |
+
+The refs are listed from each folder a pass asks in: the offer and Review list them from the tree and the checkout, a landing three
+times. A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
+(`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
+`ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
+(15), 17.3 s. The other test classes that start git are not counted yet.
+
+A held reader per repository does not earn its place on these figures. A view asks at most three object questions a pass, one of them
+by id, and the Git page's reads ask none once an id's answer is kept. Only a landing (6 and 12) and the tidy (each branch's tree by its
+tip's id) ask more, and the starts they would save are cut without a process kept: each branch's tree from the refs' one listing
+(`%(tree)`), the refs listed once a pass, the tree's head, branch and files in one `status --porcelain=v2 --branch`, and a fact read once
+where nothing wrote between. A held reader would still cost its lifetime, the repack hazard and the version floor (the git-app design
+§4.3), for at most 11 starts of a merge press's 43.
+
 ## Where a change goes
 
 - **How an act is carried or judged:** the doors (`GitDoors`, `GitRouting`, `GitWiring`), compiled into
@@ -255,7 +294,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 under its grant on the SSH host, the same push refused without one, a tag refused by `deny` and passed by `allow`), `GitPushCommandTests`,
 `JournaledDeletesTests` (a judged and a forced delete journaled with their Undo, the one-way census), `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
-census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
+census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `ViewGitCountTests` (each page read's git starts held to those measured), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `WorkflowSquashChainProcessTests` (land, push, pull-request, monitor and tidy against the stand-ins, a squash
 merge ending a two-part chain once with an Undo), `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
@@ -313,4 +352,5 @@ catalogues (`i18n:check`).
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).
-- **OPTIMIZE1a:** git's starts counted per view, then a held reader per repository.
+- **OPTIMIZE1a:** counted per view, landing and count class (*Git's starts, counted*); the held reader is not proposed. Left: the
+  cuts the figures name (PERF1's row), and the other test classes that start git counted beside a Process run.

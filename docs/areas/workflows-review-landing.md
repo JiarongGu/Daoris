@@ -319,5 +319,6 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **FABRIC-PERFORM1l:** the pull-request event keeps its fields; WORKFLOW1j and 1k on observed nodes.
 - **LANDNODE1j:** the installed window's proof.
 - **REVIEWFLOW1c and LINESTOGETHER1:** a session's steps as one flow, proven in the installed window.
-- **GITAPP1 part two:** keeping or reusing review answers across opens, proposed and not designed.
+- **GITAPP1 part two:** keeping or reusing review answers across opens, proposed and not designed; not by a held reader, which the
+  counted starts do not earn (the git area's *Git's starts, counted*: a review asks two or three object questions of its 23).
 - **WORKSETUP1:** the work workspace set to a pull request after the owner's Accept, on the install.

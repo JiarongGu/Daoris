@@ -189,7 +189,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     each tree's branch from that list, until one of its stages writes. A branch's end judgement is three starts, where it left the
     line (which is also whether the line holds its tip), its tree and its files, from five: D88's question of every session
     branch is one `rev-list` of the judgement's refs (`UnheldTips`); on the benchmark's two dozen trees the tidy is 6 starts, on
-    six trees with work 27 from 38. An ended session's offer reads each question of git once (`GitReadOnce` over the tree's walk), and a
+    six trees with work 26 from 38 (the git area's *Git's starts, counted*). An ended session's offer reads each question of git once (`GitReadOnce` over the tree's walk), and a
     line still where the branch left it is neither walked nor compared again (17 starts of a tree of work, 12). A reader of the running ones asks the open ones, and every
     other reader of the session list (the window's sessions slice, the parks a look says, the readers that need a line's other
     parts and the per-session doors) reads the list kept by its change since the last mark (`SessionListKept`): its text and its
