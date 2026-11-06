@@ -72,7 +72,8 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(composed.Ask, Strings(permissions["ask"] ?? new JsonArray()));
         var deny = Strings(permissions["deny"]);
         Assert.Equal(composed.Deny, deny.Take(composed.Deny.Count));
-        Assert.Equal(Strings(expected["deny"]), deny.Skip(composed.Deny.Count));
+        // Every session is also denied Daoris's git keys (D241 point 7), by this home's own path.
+        Assert.Equal([.. Strings(expected["deny"]), GitSessionHolds.ProfileDeny(_home)], deny.Skip(composed.Deny.Count));
         Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
     }
 

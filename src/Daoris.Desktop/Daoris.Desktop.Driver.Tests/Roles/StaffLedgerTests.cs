@@ -353,10 +353,12 @@ public sealed class StaffLedgerTests : IDisposable
     [Fact]
     public void The_line_s_own_facts_are_kept_and_the_ledger_s_read_over_them()
     {
-        Save(Weighted(1, 1, new Dictionary<string, StaffMove> { [StaffConditions.Transient] = new(StaffActions.Weighted) }), read: 0);
+        Save(Weighted(1, 1), read: 0);
 
+        // A policy stores no moves: the line's effective rules bring them (CONTEXTDRIVE1e).
         var take = Ledger().Take("build", RoleWork.Build, Order, new StaffFacts
         {
+            Moves = new Dictionary<string, StaffMove> { [StaffConditions.Transient] = new(StaffActions.Weighted) },
             MovedOff = new Dictionary<StaffKey, DateTimeOffset> { [StaffKey.Of(Sonnet)] = _clock.GetUtcNow().AddMinutes(-5) },
             Window = [StaffKey.Of(Opus), StaffKey.Of(Opus)],
         });

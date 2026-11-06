@@ -135,6 +135,9 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
+    /// <summary>The runs waiting on a person's task, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
+    public IReadOnlyList<HumanTask> HumanTasks() => _governed is { } governed ? Daoris.Driver.HumanTasks.Of(governed.Values, records.Read) : [];
+
     /// <summary>
     /// The landed branches whose <c>integrate</c> waits for the owner's card (§17.4), each as its unit's last judgement found it, oldest
     /// landing first; a unit the last look no longer governs is none. Empty before a pass has judged one.

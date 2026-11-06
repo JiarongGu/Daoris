@@ -125,7 +125,7 @@ export interface CheckHeldAnswer {
  * What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it; a declined request's ask again and go
  * on (INTEGRATE1p); a review's changes, with their words (DECIDE1c).
  */
-export type NodeAct = 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes';
+export type NodeAct = 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {

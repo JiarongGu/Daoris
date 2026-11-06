@@ -557,9 +557,10 @@ public sealed class WorkflowRoutes(DriverContext context)
     // `daoris workflow skip|stop`. Both doors end in RunNodeWords.Word, which keeps the word on the run's record under its lock with the
     // lease asked inside it; the loop's runtime applies it at its next pass, which the nudge wakes.
     /// <summary>
-    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words) on
-    /// `node` of `run`, a run bound to a graph version, for the next look. Answers `{ run, node, act, done, refused, message }`, a refusal as an
-    /// answer with its code (`not-run`, `unread-version`, `not-node`, `not-act`, `not-review`, `ended`, `worded`, the one table's `no-words`,
+    /// Keep the person's `act` (`skip` with their `words`, or `stop`, words where given; a review's `changes`, with their words; a task's `done`,
+    /// or an approval's `approve` or `reject`, with a note where given) on `node` of `run`, a run bound to a graph version, for the next look.
+    /// Answers `{ run, node, act, done, refused, message }`, a refusal as an answer with its code (`not-run`, `unread-version`, `not-node`,
+    /// `not-act`, `not-review`, `not-task`, `not-waiting`, `ended`, `worded`, the one table's `no-words`,
     /// `not-skippable` and `not-in-table`, `not-held`, `unreadable`) and the terminal's sentence. Asked for its words (`said: true`) by the
     /// terminal's verb over the pipe, it runs that verb's own path here.
     /// </summary>

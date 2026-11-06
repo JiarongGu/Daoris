@@ -22,6 +22,12 @@ public abstract class BuiltInNode : INodeKind
     /// <summary>The outcomes a node of it is reached with, which its declaration writes; none where its kind is no decision.</summary>
     public virtual IReadOnlyList<string> Outcomes => [];
 
+    /// <summary>
+    /// Whether a node of it may declare <paramref name="outcomes"/>: where its kind is reached with outcomes, any that keep the names a route is
+    /// followed by (<see cref="NodeOutcomes.Problem"/>); a kind whose outcomes are a fixed set of its own says which.
+    /// </summary>
+    public virtual bool TakesOutcomes(IReadOnlyList<string> outcomes) => Outcomes.Count > 0 && NodeOutcomes.Problem(outcomes) is null;
+
     public virtual NodePart Part(NodeDeclaration node) => NodePart.Automatic(node.Kind);
 
     public virtual string Offered => PaletteKind.Alone;

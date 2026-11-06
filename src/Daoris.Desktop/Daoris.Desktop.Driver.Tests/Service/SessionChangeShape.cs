@@ -8,10 +8,10 @@ internal static class SessionChangeShape
     public const string ChangesPath = "/api/sessions/changes";
     public const string ListDoor = "/api/sessions?includeClosed=true";
 
-    /// <summary>The change that carries every record of <paramref name="sessions"/>, a JSON array, as a first read.</summary>
+    /// <summary>The change that carries every record of <paramref name="sessions"/>, a JSON array, as a first read; an answer that is no array is passed as it came.</summary>
     public static string Whole(string sessions)
     {
-        var records = JsonNode.Parse(sessions)!.AsArray();
+        if (JsonNode.Parse(sessions) is not JsonArray records) return sessions;
         var order = new JsonArray();
         foreach (var record in records)
         {

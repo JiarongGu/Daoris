@@ -61,6 +61,9 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'pass-over': 'passOver',
   'ask-again': 'passOver',
   'go-on': 'passOver',
+  'task-done': 'passOver',
+  'task-approve': 'passOver',
+  'task-reject': 'passOver',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */

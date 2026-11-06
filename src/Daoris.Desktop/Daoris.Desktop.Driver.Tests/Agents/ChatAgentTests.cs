@@ -25,6 +25,9 @@ public sealed class ChatAgentTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
+    private static string? Fresh(string? frame) =>
+        frame is null ? null : System.Text.RegularExpressions.Regex.Replace(frame, "\"request_id\":\"daoris-[0-9a-f]+\"", "\"request_id\":\"daoris-*\"");
+
     [Theory]
     [InlineData("claude-code")]
     [InlineData("claude-code-acp")]
@@ -44,7 +47,8 @@ public sealed class ChatAgentTests : IDisposable
         Assert.Equal(adapter.FullPosture, agent.FullPosture);
         Assert.Equal(adapter.Toolchain?.ErrorWords?.TypedFailures == true, agent.TypedFailures);
         Assert.Equal(adapter.FrameMessage("the person's words"), agent.FrameMessage("the person's words"));
-        Assert.Equal(adapter.FrameInterrupt(), agent.FrameInterrupt());
+        // An interrupt names itself by a fresh request id each time it is framed; all else of it is the door's.
+        Assert.Equal(Fresh(adapter.FrameInterrupt()), Fresh(agent.FrameInterrupt()));
         Assert.Equal(adapter.StructuredOutput() is null, agent.StructuredOutput() is null);
         Assert.Equal(CommitTrailers.For(adapter), agent.Trailers());
         Assert.Equal(TurnBinding.Of(ProviderRegistry.Built(), adapter, "account-1"), agent.Binding(ProviderRegistry.Built(), "account-1"));

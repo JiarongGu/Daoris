@@ -104,8 +104,11 @@ public sealed class WorkflowMigrationTests : IDisposable
         Assert.Equal("merge-automatic", WorkflowSelection.Resolve(config, "auto", "default", null).Workflow);
         Assert.Equal("engine-workflow", WorkflowSelection.Resolve(config, "engine", "aurora", null).Workflow);
         var land = LandOf(store, "engine-workflow");
-        Assert.Equal(("pull-request", "example-pr", "feat/{ticket}-{slug}", "[A-Z]+-\\d+", true),
-            (land["method"]!.ToString(), land["plugin"]!.ToString(), land["pattern"]!.ToString(), land["key"]!.ToString(), (bool)land["squash"]!));
+        // A rule that named a plugin lands a branch, then the push node and the plugin's own pull-request step.
+        Assert.Equal(("branch", "feat/{ticket}-{slug}", "[A-Z]+-\\d+", true),
+            (land["method"]!.ToString(), land["pattern"]!.ToString(), land["key"]!.ToString(), (bool)land["squash"]!));
+        Assert.Contains(Nodes(store, "engine-workflow"), node => (string?)node!["kind"] == NodeKinds.Push);
+        Assert.Contains(Nodes(store, "engine-workflow"), node => (string?)node!["kind"] == "example-pr/pull-request");
         Assert.Contains(Nodes(store, "engine-workflow"), node => (string?)node!["id"] == "qa");
         // The workspace's rule becomes the workspace's choice, and its integrate a line policy.
         Assert.Equal(2, config.WorkspaceLinePolicies["aurora"].Batch);

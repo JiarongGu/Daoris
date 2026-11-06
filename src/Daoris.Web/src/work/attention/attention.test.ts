@@ -828,12 +828,9 @@ describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'policy-hold': 'holding', 'request-declined': 'holding', 'go-ahead': 'holding',
-      permission: 'holding', answer: 'holding',
-      confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
-      'account-wait': 'holding', 'signed-out': 'holding',
-      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word',
-      integration: 'word', 'git-ask': 'holding',
+      permission: 'holding', answer: 'holding', task: 'holding', confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
+      'account-wait': 'holding', 'signed-out': 'holding', proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
+      'hand-over': 'word', unanswerable: 'word', review: 'ready', work: 'word', space: 'word', 'git-held': 'word', memory: 'word', integration: 'word', 'git-ask': 'holding',
     });
   });
 
@@ -1255,13 +1252,8 @@ describe('the place each wait is counted at', () => {
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions', memory: 'sessions',
       proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'policy-hold': 'quests', 'request-declined': 'quests', 'go-ahead': 'quests',
-      departure: 'quests', 'set-up': 'quests', trust: 'quests',
-      work: 'projects', integration: 'projects',
-      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
-      space: 'settings',
-      confirmation: null,
-      'git-held': 'settings',
-      'git-ask': 'sessions',
+      departure: 'quests', 'set-up': 'quests', trust: 'quests', task: 'quests', work: 'projects', integration: 'projects',
+      rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents', space: 'settings', confirmation: null, 'git-held': 'settings', 'git-ask': 'sessions',
     });
   });
 
@@ -1354,7 +1346,7 @@ describe('what a row offers', () => {
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual(['accept-rule', 'approve', 'ask-again', 'choose', 'go-on', 'not-yet', 'opinion-anyway', 'pass-over', 'quiet-carry-on', 'quiet-stop', 'refuse', 'trust']);
+      .toEqual('accept-rule approve ask-again choose go-on not-yet opinion-anyway pass-over quiet-carry-on quiet-stop refuse task-approve task-done task-reject trust'.split(' '));
   });
 
   /**

@@ -60,7 +60,7 @@ public static class NoticesRead
     /// </summary>
     public static IReadOnlyDictionary<string, string> KindGroups { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["parked"] = "holding", ["parked-quest"] = "holding", ["steward-stopped"] = "holding", ["policy-hold"] = "holding", ["request-declined"] = "holding", ["go-ahead"] = "holding", ["permission"] = "holding",
+        ["parked"] = "holding", ["parked-quest"] = "holding", ["steward-stopped"] = "holding", ["policy-hold"] = "holding", ["request-declined"] = "holding", ["task"] = "holding",["go-ahead"] = "holding", ["permission"] = "holding",
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["quiet"] = "holding", ["helper-ended"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
         ["opinion"] = "word", ["rule"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word", ["memory"] = "word",

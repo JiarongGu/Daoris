@@ -56,6 +56,9 @@ public sealed class DriverWatch(
     /// <summary>The runs held at a declined request (INTEGRATE1o part o3), as the evaluation runtime last read the quests; none before a pass.</summary>
     public IReadOnlyList<RequestHold> RequestHolds => _doors.Nodes?.RequestHolds() ?? [];
 
+    /// <summary>The runs waiting on a person's task (NODEKIT1 HUMAN), as the evaluation runtime last governed them; none before a pass.</summary>
+    public IReadOnlyList<HumanTask> HumanTasks => _doors.Nodes?.HumanTasks() ?? [];
+
     /// <summary>The landed branches whose integration waits for the owner's card (INTEGRATE1h), as the evaluation runtime last judged them; none before a pass.</summary>
     public IReadOnlyList<IntegrationCardWait> CardWaits => _doors.Nodes?.CardWaits() ?? [];
 

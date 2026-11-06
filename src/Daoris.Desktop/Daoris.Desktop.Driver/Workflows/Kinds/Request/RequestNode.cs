@@ -57,4 +57,12 @@ internal sealed class RequestNode : BuiltInNode, IStarts, IPressed
         : status.State == NodeStates.Failed && status.Code == RequestOptions.DeclinedCode && NodeOptions.Text(node, "declined") != RequestOptions.Stop
             ? [NodeWordActs.AskAgain, NodeWordActs.GoOn]
             : [];
+
+    /// <summary>Its send moves nothing (a mark of the attempt); asking again is the table's failed to ready, going on without it a skip with their words.</summary>
+    public NodeMove? Move(NodeDeclaration node, NodeWord word, NodeStatus status, NodeScope scope) => word.Act switch
+    {
+        NodeWordActs.AskAgain => new NodeMove(NodeStates.Ready, NodeCause.Person),
+        NodeWordActs.GoOn => new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope },
+        _ => null,
+    };
 }

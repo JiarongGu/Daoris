@@ -9,4 +9,13 @@ public sealed record WireServer(string Name, string Status);
 /// list, so a door that says nothing of its skills reads as none said, never as none loaded.
 /// </summary>
 public sealed record WireLoaded(
-    IReadOnlyList<string> Tools, IReadOnlyList<WireServer> Servers, IReadOnlyList<string> Skills, IReadOnlyList<string> Plugins);
+    IReadOnlyList<string> Tools, IReadOnlyList<WireServer> Servers, IReadOnlyList<string> Skills, IReadOnlyList<string> Plugins)
+{
+    /// <summary>Equal where each list holds the same items in the same order, as a reading kept and read back is.</summary>
+    public bool Equals(WireLoaded? other) =>
+        other is not null && Tools.SequenceEqual(other.Tools) && Servers.SequenceEqual(other.Servers)
+        && Skills.SequenceEqual(other.Skills) && Plugins.SequenceEqual(other.Plugins);
+
+    public override int GetHashCode() =>
+        HashCode.Combine(Tools.Count, Servers.Count, Skills.Count, Plugins.Count, Tools.FirstOrDefault(), Servers.FirstOrDefault());
+}

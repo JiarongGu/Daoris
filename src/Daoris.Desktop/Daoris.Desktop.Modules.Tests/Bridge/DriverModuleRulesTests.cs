@@ -22,7 +22,10 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         file = PermissionRules.Add(file, RuleScope.Repository, "engine", RuleList.Deny, "Bash(rm -rf:*)");
         PermissionRules.Save(Home, PermissionRules.SwitchDefault(file, "no-publish", on: false));
 
-        var answered = await AnswerAsync(Module(), "RULES");
+        // As the wire writes it, where a null is left out.
+        var response = await AskAsync(Module(), "RULES");
+        Assert.True(response.Success, $"RULES was refused: {response.Error?.Message}");
+        var answered = JsonSerializer.SerializeToElement(response.Data, Shenora.Core.Ipc.IpcJson.Options);
 
         Assert.Equal(PermissionRules.PathOf(Home), answered.GetProperty("path").GetString());
         var defaults = answered.GetProperty("defaults").EnumerateArray().ToList();
@@ -42,7 +45,7 @@ public sealed class DriverModuleRulesTests : DriverModuleBridge
         // leaves a null out, so a rule default carries no `hook` the page could misread.
         Assert.Empty(defaults[4].GetProperty("rules").EnumerateArray());
         Assert.Equal(TreeGuard.Matcher, defaults[4].GetProperty("hook").GetString());
-        Assert.True(defaults[0].GetProperty("hook").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
+        Assert.False(defaults[0].TryGetProperty("hook", out _));
 
         var scopes = answered.GetProperty("scopes").EnumerateArray().ToList();
         var machine = scopes.Single(s => s.GetProperty("scope").GetString() == "machine");
