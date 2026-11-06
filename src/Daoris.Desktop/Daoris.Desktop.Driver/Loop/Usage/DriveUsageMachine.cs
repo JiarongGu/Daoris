@@ -99,6 +99,9 @@ internal static class DriveUsageMachine
           workflow approve|reject <run> <node> ["…"]
               press your task on a run, or answer its approval, with a note if you like: the run takes the route
               for what you pressed. Daoris's window confirms it.
+          workflow fix <run> [<node>]
+              ask for a fix of a verification run's failed gate, with its log: one ask per gate, and a repeat finds the
+              ask already made. `work held` names the failed verifications. Daoris's window confirms it.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every command that reads a record need.

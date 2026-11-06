@@ -216,7 +216,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the kind the check's `ask` option names), found again by its words so a restart makes none twice, and a later failure of the same
     gate goes to the open ask's channel once. A check whose `failed` is `ask`, which only a version the person saved can say, has
     Daoris ask for that fix itself at each whole look (`VerifyFixStanding`), the failure still held for the person; `wait`, or none,
-    waits for the press, and `stop` asks nothing; the place's *Your part* says which. A check with `reach: paths` runs only the gates
+    waits for the press, and `stop` asks nothing; the place's *Your part* says which. The terminal's `daoris workflow fix <run> [<node>]`
+    is the press's twin (`WORK_HELD`'s `ask-fix`, answering its `said`), and `work held` lists a failed check's words without
+    `ask-fix` and names that verb beside them. A check with `reach: paths` runs only the gates
     the batch's changed paths reach (a gate's optional `paths` in the accepted declaration; none reaches every change; this
     repository's gates carry theirs, placed as its merge tool's reach table places them) and every gate whose newest evidence on the
     line is not a pass, and names the rest as *kept* in its result; a batch with no base runs them all. A person's verification of a branch or a commit (`daoris gate verify`, *Verify…*) is a run
