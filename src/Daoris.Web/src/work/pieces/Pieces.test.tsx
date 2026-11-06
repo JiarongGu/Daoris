@@ -84,6 +84,36 @@ describe('the Pieces section', () => {
     expect(onStop).toHaveBeenCalledWith('pt1', expect.objectContaining({ done: expect.any(Function) }));
   });
 
+  // COAGENT1b2: a piece's later acts, each asked first and told to its press by the piece's id.
+  it('offers Discard… on a piece holding work or a copy, asking first, and the hand-over only on an uncertain one', async () => {
+    const onAct = vi.fn((_: string, __: string, answered: { done: () => void }) => answered.done());
+    const uncertain = row({ id: 'p3', state: 'uncertain', code: 'job-unknown' });
+    render(<Pieces section={section({ pieces: [handed, uncertain, row({ id: 'p4', state: 'taken-in' }), row({ id: 'p5', state: 'discarded' })], onAct })} headingId="h" />);
+
+    expect(screen.getAllByRole('button', { name: 'Discard…' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Hand over what it left' })).toHaveLength(1);
+
+    await userEvent.click(within(document.querySelector('[data-piece="p3"]') as HTMLElement).getByRole('button', { name: 'Hand over what it left' }));
+    expect(screen.getByText(/Its job is ended now/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Hand it over' }));
+    expect(onAct).toHaveBeenCalledWith('p3', 'hand-over', expect.objectContaining({ done: expect.any(Function) }));
+
+    await userEvent.click(within(document.querySelector('[data-piece="p2"]') as HTMLElement).getByRole('button', { name: 'Discard…' }));
+    expect(onAct).toHaveBeenCalledTimes(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Discard the piece' }));
+    expect(onAct).toHaveBeenLastCalledWith('p2', 'discard', expect.objectContaining({ done: expect.any(Function) }));
+  });
+
+  it('says Discard… and the hand-over in Chinese, and offers neither without the press', async () => {
+    await i18n.changeLanguage('zh');
+    const { rerender } = render(<Pieces section={section({ pieces: [row({ state: 'uncertain', code: 'job-unknown' })], onAct: vi.fn() })} headingId="h" />);
+    expect(screen.getByRole('button', { name: '丢弃…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '交付它留下的' })).toBeInTheDocument();
+
+    rerender(<Pieces section={section({ pieces: [row({ state: 'uncertain', code: 'job-unknown' })] })} headingId="h" />);
+    expect(screen.queryByRole('button', { name: '丢弃…' })).toBeNull();
+  });
+
   it('offers no stop for a piece whose partner does not work, and no door without its press', () => {
     render(<Pieces section={section({ pieces: [handed] })} headingId="h" />);
     expect(screen.queryByRole('button', { name: 'Stop…' })).toBeNull();

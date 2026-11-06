@@ -48,6 +48,7 @@
   "opinion.why.signed-out": "列出的另一家厂商的阅读者都没有已登录的账户",
   "opinion.why.not-independent": "列出的阅读者中没有另一家厂商的智能体",
   "opinion.why.ended": "{{who}} 没有给出意见就结束了",
+  "opinion.why.transient": "{{who}} 的服务方一直出错，没能给出意见",
   "opinion.why.out-of-time": "{{who}} 在给出意见之前用完了它的分钟数",
   "opinion.why.other": "列出的另一家厂商的阅读者都读不了它",
   "opinion.toPerson.recheck": "它的发现交给了你：再读的发现从不自行回到做这项工作的会话。",

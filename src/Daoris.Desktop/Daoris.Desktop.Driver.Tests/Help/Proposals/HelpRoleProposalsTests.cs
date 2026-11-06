@@ -21,6 +21,8 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         System.IO.File.WriteAllText(file, """{ "adapter": "claude-code" }""");
         Staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Staffing.ImportFile();
+        // The seeded Design role takes design machine-wide; the cases below add one that does, so it is removed first.
+        RoleCatalog.Write(DesktopStore.LocationIn(_home), RoleChange.Remove("design"), () => StoreSettled.Yes);
     }
 
     void IDisposable.Dispose()

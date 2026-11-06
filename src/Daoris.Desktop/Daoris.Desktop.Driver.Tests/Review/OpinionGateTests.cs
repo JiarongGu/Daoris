@@ -208,6 +208,19 @@ public sealed class OpinionGateTests
         Assert.Contains("Codex (OpenAI) ran out of its minutes before it said one", late.Says);
     }
 
+    /// <summary>AGENTERRORS1d: a pass whose provider kept failing is unavailable with its own code and no reset, so the look has nothing to ask again by.</summary>
+    [Fact]
+    public async Task A_pass_whose_provider_kept_failing_is_unavailable_with_the_transient_code_and_no_reset()
+    {
+        var world = new World();
+        world.Opinions["o1"] = Opinion(state: "failed") with { Why = OpinionViews.Transient };
+        var gate = await JudgeAsync(Facts(Rule(required: true)) with { Asks = [AskOf("o1")] }, world);
+
+        Assert.Equal((OpinionGateStates.Unavailable, "transient"), (gate.State, gate.Code));
+        Assert.Null(gate.Until);
+        Assert.Contains("Codex (OpenAI)'s provider kept failing before it said one", gate.Says);
+    }
+
     [Fact]
     public async Task The_newest_ask_decides_a_later_pass_after_none_could_be_had()
     {

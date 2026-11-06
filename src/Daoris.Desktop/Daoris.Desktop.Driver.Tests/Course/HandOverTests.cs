@@ -604,14 +604,18 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(("hand-over", "s1", "codex-acp", "work"), (ask!.Verb, ask.Ids[0], ask.Agent, ask.Account));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent", "codex-acp"], out _)!.Account);
 
-        Assert.Null(SessionsCommand.Read(["hand-over", "s1"], out problem));
+        // Naming no agent is the press that goes on in a new session (ONEWAY1j).
+        var bare = SessionsCommand.Read(["hand-over", "s1"], out problem);
+        Assert.Null(problem);
+        Assert.Equal(("hand-over", "s1", null), (bare!.Verb, bare.Ids[0], bare.Agent));
+
+        Assert.Null(SessionsCommand.Read(["hand-over", "--agent", "codex-acp"], out problem));
         Assert.Equal(
-            "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`; "
+            "`hand-over` takes one session's id, with `--agent <adapter>` to name the agent and, where one is wanted, `--account <name>`; "
             + "or `--approve` or `--decline` for its agent's own ask to hand it over.", problem);
-        Assert.Null(SessionsCommand.Read(["hand-over", "--agent", "codex-acp"], out _));
         Assert.Null(SessionsCommand.Read(["hand-over", "s1", "--agent"], out _));
-        Assert.Contains("session hand-over <id> --agent <adapter> [--account <name>]", SessionsCommand.Usage);
-        Assert.Contains("session hand-over <id> --agent <adapter> [--account <name>]", DriverCommand.Usage);
+        Assert.Contains("session hand-over <id> [--agent <adapter> [--account <name>]]", SessionsCommand.Usage);
+        Assert.Contains("session hand-over <id> [--agent <adapter> [--account <name>]]", DriverCommand.Usage);
     }
 
     /// <summary>The verb opens nothing itself: the host's seam does, as start-from's, and its exit is the verb's.</summary>

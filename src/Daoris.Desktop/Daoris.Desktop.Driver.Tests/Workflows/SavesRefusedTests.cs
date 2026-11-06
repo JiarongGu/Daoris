@@ -28,7 +28,7 @@ public sealed class SavesRefusedTests : IDisposable
         var said = Assert.Single(Saved(NoMethod));
 
         Assert.Equal((GraphRefusal.LandMethod, "land"), (said.Code, said.Node));
-        Assert.Equal("node `land`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.", said.Words);
+        Assert.Equal("node `land`: a `land` is saved with its method chosen: merge, branch or integrate.", said.Words);
         Assert.Empty(NodeGraphs.Read(NoMethod).Problems);
     }
 
@@ -46,12 +46,12 @@ public sealed class SavesRefusedTests : IDisposable
     [Fact]
     public void A_tail_without_its_method_says_which_method_brings_it()
     {
-        var graph = NoMethod.Replace("\"reach\":\"performed\"}", "\"reach\":\"performed\",\"options\":{\"method\":\"merge\"}},{\"id\":\"push\",\"kind\":\"pushed\",\"version\":1,\"reach\":\"observed\"}", StringComparison.Ordinal)
+        var graph = NoMethod.Replace("\"reach\":\"performed\"}", "\"reach\":\"performed\",\"options\":{\"method\":\"merge\"}},{\"id\":\"push\",\"kind\":\"push\",\"version\":1,\"reach\":\"performed\"}", StringComparison.Ordinal)
             .Replace("\"wires\":[", "\"wires\":[{\"id\":\"b\",\"kind\":\"after\",\"from\":\"land\",\"to\":\"push\"},", StringComparison.Ordinal);
 
         var said = Saved(graph).Single(problem => problem.Code == GraphRefusal.LandTail);
 
-        Assert.Equal("node `push` is a `pushed`, which comes with a `land` whose method is `push`: choose that method on the landing and it brings this step.", said.Words);
+        Assert.Equal("node `push` is a `push`, which pushes the branch of a `land` whose method is `branch`: choose that method on the landing.", said.Words);
     }
 
     [Fact]

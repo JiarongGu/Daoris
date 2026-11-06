@@ -17,7 +17,7 @@ import type { useAttendedHead } from './useAttendedHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useAttendedSession } from './useAttendedSession';
 import { relationsOf } from './relations';
-import { SessionTerminalHold } from './TerminalHold';
+import { SessionTerminalHold } from './SessionTerminalHold';
 
 type Page = ComponentProps<typeof AttendedSession>;
 

@@ -230,7 +230,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 // 🔴 One turn, and no words (§5.6): nobody talks to a reviewer while it reads, on either door.
                 refusesInput: OpinionPass.TakesNoWords(opinion),
                 ct: ct,
-                transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
+                transientWanted: TransientOwners.Opinion(_context.Processes, sessionId, retryCt => service.Opinions.ReadAsync(opinion, retryCt)),
                 preamble: Driver.JoinNotices(preamble, opening),
                 handedPlan: ConnectorPlans.For(sessionId, ask.Workspace, [], ConnectorPlans.ConnectorOnly),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),

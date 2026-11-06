@@ -23286,3 +23286,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **PERSONDOOR1j — confirmation slots protected** (D156; ONEWAY1n, one confirmation queue): checked (BL26): the slots are protected (`PersonConfirmations.cs` ~142-148, ~451-462; `ConfirmationTests` ~361). Left: every ask without a session is one asker, so an agent that leaves its session off can hold both of the terminal's places; bound a nameless ask by its process or refuse it. The rest of PERSONDOOR1 (c to i) is parked with STEWARDROLE1. → `docs/2026-10-09-person-door-design.md` §10
 
   **Outcome** 2026-11-06: BL36: a nameless confirmation ask is bound by its process (`AskerProcess`, the loopback port's owner), one of the terminal's two places each; where the process cannot be read the asks stay one asker, as before.
+
+## HELPWIRED1b (2026-11-06)
+
+- [x] **HELPWIRED1b — what the door says it loaded, beside what was handed** (ONEWAY1h). → `docs/areas/agents-and-harnesses.md`, Open
+
+  **Outcome** 2026-11-06: BL41: the native door's init frame is read once into a `Loaded` reading, kept on the newest receipt, and Ask Daoris's *What it has* shows it beside what was handed, flagging a server handed but not listed or listed but not handed. The protocol door sends no init frame, so its receipts say not said.

@@ -62,6 +62,9 @@ public abstract record WireReading
     /// <summary>The account's windows as the agent reported them, unread: the provider's window words read them above.</summary>
     public sealed record WindowsSaid(JsonElement Windows) : WireReading;
 
+    /// <summary>The door's init frame: what it said it loaded at its start (HELPWIRED1b), the tools, servers, skills and plugins.</summary>
+    public sealed record Loaded(WireLoaded Init) : WireReading;
+
     /// <summary>A stream the agent runs beside itself opened: a subagent or a background task, its own console (CONSOLE3c).</summary>
     public sealed record StreamOpened(SessionStream Stream) : WireReading;
 

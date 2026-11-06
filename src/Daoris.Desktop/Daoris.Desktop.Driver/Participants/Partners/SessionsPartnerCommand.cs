@@ -8,15 +8,16 @@ namespace Daoris.Driver;
 /// partner's record's stop, the same press as <c>sessions stop</c>: the driver reads it as the person's and keeps the work.
 /// </summary>
 /// <remarks>
-/// <para>The design's <c>--discard</c> and <c>--hand-over</c> wait for the acts they name (a piece's ref removed in one verified
-/// transaction, an uncertain piece's work handed), which no sub-feature builds yet; the words refuse them as unknown.</para>
+/// <para><c>--discard</c> and <c>--hand-over</c> are the page's <i>Discard…</i> and <i>Hand over what it left</i>: each writes the piece's
+/// act for the driver's next look (<see cref="PartnerPersonAct"/>), which removes the ref and the copy, or keeps and hands an uncertain
+/// piece's work, so they say the same with or without a running Daoris.</para>
 /// <para>Exit codes are the family's: 0 asked, listed or stopped · 1 refused, a policy answer · 2 could not, the usage among them.</para>
 /// </remarks>
 public static class SessionsPartnerCommand
 {
     private const string UsageProblem =
         "`partner` takes one session's id, the piece in quotes and `--agent <name>`, with `--paths <path>…` where the piece is about some; "
-        + "or a session's id and `--list`; or a piece's id and `--stop`.";
+        + "or a session's id and `--list`; or a piece's id and `--stop`, `--discard` or `--hand-over`.";
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static TAsk? Read<TAsk>(IReadOnlyList<string> args, out string? problem, ParticipantsAskMaker<TAsk> make)
@@ -29,6 +30,10 @@ public static class SessionsPartnerCommand
                 return make("partner-list", [id], null, null, []);
             case ["partner", var piece, "--stop"] when Word(piece):
                 return make("partner-stop", [piece.TrimStart('#')], null, null, []);
+            case ["partner", var piece, "--discard"] when Word(piece):
+                return make("partner-discard", [piece.TrimStart('#')], null, null, []);
+            case ["partner", var piece, "--hand-over"] when Word(piece):
+                return make("partner-hand-over", [piece.TrimStart('#')], null, null, []);
             case ["partner", var id, var words, ..] when Word(id) && Word(words):
             {
                 var rest = args.Skip(3).ToList();
@@ -86,6 +91,22 @@ public static class SessionsPartnerCommand
 
         output.WriteLine($"sessions: {asked.Message}");
         return asked.Asked is null ? 1 : 0;
+    }
+
+    /// <summary><c>partner &lt;piece&gt; --discard</c> or <c>--hand-over</c>: the act written for the driver's look, or why not.</summary>
+    public static Task<int> ActAsync(IParticipantsWorld world, string piece, string act, TextWriter output)
+    {
+        try
+        {
+            var acted = PartnerPersonAct.Ask(world.Home, piece, act, DateTimeOffset.UtcNow);
+            output.WriteLine($"sessions: {acted.Message}");
+            return Task.FromResult(acted.Acted ? 0 : 1);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            output.WriteLine($"sessions: the act could not be written under the home ({error.Message}), so nothing was done.");
+            return Task.FromResult(2);
+        }
     }
 
     /// <summary>

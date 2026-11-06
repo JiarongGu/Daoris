@@ -53,8 +53,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     {
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
         {
-            "/api/sessions" => (HttpStatusCode.OK,
-                """[{"id":"s1","repository":"engine","state":"working","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]"""),
+            "/api/sessions/changes" => (HttpStatusCode.OK,
+                """{"whole":true,"order":["s1"],"mark":null,"changed":[{"id":"s1","repository":"engine","state":"working","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]}"""),
             "/api/sessions/s1/say" => (HttpStatusCode.Conflict, """{"error":"Session `s1` is working.","refusal":"running"}"""),
             _ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""),
         });
@@ -112,8 +112,8 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
     {
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
         {
-            "/api/sessions" => (HttpStatusCode.OK,
-                """[{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]"""),
+            "/api/sessions/changes" => (HttpStatusCode.OK,
+                """{"whole":true,"order":["s1"],"mark":null,"changed":[{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]}"""),
             "/api/sessions/s1/say" => (HttpStatusCode.OK, """
                 {"session":{"id":"s1","state":"completed"},"message":"Kept.",
                  "said":{"id":"w1","text":"also the changelog","at":"2026-10-03T09:00:00+00:00","files":[],"reopens":true}}

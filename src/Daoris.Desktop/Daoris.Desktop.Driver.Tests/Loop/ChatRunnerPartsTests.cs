@@ -28,10 +28,10 @@ public sealed class ChatRunnerPartsTests : IDisposable
         Assert.Equal(
             [
                 "help", "help-rooms", "start-from",
-                "briefed-move", "curve-move", "go-on", "hand-over", "help-access", "helper-words", "limit-move", "limit-wait", "replacement",
+                "briefed-move", "curve-move", "go-on", "hand-over", "help-access", "helper-words", "limit-move", "limit-wait", "replacement", "transient-move",
             ],
             order.Select(part => part.Name));
-        Assert.Equal([.. Enumerable.Repeat(ExecutorPhase.Start, 3), .. Enumerable.Repeat(ExecutorPhase.Move, 9)], order.Select(part => (ExecutorPhase)part.Phase));
+        Assert.Equal([.. Enumerable.Repeat(ExecutorPhase.Start, 3), .. Enumerable.Repeat(ExecutorPhase.Move, 10)], order.Select(part => (ExecutorPhase)part.Phase));
 
         // What each phase holds, in the order the runner built it.
         Assert.Collection(
@@ -49,7 +49,8 @@ public sealed class ChatRunnerPartsTests : IDisposable
             executor => Assert.IsType<ChatHelperWords>(executor),
             executor => Assert.IsType<LimitMove>(executor),
             executor => Assert.IsType<LimitWaits>(executor),
-            executor => Assert.IsType<ChatReplacement>(executor));
+            executor => Assert.IsType<ChatReplacement>(executor),
+            executor => Assert.IsType<TransientMove>(executor));
 
         // A sibling is reached through the wiring by its type, or its port's: the same instance the runner built.
         IExecutorWiring wiring = runner;

@@ -144,6 +144,28 @@ public sealed class IntakeTests : IAsyncLifetime
         Assert.Equal("someone-else", (await _asks.FindAsync(other.Id))!.Intake);
     }
 
+    /// <summary>
+    /// AGENTERRORS1d (D210 point 8, design §7): the first intake that ended `intake.transient` frees its ask for a fresh one, and an ask
+    /// whose earlier intake already ended so stays bound to the second failed record, so an outage costs two bounds and then the person
+    /// hears of it. An end with no such line is let go as before.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_whose_earlier_intake_ended_transient_stays_bound_after_a_second_transient_end()
+    {
+        const string transient = """[{"code":"intake.transient","values":{"agent":"stub","count":"3"},"text":"The intake on stub ended."}]""";
+        var ask = await Proposed();
+
+        var first = (await _ledger.OpenIntakeAsync(ask.Id, "stub", Room(), Now)).Session!;
+        await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
+        await _ledger.AdvanceAsync(first.Id, "failed", "The intake on stub ended.", null, null, Now, noteParts: transient, unbindAsk: true);
+        Assert.Null((await _asks.FindAsync(ask.Id))!.Intake);
+
+        var second = (await _ledger.OpenIntakeAsync(ask.Id, "stub", Room(), Now)).Session!;
+        await _ledger.AdvanceAsync(second.Id, "working", null, null, null, Now);
+        await _ledger.AdvanceAsync(second.Id, "failed", "The intake on stub ended.", null, null, Now, noteParts: transient, unbindAsk: true);
+        Assert.Equal(second.Id, (await _asks.FindAsync(ask.Id))!.Intake);
+    }
+
     /// <summary>The room is a circle's shared working directory, so it holds one intake at a time — whichever ask it serves.</summary>
     [Fact]
     public async Task One_intake_at_a_time_holds_a_circles_room()

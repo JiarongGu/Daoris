@@ -185,7 +185,9 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
                     clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
                 .ConfigureAwait(false);
-            if (unbindAsk && moved!.Ask is { } ask && asks is not null)
+            // An ask whose earlier intake already ended transient stays bound to this failed record (AGENTERRORS1d), so the person hears of it.
+            if (unbindAsk && moved!.Ask is { } ask && asks is not null
+                && !await IntakeTransients.SecondAsync(sessions, moved, inside).ConfigureAwait(false))
             {
                 await asks.UnbindIntakeAsync(ask, moved.Id, now, inside).ConfigureAwait(false);
             }

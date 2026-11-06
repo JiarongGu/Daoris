@@ -313,7 +313,11 @@ public sealed class PluginCatalogTests : IDisposable
             else Assert.True(entry.Problem is null, why);
             Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
             // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
-            if (refused) Assert.Equal(AdapterSet.Built().Registry.ToolchainOf(name), AdapterSet.Built().WithPlugins(catalog).Registry.ToolchainOf(name));
+            if (refused)
+            {
+                var built = AdapterSet.Built();
+                Assert.Same(built.Registry.ToolchainOf(name), built.WithPlugins(catalog).Registry.ToolchainOf(name));
+            }
         }
     }
 

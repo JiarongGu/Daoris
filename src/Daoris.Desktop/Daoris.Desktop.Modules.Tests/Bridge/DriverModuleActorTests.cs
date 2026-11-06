@@ -126,16 +126,18 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
 
     /// <summary>ONEWAY1b: the door's wire is Build's first agent's, read from its order rather than the old key; the pipe where it does not resolve.</summary>
     [Fact]
-    public void ONEWAY1b_the_doors_wire_reads_builds_first_agent_and_is_the_pipe_where_it_does_not_resolve()
+    public void ONEWAY1b_the_doors_wire_reads_builds_first_agent_and_refuses_one_this_build_does_not_know()
     {
         var loop = Loop();
         var build = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("claude-code-acp")] };
 
         Assert.Equal(true, DriverContext.UnadoptedOf(loop, DriverConfig.Empty with { Actors = build }));
-        Assert.Equal(false, DriverContext.UnadoptedOf(loop, DriverConfig.Empty with
+        // A door this build does not know is not answered as the pipe: the refusal names the agents the machine has.
+        var unknown = Assert.Throws<UnknownDoorException>(() => DriverContext.UnadoptedOf(loop, DriverConfig.Empty with
         {
             Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["build"] = [new ActorChoice("nobody-knows")] },
         }));
+        Assert.Contains("`nobody-knows` is not a door this build knows", unknown.Message);
     }
 
     /// <summary>

@@ -404,9 +404,9 @@ export const useOpenSessionFolder = () => useMutation({
 
 export {
   useApproveHandOver, useApproveHelper, useAskHelper, useAskPartner, useDeclineHandOver, useDeclineHelper, useHelperWaits,
-  useSessionHandOverAsk, useSessionHelpers, useSessionPartners, useSessionQuestion,
+  usePartnerAct, useSessionHandOverAsk, useSessionHelpers, useSessionPartners, useSessionQuestion,
 } from './sessionHelpers';
-export type { HandOverWord, HelperApproved, HelperAsked, HelperDeclined, PartnerAsked } from './sessionHelpers';
+export type { HandOverWord, HelperApproved, HelperAsked, HelperDeclined, PartnerActed, PartnerAsked } from './sessionHelpers';
 
 /**
  * The held permissions' key (AUTONOMY1b3c): under the sessions', so a session's publication (a turn's cancel, a stop, a session's

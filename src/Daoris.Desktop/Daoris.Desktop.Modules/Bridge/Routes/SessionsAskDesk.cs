@@ -99,6 +99,17 @@ internal sealed class SessionsAskDesk(DriverContext context)
         return new { asked.Asked, asked.Why, asked.Message };
     }
 
+    public Task<object?> PartnerActAsync(SessionPartnerAct press, CancellationToken cancellationToken)
+    {
+        // The piece must be this session's: another session's piece is no piece of its page.
+        var ask = new PartnerFiles(_loop.Home).ReadAsk(press.Piece.Trim().TrimStart('#'));
+        var acted = ask is null || !string.Equals(ask.Asker, press.Id, StringComparison.Ordinal)
+            ? new PartnerActed(false, PartnerPersonActs.Why.NoPiece, $"No piece `{press.Piece}` of session {press.Id} is on file here. Nothing was done.")
+            : PartnerPersonAct.Ask(_loop.Home, ask.Id, press.Act, DateTimeOffset.UtcNow);
+        if (acted.Acted) _loop.Nudge();
+        return Task.FromResult<object?>(new { acted.Acted, acted.Why, acted.Message });
+    }
+
     public Task<object?> PartnersAsync(SessionPartners press, CancellationToken cancellationToken)
     {
         var id = press.Id;

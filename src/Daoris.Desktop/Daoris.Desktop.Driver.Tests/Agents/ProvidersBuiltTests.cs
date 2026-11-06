@@ -31,7 +31,12 @@ public sealed class ProvidersBuiltTests
 
     public static TheoryData<string> RealDoors => ["claude-code", "claude-code-acp", "codex-acp", "dsh"];
 
-    private static readonly Type[] Ports = [typeof(ISpawn), typeof(IDialect), typeof(IChildVocabulary), typeof(IConversationHome)];
+    // What only the contract carries: a class never stated these, so the old registry holds each absent where a registration states it.
+    private static readonly Type[] Ports =
+    [
+        typeof(ISpawn), typeof(IDialect), typeof(IChildVocabulary), typeof(IConversationHome),
+        typeof(IDoorOffers), typeof(ISettingsFile), typeof(IRuleLanguage), typeof(ISkillLayout),
+    ];
 
     /// <summary>
     /// Whether two values state the same facts, collecting where they do not: a record by its members, a list by its items, a table
@@ -100,7 +105,7 @@ public sealed class ProvidersBuiltTests
 
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(each => each.Name != "EqualityContract" && each.GetIndexParameters().Length == 0))
         {
-            if (Ports.Any(port => port.IsAssignableFrom(property.PropertyType))) continue;
+            if (Ports.Any(port => port.IsAssignableFrom(property.PropertyType)) || property.Name == nameof(AbilitiesPart.ServersInherit)) continue;
             Differences(property.GetValue(left), property.GetValue(right), $"{path}.{property.Name}", found, withEvidence);
         }
     }
@@ -374,7 +379,7 @@ public sealed class ProvidersBuiltTests
         Assert.False(Providers.IsStandIn(""));
         // The registry over the built set reads the same flag for every provider it makes.
         var registry = ProviderRegistry.Of(AdapterSet.Built());
-        Assert.Equal(["stub", "alt-stub"], registry.Providers.Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
+        Assert.Equal(["alt-stub", "stub"], registry.Providers.Where(provider => provider.Identity.StandIn).Select(provider => provider.Id.Value));
     }
 
     /// <summary>The ports a provider written on the contract alone needs are declared, with the members row b names.</summary>

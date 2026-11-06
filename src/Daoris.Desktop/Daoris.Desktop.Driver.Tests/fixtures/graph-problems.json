@@ -511,25 +511,24 @@
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "again" }, { "id": "b", "kind": "after", "from": "again", "to": "line" }] },
       "problems": [{ "code": "land-once", "wire": null, "node": "again", "words": "node `again`: `land` and `again` are both a landing, and a graph holds one `land`." }] },
-    { "name": "a merge land with a pushed after it (LANDNODE1a)",
+    { "name": "a merge land with a push after it (LANDNODE1a)",
       "graph": { "entries": ["land"], "end": "line",
         "nodes": [
           { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
-          { "id": "push", "kind": "pushed", "version": 1, "reach": "observed" },
+          { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "line" }] },
-      "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push` is a `pushed`, which comes with a `land` whose method is `push`: choose that method on the landing and it brings this step." }] },
-    { "name": "a pull-request land with no pushed or pull-request (LANDNODE1a)",
+      "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push` is a `push`, which pushes the branch of a `land` whose method is `branch`: choose that method on the landing." }] },
+    { "name": "an integrate land with no integrate after it (LANDNODE1a)",
       "graph": { "entries": ["land"], "end": "line",
         "nodes": [
-          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "pull-request", "plugin": "acme.pr" } },
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "integrate" } },
           { "id": "line", "kind": "line", "version": 1, "reach": "observed" }
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "line" }] },
       "problems": [
-        { "code": "land-tail", "wire": null, "node": "land", "words": "node `land`: a `pull-request` land brings a `pushed` after it, and the graph holds none." },
-        { "code": "land-tail", "wire": null, "node": "land", "words": "node `land`: a `pull-request` land brings a `pull-request` after it, and the graph holds none." }
+        { "code": "land-tail", "wire": null, "node": "land", "words": "node `land`: a `integrate` land brings a `integrate` after it, and the graph holds none." }
       ] },
     { "name": "a merge land with no review lands with no press (LANDNODE1c2)",
       "graph": { "entries": ["land"], "end": "line",
@@ -555,15 +554,13 @@
       "graph": { "entries": ["landing", "line"], "end": "landing",
         "nodes": [{ "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } }, { "id": "line", "kind": "line", "version": 1, "reach": "observed" }] },
       "problems": [{ "code": "before-landing", "wire": null, "node": "line", "words": "node `line`: a `line` observes the landing, and a way to it passes no `land` (`landing`), so it would wait for ever before one." }] },
-    { "name": "a push and a pull request beside the landing, a way to each passes no landing (INTEGRATE1n, F47)",
-      "graph": { "entries": ["landing", "push", "pr"], "end": "landing",
+    { "name": "a push beside the landing, a way to it passes no landing (INTEGRATE1n, F47)",
+      "graph": { "entries": ["landing", "push"], "end": "landing",
         "nodes": [
-          { "id": "landing", "kind": "land", "version": 1, "reach": "performed" }, { "id": "push", "kind": "pushed", "version": 1, "reach": "observed" },
-          { "id": "pr", "kind": "pull-request", "version": 1, "reach": "observed" }
+          { "id": "landing", "kind": "land", "version": 1, "reach": "performed" }, { "id": "push", "kind": "push", "version": 1, "reach": "performed" }
         ] },
       "problems": [
-        { "code": "before-landing", "wire": null, "node": "push", "words": "node `push`: a `pushed` observes the landing, and a way to it passes no `land` (`landing`), so it would wait for ever before one." },
-        { "code": "before-landing", "wire": null, "node": "pr", "words": "node `pr`: a `pull-request` observes the landing, and a way to it passes no `land` (`landing`), so it would wait for ever before one." }
+        { "code": "before-landing", "wire": null, "node": "push", "words": "node `push`: a `push` observes the landing, and a way to it passes no `land` (`landing`), so it would wait for ever before one." }
       ] },
     { "name": "an integrate beside the landing, a way to which passes no landing (INTEGRATE1n, F47)",
       "graph": { "entries": ["landing", "integrate"], "end": "landing",

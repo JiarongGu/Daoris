@@ -181,7 +181,7 @@ public sealed class HelpGoOnTests : IDisposable
 
         Assert.Null(answer.SessionId);
         Assert.Equal(1, described);
-        Assert.Equal(HelpRoom.Render(HelpRoomFixture.Machine), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));
+        Assert.Equal(HelpRoom.Render(HelpRoomFixture.Machine with { Rules = HelpRuleFacts.Read(_home) }), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));
         lock (native.Asked) Assert.Equal("conv-h1", Assert.Single(native.Asked).Resume);
     }
 
@@ -209,7 +209,7 @@ public sealed class HelpGoOnTests : IDisposable
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal("conv-h1", asked.Resume);
         Assert.Equal(Path.GetFullPath(alpha), Path.GetFullPath(asked.Root));
-        Assert.Equal(HelpRoom.Render(machine.Within("alpha")), File.ReadAllText(Path.Combine(alpha, "AGENTS.md")));
+        Assert.Equal(HelpRoom.Render(machine.Within("alpha") with { Rules = HelpRuleFacts.Read(_home) }), File.ReadAllText(Path.Combine(alpha, "AGENTS.md")));
         Assert.False(File.Exists(Path.Combine(Room, "AGENTS.md")));
     }
 
@@ -234,7 +234,7 @@ public sealed class HelpGoOnTests : IDisposable
         SpawnRequest asked;
         lock (native.Asked) asked = Assert.Single(native.Asked);
         Assert.Equal(Path.GetFullPath(Room), Path.GetFullPath(asked.Root));
-        Assert.Equal(HelpRoom.Render(machine), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));
+        Assert.Equal(HelpRoom.Render(machine with { Rules = HelpRuleFacts.Read(_home) }), File.ReadAllText(Path.Combine(Room, "AGENTS.md")));
         Assert.False(Directory.Exists(HelpRoom.PathOf(_home, "alpha")));
     }
 

@@ -146,6 +146,19 @@ internal static class HarnessCapture
             // background work the harness ends with its turn, the run's ending's however its streams are kept (BGWAIT1c).
             lineage?.Stream(frame);
             own?.Heard(frame);
+            // What the harness says it loaded, said once as its init frame goes by (HELPWIRED1b).
+            if (NativeInit.Read(frame) is { } loaded)
+            {
+                try
+                {
+                    sink.Read(new WireReading.Loaded(loaded));
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    Line($"[what the session said it loaded could not be kept: {error.Message}]");
+                }
+            }
+
             if (beside?.Take(frame) == true) continue;
             var mapped = mapper.Read(frame);
             if (own is not null)

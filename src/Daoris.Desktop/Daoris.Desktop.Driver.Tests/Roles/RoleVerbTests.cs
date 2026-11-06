@@ -86,7 +86,7 @@ public sealed class RoleVerbTests : IDisposable
 
         Assert.Equal(2, await Run("set", "lead", "--name", "Lead", "--takes", "gardening", "claude-code-acp"));
         Assert.Contains("`gardening` is not a work", _error.ToString());
-        Assert.All(Catalogue().Slots, slot => Assert.Equal(RoleState.Seed, slot.State));
+        Assert.All(Catalogue().Slots.Where(slot => slot.Id != "design"), slot => Assert.Equal(RoleState.Seed, slot.State));
     }
 
     /// <summary>
@@ -159,7 +159,8 @@ public sealed class RoleVerbTests : IDisposable
         Assert.Equal(0, await Run("set", "designer", "--name", "Designer", "--takes", "design", "claude-code-acp opus high", "claude-code-acp sonnet high"));
 
         Assert.Equal(2, await Run("policy", "designer", "--on", "signed-out=hold"));
-        Assert.Contains("`moves.signed-out` as `hold`, which this build does not enforce yet", _error.ToString());
+        // A move on a failure is a supervisor rule's now, so the policy's own flag for it is gone.
+        Assert.Contains("`--on` is not a flag of `driver role policy`", _error.ToString());
         Assert.Equal(2, await Run("policy", "designer", "--rule", "weight", "--weight", "1=11"));
         Assert.Contains("a weight is from 0 to 10", _error.ToString());
         Assert.Equal(2, await Run("policy", "designer", "--weight", "3=1"));

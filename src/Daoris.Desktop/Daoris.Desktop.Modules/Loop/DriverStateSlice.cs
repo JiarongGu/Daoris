@@ -43,7 +43,7 @@ public static class DriverStateSlice
             // GITAUTH1f (D198): git access at each level, as Settings → Git and the remote rows read it.
             "gitAccess", "workspaceGitAccess", "machineGitAccess",
         ],
-        ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping"],
+        ["running"] = ["running", "drivingBrowser", "inReview", "helpSwapping", "sessionGitAccess"],
     };
 
     /// <summary>

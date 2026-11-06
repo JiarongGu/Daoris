@@ -244,7 +244,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => deletion.DeleteAsync(service, "s1", "screen", null, history, closing.Token));
         else
             Assert.Equal(DeleteVerdict.Live, (await deletion.DeleteAsync(service, "s1", "screen", null, history)).Verdict);
-        Assert.Equal(["GET /api/sessions", "GET /api/sessions/s1/deletable", "DELETE /api/sessions/s1"], calls);
+        Assert.Equal(["GET /api/sessions/changes", "GET /api/sessions/s1/deletable", "DELETE /api/sessions/s1"], calls);
         Assert.Empty(history.Calls);
         Assert.Equal("kept", File.ReadAllText(Conversation));
         Assert.Equal("kept too", File.ReadAllText(Transcript));
@@ -268,7 +268,7 @@ public sealed class WorkplaceContextPortsTests : IDisposable
             File.Delete(path);
         }).DeleteAsync(service, "s1", "screen", null, history, closing.Token);
         Assert.Equal(DeleteVerdict.Deleted, result.Verdict);
-        Assert.Equal(["GET /api/sessions", "GET /api/sessions/s1/deletable", "DELETE /api/sessions/s1", "forget", "transcript"], calls);
+        Assert.Equal(["GET /api/sessions/changes", "GET /api/sessions/s1/deletable", "DELETE /api/sessions/s1", "forget", "transcript"], calls);
         Assert.Equal(["record", SessionHomeFiles.Conversation, SessionHomeFiles.Transcript], result.Removed);
         Assert.Empty(result.Stayed);
     }
@@ -381,11 +381,11 @@ public sealed class WorkplaceContextPortsTests : IDisposable
             calls.Add($"{request.Method} {path}");
             JsonNode body;
             var status = HttpStatusCode.OK;
-            if (path == "/api/sessions")
+            if (path == "/api/sessions/changes")
             {
                 var record = HistoryStandIn.Record("s1", kind: "chat");
                 record["deletable"] = true;
-                body = new JsonArray(record);
+                body = new JsonObject { ["whole"] = true, ["changed"] = new JsonArray(record), ["order"] = new JsonArray("s1"), ["mark"] = null };
             }
             else if (request.Method == HttpMethod.Get) body = new JsonObject { ["deletable"] = true };
             else

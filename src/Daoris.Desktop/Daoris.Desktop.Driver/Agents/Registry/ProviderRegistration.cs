@@ -150,11 +150,19 @@ internal static class ProviderRegistration
                     : doors.Single(door => Ids.Same(door.Id.Value, owning)).Lent
                 : (LentPart?)null;
 
+        var identity = new ProviderIdentity(
+            declaring?.Product, declaring?.Maker, declaring?.Mark, Providers.IsStandIn(group.Id),
+            [.. group.Doors.Select(name => DeclaredBy(set, name)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
+
+        // A provider a built door presents is the registration itself, every part of it, with the doors this set joins to it.
+        if (group.Doors.Select(set.Resolve).OfType<LegacyDoor>().FirstOrDefault(door => !door.Declared && Ids.Same(door.Provider.Id.Value, group.Id)) is { } registered)
+        {
+            return registered.Provider with { Doors = doors, Identity = registered.Provider.Identity with { DeclaredBy = identity.DeclaredBy } };
+        }
+
         return new Provider(
             id,
-            new ProviderIdentity(
-                declaring?.Product, declaring?.Maker, declaring?.Mark, Providers.IsStandIn(group.Id),
-                [.. group.Doors.Select(name => DeclaredBy(set, name)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]),
+            identity,
             doors,
             declaring is null ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(declaring), evidence),
             Known<AccountsPart>.Declared(accounts, evidence),
@@ -184,6 +192,7 @@ internal static class ProviderRegistration
     private static AgentDoor BuildDoor(AdapterSet set, string name, string provider)
     {
         var adapter = set.Resolve(name);
+        if (adapter is LegacyDoor { Declared: false } built) return built.Door;
         var toolchain = adapter.Toolchain;
         var plugin = DeclaredBy(set, name);
         var owning = Ids.Same(name, provider);
