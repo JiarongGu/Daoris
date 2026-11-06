@@ -86,7 +86,7 @@ public sealed class LayerRunProcessTests : IDisposable
 
         await run.OpenAsync(CancellationToken.None);
         while (!readings.ToArray().Any(each => each is WireReading.Shown { Text: "up" })) await Task.Delay(20);
-        await run.StopTurnAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(20));
+        await run.StopTurnAsync(CancellationToken.None).WaitAsync(Poll.Patience);
         var end = await run.EndAsync(CancellationToken.None);
 
         Assert.True(run.Stopped);

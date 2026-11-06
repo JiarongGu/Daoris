@@ -20,7 +20,8 @@
     ["Daoris.Desktop.Modules/Bridge/HeldAnswers.cs", ".Wire", "a held answer's serialized JSON, compared to see whether it moved"],
     ["Daoris.Desktop.Modules/Bridge/Routes/WorkflowEditRoutes.cs", ".Wire", "a graph problem's workflow wire id, no door"],
     ["Daoris.Desktop.Modules/Bridge/Routes/WorkflowRoutes.cs", ".Wire", "a refused save's problem's workflow wire id, no door"],
-    ["Daoris.Desktop.Driver/Workplace/GitCredentialDoor.cs", "\"protocol\"", "a git credential request's `protocol` field, no door"]
+    ["Daoris.Desktop.Driver/Workplace/GitCredentialDoor.cs", "\"protocol\"", "a git credential request's `protocol` field, no door"],
+    ["Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs", "\"pipe\"", "the stop code for the relay's own pipe to the lease's process, no provider's door"]
   ],
   "exceptions": [
     ["Daoris.Desktop.Driver/Agents/AccountVerbContext.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],

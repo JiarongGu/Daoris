@@ -10,18 +10,11 @@ namespace Daoris.Driver;
 [NodeKind("*/pull-request", NodeGroup.Landing, NodeKinds.Push)]
 public sealed record PullRequestStep : PluginStep, IWatchable
 {
-    /// <summary>The id a plugin's pull-request step ends in.</summary>
-    public const string Id = "pull-request";
-
     public override NodePart Part(NodeDeclaration node) => base.Part(node) with { Lowered = WorkflowKinds.PullRequest };
 
     public IReadOnlyList<string> States => PullRequestReading.States;
 
     public NodeWatched Read(NodeReading reading) => PullRequestReading.Read(reading);
-
-    /// <summary>The plugin whose pull-request step <paramref name="kind"/> is, or null where it is any other node.</summary>
-    public static string? PluginOf(string kind) =>
-        kind.EndsWith("/" + Id, StringComparison.Ordinal) && kind.Length > Id.Length + 1 ? kind[..^(Id.Length + 1)] : null;
 
     /// <summary>Whether <paramref name="address"/> is an address a pull request is kept by: an absolute <c>http</c> or <c>https</c> one.</summary>
     public static bool IsAddress(string? address) =>
@@ -36,7 +29,7 @@ public sealed record PullRequestStep : PluginStep, IWatchable
         if (NodeEvaluations.Landed(governed, record.Statuses) is not { Unit: var unit } || NodeObserving.LandingOf(unit) is not { } landed) return;
         foreach (var node in governed.Declared.Values)
         {
-            if (PluginOf(node.Kind) is not { } plugin) continue;
+            if (PullRequestKind.PluginOf(node.Kind) is not { } plugin) continue;
             if (record.Statuses.GetValueOrDefault(node.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Ref: { } address }) continue;
             if (!IsAddress(address)) continue;
             kept.Keep(governed.Watched.Repository, landed.Branch, plugin, address);

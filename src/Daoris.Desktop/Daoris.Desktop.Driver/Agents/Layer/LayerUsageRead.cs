@@ -65,7 +65,7 @@ internal sealed class LayerUsageRead(UsageQuestion today, LayerUsageVendor vendo
     /// <summary>The spawn today's read starts: the resolved command, its tools and the account's home, through the one shell.</summary>
     private static ProcessStartInfo Composed(UsageAsk ask)
     {
-        var info = new ProcessStartInfo { FileName = ask.Run[0], UseShellExecute = false };
+        var info = new ProcessStartInfo { FileName = ask.Run[0], UseShellExecute = false, CreateNoWindow = true };
         foreach (var part in ask.Run.Skip(1)) info.ArgumentList.Add(part);
         Tools.Hand(info);
         Shell.Equip(info, ask.Toolchain, ask.ProfileHome, binary: ask.Managed);
