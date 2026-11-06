@@ -121,6 +121,72 @@ public sealed class LayerReadingsTests
         Assert.Null(translation.Failure);
     }
 
+    [Fact]
+    public void A_protocol_door_s_context_figures_are_said_as_the_agent_sent_them_and_never_inferred()
+    {
+        var translation = Readings();
+
+        var both = Assert.IsType<WireReading.Said>(Assert.Single(translation.Read(new ContextReading(150, 200000, Now)))).Event;
+        var window = Assert.IsType<WireReading.Said>(Assert.Single(translation.Read(new ContextReading(null, 200000, Now)))).Event;
+
+        Assert.Equal((SessionEventKind.Usage, 150L, 200000L), (both.Kind, both.Used, both.Size));
+        Assert.Equal((null, 200000L), (window.Used, window.Size));
+        Assert.Empty(translation.Read(new ContextReading(null, null, Now)));
+    }
+
+    [Fact]
+    public void A_start_the_agent_did_not_announce_names_no_conversation_and_the_first_announced_one_does()
+    {
+        var translation = Readings();
+
+        Assert.Empty(translation.Read(new SessionStarted("status-id") { Announced = false }));
+        var named = translation.Read(new SessionStarted("conv-1"));
+
+        Assert.Equal("conv-1", Assert.IsType<WireReading.ConversationNamed>(Assert.Single(named)).Conversation);
+        Assert.Equal("conv-1", translation.Conversation);
+    }
+
+    [Fact]
+    public void A_turn_s_report_is_kept_for_its_terminal_and_a_denial_of_an_unseen_call_is_a_line_alone()
+    {
+        var translation = Readings();
+        translation.Read(new ToolCall("Read", "{}", "c1"));
+        translation.Read(new UsageLive(100, 5, 50));
+
+        Assert.Empty(translation.Read(new AgentToolDenied("Read", "c1", null)));
+        Assert.Empty(translation.Read(new AgentToolDenied("Read", "c1", "twice")));
+        Assert.Empty(translation.Read(new AgentToolDenied("Edit", "c9", null)));
+        Assert.Empty(translation.Read(new AgentToolDenied("Edit", null, null)));
+        Assert.Empty(translation.Read(new AgentModelUsage([new("m1", 100, 5, 50, 0, 200000, true)], Now)));
+        var ended = translation.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", null, null, null));
+
+        Assert.Equal(
+            ["  permission refused: Read", "  permission refused: Edit", "— the turn ended: success"],
+            ended.OfType<WireReading.Shown>().Select(each => each.Text));
+        var said = ended.OfType<WireReading.Said>().Select(each => each.Event).ToList();
+        Assert.Equal(("refused", "Read"), (said[0].Status, said[0].ToolName));
+        Assert.Equal((SessionEventKind.Usage, 150L, 200000L), (said[1].Kind, said[1].Used, said[1].Size));
+        Assert.Equal(SessionEventKind.Turn, said[2].Kind);
+        Assert.Equal(new AcpUsage(150, 200000), translation.Usage);
+    }
+
+    [Fact]
+    public void A_context_without_a_window_or_a_window_without_a_context_is_no_usage_record()
+    {
+        var noWindow = Readings();
+        noWindow.Read(new UsageLive(100, 5, 50));
+        var withoutWindow = noWindow.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", null, null, null));
+
+        var noContext = Readings();
+        noContext.Read(new AgentModelUsage([new("m1", 1, 1, 1, 1, 200000, true)], Now));
+        var withoutContext = noContext.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", null, null, null));
+
+        Assert.DoesNotContain(withoutWindow.OfType<WireReading.Said>(), each => each.Event.Kind == SessionEventKind.Usage);
+        Assert.DoesNotContain(withoutContext.OfType<WireReading.Said>(), each => each.Event.Kind == SessionEventKind.Usage);
+        Assert.Null(noWindow.Usage);
+        Assert.Null(noContext.Usage);
+    }
+
     private static readonly AgentRestriction OwnersModel = new(RestrictionCause.Unknown, RestrictionSubject.Model, RestrictionRecovery.OwnerAction);
 
     private static bool Refused(

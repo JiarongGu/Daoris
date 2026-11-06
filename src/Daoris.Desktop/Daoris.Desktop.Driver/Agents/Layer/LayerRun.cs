@@ -92,7 +92,7 @@ internal sealed class LayerRun(LayerRegistration registration, LayerStart start,
             : null;
         string[] own;
         lock (_gate) own = [.. _own.TakeLast(HarnessEnding.LinesKept)];
-        return new AgentRunEnd(exit, Usage: null, new HarnessEnding(exit, failure, own) { ModelRefused = readings.ModelRefused }, readings.Conversation is not null);
+        return new AgentRunEnd(exit, readings.Usage, new HarnessEnding(exit, failure, own) { ModelRefused = readings.ModelRefused }, readings.Conversation is not null);
     }
 
     public async ValueTask DisposeAsync()

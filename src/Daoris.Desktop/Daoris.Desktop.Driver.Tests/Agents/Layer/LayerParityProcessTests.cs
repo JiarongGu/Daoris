@@ -1,6 +1,7 @@
 using Daoris.Driver;
 using Lyntai.Agents;
 using LayerEnded = Lyntai.Agents.SessionEnded;
+using LayerStarted = Lyntai.Agents.SessionStarted;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -75,6 +76,58 @@ public sealed class LayerParityProcessTests : IDisposable
         {
             new { t = "text", text = "working" }, new { t = "refused" },
             new { t = "end", kind = "Fatal", by = LayerTestProvider.RefusedBy, restricts = "model", subtype = Failed, why = "it broke", delivery = "Taken" },
+        },
+    };
+
+    private static object[] Spoke(object ctx, object usage, object byModel, params object[] more) =>
+    [
+        new { t = "text", text = "hello", model = "m1", ctx },
+        .. more,
+        new { t = "end", subtype = "success", model = "m1", usage, byModel },
+    ];
+
+    private static readonly object Counts = new { @in = 100, @out = 5, read = 50, write = 0 };
+
+    /// <summary>The turn's own report: the context its last message held, the tokens by model with the window the harness names (AG33).</summary>
+    private static readonly object Reported = new
+    {
+        @out = Spoke(Counts, Counts, new { m1 = new { @in = 100, @out = 5, read = 50, write = 0, window = 200000 } }),
+    };
+
+    /// <summary>The same, with a count written to the cache: the layer's tick carries none, so its context figure is short by it.</summary>
+    private static readonly object Written = new
+    {
+        @out = Spoke(
+            new { @in = 100, @out = 5, read = 50, write = 30 }, new { @in = 100, @out = 5, read = 50, write = 30 },
+            new { m1 = new { @in = 100, @out = 5, read = 50, write = 30, window = 200000 } }),
+    };
+
+    /// <summary>A denial naming a call the record does not hold: said on the console and no card.</summary>
+    private static readonly object DeniedUnseen = new
+    {
+        @out = new object[]
+        {
+            new { t = "text", text = "hello" }, new { t = "end", subtype = "success", denied = new[] { new { name = "Edit", id = "c9" } } },
+        },
+    };
+
+    /// <summary>A denial of a call the turn made.</summary>
+    private static readonly object DeniedSeen = new
+    {
+        @out = new object[]
+        {
+            new { t = "call", name = "lookup", args = "{}", id = "c1" }, new { t = "result", id = "c1", text = "no", error = true },
+            new { t = "end", subtype = "success", denied = new[] { new { name = "lookup", id = "c1" } } },
+        },
+    };
+
+    /// <summary>A status frame carrying an id before the agent's own initialization: it names nothing (AG35).</summary>
+    private static readonly object Announced = new
+    {
+        @out = new object[]
+        {
+            new { t = "start", id = "status-id", announced = false }, new { t = "start", id = "conv-1" }, new { t = "text", text = "hello" },
+            new { t = "end", subtype = "success" },
         },
     };
 
@@ -154,6 +207,54 @@ public sealed class LayerParityProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_turn_s_context_window_and_tokens_by_model_are_observed_alike()
+    {
+        var (daoris, layer) = await BothAsync(Reported);
+
+        ParityOracle.Equal(daoris, layer, Relation, []);
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Usage && each["used"] == "150" && each["size"] == "200000");
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Turn && each["models"]!.Contains("modelUsage", StringComparison.Ordinal));
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.End && each["usage"] == "AcpUsage { Used = 150, Size = 200000 }");
+    }
+
+    /// <summary>What the oracle finds today, kept so the move that needs it meets it: a count written to the cache is in Claude's context and not in the layer's tick.</summary>
+    [Fact]
+    public async Task A_count_written_to_the_cache_is_the_one_difference_in_the_context_the_layer_s_tick_carries()
+    {
+        var (daoris, layer) = await BothAsync(Written);
+
+        // The record's figure and the ending's high-water mark, the same count short.
+        Assert.Collection(
+            ParityOracle.Differences(daoris, layer, Relation, []),
+            each => Assert.Equal("Events #2: said.used: daoris '180', layer '150'", each),
+            each => Assert.Equal(
+                "End #1: end.usage: daoris 'AcpUsage { Used = 180, Size = 200000 }', layer 'AcpUsage { Used = 150, Size = 200000 }'", each));
+    }
+
+    [Fact]
+    public async Task A_denied_call_the_record_holds_is_a_refusal_differing_only_by_the_kind_the_layer_s_call_does_not_carry()
+    {
+        var (daoris, layer) = await BothAsync(DeniedSeen);
+
+        var found = ParityOracle.Differences(daoris, layer, Relation, []);
+        Assert.NotEmpty(found);
+        Assert.All(found, each => Assert.Contains("toolKind=", each, StringComparison.Ordinal));
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.Events && each["status"] == "refused" && each["toolName"] == "lookup");
+    }
+
+    [Fact]
+    public async Task A_denial_of_a_call_the_record_does_not_hold_and_an_unannounced_start_are_observed_alike()
+    {
+        var (daoris, layer) = await BothAsync(DeniedUnseen);
+        ParityOracle.Equal(daoris, layer, Relation, []);
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.Console && each["text"] == "  permission refused: Edit");
+
+        var (named, started) = await BothAsync(Announced);
+        ParityOracle.Equal(named, started, Relation, []);
+        Assert.Equal("conv-1", Assert.Single(started.Seen, each => each.Channel == ParityChannel.Conversation)["conversation"]);
+    }
+
+    [Fact]
     public async Task A_refused_model_on_a_turn_that_ran_nothing_is_the_ending_s_refused_model_on_both_paths()
     {
         var (daoris, layer) = await BothAsync(Refused);
@@ -174,6 +275,9 @@ public sealed class LayerParityProcessTests : IDisposable
     public static TheoryData<string, string> Plants => new()
     {
         { "a refused model's restriction dropped", "modelRefused" },
+        { "a denial dropped", "Console" },
+        { "the tokens by model dropped", "Events" },
+        { "an unannounced start named", "Conversation" },
         { "a line the layer's reader drops", "Console" },
         { "a write reordered", "Events" },
         { "an undeclared pair", "in no pair the relation declares" },
@@ -187,6 +291,9 @@ public sealed class LayerParityProcessTests : IDisposable
     {
         var (spec, planted) = plant switch
         {
+            "a denial dropped" => (DeniedUnseen, Dropping<AgentToolDenied>()),
+            "the tokens by model dropped" => (Reported, Dropping<AgentModelUsage>()),
+            "an unannounced start named" => (Announced, Announcing()),
             "a refused model's restriction dropped" =>
                 (Refused, Ending(failure => new AgentFailure(failure.Kind, failure.By) { Delivery = failure.Delivery })),
             "a line the layer's reader drops" => (Worked, Dropping<TextDelta>()),
@@ -198,7 +305,7 @@ public sealed class LayerParityProcessTests : IDisposable
                 (Unheard, Ending(failure => new AgentFailure(failure.Kind, failure.By) { Delivery = AgentDelivery.Taken })),
             _ => throw new ArgumentOutOfRangeException(nameof(plant), plant, null),
         };
-        var expected = spec == Worked ? Array.Empty<ParityPair>() : spec == Refused ? [RefusedPair] : [Fatal];
+        var expected = spec == Refused ? [RefusedPair] : spec == Broke || spec == Unheard ? [Fatal] : Array.Empty<ParityPair>();
 
         var (daoris, honest) = await BothAsync(spec);
         var (_, layer) = await BothAsync(spec, planted);
@@ -210,6 +317,9 @@ public sealed class LayerParityProcessTests : IDisposable
 
     private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Dropping<T>() =>
         read => read.Where((each, at) => !(each is T && at == read.ToList().FindIndex(first => first is T)));
+
+    private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Announcing() =>
+        read => read.Select(each => each is LayerStarted started ? started with { Announced = true } : each);
 
     private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Swapping<TFirst, TThen>() => read =>
     {

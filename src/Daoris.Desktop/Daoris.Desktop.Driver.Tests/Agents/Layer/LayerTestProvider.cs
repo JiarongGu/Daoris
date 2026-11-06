@@ -189,7 +189,11 @@ internal static class LayerTestProvider
             switch (Text("t"))
             {
                 case "start":
-                    yield return new SessionStarted(Text("id")!);
+                    // A start the agent did not announce is a later frame that only carries an id (AG35).
+                    yield return new SessionStarted(Text("id")!)
+                    {
+                        Announced = !frame.TryGetProperty("announced", out var announced) || announced.ValueKind != JsonValueKind.False,
+                    };
                     break;
                 case "text":
                     yield return new TextDelta(Text("text")!);
@@ -206,10 +210,8 @@ internal static class LayerTestProvider
                 case "plan":
                     yield return new PlanUpdated([new LayerPlanEntry(Text("text")!, PlanEntryStatus.InProgress)]);
                     break;
-                case "usage":
-                    yield return new UsageFinal(Count("in"), Count("out"), Count("read"), Count("write"), Text("model"));
-                    break;
                 case "end" when Text("kind") is { } kind:
+                    foreach (var report in Closing(frame)) yield return report;
                     yield return new SessionEnded(ProviderVerdict.Failed, true, Text("subtype"), Text("id"), null, Text("why"))
                     {
                         Failure = new AgentFailure(Enum.Parse<AgentFailureKind>(kind), Text("by") ?? "tests:failed")
@@ -227,8 +229,44 @@ internal static class LayerTestProvider
                     };
                     break;
                 case "end":
+                    foreach (var report in Closing(frame)) yield return report;
                     yield return new SessionEnded(ProviderVerdict.Ok, false, Text("subtype") ?? "success", Text("id"), Text("text"), null);
                     break;
+            }
+
+            // An assistant message's usage, which the layer's Claude door ticks after the blocks it read (the context the message held).
+            if (Text("t") is "text" or "think" or "call" && frame.TryGetProperty("ctx", out var ctx))
+            {
+                long Held(string name) => ctx.TryGetProperty(name, out var value) ? value.GetInt64() : 0;
+                yield return new UsageLive(Held("in"), Held("out"), Held("read"));
+            }
+        }
+
+        /// <summary>What a result frame reports before its terminal: the usage, the denials, the tokens by model (AG33), as the layer's Claude door orders them.</summary>
+        private static IEnumerable<AgentStreamEvent> Closing(JsonElement frame)
+        {
+            long Count(JsonElement of, string name) => of.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt64() : 0;
+            var model = frame.TryGetProperty("model", out var named) ? named.GetString() : null;
+            if (frame.TryGetProperty("usage", out var usage))
+            {
+                yield return new UsageFinal(Count(usage, "in"), Count(usage, "out"), Count(usage, "read"), Count(usage, "write"), model);
+            }
+
+            if (frame.TryGetProperty("denied", out var denied))
+            {
+                foreach (var each in denied.EnumerateArray())
+                {
+                    yield return new AgentToolDenied(each.GetProperty("name").GetString()!, each.GetProperty("id").GetString(), null);
+                }
+            }
+
+            if (frame.TryGetProperty("byModel", out var byModel))
+            {
+                yield return new AgentModelUsage(
+                    [.. byModel.EnumerateObject().Select(each => new AgentModelUsageEntry(
+                        each.Name, Count(each.Value, "in"), Count(each.Value, "out"), Count(each.Value, "read"), Count(each.Value, "write"),
+                        Count(each.Value, "window"), each.Name == model))],
+                    DateTimeOffset.UnixEpoch);
             }
         }
     }
