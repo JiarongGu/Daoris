@@ -20,7 +20,7 @@ public sealed class LineBatchingTests : IDisposable
          "nodes":[{"id":"verify","kind":"check","version":1,"reach":"performed","timeoutSeconds":600,"options":{"ask":"fix"}}],"wires":[]}
         """;
 
-    private static readonly NodeDeclaration Check = CheckNodes.Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
+    private static readonly NodeDeclaration Check = new CheckNode().Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "line-batching", Guid.NewGuid().ToString("N")[..8]);
     private readonly Checks _checks = new();
@@ -74,7 +74,7 @@ public sealed class LineBatchingTests : IDisposable
 
     private NodeRecordFiles Files => new(_home, () => true);
 
-    private WorkPerformer Performer() => new(Files, new NoPlugins(), () => _now) { Checks = _checks };
+    private WorkPerformer Performer() => new(Files, new NoPlugins(), () => _now) { Doors = NodeDoors.None.With(NodeKinds.Check, _checks) };
 
     private static NodeDeclaration? Declared(string unit, string node) => RunUnits.Is(unit) && node == Check.Id ? Check : null;
 

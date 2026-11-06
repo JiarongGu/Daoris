@@ -13,7 +13,7 @@ public sealed class CheckExecutionProcessTests : IAsyncLifetime
 {
     private const string Unit = "run:v-0123456789abcdef";
 
-    private static readonly NodeDeclaration Check = CheckNodes.Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
+    private static readonly NodeDeclaration Check = new CheckNode().Performed(new NodeDeclaration("verify", NodeKinds.Check, 1, NodeReach.Performed));
 
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "check-execution", Guid.NewGuid().ToString("N")[..8]);
     private HeavyExecutor _executor = null!;
@@ -72,8 +72,8 @@ public sealed class CheckExecutionProcessTests : IAsyncLifetime
 
     private WorkPerformer Performer() => new(Files, new NoPlugins(), () => DateTimeOffset.UtcNow)
     {
-        Checks = new CheckExecution(_executor, (unit, attempt, _) =>
-            new VerifySend(CheckExecution.RunOf(unit), attempt.Call.Invocation, "engine", Checkout, attempt.Call.SubjectRevision, _blob) { Tree = Checkout + "-verify" }),
+        Doors = NodeDoors.None.With(NodeKinds.Check, new CheckExecution(_executor, (unit, attempt, _) =>
+            new VerifySend(CheckExecution.RunOf(unit), attempt.Call.Invocation, "engine", Checkout, attempt.Call.SubjectRevision, _blob) { Tree = Checkout + "-verify" })),
     };
 
     private NodeDeclaration? Declared(string unit, string node) => unit == Unit && node == Check.Id ? Check : null;

@@ -124,10 +124,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     public Func<string, IReadOnlyList<PluginResource>?> Resources { get; set; } = _ => null;
 
     /// <summary>
-    /// The heavy executor's port (FABRIC-PIPELINE1d): a <c>check</c>'s attempt is sent there by its kind and asked after only once it says
-    /// it has an answer, or after a restart. Null starts no check: it stays ready.
+    /// The doors this loop starts its nodes on (<see cref="NodeDoors"/>): a kind whose unit is started through this journal (<see cref="IJournalled"/>)
+    /// has its attempts sent to its door, a port, and asked after only once it says it has an answer, or after a restart (FABRIC-PIPELINE1d).
+    /// None starts no such node: it stays ready.
     /// </summary>
-    public ICheckPort? Checks { get; set; }
+    public NodeDoors Doors { get; set; } = NodeDoors.None;
+
+    /// <summary>The port <paramref name="kind"/>'s nodes are started on, where its unit is started through this journal and its door is wired; else null.</summary>
+    internal ICheckPort? PortOf(string kind) => NodeKit.Of(kind) is IJournalled ? Doors.Door<ICheckPort>(kind) : null;
 
     /// <summary>
     /// The invocations this performer's loop delivered: an attempt sent by a loop since ended is asked after before anything else, since a
@@ -152,9 +156,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     {
         if (start.Move.Binding is not { } binding) return new("", start.Node, PerformedWhat.Refused, NodeRefusal.NoBinding);
         var unit = binding.Unit;
-        // FABRIC-PIPELINE1d: the one kind Daoris performs this way beside a plugin's, its attempt naming the executor.
-        var check = node.Kind == NodeKinds.Check && Checks is not null;
-        if (!(NodeKit.IsPlugin(node.Kind) || check) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
+        // FABRIC-PIPELINE1d: a kind of Daoris's own performed this way beside a plugin's, on its port, its attempt naming its kind.
+        var onPort = PortOf(node.Kind) is not null;
+        if (!(NodeKit.IsPlugin(node.Kind) || onPort) || node.Reach != NodeReach.Performed) return new(unit, node.Id, PerformedWhat.Refused, NotPlugin);
 
         // §D6: the attempt (invocation, key, revision, inputs, deadline, state) on the unit's record first, with its start and its firings.
         var now = clock();
@@ -168,7 +172,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // never `run:`; on a unit's own record it is that unit, as before.
             var call = new WorkPerformCall(binding.Observes, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
                 [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node));
-            var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, check ? NodeKinds.Check : node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
+            var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, onPort ? node.Kind : node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
             return (Kept(record, moved, "start", now) with { Attempts = [.. record.Attempts, attempt], Fired = fired }, (attempt, null));
         });
@@ -282,7 +286,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     {
         AttemptStates.Recorded or AttemptStates.Unknown => attempt.AskAt is not { } ask || ask <= now,
         // FABRIC-PIPELINE1d: the executor owns a check's bound, so it is asked once it says it has an answer, or after a restart; never at its deadline.
-        AttemptStates.Sent when IsCheck(attempt) => !SentHere(attempt.Call.Invocation) || Checks?.Answered(attempt.Call.Invocation) == true,
+        AttemptStates.Sent when OnPort(attempt) => !SentHere(attempt.Call.Invocation) || PortOf(attempt.Plugin)?.Answered(attempt.Call.Invocation) == true,
         AttemptStates.Sent => !SentHere(attempt.Call.Invocation) || Held(attempt) != attempt.Generation
             || (attempt.AskAt ?? attempt.Call.DeadlineAt) <= now,
         _ => false,
@@ -332,8 +336,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             return decided.What == PerformedWhat.Redelivered && sends.Take() ? await SendAsync(unit, asked, node, PerformedWhat.Redelivered, ct).ConfigureAwait(false) : decided;
         }
 
-        var check = IsCheck(asked);
-        if ((check ? Checks is null : port.GenerationOf(asked.Plugin) is null) || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
+        var check = OnPort(asked);
+        var checks = check ? PortOf(asked.Plugin) : null;
+        if ((check ? checks is null : port.GenerationOf(asked.Plugin) is null) || !sends.Take()) return new(unit, node.Id, PerformedWhat.Unanswered);
         WorkReconcileAnswer answer;
         int generation;
         try
@@ -341,7 +346,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             // FABRIC-PIPELINE1d: a check's answer is the executor's, read from its attempt's folder.
             // FABRIC-CUTOVER1c (the cutover design §2.4.1): asked under the unit its call was sent for, a run's subject's, never the record's.
             (answer, generation) = check
-                ? (await Checks!.ReconcileAsync(unit, asked, ct).ConfigureAwait(false), CheckGeneration)
+                ? (await checks!.ReconcileAsync(unit, asked, ct).ConfigureAwait(false), PortGeneration)
                 : await port.ReconcileStepAsync(
                     asked.Plugin, new WorkReconcileCall(asked.Call.Unit, asked.Call.Step, invocation, asked.Call.IdempotencyKey, asked.Call.SubjectRevision), ct)
                     .ConfigureAwait(false);
@@ -412,11 +417,11 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         int generation;
         try
         {
-            if (IsCheck(attempt))
+            if (OnPort(attempt))
             {
                 // FABRIC-PIPELINE1d: a hand-over; the executor runs it on its own task, never the pass's.
-                await (Checks ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
-                generation = CheckGeneration;
+                await (PortOf(attempt.Plugin) ?? throw new DriverException("no executor takes a check here")).SendAsync(unit, attempt, node, ct).ConfigureAwait(false);
+                generation = PortGeneration;
             }
             else
             {
@@ -518,11 +523,14 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
 
     internal static TimeSpan Timeout(NodeDeclaration node) => node.TimeoutSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : DefaultTimeout;
 
-    /// <summary>Whether an attempt is a check's, sent to the heavy executor by its kind (FABRIC-PIPELINE1d).</summary>
-    internal static bool IsCheck(NodeAttempt attempt) => attempt.Plugin == NodeKinds.Check;
+    /// <summary>
+    /// Whether an attempt was sent to its kind's port rather than a plugin's process: its sender names a kind whose unit is started through this
+    /// journal (FABRIC-PIPELINE1d, D247 §6 point 1), wired or not.
+    /// </summary>
+    internal static bool OnPort(NodeAttempt attempt) => NodeKit.Of(attempt.Plugin) is IJournalled;
 
-    /// <summary>The generation a check's attempt records: the executor has one, the driver's own.</summary>
-    private const int CheckGeneration = 1;
+    /// <summary>The generation an attempt on a port records: the port has one, the driver's own.</summary>
+    private const int PortGeneration = 1;
 
     /// <summary>
     /// The person's stop of a check that was running (FABRIC-PIPELINE1d; the pipeline design §4.2): the pass that applied it tells the executor,
@@ -530,10 +538,10 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// </summary>
     public void StopChecks(string unit, IReadOnlyCollection<string> nodes)
     {
-        if (Checks is null || records.Read(unit) is not { } record) return;
-        foreach (var attempt in record.Attempts.Where(each => IsCheck(each) && nodes.Contains(each.Node) && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
+        if (records.Read(unit) is not { } record) return;
+        foreach (var attempt in record.Attempts.Where(each => OnPort(each) && nodes.Contains(each.Node) && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
         {
-            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) Checks.Stop(attempt.Call.Invocation);
+            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) PortOf(attempt.Plugin)?.Stop(attempt.Call.Invocation);
         }
     }
 

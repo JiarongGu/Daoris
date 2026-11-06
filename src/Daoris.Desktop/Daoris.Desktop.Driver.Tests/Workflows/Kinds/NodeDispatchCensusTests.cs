@@ -17,14 +17,20 @@ public sealed partial class NodeDispatchCensusTests
         "Workflows/Nodes/RunNodeWords.cs",
         "Workflows/Nodes/WireEvaluation.cs",
         "Workflows/Nodes/NodeRunKeeping.cs",
+        "Workflows/Nodes/NodeGoverning.cs",
+        "Workflows/Nodes/WorkPerformer.cs",
         "Loop/Watch/WatchNodes.cs",
     ];
 
-    /// <summary>The kinds a dispatching file may still name: the evaluator's join and sink, and what the run's keeping reads beside its doors.</summary>
+    /// <summary>
+    /// The kinds a dispatching file may still name: the evaluator's join and sink, what the run's keeping reads beside its doors, and the graph
+    /// that integrates.
+    /// </summary>
     private static readonly Dictionary<string, string[]> Kept = new(StringComparer.Ordinal)
     {
         ["Workflows/Nodes/WireEvaluation.cs"] = [nameof(NodeKinds.All), nameof(NodeKinds.Stop)],
         ["Workflows/Nodes/NodeRunKeeping.cs"] = [nameof(NodeKinds.Claimed), nameof(NodeKinds.Integrate), nameof(NodeKinds.Request), nameof(NodeKinds.Review)],
+        ["Workflows/Nodes/NodeGoverning.cs"] = [nameof(NodeKinds.Integrate)],
     };
 
     [Fact]
@@ -56,6 +62,15 @@ public sealed partial class NodeDispatchCensusTests
         }
 
         Assert.NotNull(typeof(NodeRuntime).GetProperty(nameof(NodeRuntime.Doors)));
+    }
+
+    /// <summary>The performer asks a node's unit whether it is started on a port through the attempt journal, and the doors for that port.</summary>
+    [Fact]
+    public void The_performer_holds_no_port_by_a_kinds_name()
+    {
+        Assert.Null(typeof(WorkPerformer).GetProperty("Checks"));
+        Assert.NotNull(typeof(WorkPerformer).GetProperty(nameof(WorkPerformer.Doors)));
+        Assert.Equal([NodeKinds.Check], NodeKit.Built.Units.Where(unit => unit is IJournalled).Select(unit => unit.Row.Kind));
     }
 
     [GeneratedRegex(@"NodeKinds\.([A-Z]\w*)")]

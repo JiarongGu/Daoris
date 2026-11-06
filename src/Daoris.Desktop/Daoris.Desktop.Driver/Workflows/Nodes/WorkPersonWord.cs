@@ -23,7 +23,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
             {
                 if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
                 // FABRIC-PIPELINE1f: a failed check's *Not now* settles it as the person's: the verdict stands, and nothing asks about it again.
-                var notNow = resolution == HeldResolutions.Stop && held.Plugin == NodeKinds.Check;
+                var notNow = resolution == HeldResolutions.Stop && OnPort(held);
                 if (resolution != HeldResolutions.Again && !notNow) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
                 return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
             }
@@ -105,7 +105,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     /// </summary>
     internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) =>
         attempt is { State: AttemptStates.Settled, RetryAt: null } && attempt.Plugin != QuestClosing.Sender
-        && !(attempt.Plugin == NodeKinds.Check && attempt.Resolution == HeldResolutions.Stop)
+        && !(OnPort(attempt) && attempt.Resolution == HeldResolutions.Stop)
         && record.Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed } status && status.Attempt == attempt.Attempt;
 
     /// <summary>Why <paramref name="word"/> is not taken on <paramref name="held"/> (FABRIC-CLOSE1q), or null where it is one of its words.</summary>
@@ -137,7 +137,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
 
         // FABRIC-PIPELINE1d (the pipeline design §4.1): a held check's *Run again*, the one table's own: its node stopped and made ready by the
         // person for a new attempt, the held attempt settled as theirs to answer for. Its *Not now* is the stop below.
-        if (word == HeldResolutions.Again && IsCheck(attempt) && attempt.State == AttemptStates.Held)
+        if (word == HeldResolutions.Again && OnPort(attempt) && attempt.State == AttemptStates.Held)
         {
             var held = StatusOf(record, node.Id);
             if (NodeStates.Live.Contains(held.State)) record = Kept(record, NodeLifecycle.Apply(node, held, new NodeMove(NodeStates.Stopped, NodeCause.Person)), "person-stop", now);

@@ -222,7 +222,8 @@ by hand. A test replaces one kind's door through `NodeDoors.With(kind, door)`, w
 - Daoris's half of one step name registers as a kind does, with the name a role: `[NodeKind("*/pull-request", NodeGroup.Landing,
   NodeKinds.Push)] PullRequestStep`. `Of` hands that half to the plugin's step whose name it is. It holds `PullRequestSteps`' bind
   refusal, `KeepPullRequests`' address keeping, and the `IWatchable` state reading (§4).
-- `check` stays Daoris's kind and starts on a port (`CheckExecution`) through the same attempt journal a plugin's step uses.
+- `check` stays Daoris's kind and starts on a port (`CheckExecution`) through the same attempt journal a plugin's step uses. Its unit
+  says so by `IJournalled`, which the performer asks for the port and the perform.
 
 ### 3.7 The ids
 
