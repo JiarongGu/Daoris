@@ -110,7 +110,7 @@ public sealed record DoorTablesPart(
 }
 
 /// <summary>
-/// The variables, files and wire keys an agent names of its own, which the census reads (the design §9). Stated absent in row a:
-/// the census's seed is its own fixture.
+/// The variables, files and wire keys an agent names of its own, which the censuses read through <see cref="ProviderVocabulary"/> (the
+/// design §9). A variable here is one its program reads, so it is kept in its own spawns and stripped from every other provider's (s-vi).
 /// </summary>
 public sealed record VocabularyPart(IReadOnlyList<string> Variables, IReadOnlyList<string> Files, IReadOnlyList<string> WireKeys);
