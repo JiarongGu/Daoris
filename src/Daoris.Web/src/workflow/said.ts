@@ -126,14 +126,19 @@ export function edgeSaid(t: TFunction, step: WorkflowStep): string {
   return step.press === null ? t('workflow.edge.automatic') : t(`workflow.edge.${step.press}`);
 }
 
-/** The person's part, composed from the steps' presses in order (design §2.5): no summary is typed. */
+/**
+ * The person's part, composed from the steps' presses in order (design §2.5): no summary is typed. A verification's check whose failure
+ * waits (`failed` absent or `wait`) adds their *Ask for a fix…*; one set to `ask`, their standing say-so (the pipeline design §4.5), is said
+ * after it as a fix asked with no press of theirs; `stop` asks nothing.
+ */
 export function partSaid(t: TFunction, workflow: Pick<CurrentWorkflow, 'steps'>): string {
-  const presses = yourPart(workflow.steps);
-  if (presses.length === 0) return t('workflow.part.none');
-  const parts = presses.map(({ press, environment }) => (press === 'reviewed'
+  const parts = yourPart(workflow.steps).map(({ press, environment }) => (press === 'reviewed'
     ? environment ? t('workflow.part.reviewed', { environment }) : t('workflow.part.reviewedAnywhere')
     : t(`workflow.part.${press}`)));
-  return t('workflow.part.says', { parts: parts.join(t('workflow.part.join')) });
+  const failed = workflow.steps.filter((step) => step.kind === 'check').map((step) => textOf(step, 'failed') ?? 'wait');
+  if (failed.includes('wait')) parts.push(t('workflow.part.fixWait'));
+  const said = parts.length === 0 ? t('workflow.part.none') : t('workflow.part.says', { parts: parts.join(t('workflow.part.join')) });
+  return failed.includes('ask') ? t('workflow.part.fixAsk', { said }) : said;
 }
 
 /**
