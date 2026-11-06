@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
+import type { StarterDoor } from './starters';
 
 /**
  * What a plugin proposal's plugin runs (PLUG9), each command as its manifest writes it, `${plugin}`
@@ -161,7 +162,7 @@ export type HelpSyncShown = {
   looked: boolean;
   rows: { key: string; step: 'line' | 'replay' | 'delete'; moves: boolean; says: string }[];
   /** Each repository whose line the look did not fetch: git's reason, when it last heard from origin (never, as none), and how origin is reached. */
-  notFetched?: { repository: string; fetch: string; lastFetch?: string | null; reach?: string | null }[];
+  notFetched?: { repository: string; fetch: string; lastFetch?: string | null; reach?: string | null; host?: string | null }[];
   /** The repositories with a checkout here that the look left apart, holding no branch of Daoris's. */
   apart?: string[];
 };
@@ -330,8 +331,14 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
  * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
  */
-function SyncNotFetched({ failed, lines }: { failed: NonNullable<HelpSyncShown['notFetched']>; lines: number }) {
+function SyncNotFetched({ failed, lines, onGo }: {
+  failed: NonNullable<HelpSyncShown['notFetched']>;
+  lines: number;
+  onGo?: (door: StarterDoor) => void;
+}) {
   const { t } = useTranslation();
+  // The screen door (GITAUTH1e): each host a fetch over SSH or HTTPS did not reach, once, opening Add a git identity with the host filled.
+  const hosts = [...new Set(failed.filter((line) => line.reach === 'ssh' || line.reach === 'https').map((line) => line.host).filter((host): host is string => !!host))];
   const reasons = [...new Set(failed.map((line) => line.fetch))];
   const when = (line: (typeof failed)[number]) => (line.lastFetch
     ? t('settings.sync.notFetched.when', { repository: line.repository, when: ago(line.lastFetch) })
@@ -352,6 +359,15 @@ function SyncNotFetched({ failed, lines }: { failed: NonNullable<HelpSyncShown['
       )}
       {failed.some((line) => line.reach === 'https' || line.reach === 'http') && (
         <p className="m-0 mt-0.5">{t('settings.sync.notFetched.https')}</p>
+      )}
+      {onGo && hosts.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {hosts.map((host) => (
+            <Button key={host} onClick={() => onGo({ view: 'settings', section: 'git', gitHost: host })}>
+              {t('help.proposal.syncAddIdentity', { host })}
+            </Button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -398,11 +414,13 @@ function SyncApart({ apart }: { apart: string[] }) {
  *
  * **A set-up is a place's** (WORKFLOWCLEAN1 1f): its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
-export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
+export function ProposalCard({ proposal, pending = false, onApply, onDismiss, onGo }: {
   proposal: HelpProposal;
   pending?: boolean;
   onApply: (id: string) => void;
   onDismiss: (id: string) => void;
+  /** Where a sync card's screen door leads (GITAUTH1e): the window opens the door, as it does a published item's. */
+  onGo?: (door: StarterDoor) => void;
 }) {
   const { t } = useTranslation();
   const deleting = proposal.kind === 'delete';
@@ -454,7 +472,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
           </ul>
           {/* LEFT3 b: what the rows do not say, on the card itself, as the look's message says it too. */}
           {(syncing.notFetched ?? []).length > 0 && (
-            <SyncNotFetched failed={syncing.notFetched!} lines={syncing.rows.filter((row) => row.step === 'line').length} />
+            <SyncNotFetched failed={syncing.notFetched!} lines={syncing.rows.filter((row) => row.step === 'line').length} onGo={onGo} />
           )}
           {(syncing.apart ?? []).length > 0 && <SyncApart apart={syncing.apart!} />}
           <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncNote')}</p>

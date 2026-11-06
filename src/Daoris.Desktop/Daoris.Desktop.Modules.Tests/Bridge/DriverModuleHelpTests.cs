@@ -85,7 +85,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var then = new DateTimeOffset(2026, 9, 29, 8, 0, 0, TimeSpan.Zero);
         var looked = new HelpSyncPlan(true, [new HelpSyncRow("engine:main", "line", true, "engine  main  fast-forwards 1 commit(s)")])
         {
-            Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh")], ["docs"]),
+            Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222")], ["docs"]),
         };
 
         var shown = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(looked), camel);
@@ -94,9 +94,9 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal("engine:main", shown.GetProperty("rows")[0].GetProperty("key").GetString());
         var line = Assert.Single(shown.GetProperty("notFetched").EnumerateArray());
         Assert.Equal(
-            ("engine", "fatal: Could not read from remote repository.", then, "ssh"),
+            ("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222"),
             (line.GetProperty("repository").GetString(), line.GetProperty("fetch").GetString(), line.GetProperty("lastFetch").GetDateTimeOffset(),
-                line.GetProperty("reach").GetString()));
+                line.GetProperty("reach").GetString(), line.GetProperty("host").GetString()));
         Assert.Equal(["docs"], shown.GetProperty("apart").EnumerateArray().Select(name => name.GetString()));
 
         var before = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(new HelpSyncPlan(false, [])), camel);

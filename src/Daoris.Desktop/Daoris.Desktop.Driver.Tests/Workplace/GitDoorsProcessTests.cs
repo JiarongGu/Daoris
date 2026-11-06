@@ -14,11 +14,17 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of the person's: no system file, an empty global file and a scratch home. No real host, key, agent or credential store is touched.</para>
 /// <para><b>OpenSSH's own transport</b> is proved against <see cref="GitSshHost"/> (<see cref="GitSshProcessTests"/>); the stand-in ssh
 /// here proves the door's judgement, its argument contract and <c>BatchMode</c> given first.</para>
-/// <para>In the Process half, beside a listener.</para>
+/// <para>In the Process half, beside a listener. <see cref="GitDoorsPinnedProcessTests"/> runs every fact again with the MinGit the
+/// toolchain pins (<see cref="PinnedMinGit"/>) named as the home's git, the doors' own proof on both gits (GITAUTH1b).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class GitDoorsProcessTests : IDisposable
+public class GitDoorsProcessTests : IDisposable
 {
+    /// <summary>Whether the doors are proved with the pinned MinGit rather than the runner's git.</summary>
+    protected virtual bool Pinned => false;
+
+    private readonly HashSet<string> _pinnedHomes = [];
+
     private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-git-doors-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Home => Path.Combine(_root, "data");
@@ -45,6 +51,7 @@ public sealed class GitDoorsProcessTests : IDisposable
     /// <summary>A git started as Daoris starts its own, for <paramref name="home"/>, kept from the person's configuration and home.</summary>
     private ProcessStartInfo Git(string folder, string home, params string[] arguments)
     {
+        if (Pinned && _pinnedHomes.Add(home)) PinnedMinGit.Lay(home);
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, home);
         Assert.Null(refusal);
         var scratch = Path.Combine(_root, "scratch-home");
@@ -100,6 +107,7 @@ public sealed class GitDoorsProcessTests : IDisposable
 
     private Task<string> TipAsync() => Ok(Bare, "rev-parse", "refs/heads/main");
 
+    /// <summary>The runner's <c>git-http-backend</c>, which serves in both runs: MinGit ships none, and the host is not what is proved.</summary>
     private static string Backend()
     {
         var (exit, output, _) = RunAsync(new ProcessStartInfo("git", "--exec-path") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true })

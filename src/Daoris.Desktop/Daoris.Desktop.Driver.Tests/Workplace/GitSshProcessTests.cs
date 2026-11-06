@@ -22,8 +22,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// known-hosts file of the person's is read.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullRequestApiHost>, IDisposable
+public class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixture<PullRequestApiHost>, IDisposable
 {
+    /// <summary>Whether this run's git is the MinGit the toolchain pins (<see cref="PinnedMinGit"/>) rather than the runner's.</summary>
+    protected virtual bool Pinned => false;
+
+    private bool _pinnedLaid;
+
     private readonly GitSshHost _host;
 
     private readonly PullRequestApiHost _api;
@@ -92,6 +97,12 @@ public sealed class GitSshProcessTests : IClassFixture<GitSshHost>, IClassFixtur
     /// <summary>A git started as Daoris starts its own, kept from the person's configuration and home.</summary>
     private ProcessStartInfo Git(string folder, params string[] arguments)
     {
+        if (Pinned && !_pinnedLaid)
+        {
+            PinnedMinGit.Lay(Home);
+            _pinnedLaid = true;
+        }
+
         var (info, refusal) = WorkingTree.GitStart(folder, arguments, Home);
         Assert.Null(refusal);
         var scratch = Path.Combine(_root, "scratch-home");

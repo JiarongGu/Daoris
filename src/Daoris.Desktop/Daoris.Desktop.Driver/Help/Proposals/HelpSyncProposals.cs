@@ -69,7 +69,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             {
                 if (Text(line, "repository") is not { } repository || Text(line, "fetch") is not { } fetch) continue;
                 var last = Moments.Read(line, "lastFetch");
-                notFetched.Add(new HelpSyncUnfetched(repository, fetch, last, Text(line, "reach")));
+                notFetched.Add(new HelpSyncUnfetched(repository, fetch, last, Text(line, "reach"), Text(line, "host")));
             }
         }
 
@@ -243,7 +243,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         node["notFetched"] = new JsonArray([.. listed.Lines.Where(pull => pull.Fetch is not null).Select(pull => (JsonNode)new JsonObject
         {
             ["repository"] = pull.Repository, ["fetch"] = GitWords.Redact(pull.Fetch),
-            ["lastFetch"] = Moments.Write(pull.LastFetch), ["reach"] = pull.Reach,
+            ["lastFetch"] = Moments.Write(pull.LastFetch), ["reach"] = pull.Reach, ["host"] = pull.Host,
         })]);
         node["apart"] = new JsonArray([.. listed.Apart.Select(each => (JsonNode)JsonValue.Create(each.Repository))]);
         JsonFile.Write(path, node);
@@ -282,7 +282,8 @@ public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched
 /// <param name="Fetch">Why, in git's words.</param>
 /// <param name="LastFetch">When this checkout last heard from origin, which its row is judged against; null for never.</param>
 /// <param name="Reach">How origin is reached: `ssh`, `https`, `http`, `git` or `file`.</param>
-public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTimeOffset? LastFetch, string? Reach);
+/// <param name="Host">Origin's host as a git identity names it, for the card's door to Add a git identity with the host filled; null for a local path or a card kept before it.</param>
+public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTimeOffset? LastFetch, string? Reach, string? Host = null);
 
 public interface IHelpSyncDoors
 {

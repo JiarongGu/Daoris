@@ -603,6 +603,35 @@ describe('the kinds that reach every door', () => {
     expect(note.textContent).not.toMatch(/credential helper/);
   });
 
+  it('offers, for each host a fetch did not reach, the door to Add a git identity with that host filled, once', async () => {
+    const onGo = vi.fn();
+    const hosted: HelpProposal = {
+      ...OFFLINE,
+      sync: {
+        ...OFFLINE.sync!,
+        notFetched: [
+          { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh', host: 'git.example.com:2222' },
+          { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh', host: 'git.example.com:2222' },
+          { repository: 'site', fetch: unreadable, lastFetch: null, reach: 'https', host: 'github.com' },
+          { repository: 'docs', fetch: unreadable, lastFetch: null, reach: 'file', host: null },
+        ],
+      },
+    };
+    render(<ul><ProposalCard proposal={hosted} onApply={vi.fn()} onDismiss={vi.fn()} onGo={onGo} /></ul>);
+
+    const door = screen.getByRole('button', { name: 'Add a git identity for git.example.com:2222…' });
+    expect(screen.getAllByRole('button', { name: /^Add a git identity for / })).toHaveLength(2);
+    await userEvent.click(door);
+
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'git', gitHost: 'git.example.com:2222' });
+  });
+
+  it('has no such door where the window gives none, or where no host is known', () => {
+    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} onGo={vi.fn()} /><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.queryByRole('button', { name: /^Add a git identity for / })).not.toBeInTheDocument();
+  });
+
   it('once looked, names on the card the repositories it left apart, and how a proposal includes one', () => {
     render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
 

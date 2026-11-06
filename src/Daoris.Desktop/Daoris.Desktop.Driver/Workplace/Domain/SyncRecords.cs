@@ -53,6 +53,9 @@ public sealed record LinePull(
 
     /// <summary>Where the fetch failed, how origin is reached, from its address: `ssh`, `https`, `http`, `git` or `file` (WSR7).</summary>
     public string? Reach { get; init; }
+
+    /// <summary>Where the fetch failed, the host of origin's address as a git identity names it (with its port where it is not the scheme's), which Ask Daoris's door to Add a git identity fills; null for a local path.</summary>
+    public string? Host { get; init; }
 }
 
 /// <summary>What bringing one branch up to date would do, or found (WSR6). Only a replay moves anything.</summary>

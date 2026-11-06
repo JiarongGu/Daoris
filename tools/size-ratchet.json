@@ -95,7 +95,7 @@
   "src/Daoris.Web/src/design/tokens.test.ts": 50744,
   "src/Daoris.Web/src/design/ui.test.tsx": 67214,
   "src/Daoris.Web/src/help/AskDaoris.test.tsx": 112207,
-  "src/Daoris.Web/src/help/ProposalCard.test.tsx": 41483,
+  "src/Daoris.Web/src/help/ProposalCard.test.tsx": 43059,
   "src/Daoris.Web/src/locales/names.test.ts": 42296,
   "src/Daoris.Web/src/projects/ProjectsView.git.test.tsx": 82164,
   "src/Daoris.Web/src/projects/ProjectsView.test.tsx": 79947,

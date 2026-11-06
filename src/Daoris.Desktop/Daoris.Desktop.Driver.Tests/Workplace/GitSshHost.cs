@@ -58,6 +58,15 @@ public sealed class GitSshHost : IAsyncLifetime
     /// <summary>Every connection accepted, an <c>ssh-keyscan</c>'s included.</summary>
     public int Connections => Volatile.Read(ref _connections);
 
+    /// <summary>
+    /// Whether a <c>git-receive-pack</c> is cut off mid-way (GITAPP2): the host lists its refs, takes the pack and applies it, then drops the
+    /// connection with no report and no exit status, so a client cannot know the push was taken. Recorded as exit <see cref="InterruptedExit"/>.
+    /// </summary>
+    public bool InterruptReceive { get; set; }
+
+    /// <summary>The exit a run cut off by <see cref="InterruptReceive"/> is recorded with.</summary>
+    public const int InterruptedExit = -1;
+
     /// <summary>Every public key a client offered, in order, with whether it was admitted.</summary>
     public IReadOnlyList<GitSshHostOffer> Offers
     {
@@ -170,7 +179,13 @@ public sealed class GitSshHost : IAsyncLifetime
                 return;
             }
 
-            exit = await RunGitAsync(stream, program, folder, emptyConfig);
+            var interrupt = InterruptReceive && program == "git-receive-pack";
+            exit = await RunGitAsync(stream, program, folder, emptyConfig, interrupt);
+            if (interrupt)
+            {
+                exit = InterruptedExit;
+                await channel.Session.CloseAsync(SshDisconnectReason.ConnectionLost, "interrupted");
+            }
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException or SshChannelException or SshConnectionException)
         {
@@ -184,7 +199,7 @@ public sealed class GitSshHost : IAsyncLifetime
     }
 
     /// <summary>git's own program on the repository, its input the channel's until the client's end, its output the channel's.</summary>
-    private async Task<int> RunGitAsync(SshStream stream, string program, string folder, string emptyConfig)
+    private async Task<int> RunGitAsync(SshStream stream, string program, string folder, string emptyConfig, bool interrupt)
     {
         var info = new ProcessStartInfo(_git!)
         {
@@ -215,11 +230,29 @@ public sealed class GitSshHost : IAsyncLifetime
                 try { git.StandardInput.Close(); } catch (IOException) { }
             }
         });
-        await git.StandardOutput.BaseStream.CopyToAsync(stream);
+        if (interrupt) await ForwardAdvertisementOnlyAsync(git.StandardOutput.BaseStream, stream);
+        else await git.StandardOutput.BaseStream.CopyToAsync(stream);
         await stream.FlushAsync();
         await git.WaitForExitAsync();
         await errors;
         return git.ExitCode;
+    }
+
+    /// <summary>
+    /// What <c>git-receive-pack</c> says is sent on until the ref advertisement's flush-pkt (<c>0000</c>) has gone; everything after it, the
+    /// report of what was taken, is read and dropped, so the client has sent its pack and hears nothing back.
+    /// </summary>
+    private static async Task ForwardAdvertisementOnlyAsync(Stream from, SshStream to)
+    {
+        var buffer = new byte[8192];
+        var advertised = false;
+        int read;
+        while ((read = await from.ReadAsync(buffer)) > 0)
+        {
+            if (advertised) continue;
+            await to.WriteAsync(buffer.AsMemory(0, read));
+            advertised = read >= 4 && buffer.AsSpan(read - 4, 4).SequenceEqual("0000"u8);
+        }
     }
 
     /// <summary>

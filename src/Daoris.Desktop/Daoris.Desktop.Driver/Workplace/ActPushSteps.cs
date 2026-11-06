@@ -10,7 +10,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// A push's end state is origin's, which no local read knows. A step that ended with exit 0 is done; one refused before anything was sent
-/// (the door's refusal, git's own <c>rejected</c>, or a hold on origin) is not done; any other end is unknown, never done and never retried.
+/// (the door's refusal, git's own <c>rejected</c>, git's own stop before it sends such as a <c>pre-push</c> hook refusing, or a hold on origin)
+/// is not done; any other end, a connection cut after origin was reached included, is unknown, never done and never retried.
 /// </remarks>
 internal static class ActPushSteps
 {
@@ -72,6 +73,14 @@ internal static class ActPushSteps
         if (stderr.Contains("[rejected]", StringComparison.Ordinal) || stderr.Contains("[remote rejected]", StringComparison.Ordinal))
         {
             return run.End($"{NothingSent}origin refused it ({ContentHolds.Said(TreeGit.Failure(stderr))})");
+        }
+
+        // Git's own stop (exit 1, `failed to push some refs`, no `fatal:` of a connection) comes before the pack is sent: the person's pre-push
+        // hook refusing is one, run once origin's refs are listed. A connection cut after that dies with `fatal:` and stays unknown.
+        if (run.Exit == 1 && stderr.Contains("failed to push some refs", StringComparison.Ordinal)
+            && !stderr.Contains("fatal:", StringComparison.Ordinal) && !stderr.Contains("hung up", StringComparison.Ordinal))
+        {
+            return run.End($"{NothingSent}git stopped it before anything was sent, as a pre-push hook of the repository does ({ContentHolds.Said(TreeGit.Failure(stderr))})");
         }
 
         var git = WorkingTree.GitInUse(home);

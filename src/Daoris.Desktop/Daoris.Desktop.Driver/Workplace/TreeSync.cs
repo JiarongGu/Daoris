@@ -93,10 +93,10 @@ internal sealed class TreeSync(
     }
 
     /// <summary>A checkout's line, and how its fetch went: why it failed, when origin was last heard from here, and how it is reached.</summary>
-    private sealed record Fetched(string? Line, string? Failed = null, DateTimeOffset? LastFetch = null, string? Reach = null)
+    private sealed record Fetched(string? Line, string? Failed = null, DateTimeOffset? LastFetch = null, string? Reach = null, string? Host = null)
     {
         /// <summary>The pull as judged, carrying what a failed fetch leaves it judged against (WSR7).</summary>
-        public LinePull Onto(LinePull pull) => Failed is null ? pull : pull with { LastFetch = LastFetch, Reach = Reach };
+        public LinePull Onto(LinePull pull) => Failed is null ? pull : pull with { LastFetch = LastFetch, Reach = Reach, Host = Host };
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ internal sealed class TreeSync(
             var (failed, url) = await FetchAsync(each.Root, line, token, each.Repository, RemoteTarget.Workspace(each.Space)).ConfigureAwait(false);
             return failed is null
                 ? new Fetched(line)
-                : new Fetched(line, failed, await LastFetchAsync(each.Root, line, token).ConfigureAwait(false), ReachOf(url));
+                : new Fetched(line, failed, await LastFetchAsync(each.Root, line, token).ConfigureAwait(false), ReachOf(url), url is null ? null : GitIdentityActs.GitAddressHost(url));
         }, ct).ConfigureAwait(false);
 
     /// <summary>The checkouts a scope takes, and every other one, listed apart (D112).</summary>

@@ -174,9 +174,9 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var offline = new SyncPlan(
             [
                 new LinePull("engine", "work", "main", PullKind.FastForward, "aaaaaaaa", "bbbbbbbb", 1, "fatal: Could not read from remote repository.", null)
-                    { Reach = "ssh", LastFetch = then },
+                    { Reach = "ssh", LastFetch = then, Host = "git.example.com:2222" },
                 new LinePull("game", "work", "main", PullKind.UpToDate, "cccccccc", "cccccccc", 0, "fatal: unable to access origin", null)
-                    { Reach = "https" },
+                    { Reach = "https", Host = "github.com" },
                 new LinePull("tools", "work", "main", PullKind.UpToDate, "dddddddd", "dddddddd", 0, null, null),
             ],
             [], [])
@@ -190,8 +190,8 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
 
         Assert.Equal(
             [
-                new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh"),
-                new HelpSyncUnfetched("game", "fatal: unable to access origin", null, "https"),
+                new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh", "git.example.com:2222"),
+                new HelpSyncUnfetched("game", "fatal: unable to access origin", null, "https", "github.com"),
             ],
             besides.NotFetched);
         Assert.Equal(["docs", "site"], besides.Apart);
