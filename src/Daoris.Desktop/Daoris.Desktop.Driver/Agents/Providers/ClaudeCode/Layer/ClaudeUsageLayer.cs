@@ -7,8 +7,9 @@ namespace Daoris.Driver;
 /// Claude Code's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under
 /// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder as today's (Lyntai's AG22),
 /// and the reading named as <see cref="ClaudeUsage"/> names it, a window not yet opened turning over a window's length after the read.
-/// Not bound in place of today's question: the layer's reader reads a real answer's object <c>scope</c> as unknown and so answers nothing
-/// (D248's note of 2026-11-07); the oracle reads it, and it is bound again when Lyntai's reader keeps such an answer.
+/// Not bound in place of today's question: the installed server names a scoped row's model by its display name with a null <c>id</c>,
+/// which the layer's reader reads as unknown, so it answers nothing on a real account (D248's note of 2026-11-07, the agent-lyntai design's
+/// §9.2); the oracle reads that answer, and the binding returns when Lyntai's reader keeps it.
 /// </summary>
 internal static class ClaudeUsageLayer
 {
@@ -55,12 +56,21 @@ internal static class ClaudeUsageLayer
             var minutes = row.Kind == "session" ? (int)ClaudeUsage.SessionLength.TotalMinutes
                 : row.Kind.StartsWith("weekly", StringComparison.Ordinal) ? (int)ClaudeUsage.WeekLength.TotalMinutes : (int?)null;
             Kept(seen, new WindowSeen(
-                $"limits:{row.Kind}", null, row.Scope is { Length: > 0 } scope ? scope : null, minutes, row.UsedPercent / 100,
+                $"limits:{row.Kind}", null, ScopeOf(row), minutes, row.UsedPercent / 100,
                 LayerUsageRead.Precision(row.UsedStep), row.ResetsAt, row.ResetsAt is null ? null : UsageHistory.ResetSaid));
         }
 
         return new(walk, seen, reading.Plan is { Length: > 0 } plan ? plan : null);
     }
+
+    /// <summary>
+    /// A row's scope under today's name: the word a string scope wrote. A scope the server wrote as an object, naming a model (with its
+    /// <see cref="AgentAllowanceLimit.ScopeName"/>) or a <see cref="AgentAllowanceLimit.Surface"/>, is a row today's reader keeps with no
+    /// scope, so the model and the surface are not kept here either. A model named with no display name reads as a word would: the
+    /// reading cannot tell the two apart, and no recorded answer has one.
+    /// </summary>
+    private static string? ScopeOf(AgentAllowanceLimit row) =>
+        row.ScopeName is null && row.Surface is null && row.Scope is { Length: > 0 } scope ? scope : null;
 
     /// <summary>As today's reader keeps a window: one that says something, a window said twice its last.</summary>
     private static void Kept(List<WindowSeen> seen, WindowSeen window)

@@ -26,7 +26,7 @@ public sealed class LayerUsageParityTests : IDisposable
         new("1", "1"),
     ]);
 
-    /// <summary>Claude's server is started with <c>-p</c> on the layer, unmeasured against today's (the design's §9.2, 1c's third difference).</summary>
+    /// <summary>Claude's server is started with <c>-p</c> on the layer, measured to change no answer (the design's §9.2, 1c's third difference).</summary>
     private static readonly string[] ClaudeSpawn = ["Spawn"];
 
     /// <summary>
@@ -63,6 +63,8 @@ public sealed class LayerUsageParityTests : IDisposable
         Claude("a used window with no reset", ClaudeUsageTests.Body(W(10, null), W(50, At(9))));
         Claude("a reset made up", ClaudeUsageTests.Body(W(0, null), W(4, At(9))));
         Claude("scoped weeks and the server's rows", ClaudeUsageTests.ScopedWeeks, Unrecognised);
+        Claude("a row scoped by a model named with its id", ClaudeUsageTests.ObjectScope("\"claude-model-example\""));
+        Claude("a row scoped by a model with no id, as the installed server answers", ClaudeUsageTests.ObjectScope("null"), Unrecognised);
         Claude("not signed in", """{"subscription_type":null,"rate_limits_available":false,"rate_limits":{"five_hour":null,"seven_day":null}}""");
         foreach (var row in ClaudeUsageTests.Unread)
         {

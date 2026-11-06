@@ -44,6 +44,18 @@ public sealed class LayerUsageHostTests : IDisposable
         lock (_reads) return [.. _reads.SelectMany(read => read.Spawns).Select(spawn => spawn.Environment?.GetValueOrDefault("CODEX_HOME") ?? "")];
     }
 
+    /// <summary>
+    /// Where the driver carries the layer, Codex's question is the layer's read from the moment the driver loads, and Claude Code's stays
+    /// today's while the layer's reader reads the installed server's answer as unknown (D248's note of 2026-11-07; the oracle's model scope
+    /// with no id).
+    /// </summary>
+    [Fact]
+    public void Codex_s_question_is_bound_to_the_layer_s_read_and_Claude_Code_s_is_today_s()
+    {
+        Assert.IsType<LayerUsageRead>(UsageReads.Of(CodexUsage.Question));
+        Assert.Same(ClaudeUsage.Question, UsageReads.Of(ClaudeUsage.Question));
+    }
+
     [Fact]
     public async Task A_key_a_busy_account_and_a_held_lock_are_never_read_and_a_ready_account_is_read_under_its_own_home()
     {
