@@ -260,7 +260,7 @@ eligibility refuses any record carrying `piece` at every door: the session's own
 (`Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs:626`, `Trees/SessionGroups.cs:1124`), the terminal's `trees land`, Ask Daoris's
 card and the landing at done. A piece never taken in when its lead's work lands is *not taken in* (未并入): its ref stays until the
 person's *Discard…*, which removes it in one transaction verified at the commit (`ref-removal-transactions.md`). Clearing a closed
-quest's work clears its pieces (D153). Piece refs sit beside Daoris's recovery refs (`refs/daoris/discarded/`,
+quest's work (D153) leaves its pieces, and waits while one is not yet taken in, discarded or refused. Piece refs sit beside Daoris's recovery refs (`refs/daoris/discarded/`,
 `Trees/SessionTrees/ContentHolds.cs:69`) and are classed as they are: no tidy, clear, sync or landing mutates one, and **no proof of
 holding counts one as a holder** (`ContentHolds.AnyRef`, `:359`, and the strays' ref scan, `TreeStrays.cs:210`, exclude the prefix), since
 a piece's commit contains the lead's history up to its base and would otherwise let a lead's branch be forgotten as held. A valid ref

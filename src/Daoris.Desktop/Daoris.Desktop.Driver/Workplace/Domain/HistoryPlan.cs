@@ -85,6 +85,9 @@ public static class HistoryContexts
     /// <summary><c>needs-you</c>: a rule proposal a session of the work made.</summary>
     public const string Proposal = "proposal";
 
+    /// <summary><c>needs-you</c>: a piece the session asked for is not settled, and only the person's act settles it.</summary>
+    public const string Piece = "piece";
+
     /// <summary><c>needs-you</c>: a rule proposal for the ask.</summary>
     public const string ProposalAsk = "proposalAsk";
 

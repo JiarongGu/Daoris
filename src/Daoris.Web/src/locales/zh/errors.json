@@ -79,6 +79,7 @@
   "errors.HISTORY_NEEDS_YOU_ask": "需求 #{{ask}} 正等你发布或关闭，所以没有清除。",
   "errors.HISTORY_NEEDS_YOU_proposal": "{{session}} 的一条规则提议正在等你处理，所以没有清除。",
   "errors.HISTORY_NEEDS_YOU_proposalAsk": "需求 #{{ask}} 的一条规则提议正在等你处理，所以没有清除。",
+  "errors.HISTORY_NEEDS_YOU_piece": "{{session}} 请求的一个分项正等你并入或丢弃，所以没有清除。",
   "errors.HISTORY_AWAITED": "#{{quest}} 在等它的回答，所以没有清除。",
   "errors.HISTORY_AWAITED_published": "#{{quest}} 由 {{session}} 发布，仍未关闭，所以没有清除。",
   "errors.HISTORY_AWAITED_chain": "#{{quest}} 是它链上的下一步，仍未关闭，并以它的工作为基础，所以没有清除。",

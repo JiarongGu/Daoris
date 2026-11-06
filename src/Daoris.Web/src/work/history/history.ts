@@ -260,7 +260,7 @@ export function keptDoor(reason: HistoryReason): KeptDoor | null {
     case 'HISTORY_NEEDS_YOU':
       if ((context === 'held' || context === 'conflict') && quest) return { to: 'quest', id: quest };
       if ((context === 'ask' || context === 'proposalAsk') && ask) return { to: 'ask', id: ask };
-      return !context && session ? { to: 'session', id: session } : null;
+      return (!context || context === 'piece') && session ? { to: 'session', id: session } : null;
     case 'HISTORY_OPEN':
     case 'HISTORY_AWAITED':
       return quest ? { to: 'quest', id: quest } : null;
