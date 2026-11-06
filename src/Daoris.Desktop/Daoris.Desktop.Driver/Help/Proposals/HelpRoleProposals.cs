@@ -166,16 +166,16 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         return new HelpPlan(null, describe, RulesTerminal(press), null) { Role = new HelpRoleChange(RoleChange.Rules(press), null, null) };
     }
 
-    /// <summary>The terminal's twin of a place's rules: the place cleared and each count's ladder set, one command per set of roles.</summary>
+    /// <summary>The terminal's twin of a place's rules: the place cleared and each count's rule set, one command per set of roles.</summary>
     private static string RulesTerminal(SupervisorRulesPress press)
     {
         var groups = press.Rules.GroupBy(rule => rule.Roles is { } roles ? string.Join(",", roles) : "").ToList();
         if (groups.Count == 0) return $"daoris role rules --place {press.Place} --clear all";
         return string.Join(" && ", groups.Select((group, index) =>
             $"daoris role rules --place {press.Place}" + (group.Key.Length > 0 ? $" --roles {group.Key}" : "") + (index == 0 ? " --clear all" : "")
-            + string.Concat(group.GroupBy(rule => rule.Count).Select(count => count.All(rule => rule.Do == SupervisorRules.Off)
-                ? $" --off {count.Key}"
-                : $" --set {count.Key}=" + string.Join(",", count.Select(rule => $"{rule.At}:{rule.Do}" + (rule.UpTo is { } upTo ? $":{upTo}" : "")))))));
+            + string.Concat(group.Select(rule => rule.Do == SupervisorRules.Off
+                ? $" --off {rule.Count}"
+                : $" --set {rule.Count}={rule.At}:{rule.Do}" + (rule.UpTo is { } upTo ? $":{upTo}" : "")))));
     }
 
     /// <summary>

@@ -498,7 +498,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Equal("ANTHROPIC_API_KEY", claude.Accounts.Required.Facts.KeyVariable);
         Assert.Same(set.AgentNamed("claude-code")!.Tables.Limits, claude.Tables.Required.Limits);
         Assert.NotNull(claude.Tables.Required.ErrorWords);
-        Assert.Same(set.AgentNamed("claude-code")!.Usage, claude.Usage.Required.Question);
+        Assert.Same(set.AgentNamed("claude-code")!.Usage, claude.Usage.Required.Read);
         Assert.Equal(Transport.Native, claude.Doors[0].Transport);
         Assert.Equal(Transport.Protocol, claude.Doors[1].Transport);
         Assert.All(claude.Doors, door => Assert.Equal(new DoorIdentity(null, null, null), door.Identity));
@@ -539,7 +539,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Same(claude.Tables.Limits, lent.Tables.Limits);
         Assert.Same(claude.Tables.Windows, lent.Tables.Windows);
         Assert.Same(claude.Tables.SignIn, lent.Tables.SignIn);
-        Assert.Same(claude.Usage, lent.Usage.Question);
+        Assert.Same(claude.Usage, lent.Usage.Read);
         Assert.Equal(claude.Accounts.Login!.LoggedIn, lent.Accounts.Login!.LoggedIn);
         Assert.Same(stub.Tables.Limits, registry.Provider("stub").Lent.Required.Tables.Limits);
         Assert.NotNull(registry.Provider("dsh").Lent.Required);
@@ -550,16 +550,16 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Equal(CodexAccounts.Pool.DeviceLoginArguments, holder.Accounts.DeviceLoginArguments);
         Assert.Equal(CodexAccounts.Pool.LoginPorts, holder.Accounts.LoginPorts);
         Assert.Equal(TablesPart.None, holder.Tables);
-        Assert.Null(holder.Usage.Question);
+        Assert.Null(holder.Usage.Read);
 
         // codex-acp lends Codex's limit words and usage question; claude-code-acp and acp-stub lend none.
         Assert.Same(codexAcp.Tables.Limits, registry.Door("codex-acp").Lent.Tables.Limits);
-        Assert.Same(codexAcp.Usage, registry.Door("codex-acp").Lent.Usage.Question);
+        Assert.Same(codexAcp.Usage, registry.Door("codex-acp").Lent.Usage.Read);
         foreach (var none in new[] { "claude-code-acp", "acp-stub" })
         {
             var door = registry.Door(none).Lent;
             Assert.Null(door.Tables.Limits);
-            Assert.Null(door.Usage.Question);
+            Assert.Null(door.Usage.Read);
             Assert.Null(door.Accounts.Login);
         }
     }
@@ -609,7 +609,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Equal(new AccountKey("codex-acp"), made.Accounts.Required.Key);
         Assert.Equal(new DoorId("codex-acp"), made.Accounts.Required.References);
         Assert.Same(ProviderRegistry.Built().AgentNamed("codex-acp")!.Tables.Limits, made.Tables.Required.Limits);
-        Assert.Same(ProviderRegistry.Built().AgentNamed("codex-acp")!.Usage, made.Usage.Required.Question);
+        Assert.Same(ProviderRegistry.Built().AgentNamed("codex-acp")!.Usage, made.Usage.Required.Read);
         Assert.False(made.Lent.Required.Tables.Limits is not null);
         Assert.Equal(["p-cx"], named.Resolve("codex-acp", IdKind.AccountKey).Pool!.Providers.Select(id => id.Value));
         Assert.Equal(["codex-acp"], named.Provider("codex").Doors.Select(door => door.Id.Value));

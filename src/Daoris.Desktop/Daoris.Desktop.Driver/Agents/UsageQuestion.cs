@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Command">The binary and the arguments that start the server.</param>
 /// <param name="Recorded">The answers the reader was written against: an entry grows only with a recorded answer.</param>
-public abstract record UsageQuestion(string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded) : IUsageQuestion
+public abstract record UsageQuestion(string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded) : IUsageRead
 {
     /// <summary>How long a reading stands before a start asks the account again.</summary>
     public abstract TimeSpan Fresh { get; }
@@ -31,7 +31,11 @@ public abstract record UsageQuestion(string Harness, IReadOnlyList<string> Comma
 /// <param name="ProfileHome">The account's configuration home, where the server is started, never none (D197 point 3).</param>
 /// <param name="Managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
 /// <param name="Now">The moment the question is asked, from which a window not yet opened takes its reset.</param>
-public sealed record UsageAsk(IReadOnlyList<string> Run, AccountAgent Toolchain, string ProfileHome, string? Managed, DateTimeOffset Now);
+public sealed record UsageAsk(IReadOnlyList<string> Run, AccountAgent Toolchain, string ProfileHome, string? Managed, DateTimeOffset Now)
+{
+    /// <summary>The account's name, its home's profile; the layer's read hands the account by it.</summary>
+    public string? Profile { get; init; }
+}
 
 /// <summary>
 /// What a <see cref="UsageQuestion"/> answered (USAGECAP1a1, D179 point 2): the walk's readings, as every caller always had

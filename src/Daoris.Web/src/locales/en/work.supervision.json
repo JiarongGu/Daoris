@@ -4,7 +4,6 @@
   "work.supervision.unknown": "not known",
   "work.supervision.atLeast": "at least {{n}}",
   "work.supervision.ruleAt": "your rule: {{act}} at {{at}} ({{place}})",
-  "work.supervision.ownAt": "Daoris: {{act}} at {{at}}",
   "work.supervision.acted": "your rules acted {{count}} time, last {{when}}: {{counted}} {{n}}, {{act}}",
   "work.supervision.acted_other": "your rules acted {{count}} times, last {{when}}: {{counted}} {{n}}, {{act}}",
   "work.supervision.chip": "{{counted}} {{n}} of {{at}}",

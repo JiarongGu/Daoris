@@ -382,10 +382,10 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
         var driver = SourceFiles.Project(SourceFiles.DriverProject);
-        // Agents/Layer/ names Lyntai's assembly, which the analysis's references do not carry and a build without Lyntai's local build does not compile.
+        // Layer/ folders name Lyntai's assembly, which the analysis's references do not carry and a build without Lyntai's local build does not compile.
         var sources = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
             .Select(path => (Path.GetRelativePath(driver, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
-            .Where(source => !source.Item1.StartsWith("Agents/Layer/", StringComparison.Ordinal))
+            .Where(source => !("/" + source.Item1).Contains("/Layer/", StringComparison.Ordinal))
             .ToList();
         var tests = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs")
             .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverTestsProject), path).Replace(Path.DirectorySeparatorChar, '/'))

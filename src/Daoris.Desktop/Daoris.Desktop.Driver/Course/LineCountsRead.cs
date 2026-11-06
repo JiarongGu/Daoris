@@ -52,9 +52,11 @@ public sealed class LineCountsRead(
             config.Forgiven);
         var parts = LineCounts.Parts(session, evidence);
         var acts = new SupervisorRuleActs(home);
-        return new LineFacts(LineCounts.Facts(LineCounts.Of(session, evidence), Ruled(home, session, evidence)), parts, LineCounts.GoOns(session, evidence))
+        var ruled = Ruled(home, session, evidence);
+        return new LineFacts(LineCounts.Facts(LineCounts.Of(session, evidence), ruled), parts, LineCounts.GoOns(session, evidence))
         {
             Acts = [.. parts.SelectMany(part => acts.Of(part.Session)).OrderBy(act => act.At)],
+            RulesRead = ruled is not null,
         };
     }
 
@@ -63,8 +65,7 @@ public sealed class LineCountsRead(
     {
         var book = SupervisorRuleBook.Read(home);
         if (evidence.Records is not { } records) return null;
-        var record = records.GetValueOrDefault(session);
-        return book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key);
+        return RuledLine.Of(home, records.GetValueOrDefault(session), LineKeys.Of(session, records).Key).In(book);
     }
 
     /// <summary>The same, the records read from <paramref name="service"/> now.</summary>

@@ -1,0 +1,11 @@
+{
+  "id": "event-relay",
+  "apiVersion": 1,
+  "name": "Event relay",
+  "version": "1.0.0",
+  "description": "Passes Daoris's work events (ids and codes, never words or names) for this whole Daoris to programs on this machine that ask for them, such as `daoris-driver events relay`.",
+  "hooks": {
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["work/event"]
+  }
+}

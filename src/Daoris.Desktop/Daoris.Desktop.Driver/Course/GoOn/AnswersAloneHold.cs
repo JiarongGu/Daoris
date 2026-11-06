@@ -19,11 +19,12 @@ namespace Daoris.Driver;
 /// held, and the next look judges again.</para>
 /// </remarks>
 public sealed class AnswersAloneHold(
-    SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null, SupervisorRuleActs? acts = null)
+    SessionEvents events, GoOnMarks marks, ContinuationAdmissions admissions, SupervisorRuleBook? rules = null, SupervisorRuleActs? acts = null,
+    string? home = null)
 {
     /// <summary>The hold of <paramref name="home"/>, judged by the rules its store holds now, each hold kept as its rule's act.</summary>
     public static AnswersAloneHold For(SessionEvents events, GoOnMarks marks, string home) =>
-        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home), new SupervisorRuleActs(home, events));
+        new(events, marks, new ContinuationAdmissions(home), SupervisorRuleBook.Read(home), new SupervisorRuleActs(home, events), home);
 
     /// <summary>
     /// The answers alone in a row <paramref name="session"/>'s line goes on by: its line's effective rule, null where none holds it. A hold
@@ -32,12 +33,11 @@ public sealed class AnswersAloneHold(
     public int? At(string session, IReadOnlyDictionary<string, PriorSession> records)
     {
         var book = rules ?? SupervisorRuleBook.Seed;
-        var record = records.GetValueOrDefault(session);
-        return SupervisorRuleBook.AnswersAloneAt(book.For(SupervisorRuleBook.RoleOf(record), record?.Repository, record?.Workspace, LineKeys.Of(session, records).Key));
+        return SupervisorRuleBook.AnswersAloneAt(RuledLine.Of(home, records.GetValueOrDefault(session), LineKeys.Of(session, records).Key).In(book));
     }
 
-    /// <summary>The number a held line was held at: its rule's.</summary>
-    public int HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records) ?? AnswersAlone.Bound;
+    /// <summary>The number a held line was held at: its rule's; null where no rule holds it now, which nothing then names.</summary>
+    public int? HeldAt(string session, IReadOnlyDictionary<string, PriorSession> records) => At(session, records);
 
     /// <summary>
     /// Whether going on with <paramref name="words"/> on <paramref name="record"/> now would take its line on by answers alone past the
@@ -51,33 +51,33 @@ public sealed class AnswersAloneHold(
     {
         words ??= record.Waiting;
         if (record.Teammate || !SessionEventText.IsLocalId(record.Session) || words.Count == 0 || !words.All(AnswersAlone.Solicited)) return false;
-        if (Admits(record, records, words)) return false;
+        if (Admission(record, records, words) is not { Admitted: false } refused) return false;
 
         // Every answer waiting on it, those handed under another ask included: going on with any of them alone would be the same third.
         var answers = record.Waiting.Concat(words).Where(AnswersAlone.Solicited).Select(word => word.Id).OfType<string>()
             .Distinct(StringComparer.Ordinal).ToList();
         if (answers.Count == 0) return true;
-        if (marks.Read(record.Session) is { Why: GoOnMarks.AnswersAlone } held && answers.All(id => held.Said.Contains(id, StringComparer.Ordinal)))
-        {
-            return true;
-        }
+        var held = marks.Read(record.Session) is { Why: GoOnMarks.AnswersAlone } mark ? mark : null;
+        if (held is not null && answers.All(id => held.Said.Contains(id, StringComparer.Ordinal))) return true;
 
         var agent = AgentOf(words, records);
         marks.Mark(record.Session, answers, GoOnMarks.AnswersAlone, at, agent);
+        // A line already waiting is one hold: a new answer joins the mark, and the hold is said and kept once.
+        if (held is not null) return true;
         events.Keep(record.Session, AnswersAloneNotes.Held(agent, answers), say: null);
-        Acted(record, records, at);
+        Acted(record, records, refused.Count, at);
         return true;
     }
 
-    // The hold is the answers-alone rule's act: said on the line by its rule and kept in the decision record (the context counters design §4.7).
-    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, DateTimeOffset at)
+    // The hold is the answers-alone rule's act at the count its admission read: said on the line by its rule and kept in the decision record.
+    private void Acted(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, AloneCount count, DateTimeOffset at)
     {
         if (acts is null) return;
         var book = rules ?? SupervisorRuleBook.Seed;
         var line = LineKeys.Of(record.Session, records).Key;
-        var effective = book.For(SupervisorRuleBook.RoleOf(records.GetValueOrDefault(record.Session) ?? record), record.Repository, record.Workspace, line);
+        var effective = RuledLine.Of(home, records.GetValueOrDefault(record.Session) ?? record, line).In(book);
         if (SupervisorRuleBook.Acting(effective, SupervisorRules.AnswersAlone, SupervisorRules.Hold) is not { } rule) return;
-        acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), rule.At, Known: true, "go-on", at));
+        acts.Record(new RuleActed(line, record.Session, rule, book.RevisionOf(rule.Place), count.N, count.Known == LineCounts.Exact, "go-on", at));
     }
 
     /// <summary>
@@ -143,15 +143,15 @@ public sealed class AnswersAloneHold(
         ContinuationAdmissions.History(session, records, part => LineCountsRead.EventsOf(events, part));
 
     /// <summary>
-    /// Whether the line admits the go-on now: judged and reserved inside its admission at <see cref="AnswersAlone.Bound"/>, the line read
-    /// by its one key. Without the service's records, or without the admissions, it is admitted: nothing counts it.
+    /// The go-on judged and reserved inside its line's admission at its rule's number, the line read by its one key. Without the service's
+    /// records, or without the admissions, none: nothing counts it, and it goes on.
     /// </summary>
-    private bool Admits(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
+    private AloneAdmission? Admission(PriorSession record, IReadOnlyDictionary<string, PriorSession> records, IReadOnlyList<SaidWordView> words)
     {
         var ids = Keys(record, words);
-        return !records.ContainsKey(record.Session)
-            || admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records)) is not { } admission
-            || admission.Admitted;
+        return records.ContainsKey(record.Session)
+            ? admissions.Admit(History(record.Session, records), "answers:" + string.Join(",", ids.Order(StringComparer.Ordinal)), ids, record.Session, At(record.Session, records))
+            : null;
     }
 
     /// <summary>Each word's id, and for a word from before ids its record and when it was said.</summary>

@@ -84,6 +84,25 @@ public sealed class AnswersAloneHoldTests : IDisposable
     }
 
     [Fact]
+    public void CONTEXTDRIVE1s_a_hold_is_one_act_at_the_count_its_admission_read_and_a_new_answer_while_it_waits_adds_none()
+    {
+        GoneOn("s1", 2);
+        var acts = new SupervisorRuleActs(_home, Events);
+        var rule = new SupervisorRule("aa", SupervisorRules.AnswersAlone, "in-a-row", 1, SupervisorRules.Hold, null, SupervisorRules.Machine, null);
+        var hold = new AnswersAloneHold(Events, Marks, Admissions, new SupervisorRuleBook([new SupervisorRuleSet(SupervisorRules.Machine, 1, [rule])]), acts);
+        var asker = Asker(said: [Answer("w9")]);
+
+        Assert.True(hold.Holds(asker, Records(asker, HelperRecord), At));
+        var waiting = Asker(said: [Answer("w9"), Answer("w10")]);
+        Assert.True(hold.Holds(waiting, Records(waiting, HelperRecord), At.AddMinutes(1)));
+
+        var act = Assert.Single(acts.Of("s1"));
+        Assert.Equal((2, 1), (act.N, act.Rule.At));
+        Assert.Single(Notes("s1", HeldNoteCodes.AnswersHeld.Code));
+        Assert.Equal(["w10", "w9"], Marks.Read("s1")!.Said.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void A_second_answer_alone_goes_on_unmarked()
     {
         GoneOn("s1", 1);
@@ -181,7 +200,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
 
         Assert.True(restarted.Holds(handed, Records(handed, Asker("s0"), HelperRecord), At));
         Assert.Equal(2, CountOf("s1", Records(handed, Asker("s0"), HelperRecord)).N);
-        Assert.False(AnswersAlone.Holds([Answer("w2")], Events.After("s1", 0).Events));
+        Assert.True(AnswersAlone.Count(Events.After("s1", 0).Events) < SupervisorRuleBook.AnswersAloneBound);
     }
 
     /// <summary>A wrapper Daoris composed, a brief, a retry's instruction and a hand-over reset nothing; the person's word and Daoris's fact word do.</summary>
@@ -263,7 +282,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.False(Hold.Holds(Asker(said: [Answer("w1")]), records, At));
 
         Assert.True(Hold.AtBound("s1", records));
-        Assert.False(AnswersAlone.AtBound(Events.After("s1", 0).Events));
+        Assert.True(AnswersAlone.Count(Events.After("s1", 0).Events) < SupervisorRuleBook.AnswersAloneBound);
     }
 
     /// <summary>The steward's choice 2: a line with no events here counts nothing, and a teammate's record is never this machine's.</summary>

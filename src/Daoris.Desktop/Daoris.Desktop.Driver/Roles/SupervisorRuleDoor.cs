@@ -40,7 +40,7 @@ public static class SupervisorRuleDoor
         }
 
         if (Text(press, "change") is { } change && change != "set") throw Mixed($"`change: {change}`");
-        var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, `repository:<id>` or `line:<key>`.");
+        var place = Text(press, "place") ?? throw Refused("place", "the supervisor's rules name their place: `machine`, `workspace:<id>`, or `repository:<id>`.");
         if (!press.TryGetProperty("rulesRevision", out var revision) || !revision.TryGetInt64(out var read))
         {
             throw Refused("revision", $"the press names no `rulesRevision`: read {place}'s rules first, then write them whole.");
@@ -58,9 +58,9 @@ public static class SupervisorRuleDoor
 
     /// <summary>
     /// The world a press is judged in: the catalogue's working roles, and each repository's workspace as its wider place, so a workspace's
-    /// write is judged on its repositories' lines and a repository's on its workspace's rules.
+    /// write is judged on its repositories' lines and a repository's on its workspace's rules, as the store keeps them in every process.
     /// </summary>
-    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: RuleWiderPlaces.Read(home).Of);
+    public static SupervisorRuleWorld World(string home) => new(Roles(home), Wider: new RuleWiderPlaceStore(home).Read().Of);
 
     /// <summary>The judge's refusal of <paramref name="press"/> against the rules stored now, or null: what a door says before anything is sent.</summary>
     public static RuleRefusal? Judge(string home, SupervisorRulesPress press) =>

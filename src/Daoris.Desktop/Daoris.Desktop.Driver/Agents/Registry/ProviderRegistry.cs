@@ -12,7 +12,7 @@ public sealed record ResolvedId(IdKind Kind, AgentDoor? Door, Provider? Provider
 /// <param name="AccountOf">The agent whose account this one runs as, null where it has its own.</param>
 public sealed record AccountAgent(
     string Name, ToolSpec Program, PoolFacts Accounts, DoorHome Home, string? Product, string? Maker, string? Mark,
-    TablesPart Tables, string? TurnReport, IUsageQuestion? Usage, string? AccountOf);
+    TablesPart Tables, string? TurnReport, IUsageRead? Usage, string? AccountOf);
 
 /// <summary>
 /// Every provider and door this build and its enabled plugins carry, and the questions the contract asks of them (AGENTPROVIDER1 row
@@ -234,7 +234,7 @@ public sealed class ProviderRegistry
     public WindowWords? WindowsOf(DoorId door) => Own(door).Tables.Windows ?? LentTo(door).Tables.Windows;
 
     /// <summary>How this door's accounts' windows are asked.</summary>
-    public IUsageQuestion? UsageOf(DoorId door) => Own(door).Usage.Question ?? LentTo(door).Usage.Question;
+    public IUsageRead? UsageOf(DoorId door) => Own(door).Usage.Read ?? LentTo(door).Usage.Read;
 
     /// <summary>
     /// The agent that answers for this door's accounts (AGT7): the door itself where it is keyed by its own name, else the door its key
@@ -315,7 +315,7 @@ public sealed class ProviderRegistry
         var errors = keyed ? tables.ErrorWords : door.Tables.ErrorWords;
         return new AccountAgent(
             door.Id.Value, program!, accounts, door.Home, product, maker, mark, tables with { ErrorWords = errors },
-            door.Tables.TurnReport, usage.Question, door.AccountOf?.Value);
+            door.Tables.TurnReport, usage.Read, door.AccountOf?.Value);
     }
 
     /// <summary>An agent a door runs as with no door of its own here: its provider's program and sign-in, in the home its door runs in, and no words.</summary>

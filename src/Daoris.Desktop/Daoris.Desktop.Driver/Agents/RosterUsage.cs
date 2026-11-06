@@ -20,9 +20,9 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// How this adapter's accounts' windows are asked (CODEXUSE1): its own question, else its owner's, since a door's readings
     /// are its owner's as its accounts are (AGT7). Null asks nothing.
     /// </summary>
-    public UsageQuestion? UsageOf(string adapter) =>
+    public IUsageRead? UsageOf(string adapter) =>
         roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.UsageOf(new DoorId(roster.Adapters.Door(adapter).Id.Value)) as UsageQuestion
+            ? roster.Adapters.UsageOf(roster.Adapters.Door(adapter).Id)
             : null;
 
     /// <summary>
@@ -261,7 +261,8 @@ internal sealed class RosterUsage(HarnessRoster roster)
                 // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
                 // person's own sign-in and might refresh their token (D197 point 3).
                 var profileHome = HarnessSettings.ProfileHome(roster.Home, owner, account);
-                readings = await question.AskAsync(new UsageAsk(command.Run, toolchain, profileHome, command.Managed, roster.Clock()), ct)
+                readings = await question.AskAsync(
+                        new UsageAsk(command.Run, toolchain, profileHome, command.Managed, roster.Clock()) { Profile = account }, ct)
                     .ConfigureAwait(false);
             }
 
@@ -298,7 +299,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// The server's command, as every spawn resolves its binary (D57): <c>driver.json</c>'s command for the question's harness,
     /// then its managed pin, then <c>PATH</c>. Null where it is pinned with nothing installed at the pin: nobody to ask.
     /// </summary>
-    private (IReadOnlyList<string> Run, string? Managed)? UsageCommand(UsageQuestion question, DriverConfig config)
+    private (IReadOnlyList<string> Run, string? Managed)? UsageCommand(IUsageQuestion question, DriverConfig config)
     {
         var arguments = question.Command.Skip(1).ToList();
         if (config.Commands.GetValueOrDefault(question.Harness) is { Count: > 0 } named) return ([.. named, .. arguments], null);

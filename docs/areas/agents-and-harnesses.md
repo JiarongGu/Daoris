@@ -70,7 +70,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AccountRotation`, `RotatedOpening`, `RotationWords`, `RotationUse`, `UsageCurves`, `SwitchDecision` | same names, `Domain/` | The walk's order, the rotated start's opening and the walk's words, the next start's reason, the curves, a running session's switch (pure); its records and enums (`AccountState`, `WalkStep`, `NextStart`, and the rest) each in a file of their own |
 | `AccountLimits`, `AccountCooling`, `RefusedAccounts`, `AccountSignIns` | same names | Limit words and resets, `cooling.json`, refused credentials, sign-in refusals: the readers only. Each provider's words are its own types in its folder (`ClaudeLimits`, `ClaudeWindows`, `ClaudeSignIn`, `CodexLimits`), and the roster's `LimitsOf`, `SignInOf`, `WindowsOf`, `UsageOf`, `KeyVariableOf` and `WeekFixedOf` read them through the registry's door and the account key it lends one level |
 | `AgentErrors`, `TransientRetry`, `TransientRetries` | same names | The four-kind reader of a door's failure, and the retry in the same conversation |
-| `AccountWindows`, `UsageQuestion`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, the readers in `Providers/ClaudeCode/` and `Providers/Codex/`, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend: the question and its answer, each provider's own `UsageQuestion` (`ClaudeUsageQuestion`, `CodexUsageQuestion`) in its folder saying how it is asked, how long a reading stands and its source, so the roster switches on no kind; the capacity estimate |
+| `AccountWindows`, `IUsageRead`, `UsageReads`, `UsageQuestion`, `ClaudeUsage`, `CodexUsage`, `UsageProjection` | same names, the port in `Contract/IUsageRead.cs`, the readers in `Providers/ClaudeCode/` and `Providers/Codex/`, `Domain/UsageProjection.cs` | Each account's windows, read at no model spend: the usage port (`IUsageRead`, the question's declaration and its read) that `UsagePart` and the toolchain hold, answered by each provider's own `UsageQuestion` (`ClaudeUsageQuestion`, `CodexUsageQuestion`) in its folder saying how it is asked, how long a reading stands and its source, or by the layer's read where `UsageReads` binds one (rule 47), so the roster switches on no kind; the capacity estimate |
 | `UsageHistory`, `UsageHistoryReads` | same names | The readings and turns history: kept, rotated and pruned; read back by month with the gaps and the unread counted; its records (`KeptReading`, `KeptTurn`, `HistoryGap`, and the rest) each in a file |
 | `HarnessProbe`, `HarnessKeys`, `HarnessSelection`, `StartWiring`, `ProbeLock`, `ScratchSignIns`, `SignInPorts` | same names | Version and sign-in questions, API-key accounts, a selection and the wiring a start is handed, one question per home at a time, no real sign-in under a scratch home |
 | `AgentSettings`, `AgentOffers`, `DoorOffers`, `SessionChoices`, `ISettingsFile` | same names; `Providers/ClaudeCode/ClaudeSettingsFile.cs` | An account's model and effort in the tool's own file (the provider's `Models` part states its aliases and efforts); what an agent offered per version and account, read by `AgentOffers.Offers` in two scopes (a session's, an account default's); `SessionChoices` is the session scope the page's actors offer per door, read through each door's `Offers` part (`SettingsOffers`: the provider's file, `max` only where the door says its native session carries it, which is Claude Code's native door; a door that states none, `ListedOffers`: what its open last listed). The start plan, the walk and a switch's candidates ask `AgentOffers.Offers(home, door, version, account, now).Session.Judge(model)`, one account's refusal passing that account while another is tried |
@@ -251,8 +251,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     Lyntai's local build: the desktop's package props import the service's ignored `local/lyntai-local.props`, and the driver
     references the layer only under `DaorisLyntaiLayer`, true when that build is in use. Without it the driver has no Lyntai
     assembly. In the driver the layer is named by `Agents/Layer/` and the providers' folders alone, a vendor's registration and
-    options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). `Agents/Layer/` and its
-    tests compile only under `DaorisLyntaiLayer`. A layer door's failure enters as a `NormalizedFailure`, built in
+    options by its folder alone, with no `global using` of it and no layer-own id (`LayerCensusTests`). `Agents/Layer/`, each
+    provider folder's `Layer/` and their tests compile only under `DaorisLyntaiLayer`. There Claude Code's and Codex's usage
+    questions are read through the layer (`LayerUsageRead`, bound when the driver loads); without it today's readers read them. A layer door's failure enters as a `NormalizedFailure`, built in
     `Agents/Layer/` alone and answered by `AgentErrors.OfNormalized` with no table read. (from D213, D248)
 
 ## Where a change goes
@@ -264,7 +265,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - A new agent or door: a registration line in `Registry/Providers.cs` and a folder under `Agents/Providers/<id>/`, on the
   contract. A door is a record of its provider, never a class of its own; a test's harness is a `TestDoors.Door`.
 - Code that names Lyntai's agent layer: `Agents/Layer/`, compiled only where the local build is in use, or a vendor's registration
-  in its provider's folder (rule 47).
+  in its provider folder's `Layer/`, compiled under the same condition (rule 47).
 - A new fact about an existing real agent (a flag, a posture, a word table entry): its provider's or door's part in its
   provider's folder, measured first, with a recorded sentence for any word table.
 - New protocol-door behaviour on a frame: a stage of its own beside `Acp.cs`, marked `[TurnStage]` with its phase and what it
@@ -436,8 +437,14 @@ Agents page, and `orient-index` and `code-map` once files move.
   alike only on the same missing reader. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
   scenario alike but for a tool step's kind, which the Claude reader derives from the tool's name (`LayerParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
-  waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). The moves wait on the
-  capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
+  waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). Claude Code's and
+  Codex's account windows are read through the layer where the driver carries it (`LayerUsageRead` over each provider folder's
+  `Layer/` vendor, Lyntai's AG21 to AG24): today's command, environment, working folder, client name, patience and exchange order,
+  any version read without a probe, the reading named as today's readers name it and the history's source `layer:<question>`. The
+  oracle over every recorded answer and both readers' fixtures (`LayerUsageParityTests`) finds the two alike but for two named
+  gaps: Claude's server starts with `-p` on the layer, unmeasured against today's start without it, and a value the layer's
+  reader cannot recognise reads its whole answer unknown where today's keeps the rest for the history. The other moves wait on
+  the capabilities requested in `docs/2026-11-06-lyntai-requests.md`.
 - **AGENTINFRA1**: an execution-neutral run for remote APIs and hosted runtimes, with scoped availability and explicit
   recovery. Accepted; built after AGENTPROVIDER1, isolated home first.
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the

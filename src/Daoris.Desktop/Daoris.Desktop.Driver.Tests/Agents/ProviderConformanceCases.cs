@@ -337,7 +337,7 @@ internal static class ConformanceCases
     }
 
     /// <summary>Every account fact a door reads: its words, its windows, its usage question and the agent that answers for its accounts.</summary>
-    private sealed record AccountRead(LimitWords? Limits, SignInWords? SignIn, WindowWords? Windows, IUsageQuestion? Usage, string? Agent, PoolFacts? Accounts);
+    private sealed record AccountRead(LimitWords? Limits, SignInWords? SignIn, WindowWords? Windows, IUsageRead? Usage, string? Agent, PoolFacts? Accounts);
 
     private static AccountRead AccountFacts(ProviderRegistry registry, DoorId door)
     {
@@ -363,7 +363,7 @@ internal static class ConformanceCases
             Assert.Same(own.Tables.Limits ?? lender.Tables.Limits, registry.LimitsOf(door.Id));
             Assert.Same(own.Tables.SignIn ?? lender.Tables.SignIn, registry.SignInOf(door.Id));
             Assert.Same(own.Tables.Windows ?? lender.Tables.Windows, registry.WindowsOf(door.Id));
-            Assert.Same(own.Usage.Question ?? lender.Usage.Question, registry.UsageOf(door.Id));
+            Assert.Same(own.Usage.Read ?? lender.Usage.Read, registry.UsageOf(door.Id));
             if (!ReferenceEquals(lender, LentPart.None) && registry.AccountAgentOf(door.Id) is { } agent)
             {
                 NoDifferences(lender.Accounts, agent.Accounts, $"{door.Id}'s account facts against what '{key}' lends");

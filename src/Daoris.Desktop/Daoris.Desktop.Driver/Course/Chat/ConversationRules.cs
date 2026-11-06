@@ -25,8 +25,8 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
     public ConversationRuled? Judge(PriorSession record, string line, string condition, DateTimeOffset? until = null)
     {
         if (staff is null) return null;
-        var role = SupervisorRuleBook.RoleOf(record);
-        var place = new StaffPlace(record.Repository, record.Workspace, line);
+        var ruled = RuledLine.Of(staff.Home, record, line);
+        var (role, place) = (ruled.Role, ruled.Place);
         StaffPolicy? policy;
         StaffMoved moved;
         try
@@ -92,7 +92,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
         try
         {
             var book = staff.Rules();
-            var effective = book.For(ruled.Role, ruled.Place.Repository, ruled.Place.Workspace, ruled.Place.Line);
+            var effective = book.For(ruled.Role, ruled.Place.Repository, ruled.Place.Workspace);
             if (SupervisorRuleBook.Acting(effective, count, does) is not { } rule) return;
             acts.Record(new RuleActed(ruled.Place.Line!, session, rule, book.RevisionOf(rule.Place), n, true, point, (clock ?? TimeProvider.System).GetUtcNow()));
         }

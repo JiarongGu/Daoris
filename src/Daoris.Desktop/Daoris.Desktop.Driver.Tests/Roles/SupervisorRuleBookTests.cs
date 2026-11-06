@@ -28,10 +28,10 @@ public sealed class SupervisorRuleBookTests : IDisposable
     [Fact]
     public void CONTEXTDRIVE1l_a_store_with_no_machine_rules_decides_by_the_seeded_rules_as_today_s_readers_did()
     {
-        var unwritten = SupervisorRuleBook.Read(_home).For("build", "daoris", "w1", "412");
+        var unwritten = SupervisorRuleBook.Read(_home).For("build", "daoris", "w1");
         Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(unwritten), SupervisorRuleBook.FailuresAt(unwritten), SupervisorRuleBook.TriesLimit(unwritten)));
-        Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(SupervisorRuleBook.Seed.For("chat", null, null, null)),
-            SupervisorRuleBook.FailuresAt(SupervisorRuleBook.Seed.For("chat", null, null, null)), SupervisorRuleBook.TriesLimit(SupervisorRuleBook.Seed.For("chat", null, null, null))));
+        Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(SupervisorRuleBook.Seed.For("chat", null, null)),
+            SupervisorRuleBook.FailuresAt(SupervisorRuleBook.Seed.For("chat", null, null)), SupervisorRuleBook.TriesLimit(SupervisorRuleBook.Seed.For("chat", null, null))));
 
         Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
         var seeded = SupervisorRuleBook.Read(_home);
@@ -50,7 +50,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
         // The workspace moves on quiet with a bound; the repository's own tries rule leaves it no moves rule of its own.
         var held = new List<SupervisorRuleSet>
         {
-            new("machine", 1, SupervisorRuleBook.Seeded(3)),
+            new("machine", 1, [.. SupervisorRuleBook.Seeded(3).Where(rule => rule.Count != SupervisorRules.Moves)]),
             new("workspace:w1", 1, [Rule("quiet", 1, "next", "workspace:w1"), Rule("moves", 3, "ask", "workspace:w1")]),
         };
         var world = new SupervisorRuleWorld(["build", "chat"], Wider: wider.Of);
@@ -59,7 +59,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
         var refused = SupervisorRules.Judge("workspace:w1", 1, [Rule("quiet", 1, "next", "workspace:w1")], held, world);
         Assert.Equal("moves-unbounded", refused?.Code);
 
-        var line = new SupervisorRuleBook(held).For("build", "daoris", "w1", "412");
+        var line = new SupervisorRuleBook(held).For("build", "daoris", "w1");
         Assert.Equal("next", line[SupervisorRules.Quiet].Single().Do);
     }
 
@@ -67,12 +67,13 @@ public sealed class SupervisorRuleBookTests : IDisposable
     public void CONTEXTDRIVE1e_the_seeded_rules_are_today_s_numbers_and_none_for_failures_at_0()
     {
         var seeded = SupervisorRuleBook.Seeded(3);
-        Assert.Equal(["answers-alone at 2: hold", "failures at 3: hold", "tries at 5: hold"], seeded.Select(rule => $"{rule.Count} at {rule.At}: {rule.Do}"));
+        Assert.Equal(
+            ["answers-alone at 2: hold", "failures at 3: hold", "tries at 5: hold", "moves at 3: ask"], seeded.Select(rule => $"{rule.Count} at {rule.At}: {rule.Do}"));
         Assert.All(seeded, rule => Assert.Equal(("machine", null), (rule.Place, rule.Roles)));
         Assert.DoesNotContain(SupervisorRuleBook.Seeded(0), rule => rule.Count == SupervisorRules.Failures);
         Assert.Null(SupervisorRules.Judge("machine", 0, seeded, [], new SupervisorRuleWorld(["build", "chat"])));
 
-        var effective = Book(new SupervisorRuleSet("machine", 1, seeded)).For("build", "daoris", "w1", "412");
+        var effective = Book(new SupervisorRuleSet("machine", 1, seeded)).For("build", "daoris", "w1");
         Assert.Equal((2, 3, 5), (SupervisorRuleBook.AnswersAloneAt(effective), SupervisorRuleBook.FailuresAt(effective), SupervisorRuleBook.TriesLimit(effective)));
         Assert.Null(SupervisorRuleBook.Course(null, effective));
     }
@@ -96,7 +97,7 @@ public sealed class SupervisorRuleBookTests : IDisposable
         Assert.Equal(60, rules.Single(rule => rule.Count == SupervisorRules.Limits).UpTo);
         Assert.All(rules, rule => Assert.Equal("build", Assert.Single(rule.Roles!)));
 
-        var effective = Book(new SupervisorRuleSet("machine", 1, [.. SupervisorRuleBook.Seeded(3), .. rules])).For("build", null, null, "412");
+        var effective = Book(new SupervisorRuleSet("machine", 1, [.. SupervisorRuleBook.Seeded(3), .. rules])).For("build", null, null);
         var course = SupervisorRuleBook.Course(policy with { Moves = new Dictionary<string, StaffMove>() }, effective)!;
         Assert.Equal(new StaffMove(StaffActions.Weighted, 2), course.Moves[StaffConditions.Transient]);
         Assert.Equal(new StaffMove(StaffActions.Next, 2), course.Moves[StaffConditions.Failed]);
@@ -114,8 +115,8 @@ public sealed class SupervisorRuleBookTests : IDisposable
             new SupervisorRuleSet("machine", 1, SupervisorRuleBook.Seeded(3)),
             new SupervisorRuleSet("repository:daoris", 1, [Rule(SupervisorRules.AnswersAlone, 4, SupervisorRules.Hold, "repository:daoris", ["build"])]));
 
-        Assert.Equal(4, SupervisorRuleBook.AnswersAloneAt(book.For("build", "daoris", null, "412")));
-        Assert.Equal(2, SupervisorRuleBook.AnswersAloneAt(book.For("chat", "daoris", null, "c1")));
+        Assert.Equal(4, SupervisorRuleBook.AnswersAloneAt(book.For("build", "daoris", null)));
+        Assert.Equal(2, SupervisorRuleBook.AnswersAloneAt(book.For("chat", "daoris", null)));
     }
 
     [Fact]
@@ -123,9 +124,9 @@ public sealed class SupervisorRuleBookTests : IDisposable
     {
         var book = Book(
             new SupervisorRuleSet("machine", 1, SupervisorRuleBook.Seeded(3)),
-            new SupervisorRuleSet("line:412", 1, [Rule(SupervisorRules.AnswersAlone, 1, SupervisorRules.Off, "line:412"), Rule(SupervisorRules.Tries, 3, SupervisorRules.Hold, "line:412")]));
+            new SupervisorRuleSet("repository:daoris", 1, [Rule(SupervisorRules.AnswersAlone, 1, SupervisorRules.Off, "repository:daoris"), Rule(SupervisorRules.Tries, 3, SupervisorRules.Hold, "repository:daoris")]));
 
-        var effective = book.For("build", null, null, "412");
+        var effective = book.For("build", "daoris", null);
         Assert.Null(SupervisorRuleBook.AnswersAloneAt(effective));
         Assert.Equal(3, SupervisorRuleBook.TriesLimit(effective));
         Assert.Null(SupervisorRuleBook.Course(null, effective));
@@ -159,5 +160,16 @@ public sealed class SupervisorRuleBookTests : IDisposable
         Assert.True(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
         Assert.Equal(SupervisorRuleBook.Seeded(3), new SupervisorRuleStore(_home).Of("machine").Rules);
         Assert.False(SupervisorRuleBook.SeedFresh(_home,() => StoreSettled.Yes));
+    }
+
+    /// <summary>CONTEXTDRIVE1t: a fresh home and a migrated one hold one machine set, its moves rule among it, so a first move rule stands.</summary>
+    [Fact]
+    public void CONTEXTDRIVE1t_one_seed_holds_the_moves_rule_and_a_first_move_rule_stands()
+    {
+        Assert.Contains(SupervisorRuleBook.Seeded(), rule => rule is { Count: SupervisorRules.Moves, At: 3, Do: SupervisorRules.Ask, Roles: null });
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));
+        var store = new SupervisorRuleStore(_home);
+        var move = new SupervisorRule("q", SupervisorRules.Quiet, SupervisorRules.Windows[SupervisorRules.Quiet], 1, SupervisorRules.Next, null, "repository:daoris", null);
+        Assert.True(store.Write("repository:daoris", 0, [move], "test", SupervisorRuleDoor.World(_home)).Stored);
     }
 }

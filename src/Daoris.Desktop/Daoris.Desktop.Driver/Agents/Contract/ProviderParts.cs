@@ -56,10 +56,10 @@ public sealed record TablesPart(LimitWords? Limits, WindowWords? Windows, SignIn
     public static TablesPart None { get; } = new(null, null, null, null, null);
 }
 
-/// <summary>How an account's windows are asked between turns (<see cref="UsageQuestion"/>); null asks nothing.</summary>
-public sealed record UsagePart(IUsageQuestion? Question)
+/// <summary>How an account's windows are read between turns (<see cref="IUsageRead"/>); null asks nothing.</summary>
+public sealed record UsagePart(IUsageRead? Read)
 {
-    public static UsagePart None { get; } = new((IUsageQuestion?)null);
+    public static UsagePart None { get; } = new((IUsageRead?)null);
 }
 
 /// <summary>

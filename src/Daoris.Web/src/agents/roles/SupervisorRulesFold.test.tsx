@@ -49,6 +49,41 @@ describe('The supervisor rules fold', () => {
     expect(form.getByText('The service did not answer: at 5: Wait for you (from This Daoris)')).toBeTruthy();
   });
 
+  it("draws a repository's workspace as the place its rules replace and inherit from, and a Build rule leaves the machine's rule to the other roles", () => {
+    const read: SupervisorRulesRead = { counts: COUNTS, wider: { 'repository:daoris': ['workspace:w'] }, sets: [
+      READ.sets[0]!,
+      { place: 'workspace:w', revision: 1, rules: [{ id: 'w-1', count: 'answers-alone', window: 'in-a-row', at: 4, do: 'hold' }, { id: 'w-2', count: 'failures', window: 'since-try-again', at: 5, do: 'hold', roles: ['build'] }] },
+      { place: 'repository:daoris', revision: 1, rules: [{ id: 'r-1', count: 'answers-alone', window: 'in-a-row', at: 3, do: 'hold' }, { id: 'r-2', count: 'tries', window: 'episode', at: 2, do: 'hold', roles: ['build'] }] },
+    ] };
+    render(<SupervisorRulesFold place="repository:daoris" placeName="daoris" read={read} roles={[...ROLES, { value: 'chat', label: 'Chat' }]} busy={false} refused={null} onSave={vi.fn()} />);
+    const form = within(screen.getByRole('form', { name: 'Supervisor: its rules for daoris' }));
+
+    expect(form.getByText("Replaces Workspace w's: at 4: Wait for you")).toBeTruthy();
+    expect(form.getByText("Replaces This Daoris's: at 5: Wait for you")).toBeTruthy();
+    expect(form.getByText('Failed sessions on a quest: at 5: Wait for you for Build (from Workspace w)')).toBeTruthy();
+    expect(form.getByText('Failed sessions on a quest: at 3: Wait for you (from This Daoris)')).toBeTruthy();
+    expect(form.getByText('The service did not answer: at 5: Wait for you (from This Daoris)')).toBeTruthy();
+  });
+
+  it("keeps a rule set for two roles as read, and a save of another rule writes it back for both", async () => {
+    const read: SupervisorRulesRead = { counts: COUNTS, sets: [READ.sets[0]!, { place: 'repository:daoris', revision: 2, rules: [
+      { id: 'r-1', count: 'tries', window: 'episode', at: 2, do: 'weighted', roles: ['build', 'design'] },
+      { id: 'r-2', count: 'failures', window: 'since-try-again', at: 3, do: 'hold', roles: ['build', 'design'] },
+    ] }] };
+    const onSave = vi.fn((_press, answered) => answered.done());
+    render(<SupervisorRulesFold place="repository:daoris" placeName="daoris" read={read} roles={[...ROLES, { value: 'design', label: 'Design' }]} busy={false} refused={null} onSave={onSave} />);
+    const form = within(screen.getByRole('form', { name: 'Supervisor: its rules for daoris' }));
+
+    expect(form.getByLabelText('Rule 1: for')).toHaveTextContent('Build and Design');
+    expect(form.queryByRole('combobox', { name: 'Rule 1: for' })).toBeNull();
+    const at = form.getByRole('textbox', { name: 'Rule 2: reaches' });
+    at.focus();
+    await userEvent.keyboard('{ArrowUp}');
+    fireEvent.click(form.getByRole('button', { name: 'Save' }));
+
+    expect(onSave.mock.calls[0]![0].rules.map((rule: { roles?: string[] }) => rule.roles)).toEqual([['build', 'design'], ['build', 'design']]);
+  });
+
   it('steps the threshold with the arrow keys within the count\'s bounds', async () => {
     const { form } = open();
     const at = form.getByRole('textbox', { name: 'Rule 1: reaches' });

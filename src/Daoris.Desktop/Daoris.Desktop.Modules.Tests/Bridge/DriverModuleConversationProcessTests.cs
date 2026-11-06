@@ -104,36 +104,45 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     /// <summary>
     /// MSG1e2 (D137 §5.2): a terminal's words reach a conversation the window runs, as the box's do. Its turns take them
     /// through the loop's chat runner, here a text door's process taking the person's line, and the asker is told it takes
-    /// them as its next turn; nothing is posted to the say door, since the conversation is running.
+    /// them as its next turn; nothing is posted to the say door, since the conversation is running. The conversation is the
+    /// window's own start: its line reaches the process through its run's input alone (D243), so a process merely tracked under
+    /// its id is no conversation the window runs.
     /// </summary>
     [Fact]
     public async Task A_terminals_words_reach_a_conversation_the_window_runs()
     {
+        var root = Path.Combine(Home, "engine");
+        Directory.CreateDirectory(root);
         var heard = Path.Combine(Home, "heard.txt");
+        var script = Path.Combine(Home, "text-agent.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            if (process.argv.includes('--version')) { console.log('stub 1.0.0'); process.exit(0); }
+            if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', (line) => appendFileSync(process.argv[2], line + '\n'));
+            lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
+            """);
+        (DriverConfig.Empty with
+        {
+            Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(StringComparer.Ordinal) { ["chat"] = [new ActorChoice("stub")] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script, heard] },
+        }).Save(DriverConfigPath);
         var loop = Loop();
         var posts = new List<string>();
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Answering(posts)));
-        using var chat = new ChatRunner(service, loop.Harnesses.Adapters, loop.Home, loop.Processes, loop.Output, loop.Harnesses, loop.Events);
+        var adapters = ProviderRegistry.Built();
+        using var service = new ServiceClient(
+            "http://stand-in", null, new HttpClient(new Posting(posts) { InnerHandler = new DriverModuleStartFromTests.StandIn(root) }));
+        using var chat = new ChatRunner(
+            service, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
         await loop.ComeUpAsync(service, chat);
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "node",
-            ArgumentList =
-            {
-                "-e",
-                "require('readline').createInterface({ input: process.stdin }).on('line', (line) => require('fs').appendFileSync(process.argv[1], line + '\\n'));",
-                heard,
-            },
-            RedirectStandardInput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        })!;
-        using var tracked = loop.Processes.Track("c1", process);
+        var id = (await AnswerAsync(new DriverModule(Bus, loop), "START_CHAT", new { repository = "engine" })).GetProperty("sessionId").GetString()!;
 
         try
         {
             var held = await loop.Words.HoldAsync(
-                new SessionRequest("c1", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "and the readme", Key = SessionRequests.NewKey() },
+                new SessionRequest(id, SessionMove.Say, DateTimeOffset.UtcNow) { Text = "and the readme", Key = SessionRequests.NewKey() },
                 CancellationToken.None);
 
             Assert.Equal((true, (string?)null, (string?)null), (held.Sent, held.Reaches, held.Why));
@@ -142,7 +151,7 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
         }
         finally
         {
-            loop.Processes.Stop("c1");
+            chat.Finish(id);
         }
     }
 
@@ -203,18 +212,13 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     }
 
     /// <summary>A service standing in that answers no record and keeps whatever is posted, each post heard by its path.</summary>
-    private sealed class Answering(List<string> posts) : HttpMessageHandler
+    /// <summary>The service's answers as the stand-in under it gives them, each post's path kept.</summary>
+    private sealed class Posting(List<string> posts) : DelegatingHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             if (request.Method == HttpMethod.Post) lock (posts) posts.Add(request.RequestUri!.AbsolutePath);
-            var body = request.Method != HttpMethod.Get ? """{"kept":true,"message":"Kept."}"""
-                : request.RequestUri!.AbsolutePath == "/api/sessions/changes" ? """{"whole":true,"order":[],"mark":null,"changed":[]}"""
-                : "[]";
-            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            {
-                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
-            });
+            return base.SendAsync(request, ct);
         }
     }
 }

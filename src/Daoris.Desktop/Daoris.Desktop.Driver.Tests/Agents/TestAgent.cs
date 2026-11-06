@@ -29,7 +29,7 @@ internal sealed record TestAgent(
     bool WeekFixed = false,
     WindowWords? Windows = null,
     SignInWords? SignIn = null,
-    IUsageQuestion? Usage = null,
+    IUsageRead? Usage = null,
     string? Mark = null,
     bool RunsInOwnHome = false,
     string? TurnReport = null,

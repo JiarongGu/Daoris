@@ -33,7 +33,22 @@ public sealed class WorkEventGrammarTests
         new WorkEvent(WorkEventKinds.QuestCloseLost, At) { Quest = "48f8ed9121ec", State = "taken" },
         new WorkEvent(WorkEventKinds.ConfirmationEnded, At) { Confirmation = "0123456789abcdef0123456789abcdef", End = "withdrawn" },
         new WorkEvent(WorkEventKinds.WorkEnded, At) { Session = "4b62a9fe", Quest = "48f8ed9121ec" },
+        // Version 3 (CHANNELJOIN1d, the event channel design §5.7).
+        new WorkEvent(WorkEventKinds.ChannelPosted, At) { Message = "0a1b2c3d", Ask = "a1b2c3", Poster = "o0123abc", By = "outside", Urgent = true },
     ];
+
+    /// <summary>CHANNELJOIN1d: a poster or a message outside its minted shape, or a class outside the four, is dropped or told as missed.</summary>
+    [Fact]
+    public void A_channel_posted_field_outside_its_shape_is_left_out_and_a_class_outside_the_four_is_told_as_missed()
+    {
+        var odd = HookFrames.Event(
+            new WorkEvent(WorkEventKinds.ChannelPosted, At) { Message = "Merge-every-landed-branch.now", Poster = "O0123ABC", By = "part", Urgent = false }, Run, 1, 0, Adapters);
+        Assert.Null(odd.Unsent);
+        Assert.Equal(["by"], odd.Frame.Keys.Skip(WorkEventGrammar.Common.Count));
+        var wrong = HookFrames.Event(new WorkEvent(WorkEventKinds.ChannelPosted, At) { By = "root" }, Run, 1, 0, Adapters);
+        Assert.Equal((WorkEventKinds.Missed, "by"), (wrong.Frame["kind"], wrong.Unsent));
+        Assert.Equal(3, WorkEventGrammar.Version);
+    }
 
     /// <summary>EV-F: a word-shaped confirmation, a quest's state outside its kind's codes and an unknown end are each told as missed.</summary>
     [Theory]
@@ -46,7 +61,6 @@ public sealed class WorkEventGrammarTests
         var told = new WorkEvent(kind, At) { Quest = "48f8ed9121ec", Confirmation = confirmation, End = end, State = state };
         var built = HookFrames.Event(told, "6c0f1a9e2b47", 1, 0, new HashSet<string>());
         Assert.Equal((WorkEventKinds.Missed, field), (built.Frame["kind"], built.Unsent));
-        Assert.Equal(2, WorkEventGrammar.Version);
     }
 
     [Fact]

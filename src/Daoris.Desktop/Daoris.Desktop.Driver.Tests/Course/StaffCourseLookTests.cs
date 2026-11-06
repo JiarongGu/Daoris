@@ -76,7 +76,7 @@ public sealed class StaffCourseLookTests : IDisposable
 
         // The record's actor is the seeded id, as on every driven record: the scoped role that takes the quest's work is the one asked.
         var snapshot = Looking(Ended("ended.quiet"));
-        Assert.Equal("engine-build", StaffSnapshotCourse.RoleOf(staff, snapshot, snapshot.Quests[0], snapshot.LastRun["q1"]));
+        Assert.Equal("engine-build", StaffSnapshotCourse.LineOf(staff, snapshot, snapshot.Quests[0], snapshot.LastRun["q1"]).Role);
         var (moving, _) = StaffSnapshotCourse.Look(staff, snapshot, Config, Now);
 
         Assert.Equal("s1", Assert.Single(moving).Value.Session);

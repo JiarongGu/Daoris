@@ -195,6 +195,18 @@ public sealed class HomeLease : IDisposable
         Live(PathIn(home)) ?? OlderIn(home).Select(Live).FirstOrDefault(holder => holder is not null);
 
     /// <summary>
+    /// The live holder the home's lease names, or null; <paramref name="doubt"/> where the lease could not be read this moment or names
+    /// what this build cannot read (a newer build's), which a reader that must never wait on a doubt takes as held (the events relay's bound).
+    /// </summary>
+    public static LeaseHolder? HeldBy(string home, out bool doubt)
+    {
+        var text = Read(PathIn(home), out var busy);
+        var named = text is null ? null : Parse(text);
+        doubt = busy || (text is not null && named is null);
+        return named is { } live && ProcessLiveness.Alive(live.Holder.Pid, live.Started) ? live.Holder : null;
+    }
+
+    /// <summary>
     /// Whether this process holds the home's lease (FABRIC-END2, design §B5): its instance's loop, or a verb acting alone under the lease
     /// it took. A verb beside an instance holds nothing, so what only the lease's holder writes, such as an end, it never writes. Read
     /// from the lease file, so any path to the home meets the one answer.

@@ -20,7 +20,6 @@ public sealed class SupervisorRuleHoldTests
         Assert.Equal(SupervisorWhy.RuleHolds, SupervisorRuleHold.Why(atBound: false, [Failures]));
         Assert.Null(SupervisorRuleHold.Why(atBound: false, [Alone, Failures with { N = 2 }]));
         Assert.Null(SupervisorRuleHold.Why(atBound: false, [Failures with { N = null }]));
-        Assert.Null(SupervisorRuleHold.Why(atBound: false, [Failures with { Watch = new CountWatch(3, SupervisorRules.Hold) }]));
         Assert.Equal(SupervisorWhy.SupervisorBound, SupervisorRuleHold.Why(atBound: true, [Failures]));
         Assert.True(new SupervisedPark("daoris", true, true, null, false, false, false) { Counts = [Failures] }.RuleHolds);
     }

@@ -13,8 +13,8 @@ public sealed class CountTextsTests
 
     internal static readonly CountFact[] Handed =
     [
-        new("answers-alone", 2, "exact", null, "admission") { Watch = new CountWatch(2, "hold") },
-        new("failures", 1, "exact", null, "records") { Watch = new CountWatch(3, "hold") },
+        new("answers-alone", 2, "exact", null, "admission") { Watch = new CountWatch(2, "hold", "machine") },
+        new("failures", 1, "exact", null, "records") { Watch = new CountWatch(3, "hold", "machine") },
         new("quiet", 0, "at-least", "walk-cut", "ended.quiet"),
         new("moves", null, "unknown", "store-unreadable", "role_moves"),
     ];
@@ -35,11 +35,11 @@ public sealed class CountTextsTests
         Assert.Equal(
             """
             Every count of this line as Daoris read it; a reason names one by its first words here.
-            - count:answers-alone=2 (exact): answers alone in a row, from the line's admission; Daoris's own number: it waits for the person after 2
-            - count:failures=1 (exact): failed sessions on this quest, from the service's records; Daoris's own number: it waits for the person after 3
+            - count:answers-alone=2 (exact): answers alone in a row, from the line's admission; the person's rule for this machine: Daoris waits for the person after 2
+            - count:failures=1 (exact): failed sessions on this quest, from the service's records; the person's rule for this machine: Daoris waits for the person after 3
             - count:quiet=0 (at-least): its last part ended quiet, from its last part's end; its walk back was cut
             - count:moves (unknown): moves to another choice in 24 hours, from the moves kept here; the store did not read
-            No rule of the person's is in force on this line: Daoris acts on its own numbers, named beside each count.
+            The rules in force on this line are the person's, named beside each count.
             Its parts, oldest first:
             - session s1: opened
             - session s2: moved on at a limit
@@ -50,6 +50,11 @@ public sealed class CountTextsTests
             - 2026-11-03 09:12 UTC, session s2: the person's Go on with this answer
             """.ReplaceLineEndings("\n"),
             CountTexts.Print(facts));
+
+        // A line whose rules did not read says so, and claims no number of Daoris's own.
+        var unread = CountTexts.Print(facts with { Counts = [.. Handed.Select(count => count with { Watch = null })], RulesRead = false });
+        Assert.Contains("The person's rules for this line did not read, so none is named here", unread, StringComparison.Ordinal);
+        Assert.DoesNotContain("own number", unread, StringComparison.Ordinal);
 
         // A rule's acts follow the go-ons, oldest first, said from the rule's codes and numbers alone; none, no section.
         Assert.DoesNotContain("Its rules' acts", CountTexts.Print(facts), StringComparison.Ordinal);

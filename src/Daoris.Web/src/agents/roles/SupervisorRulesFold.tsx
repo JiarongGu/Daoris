@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RoleChangePress, SupervisorRuleWire, SupervisorRulesRead } from '../../data/wiring';
 import { Button, FormField, FormGrid, FormRow, Icon, SelectField, WhyGlyph } from '../../design/ui';
+import { list } from '../../locales/format';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { NumberField } from './RolePolicy';
 import {
-  blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, sameAsStored, setOf,
+  blankRule, draftOf, inheritedFrom, MACHINE, nextCount, pressOf, readable, reaction, recount, replaced, type RuleDraft, rowOf, sameAsStored, setOf,
 } from './supervisorRulesDraft';
 
 const ANY = '';
@@ -16,6 +17,13 @@ const COLUMNS = ['name', 'number', 'name', 'short', 'acts'] as const;
 export function ruleSaid(t: TFunction, rule: Pick<SupervisorRuleWire, 'at' | 'do' | 'upTo'>): string {
   const act = t(`settings.supervisor.act.${rule.do}`);
   return rule.do === 'wait' && rule.upTo ? t('settings.supervisor.saidWait', { at: rule.at, act, minutes: rule.upTo }) : t('settings.supervisor.said', { at: rule.at, act });
+}
+
+/** A wider place in the person's words: this machine, or a workspace or repository by its name. */
+function placeSaid(t: TFunction, place: string): string {
+  if (place === MACHINE) return t('settings.supervisor.machine');
+  const [kind, name] = [place.slice(0, place.indexOf(':')), place.slice(place.indexOf(':') + 1)];
+  return kind === 'workspace' ? t('settings.supervisor.workspace', { name }) : t('settings.supervisor.repository', { name });
 }
 
 /**
@@ -36,9 +44,8 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
   const [draft, setDraft] = useState(() => draftOf(place, stored));
   const [said, setSaid] = useState<string | null>(null);
   const [keys, setKeys] = useState(() => draft.rows.length);
-  const machine = setOf(read, MACHINE)?.rules ?? [];
-  const wider = place === MACHINE ? [] : machine;
-  const inherited = inheritedFrom(read, place, draft.rows);
+  const lineRoles = roles.map((role) => role.value);
+  const inherited = inheritedFrom(read, draft, lineRoles);
   const unchanged = sameAsStored(draft, stored);
   const locked = busy;
 
@@ -53,7 +60,7 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
   const copyHere = (rule: SupervisorRuleWire) => {
     setDraft((was) => ({
       ...was,
-      rows: [...was.rows, { key: keys, count: rule.count, at: String(rule.at), do: rule.do, upTo: rule.upTo ? String(rule.upTo) : '', role: rule.roles?.[0] ?? ANY }],
+      rows: [...was.rows, rowOf(rule, keys)],
     }));
     setKeys(keys + 1);
   };
@@ -63,8 +70,9 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
     onSave(pressOf(draft), { done: () => setSaid(null), refused: setSaid });
   };
   // A rule on tries is the machine's last bound: it is never taken out there, only changed.
-  const mayRemove = (row: RuleDraft) => !(place === MACHINE && row.count === 'tries' && row.role === ANY);
+  const mayRemove = (row: RuleDraft) => !(place === MACHINE && row.count === 'tries' && row.roles.length === 0);
   const roleOptions = [{ value: ANY, label: t('settings.supervisor.everyRole') }, ...roles];
+  const roleNames = (ids: readonly string[]) => list(ids.map((id) => roles.find((role) => role.value === id)?.label ?? id));
   const first = draft.rows.length === 0;
 
   return (
@@ -92,7 +100,8 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
           {draft.rows.map((row, index) => {
             const n = index + 1;
             const count = countOf(row.count);
-            const replacing = replaced(row, wider);
+            const replacing = replaced(read, draft, row, lineRoles);
+            const replacedAt = [...new Set(replacing.map((each) => each.place))];
             return (
               <FormRow key={row.key}>
                 <FormField label={t('settings.supervisor.field.when')} when="stacked">
@@ -117,10 +126,15 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                   />
                 </FormField>
                 <FormField label={t('settings.supervisor.field.for')} when="stacked">
-                  <SelectField
-                    value={row.role} disabled={locked} ariaLabel={t('settings.supervisor.forOf', { n })}
-                    onChange={(role) => patch(row.key, (was) => ({ ...was, role }))} options={roleOptions}
-                  />
+                  {row.roles.length > 1 ? (
+                    // A rule set at the terminal for several roles: the fold edits one role, so it keeps these as read.
+                    <span className="text-small text-ink" aria-label={t('settings.supervisor.forOf', { n })} data-rule-roles={row.roles.join(',')}>{roleNames(row.roles)}</span>
+                  ) : (
+                    <SelectField
+                      value={row.roles[0] ?? ANY} disabled={locked} ariaLabel={t('settings.supervisor.forOf', { n })}
+                      onChange={(role) => patch(row.key, (was) => ({ ...was, roles: role === ANY ? [] : [role] }))} options={roleOptions}
+                    />
+                  )}
                 </FormField>
                 <span className="flex items-center">
                   <Button
@@ -139,7 +153,11 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                         {t('settings.supervisor.minutes')}
                       </span>
                     )}
-                    {replacing.length > 0 && <span>{t('settings.supervisor.replaces', { place: t('settings.supervisor.machine'), rules: replacing.map((rule) => ruleSaid(t, rule)).join('; ') })}</span>}
+                    {replacedAt.map((at) => (
+                      <span key={at} data-replaces={at}>
+                        {t('settings.supervisor.replaces', { place: placeSaid(t, at), rules: replacing.filter((each) => each.place === at).map((each) => ruleSaid(t, each.rule)).join('; ') })}
+                      </span>
+                    ))}
                     {(row.count === 'failures-on-choice' || row.count === 'tries') && <span>{t(`settings.supervisor.note.${row.count}`)}</span>}
                   </span>
                 )}
@@ -151,9 +169,13 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
       {first && <p className="m-0 text-small text-ink-soft">{t('settings.supervisor.none', { place: placeName })}</p>}
       {inherited.length > 0 && (
         <ul className="m-0 grid list-none gap-1 p-0 text-small text-ink-soft">
-          {inherited.map((rule, at) => (
-            <li key={`${rule.count}-${rule.roles?.[0] ?? ANY}-${at}`} className="flex flex-wrap items-center gap-2" data-inherited={rule.count}>
-              <span>{t('settings.supervisor.inherited', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), place: t('settings.supervisor.machine') })}</span>
+          {inherited.map(({ place: from, rule }, at) => (
+            <li key={`${from}-${rule.count}-${rule.roles?.[0] ?? ANY}-${at}`} className="flex flex-wrap items-center gap-2" data-inherited={rule.count} data-from={from}>
+              <span>
+                {rule.roles && rule.roles.length > 0
+                  ? t('settings.supervisor.inheritedFor', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), roles: roleNames(rule.roles), place: placeSaid(t, from) })
+                  : t('settings.supervisor.inherited', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), place: placeSaid(t, from) })}
+              </span>
               <Button variant="ghost" disabled={locked} onClick={() => copyHere(rule)}>{t('settings.supervisor.setHere')}</Button>
             </li>
           ))}

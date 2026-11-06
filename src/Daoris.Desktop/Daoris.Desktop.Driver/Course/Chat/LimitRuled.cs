@@ -49,7 +49,7 @@ internal static class LimitRuled
     {
         try
         {
-            StaffCourse.LimitMoved(context.Harnesses.StaffFor(context.Home), SupervisorRuleBook.RoleOf(prior), line, prior, taken);
+            StaffCourse.LimitMoved(context.Harnesses.StaffFor(context.Home), RuledLine.Of(context.Home, prior, line).Role, line, prior, taken);
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {

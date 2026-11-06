@@ -316,21 +316,23 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         var root = await RepositoryAsync("engine");
         var (branch, _, tip) = await MergedAsync(root, treeless: true);
         var refused = false;
-        WorkingTree.Answered.Value = arguments =>
+        // git refuses the transaction itself, the line its proof rested on rewound as the branch goes: the act's own git is no start this
+        // seam answers.
+        var trees = new SessionTrees(Home)
         {
-            if (arguments is ["update-ref", "--stdin"])
+            BeforeRefDeleted = async name =>
             {
+                await Rewinds(root)(name);
                 refused = true;
-                return (128, "", "fatal: simulated refusal");
-            }
-
-            return refused && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"refs/heads/{branch}"
+            },
+        };
+        WorkingTree.Answered.Value = arguments =>
+            refused && arguments is ["rev-parse", "--verify", "--quiet", var reference] && reference == $"refs/heads/{branch}"
                 ? (128, "", "fatal: simulated read failure")
                 : null;
-        };
         try
         {
-            var removal = await new SessionTrees(Home).RemoveBranchAsync(root, "engine", branch);
+            var removal = await trees.RemoveBranchAsync(root, "engine", branch);
 
             Assert.True(refused, "the transaction was refused");
             Assert.False(removal.Removed, removal.Message);

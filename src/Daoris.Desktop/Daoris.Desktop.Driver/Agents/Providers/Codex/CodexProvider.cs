@@ -29,7 +29,7 @@ internal static class CodexProvider
             new DoorHome("CODEX_HOME", OwnHome: false, TrustFile: null),
             // The same words and question, lent to a harness naming this door (O3-F2): a plugin's door onto `codex-acp` reads Codex's
             // by reference, while one joined to `codex` reads neither.
-            new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(CodexUsage.Question)),
+            new LentPart(PoolFacts.None, TablesPart.None with { Limits = CodexLimits.Words }, new UsagePart(UsageReads.Of(CodexUsage.Question))),
             Known<IDoorOffers>.Absent,
             new PosturesPart("agent", Asking: "workspace-write", Full: "agent-full-access", Reading: "read-only"),
             Known<ISpawn>.Declared(new CodexAcpSpawn(), Evidence),
@@ -53,7 +53,7 @@ internal static class CodexProvider
             // What Codex says when a limit refuses a turn (TOOL4k) and how an account's windows are asked (CODEXUSE1) are the agent's:
             // its built door is read through them, and a harness naming `codex` still reads its sign-in alone (its `Lent` part below).
             Known<TablesPart>.Declared(TablesPart.None with { Limits = CodexLimits.Words }, Evidence),
-            Known<UsagePart>.Declared(new UsagePart(CodexUsage.Question), Evidence),
+            Known<UsagePart>.Declared(new UsagePart(UsageReads.Of(CodexUsage.Question)), Evidence),
             Known<LentPart>.Declared(new LentPart(pool, TablesPart.None, UsagePart.None), Evidence),
             Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Declared(CodexChildVocabulary.Vocabulary, Evidence),
             Known<IRuleLanguage>.Absent, Known<ISkillLayout>.Absent,
