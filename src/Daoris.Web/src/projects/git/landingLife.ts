@@ -9,7 +9,7 @@ import { short, type TraceAnswer, type TraceBranch } from '../../work/head/trace
 type Translate = TFunction;
 
 /** The proofs an end rests on (`EndBy`), each worded as the milestone words it (`work.milestone.by.*`). */
-export const END_BY = ['empty', 'merged', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
+export const END_BY = ['empty', 'merged', 'on-line', 'pull-request', 'landed', 'carried', 'inside', 'tidied'] as const;
 
 /** A pull request's states (`PullRequestStates.All`), in its order. */
 export const PULL_REQUEST_STATES = ['open', 'completed', 'abandoned', 'unknown'] as const;

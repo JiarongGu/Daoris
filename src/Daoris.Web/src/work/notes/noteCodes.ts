@@ -335,6 +335,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Why a conversation whose agent has no account left does not go on with another: the person's pick, or no other choice.
   'chat.limit-picked': { values: ['owner'] },
   'chat.limit-no-other': { values: ['owner'] },
+  // What a part left running when the next part starts in its tree: ended and waited for, or still there after the wait.
+  'chat.left-ended': { values: ['count'] },
+  'chat.left-running': { values: ['count', 'seconds'] },
   // The limit's wake (D206 §3.7): its own conversation went on, or could not be resumed and went on briefed.
   'limit.resumed': { values: ['until'] },
   'limit.resume-refused': { values: ['why'], why: 'continue' },
@@ -349,6 +352,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A helper an account's limit cut off, which the session no longer waits on, with when its account is ready again.
   'helper.limited': { values: ['agent', 'until'] },
   'helper.limited-no-reset': { values: ['agent'] },
+  // The person's own ask of a helper, kept on the session whose next turn its answer is.
+  'helper.person-asked': { values: [] },
   // A partner's piece (D199 point 8): on the lead its course, on the partner whose session it works for. Notes, never words.
   'partner.asked': { values: ['agent'] },
   'partner.started': { values: ['agent', 'session'] },

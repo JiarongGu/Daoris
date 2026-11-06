@@ -7,7 +7,7 @@ import { DotMark, Icon } from '../../design/ui';
 import { endOffersStop, endSentences, entryDetail, entryName, heldSentence, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
-const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside'] as const;
+const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried', 'inside', 'tidied'] as const;
 
 const what = entryName;
 

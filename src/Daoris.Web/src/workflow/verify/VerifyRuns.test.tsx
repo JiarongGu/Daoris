@@ -86,7 +86,7 @@ describe("a repository's verifications", () => {
     await i18n.changeLanguage('zh');
     render(<VerifyRuns answer={lineOf(batch, first)} />);
     [since, opening] = rows();
-    expect(since).toHaveTextContent('自 1111111 以来合入主线 main 的提交');
+    expect(since).toHaveTextContent('自 1111111 以来落到主线 main 的提交');
     expect(opening).toHaveTextContent('主线 main 的首次验证');
   });
 });

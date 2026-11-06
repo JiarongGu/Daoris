@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
+import { isComposing } from '../../lib/composing';
 
 /** The structures' doors (COWORKUX1f, the co-worker design §6.2, §3.2), each its own door's words and rule. */
 export const BRING_IN_DOORS = ['question', 'piece', 'opinion', 'goOn', 'alongside'] as const;
@@ -27,7 +28,7 @@ export function BringInAgent({ choices, onClose }: { choices: readonly BringInCh
       aria-labelledby="bring-in-title"
       data-bring-in
       className="grid gap-2 rounded-control border border-line bg-raised p-3"
-      onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }}
+      onKeyDown={(event) => { if (isComposing(event)) return; if (event.key === 'Escape') onClose(); }}
     >
       <h3 id="bring-in-title" className="m-0 text-small font-semibold">{t('work.team.bringIn.title')}</h3>
       <p className="m-0 text-small text-ink-soft">{t('work.team.bringIn.lead')}</p>

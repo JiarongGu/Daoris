@@ -337,6 +337,6 @@
   "workflow.run.line.exit": "退出码 {{exit}}",
   "workflow.run.line.wall": "{{seconds}} 秒",
   "workflow.run.line.join": " · ",
-  "workflow.run.line.batch": "自 {{base}} 以来合入主线 {{line}} 的提交",
+  "workflow.run.line.batch": "自 {{base}} 以来落到主线 {{line}} 的提交",
   "workflow.run.line.first": "主线 {{line}} 的首次验证"
 }

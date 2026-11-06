@@ -78,11 +78,11 @@ describe('a held verification on What needs you', () => {
     await i18n.changeLanguage('zh');
     const item = worded(failed);
     expect(item.title).toBe('engine 的验证失败：suite');
-    expect(item.detail).toBe('它验证的是 主线 main 上的 2222222，即自 1111111 以来合入的提交。在你再运行一次之前，不会再验证它。');
+    expect(item.detail).toBe('它验证的是 主线 main 上的 2222222，即自 1111111 以来落地的提交。在你再运行一次之前，不会再验证它。');
     render(<ul><AttentionRow item={worded(held())} acts={{ held: vi.fn() }} /></ul>);
     expect(screen.getByRole('button', { name: '再运行一次' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '暂不处理' })).toBeInTheDocument();
     render(<ul><AttentionRow item={worded(failed)} acts={{ held: vi.fn() }} /></ul>);
-    expect(screen.getByRole('button', { name: '请求修复…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '请人修复…' })).toBeInTheDocument();
   });
 });

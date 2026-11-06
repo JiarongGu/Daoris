@@ -63,7 +63,7 @@ describe('find on the workspace map', () => {
     await i18n.changeLanguage('zh');
     render(world(14));
     await userEvent.type(screen.getByRole('searchbox'), '支付');
-    expect(within(screen.getByRole('list')).getByRole('button')).toHaveTextContent('ledger — 负责 支付流程');
+    expect(within(screen.getByRole('list', { name: '匹配项' })).getByRole('button')).toHaveTextContent('ledger — 负责 支付流程');
   });
 
   it('steps nothing on Enter while an input method composes, and steps on the Enter after it', async () => {
@@ -115,7 +115,7 @@ describe('find on the code map', () => {
     await i18n.changeLanguage('zh');
     render(<Code />);
     await userEvent.type(screen.getByRole('searchbox'), 'billing');
-    expect(within(screen.getByRole('list')).getAllByRole('button')[0]).toHaveTextContent('session — 位于 src/Billing');
+    expect(within(screen.getByRole('list', { name: '匹配项' })).getAllByRole('button')[0]).toHaveTextContent('session — 位于 src/Billing');
   });
 
   it('steps nothing on Enter while an input method composes', async () => {
