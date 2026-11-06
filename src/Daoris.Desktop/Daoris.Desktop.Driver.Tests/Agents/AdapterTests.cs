@@ -247,7 +247,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_native_resume_carries_its_words_on_its_input_and_not_in_its_arguments()
     {
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
+        var info = BuiltDoors.Of("claude-code").PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         var print = info.ArgumentList.IndexOf("-p");
         Assert.True(print >= 0 && info.ArgumentList[print + 1] == "--resume", string.Join(' ', info.ArgumentList));

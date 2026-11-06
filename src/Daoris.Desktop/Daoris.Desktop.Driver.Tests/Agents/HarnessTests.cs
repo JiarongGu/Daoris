@@ -472,7 +472,7 @@ public sealed class HarnessProbeTests : IDisposable
         var roster = new HarnessRoster(
             new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
-                ["stub"] = new StubAdapter(),
+                ["stub"] = BuiltDoors.Of("stub"),
             }),
             DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
@@ -558,7 +558,7 @@ public sealed class HarnessProbeTests : IDisposable
             const org = home && existsSync(home + '/org.txt') ? readFileSync(home + '/org.txt', 'utf8').trim() : 'Org A';
             console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, authMethod: 'claude.ai', email: 'person@example.invalid', orgName: org, subscriptionType: 'max' }));
             """);
-        var claude = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
+        var claude = BuiltDoors.Of("claude-code").Toolchain!.LoginCheck!;
         return new HarnessToolchain(
             Binary: ["node", script], VersionArguments: ["--version"],
             ProfileVariable: "CHATTY_HOME",
@@ -622,7 +622,7 @@ public sealed class HarnessProbeTests : IDisposable
     [Fact]
     public void Claude_code_names_who_signed_in_by_the_email_it_reports()
     {
-        var question = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
+        var question = BuiltDoors.Of("claude-code").Toolchain!.LoginCheck!;
         const string answer = """
             {
               "loggedIn": true,

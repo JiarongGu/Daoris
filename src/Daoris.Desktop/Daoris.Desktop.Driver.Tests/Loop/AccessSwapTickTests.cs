@@ -177,7 +177,7 @@ public sealed class AccessSwapTickTests : IDisposable
     /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
     private sealed class PosturedStub : ISessionAdapter
     {
-        private readonly AcpStubAdapter _stub = new();
+        private readonly ISessionAdapter _stub = BuiltDoors.Of("acp-stub");
 
         public string Name => _stub.Name;
 

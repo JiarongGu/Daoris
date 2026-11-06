@@ -22,7 +22,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_resume_runs_the_answer_as_the_next_turn_of_the_kept_conversation()
     {
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
+        var info = BuiltDoors.Of("claude-code").PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         var arguments = info.ArgumentList.ToList();
         Assert.Equal("claude", info.FileName);
@@ -43,7 +43,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_resume_takes_the_settings_and_servers_flags_as_a_start_does()
     {
-        var adapter = new ClaudeCodeAdapter();
+        var adapter = BuiltDoors.Of("claude-code");
         var info = adapter.PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         adapter.HandSettings(info, "D:/daoris-data/sessions/s1.settings.json");
@@ -114,7 +114,7 @@ public sealed class NativeResumeTests
             ],
             Continuations.Opening("claude-code", null, null, answer: false, findings: true, persons: true));
 
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], resume.Conversation)!;
+        var info = BuiltDoors.Of("claude-code").PrepareResume(Target(), ["claude"], resume.Conversation)!;
 
         var arguments = info.ArgumentList.ToList();
         // The prompt is the resume's own, written on the input (AGENTLYNTAI1s-i), so it is read where it is composed.
@@ -265,7 +265,7 @@ public sealed class NativeResumeTests
     {
         var target = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null) with { Resume = "0b5e7c1a" };
 
-        var arguments = new ClaudeCodeAdapter().PrepareChat(target, ["claude"]).ArgumentList.ToList();
+        var arguments = BuiltDoors.Of("claude-code").PrepareChat(target, ["claude"]).ArgumentList.ToList();
 
         Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
         Assert.Equal("stream-json", arguments[arguments.IndexOf("--input-format") + 1]);
@@ -281,9 +281,9 @@ public sealed class NativeResumeTests
         var fresh = SpawnRequests.Chat("Game", "D:/trees/chat-1", "http://localhost:5177", null);
         var going = fresh with { Resume = "0b5e7c1a" };
 
-        Assert.DoesNotContain("--resume", new ClaudeCodeAdapter().PrepareChat(fresh, ["claude"]).ArgumentList);
+        Assert.DoesNotContain("--resume", BuiltDoors.Of("claude-code").PrepareChat(fresh, ["claude"]).ArgumentList);
         Assert.DoesNotContain("--resume", AdapterSet.Built().Resolve("claude-code-acp").PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
-        Assert.DoesNotContain("--resume", new AcpStubAdapter().PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
+        Assert.DoesNotContain("--resume", BuiltDoors.Of("acp-stub").PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
     }
 
     /// <summary>

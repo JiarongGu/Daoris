@@ -49,7 +49,7 @@ public sealed class ActorRunTests : IDisposable
         var roundtrip = JsonSerializer.Deserialize<ActorAsked>(JsonSerializer.Serialize(explicitDefault, ActorRun.Json), ActorRun.Json)!;
         Assert.Equal(explicitDefault, roundtrip);
         Assert.Equal("high", roundtrip.Effort.Value);
-        var adapter = new ClaudeCodeAdapter();
+        var adapter = BuiltDoors.Of("claude-code");
         var target = new SessionTarget("q", "title", "body", "asker", "Owner", _home, "http://stand-in") { Asked = roundtrip };
         var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = roundtrip, Resume = "conv-1" };
         foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "conv-1"), adapter.PrepareChat(chat, null) })
@@ -156,7 +156,7 @@ public sealed class ActorRunTests : IDisposable
         Assert.Null(ActorOverride.Read(null));
 
         var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = asked.Overlaid(new ActorOverride("sonnet", null)), Resume = "conv-1" };
-        var arguments = new ClaudeCodeAdapter().PrepareChat(chat, null).ArgumentList.ToList();
+        var arguments = BuiltDoors.Of("claude-code").PrepareChat(chat, null).ArgumentList.ToList();
         Assert.Equal("sonnet", arguments[arguments.IndexOf("--model") + 1]);
         Assert.DoesNotContain("--effort", arguments);
     }

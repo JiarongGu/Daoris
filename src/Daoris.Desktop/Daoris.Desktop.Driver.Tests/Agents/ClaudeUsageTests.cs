@@ -32,7 +32,7 @@ public sealed class ClaudeUsageTests
     [Fact]
     public void Claude_s_native_door_declares_the_measured_command_asked_of_its_own_pin_and_a_recorded_answer()
     {
-        var question = new ClaudeCodeAdapter().Toolchain!.Usage;
+        var question = BuiltDoors.Of("claude-code").Toolchain!.Usage;
 
         Assert.Same(ClaudeUsage.Question, question);
         Assert.Equal("claude-code", question!.Harness);

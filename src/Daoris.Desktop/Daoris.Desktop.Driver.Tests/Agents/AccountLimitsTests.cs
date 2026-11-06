@@ -17,7 +17,7 @@ public sealed class AccountLimitsTests
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
     private static readonly TimeZoneInfo Machine = TimeZoneInfo.FindSystemTimeZoneById("America/St_Johns");
 
-    private static readonly LimitWords Claude = new ClaudeCodeAdapter().Toolchain!.Limits!;
+    private static readonly LimitWords Claude = BuiltDoors.Of("claude-code").Toolchain!.Limits!;
 
     /// <summary>A wall-clock moment in a zone, written as the design's rows write it.</summary>
     private static DateTimeOffset At(string wall, TimeZoneInfo zone)
@@ -478,7 +478,7 @@ public sealed class AccountLimitsTests
     public void Only_an_agent_seen_hitting_a_limit_declares_an_entry()
     {
         Assert.Equal(new[] { "claude-code", "codex-acp", "stub" }, Declared().Select(d => d.Agent).Order(StringComparer.Ordinal));
-        Assert.Same(Claude, new StubAdapter().Toolchain!.Limits);
+        Assert.Same(Claude, BuiltDoors.Of("stub").Toolchain!.Limits);
     }
 
     private static IEnumerable<(string Agent, LimitWords Words)> Declared()

@@ -17,7 +17,7 @@ public sealed class SpawnInheritedTests
     private static SpawnRequest Chat() => SpawnRequests.Chat("Game", "D:/fam/Game", "http://localhost:5177", null);
 
     private static readonly string[] Planted =
-        ["CLAUDE_CONFIG_DIR", "ANTHROPIC_API_KEY", "DISABLE_UPDATES", "CODEX_HOME", "DSH_HOME", StubAdapter.ConfigVariable];
+        ["CLAUDE_CONFIG_DIR", "ANTHROPIC_API_KEY", "DISABLE_UPDATES", "CODEX_HOME", "DSH_HOME", StubProvider.ConfigVariable];
 
     [Theory]
     [InlineData("claude-code", null)]

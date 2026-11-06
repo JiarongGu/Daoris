@@ -69,8 +69,8 @@ public sealed class PressModelTickTests : IDisposable
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
     private static AdapterSet Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        ["stub"] = new StubAdapter(),
-        ["acp-stub"] = new AcpStubAdapter(),
+        ["stub"] = BuiltDoors.Of("stub"),
+        ["acp-stub"] = BuiltDoors.Of("acp-stub"),
         ["acp-other"] = new WalkAgentTickTests.AcpOtherAdapter(),
     });
 

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>A door that states no native dialect hands its readers no <see cref="IStreamMapper"/>, so its output is read by the plain
-/// capture with no retry, as <see cref="StubAdapter"/> is. A protocol door's <c>Resumes</c> is eligibility to negotiate, which today's
+/// capture with no retry, as a stand-in's is. A protocol door's <c>Resumes</c> is eligibility to negotiate, which today's
 /// default is (<c>Transport == Protocol</c>); a door stating the ability absent reads as that default.</para>
 /// <para>The facts are read the way <see cref="ProviderRegistration"/> grouped them: a door that gives its provider its id and is keyed
 /// by it declares through its provider; any other through its own record and what it is lent.</para>

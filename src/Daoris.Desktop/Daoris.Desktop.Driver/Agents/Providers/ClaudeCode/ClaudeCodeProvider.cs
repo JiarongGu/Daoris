@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Claude Code written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): provider <c>claude-code</c> with its
 /// two doors, <c>claude-code</c> on the pipe and <c>claude-code-acp</c> on the protocol, which runs as its accounts. The shim
-/// (<see cref="LegacyDoor"/>) presents them to the adapter seam's readers; a test holds the native door equal to
-/// <see cref="ClaudeCodeAdapter"/> while that class stands.
+/// (<see cref="LegacyDoor"/>) presents them to the adapter seam's readers.
 /// </summary>
 /// <remarks>
 /// Each door's spawn is its own (<see cref="ClaudeCodeSpawn"/>, <see cref="ClaudeAcpSpawn"/>); its dialect is its class's until rows i and k. The

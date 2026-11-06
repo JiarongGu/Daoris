@@ -72,7 +72,7 @@ public sealed class ChatGoOnTests : IDisposable
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = new Talk(),
-            ["acp-stub"] = new AcpStubAdapter(),
+            ["acp-stub"] = BuiltDoors.Of("acp-stub"),
         });
         var client = ledger.Client();
         if (lines is not null) client.AccountLined += line => { lock (lines) lines.Add(line); };

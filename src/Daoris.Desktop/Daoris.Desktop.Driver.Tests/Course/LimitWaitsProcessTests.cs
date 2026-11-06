@@ -1216,8 +1216,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
     private static AdapterSet TwoAgents() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        ["stub"] = new StubAdapter(),
-        ["acp-stub"] = new AcpStubAdapter(),
+        ["stub"] = BuiltDoors.Of("stub"),
+        ["acp-stub"] = BuiltDoors.Of("acp-stub"),
         ["acp-second"] = PluginDoors.Adapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
     });
 

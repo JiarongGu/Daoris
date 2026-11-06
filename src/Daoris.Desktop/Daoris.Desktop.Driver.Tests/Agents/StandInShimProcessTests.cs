@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// AGENTPROVIDER1 row b, part 1 (D213's row b note; the design §11 row b's proof): the stand-ins on the contract, through the shim,
-/// open, send and stop on each door and <c>acp-stub</c> resumes, in real processes, and each run answers what the same run on the old
-/// classes answers. No model, no account. A separate test door states a native resume and no native dialect, and its resume's early
+/// open, send and stop on each door and <c>acp-stub</c> resumes, in real processes. No model, no account. A separate test door states a native resume and no native dialect, and its resume's early
 /// failed exit is read by the plain capture and not tried again (the retry is the structured capture's: <c>Driver.cs</c>'s
 /// <c>structured is not null</c>).
 /// </summary>
@@ -73,21 +72,19 @@ public sealed class StandInShimProcessTests : IDisposable
 
     private static IReadOnlyList<string> Command(string script, params string[] more) => ["node", script, .. more];
 
-    /// <summary>The pipe stand-in: a driven start and a conversation's words answer as the class does, and a stop ends the process.</summary>
+    /// <summary>The pipe stand-in: a driven start and a conversation's words are answered, and a stop ends the process.</summary>
     [Fact]
-    public async Task The_pipe_stand_in_through_the_shim_starts_hears_and_stops_as_the_class_does()
+    public async Task The_pipe_stand_in_starts_hears_and_stops()
     {
-        ISessionAdapter old = new StubAdapter();
         var door = AdapterSet.Built().Resolve("stub");
         var command = Command(Text());
 
-        var started = (await Ran(door.Prepare(Target(), command)), await Ran(old.Prepare(Target(), command)));
-        var spoken = (await Ran(door.PrepareChat(Chat(), command), "hello"), await Ran(old.PrepareChat(Chat(), command), "hello"));
+        var started = await Ran(door.Prepare(Target(), command));
+        var spoken = await Ran(door.PrepareChat(Chat(), command), "hello");
 
-        Assert.Equal(started.Item2, started.Item1);
-        Assert.Equal(spoken.Item2, spoken.Item1);
-        Assert.Contains("heard: hello", spoken.Item1.Out);
-        Assert.Equal(0, spoken.Item1.Exit);
+        Assert.Equal(0, started.Exit);
+        Assert.Contains("heard: hello", spoken.Out);
+        Assert.Equal(0, spoken.Exit);
 
         // A stop: the process is ended while it waits on its stdin.
         using var waiting = Process.Start(door.PrepareChat(Chat(), command))!;
@@ -96,19 +93,16 @@ public sealed class StandInShimProcessTests : IDisposable
         Assert.True(waiting.WaitForExit(10_000));
     }
 
-    /// <summary>The protocol stand-in: open, send and close on the wire, then a resume by the agent's own answer, equal to the class's.</summary>
+    /// <summary>The protocol stand-in: open, send and close on the wire, then a resume by the agent's own answer.</summary>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task The_protocol_stand_in_through_the_shim_opens_sends_and_resumes_as_the_class_does(bool resume)
+    public async Task The_protocol_stand_in_opens_sends_and_resumes(bool resume)
     {
-        ISessionAdapter old = new AcpStubAdapter();
         var door = AdapterSet.Built().Resolve("acp-stub");
 
-        var methodsOld = await Wire(old, "old.txt", resume);
         var methodsNew = await Wire(door, "new.txt", resume);
 
-        Assert.Equal(methodsOld, methodsNew);
         Assert.Equal(resume ? ["initialize", "session/resume", "session/prompt", "session/close"] : ["initialize", "session/new", "session/prompt", "session/close"], methodsNew);
     }
 
@@ -128,7 +122,7 @@ public sealed class StandInShimProcessTests : IDisposable
 
     /// <summary>The protocol stand-in stopped: ended while it waits for frames.</summary>
     [Fact]
-    public async Task The_protocol_stand_in_through_the_shim_is_stopped_by_ending_its_process()
+    public async Task The_protocol_stand_in_is_stopped_by_ending_its_process()
     {
         var door = AdapterSet.Built().Resolve("acp-stub");
         using var process = Process.Start(door.Prepare(Target(), Command(Acp(), Path.Combine(_home, "stopped.txt"))))!;

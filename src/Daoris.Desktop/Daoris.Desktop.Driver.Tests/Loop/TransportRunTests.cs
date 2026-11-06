@@ -198,8 +198,8 @@ public sealed class TransportRunTests : IDisposable
         var host = new RecordingTransportHost(_home, _processes);
         var adapters = AdapterSet.Built();
 
-        Assert.True(GoingOn(host, new ClaudeCodeAdapter()).GoesOn);
-        Assert.False(GoingOn(host, new ClaudeCodeAdapter(), handed: false).GoesOn);
+        Assert.True(GoingOn(host, BuiltDoors.Of("claude-code")).GoesOn);
+        Assert.False(GoingOn(host, BuiltDoors.Of("claude-code"), handed: false).GoesOn);
         Assert.False(GoingOn(host, adapters.Resolve("stub")).GoesOn);
         Assert.False(GoingOn(host, adapters.Resolve("acp-stub")).GoesOn);
     }
@@ -214,7 +214,7 @@ public sealed class TransportRunTests : IDisposable
     public async Task A_go_on_resumes_its_own_conversation_under_the_same_rules_with_the_words_off_its_arguments()
     {
         var host = new RecordingTransportHost(_home, _processes) { Commands = ["claude"] };
-        var run = GoingOn(host, new ClaudeCodeAdapter());
+        var run = GoingOn(host, BuiltDoors.Of("claude-code"));
         run.HandStart(run.Start with { Session = "s1", Transcript = Path.Combine(_home, "s1.log") });
         run.HandSink(ReadingSinks.None);
         run.HandCarriers(new RunCarriers("D:/daoris-data/sessions/s1.settings.json", "D:/daoris-data/sessions/s1.mcp.json"));
