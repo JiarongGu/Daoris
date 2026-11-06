@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-06 - Every start inherited `DAORIS_HOST_TOKEN` where Daoris's own environment held it (FIX4)
+
+- **Symptom:** `GitSessionHoldsTests`, which names the tokens a session must never hold, was red: `DAORIS_HOST_TOKEN` was not taken out
+  of what a start inherits, so a host's API token meant for one plugin process could reach an agent's session or git.
+- **Root cause:** G9 (60f23bc07) hands an identity's token to the one plugin process started for it through `DAORIS_HOST_TOKEN`,
+  but did not add the variable to `GitWiring.Removed`, the list every start strips from what it inherits.
+- **Fix:** `GitWiring.Removed` names `GitRouting.HostTokenVariable` (5f10d09b9); the plugin's own start sets the variable after the
+  strip, so only that process holds it. `PluginHostToken.Variable` reads the one name.
+- **Verify:** `GitSessionHoldsTests`, `PluginHostTokenTests`, `HolderKeyStripTests`, `ToolsChildrenTests`.
+
 ## 2026-11-04 - An older copy of an example plugin edited since its install was said older, and its update replaced the edits (LANDPIN3b)
 
 - **Symptom:** a copy of `github-pull-request` or `azure-devops-pull-request` installed from the install's offer, edited by hand, and then older than the offer a republish brought, was said *update available*; its update, from the record's offer or the shipped press, replaced the edited files.
