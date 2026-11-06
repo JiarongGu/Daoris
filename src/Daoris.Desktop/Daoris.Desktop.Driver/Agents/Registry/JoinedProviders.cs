@@ -15,7 +15,8 @@ namespace Daoris.Driver;
 /// that name it.</item>
 /// </list>
 /// <para>A door whose name the registry carries is kept out, as is the second declaration of one name, so nothing carried is replaced. A
-/// made provider takes Claude Code's skill layout and no rule language, and states no program: each declared door states its own.</para>
+/// made provider states no program, rules or skills: each declared door states its own program, and its rules and skills are read from
+/// the door whichever provider holds it (<see cref="DoorPorts"/>).</para>
 /// </remarks>
 internal static class JoinedProviders
 {
@@ -96,7 +97,10 @@ internal static class JoinedProviders
         };
     }
 
-    /// <summary>A provider made from declarations: its doors' plugins, the maker and product of the door it is named for, its accounts.</summary>
+    /// <summary>
+    /// A provider made from declarations: its doors' plugins, its accounts, and the maker, product and lent part of the door it is named
+    /// for, where one is.
+    /// </summary>
     private static Provider Made(string id, IReadOnlyList<AgentDoor> doors, AccountsPart accounts)
     {
         var named = doors.FirstOrDefault(door => Ids.Same(door.Id.Value, id));
@@ -108,11 +112,12 @@ internal static class JoinedProviders
             Known<AccountsPart>.Declared(accounts, Evidence),
             Known<TablesPart>.Absent,
             Known<UsagePart>.Absent,
-            Known<LentPart>.Absent,
+            // What a harness naming this id reads of it is the door of its name's own, which states none of a pool, words or usage.
+            named is null ? Known<LentPart>.Absent : Known<LentPart>.Declared(named.Lent, Evidence),
             Known<ISettingsFile>.Absent,
             Known<IChildVocabulary>.Absent,
             Known<IRuleLanguage>.Absent,
-            Known<ISkillLayout>.Declared(ClaudeSkills.Layout, "a plugin's harness takes Claude Code's skill layout"),
+            Known<ISkillLayout>.Absent,
             Known<IConversationHome>.Absent,
             Reach.Everywhere,
             Known<VocabularyPart>.Absent);

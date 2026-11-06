@@ -60,11 +60,16 @@ public static class DoorPorts
         /// <summary>The maker a door's registration states: a plugin's door its own, any other its provider's (<see cref="CommitTrailers"/>).</summary>
         public string? MakerOf(AgentDoor door) => door.Declared ? door.Identity.Maker : registry.ProviderOfDoor(door).Identity.Maker;
 
-        /// <summary>The language the door's rules are written in, or null where the person's rules reach none of its sessions.</summary>
-        public IRuleLanguage? RuleLanguage(AgentDoor door) => registry.ProviderOfDoor(door).Rules.TryGet(out var language) ? language : null;
+        /// <summary>
+        /// The language the door's rules are written in, or null where the person's rules reach none of its sessions: a plugin's door,
+        /// which takes no settings file, none, whichever provider it joined.
+        /// </summary>
+        public IRuleLanguage? RuleLanguage(AgentDoor door) =>
+            !door.Declared && registry.ProviderOfDoor(door).Rules.TryGet(out var language) ? language : null;
 
-        /// <summary>The layout the door's skills are copied in, or null where it is handed none.</summary>
-        public ISkillLayout? SkillLayout(AgentDoor door) => registry.ProviderOfDoor(door).Skills.TryGet(out var layout) ? layout : null;
+        /// <summary>The layout the door's skills are copied in, or null where it is handed none: a plugin's door takes Claude Code's.</summary>
+        public ISkillLayout? SkillLayout(AgentDoor door) =>
+            door.Declared ? ClaudeSkills.Layout : registry.ProviderOfDoor(door).Skills.TryGet(out var layout) ? layout : null;
 
         /// <summary>The abilities of the door named <paramref name="name"/>, null where none is.</summary>
         public DoorAbilities? AbilitiesOf(string name) => registry.Doors.Any(id => Ids.Same(id.Value, name)) ? registry.Door(name).Can : null;
