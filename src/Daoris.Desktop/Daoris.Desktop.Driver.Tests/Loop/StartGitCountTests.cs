@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Daoris.Driver;
+using Xunit.Abstractions;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -15,13 +16,14 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class StartGitCountTests : IDisposable
 {
-    private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-start-git-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "start-git", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
+    private readonly ITestOutputHelper _output;
 
-    public StartGitCountTests()
+    public StartGitCountTests(ITestOutputHelper output)
     {
+        _output = output;
         Directory.CreateDirectory(_home);
         _repository = Path.Combine(_home, "engine");
         Directory.CreateDirectory(_repository);
@@ -82,6 +84,7 @@ public sealed class StartGitCountTests : IDisposable
         Assert.True(spawn > 0, "the session never spawned:\n" + string.Join('\n', starts));
         var before = starts.Take(spawn).Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{before.Count} git starts before the spawn:\n{string.Join('\n', starts.Take(spawn))}";
+        _output.WriteLine(report);
         Assert.True(before.Count > 0, report);
         Assert.True(before.Count(each => each.Contains("symbolic-ref --short refs/remotes/origin/HEAD", StringComparison.Ordinal)) <= 1, report);
         // The line guessed once, before the tree is made. One spelling per ref fact (LANDGIT1c): the line's commit read after the tree is

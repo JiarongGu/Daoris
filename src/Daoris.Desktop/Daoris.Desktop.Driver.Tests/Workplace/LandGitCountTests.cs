@@ -209,9 +209,11 @@ public sealed class LandGitCountTests : IDisposable
     // proof's holders listing never read (it leaves the branch itself out), and `update-ref -d` on a symbolic ref would delete its target.
     // LANDNODE1c3: every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref
     // made through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
-    // (`rev-parse`, `merge-base --is-ancestor`), the ceilings 47, 50 and 61.
-    private const int SquashCeiling = 50;
-    private const int MergeCeiling = 61;
+    // (`rev-parse`, `merge-base --is-ancestor`), the ceilings 47, 50 and 61. Measured on the presses 29 and 43 (OPTIMIZE1a, 2026-11-06):
+    // what is left asked again is the refs listed three times in one pass, and in a merge's promotion the line's commit read twice back to
+    // back, twice.
+    private const int SquashCeiling = 29;
+    private const int MergeCeiling = 43;
 
     private const string VerifyQuiet = "git rev-parse --verify --quiet ";
 

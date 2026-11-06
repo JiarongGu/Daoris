@@ -51,8 +51,9 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
 
     // On six trees, 57 git starts before PERF1c and 38 after it: each tree's branch asked of the tree, the checkout's top and its trees
     // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch.
-    private const int Ceiling = 27;
+    // per branch. Measured 26 (OPTIMIZE1a, 2026-11-06), two trees 14: the checkout's trees listed twice, by the stages and by the
+    // judgement, and each branch's tree asked by its id (`<tip>^{tree}`), one start a branch that the refs' listing could carry.
+    private const int Ceiling = 26;
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>
     private async Task<List<string>> WarmLookAsync()
