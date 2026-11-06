@@ -8,9 +8,12 @@ export const TASK_ACTS: readonly TaskAct[] = ['done', 'approve', 'reject'];
 
 export const isTaskAct = (act: string): act is TaskAct => (TASK_ACTS as readonly string[]).includes(act);
 
+/** The note's words: a refusal is the run's rejection, which takes the person's reason, as a review's changes do; the rest take a note they may give. */
+const wordsKey = (act: TaskAct) => (act === 'reject' ? 'workflow.run.node.rejectWords' : 'workflow.run.node.taskWords');
+
 /**
  * **The person's press of a waiting task** (NODEKIT1 HUMAN; D245's second note): asked once, with a note they may give, which the run's record
- * keeps with the reach. The run's view and *What needs you* each press it as the run's node word, so both say it in these words.
+ * keeps with the reach; a *Reject* waits for its reason, which the run's route for rejected carries. The run's view and *What needs you* each press it as the run's node word, so both say it in these words.
  *
  * A molecule: the act, the node, the note and the press arrive as props.
  */
@@ -36,12 +39,13 @@ export function TaskPress({ act, node, words, onWords, busy, block, className, o
       says={t(`workflow.run.node.${act}Says`, { node })}
       meanIt={t(`workflow.run.node.${act}MeanIt`)}
       busy={busy}
+      ready={act !== 'reject' || words.trim() !== ''}
       onConfirm={onConfirm}
       onClose={onClose}
     >
       <input
-        aria-label={t('workflow.run.node.taskWords')}
-        placeholder={t('workflow.run.node.taskWords')}
+        aria-label={t(wordsKey(act))}
+        placeholder={t(wordsKey(act))}
         value={words}
         onChange={(event) => onWords(event.target.value)}
         className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"

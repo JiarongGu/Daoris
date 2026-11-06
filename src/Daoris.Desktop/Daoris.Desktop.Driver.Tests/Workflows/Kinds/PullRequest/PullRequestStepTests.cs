@@ -6,11 +6,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// G8's pull-request step (D241 point 4): the plugin a step id names, the address its evidence gives, the bind's refusal of a graph whose pull
 /// request no plugin serves, and the landing record its address is kept on.
 /// </summary>
-public sealed class PullRequestStepsTests : IDisposable
+public sealed class PullRequestStepTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "pr-steps", Guid.NewGuid().ToString("N")[..8]);
 
-    public PullRequestStepsTests() => Directory.CreateDirectory(_home);
+    public PullRequestStepTests() => Directory.CreateDirectory(_home);
 
     public void Dispose() => GitSeed.Discard(_home);
 
@@ -26,7 +26,7 @@ public sealed class PullRequestStepsTests : IDisposable
     [InlineData("pull-request", null)]
     [InlineData("/pull-request", null)]
     [InlineData("example.github/deploy", null)]
-    public void A_pull_request_step_names_its_plugin(string kind, string? plugin) => Assert.Equal(plugin, PullRequestSteps.PluginOf(kind));
+    public void A_pull_request_step_names_its_plugin(string kind, string? plugin) => Assert.Equal(plugin, PullRequestStep.PluginOf(kind));
 
     [Theory]
     [InlineData("https://example.test/pull/7", true)]
@@ -34,7 +34,7 @@ public sealed class PullRequestStepsTests : IDisposable
     [InlineData("ftp://example.test/7", false)]
     [InlineData("pull/7", false)]
     [InlineData(null, false)]
-    public void Only_a_web_address_is_a_pull_request(string? address, bool is_address) => Assert.Equal(is_address, PullRequestSteps.IsAddress(address));
+    public void Only_a_web_address_is_a_pull_request(string? address, bool is_address) => Assert.Equal(is_address, PullRequestStep.IsAddress(address));
 
     [Fact]
     public void A_graph_whose_pull_request_has_no_plugin_is_refused_at_the_bind_and_one_with_it_is_not()

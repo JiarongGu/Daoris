@@ -22,12 +22,12 @@ public sealed class HumanNodeTests : NodeRunFixture
     private const string ApprovalGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"sign","kind":"human","version":1,"reach":"pressed","outcomes":["approved","rejected"]},
+                  {"id":"sign","kind":"human","version":1,"reach":"pressed","outcomes":["approved"]},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"},
                   {"id":"redo","kind":"human","version":1,"reach":"pressed","outcomes":["done"]}],
          "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
                   {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"approved"},
-                  {"id":"s>r","kind":"when","from":"sign","to":"redo","outcome":"rejected"}]}
+                  {"id":"s>r","kind":"rejected","from":"sign","to":"redo"}]}
         """;
 
     /// <summary>The run's work done on its branch, as the landing binds it.</summary>
@@ -63,24 +63,36 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Theory]
-    [InlineData(NodeWordActs.Approve, null, "approved", "handed", "redo")]
-    [InlineData(NodeWordActs.Reject, "the notes miss the migration", "rejected", "redo", "handed")]
-    public async Task An_approval_goes_on_along_the_when_wire_of_the_outcome_pressed(string act, string? note, string outcome, string next, string other)
+    [InlineData(NodeWordActs.Approve, null, NodeStates.Reached, "approved", "handed", "redo")]
+    [InlineData(NodeWordActs.Reject, "the notes miss the migration", NodeStates.Rejected, null, "redo", "handed")]
+    public async Task An_approval_goes_on_along_the_when_wire_of_its_approval_and_its_refusal_along_the_rejected_wire(
+        string act, string? note, string state, string? outcome, string next, string other)
     {
         BoundTo(ApprovalGraph);
         Read();
         var runtime = Runtime();
         await RunPassAsync(runtime);
         Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Skip, NodeWordActs.Stop],
-            RunNodeWords.Acts(Declared("approved", "rejected") with { Id = "sign" }, RunStatus("sign")));
+            RunNodeWords.Acts(Declared("approved") with { Id = "sign" }, RunStatus("sign")));
 
         Assert.True(Press("sign", act, note).Done);
         Read();
         await RunPassAsync(runtime, whole: false);
 
-        Assert.Equal((NodeStates.Reached, outcome, note), (RunStatus("sign").State, RunStatus("sign").Acceptance!.Outcome, RunStatus("sign").Words));
+        Assert.Equal((state, outcome, note), (RunStatus("sign").State, RunStatus("sign").Acceptance?.Outcome, RunStatus("sign").Words));
         Assert.Equal(NodeStates.Active, RunStatus(next).State);
         Assert.NotEqual(NodeStates.Active, RunStatus(other).State);
+    }
+
+    [Theory]
+    [InlineData(true, "done")]
+    [InlineData(true, "approved")]
+    [InlineData(true)]
+    [InlineData(false, "approved", "rejected")]
+    [InlineData(false, "rejected")]
+    public void A_task_declares_done_and_an_approval_approved_and_the_refusal_is_no_outcome(bool taken, params string[] outcomes)
+    {
+        Assert.Equal(taken, ((BuiltInNode)NodeKit.Of(NodeKinds.Human)!).TakesOutcomes(outcomes) || outcomes.Length == 0);
     }
 
     [Fact]
@@ -118,7 +130,9 @@ public sealed class HumanNodeTests : NodeRunFixture
         Assert.Equal((RunId, "sign", RunHome.Repository, RunId), (task.Run, task.Node, task.Repository, task.Work));
         Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], task.Acts);
 
-        Assert.True(Press("sign", NodeWordActs.Reject).Done);
+        // A refusal is a rejection, so it takes the person's words as a review's changes do.
+        Assert.False(Press("sign", NodeWordActs.Reject).Done);
+        Assert.True(Press("sign", NodeWordActs.Reject, "the notes miss it").Done);
         Assert.Empty(runtime.HumanTasks());
     }
 
@@ -136,17 +150,18 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
-    public void A_person_s_task_declares_a_tasks_outcome_or_an_approvals_two_and_no_other()
+    public void A_person_s_task_declares_a_tasks_outcome_or_an_approvals_and_no_other_and_the_refusal_is_no_outcome()
     {
         Assert.Null(NodeDeclarations.Problem(Declared()));
         Assert.Null(NodeDeclarations.Problem(Declared("done")));
-        Assert.Null(NodeDeclarations.Problem(Declared("approved", "rejected")));
-        foreach (var other in new[] { new[] { "merged", "closed" }, ["rejected", "approved"], ["approved"], ["done", "approved", "rejected"] })
+        Assert.Null(NodeDeclarations.Problem(Declared("approved")));
+        foreach (var other in new[] { new[] { "merged", "closed" }, ["rejected", "approved"], ["approved", "rejected"], ["rejected"], ["done", "approved"] })
         {
             Assert.Equal("outcomes", NodeDeclarations.Problem(Declared(other)));
         }
 
         Assert.Equal([NodeWordActs.Done], HumanNode.Presses(Declared()));
-        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], HumanNode.Presses(Declared("approved", "rejected")));
+        Assert.Equal([NodeWordActs.Done], HumanNode.Presses(Declared("done")));
+        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], HumanNode.Presses(Declared("approved")));
     }
 }

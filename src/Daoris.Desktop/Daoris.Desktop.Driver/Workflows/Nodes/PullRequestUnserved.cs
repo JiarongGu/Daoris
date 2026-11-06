@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A graph's plugin pull-request step (<see cref="PullRequestSteps"/>) that no installed plugin performs.</summary>
+/// <summary>A graph's plugin pull-request step (<see cref="PullRequestStep"/>) that no installed plugin performs.</summary>
 public static class PullRequestUnserved
 {
     /// <summary>
@@ -11,7 +11,7 @@ public static class PullRequestUnserved
     {
         foreach (var node in graph.Nodes)
         {
-            if (PullRequestSteps.PluginOf(node.Kind) is not { } plugin) continue;
+            if (PullRequestStep.PluginOf(node.Kind) is not { } plugin) continue;
             var serves = plugins.Any(each => string.Equals(each.Id, plugin, StringComparison.OrdinalIgnoreCase)
                 && each.Points.Contains(HookPoints.Perform, StringComparer.Ordinal));
             if (!serves) return BindingProblem.ForUnserved(workflow, version, node.Id, plugin);

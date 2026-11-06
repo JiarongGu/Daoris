@@ -355,7 +355,7 @@ public static class Involvement
         .. graph.Nodes.Select(node =>
         {
             var kind = NodeKit.Of(node.Kind)?.Part(node).Lowered;
-            if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestSteps.PluginOf(node.Kind))]);
+            if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestStep.PluginOf(node.Kind))]);
             // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
             IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land
                 ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? "you" : "automatic")]

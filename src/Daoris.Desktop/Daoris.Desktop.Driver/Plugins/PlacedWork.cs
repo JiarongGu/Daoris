@@ -32,7 +32,7 @@ internal sealed class PlacedWork
 
     /// <summary>Whether a plugin takes the host's token: it declares the pull-request step.</summary>
     public static bool Takes(PluginEntry plugin) =>
-        plugin.Manifest.Steps.Any(step => PullRequestSteps.PluginOf(step.Kind) == plugin.Manifest.Id);
+        plugin.Manifest.Steps.Any(step => PullRequestStep.PluginOf(step.Kind) == plugin.Manifest.Id);
 
     /// <summary>The plugin a process key belongs to: the key itself where it is a plugin's own.</summary>
     public static string PluginOf(string key)
