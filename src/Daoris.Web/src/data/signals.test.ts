@@ -200,6 +200,18 @@ describe('sittingSentence', () => {
     expect(sittingSentence(sits('Exhausted', reason))).toBe(reason);
   });
 
+  /** CONTEXTDRIVE1g: a park carrying its failures rule's number says the rule beside the count, in both languages. */
+  it('says a park by the failures rule with its number', async () => {
+    const parked: Consideration = { ...sits('Exhausted', 'parked'), quest: '9a9492', strikes: 3, parksAt: 3 };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(parked)).toMatch(/3 sessions on `#9a9492` failed.*your failures rule parks it at 3/);
+
+    await i18n.changeLanguage('zh');
+    expect(sittingSentence(parked)).toMatch(/你的主管规则在 3 个时挂起它/);
+    await i18n.changeLanguage('en');
+  });
+
   /**
    * TOOL4g (D125 §4): a quest held because every account its start may use is cooling waits for an account. The tick names
    * whose account, which and until when, so 中文 says it from those facts; English is the driver's own sentence. Any other
@@ -428,8 +440,8 @@ describe('sittingSentence', () => {
       ['SourceReopened', { code: 'held', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is set aside, and nothing carries it on until you go on with it on the new work or abandon it.', /它已搁置/],
       ['TransientHeld', { code: 'transient', session: 's1' }, "Its last session's provider kept failing: it waits for your words or Try again.", /服务方一直出错：它在等你的话或「重试」/],
       // STAFFPOLICY1e: a role policy's ask and its bound of moves, answered by Try again's door.
-      ['PolicyHeld', { code: 'policy-ask', session: 's1' }, "Its role's policy asks before it moves this quest to another choice: Try again says yes to one move.", /它的角色策略在把这项委托改用其他选择之前先问你/],
-      ['PolicyHeld', { code: 'moves-bound', session: 's1' }, "This quest made its role's policy's moves to another choice for today: Try again says yes to one more.", /今天已按其角色策略改用其他选择达到上限/],
+      ['PolicyHeld', { code: 'policy-ask', session: 's1' }, 'Your supervisor rule asks before it moves this quest to another choice: Try again says yes to one move.', /你的主管规则在把这项委托改用其他选择之前先问你/],
+      ['PolicyHeld', { code: 'moves-bound', session: 's1' }, 'This quest made the moves to another choice your supervisor rule allows for today: Try again says yes to one more.', /今天已按你的主管规则改用其他选择达到上限/],
       // STEWARDROLE1b (D209 §5.1, §3.1a): the steward's stop held for a Try again, and a start held out of the owner's checkout.
       ['Stopped', { code: 'steward', session: 's1' }, 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.', /^管家停止了会话 `s1`；管家或所有者「重试」会让它继续。$/],
       ['Blocked', { code: 'checkout', session: 's1' }, 'Its earlier work is in your checkout, so carrying it on is yours.', /^它之前的工作在你的检出里，所以由你来让它继续。$/],

@@ -152,8 +152,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The page writes
     them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
     at the revision read, each rule saying what it replaces; a role's editor says the rules naming it and writes none,
-    and its policy record carries the rule and choices alone. A held answer carries its rule (`AnswerRuleWords`) and
-    the head, the foot and *What needs you* say it in one sentence. The room says each place's rules
+    and its policy record carries the rule and choices alone (the web's `StaffPolicy` wire type names no `moves` or
+    `most`). A held answer carries its rule (`AnswerRuleWords`), a parked quest the failures rule's number
+    (`parksAt`), and a hold on an ask or the moves bound words the rule; the head, the foot and *What needs you* say
+    one in one sentence, and *Change the rule…* opens the place whose rule it is (`ruleDoor`, handed down by the frame as
+    `onChangeRule`). `SESSION_SUPERVISOR` answers, beside the decisions, the line's `counts` (each with the rule it acts
+    by) and the `acts` the rules made: *Details* draws each count and its Supervisor line, and the head's chip
+    (`supervisionChip`) names a count a rule holds the line at or one short of it. The room says each place's rules
     (`HelpRoomRules`); the window says *supervisor rule* and *count*. (from D229)
 
 **The supervisor and the steward**
@@ -270,14 +275,11 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1e (rest):** *Details*' Supervisor line reading the recorded acts (the web).
-- **CONTEXTDRIVE1g (rest):** the machine's page mounts the fold only through a place's Roles; `HelpCoverageTests`' rows
-  for the new hooks; the failures and tries holds carry no rule words of their own yet.
-- **CONTEXTDRIVE1h (rest):** *Details*' counts (the session read's `counts`), the head's chip with its count, and the
-  frame handing `onChangeRule` (the door to the place's Roles) to the head and the strip.
-- **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `rules` card words.
+- **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
+  the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1l, m:** the web's `StaffPolicy` wire type still names `moves` and `most`; the installed proof.
+- **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
+  rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask
   (`HandsOver`, the shell's chat runner) still starts the agent's own entry.
 - **MODELROLE1l/e2:** the installed proof of a design quest on Design; the partner's real-process case. D233 choice 5

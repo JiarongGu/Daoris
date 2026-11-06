@@ -71,14 +71,14 @@ describe('a line’s supervision', () => {
     await userEvent.click(screen.getByRole('button', { name: /详情/ }));
     expect(screen.getByText('连续仅靠回答继续')).toBeInTheDocument();
     expect(screen.getByText('2 · 你的规则：到 2 时等你处理（daoris）')).toBeInTheDocument();
-    expect(screen.getByText('督导')).toBeInTheDocument();
-    expect(screen.getByText(/你的规则已生效 1 次/)).toBeInTheDocument();
+    expect(screen.getByText('主管')).toBeInTheDocument();
+    expect(screen.getByText(/你的主管规则已生效 1 次/)).toBeInTheDocument();
   });
 
   it('puts the chip on the head with its count and its tip', async () => {
     render(
       <Tooltip.Provider>
-        <SessionPageHead session={session} title="Build the policy store" shown="waiting" acts={[]} chip={supervisionChip(t, held)} />
+        <SessionPageHead session={session} title="Build the policy store" shown="awaiting-person" acts={[]} chip={supervisionChip(t, held)} />
       </Tooltip.Provider>,
     );
     const chip = within(screen.getByRole('banner')).getByText('answers alone in a row 2 of 2');
