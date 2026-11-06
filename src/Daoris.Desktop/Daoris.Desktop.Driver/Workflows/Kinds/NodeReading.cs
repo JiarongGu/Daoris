@@ -21,9 +21,17 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
     /// <summary>The quests the work published.</summary>
     public IReadOnlyList<QuestView>? Requests { get; init; }
 
-    /// <summary>The reading of <paramref name="node"/> on <paramref name="subject"/>, its reads taken from <paramref name="run"/>.</summary>
-    public static NodeReading Of(WireRun run, string subject, WorkUnit unit, NodeDeclaration node, NodeAcceptance binding) => new(unit, node, binding)
+    /// <summary>The nodes wired straight into its node by <c>after</c>: the step a <c>monitor</c> watches.</summary>
+    public IReadOnlyList<NodeDeclaration> Follows { get; init; } = [];
+
+    /// <summary>
+    /// The reading of <paramref name="node"/> on <paramref name="subject"/>, its reads taken from <paramref name="run"/> and the nodes it
+    /// <paramref name="follows"/>.
+    /// </summary>
+    public static NodeReading Of(WireRun run, string subject, WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, IReadOnlyList<NodeDeclaration> follows) =>
+        new(unit, node, binding)
     {
+        Follows = follows,
         Git = run.Git,
         Opinion = run.Opinions.GetValueOrDefault(subject),
         Review = run.Reviews.GetValueOrDefault(subject),

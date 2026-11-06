@@ -113,7 +113,7 @@ public sealed class NodeKitTests
     public void A_kit_without_a_kind_refuses_a_node_of_it_and_reads_every_other_as_this_one_does()
     {
         var older = NodeKit.Built.Without(NodeKinds.Monitor);
-        var monitor = new NodeDeclaration("watch", NodeKinds.Monitor, 1, NodeReach.Observed);
+        var monitor = new NodeDeclaration("watch", NodeKinds.Monitor, 1, NodeReach.Observed) { Outcomes = PullRequestReading.States };
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(monitor, older));
         Assert.Null(NodeAuthorities.Of(monitor, older));
         Assert.Null(NodeDeclarations.Problem(monitor));

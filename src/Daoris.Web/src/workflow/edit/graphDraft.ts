@@ -34,7 +34,7 @@ export const emptyDraft = (): GraphDraft => ({ nodes: [], wires: [], end: '', re
 export function stepChoices(palette: WorkflowPaletteAnswer): StepChoice[] {
   return [
     ...palette.kinds.map((kind): StepChoice => ({
-      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: [], outputsOn: {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
+      kind: kind.kind, version: 1, reach: kind.reach, plugin: null, outcomes: kind.outcomes ?? [], outputsOn: {}, inputs: {}, outputs: {}, evidence: null, rejectable: false,
       skippable: true, leaves: kind.leaves ?? [], options: kind.options, roleTakes: kind.roleTakes ?? [], mayEnd: kind.mayEnd,
       offered: kind.offered ?? 'alone',
     })),

@@ -12,6 +12,9 @@ public sealed record PaletteKind(
     string? SkipBy, IReadOnlyList<NodeOptionField> Options, IReadOnlyList<string> Leaves, IReadOnlyList<string> RoleTakes, string Offered = PaletteKind.Alone)
 {
     public const string Alone = "alone";
+
+    /// <summary>The outcomes a node of the kind is reached with, which a step added in the editor declares: a monitor's; none on the rest.</summary>
+    public IReadOnlyList<string> Outcomes { get; init; } = [];
 }
 
 /// <summary>
@@ -38,8 +41,8 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
     /// <summary>
     /// The palette, built from the kinds' own units (<see cref="NodeKit"/>), in the kit's order: each built-in kind's authority, options, role and
     /// offer, each wire kind with the kinds that may leave it (a failed wire only a kind something can fail, a rejected wire only a kind a person
-    /// may reject, a decision's route none, since no built-in is one, and a wait none, since its source is another unit's), and the plugins'
-    /// declared steps.
+    /// may reject, a decision's route only a kind reached with outcomes (a monitor), and a wait none, since its source is another unit's), and the
+    /// plugins' declared steps.
     /// </summary>
     public static WorkflowPalette Build(IEnumerable<(string Plugin, IReadOnlyList<NodeDeclaration> Steps)> plugins)
     {
@@ -47,7 +50,8 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
         var kinds = units
             .Select(unit => (Row: unit.Row, Unit: unit))
             .Select(each => new PaletteKind(each.Row.Kind, each.Row.Reach, each.Row.ReachBy, each.Row.FailureBy, each.Row.PersonJudges, each.Row.PersonSkips,
-                each.Row.MayEnd, each.Row.Evidenced, each.Row.SkipBy, each.Unit.Options, Leaving(each.Row, decision: false), each.Unit.RoleTakes, each.Unit.Offered))
+                each.Row.MayEnd, each.Row.Evidenced, each.Row.SkipBy, each.Unit.Options, Leaving(each.Row, decision: each.Unit.Outcomes.Count > 0), each.Unit.RoleTakes,
+                each.Unit.Offered) { Outcomes = each.Unit.Outcomes })
             .ToArray();
         IReadOnlyList<string> Leaves(Func<NodeAuthority, bool> may) => [.. units.Where(unit => may(unit.Row)).Select(unit => unit.Row.Kind)];
         var wires = WireKinds.All.Select(kind => new PaletteWire(
@@ -57,7 +61,8 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
             {
                 WireKinds.Failed => Leaves(each => each.FailureBy is not null),
                 WireKinds.Rejected => Leaves(each => each.PersonJudges),
-                WireKinds.When or WireKinds.Wait => [],
+                WireKinds.When => [.. units.Where(unit => unit.Outcomes.Count > 0).Select(unit => unit.Row.Kind)],
+                WireKinds.Wait => [],
                 _ => null,
             },
             kind == WireKinds.Wait ? NodeKinds.WaitUnit : null)).ToArray();
@@ -83,6 +88,7 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
             var options = kind.Options.Select(option =>
                 $"`{option.Name}` ({option.Type}{(option.Choices.Count > 0 ? $": {string.Join("|", option.Choices)}" : "")}{(option.Required ? ", required" : "")})");
             text.Append($"- `{kind.Kind}`: {kind.Reach}");
+            if (kind.Outcomes.Count > 0) text.Append($"; outcomes {Names(kind.Outcomes)}");
             if (kind.Options.Count > 0) text.Append($"; options {string.Join(", ", options)}");
             text.Append($"; ways on {string.Join(", ", kind.Leaves)}{(kind.MayEnd ? "; may end the work" : "")}\n");
         }
