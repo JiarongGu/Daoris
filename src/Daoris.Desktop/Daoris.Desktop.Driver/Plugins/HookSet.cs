@@ -55,7 +55,21 @@ public sealed class HookSet(
     private readonly Dictionary<string, Held> _running = new(StringComparer.Ordinal);
 
     // FABRIC-PERFORM1a: the work wire's side, its lease and its clock. Its own writer of the same lines, since a field cannot read `Log`.
-    private readonly Func<bool> _holdsHome = holdsHome ?? (() => HomeLease.HeldHere(home));
+    private readonly Func<bool> _holdsHome = holdsHome ?? WorkEventPlugins.Held(home);
+    private WorkEventPoint? _events;
+
+    /// <summary>
+    /// <c>work/event</c>'s teller (EVENTHOOK1b): every event minted here, told only while this loop holds the home. A plugin answering late
+    /// <see cref="WorkEventPoint.LateInARow"/> times is stopped, its stop counted as an exit of its own.
+    /// </summary>
+    public WorkEventPoint Events => LazyInitializer.EnsureInitialized(ref _events, () => new WorkEventPoint(
+        WorkEventPlugins.Adapters,
+        unsent: (kind, failed) => log?.Warn(PluginEvents.Unsent, ("kind", kind), ("field", failed)),
+        late: id => _ = StopLateAsync(id),
+        failed: (id, error) => Log.Failed(id, HookPoints.Event, PluginFailures.KindOf(error, PluginEvents.Errored), null, null, PluginEvents.ByLoop)));
+
+    /// <summary>One event told at <c>work/event</c>; never waits.</summary>
+    public void Tell(WorkEvent told) => Events.Tell(told);
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
     private readonly WorkPlugins _work = new(new PluginLog(log, health), clock ?? (() => DateTimeOffset.UtcNow));
     private readonly SemaphoreSlim _reconciling = new(1, 1);
@@ -112,6 +126,7 @@ public sealed class HookSet(
             // on it, is told before what is wanted is judged, so its wait holds from this look.
             var now = _clock();
             var holds = _holdsHome();
+            Events.Held = holds;
             List<string> exited;
             lock (_running) exited = [.. _running.Where(pair => pair.Value.Work && !pair.Value.Channel.Alive).Select(pair => pair.Key)];
             var waits = exited.ToDictionary(id => id, id => _work.Exited(id, now), StringComparer.Ordinal);
@@ -128,9 +143,10 @@ public sealed class HookSet(
             // started where this loop holds the lease and a unit awaits its steps, once its wait after an unasked exit is over.
             var wanted = catalog.Contributing
                 .Where(p => p.Manifest.Hooks is { } hooks
-                    && (hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal))
+                    && (hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal)) || (holds && WorkEventPlugins.Declares(p))
                         || (holds && WorkPlugins.Speaks(p) && !_placed.IsPlaced(p.Manifest.Id) && _work.Awaits(p.Manifest.Id))))
                 .Where(p => !WorkPlugins.Speaks(p) || _placed.IsPlaced(p.Manifest.Id) || _work.MayStart(p.Manifest.Id, now))
+                .Where(p => !WorkEventPlugins.Declares(p) || _work.MayStart(p.Manifest.Id, now))
                 .ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
             if (holds)
             {
@@ -160,7 +176,9 @@ public sealed class HookSet(
                 gone = _running.Keys.Where(id =>
                         !wanted.TryGetValue(id, out var plugin)
                         || _running[id].Signature != Signature(plugin)
-                        || !_running[id].Channel.Alive)
+                        || !_running[id].Channel.Alive
+                        // One at work/event started again as the lease moves, so its handshake says where its events begin.
+                        || (_running[id].Channel.Points.Contains(HookPoints.Event) && Events.Listening.Contains(id) != holds))
                     .ToList();
             }
 
@@ -179,6 +197,7 @@ public sealed class HookSet(
                 // now. It was removed uncounted and started again below, so a plugin crashing on what it was told never waited.
                 if (held.Work && !wasAlive && !waits.ContainsKey(id)) waits[id] = _work.Exited(id, now);
                 if (held.Work) _work.Stopped(id);
+                await Events.LeaveAsync(id).ConfigureAwait(false);
                 await held.Channel.DisposeAsync().ConfigureAwait(false);
                 var waited = waits.TryGetValue(id, out var wait);
                 var name = PlacedWork.PluginOf(id);
@@ -228,14 +247,24 @@ public sealed class HookSet(
                     if (hand?.Refusal is { } refused) throw new DriverException($"plugin `{id}`: {refused}.");
                     IHookChannel channel;
                     HookProcess.HostToken.Value = hand?.Token;
+                    HookProcess.Events.Value = holds && WorkEventPlugins.Declares(plugin) ? WorkEventPlugins.Join(Events, key, home) : null;
                     try
                     {
                         channel = await _start(plugin, line => Say(id, line), ct).ConfigureAwait(false);
                     }
+                    catch
+                    {
+                        await Events.LeaveAsync(key).ConfigureAwait(false);
+                        throw;
+                    }
                     finally
                     {
                         HookProcess.HostToken.Value = null;
+                        HookProcess.Events.Value = null;
                     }
+
+                    if (holds && channel.Points.Contains(HookPoints.Event)) Events.Listen(key, channel.EventAsync);
+                    else await Events.LeaveAsync(key).ConfigureAwait(false);
 
                     // FABRIC-PERFORM1a: its next generation, heard and told only where this loop holds the lease.
                     var work = WorkPlugins.Speaks(plugin);
@@ -641,6 +670,25 @@ public sealed class HookSet(
         }
     }
 
+    /// <summary>A plugin late at <c>work/event</c> too often, stopped: an exit of its own, started again after its wait (§4.4).</summary>
+    private async Task StopLateAsync(string id)
+    {
+        await _reconciling.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            Held? held;
+            lock (_running) _running.Remove(id, out held);
+            if (held is null) return;
+            await held.Channel.DisposeAsync().ConfigureAwait(false);
+            Log.Stopped(PlacedWork.PluginOf(id), PluginEvents.Late, PluginEvents.ByLoop);
+            if (_work.Exited(id, _clock()) is null) Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Unsound, null, null, PluginEvents.ByLoop);
+        }
+        finally
+        {
+            _reconciling.Release();
+        }
+    }
+
     /// <summary>A call that failed, as its kind: a plain refusal from a channel is the plugin's error.</summary>
     private void CallFailed(string id, IHookChannel channel, string point, DriverException error, Stopwatch took)
     {
@@ -656,6 +704,7 @@ public sealed class HookSet(
         _changes.Writer.TryComplete();
         await _going.CancelAsync().ConfigureAwait(false);
         _work.Dispose();
+        if (_events is not null) await _events.DisposeAsync().ConfigureAwait(false);
         Task? telling;
         lock (_tellingGate) telling = _telling;
         if (telling is not null) await telling.ConfigureAwait(false);

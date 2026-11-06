@@ -95,7 +95,14 @@ internal sealed class LoopRun(
         // The driven work's news is the lease holder's, told from its own cursor on a wait of its own.
         _ = Task.Run(
             () => JournalFeed.RunAsync(
-                service, [NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct)], log, ct),
+                service,
+                [
+                    // EVENTHOOK1b (D244's note): the driven work's parks and ends told at `work/event` as they are claimed, and the teller's gaps.
+                    WorkEventNews.Gapped(
+                        NewsFeed("lease", news, service, row => !row.Marks.Contains("chat", StringComparer.Ordinal), ct, told => shared.Hooks?.Tell(told)),
+                        told => shared.Hooks?.Tell(told), () => DateTimeOffset.UtcNow),
+                ],
+                log, ct),
             ct);
 
         ServePipe();
@@ -290,7 +297,9 @@ internal sealed class LoopRun(
     /// One news teller as a journal feed's teller: its rows claimed from its own cursor, each claimed piece made the attention event
     /// the notifier reads, kept in Notifications whatever the switch says, since recording is not telling, and told while it is on.
     /// </summary>
-    private JournalTeller NewsFeed(string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct)
+    /// <param name="told">Where the lease's teller tells each piece at <c>work/event</c>; null for the conversations' teller, which tells none.</param>
+    private JournalTeller NewsFeed(
+        string name, News news, ServiceClient service, Func<JournalEntry, bool> takes, CancellationToken ct, Action<WorkEvent>? told = null)
     {
         var teller = new NewsTeller(
             news, name, takes, () => DateTimeOffset.UtcNow,
@@ -298,7 +307,9 @@ internal sealed class LoopRun(
             {
                 foreach (var piece in pieces)
                 {
-                    var item = await NewsAttention.OfAsync(service, piece, ct).ConfigureAwait(false);
+                    var record = await NewsAttention.ReadAsync(service, piece, ct).ConfigureAwait(false);
+                    if (told is not null && WorkEventNews.Of(piece, record) is { } happened) told(happened);
+                    var item = NewsAttention.Of(piece, record);
                     loop.Notices.Keep([item]);
                     if (NotifyRule.Tells(item, loop.Notifying())) await AttentionTold.TellAsync(eventBus, item).ConfigureAwait(false);
                 }

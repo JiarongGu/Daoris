@@ -7,23 +7,27 @@ namespace Daoris.Driver;
 /// </summary>
 public static class NewsAttention
 {
-    /// <summary>The event for <paramref name="told"/>; its repository and note empty where the record cannot be read this moment.</summary>
-    public static async Task<AttentionEvent> OfAsync(ServiceClient service, NewsTold told, CancellationToken ct)
+    /// <summary>
+    /// The record <paramref name="told"/> is shown with, or null where it cannot be read this moment: the piece is then told by its id alone,
+    /// since the claim was made, and a second telling would break the once.
+    /// </summary>
+    public static async Task<SessionView?> ReadAsync(ServiceClient service, NewsTold told, CancellationToken ct)
     {
-        SessionView? record = null;
         try
         {
-            record = await service.FindSessionAsync(told.Session, ct).ConfigureAwait(false);
+            return await service.FindSessionAsync(told.Session, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            // A record that does not answer is told by its id alone: the claim was made, and a second telling would break the once.
+            return null;
         }
+    }
 
-        return new AttentionEvent(told.Kind, told.Session, record?.Repository ?? "", told.State, record?.Note)
+    /// <summary>The event for <paramref name="told"/>; its repository and note empty where <paramref name="record"/> is null.</summary>
+    public static AttentionEvent Of(NewsTold told, SessionView? record) =>
+        new(told.Kind, told.Session, record?.Repository ?? "", told.State, record?.Note)
         {
             NoteParts = record?.NoteParts,
             Workspace = told.Workspace,
         };
-    }
 }

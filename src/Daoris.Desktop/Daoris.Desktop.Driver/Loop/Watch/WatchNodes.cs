@@ -73,7 +73,7 @@ internal sealed class WatchNodes
         {
             Log = (code, said) => Log?.Info(code, ("said", said)),
             Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(service), new SessionTrees(home, landingPlugins),
-                watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid),
+                watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
             Executor = _executor,
             Integration = watch.IntegrationDoor,
             Requests = service,

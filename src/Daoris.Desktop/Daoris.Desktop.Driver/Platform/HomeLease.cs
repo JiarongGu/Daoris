@@ -201,6 +201,13 @@ public sealed class HomeLease : IDisposable
     /// </summary>
     public static bool HeldHere(string home) => HeldBy(home) is { } holder && holder.Pid == Environment.ProcessId;
 
+    /// <summary><see cref="HeldHere"/>, or null where the lease file could not be read this moment (another process's lock on it).</summary>
+    public static bool? HeldHereRead(string home)
+    {
+        Read(PathIn(home), out var busy);
+        return busy ? null : HeldHere(home);
+    }
+
     /// <summary>What a terminal's loop says when an instance holds the home.</summary>
     public static string Refusal(string home, LeaseHolder holder) =>
         $"{home} is already driven by {holder.Named}. A second loop on one home races the first for the "
