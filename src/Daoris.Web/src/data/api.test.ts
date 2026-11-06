@@ -110,7 +110,7 @@ describe("a source's reopen and its submitting session", () => {
 
   const quest = { id: 'sr0sr0', from: 'game', to: 'engine', status: 'Taken', title: 'Stream the tiles', body: '', filed: '2026-10-18T00:00:00Z', updated: '2026-10-18T00:00:00Z' };
 
-  it('reads both where the host answers them, and neither from an older host', async () => {
+  it('reads both where the host answers them, and neither where it answers none', async () => {
     const reopened = { machine: 'desk', sequence: 44, of: { machine: 'desk', sequence: 41 }, note: 'It seams.', at: '2026-10-18T02:00:00Z', session: 's-7f3a21' };
     const submission = { machine: 'desk', sequence: 45, at: '2026-10-18T03:00:00Z', note: 'ready', session: 's-7f3a21' };
     vi.stubGlobal('fetch', vi.fn(async () => Response.json([{ ...quest, reopened }, { ...quest, id: 'su0su0', submission }])));

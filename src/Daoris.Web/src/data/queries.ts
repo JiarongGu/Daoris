@@ -105,8 +105,8 @@ export const useCodeMap = (repository: string | null) =>
 
 /**
  * The circles this deployment holds — the registry unscoped, because it is the authority (D48 §3)
- * and the one reader that must see every workspace is the switcher itself. A row from a host older
- * than workspaces names none and counts as `default`, so one such family stays one circle.
+ * and the one reader that must see every workspace is the switcher itself. A row
+ * that names none counts as `default`, so one such family stays one circle.
  */
 export const useWorkspaces = () =>
   useQuery({

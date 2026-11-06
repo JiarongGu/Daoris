@@ -88,7 +88,7 @@ export const useReadingSince = (session: string | null): number | null => {
 
 /**
  * The page leaves a read nobody waits on (GITAPP1a-iii): out of the table, so a return asks afresh, and `READ_LEAVE` sent, so the
- * host stops its git once no other window waits on it. An older shell's refusal of the route changes nothing: its read runs on.
+ * host stops its git once no other window waits on it. A refusal of the route changes nothing: its read runs on.
  */
 function leave(client: QueryClient, session: string, entry: Reading) {
   const reading = readsOf(client);
@@ -357,7 +357,7 @@ export type LandingConflict = { says: string; words: string };
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
  * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
  * with where that plugin cannot land work now. And the review's gate while it holds the work (REVIEWENV1c), which the page
- * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review, and from a shell older than it. And the
+ * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review. And the
  * second opinion's gate before it (XAGENT1f), wherever a level asks one, which the page draws beside the review's (XAGENT1g).
  */
 export const useLanding = (id: string | null, branch?: string | null) => {
@@ -372,15 +372,15 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       /**
        * The branch the press lands on already stands (ACCEPTALL1g): an entry's or a chain's, which the press moves on instead of
-       * making it. False or absent (an older host) is a branch the press makes.
+       * making it. False or absent is a branch the press makes.
        */
       stands?: boolean;
       /**
        * The target is the branch the session's own agent moved its tree onto (TREEFOLLOW1), which the press lands as it stands and
-       * makes no other (TREEFOLLOWWEB1). Absent from an older host, read as a branch the rule names.
+       * makes no other (TREEFOLLOWWEB1). Absent, read as a branch the rule names.
        */
       own?: boolean;
-      /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean, absent from an older host. */
+      /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean. */
       uncommitted?: number;
       opinion?: OpinionGate | null;
       workflow?: import('../../workflow/gate').WorkflowGateState | null;
@@ -401,7 +401,7 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       /**
        * The person's Accept is kept on the session (LANDBACK1 part 1): it was carried on to commit its tree or resolve its conflict, and
        * lands when its tree is clean. `awaiting` while the carry-on's turn runs; `carries` of the Accept's two. Absent where none is
-       * kept, and from an older host.
+       * kept.
        */
       carried?: { carries: number; awaiting: boolean } | null;
     }>,
@@ -448,7 +448,7 @@ export const useOpinionGate = (id: string | null) => {
 /**
  * What of the second opinion's gates waits on the person on this machine (XAGENT1g, design §9): a dispute, a required opinion
  * none could be had for, and commits nobody read where the work lands by itself, oldest first. *What needs you* lists them.
- * A shell older than the route answers nothing, which reads as none. `enabled` lets a caller ask it only while there is work
+ * An answer of nothing reads as none. `enabled` lets a caller ask it only while there is work
  * it could name: an opinion is owed only on work Sessions' list places *To review*.
  */
 export const useOpinionWaits = (enabled = true) => {
