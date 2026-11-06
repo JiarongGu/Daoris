@@ -41,7 +41,6 @@ area document under `docs/areas/`. Each row's earlier full text is in git at `9f
 
 ## Driving
 
-- [ ] **SESSWATCH1 — a quiet session seen, worded and set by one door** (driver, service, web): 1a, 1c (`quietMinutes`, the one quiet setting at every door, `settings_quiet`, Ask Daoris's answer) and 1b in most part (the watcher's one word on every door that takes words) are built. Left: **1b**'s rest, the session row's *told* line on the page and `LongCalls`' look folded into the watcher's. → `docs/2026-10-23-session-watch-design.md` §9; `docs/areas/driving.md`, Open
 - [ ] **SESSWATCH1d — measured on the install** (the parent with the owner; after 1a and 1b have run about two weeks; design §9 row 4). Quiet episodes by door and state, the real harnesses' idle CPU, and a D200 note naming which cells allow an automatic end.
 - [ ] **SESSWATCH1e — the automatic end and carry-on, only where 1d allows** (driver; after 1d; design §9 row 5). Proof: cases 3, 6 and 7.
 

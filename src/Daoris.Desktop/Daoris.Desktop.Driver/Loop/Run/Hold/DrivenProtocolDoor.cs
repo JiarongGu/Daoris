@@ -138,13 +138,16 @@ internal sealed class DrivenProtocolDoor(IRunWiring wiring)
 
                 // Under its run's light checks, a call or a background task past its bound is told to it once, as Daoris's urgent word,
                 // and never ended; the checks its start kept, so every run of it reads the same, and the bound its graph version set.
-                using var longCalls = LongCalls.Watch(
-                    SessionChecks.Held(context.Home, sessionId), sessionId, RunningCalls.Of(context.Events), () => session.BackgroundRunning, inbox,
-                    inbox is null ? null : new SaidDoor(context.Service, sessionId),
-                    failed: error => run.Say($"— Daoris's look at this session's long calls failed, and tells it nothing more: {error}"),
-                    minutes: SessionChecks.HeldMinutes(context.Home, sessionId));
+                // The watcher's one look finds them; the quiet word below tells them.
+                if (inbox is not null
+                    && CallBound.Of(SessionChecks.Held(context.Home, sessionId), SessionChecks.HeldMinutes(context.Home, sessionId)) is { } callBound)
+                {
+                    wiring.Watch.LongCalls(
+                        sessionId, callBound, () => session.BackgroundRunning, () => inbox.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep);
+                }
 
-                // A quest session the watcher marks quiet is told once, as Daoris's urgent word, taken off again when its quiet ends.
+                // A quest session the watcher marks quiet, or whose call it finds long, is told once, as Daoris's urgent word, the quiet
+                // one taken off again when its quiet ends.
                 using var quietWord = QuietWord.Tell(
                     wiring.Watch, sessionId, inbox, inbox is null ? null : new SaidDoor(context.Service, sessionId), RunningCalls.Of(context.Events),
                     failed: error => run.Say($"— Daoris's word to this quiet session was not kept: {error}"));

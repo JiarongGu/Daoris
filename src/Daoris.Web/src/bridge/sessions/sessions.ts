@@ -42,7 +42,7 @@ export const sessionsSlice: SliceSpec = {
  * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
  * (FABRIC-PIPELINE1c), each absent where it is not so.
  */
-export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; heard?: string };
+export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string };
 
 const isCall = (value: unknown): value is PushedCall =>
   typeof value === 'object' && value !== null
@@ -68,8 +68,9 @@ export const callsSlice: SliceSpec = {
     const quiet = partitions.get('quiet');
     if (typeof quiet === 'object' && quiet !== null && !Array.isArray(quiet)) {
       for (const [session, mark] of Object.entries(quiet)) {
-        const since = (mark as { since?: unknown } | null)?.since;
-        if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since };
+        const { since, told } = (mark ?? {}) as { since?: unknown; told?: unknown };
+        // SESSWATCH1b: whether Daoris's word to it was kept, which the row says beside the quiet.
+        if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since, ...(told === true ? { quietTold: true } : {}) };
       }
     }
     // COWORKVIEW1a: when the window last heard a session (§3.7), beside its call, or a call of no title where it makes none.

@@ -261,6 +261,21 @@ export const PastItsBoundTold: Story = {
 export const PastItsBoundToldChinese: Story = { ...PastItsBoundTold, decorators: [chinese] };
 
 /**
+ * SESSWATCH1b: a session nothing was heard from for a quarter of an hour, which the watcher marked quiet and told its one word: the row
+ * says *quiet* with its time, and that Daoris told it.
+ */
+export const QuietAndTold: Story = {
+  args: {
+    session: { ...SESSION, created: at(62), updated: at(15) },
+    grouping: placed({ group: 'working', shown: 'working', calling: { title: '', since: at(15), quiet: at(15), quietTold: true } }),
+    place: 'engine',
+  },
+};
+
+/** The same, in 中文. */
+export const QuietAndToldChinese: Story = { ...QuietAndTold, decorators: [chinese] };
+
+/**
  * AUTONOMY1b3b: a working session whose tool call is held for the person's answer under asking: its line says the call waits for
  * your answer and for how long, timed from the hold, and its tip where to answer it.
  */

@@ -20,7 +20,7 @@ public sealed record RunningCall(string Title, DateTimeOffset Since)
     public bool Waiting { get; init; }
 
     /// <summary>
-    /// Whether Daoris told the session this call ran past its pipeline's <c>callMinutes</c> (FABRIC-PIPELINE1c, <see cref="LongCalls"/>):
+    /// Whether Daoris told the session this call ran past its pipeline's <c>callMinutes</c> (FABRIC-PIPELINE1c, <see cref="LongCallLook"/>):
     /// the rail says so beside its time. Held in memory with the call, as the call is.
     /// </summary>
     public bool Told { get; init; }

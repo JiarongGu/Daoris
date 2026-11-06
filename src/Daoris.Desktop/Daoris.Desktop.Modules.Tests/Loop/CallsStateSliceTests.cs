@@ -62,6 +62,8 @@ public sealed class CallsStateSliceTests : DriverModuleBridge
         var quiet = Written(slice.Snapshot().Partitions.Single(each => each.Partition == CallsStateSlice.QuietPartition).Data);
         Assert.Equal(["s1"], quiet.Select(each => each.Key));
         Assert.True(DateTimeOffset.TryParse(quiet["s1"]!["since"]!.GetValue<string>(), out _));
+        // Nothing has kept Daoris's word to it, so the row says nothing of one.
+        Assert.False(quiet["s1"]!["told"]!.GetValue<bool>());
 
         watch.Heard("s1");
         now += TimeSpan.FromMinutes(1);
