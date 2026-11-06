@@ -85,7 +85,6 @@ test('the phase plans the scenario contract over every stand-in\'s doors: held b
 
   assert.deepEqual(of('first-stand-in'), [
     'live.start first-native driven', 'live.start first-protocol driven',
-    'live.turn first-native driven', 'live.turn first-protocol driven',
     'live.resume-own first-native driven', 'live.resume-own first-protocol driven',
     // A missing conversation is the protocol door's alone, and this provider's file holds it there.
     'live.missing-conversation first-protocol held i',

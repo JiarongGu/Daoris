@@ -131,14 +131,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Action<PressTold>? Told { get; init; }
 
-    /// <summary>
-    /// What a loop does when a conversation another Daoris process runs tells its turns anew, or leaves (CLITURN1, <see cref="TurnMarks"/>):
-    /// the shell's publishes the conversation's queue to its windows. Null takes none.
-    /// </summary>
-    public Action<string>? Turned { get; init; }
-
-    private readonly Dictionary<string, long> _turnsSeen = new(StringComparer.OrdinalIgnoreCase);
-    private readonly string _home;
 
     /// <summary>
     /// A loop's watch over its own registry, looking when the folder says a request arrived, and listing it every
@@ -192,7 +184,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     public SessionRequestWatch(
         string home, Func<string, bool> runsHere, Func<string, Noted?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
     {
-        _home = home;
         _requests = new SessionRequests(home);
         _told = new PressesTold(home);
         _runsHere = runsHere;
@@ -212,7 +203,6 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         kind != ChangeKind.Deleted
         && !name.Contains('/')
         && (name.EndsWith(PressesTold.Suffix, StringComparison.Ordinal)
-            || name.EndsWith(TurnMarks.Suffix, StringComparison.Ordinal)
             || (name.EndsWith(".json", StringComparison.Ordinal) && !name.EndsWith(SessionRequests.Answered, StringComparison.Ordinal)));
 
     /// <summary>
@@ -580,21 +570,12 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         try
         {
             // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
-            return begun + Hear().Count + HearTurns();
+            return begun + Hear().Count;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return begun;
         }
-    }
-
-    /// <summary>The conversations whose owners told their turns anew since the last look (CLITURN1), each handed to <see cref="Turned"/>; how many.</summary>
-    internal int HearTurns()
-    {
-        if (Turned is not { } turned) return 0;
-        var changed = new TurnMarks(_home).Changed(_turnsSeen);
-        foreach (var session in changed) turned(session);
-        return changed.Count;
     }
 
     /// <summary>

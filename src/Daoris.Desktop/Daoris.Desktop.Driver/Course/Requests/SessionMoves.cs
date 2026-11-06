@@ -32,7 +32,7 @@ public static class SessionMoves
         return new StopAnswer(stopped || orphan, orphan, elsewhere);
     }
 
-    /// <summary>How long a window's stop waits for the process that runs the session to take it (CLITURN1): short, since the owner looks within a second.</summary>
+    /// <summary>How long a window's stop waits for the process that runs the session to take it: short, since the owner looks within a second.</summary>
     public static readonly TimeSpan OwnerWait = TimeSpan.FromSeconds(5);
 
     /// <summary>
