@@ -1,14 +1,16 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PROVIDER_VOCABULARY as vocabulary } from '../data/generated/service';
 
 /**
  * AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the page's twin of the driver's `ProviderCensusTests`. Every site in
  * the page's production sources that names a provider's id, variable, file or wire key is counted over the source with its comments
  * blanked, and each is a named exception in the `page` section of the driver's `fixtures/provider-census.json`, by file and token
- * (the count of a listed file's sites is not pinned, CENSUSRULES1), the design's row that moves it (s: the page reads the sheet) and its class. The ids and the vocabulary are read from
- * `fixtures/provider-vocabulary.json`, the one table the four censuses share; nothing here copies a word of it. Tests, the test
- * support in `src/test/` and the translations are no production source.
+ * (the count of a listed file's sites is not pinned, CENSUSRULES1), the design's row that moves it (s: the page reads the sheet) and its class. The ids and the vocabulary are the
+ * driver's registrations', `PROVIDER_VOCABULARY` in the generated service types, the one table the four censuses share; nothing here
+ * copies a word of it. Tests, the test support in `src/test/`, the translations and the generated files, written from what the other
+ * censuses read, are no production source.
  */
 
 const root = join(process.cwd(), '..', '..');
@@ -23,18 +25,18 @@ interface Section { roots: string[]; exceptions: Row[] }
 interface Token { name: string; pattern: RegExp }
 
 const census = JSON.parse(readFileSync(join(fixtures, 'provider-census.json'), 'utf8')) as { page: Section };
-const vocabulary = JSON.parse(readFileSync(join(fixtures, 'provider-vocabulary.json'), 'utf8')) as {
-  ids: [string, string][]; words: [string, string, string][];
-};
 const section = census.page;
 
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// A hyphened id is no ordinary word, so every one the registrations hold is counted in a sentence.
+const hyphened = vocabulary.ids.map(([id]) => id).filter((id) => id.includes('-')).sort((a, b) => b.length - a.length).map(escape);
 
 const tokens: Token[] = [
   ...vocabulary.ids.map(([id]) => ({ name: `"${id}"`, pattern: new RegExp(`["'\`]${escape(id)}["'\`]`, 'g') })),
   { name: 'StartsWith(agent)', pattern: /\.startsWith\(\s*["'`](?:claude|codex|dsh)/g },
   // An id as an example or a name in a sentence (help, a refusal): words, but still a site that names a provider.
-  { name: 'id in a sentence', pattern: /(?<![\w@/.-])(?:claude-code-acp|claude-code|codex-acp|acp-stub|alt-stub)(?![\w"'`-])/g },
+  { name: 'id in a sentence', pattern: new RegExp(`(?<![\\w@/.-])(?:${hyphened.join('|')})(?![\\w"'\`-])`, 'g') },
   ...vocabulary.words.map(([word]) => {
     const plain = /^[A-Za-z0-9_]+$/.test(word) && !word.startsWith('_') && !word.endsWith('_');
     return { name: word, pattern: new RegExp(plain ? `(?<![A-Za-z0-9_])${escape(word)}(?![A-Za-z0-9_])` : escape(word), 'g') };
@@ -142,9 +144,9 @@ function problems(found: Map<string, Map<string, number>>, rows: Row[], exact = 
   return out;
 }
 
-const SKIPPED = new Set(['node_modules', 'dist', 'coverage', 'locales', 'test']);
+const SKIPPED = new Set(['node_modules', 'dist', 'coverage', 'locales', 'test', 'generated']);
 
-/** Every production source of the page: tests, the test support and the translations are none. */
+/** Every production source of the page: tests, the test support, the translations and the generated files are none. */
 function sources(): [string, string][] {
   const files: [string, string][] = [];
   const walk = (folder: string): void => {
