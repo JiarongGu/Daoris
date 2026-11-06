@@ -348,8 +348,10 @@ catalogues (`i18n:check`).
 - **GITAPP2:** Stash Drop is built (`StashDrops.cs`, `StashDropSteps.cs`, `GIT_STASH_DROP`): it is offered only for a stash a done Save of
   Daoris's own made, read from the Save step's journaled words (the commit saved; a message proves no ownership), by commit id, never
   its place; the step finds the place as it runs and, where git names another commit it dropped, stores that one again and reports
-  not done. It has no Undo: its answer and its record keep the commit and `git stash store -m <message> <id>`, good until git clears
-  unused objects. The push's interruption (origin took the pack and the connection dropped before it said so:
+  not done (proved with a Save slipped in between the step's read and its git). It has no Undo: its answer and its record keep the commit
+  and `git stash store -m <message> <id>`, good until git clears unused objects. Its terminal twin is `daoris git stash drop <repository>
+  <commit> [--plan|--yes]` (`GitStashDropCommand`; `GIT_STASH_DROP` is a Person press with `said`, `person.route.GIT_STASH_DROP` its card's
+  words): the plan names the store-back command, `--yes` asks the window or runs the act itself, a session's terminal is refused. The push's interruption (origin took the pack and the connection dropped before it said so:
   unknown, never retried) and the person's `pre-push` hook refusing (not done, nothing sent) are proved against the stand-in SSH
   host (`GitPushActProcessTests`).
 - **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone. Left: the doors

@@ -34,6 +34,16 @@ public sealed partial class StashDrops(ActJournal journal)
         return saved;
     }
 
+    /// <summary>What a Drop of the stash <paramref name="id"/> would rest on now: its message, or why it would be refused; the same reads the press judges, changing nothing.</summary>
+    public async Task<(string? Message, string? Why)> PlanAsync(StageContext context, string id, CancellationToken ct)
+    {
+        var (refusal, message) = await JudgeAsync(context, new StashDropPress(id), ct).ConfigureAwait(false);
+        return refusal is null ? (message, null) : (null, refusal);
+    }
+
+    /// <summary>The command that stores the dropped commit again.</summary>
+    internal static string StoreCommand(string id, string message) => $"git stash store -m \"{message.Replace("\"", "'", StringComparison.Ordinal)}\" {id}";
+
     public async Task<ActRun> RunAsync(StageContext context, StashDropPress press, CancellationToken ct)
     {
         if (await StageActs.GuardAsync(context, "this act", ct).ConfigureAwait(false) is { } guarded) return Refused(guarded);
@@ -45,7 +55,7 @@ public sealed partial class StashDrops(ActJournal journal)
         {
             ["verb"] = StashVerbs.Drop, ["id"] = id, ["message"] = message, ["switch"] = true,
             ["shared"] = "refs/stash is shared with every linked tree, sessions' included; a Drop removes this one entry by its commit id",
-            ["undo"] = $"git stash store -m \"{message.Replace("\"", "'", StringComparison.Ordinal)}\" {id}",
+            ["undo"] = StoreCommand(id, message),
         };
         var act = new ActPlan(StashVerbs.Drop, "window", context.Repository, context.Checkout, [StashDropSteps.Step(id, message)])
         {
@@ -61,7 +71,7 @@ public sealed partial class StashDrops(ActJournal journal)
         var short12 = id[..Math.Min(12, id.Length)];
         if (run.Outcome == ActOutcomes.Done)
         {
-            var said = $"The stash `{short12}` is dropped; `git stash store -m \"{message.Replace("\"", "'", StringComparison.Ordinal)}\" {id}` puts it back until git clears unused objects.";
+            var said = $"The stash `{short12}` is dropped; `{StoreCommand(id, message)}` puts it back until git clears unused objects.";
             return run with { Notes = said, Said = $"{run.Said} {said}" };
         }
 

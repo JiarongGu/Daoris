@@ -504,6 +504,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("GIT_SWITCH", "driver,checkouts", null)]
     [InlineData("GIT_STASH", "driver,checkouts", null)]
     [InlineData("GIT_STASH_APPLY", "driver,checkouts", null)]
+    [InlineData("GIT_STASH_DROP", "driver,checkouts", null)]
     // HELPMODE1c3: and the driver's, whose helpGrants draws the browser's grant from the plugin's approval.
     [InlineData("PLUGIN_ACTION", "driver,plugins,harnesses", null)]
     [InlineData("PLUGIN_UPDATE", "driver,plugins,harnesses", null)]

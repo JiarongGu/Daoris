@@ -90,6 +90,42 @@ public sealed class StashDropsGitTests : TreeSyncFixture
         Assert.Equal([made], await ListAsync(root));
     }
 
+    /// <summary>
+    /// 🔴 Another tree saves after the step read the list and before its git ran, so the place now names another commit: git drops that one, the
+    /// step stores it again by its commit, and the act reports not done with the stash asked for still on the list.
+    /// </summary>
+    [Fact]
+    public async Task A_save_between_the_read_and_the_drop_stores_the_wrong_stash_back_and_reports_not_done()
+    {
+        var root = await RepositoryWithOneCommitAsync();
+        var asked = await SaveAsync(root, "first\n", "first work");
+        var neighbour = await SaveAsync(root, "second\n", "second work");
+        await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "third\n");
+        var other = (await GitAsync(root, "stash", "create", "On master: other tree")).Trim();
+        await GitAsync(root, "checkout", "--", "a.txt");
+
+        var drops = new StashDrops(Journal());
+        var moved = false;
+        drops.Runs.Seam = async (point, _) =>
+        {
+            if (point != ActSeams.BeforePid || moved) return;
+            moved = true;
+            await GitAsync(root, "stash", "store", "-m", "other tree", other);
+        };
+        var run = await drops.RunAsync(Context(root), new StashDropPress(asked), CancellationToken.None);
+
+        Assert.True(moved);
+        Assert.False(run.Refused, run.Said);
+        Assert.Equal(ActOutcomes.NotDone, run.Outcome);
+        Assert.Contains("stored again", run.Notes, StringComparison.Ordinal);
+        Assert.Contains(neighbour, run.Notes, StringComparison.Ordinal);
+        var left = await ListAsync(root);
+        Assert.Equal(3, left.Count);
+        Assert.Contains(asked, left);
+        Assert.Contains(neighbour, left);
+        Assert.Contains(other, left);
+    }
+
     [Fact]
     public async Task The_plan_marks_the_stashes_a_save_of_daoris_made()
     {
