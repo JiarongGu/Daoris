@@ -171,7 +171,7 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says it runs, read whether or not its streams are kept.</summary>
     private readonly AcpBackground _background = new();
 
-    /// <summary>The background work its harness says still runs, with when each began (<see cref="LongCalls"/>).</summary>
+    /// <summary>The background work its harness says still runs, with when each began (<see cref="LongCallLook"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
     /// <summary>Whether no turn runs and the session waits on its own background work.</summary>

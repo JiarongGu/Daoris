@@ -127,8 +127,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["SessionSay.cs"] = "the headless door: the inbox's head is where the request is said again",
         ["SessionWords.cs"] = "the inbox's and the turns' head is where the shell says the word again, through its whole judge",
         ["ReopenTelling.cs"] = "the running session's inbox answered `continued`: the reopen's words are said at the head through the reopen's doors",
-        ["LongCalls.cs"] = "Daoris's word about this run's call: a record that went on is told nothing, as a closed inbox is",
-        ["QuietWord.cs"] = "the watcher's word to a quiet session: a record that went on is told nothing, as a closed inbox is, and its episode is forgotten",
+        ["QuietWord.cs"] = "the watcher's word to a quiet session or about a long call: a record that went on is told nothing, as a closed inbox is, and a quiet episode is forgotten",
     };
 
     /// <summary>The runner hands a keep on to the dispatcher that holds it, which is named above and reads the head itself.</summary>

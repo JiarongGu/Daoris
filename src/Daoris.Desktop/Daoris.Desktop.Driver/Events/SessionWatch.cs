@@ -172,6 +172,22 @@ public sealed class SessionWatch
     /// <summary>Told each step as it is written, after the watcher's lock is let go: what a run's <see cref="QuietWord"/> says and withdraws by.</summary>
     public event Action<QuietStep>? Stepped;
 
+    /// <summary>Told each long call found (<see cref="LongCallLook"/>), after the lock is let go: what <see cref="QuietWord"/> tells.</summary>
+    public event Action<LongCallStep>? LongCalled;
+
+    /// <summary>The wall clock a call's start is read against; a test hands one it moves.</summary>
+    public Func<DateTimeOffset> Wall { get; set; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Look for a light session's calls and background work past <paramref name="bound"/> at each look, once a run (SESSWATCH1b, FABRIC-PIPELINE1c).
+    /// </summary>
+    /// <param name="background">Its background work still running; none where null.</param>
+    /// <param name="reaches">Whether its door takes an urgent word at its next step now.</param>
+    public void LongCalls(string session, TimeSpan bound, Func<IReadOnlyList<RunningTask>>? background, Func<bool> reaches)
+    {
+        if (_watched.TryGetValue(session, out var watched)) watched.Long = new LongCallLook(bound, background, reaches);
+    }
+
     /// <summary>Register a run while it lasts; disposing ends its episode, if one is open, as <c>ended</c>.</summary>
     public WatchHandle Watch(string session, WatchedRun run)
     {
@@ -290,13 +306,20 @@ public sealed class SessionWatch
     public IReadOnlyList<QuietStep> Look(Func<string, JobRead?> jobs, TimeSpan pace, Func<string, string?, HeavyWait?>? heavy = null)
     {
         var steps = new List<QuietStep>();
+        var longs = new List<LongCallStep>();
         var now = Clock.Now;
         lock (_gate)
         {
             Gap(now, pace);
-            foreach (var watched in _watched.Values) Judge(watched, now, jobs, heavy, steps);
+            var wall = Wall();
+            foreach (var watched in _watched.Values)
+            {
+                Judge(watched, now, jobs, heavy, steps);
+                if (!watched.Gone && watched.Long is { } look) longs.AddRange(look.Find(watched.Session, _calls, wall));
+            }
         }
 
+        foreach (var found in longs) LongCalled?.Invoke(found);
         foreach (var step in steps) Write(step);
         foreach (var session in steps.Select(step => step.Session).Distinct(StringComparer.OrdinalIgnoreCase)) Changed?.Invoke(session);
         return steps;
@@ -535,6 +558,7 @@ public sealed class SessionWatch
         public Func<bool>? OwnWork = run.WaitsOnOwnWork;
         public Func<IReadOnlyList<string>>? Works;
         public Func<bool>? Transient;
+        public LongCallLook? Long;
         public long HeardTicks = heard;
         public readonly List<(TimeSpan At, TimeSpan Cpu)> Reads = [];
         public readonly CancellationTokenSource End = new();

@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <c>said</c> through the session's inbox, urgent, under <see cref="DaorisKeys.Watch"/>, once per quiet episode, and taken off again when
 /// the episode ends or the run ends, so a word not yet on the wire never outlives the quiet it speaks of and never becomes a carry-on's
 /// resume. A word already on the wire cannot be called back: its words say only what ran, true whenever they are read. An intake takes
-/// no words, so it gets the mark alone; where <see cref="LongCalls"/> already told the same call, its word is the episode's.
+/// no words, so it gets the mark alone; where the long-call word (<see cref="LongCallLook"/>, found by the same look) already told the same call,
+/// its word is the episode's.
 /// Every door that takes words has one: the protocol door's reaches the agent at its next step, and the native and the text-only doors'
 /// waits for the turn's end, where it is judged by its episode and goes to no turn once the session was heard again.
 /// </summary>
@@ -31,6 +32,45 @@ public sealed class QuietWord : IDisposable
         _calls = calls;
         _failed = failed;
         _watch.Stepped += OnStep;
+        _watch.LongCalled += OnLong;
+    }
+
+    /// <summary>
+    /// What a long call's session is told (the pipeline design §3.2's fourth layer): the call's title and time, that a suite run whole is the
+    /// verification pipeline's, and that Daoris ends nothing.
+    /// </summary>
+    public static string LongWords(LongCallStep step)
+    {
+        var what = step.Background ? $"Your background task `{step.Title}`" : $"Your call `{step.Title}`";
+        var stop = step.Background ? "stop that task, " : "do not run it again, ";
+        return $"Daoris: {what} has run for {(int)step.Ran.TotalMinutes} minutes, past this pipeline's bound of {(int)step.Bound.TotalMinutes} "
+               + "minutes for one call. Your "
+               + "checks are light: a test suite or a project run whole is the verification pipeline's, which runs it after your work lands. "
+               + $"If this is one, {stop}and run only the checks your change reaches, filtered (a test class, a test file). Daoris does not "
+               + "end it.";
+    }
+
+    private void OnLong(LongCallStep step)
+    {
+        if (string.Equals(step.Session, _session, StringComparison.OrdinalIgnoreCase) && Volatile.Read(ref _disposed) == 0) _ = Guard(TellLongAsync(step));
+    }
+
+    /// <summary>
+    /// Keep a long call's word, urgent, as Daoris's, and mark the call told on the rail; a record that went on or a closed inbox is told
+    /// nothing. Daoris never ends the call: a turn is the agent's (DONEEND1), and the person's <i>Stop</i> stays the door.
+    /// </summary>
+    public async Task<bool> TellLongAsync(LongCallStep step, CancellationToken ct = default)
+    {
+        var word = new ChatMessage(LongWords(step), [])
+        {
+            Level = MessageLevel.Urgent,
+            // No judge: that the call ran past its bound stays true once it ends, and the word still says what to do next.
+            Daoris = new DaorisWord(step.Key),
+        };
+        var kept = await _inbox.KeepOrHoldAsync(_door, word, ct).ConfigureAwait(false);
+        if (kept.Outcome is InboxKeep.Closed or InboxKeep.Continued) return false;
+        if (step.Call is { } call) _calls?.MarkTold(_session, call);
+        return true;
     }
 
     /// <summary>The word's watch for a run whose door takes words; null for a door with no inbox. Only a quest session's mark is told.</summary>
@@ -59,7 +99,7 @@ public sealed class QuietWord : IDisposable
         else if (step.Step == "over") _ = Guard(WithdrawAsync(step.Episode));
     }
 
-    /// <summary>Keep the episode's word, once; a call <see cref="LongCalls"/> told already is the episode's word, and none is kept.</summary>
+    /// <summary>Keep the episode's word, once; a call told as long already is the episode's word, and none is kept.</summary>
     public async Task<bool> TellAsync(QuietStep step, CancellationToken ct = default)
     {
         if (_calls?.Calling(_session) is { Told: true }) return false;
@@ -96,6 +136,7 @@ public sealed class QuietWord : IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _watch.Stepped -= OnStep;
+        _watch.LongCalled -= OnLong;
         foreach (var episode in _told.Keys.ToList())
         {
             try

@@ -387,7 +387,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 : await WorkflowProcesses.ReadAsync(
                     home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct).ConfigureAwait(false);
             var checks = SessionChecks.Of(config, quest.To, process);
-            var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
+            var checksKept = SessionChecks.Hold(home, sessionId, checks, CallBound.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var rules = _driver.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,

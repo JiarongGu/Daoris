@@ -55,8 +55,8 @@ public sealed class ReviewBoundaryTests
         Assert.Equal(SessionChecks.HeavyAtEnd, SessionChecks.Of(config, "web-app", heavy));
         Assert.Equal(SessionChecks.Light, SessionChecks.Of(config, "web-app", current));
         Assert.Null(SessionChecks.Of(config, "web-app", named));
-        Assert.Null(LongCalls.MinutesOf(named));
-        Assert.Null(LongCalls.MinutesOf(null));
+        Assert.Null(CallBound.MinutesOf(named));
+        Assert.Null(CallBound.MinutesOf(null));
     }
 
     [Fact]

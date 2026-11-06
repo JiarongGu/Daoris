@@ -106,7 +106,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // beside them for its long-call watch.
             var checks = SessionChecks.Of(config, quest.To, process);
             var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.Can.TakesSettings);
-            var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
+            var checksKept = SessionChecks.Hold(home, sessionId, checks, CallBound.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var asking = await StartTargets.WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
             // A carry-on's moved words are taken once its first prompt is written, and the take is what keeps the person's among them on
