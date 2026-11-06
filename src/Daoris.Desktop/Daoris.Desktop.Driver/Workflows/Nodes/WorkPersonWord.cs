@@ -22,7 +22,9 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
             if (held is not null && KeptFailure(record, held))
             {
                 if (held.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
-                if (resolution != HeldResolutions.Again) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
+                // FABRIC-PIPELINE1f: a failed check's *Not now* settles it as the person's: the verdict stands, and nothing asks about it again.
+                var notNow = resolution == HeldResolutions.Stop && held.Plugin == NodeKinds.Check;
+                if (resolution != HeldResolutions.Again && !notNow) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAgain));
                 return (With(record, held, held with { Resolution = resolution, ResolvedAt = now }), new WorkPerformed(unit, node, PerformedWhat.Worded, resolution));
             }
 
@@ -103,6 +105,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     /// </summary>
     internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) =>
         attempt is { State: AttemptStates.Settled, RetryAt: null } && attempt.Plugin != QuestClosing.Sender
+        && !(attempt.Plugin == NodeKinds.Check && attempt.Resolution == HeldResolutions.Stop)
         && record.Statuses.GetValueOrDefault(attempt.Node) is { State: NodeStates.Failed } status && status.Attempt == attempt.Attempt;
 
     /// <summary>Why <paramref name="word"/> is not taken on <paramref name="held"/> (FABRIC-CLOSE1q), or null where it is one of its words.</summary>

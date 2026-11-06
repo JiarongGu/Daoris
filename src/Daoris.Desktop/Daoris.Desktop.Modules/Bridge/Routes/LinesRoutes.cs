@@ -385,19 +385,26 @@ public sealed class LinesRoutes(DriverContext context)
     [Owner("WORK_HELD", Unit = "unit")]
     [GroundRead("WORK_HELD", nameof(PipeReads.HeldAttempt))]
     [Publishes("WORK_HELD", StateScopes.Sessions)]
-    private Task<object?> WorkHeldAsync(WorkHeldPress press, CancellationToken cancellationToken)
+    private async Task<object?> WorkHeldAsync(WorkHeldPress press, CancellationToken cancellationToken)
     {
         var (unit, node, attempt, word) = (press.Unit, press.Node, press.Attempt, press.Resolution);
-        _ = _loop.Service ?? throw NotReady();
+        var service = _loop.Service ?? throw NotReady();
+
+        // FABRIC-PIPELINE1f: *Ask for a fix…* on a failed verification publishes its ask; it moves no node and writes nothing on the record.
+        if (word == HeldResolutions.AskFix)
+        {
+            var pressed = await VerifyFixAsks.AskAsync(service, new NodeRecordFiles(_loop.Home), unit, node, attempt, cancellationToken);
+            return new { Unit = unit, Node = node, Attempt = attempt, Resolution = word, pressed.Done, Refused = pressed.Done ? null : "not-asked", pressed.Message };
+        }
 
         var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
         var worded = done.What == PerformedWhat.Worded;
         if (worded) _loop.Nudge();
-        return Task.FromResult<object?>(new
+        return new
         {
             Unit = unit, Node = node, Attempt = attempt, Resolution = word, Done = worded, Refused = worded ? null : done.Code,
             Message = HeldAttempts.Said(done, attempt, word),
-        });
+        };
     }
 
     /// <summary>A session branch's row (<see cref="SweepWires.SweepRow"/>).</summary>

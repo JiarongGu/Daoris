@@ -178,6 +178,9 @@ internal static class HistoryHome
             }
         }
 
+        // A verification run no later run makes needed (the pipeline design §4.3): no quest holds one, so it is read from the runs themselves.
+        foreach (var (path, folder) in LandedRunsLeft.Of(world.Home)) Add(path, folder);
+
         return found;
     }
 

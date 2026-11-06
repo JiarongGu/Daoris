@@ -12,6 +12,9 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The gates the check names; null for the heavy gates, or the runner where the declaration names one.</summary>
     public IReadOnlyList<string>? Gates { get; init; }
 
+    /// <summary>Where the check runs only the gates its batch's changed paths reach (<c>reach: paths</c>); null where every gate it names runs.</summary>
+    public VerifyReach? Reach { get; init; }
+
     /// <summary>The check's bound, counted from both slots held.</summary>
     public TimeSpan Bound { get; init; } = HeavyExecutor.DefaultBound;
 
