@@ -162,7 +162,7 @@ public sealed class RelayRun
             try
             {
                 if (new FileInfo(file).Length > 1024) continue;
-                using var read = JsonDocument.Parse(File.ReadAllText(file));
+                using var read = JsonDocument.Parse(AtomicFile.ReadText(file));
                 if (!read.RootElement.TryGetProperty("pid", out var named) || !named.TryGetInt32(out var said) || said != pid) continue;
                 if (!Alive(pid)) File.Delete(file);
             }
