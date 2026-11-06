@@ -19,6 +19,13 @@ export function ruleSaid(t: TFunction, rule: Pick<SupervisorRuleWire, 'at' | 'do
   return rule.do === 'wait' && rule.upTo ? t('settings.supervisor.saidWait', { at: rule.at, act, minutes: rule.upTo }) : t('settings.supervisor.said', { at: rule.at, act });
 }
 
+/** A wider place in the person's words: this machine, or a workspace or repository by its name. */
+function placeSaid(t: TFunction, place: string): string {
+  if (place === MACHINE) return t('settings.supervisor.machine');
+  const [kind, name] = [place.slice(0, place.indexOf(':')), place.slice(place.indexOf(':') + 1)];
+  return kind === 'workspace' ? t('settings.supervisor.workspace', { name }) : t('settings.supervisor.repository', { name });
+}
+
 /**
  * **A place's supervisor rules** (CONTEXTDRIVE1g, the context counters design §7.1): *when this count reaches n here, do this*, as rows in
  * the role editor's form, written whole at the revision read. Each rule set here says the wider place's rule it replaces; an inherited rule is
@@ -37,9 +44,8 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
   const [draft, setDraft] = useState(() => draftOf(place, stored));
   const [said, setSaid] = useState<string | null>(null);
   const [keys, setKeys] = useState(() => draft.rows.length);
-  const machine = setOf(read, MACHINE)?.rules ?? [];
-  const wider = place === MACHINE ? [] : machine;
-  const inherited = inheritedFrom(read, place, draft.rows);
+  const lineRoles = roles.map((role) => role.value);
+  const inherited = inheritedFrom(read, draft, lineRoles);
   const unchanged = sameAsStored(draft, stored);
   const locked = busy;
 
@@ -94,7 +100,8 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
           {draft.rows.map((row, index) => {
             const n = index + 1;
             const count = countOf(row.count);
-            const replacing = replaced(row, wider);
+            const replacing = replaced(read, draft, row, lineRoles);
+            const replacedAt = [...new Set(replacing.map((each) => each.place))];
             return (
               <FormRow key={row.key}>
                 <FormField label={t('settings.supervisor.field.when')} when="stacked">
@@ -146,7 +153,11 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
                         {t('settings.supervisor.minutes')}
                       </span>
                     )}
-                    {replacing.length > 0 && <span>{t('settings.supervisor.replaces', { place: t('settings.supervisor.machine'), rules: replacing.map((rule) => ruleSaid(t, rule)).join('; ') })}</span>}
+                    {replacedAt.map((at) => (
+                      <span key={at} data-replaces={at}>
+                        {t('settings.supervisor.replaces', { place: placeSaid(t, at), rules: replacing.filter((each) => each.place === at).map((each) => ruleSaid(t, each.rule)).join('; ') })}
+                      </span>
+                    ))}
                     {(row.count === 'failures-on-choice' || row.count === 'tries') && <span>{t(`settings.supervisor.note.${row.count}`)}</span>}
                   </span>
                 )}
@@ -158,9 +169,13 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
       {first && <p className="m-0 text-small text-ink-soft">{t('settings.supervisor.none', { place: placeName })}</p>}
       {inherited.length > 0 && (
         <ul className="m-0 grid list-none gap-1 p-0 text-small text-ink-soft">
-          {inherited.map((rule, at) => (
-            <li key={`${rule.count}-${rule.roles?.[0] ?? ANY}-${at}`} className="flex flex-wrap items-center gap-2" data-inherited={rule.count}>
-              <span>{t('settings.supervisor.inherited', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), place: t('settings.supervisor.machine') })}</span>
+          {inherited.map(({ place: from, rule }, at) => (
+            <li key={`${from}-${rule.count}-${rule.roles?.[0] ?? ANY}-${at}`} className="flex flex-wrap items-center gap-2" data-inherited={rule.count} data-from={from}>
+              <span>
+                {rule.roles && rule.roles.length > 0
+                  ? t('settings.supervisor.inheritedFor', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), roles: roleNames(rule.roles), place: placeSaid(t, from) })
+                  : t('settings.supervisor.inherited', { count: t(`settings.supervisor.count.${rule.count}`), rule: ruleSaid(t, rule), place: placeSaid(t, from) })}
+              </span>
               <Button variant="ghost" disabled={locked} onClick={() => copyHere(rule)}>{t('settings.supervisor.setHere')}</Button>
             </li>
           ))}

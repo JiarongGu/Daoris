@@ -11,7 +11,7 @@ internal sealed class StaffPolicyLook(ILookWiring wiring) : ILookPass
     {
         var staff = wiring.Harnesses.StaffFor(wiring.Home);
         var snapshot = round.State.Snapshot;
-        RuleWiderPlaces.Keep(wiring.Home, snapshot.Repositories.Select(repo => (repo.Repository, repo.Workspace)));
+        new RuleWiderPlaceStore(wiring.Home).Keep(snapshot.Repositories.Select(repo => (repo.Repository, repo.Workspace)));
         snapshot = snapshot with { FailuresAt = StaffSnapshotCourse.FailuresAt(staff, snapshot) };
         var (policyMoving, policyHolds) = StaffSnapshotCourse.Look(staff, snapshot, wiring.Config, wiring.Harnesses.Clock());
         var limitHolds = StaffSnapshotCourse.LimitHolds(staff, snapshot);

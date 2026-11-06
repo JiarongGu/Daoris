@@ -35,7 +35,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 | `ApprovedChoice` | `Course/HandOver/ApprovedChoice.cs` | The choice a hand-over is approved on: an agent's own ask takes the arranged order's step for its agent; a handed quest's file keeps its model and effort, and its start takes them while the role still lists them |
 | `SupervisorRules` | `Roles/SupervisorRules.cs` | The rule supervisor's pure half: counts, actions, bounds, places, judge, effective set, act |
 | `SupervisorRuleStore`, `SupervisorRuleBook`, `RuledPolicy` | `Roles/SupervisorRule*.cs`, `Roles/RuledPolicy.cs` | `supervisor_rules`; the fresh seed; what each executor reads; a preset's rules |
-| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
+| `SupervisorRuleActs`, `SupervisorRuleHold`, `RuleWiderPlaces`, `RuleWiderPlaceStore` | `Roles/SupervisorRuleActs.cs`, `Roles/SupervisorRuleHold.cs`, `Roles/RuleWiderPlaces.cs`, `Roles/RuleWiderPlaceStore.cs` | A rule's act said, kept and read back; `rule-holds`; a repository's workspace as its wider place, kept in the store from the look's registry. A Planned look pass (`RuleActsLook`, `PlannedRuleActs`) records a park, a transient hold, a rule's move and the moves bound once per session; the supervisor's print lists them (`LineFacts.Acts`) |
 | `QuestionSupervisorDecisions`, `SupervisorWhy`, `SupervisorBounds` | `Roles/QuestionSupervisorDecisions.cs`, `Roles/SupervisorDecision.cs` | The agent supervisor's decisions in memory, its lifecycle, refusals and bounds; the class keeps one-line doors |
 | `SupervisorBook`, `SupervisorDecisionFiles`, `SupervisorKeeping`, `SupervisorReleasing`, `SupervisorSweeps`, `SupervisorTickets`, `SupervisorReads` | `Roles/Supervisor*.cs` | The decisions' shared memory (live decisions, session locks, closed questions) and its one move in the book; the files, keeping, releasing, sweeps, tickets and reads each reach it and keep no state |
 | `SessionsSuperviseCommand`, `SupervisorQuarantine`, `HolderKey` | `Roles/SessionsSuperviseCommand.cs`, `Roles/SupervisorQuarantine.cs`, `Roles/SupervisorProof.cs` | The holder's verb; unattributed words taken back; the key, its proof and the role terminal's verbs |
@@ -129,7 +129,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `refer` (ask the agent supervisor) is not offered yet. (from D229)
 33. A place is the machine, `workspace:<id>`, `repository:<id>` or `line:<key>`. For each count the most specific place
     holding a rule decides, with no layering. Rules naming the role beat those naming none; `off` ends inheritance. A
-    repository's workspace, as the driver's last look read the registry, is its wider place at the judge as at the lines. (from D229)
+    repository's workspace is its wider place at the judge in every process as at the lines: the look keeps the registry's
+    in the store (`repository_workspaces`, step 21) and the judge reads it there; `ROLES` answers each place's wider places,
+    and the fold draws what a place's rules replace and inherit along that chain, for each role's lines. (from D229)
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one
     choice acting at or past failures, and where two rules on one count at the place would apply to one line (`ladder`:
     both for every role, or both naming one role); a rule naming a role beside the every-role rule stands. The terminal's
@@ -286,8 +288,6 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 - **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
   the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1r:** the judge's wider places come from the driver's last look in memory (`RuleWiderPlaces`), so a terminal's
-  own process judges a write on a repository's chain without its workspace; the fold reads only the machine as wider, by no role.
 - **CONTEXTDRIVE1s:** an act records the rule's number for the answers-alone hold, the transient hold and the moves bound, and the
   park's count before *Try again*'s mark; a new answer while a line waits records another act; nothing counts `tries`.
 - **CONTEXTDRIVE1t (rest):** `CountWatch.Place` may be null and the print and the web keep *Daoris's own number* (`ownAt`);

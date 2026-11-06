@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SupervisorRulesRead } from '../../data/wiring';
-import { blankRule, draftOf, inheritedFrom, nextCount, pressOf, readable, reaction, recount, replaced, rulesOfRole, sameAsStored, setOf } from './supervisorRulesDraft';
+import { blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readable, reaction, recount, replaced, rulesOfRole, sameAsStored, setOf } from './supervisorRulesDraft';
 
 // CONTEXTDRIVE1g: the supervisor's rules as the editor holds them, and the press that writes a place's set whole.
 
@@ -77,14 +77,34 @@ describe('The supervisor rules draft', () => {
     expect(readable(draft)).toBe(false);
   });
 
-  it("says what a place's rule replaces and what it inherits", () => {
+  it("says what a place's rule replaces and what it inherits, by role", () => {
     const here = draftOf('repository:daoris', setOf(READ, 'repository:daoris'));
-    const machine = setOf(READ, 'machine')!.rules;
+    const roles = ['build', 'chat'];
 
-    expect(replaced({ ...here.rows[0]!, roles: [] }, machine).map((rule) => rule.at)).toEqual([2]);
-    expect(replaced(here.rows[0]!, machine)).toEqual([]);
-    expect(inheritedFrom(READ, 'repository:daoris', here.rows).map((rule) => rule.count)).toEqual(['failures']);
-    expect(inheritedFrom(READ, 'machine', [])).toEqual([]);
+    // A Build rule replaces the machine's for Build's lines; Chat's lines still read the machine's.
+    expect(replaced(READ, here, here.rows[0]!, roles).map((each) => [each.place, each.rule.at])).toEqual([['machine', 2]]);
+    expect(inheritedFrom(READ, here, roles).map((each) => [each.place, each.rule.count])).toEqual([['machine', 'answers-alone'], ['machine', 'failures']]);
+    const everyRole = { ...here, rows: [{ ...here.rows[0]!, roles: [] }] };
+    expect(inheritedFrom(READ, everyRole, roles).map((each) => each.rule.count)).toEqual(['failures']);
+    expect(inheritedFrom(READ, draftOf('machine', setOf(READ, 'machine')), roles)).toEqual([]);
+  });
+
+  it("reads a repository's chain through its workspace as ROLES answers it", () => {
+    const read: SupervisorRulesRead = {
+      ...READ,
+      wider: { 'repository:r': ['workspace:w'] },
+      sets: [
+        READ.sets[0]!,
+        { place: 'workspace:w', revision: 1, rules: [{ id: 'w-1', count: 'answers-alone', window: 'in-a-row', at: 4, do: 'hold' }] },
+        { place: 'repository:r', revision: 1, rules: [{ id: 'r-1', count: 'answers-alone', window: 'in-a-row', at: 3, do: 'hold' }] },
+      ],
+    };
+    const here = draftOf('repository:r', setOf(read, 'repository:r'));
+
+    expect(chainOf(read, 'repository:r')).toEqual(['repository:r', 'workspace:w', 'machine']);
+    expect(chainOf(read, 'workspace:w')).toEqual(['workspace:w', 'machine']);
+    expect(replaced(read, here, here.rows[0]!, ['build']).map((each) => [each.place, each.rule.at])).toEqual([['workspace:w', 4]]);
+    expect(inheritedFrom(read, { ...here, rows: [] }, ['build']).map((each) => [each.place, each.rule.count])).toEqual([['workspace:w', 'answers-alone'], ['machine', 'failures']]);
   });
 
   it('finds the rules naming a role at every place', () => {
