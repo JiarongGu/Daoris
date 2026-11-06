@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The stand-ins written on the contract (AGENTPROVIDER1 row b; the agent-provider design §3.3, §11): provider <c>stub</c> with its two
 /// doors, <c>stub</c> on the pipe and <c>acp-stub</c> on the protocol, which run whatever command the machine's configuration names
-/// and no model (D46 §8). Their facts are those <see cref="StubAdapter"/> and <see cref="AcpStubAdapter"/> declare until row t takes the
-/// classes away; the shim (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
+/// and no model (D46 §8). The shim (<see cref="LegacyDoor"/>) presents them to today's readers.
 /// </summary>
 /// <remarks>
 /// <para>The words are Claude Code's by reference, named exactly (O1-F5): its limit, window and sign-in words and its error

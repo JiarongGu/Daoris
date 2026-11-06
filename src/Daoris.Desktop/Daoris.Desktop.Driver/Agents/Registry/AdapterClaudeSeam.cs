@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -9,4 +11,11 @@ internal static class AdapterClaudeSeam
 {
     public static bool TakesClaudeSeam(this ISessionAdapter adapter) =>
         adapter is LegacyDoor door ? door.ClaudeSeam : adapter.Abilities().Transport == Transport.Protocol;
+
+    /// <summary>The seam on <paramref name="info"/>, applied by the door that takes it; nothing where it takes none.</summary>
+    public static void PointAtClaude(this ISessionAdapter adapter, ProcessStartInfo info, string managedClaude)
+    {
+        if (adapter is LegacyDoor door) door.PointAtClaude(info, managedClaude);
+        else if (adapter.TakesClaudeSeam()) ClaudeCodeSpawn.PointAt(info, managedClaude);
+    }
 }

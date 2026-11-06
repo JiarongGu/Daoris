@@ -72,7 +72,7 @@ public sealed class StartPlanStaffTests : IDisposable
     {
         public string Name => name;
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public HarnessToolchain? Toolchain => toolchain;
 

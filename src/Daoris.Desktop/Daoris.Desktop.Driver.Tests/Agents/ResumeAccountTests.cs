@@ -377,8 +377,6 @@ public sealed class ResumeAccountTests : IDisposable
     {
         public string Name => name;
 
-        public SessionWire Wire => SessionWire.Pipe;
-
         public HarnessToolchain? Toolchain => toolchain;
 
         public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");

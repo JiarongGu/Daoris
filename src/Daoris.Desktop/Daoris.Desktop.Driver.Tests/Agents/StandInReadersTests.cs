@@ -12,18 +12,11 @@ public sealed class StandInReadersTests
 {
     private static readonly IReadOnlyList<string> Configured = ["node", "agent.mjs"];
 
-    /// <summary>The sets the readers are held over: the built one, the classes beside the built others, and a plugin's door of the stand-in's kind.</summary>
-    public static TheoryData<string> Sets => new() { "built", "classes", "plugin" };
+    /// <summary>The sets the readers are held over: the built one, and one with a plugin's door of the stand-in's kind.</summary>
+    public static TheoryData<string> Sets => new() { "built", "plugin" };
 
     private static AdapterSet Set(string which) => which switch
     {
-        "classes" => new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["stub"] = new StubAdapter(),
-            ["acp-stub"] = new AcpStubAdapter(),
-            ["claude-code"] = new ClaudeCodeAdapter(),
-            ["codex-acp"] = AdapterSet.Built().Resolve("codex-acp"),
-        }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain }),
         "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
         _ => AdapterSet.Built(),
     };

@@ -156,7 +156,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         var facts = new StandingFacts { Repository = "engine" };
 
         var codex = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("codex-acp"), _tree);
-        var claude = StandingBlocks.OnHarness(facts, new ClaudeCodeAdapter(), _tree);
+        var claude = StandingBlocks.OnHarness(facts, BuiltDoors.Claude, _tree);
         var acp = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("claude-code-acp"), _tree);
 
         Assert.Equal([".claude/skills"], codex.Skills);
@@ -188,7 +188,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         var facts = new StandingFacts { Repository = "engine" };
 
         var codex = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("codex-acp"), _tree);
-        var claude = StandingBlocks.OnHarness(facts, new ClaudeCodeAdapter(), _tree);
+        var claude = StandingBlocks.OnHarness(facts, BuiltDoors.Claude, _tree);
 
         Assert.True(codex.NoDenies);
         Assert.False(claude.NoDenies);

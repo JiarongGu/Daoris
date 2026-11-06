@@ -59,7 +59,7 @@ public sealed class HandOverTests : IDisposable
     [Fact]
     public void The_accounts_a_hand_over_is_judged_by_are_one_read_for_the_chat_the_curve_and_the_loop()
     {
-        var adapters = ProvidersBuiltTests.Old();
+        var adapters = AdapterSet.Built();
         Assert.Null(HandOverAccounts.Of(adapters, _home, "no-such-agent"));
         Assert.Equal(HandOverAccounts.Of(adapters, _home, "claude-code"), HandOverAccounts.Of(adapters, _home, "claude-code"));
         Assert.Empty(HandOverAccounts.Of(adapters, _home, "claude-code")!.Where(string.IsNullOrEmpty));

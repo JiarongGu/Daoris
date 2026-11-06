@@ -267,7 +267,7 @@ public sealed class ModelRefusalTickTests : IDisposable
         public IStreamMapper? StructuredOutput() => new ClaudeStreamJson();
 
         public HarnessToolchain? Toolchain => new(
-            Binary: [], VersionArguments: [], ProfileVariable: StubAdapter.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
+            Binary: [], VersionArguments: [], ProfileVariable: StubProvider.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
             RunsInOwnHome: true);
 
         public ProcessStartInfo Prepare(SpawnRequest request) =>

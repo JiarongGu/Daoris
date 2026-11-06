@@ -116,7 +116,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// </summary>
     public bool GoesOn => !IsProtocol && adapter.Resumes && _start.Target is not null && _start.Selection is not null;
 
-    private bool IsProtocol => adapter.Wire == SessionWire.Acp;
+    private bool IsProtocol => adapter.Transport == Transport.Protocol;
 
     /// <summary>One run of the process: the first run's, a go-on's or a retry's, each with its own token and capture.</summary>
     private sealed class Leg(Process process, string proc, Task capture)
@@ -151,7 +151,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Refused(ChoiceAbility);
 
-    internal override DoorInput Input { get; } = new(adapter.Wire == SessionWire.Acp ? LinesAbility : null);
+    internal override DoorInput Input { get; } = new(adapter.Transport == Transport.Protocol ? LinesAbility : null);
 
     public override async Task StopTurnAsync(CancellationToken ct)
     {

@@ -51,8 +51,8 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
     private static AdapterSet Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        ["stub"] = new StubAdapter(),
-        ["acp-stub"] = new AcpStubAdapter(),
+        ["stub"] = BuiltDoors.Stub,
+        ["acp-stub"] = BuiltDoors.AcpStub,
         ["acp-second"] = PluginDoors.Adapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
     });
 

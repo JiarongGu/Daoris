@@ -262,7 +262,7 @@ public sealed class IntakeTests : IDisposable
     {
         var target = IntakeTarget();
 
-        var info = new StubAdapter().Prepare(target, ["node", "agent.mjs"]);
+        var info = BuiltDoors.Stub.Prepare(target, ["node", "agent.mjs"]);
 
         Assert.Equal("a1b2c3", info.Environment[IntakeRoom.AskVariable]);
         Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
@@ -285,7 +285,7 @@ public sealed class IntakeTests : IDisposable
             Session = "s1",
         };
 
-        var info = new StubAdapter().Prepare(target, ["node", "agent.mjs"]);
+        var info = BuiltDoors.Stub.Prepare(target, ["node", "agent.mjs"]);
 
         Assert.Equal("q1a2b3", info.Environment["DAORIS_QUEST_ID"]);
         Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
@@ -297,7 +297,7 @@ public sealed class IntakeTests : IDisposable
     {
         var target = IntakeTarget();
 
-        var info = new ClaudeCodeAdapter().Prepare(target, ["claude"]);
+        var info = BuiltDoors.Claude.Prepare(target, ["claude"]);
 
         // The intake's instruction is the composed prompt, written on the input and never an argument (AGENTLYNTAI1s-i).
         Assert.Equal(target.Prompt, TargetPrompt.Compose(target));
@@ -976,7 +976,7 @@ public sealed class IntakeTests : IDisposable
         public string? HandedText { get; private set; }
 
         public ProcessStartInfo Prepare(SpawnRequest request) =>
-            new StubAdapter().Prepare(request);
+            BuiltDoors.Stub.Prepare(request);
 
         public void HandSettings(ProcessStartInfo info, string settingsFile) =>
             HandedText = File.ReadAllText(settingsFile);

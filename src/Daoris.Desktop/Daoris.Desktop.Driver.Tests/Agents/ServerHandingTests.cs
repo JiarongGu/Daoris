@@ -43,9 +43,9 @@ public sealed class ServerHandingTests : IDisposable
     public void An_adapter_declaring_no_carrier_keeps_the_file_named_by_its_own_door_on_the_pipe_and_none_on_the_wire()
     {
         var info = new ProcessStartInfo();
-        var file = new Adapter(SessionWire.Pipe).ServerHanding()!.Hand(info, _home, Plan("s3"));
+        var file = new Adapter(Transport.Native).ServerHanding()!.Hand(info, _home, Plan("s3"));
         Assert.Equal(["servers:" + file], info.ArgumentList);
-        Assert.Null(new Adapter(SessionWire.Acp).ServerHanding());
+        Assert.Null(new Adapter(Transport.Protocol).ServerHanding());
     }
 
     private static ServerEntry Server(string name, string command = "npx") => new(name, command, [], new Dictionary<string, string>());
@@ -128,10 +128,10 @@ public sealed class ServerHandingTests : IDisposable
         SpawnFiles.Remove(file);
     }
 
-    private sealed class Adapter(SessionWire wire) : ISessionAdapter
+    private sealed class Adapter(Transport wire) : ISessionAdapter
     {
         public string Name => "stand-agent";
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
         public ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
         public void HandServers(ProcessStartInfo info, string configFile) => info.ArgumentList.Add("servers:" + configFile);
     }

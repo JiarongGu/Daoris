@@ -32,12 +32,12 @@ public sealed class ChatGoOnTests : IDisposable
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
-    /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed.</summary>
+    /// <summary>A conversation's adapter on the protocol door with no toolchain, so nothing is probed.</summary>
     private sealed class Talk : ISessionAdapter
     {
         public string Name => "talk";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 
@@ -72,7 +72,7 @@ public sealed class ChatGoOnTests : IDisposable
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = new Talk(),
-            ["acp-stub"] = new AcpStubAdapter(),
+            ["acp-stub"] = BuiltDoors.AcpStub,
         });
         var client = ledger.Client();
         if (lines is not null) client.AccountLined += line => { lock (lines) lines.Add(line); };

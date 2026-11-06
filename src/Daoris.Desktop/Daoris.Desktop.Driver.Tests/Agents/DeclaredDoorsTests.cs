@@ -120,7 +120,7 @@ public sealed class DeclaredDoorsTests : IDisposable
 
         Assert.Equal("acme-agent", Path.GetFileNameWithoutExtension(start.FileName));
         Assert.True(start.RedirectStandardInput);
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(adapter.Interactive);
         Assert.NotNull(chat);
     }

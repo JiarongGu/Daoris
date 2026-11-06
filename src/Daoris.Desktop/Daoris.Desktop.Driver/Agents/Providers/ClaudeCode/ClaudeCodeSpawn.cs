@@ -21,6 +21,9 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
 
     public SpawnChoiceVariables ChoiceVariables => ChoiceVariablesOfClaude;
 
+    /// <summary>Claude Code's seam, for every door that runs its program (<see cref="ISpawn.PointAtClaude"/>): the Agent SDK told which <c>claude</c> to run.</summary>
+    internal static void PointAt(ProcessStartInfo info, string managedClaude) => ClaudeAcp.PointAtClaude(info, managedClaude);
+
     /// <summary>
     /// Its own structured output (D76, CONV3), checked against the binary before it was written (docs/2026-09-25-stream-json-evidence.md):
     /// <c>stream-json</c> needs <c>--verbose</c> beside it, and partial messages let the words stream as they are written.

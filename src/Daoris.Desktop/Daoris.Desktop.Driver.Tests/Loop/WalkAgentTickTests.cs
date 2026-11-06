@@ -72,8 +72,8 @@ public sealed class WalkAgentTickTests : IDisposable
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
     private static AdapterSet Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        ["stub"] = new StubAdapter(),
-        ["acp-stub"] = new AcpStubAdapter(),
+        ["stub"] = BuiltDoors.Stub,
+        ["acp-stub"] = BuiltDoors.AcpStub,
         ["acp-other"] = new AcpOtherAdapter(),
     });
 
@@ -277,14 +277,14 @@ public sealed class WalkAgentTickTests : IDisposable
     }
 
     /// <summary>
-    /// A door onto another tool's accounts (the way Codex's protocol door is onto Codex's): <see cref="AcpStubAdapter"/>'s own, as the
+    /// A door onto another tool's accounts (the way Codex's protocol door is onto Codex's): the protocol stand-in's own, as the
     /// agent <c>other</c>, so its accounts and its cool-offs are kept apart from the stub's.
     /// </summary>
     internal sealed class AcpOtherAdapter : ISessionAdapter
     {
         public string Name => "acp-other";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 
@@ -296,7 +296,7 @@ public sealed class WalkAgentTickTests : IDisposable
         public HarnessToolchain? Toolchain => new(
             Binary: [],
             VersionArguments: [],
-            ProfileVariable: StubAdapter.ConfigVariable,
+            ProfileVariable: StubProvider.ConfigVariable,
             AccountOf: "other",
             ProbeByPresence: true,
             RunsInOwnHome: true);

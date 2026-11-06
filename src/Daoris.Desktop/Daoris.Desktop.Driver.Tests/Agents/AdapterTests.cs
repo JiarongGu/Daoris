@@ -130,8 +130,8 @@ public sealed class AdapterTests
     [Fact]
     public void An_adapter_that_says_nothing_is_held_over_the_pipe()
     {
-        Assert.Equal(SessionWire.Pipe, AdapterSet.Built().Resolve("stub").Wire);
-        Assert.Equal(SessionWire.Pipe, AdapterSet.Built().Resolve("claude-code").Wire);
+        Assert.Equal(Transport.Native, AdapterSet.Built().Resolve("stub").Transport);
+        Assert.Equal(Transport.Native, AdapterSet.Built().Resolve("claude-code").Transport);
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public sealed class AdapterTests
         var adapter = AdapterSet.Built().Resolve("acp-stub");
         var info = adapter.Prepare(Target(), ["node", "acp-agent.mjs"]);
 
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(info.RedirectStandardInput);
         Assert.True(info.RedirectStandardOutput);
         Assert.Equal("D:/fam/Game", info.WorkingDirectory);
@@ -247,7 +247,7 @@ public sealed class AdapterTests
     [Fact]
     public void A_native_resume_carries_its_words_on_its_input_and_not_in_its_arguments()
     {
-        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
+        var info = BuiltDoors.Claude.PrepareResume(Target(), ["claude"], "0b5e7c1a")!;
 
         var print = info.ArgumentList.IndexOf("-p");
         Assert.True(print >= 0 && info.ArgumentList[print + 1] == "--resume", string.Join(' ', info.ArgumentList));

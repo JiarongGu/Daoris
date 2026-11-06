@@ -472,7 +472,7 @@ public sealed class HarnessProbeTests : IDisposable
         var roster = new HarnessRoster(
             new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
-                ["stub"] = new StubAdapter(),
+                ["stub"] = BuiltDoors.Stub,
             }),
             DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
@@ -558,7 +558,7 @@ public sealed class HarnessProbeTests : IDisposable
             const org = home && existsSync(home + '/org.txt') ? readFileSync(home + '/org.txt', 'utf8').trim() : 'Org A';
             console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, authMethod: 'claude.ai', email: 'person@example.invalid', orgName: org, subscriptionType: 'max' }));
             """);
-        var claude = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
+        var claude = BuiltDoors.Claude.Toolchain!.LoginCheck!;
         return new HarnessToolchain(
             Binary: ["node", script], VersionArguments: ["--version"],
             ProfileVariable: "CHATTY_HOME",
@@ -622,7 +622,7 @@ public sealed class HarnessProbeTests : IDisposable
     [Fact]
     public void Claude_code_names_who_signed_in_by_the_email_it_reports()
     {
-        var question = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
+        var question = BuiltDoors.Claude.Toolchain!.LoginCheck!;
         const string answer = """
             {
               "loggedIn": true,
@@ -762,20 +762,20 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
-    private sealed class FakeAdapter(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe)
+    private sealed class FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native)
         : ISessionAdapter
     {
         public string Name => "fake";
 
         /// <summary>Which door — the protocol one asks for the Agent SDK's executable seam (ACP2).</summary>
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }
 
-    private static AdapterSet Set(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe) =>
+    private static AdapterSet Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
         new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = new FakeAdapter(toolchain, wire),
@@ -936,7 +936,7 @@ public sealed class HarnessSelectionTests : IDisposable
         File.WriteAllText(claude, "");
         new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
 
-        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), Transport.Protocol), Settings)
             .SelectAsync("fake", Config(), workspace: null, chosen: null);
 
         Assert.True(selection.Allowed);
@@ -965,7 +965,7 @@ public sealed class HarnessSelectionTests : IDisposable
     [Fact]
     public async Task With_no_claude_pinned_the_protocol_door_lets_the_sdk_find_its_own()
     {
-        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), Transport.Protocol), Settings)
             .SelectAsync("fake", Config(), workspace: null, chosen: null);
 
         Assert.True(selection.Allowed);

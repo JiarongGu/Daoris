@@ -177,11 +177,11 @@ public sealed class AccessSwapTickTests : IDisposable
     /// <summary>The protocol stub with postures: Claude's words for its auto, asking and unrestricted modes.</summary>
     private sealed class PosturedStub : ISessionAdapter
     {
-        private readonly AcpStubAdapter _stub = new();
+        private readonly ISessionAdapter _stub = BuiltDoors.AcpStub;
 
         public string Name => _stub.Name;
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

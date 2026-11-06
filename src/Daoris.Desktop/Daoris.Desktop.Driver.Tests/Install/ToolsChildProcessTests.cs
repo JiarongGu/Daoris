@@ -122,7 +122,7 @@ public sealed class ToolsChildProcessTests : IDisposable
     {
         var marker = Path.Combine(_root, "session.txt");
         var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177") { Home = Home };
-        var info = new StubAdapter().Prepare(target, ["node", Probe(), marker]);
+        var info = BuiltDoors.Stub.Prepare(target, ["node", Probe(), marker]);
 
         var said = await RunAsync(info, marker);
 
@@ -139,7 +139,7 @@ public sealed class ToolsChildProcessTests : IDisposable
         LayInstallBin();
         var marker = Path.Combine(_root, "session-daoris.txt");
         var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177") { Home = Home };
-        var info = new StubAdapter().Prepare(target, ["node", Probe("daoris"), marker]);
+        var info = BuiltDoors.Stub.Prepare(target, ["node", Probe("daoris"), marker]);
 
         var said = await RunAsync(info, marker);
 

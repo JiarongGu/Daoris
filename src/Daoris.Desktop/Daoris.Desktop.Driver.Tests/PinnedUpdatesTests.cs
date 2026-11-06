@@ -65,14 +65,15 @@ public sealed class PinnedUpdatesTests : IDisposable
     [Fact]
     public void The_protocol_door_s_managed_claude_runs_with_updates_off()
     {
-        var acp = AdapterSet.Built().Resolve("claude-code-acp").Toolchain!;
+        var door = AdapterSet.Built().Resolve("claude-code-acp");
+        var acp = door.Toolchain!;
         var pointed = new ProcessStartInfo("claude-agent-acp");
         var unpointed = new ProcessStartInfo("claude-agent-acp");
         unpointed.Environment.Remove("DISABLE_UPDATES");
 
         Shell.Equip(pointed, acp, profileHome: null, binary: null,
-            claudeExecutable: "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd");
-        Shell.Equip(unpointed, acp, profileHome: null, binary: null, claudeExecutable: null);
+            seam: each => door.PointAtClaude(each, "C:/somewhere/toolchain/claude-code/2.1.270/claude.cmd"));
+        Shell.Equip(unpointed, acp, profileHome: null, binary: null, seam: null);
 
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
         Assert.False(unpointed.Environment.ContainsKey("DISABLE_UPDATES"));

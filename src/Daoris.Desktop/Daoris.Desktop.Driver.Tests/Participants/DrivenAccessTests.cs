@@ -175,7 +175,7 @@ public sealed class DrivenAccessTests : IDisposable
             Assert.Contains("Read(//c/secrets/**)", handed["permissions"]!["deny"]!.AsArray().Select(rule => rule!.GetValue<string>()));
             var hook = handed["hooks"]!["PreToolUse"]![0]!["hooks"]![0]!;
             Assert.Equal(tree, hook["args"]![1]!.GetValue<string>());
-            if (adapter.Wire == SessionWire.Pipe) Assert.Equal(file, info.ArgumentList[info.ArgumentList.IndexOf("--settings") + 1]);
+            if (adapter.Transport == Transport.Native) Assert.Equal(file, info.ArgumentList[info.ArgumentList.IndexOf("--settings") + 1]);
             else Assert.NotNull(meta);
         }
     }

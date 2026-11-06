@@ -180,7 +180,7 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     private sealed class NoModes : ISessionAdapter
     {
         public string Name => "no-modes";
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
         public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("no-modes");
     }
 

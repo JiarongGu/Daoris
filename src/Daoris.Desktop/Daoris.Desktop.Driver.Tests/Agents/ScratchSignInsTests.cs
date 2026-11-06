@@ -45,7 +45,7 @@ public sealed class ScratchSignInsTests : IDisposable
         Assert.False(ScratchSignIns.IsReal(Claude, [stub]));
         Assert.False(ScratchSignIns.IsReal(Claude, ["node", "claude.mjs"]));
         Assert.False(ScratchSignIns.IsReal(Claude, []));
-        Assert.False(ScratchSignIns.IsReal(new StubAdapter().Toolchain!, ["claude"]));
+        Assert.False(ScratchSignIns.IsReal(BuiltDoors.Stub.Toolchain!, ["claude"]));
     }
 
     /// <summary>

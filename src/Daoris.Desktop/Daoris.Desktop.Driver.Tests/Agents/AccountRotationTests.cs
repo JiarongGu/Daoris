@@ -49,11 +49,11 @@ public sealed class AccountRotationTests : IDisposable
     /// <summary>A file that is there, so the harness is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public HarnessToolchain? Toolchain => toolchain;
 

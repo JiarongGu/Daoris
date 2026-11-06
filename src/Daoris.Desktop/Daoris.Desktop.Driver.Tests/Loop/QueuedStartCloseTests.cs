@@ -106,7 +106,7 @@ public sealed class QueuedStartCloseTests : IDisposable
     public async Task A_go_on_run_closed_before_its_start_says_the_words_it_took_never_reached_the_session()
     {
         var driver = Driver();
-        var adapter = new ClaudeCodeAdapter();
+        var adapter = BuiltDoors.Claude;
         new HarnessConversations(_home).Keep("s1", adapter.Name, "conv-1");
         var held = driver.Context.Processes.OpenInbox("s1");
         Assert.True(held.Hold(new ChatMessage("And log it.", [])));

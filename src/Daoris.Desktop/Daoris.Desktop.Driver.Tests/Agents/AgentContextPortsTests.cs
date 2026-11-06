@@ -54,7 +54,7 @@ public sealed class AgentContextPortsTests
         // CONTEXTONE1c: the standing block, composed and bound on the same operations.
         var facts = new StandingFacts { Repository = "stand" };
         Assert.Equal(StandingBlock.Fitted(facts, 0).Text, actual.Block(facts, 0).Text);
-        Assert.Equal(facts with { Skills = [] }, actual.OnHarness(facts, new ClaudeCodeAdapter(), "C:/nowhere"));
+        Assert.Equal(facts with { Skills = [] }, actual.OnHarness(facts, BuiltDoors.Claude, "C:/nowhere"));
         var output = new SessionOutput();
         var streams = Assert.IsType<SessionStreams>(((ISessionOutput)output).ForSession("s1"));
         streams.Open(new("task", SessionStreamKind.Task, "Task", true));

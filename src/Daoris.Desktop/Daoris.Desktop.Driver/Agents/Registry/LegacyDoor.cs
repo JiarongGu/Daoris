@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>A door that states no native dialect hands its readers no <see cref="IStreamMapper"/>, so its output is read by the plain
-/// capture with no retry, as <see cref="StubAdapter"/> is. A protocol door's <c>Resumes</c> is eligibility to negotiate, which today's
-/// default is (<c>Wire == Acp</c>); a door stating the ability absent reads as that default.</para>
+/// capture with no retry, as a stand-in's is. A protocol door's <c>Resumes</c> is eligibility to negotiate, which today's
+/// default is (<c>Transport == Protocol</c>); a door stating the ability absent reads as that default.</para>
 /// <para>The facts are read the way <see cref="ProviderRegistration"/> grouped them: a door that gives its provider its id and is keyed
 /// by it declares through its provider; any other through its own record and what it is lent.</para>
 /// </remarks>
@@ -49,7 +49,7 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     public string Name => _door.Id.Value;
 
-    public SessionWire Wire => _door.Transport == Transport.Protocol ? SessionWire.Acp : SessionWire.Pipe;
+    public Transport Transport => _door.Transport;
 
     public string? AcpPosture => _door.Postures.Ordinary;
 
@@ -90,6 +90,8 @@ internal sealed class LegacyDoor : ISessionAdapter
 
     /// <summary>Whether the door's program runs Claude Code's, so its spawn takes Claude Code's seam (<see cref="ISpawn.ClaudeSeam"/>).</summary>
     public bool ClaudeSeam => Spawn().ClaudeSeam;
+
+    public void PointAtClaude(ProcessStartInfo info, string managedClaude) => Spawn().PointAtClaude(info, managedClaude);
 
     /// <summary>The variables its program reads for the model and the effort (<see cref="ISpawn.ChoiceVariables"/>).</summary>
     public SpawnChoiceVariables ChoiceVariables => Spawn().ChoiceVariables;

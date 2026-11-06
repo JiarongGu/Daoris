@@ -111,7 +111,7 @@ public sealed class Acp3AdapterTests : IDisposable
         var adapter = Adapter("dsh");
         var info = adapter.Prepare(Target(_home), command: null);
 
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(info.RedirectStandardInput);
         Assert.Contains("--profile", info.ArgumentList);
         Assert.Contains("acp", info.ArgumentList);
@@ -152,7 +152,7 @@ public sealed class Acp3AdapterTests : IDisposable
         var adapter = Adapter("codex-acp");
         var info = adapter.Prepare(Target(_home), command: null);
 
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(info.RedirectStandardInput);
         Assert.Equal("CODEX_HOME", adapter.Toolchain!.ProfileVariable);
         Assert.Equal("codex-acp", adapter.Toolchain!.Binary[0]);
@@ -264,7 +264,7 @@ public sealed class Acp3AdapterTests : IDisposable
     {
         var acp = AdapterSet.Built().Names
             .Select(AdapterSet.Built().Resolve)
-            .Where(a => a.Wire == SessionWire.Acp && a.Toolchain is { Install: not null });
+            .Where(a => a.Transport == Transport.Protocol && a.Toolchain is { Install: not null });
 
         Assert.All(acp, adapter => Assert.False(string.IsNullOrWhiteSpace(adapter.Toolchain!.Package)));
     }

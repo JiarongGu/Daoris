@@ -100,13 +100,6 @@ public sealed class ProviderRegistryTests : IDisposable
     }
 
     [Fact]
-    public void A_transport_is_the_wire_the_adapter_declares()
-    {
-        Assert.Equal(Transport.Native, AdapterAbilities.TransportOf(SessionWire.Pipe));
-        Assert.Equal(Transport.Protocol, AdapterAbilities.TransportOf(SessionWire.Acp));
-    }
-
-    [Fact]
     public void Every_built_door_reads_its_abilities_as_its_adapter_answered_them()
     {
         // Row g: a caller's door test reads the door's ability; each one answers what the wire test answered.
@@ -114,7 +107,7 @@ public sealed class ProviderRegistryTests : IDisposable
         {
             var adapter = AdapterSet.Built().Resolve(name);
             var abilities = adapter.Abilities();
-            var protocol = adapter.Wire == SessionWire.Acp;
+            var protocol = adapter.Transport == Transport.Protocol;
             Assert.Equal(protocol, abilities.ServersOnWire);
             Assert.Equal(protocol, abilities.RulesOnWire);
             Assert.Equal(protocol, abilities.SetAtOpen);

@@ -335,11 +335,11 @@ public sealed class AccountCoolingTests : IDisposable
 
     // ——— The roster: read before any probe (§3.3, §4).
 
-    private sealed class Adapter(string name, HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public HarnessToolchain? Toolchain => toolchain;
 
@@ -492,7 +492,7 @@ public sealed class AccountCoolingTests : IDisposable
     {
         var roster = Roster(
             new Adapter("fake", Present(limits: ClaudeLimits.Words)),
-            new Adapter("fake-acp", Present(accountOf: "fake"), SessionWire.Acp));
+            new Adapter("fake-acp", Present(accountOf: "fake"), Transport.Protocol));
 
         Assert.Same(ClaudeLimits.Words, roster.LimitsOf("fake-acp"));
         var limited = roster.Limited("fake-acp", null, Refusal, "s1");
@@ -668,7 +668,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_door_with_no_toolchain_and_no_owner_s_words_starts_as_it_always_did()
     {
-        var roster = Roster(new Adapter("bare", toolchain: null, SessionWire.Acp));
+        var roster = Roster(new Adapter("bare", toolchain: null, Transport.Protocol));
         AccountCooling.Cool(_home, Entry(agent: "bare", account: null), _now);
 
         Assert.Null(roster.LimitsOf("bare"));

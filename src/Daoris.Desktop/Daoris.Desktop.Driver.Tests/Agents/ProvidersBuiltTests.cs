@@ -9,22 +9,10 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// AGENTPROVIDER1 rows b and d (the agent-provider design §11): the one registration list holds the stand-ins, Claude Code, Codex and
-/// dsh written on the contract, and what each states is held against the classes it stands beside until row t, field by field (old
-/// against new, X). The ports a provider written on the contract alone needs are declared; each provider states the ones it uses.
+/// dsh written on the contract. The ports a provider written on the contract alone needs are declared; each provider states the ones it uses.
 /// </summary>
 public sealed class ProvidersBuiltTests
 {
-    /// <summary>Today's adapter classes and Codex's holder as a set, the old side of the comparison.</summary>
-    internal static AdapterSet Old() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["stub"] = new StubAdapter(),
-        ["acp-stub"] = new AcpStubAdapter(),
-        ["claude-code"] = new ClaudeCodeAdapter(),
-        ["claude-code-acp"] = AdapterSet.Built().Resolve("claude-code-acp"),
-        ["codex-acp"] = AdapterSet.Built().Resolve("codex-acp"),
-        ["dsh"] = AdapterSet.Built().Resolve("dsh"),
-    },new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
-
     private static Provider Listed(string id) => Providers.Built().Single(provider => provider.Id.Value == id);
 
     public static TheoryData<string> Ids => ["claude-code", "codex", "dsh", "stub"];
@@ -133,16 +121,6 @@ public sealed class ProvidersBuiltTests
         Assert.All(Providers.Built(), provider => Assert.False(provider.Unavailable));
     }
 
-    /// <summary>Old against new: what the registry reads from the classes is what each provider on the contract states, every part.</summary>
-    [Theory]
-    [MemberData(nameof(Ids))]
-    public void Each_provider_on_the_contract_states_what_the_classes_state(string id)
-    {
-        var old = ProviderRegistry.Of(Old()).Provider(id);
-
-        Assert.Empty(Compared(old, Listed(id)));
-    }
-
     /// <summary>The registry over the built set, whose doors all arrive through the shim, equals the one over the registration list.</summary>
     [Fact]
     public void The_registry_over_the_built_set_equals_the_one_over_the_registration_list()
@@ -201,86 +179,28 @@ public sealed class ProvidersBuiltTests
         }
     }
 
-    /// <summary>Old against new through the shim: every member the readers ask of an adapter answers as the class answered it.</summary>
+    /// <summary>A stand-in's door answers the readers as a door with no model in it: a plain capture, no resume, no dialect, no carriers.</summary>
     [Theory]
     [InlineData("stub")]
     [InlineData("acp-stub")]
-    public void The_shim_presents_a_stand_in_as_the_class_does(string name)
+    public void A_stand_in_door_answers_the_readers_with_no_model_behind_it(string name)
     {
-        ISessionAdapter old = Old().Resolve(name);
         var door = AdapterSet.Built().Resolve(name);
         var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
         var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
         IReadOnlyList<string> command = ["node", "agent.mjs", "--flag"];
 
         Assert.IsType<LegacyDoor>(door);
-        Assert.Equal(old.Name, door.Name);
-        Assert.Equal(old.Wire, door.Wire);
-        Assert.Equal(old.Interactive, door.Interactive);
-        Assert.Equal(old.Resumes, door.Resumes);
-        Assert.Equal(old.TakesSettings, door.TakesSettings);
-        Assert.Equal((old.AcpPosture, old.AskingPosture, old.FullPosture), (door.AcpPosture, door.AskingPosture, door.FullPosture));
-        Assert.Empty(Compared(old.Toolchain, door.Toolchain));
-        Assert.Equal(Shape(old.Prepare(target, command)), Shape(door.Prepare(target, command)));
-        Assert.Equal(Shape(old.PrepareChat(chat, command)), Shape(door.PrepareChat(chat, command)));
+        Assert.Equal(name, door.Name);
+        Assert.Equal(name == "stub" ? Transport.Native : Transport.Protocol, door.Transport);
+        Assert.True(door.Interactive);
+        Assert.Equal(["node", "agent.mjs", "--flag"], [door.Prepare(target, command).FileName, .. door.Prepare(target, command).ArgumentList]);
+        Assert.Equal("node", door.PrepareChat(chat, command).FileName);
         Assert.Null(door.PrepareResume(target, command, "conversation"));
         Assert.Null(door.StructuredOutput());
         Assert.Null(door.FrameInterrupt());
         Assert.Equal("a message", door.FrameMessage("a message"));
         Assert.Empty(door.ToolsUpFront);
-    }
-
-    /// <summary>
-    /// Old against new through the shim, for every real door: each member the readers ask of an adapter, the spawn with its binary and
-    /// with a configured command, the resume, the carriers, the stream reader, the frames, the session's <c>_meta</c> and what the
-    /// program reads of a tree, answers as the class answered it.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(RealDoors))]
-    public void The_shim_presents_a_real_door_as_its_class_does(string name)
-    {
-        ISessionAdapter old = Old().Resolve(name);
-        var door = AdapterSet.Built().Resolve(name);
-        var target = new SessionTarget("q-1", "title", "body", "asker", "repo", Path.GetTempPath(), "http://svc");
-        var chat = SpawnRequests.Chat("repo", Path.GetTempPath(), "http://svc", null);
-        IReadOnlyList<string> command = ["agent", "--flag"];
-        IReadOnlyList<string> plugins = ["plugins/one"];
-
-        Assert.IsType<LegacyDoor>(door);
-        Assert.Equal(old.Name, door.Name);
-        Assert.Equal(old.Wire, door.Wire);
-        Assert.Equal(old.Interactive, door.Interactive);
-        Assert.Equal(old.Resumes, door.Resumes);
-        Assert.Equal(old.TakesSettings, door.TakesSettings);
-        Assert.Equal(
-            (old.AcpPosture, old.AskingPosture, old.FullPosture, old.ReadingPosture),
-            (door.AcpPosture, door.AskingPosture, door.FullPosture, door.ReadingPosture));
-        Assert.Equal((old.LoadsTreeSkills, old.InstructionFileLimit), (door.LoadsTreeSkills, door.InstructionFileLimit));
-        Assert.Empty(Compared(old.Toolchain, door.Toolchain));
-        Assert.Equal(Shape(old.Prepare(target, null)), Shape(door.Prepare(target, null)));
-        Assert.Equal(Shape(old.Prepare(target, command)), Shape(door.Prepare(target, command)));
-        Assert.Equal(old.PrepareResume(target, command, "c-1") is { } resumed ? Shape(resumed) : null,
-            door.PrepareResume(target, command, "c-1") is { } shimmed ? Shape(shimmed) : null);
-        if (old.Interactive) Assert.Equal(Shape(old.PrepareChat(chat, command)), Shape(door.PrepareChat(chat, command)));
-        else Assert.Equal(Assert.Throws<DriverException>(() => old.PrepareChat(chat, command)).Message, Assert.Throws<DriverException>(() => door.PrepareChat(chat, command)).Message);
-        Assert.Equal(old.ToolsUpFront, door.ToolsUpFront);
-        Assert.Equal(Carried(old, plugins), Carried(door, plugins));
-        Assert.Equal(old.StructuredOutput()?.GetType(), door.StructuredOutput()?.GetType());
-        Assert.Equal(old.FrameMessage("a message"), door.FrameMessage("a message"));
-        Assert.Equal(old.FrameInterrupt() is null, door.FrameInterrupt() is null);
-        Assert.Equal(JsonSerializer.Serialize(old.AcpSessionMeta("settings.json")), JsonSerializer.Serialize(door.AcpSessionMeta("settings.json")));
-        Assert.Equal(
-            JsonSerializer.Serialize(old.AcpSessionMeta("settings.json", plugins)), JsonSerializer.Serialize(door.AcpSessionMeta("settings.json", plugins)));
-    }
-
-    /// <summary>What a door's carriers add to a spawn: its servers, its rules file and its plugins, in order.</summary>
-    private static string Carried(ISessionAdapter adapter, IReadOnlyList<string> plugins)
-    {
-        var info = new ProcessStartInfo("agent");
-        adapter.HandServers(info, "servers.json");
-        adapter.HandSettings(info, "settings.json");
-        adapter.HandPlugins(info, plugins);
-        return string.Join('|', info.ArgumentList);
     }
 
     [Fact]
@@ -347,7 +267,7 @@ public sealed class ProvidersBuiltTests
     }
 
     [Fact]
-    public void Both_missing_command_messages_read_as_the_classes_read()
+    public void Both_missing_command_messages_name_the_door_and_read_alike()
     {
         var shimmed = AdapterSet.Built();
         var target = new SessionTarget("q-1", "t", "b", "a", "repo", "/root", "http://x");
@@ -355,11 +275,10 @@ public sealed class ProvidersBuiltTests
 
         foreach (var name in new[] { "stub", "acp-stub" })
         {
-            ISessionAdapter old = Old().Resolve(name);
             var door = shimmed.Resolve(name);
-            var expected = Assert.Throws<DriverException>(() => old.Prepare(target, null)).Message;
+            var expected = Assert.Throws<DriverException>(() => door.Prepare(target, null)).Message;
 
-            Assert.Equal(expected, Assert.Throws<DriverException>(() => door.Prepare(target, null)).Message);
+            Assert.Contains($"the {name} adapter needs a command", expected);
             Assert.Equal(expected, Assert.Throws<DriverException>(() => door.PrepareChat(chat, null)).Message);
             Assert.Equal(expected, Assert.Throws<DriverException>(() => door.Prepare(target, [])).Message);
         }

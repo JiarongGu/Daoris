@@ -46,11 +46,11 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     private string Transcript => DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log");
 
     /// <summary>An agent declaring Claude Code's refused words, on the door a test names, present by a look.</summary>
-    private sealed class Adapter(SessionWire wire, bool structured, HarnessToolchain toolchain) : ISessionAdapter
+    private sealed class Adapter(Transport wire, bool structured, HarnessToolchain toolchain) : ISessionAdapter
     {
         public string Name => "fake";
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public HarnessToolchain? Toolchain => toolchain;
 
@@ -59,7 +59,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         public ProcessStartInfo Prepare(SpawnRequest request) => new("unused");
     }
 
-    private HarnessRoster Roster(SessionWire wire = SessionWire.Pipe, bool structured = true) =>
+    private HarnessRoster Roster(Transport wire = Transport.Native, bool structured = true) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = new Adapter(wire, structured, new HarnessToolchain(
@@ -227,7 +227,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     {
         using var service = _ledger.Client();
         Account();
-        var roster = Roster(SessionWire.Acp, structured: false);
+        var roster = Roster(Transport.Protocol, structured: false);
         File.WriteAllText(Transcript, $"The error path now prints the provider's line:\n{Measured}\n");
 
         var quoted = TransportRun.Ending(protocol: true, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);
@@ -245,7 +245,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     {
         using var service = _ledger.Client();
         Account();
-        var roster = Roster(SessionWire.Pipe, structured: false);
+        var roster = Roster(Transport.Native, structured: false);
         File.WriteAllText(Transcript, $"working on it\n{Measured}\n");
 
         var clean = TransportRun.Ending(protocol: false, structured: false, 0, turnFailed: null, new HarnessWords(), Transcript);

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -1287,14 +1288,14 @@ public sealed class HelperLookTests : IDisposable
     {
         public string Name => "talk";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) =>
+        public ProcessStartInfo Prepare(SpawnRequest request) =>
             throw new InvalidOperationException("a judgement test spawns nothing");
 
-        public System.Diagnostics.ProcessStartInfo PrepareChat(SpawnRequest request) =>
+        public ProcessStartInfo PrepareChat(SpawnRequest request) =>
             throw new InvalidOperationException("a judgement test spawns nothing");
     }
 

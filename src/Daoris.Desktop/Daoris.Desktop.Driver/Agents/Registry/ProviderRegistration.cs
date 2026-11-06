@@ -204,7 +204,7 @@ internal static class ProviderRegistration
         var lent = toolchain is null || keyedItself
             ? LentPart.None
             : new LentPart(PoolFacts.Of(toolchain), TablesPart.Of(toolchain, withErrors: false), new UsagePart(toolchain.Usage));
-        var transport = AdapterAbilities.TransportOf(adapter.Wire);
+        var transport = adapter.Transport;
 
         return new AgentDoor(
             new DoorId(name),

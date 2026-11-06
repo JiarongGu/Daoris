@@ -336,7 +336,7 @@ public sealed class PermissionSpawnTests : IDisposable
         public ProcessStartInfo Prepare(SpawnRequest request)
         {
             Prompt = request.Identity["DAORIS_TARGET"] ?? "";
-            return new StubAdapter().Prepare(request);
+            return BuiltDoors.Stub.Prepare(request);
         }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile)
@@ -350,14 +350,14 @@ public sealed class PermissionSpawnTests : IDisposable
     private sealed class RecordingAcpAdapter : ISessionAdapter
     {
         public string Name => "recording-acp";
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
         public bool TakesSettings => true;
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
         public ProcessStartInfo Prepare(SpawnRequest request)
         {
-            var info = new StubAdapter().Prepare(request);
+            var info = BuiltDoors.Stub.Prepare(request);
             info.RedirectStandardInput = true;
             return info;
         }

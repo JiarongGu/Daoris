@@ -18,7 +18,7 @@ internal static class NativePrompt
     /// <remarks>
     /// Called once the run's output is being read, so a harness that writes before it reads can never fill a pipe and wait (the note
     /// at <c>ChildProcess.RunAsync</c>). A harness that ended before it read it all says why in its own exit: the write's refusal is
-    /// swallowed, never raised in its place. The encoding is the start's own, BOM-less UTF-8 (<see cref="ClaudeCodeAdapter"/>).
+    /// swallowed, never raised in its place. The encoding is the start's own, BOM-less UTF-8 (<see cref="ClaudeCodeSpawn"/>).
     /// </remarks>
     /// <returns>
     /// Whether the prompt's write returned (FOUNDATION1f-iv part b): what a carry-on's moved words' <c>sent</c> waits for. False for a start

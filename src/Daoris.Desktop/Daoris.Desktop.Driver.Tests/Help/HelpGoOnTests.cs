@@ -32,7 +32,7 @@ public sealed class HelpGoOnTests : IDisposable
 
         public string Name => "native-talk";
 
-        public SessionWire Wire => SessionWire.Pipe;
+        public Transport Transport => Transport.Native;
 
         public bool Interactive => true;
 
@@ -143,7 +143,7 @@ public sealed class HelpGoOnTests : IDisposable
             DateTimeOffset.UtcNow);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["acp-stub"] = new AcpStubAdapter(),
+            ["acp-stub"] = BuiltDoors.AcpStub,
         });
         var events = Events;
         using var runner = new ChatRunner(
