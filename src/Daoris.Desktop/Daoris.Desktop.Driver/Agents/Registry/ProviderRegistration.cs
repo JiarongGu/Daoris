@@ -191,10 +191,9 @@ internal static class ProviderRegistration
 
     private static AgentDoor BuildDoor(AdapterSet set, string name, string provider)
     {
-        var adapter = set.Resolve(name);
-        if (adapter is LegacyDoor { Declared: false } built) return built.Door;
+        var adapter = LegacyDoor.Of(set.Resolve(name));
+        if (!adapter.Declared) return adapter.Door;
         var toolchain = adapter.Toolchain;
-        var plugin = DeclaredBy(set, name);
         var owning = Ids.Same(name, provider);
         var key = KeyOf(set, name);
         var declared = toolchain?.AccountOf is { Length: > 0 } accountOf ? new AccountKey(accountOf) : (AccountKey?)null;
@@ -210,11 +209,9 @@ internal static class ProviderRegistration
             new DoorId(name),
             transport,
             // A declared door's identity and home are its own, from its declaration (row q).
-            adapter is LegacyDoor { Declared: true } declaredDoor
-                ? declaredDoor.Door.Identity
-                : plugin is null ? new DoorIdentity(null, null, null) : new DoorIdentity(plugin, toolchain?.Product, toolchain?.Maker),
+            adapter.Door.Identity,
             toolchain is null || owning ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(toolchain), $"the toolchain of {name}"),
-            adapter is LegacyDoor { Declared: true } homed ? homed.Door.Home : DoorHome.Of(toolchain),
+            adapter.Door.Home,
             lent,
             Absent(),
             new PosturesPart(adapter.AcpPosture, adapter.AskingPosture, adapter.FullPosture, adapter.ReadingPosture),

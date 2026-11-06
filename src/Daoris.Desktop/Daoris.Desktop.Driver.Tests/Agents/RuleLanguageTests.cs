@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// AGENTPROVIDER1 row o (the agent-provider design §4.5): a provider takes the product's rules by its own language. Claude Code's two
 /// doors are handed exactly the file they were, byte for byte, with the lineage hook Claude Code's language installs for the file Loop
 /// hands; a provider that states no language (Codex, dsh, the stand-ins) is handed none, so none of the person's denies is presented
-/// as reaching it. A plugin's or a test's adapter, which declares none, keeps what it took before: Claude Code's where it takes settings.
+/// as reaching it.
 /// </summary>
 public sealed class RuleLanguageTests : IDisposable
 {
@@ -30,7 +30,7 @@ public sealed class RuleLanguageTests : IDisposable
         Assert.Null(built.Resolve("codex-acp").Home().TrustFile);
         Assert.Equal("CODEX_HOME", built.Resolve("codex-acp").Home().Variable);
         Assert.Null(built.Resolve("dsh").Home().TrustFile);
-        Assert.Equal(new DoorHome(null, false, null), new Adapter(false).Home());
+        Assert.Equal(new DoorHome(null, false, null), TestDoors.Door("stand-agent").Home());
     }
 
     [Fact]
@@ -70,17 +70,4 @@ public sealed class RuleLanguageTests : IDisposable
         Assert.Contains(TreeGuardHook.Matcher, bare, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void An_adapter_that_declares_no_language_keeps_claude_codes_where_it_takes_settings()
-    {
-        Assert.Same(ClaudeRules.Language, new Adapter(takesSettings: true).RuleLanguage());
-        Assert.Null(new Adapter(takesSettings: false).RuleLanguage());
-    }
-
-    private sealed class Adapter(bool takesSettings) : ISessionAdapter
-    {
-        public string Name => "stand-agent";
-        public bool TakesSettings => takesSettings;
-        public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new("stand-command");
-    }
 }

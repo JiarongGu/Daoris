@@ -34,6 +34,10 @@ internal sealed class LegacyDoor : ISessionAdapter
         providers.SelectMany(provider => provider.Doors.Select(door =>
             KeyValuePair.Create(door.Id.Value, (ISessionAdapter)new LegacyDoor(provider, door))));
 
+    /// <summary>The door behind <paramref name="adapter"/>: every adapter there is stands on a registered door, so no other is read.</summary>
+    public static LegacyDoor Of(ISessionAdapter adapter) =>
+        adapter as LegacyDoor ?? throw new DriverException($"the `{adapter.Name}` adapter is no registered door; every harness is written on the provider contract.");
+
     public Provider Provider => _provider;
 
     /// <summary>A door a plugin declared (<see cref="DeclaredDoors"/>): its identity, home and program its own, and none of its provider's.</summary>

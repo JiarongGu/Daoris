@@ -56,7 +56,7 @@ internal static class TestDoors
         transport,
         new DoorIdentity(null, null, null),
         Known<ToolSpec>.Absent,
-        DoorHome.Of(toolchain),
+        toolchain is null ? new DoorHome(null, false, null) : new DoorHome(toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.TrustFile),
         toolchain is null
             ? LentPart.None
             : new LentPart(PoolFacts.Of(toolchain), TablesPart.None, new UsagePart(toolchain.Usage)),
