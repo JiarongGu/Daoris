@@ -149,7 +149,7 @@ internal sealed class RosterNext(HarnessRoster roster)
             door ??= toolchain;
         }
 
-        return door ?? roster.Adapters.ToolchainOf(owner);
+        return door ?? roster.Adapters.Registry.ToolchainOf(owner);
     }
 
     /// <summary>

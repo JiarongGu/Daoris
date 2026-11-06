@@ -59,9 +59,9 @@ public sealed class ProviderCensusTests
     private static readonly (string Owner, string[] Types)[] ProviderTypes =
     [
         ("claude-code", ["ClaudeStreamJson", "ClaudeStreams", "ClaudeUsage", "ClaudeTrust", "ClaudeErrors", "ClaudeAcpErrors", "ClaudeAcp",
-            "ClaudeLimits", "ClaudeWindows", "ClaudeSignIn", "ClaudeReleases", "ClaudeReleaseDownloads", "ClaudeCodeAdapter", "ClaudeAcpAdapter"]),
-        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexErrors", "CodexReleases", "CodexReleaseDownloads", "CodexAcpAdapter"]),
-        ("dsh", ["DshProfile", "DshAdapter"]),
+            "ClaudeLimits", "ClaudeWindows", "ClaudeSignIn", "ClaudeReleases", "ClaudeReleaseDownloads", "ClaudeCodeAdapter"]),
+        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexErrors", "CodexReleases", "CodexReleaseDownloads"]),
+        ("dsh", ["DshProfile"]),
         ("stub", ["StubAdapter", "AcpStubAdapter"]),
     ];
 
@@ -282,7 +282,7 @@ public sealed class ProviderCensusTests
     [Fact]
     public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {
-        const string file = "Daoris.Desktop.Driver/Course/HandOver/HandOverQuest.cs";
+        const string file = "Daoris.Desktop.Driver/Agents/TransportRun.cs";
         var source = File.ReadAllText(Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), file)).Replace("\r\n", "\n");
 
         var more = Census(Sources().Where(each => each.File != file).Append((file, source + "\nvar again = wire == SessionWire.Acp;")));

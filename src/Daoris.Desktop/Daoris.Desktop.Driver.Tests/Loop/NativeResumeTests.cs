@@ -282,7 +282,7 @@ public sealed class NativeResumeTests
         var going = fresh with { Resume = "0b5e7c1a" };
 
         Assert.DoesNotContain("--resume", new ClaudeCodeAdapter().PrepareChat(fresh, ["claude"]).ArgumentList);
-        Assert.DoesNotContain("--resume", new ClaudeAcpAdapter().PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
+        Assert.DoesNotContain("--resume", AdapterSet.Built().Resolve("claude-code-acp").PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
         Assert.DoesNotContain("--resume", new AcpStubAdapter().PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
     }
 

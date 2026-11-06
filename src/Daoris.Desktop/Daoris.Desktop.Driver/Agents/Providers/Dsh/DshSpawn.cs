@@ -10,11 +10,23 @@ internal sealed class DshSpawn : ISpawn
 {
     private static readonly string[] Program = ["dsh"];
 
+    /// <summary>The profile dsh boots for the automation surface, its ACP server automation-only by its maker's own choice.</summary>
+    public const string Profile = "acp";
+
+    /// <summary>dsh's permission posture, an environment variable it reads at boot, feeding its sandbox and its approval policy.</summary>
+    public const string PermissionVariable = "DSH_PERMISSION_MODE";
+
+    /// <summary>
+    /// D37 in dsh's vocabulary: writes inside the workspace proceed, anything past the sandbox asks, which over ACP is refused by
+    /// construction (D52). Never <c>danger-full-access</c>, which is approvals off.
+    /// </summary>
+    public const string Posture = "workspace-write";
+
     public ProcessRecipe Start(SpawnRequest request) =>
-        ProcessRecipe.Of(Resolve(request.Command), ["--profile", DshAdapter.Profile]) with
+        ProcessRecipe.Of(Resolve(request.Command), ["--profile", Profile]) with
         {
             Input = true,
-            Variables = new Dictionary<string, string> { [DshAdapter.PermissionVariable] = DshAdapter.Posture },
+            Variables = new Dictionary<string, string> { [PermissionVariable] = Posture },
         };
 
     public ProcessRecipe Chat(SpawnRequest request) =>
