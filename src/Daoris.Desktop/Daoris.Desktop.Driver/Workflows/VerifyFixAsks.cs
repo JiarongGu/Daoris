@@ -24,8 +24,11 @@ public static class VerifyFixAsks
     /// <summary>How many commits of the batch the ask names.</summary>
     private const int Commits = 20;
 
-    /// <summary>What a press came to: whether an ask stands for the failure now, and the sentence the person reads.</summary>
-    public sealed record Pressed(bool Done, string Message, string? Ask = null);
+    /// <summary>
+    /// What a press came to: whether an ask stands for the failure now, the sentence the person reads, and whether the look found it asked
+    /// already (the ask made, or the failure on its channel), so nothing was sent.
+    /// </summary>
+    public sealed record Pressed(bool Done, string Message, string? Ask = null, bool Found = false);
 
     /// <summary>The first line of an ask for <paramref name="gate"/> failing on <paramref name="scope"/> in <paramref name="run"/>.</summary>
     public static string First(string scope, string gate, string run) => $"{Opening}{Key(scope, gate)}{RunMark}{run}.";
@@ -39,9 +42,11 @@ public static class VerifyFixAsks
 
     /// <summary>
     /// The ask for the failed check <paramref name="node"/> of <paramref name="unit"/>'s attempt <paramref name="attempt"/>: found if it was made,
-    /// added to its channel if its gate failed again, else published. A refusal is an answer with its sentence.
+    /// added to its channel once if its gate failed again, else published. A refusal is an answer with its sentence.
     /// </summary>
-    public static async Task<Pressed> AskAsync(ServiceClient service, NodeRecordFiles records, string unit, string node, int attempt, CancellationToken ct)
+    /// <param name="asks">The workspace's asks as a look read them for every failure it asks about; null reads them here.</param>
+    public static async Task<Pressed> AskAsync(
+        ServiceClient service, NodeRecordFiles records, string unit, string node, int attempt, CancellationToken ct, IReadOnlyList<AskView>? asks = null)
     {
         var record = records.Read(unit);
         var held = record?.Attempts.FirstOrDefault(each => each.Node == node && each.Attempt == attempt);
@@ -56,17 +61,24 @@ public static class VerifyFixAsks
 
         var scope = ScopeOf(run);
         var first = First(scope, gate, run.Run);
-        var made = (await service.EveryAskAsync(ct).ConfigureAwait(false))
+        var made = (asks ?? await service.EveryAskAsync(ct).ConfigureAwait(false))
             .Where(ask => string.Equals(RemoteTarget.Workspace(ask.Workspace), RemoteTarget.Workspace(run.Workspace), StringComparison.OrdinalIgnoreCase)
                           && ask.Sentence.StartsWith(Opening + Key(scope, gate) + RunMark, StringComparison.Ordinal))
             .ToList();
         if (made.FirstOrDefault(ask => ask.Sentence.StartsWith(first, StringComparison.Ordinal)) is { } already)
         {
-            return new(true, $"the ask for this failure is made already: #{already.Id}", already.Id);
+            return new(true, $"the ask for this failure is made already: #{already.Id}", already.Id, Found: true);
         }
 
         if (made.FirstOrDefault(ask => !Is(ask.State, "Closed") && !Is(ask.State, "Done")) is { } open)
         {
+            // Once per run: a look that finds this run's failure on the channel already posts nothing again.
+            var channel = await service.ChannelAsync(open.Id, entry: null, ct).ConfigureAwait(false);
+            if (channel?.Items.Any(item => item.Text?.Contains($"(run {run.Run})", StringComparison.Ordinal) == true) == true)
+            {
+                return new(true, $"the gate {gate} failed again, which is on the channel of ask #{open.Id} already", open.Id, Found: true);
+            }
+
             var posted = await service.ChannelPostAsync(open.Id, Again(run, scope, gate), to: null, re: null, ct, urgent: false).ConfigureAwait(false);
             return posted.Ok
                 ? new(true, $"the gate {gate} failed again, which is on the channel of ask #{open.Id}", open.Id)
@@ -76,8 +88,14 @@ public static class VerifyFixAsks
         var files = LogOf(result.Gates.FirstOrDefault(each => each.Name == gate)?.Log, gate) is { } log ? new[] { log } : [];
         var kind = NodeOf(records.Home, run, node) is { } declared ? NodeOptions.Text(declared, "ask") : null;
         var composed = kind is not null && AskWorkflowCommand.Compose(kind, null, null, out _) is { } chosen ? chosen : null;
+        var batch = await BatchAsync(run, ct).ConfigureAwait(false);
+        var settled = VerifyBatchSessions.Settled(records.Home, run);
+        var sessions = settled.Any(each => each.Session is null && batch.Any(commit => commit.Id == each.Tip))
+            ? await service.SessionRecordsAsync(ct).ConfigureAwait(false)
+            : [];
+        var carried = VerifyBatchSessions.Of(settled, batch.Select(commit => commit.Id).ToHashSet(StringComparer.OrdinalIgnoreCase), sessions);
         var published = await service.AskAsync(
-            run.Workspace, await SentenceAsync(run, scope, gate, result, first, ct).ConfigureAwait(false), [], files, run.Repository, ct,
+            run.Workspace, Sentence(run, scope, gate, result, first, batch, carried), [], files, run.Repository, ct,
             workflow: composed, shortTitle: Short(scope, gate)).ConfigureAwait(false);
         return published.Ok
             ? new(true, $"asked for a fix of the gate {gate}: #{published.AskId}", published.AskId)
@@ -96,24 +114,47 @@ public static class VerifyFixAsks
         $"The gate {gate} failed again on {scope} at {TextBounds.ShortCommit(run.Commit, 7)} (run {run.Run}). Its log is on the run.";
 
     /// <summary>The check's declaration in the version the run is bound to; null where it no longer reads.</summary>
-    private static NodeDeclaration? NodeOf(string home, VerifyRun run, string node) =>
+    internal static NodeDeclaration? NodeOf(string home, VerifyRun run, string node) =>
         new WorkflowFiles(home).Load(run.Workflow)?.Read.Versions.FirstOrDefault(each => each.Version == run.Version) is { Graph: { } graph }
             ? graph.Nodes.FirstOrDefault(each => each.Id == node)
             : null;
 
-    private static async Task<string> SentenceAsync(VerifyRun run, string scope, string gate, VerifyResult result, string first, CancellationToken ct)
+    /// <summary>A commit of the batch: its full id, and its short id and subject as the ask lists it.</summary>
+    internal sealed record BatchCommit(string Id, string Said);
+
+    /// <summary>The batch's commits from the run's base to its tip, newest first; none for a run with no base, or where git could not say.</summary>
+    private static async Task<IReadOnlyList<BatchCommit>> BatchAsync(VerifyRun run, CancellationToken ct)
+    {
+        if (run.Base is not { } from) return [];
+        var (code, log, _) = await WorkingTree.GitAsync(run.Root, ["log", "--format=%H %h %s", $"{from}..{run.Commit}"], ct).ConfigureAwait(false);
+        return code != 0
+            ? []
+            : [.. log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(line => line.Split(' ', 2))
+                .Where(parts => parts.Length == 2 && WorkingTree.IsCommitId(parts[0]))
+                .Select(parts => new BatchCommit(parts[0], parts[1]))];
+    }
+
+    /// <summary>
+    /// The ask's words: the first line the look finds it by, whose ask it is and what failed, the batch's commits (at most
+    /// <see cref="Commits"/>), and the sessions whose landings carried them.
+    /// </summary>
+    internal static string Sentence(
+        VerifyRun run, string scope, string gate, VerifyResult result, string first, IReadOnlyList<BatchCommit> batch, IReadOnlyList<string> sessions)
     {
         var text = new StringBuilder(first).AppendLine().AppendLine();
         text.AppendLine($"This ask is Daoris's, not a person's: its verification of {run.Repository}'s {scope} failed the gate {gate} at {TextBounds.ShortCommit(run.Commit, 7)}.");
         if (result.Gates.FirstOrDefault(each => each.Name == gate)?.Exit is { } exit) text.AppendLine($"The gate exited {exit}; its log is attached.");
-        if (run.Base is { } from)
+        if (run.Base is { } from && batch.Count > 0)
         {
-            var (code, log, _) = await WorkingTree.GitAsync(run.Root, ["log", "--format=%h %s", $"-{Commits}", $"{from}..{run.Commit}"], ct).ConfigureAwait(false);
-            if (code == 0 && log.Trim().Length > 0)
-            {
-                text.AppendLine().AppendLine($"The batch since {TextBounds.ShortCommit(from, 7)}, newest first:");
-                foreach (var line in log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) text.AppendLine($"- {line}");
-            }
+            text.AppendLine().AppendLine($"The batch since {TextBounds.ShortCommit(from, 7)}, newest first:");
+            foreach (var commit in batch.Take(Commits)) text.AppendLine($"- {commit.Said}");
+            if (batch.Count > Commits) text.AppendLine($"- and {batch.Count - Commits} more");
+        }
+
+        if (sessions.Count > 0)
+        {
+            text.AppendLine().AppendLine($"The batch landed from the session{(sessions.Count == 1 ? "" : "s")} {string.Join(", ", sessions.Select(session => $"`{session}`"))}.");
         }
 
         return text.ToString().TrimEnd();
