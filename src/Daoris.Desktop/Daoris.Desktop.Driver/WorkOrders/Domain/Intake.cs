@@ -189,6 +189,9 @@ public static class IntakePrompt
 /// </summary>
 public static class IntakeObservation
 {
+    /// <summary>The ask is deleted, closed, or has gained quests since the intake began: <c>Conclude</c>'s authoritative endings.</summary>
+    public static bool Settled(int before, AskView? after) => after is null || after.State == "Closed" || after.Quests.Count > before;
+
     /// <param name="before">How many quests the ask had when the intake opened.</param>
     /// <param name="after">The ask as it stands now — null when the service no longer has it.</param>
     /// <param name="turnFailed">

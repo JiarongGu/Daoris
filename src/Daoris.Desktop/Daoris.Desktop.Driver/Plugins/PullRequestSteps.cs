@@ -14,23 +14,6 @@ public static class PullRequestSteps
     public static string? PluginOf(string kind) =>
         kind.EndsWith("/" + Id, StringComparison.Ordinal) && kind.Length > Id.Length + 1 ? kind[..^(Id.Length + 1)] : null;
 
-    /// <summary>
-    /// Why a run of <paramref name="graph"/> is refused at its bind, or null: it holds a plugin's pull-request step, and no plugin by that id is
-    /// installed, switched on, sound and performing steps here, so the run would reach a step nothing performs.
-    /// </summary>
-    public static BindingProblem? Unserved(NodeGraph graph, IReadOnlyList<WorkflowPlugin> plugins, string workflow, int version)
-    {
-        foreach (var node in graph.Nodes)
-        {
-            if (PluginOf(node.Kind) is not { } plugin) continue;
-            var serves = plugins.Any(each => string.Equals(each.Id, plugin, StringComparison.OrdinalIgnoreCase)
-                && each.Points.Contains(HookPoints.Perform, StringComparer.Ordinal));
-            if (!serves) return BindingProblem.ForUnserved(workflow, version, node.Id, plugin);
-        }
-
-        return null;
-    }
-
     /// <summary>Whether <paramref name="address"/> is an address a pull request is kept by: an absolute <c>http</c> or <c>https</c> one.</summary>
     public static bool IsAddress(string? address) =>
         Uri.TryCreate(address, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";

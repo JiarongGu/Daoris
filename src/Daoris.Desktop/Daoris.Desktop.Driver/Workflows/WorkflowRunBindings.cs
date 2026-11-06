@@ -128,7 +128,7 @@ public static class WorkflowRunBindings
         }
 
         // G8: a plugin's pull-request step nothing performs here is refused now, never run to.
-        if (PullRequestSteps.Unserved(newest.Graph, plugins, selected.Workflow, newest.Version) is { } unserved)
+        if (PullRequestUnserved.Of(newest.Graph, plugins, selected.Workflow, newest.Version) is { } unserved)
         {
             return (binding with { Version = newest.Version, Digest = newest.Digest }).Held(unserved);
         }

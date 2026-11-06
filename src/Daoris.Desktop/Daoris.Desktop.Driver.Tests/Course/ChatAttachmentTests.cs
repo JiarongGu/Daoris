@@ -68,7 +68,7 @@ public sealed class ChatAttachmentTests : IDisposable
         var tooMany = Assert.Throws<DriverException>(() => ChatFiles.Keep(_home, "s1a2b3c4", many));
         Assert.Contains($"at most {ChatFiles.MaxFiles} files", tooMany.Message);
 
-        var large = new ChatUpload("big.bin", new byte[ChatFiles.MaxBytes + 1]);
+        var large = new ChatUpload("big.bin", new byte[ChatAttachmentLimit.MaxBytes + 1]);
         var tooLarge = Assert.Throws<DriverException>(() => ChatFiles.Keep(_home, "s1a2b3c4", [large]));
         Assert.Contains("20 MB", tooLarge.Message);
 

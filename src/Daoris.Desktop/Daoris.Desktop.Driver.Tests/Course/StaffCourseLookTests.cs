@@ -76,8 +76,8 @@ public sealed class StaffCourseLookTests : IDisposable
 
         // The record's actor is the seeded id, as on every driven record: the scoped role that takes the quest's work is the one asked.
         var snapshot = Looking(Ended("ended.quiet"));
-        Assert.Equal("engine-build", StaffCourse.RoleOf(staff, snapshot, snapshot.Quests[0], snapshot.LastRun["q1"]));
-        var (moving, _) = StaffCourse.Look(staff, snapshot, Config, Now);
+        Assert.Equal("engine-build", StaffSnapshotCourse.RoleOf(staff, snapshot, snapshot.Quests[0], snapshot.LastRun["q1"]));
+        var (moving, _) = StaffSnapshotCourse.Look(staff, snapshot, Config, Now);
 
         Assert.Equal("s1", Assert.Single(moving).Value.Session);
     }
@@ -88,14 +88,14 @@ public sealed class StaffCourseLookTests : IDisposable
         var moves = Staffed(Policy("""{"quiet":"next"}""")).Moves;
         var staff = new StaffLedger(_home, () => StoreSettled.Yes);
 
-        var (moving, holds) = StaffCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
+        var (moving, holds) = StaffSnapshotCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
 
         Assert.Empty(holds);
         var move = Assert.Single(moving);
         Assert.Equal(("q1", "s1", StaffConditions.Quiet), (move.Key, move.Value.Session, move.Value.Condition));
         Assert.Equal(1, moves.Of("q1").Moves);
 
-        var (again, _) = StaffCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
+        var (again, _) = StaffSnapshotCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
         Assert.Equal("s1", Assert.Single(again).Value.Session);
         Assert.Equal(1, moves.Of("q1").Moves);
     }
@@ -104,7 +104,7 @@ public sealed class StaffCourseLookTests : IDisposable
     public void A_quiet_end_under_a_retry_and_an_unset_role_decides_nothing_and_writes_nothing()
     {
         var staff = Staffed(Policy("""{"quiet":"retry"}"""));
-        var (moving, holds) = StaffCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
+        var (moving, holds) = StaffSnapshotCourse.Look(staff, Looking(Ended("ended.quiet")), Config, Now);
         Assert.Empty(moving);
         Assert.Empty(holds);
         Assert.Equal(0, staff.Moves.Of("q1").Moves);
@@ -117,7 +117,7 @@ public sealed class StaffCourseLookTests : IDisposable
     {
         var staff = Staffed(Policy("""{"failed":{"do":"next","after":2}}"""));
 
-        var (moving, _) = StaffCourse.Look(staff, Looking(Ended("none"), failedRuns: failures, strikes: failures), Config, Now);
+        var (moving, _) = StaffSnapshotCourse.Look(staff, Looking(Ended("none"), failedRuns: failures, strikes: failures), Config, Now);
 
         Assert.Equal(moves, moving.ContainsKey("q1"));
         Assert.Equal(moves ? 1 : 0, staff.Moves.Of("q1").Moves);
@@ -129,15 +129,15 @@ public sealed class StaffCourseLookTests : IDisposable
         var staff = Staffed(Policy("""{"failed":{"do":"next","after":1}}"""));
 
         var looking = Looking(Ended("none"), failedRuns: 3, strikes: 3);
-        var (parked, _) = StaffCourse.Look(staff, looking with { FailuresAt = StaffCourse.FailuresAt(staff, looking) }, Config, Now);
+        var (parked, _) = StaffSnapshotCourse.Look(staff, looking with { FailuresAt = StaffSnapshotCourse.FailuresAt(staff, looking) }, Config, Now);
         Assert.Empty(parked);
 
-        Assert.False(StaffCourse.FailedStrike(Ended("ended.transient")));
-        Assert.False(StaffCourse.FailedStrike(Ended("ended.quiet")));
-        Assert.False(StaffCourse.FailedStrike(Ended("none", state: "completed")));
-        Assert.False(StaffCourse.FailedStrike(Ended("none") with { Limit = true }));
-        Assert.True(StaffCourse.FailedStrike(Ended("none")));
-        Assert.True(StaffCourse.EndedQuiet(Ended("ended.quiet")));
+        Assert.False(StaffSnapshotCourse.FailedStrike(Ended("ended.transient")));
+        Assert.False(StaffSnapshotCourse.FailedStrike(Ended("ended.quiet")));
+        Assert.False(StaffSnapshotCourse.FailedStrike(Ended("none", state: "completed")));
+        Assert.False(StaffSnapshotCourse.FailedStrike(Ended("none") with { Limit = true }));
+        Assert.True(StaffSnapshotCourse.FailedStrike(Ended("none")));
+        Assert.True(StaffSnapshotCourse.EndedQuiet(Ended("ended.quiet")));
     }
 
     [Fact]
@@ -145,14 +145,14 @@ public sealed class StaffCourseLookTests : IDisposable
     {
         var staff = Staffed(Policy("""{"failed":{"do":"ask","after":1}}"""));
 
-        var (moving, holds) = StaffCourse.Look(staff, Looking(Ended("none")), Config, Now);
+        var (moving, holds) = StaffSnapshotCourse.Look(staff, Looking(Ended("none")), Config, Now);
 
         Assert.Empty(moving);
         Assert.Equal(SittingFact.PolicyAsk, holds["q1"]);
 
         var bounded = Staffed(Policy("""{"quiet":"next"}""", most: 1));
         Assert.True(bounded.Moves.Record("q1", "build", null, StaffConditions.ModelRefused, StaffActions.Next, null));
-        var (none, atBound) = StaffCourse.Look(bounded, Looking(Ended("ended.quiet")), Config, Now);
+        var (none, atBound) = StaffSnapshotCourse.Look(bounded, Looking(Ended("ended.quiet")), Config, Now);
         Assert.Empty(none);
         Assert.Equal(SittingFact.MovesBound, atBound["q1"]);
     }

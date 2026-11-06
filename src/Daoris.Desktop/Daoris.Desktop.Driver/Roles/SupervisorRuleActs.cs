@@ -21,7 +21,7 @@ public sealed record RuleActed(string Line, string Session, SupervisorRule Rule,
 /// A rule's file carries no <c>question</c> and no state lines: it is final as written, so the questions' reader and the start's sweep pass
 /// it by. It is read for the history alone, never to decide.
 /// </summary>
-public sealed class SupervisorRuleActs(string home, SessionEvents? events = null, MachineLog? log = null)
+public sealed class SupervisorRuleActs(string home, ISessionEvents? events = null, MachineLog? log = null)
 {
     /// <summary>The holder kind a rule's decision file names.</summary>
     public const string HolderKind = "rule";

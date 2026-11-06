@@ -70,8 +70,8 @@ public static class AccessKey
     /// <summary>Go-aheads: never asked, save what the ask itself demands (D184 point 5).</summary>
     public const string Never = "never";
 
-    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e; its value is the provider's, read from it.</summary>
-    public static string ConsoleAsks => ClaudeCodeProvider.Id;
+    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e; its value is the console provider's id, which that provider's declaration takes as its own.</summary>
+    public static string ConsoleAsks => ConsoleProviderId.Value;
 
     /// <summary>The pauses, in the order every door and the record say them.</summary>
     public static IReadOnlyList<AccessPause> Pauses { get; } =

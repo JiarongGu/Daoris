@@ -23,9 +23,6 @@ public static class ChatFiles
     /// <summary>How many files one message carries — a quest's limit.</summary>
     public const int MaxFiles = 10;
 
-    /// <summary>How many bytes one message's files come to together — a quest's limit, 20 MB.</summary>
-    public const long MaxBytes = 20L * 1024 * 1024;
-
     /// <summary>A kept name's longest — a path under a deep home still has to open on Windows.</summary>
     public const int MaxNameLength = 100;
 
@@ -55,10 +52,10 @@ public static class ChatFiles
         }
 
         var total = distinct.Sum(entry => entry.Upload.Content.LongLength);
-        if (total > MaxBytes)
+        if (total > ChatAttachmentLimit.MaxBytes)
         {
             throw new DriverException(
-                $"A message's files come to at most {MaxBytes / (1024 * 1024)} MB together — these come to "
+                $"A message's files come to at most {ChatAttachmentLimit.MaxBytes / (1024 * 1024)} MB together — these come to "
                 + $"{total / (1024.0 * 1024.0):0.#} MB.");
         }
 
