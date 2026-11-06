@@ -241,8 +241,8 @@ describe('a session’s facts line', () => {
     // AGENTPROVIDER1 s-vii: counted by agent. A line moved between one agent's two doors is on one agent, as the roster's sheet says;
     // before, each door was counted as an agent, which a roster with no sheet still reads.
     const sheets = [
-      { id: 'claude-code', doors: [{ door: 'claude-code', wire: 'pipe' as const, rows: [] }, { door: 'claude-code-acp', wire: 'acp' as const, rows: [] }] },
-      { id: 'codex', doors: [{ door: 'codex-acp', wire: 'acp' as const, rows: [] }] },
+      { id: 'claude-code', doors: [{ door: 'claude-code', transport: 'native' as const, rows: [] }, { door: 'claude-code-acp', transport: 'protocol' as const, rows: [] }] },
+      { id: 'codex', doors: [{ door: 'codex-acp', transport: 'protocol' as const, rows: [] }] },
     ];
     const doors = [session({ id: 'p1', adapter: 'claude-code' }), session({ id: 'p2', adapter: 'claude-code-acp' })];
     expect(leadingAgentOf(entry, doors, roster, sheets)).toBeNull();

@@ -43,6 +43,7 @@ public static class HomeMigration
         new StoreNamesStep(),
         new BindingFilesStep(),
         new WiredFilesStep(),
+        new UsageFileStep(),
     ];
 
     /// <summary>

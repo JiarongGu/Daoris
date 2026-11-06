@@ -42,7 +42,7 @@ export function readMachine(answers: {
   attached: boolean;
   registry?: readonly { repository: string }[];
   /** The driver's standing state. The adapters are `""` for none: the bridge leaves a null out. */
-  driver?: { drivable?: readonly string[]; helperAdapter?: string; intakeAdapter?: string };
+  driver?: { drivable?: readonly string[]; helperAgent?: string; intakeAgent?: string };
   harnesses?: readonly ToolDoor[];
   sessions?: readonly Pick<Session, 'state' | 'said'>[];
   lines?: readonly RepositoryLine[];
@@ -64,7 +64,7 @@ export function readMachine(answers: {
     unnamedLines: (answers.lines ?? [])
       .filter((line) => !line.notReadYet && line.source === 'none' && drivable.includes(line.repository))
       .map((line) => line.repository),
-    helper: answers.driver?.helperAdapter || null,
-    intake: answers.driver?.intakeAdapter || null,
+    helper: answers.driver?.helperAgent || null,
+    intake: answers.driver?.intakeAgent || null,
   };
 }

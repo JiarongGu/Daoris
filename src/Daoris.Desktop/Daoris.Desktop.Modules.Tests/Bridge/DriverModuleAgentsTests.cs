@@ -59,7 +59,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         var rows = roster.GetProperty("harnesses").EnumerateArray().ToList();
         var declared = rows.Single(h => h.GetProperty("harness").GetString() == "acme-agent");
         Assert.Equal("acme.gate", declared.GetProperty("plugin").GetString());
-        Assert.Equal("acp", declared.GetProperty("wire").GetString());
+        Assert.Equal("protocol", declared.GetProperty("transport").GetString());
         // Probed by presence: the file is there, so it is present, and nothing was started to say so.
         Assert.True(declared.GetProperty("present").GetBoolean());
         // The build's own carry no plugin.
@@ -144,7 +144,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.True(claude.GetProperty("acts").GetProperty("signsIn").GetBoolean());
         Assert.True(claude.GetProperty("acts").GetProperty("installs").GetBoolean());
         var protocol = claude.GetProperty("doors")[1];
-        Assert.Equal("acp", protocol.GetProperty("wire").GetString());
+        Assert.Equal("protocol", protocol.GetProperty("transport").GetString());
         var steering = protocol.GetProperty("rows").EnumerateArray().Single(row => row.GetProperty("capability").GetString() == "steering");
         Assert.Equal("measured", steering.GetProperty("source").GetString());
         Assert.Equal("docs/2026-10-03-steer-evidence.md", steering.GetProperty("evidence").GetString());
@@ -153,7 +153,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.True(agents["codex"].GetProperty("acts").GetProperty("deviceCode").GetBoolean());
         Assert.False(agents.ContainsKey("codex-acp"));
         Assert.All(roster.GetProperty("harnesses").EnumerateArray(),
-            door => Assert.Contains(door.GetProperty("wire").GetString(), new[] { "acp", "pipe" }));
+            door => Assert.Contains(door.GetProperty("transport").GetString(), new[] { "protocol", "native" }));
     }
 
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>

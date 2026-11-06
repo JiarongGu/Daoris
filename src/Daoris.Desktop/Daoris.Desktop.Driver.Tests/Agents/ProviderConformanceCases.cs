@@ -522,7 +522,7 @@ internal static class ConformanceCases
     private static void D210Precedence(ConformanceRun run)
     {
         var (registry, door, adapters, adapter) = (run.Registry, run.TheDoor, run.Set, run.Adapter);
-        var wire = Protocol(door) ? "protocol" : "pipe";
+        var wire = Protocol(door) ? "protocol" : "native";
         AgentError Read(string words, int? status, string? kind, string where, DateTimeOffset seen) =>
             AgentErrors.Read(adapters, adapter, new DoorFailure(wire, null, kind, status, words, where), seen, TimeZoneInfo.Utc);
         static DateTimeOffset Seen(string day) => DateTimeOffset.Parse(day + "T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
@@ -533,7 +533,7 @@ internal static class ConformanceCases
             // A limit's sentence first, whatever transient kind or status is beside it (D210 §3.2 step 1).
             Assert.Equal(AgentErrorKind.Limit, Read(words, 529, "overloaded", DoorWhere.Prompt, Seen(recorded.Seen)).Kind);
             // The source before any kind: the harness's own lines are never a limit.
-            Assert.NotEqual(AgentErrorKind.Limit, Read(words, null, null, DoorWhere.Harness, Seen(recorded.Seen)).Kind);
+            Assert.NotEqual(AgentErrorKind.Limit, Read(words, null, null, DoorWhere.Lines, Seen(recorded.Seen)).Kind);
         }
 
         // A sign-in's refusal is access, before a transient status beside it.

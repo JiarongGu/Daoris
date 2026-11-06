@@ -21,6 +21,6 @@ public static class DoorFailures
         _ => new("protocol", null, null, null, error.Message, where),
     };
 
-    /// <summary>The pipe door's failed <c>result</c>: its own words, the wire carrying no code and no kind there.</summary>
-    public static DoorFailure OfResult(string words) => new("pipe", null, null, null, words, DoorWhere.Result);
+    /// <summary>The native door's failed <c>result</c>: its own words, the wire carrying no code and no kind there.</summary>
+    public static DoorFailure OfResult(string words) => new("native", null, null, null, words, DoorWhere.Result);
 }

@@ -39,7 +39,7 @@ public static class UsageStateSlice
     public const string Accounts = "accounts";
 
     /// <summary>What a session's record carries, as the route writes it and the page's <c>UsedSession</c> reads it.</summary>
-    public static readonly IReadOnlyList<string> SessionFields = ["session", "repository", "harness", "profile", "used", "size", "when"];
+    public static readonly IReadOnlyList<string> SessionFields = ["session", "repository", "door", "profile", "used", "size", "when"];
 
     /// <summary>What an account's share carries, as the route writes it and the page's <c>UsedAccount</c> reads it.</summary>
     public static readonly IReadOnlyList<string> AccountFields = ["agent", "profile", "sessions", "used"];
@@ -88,7 +88,7 @@ public static class UsageStateSlice
 
     /// <summary>One measured session, as the route and the slice write it: the own home's <c>profile</c> written null, as the route always wrote it.</summary>
     public static JsonNode Session(UsageEntry entry) =>
-        Written(new { entry.Session, entry.Repository, entry.Harness, entry.Profile, entry.Used, entry.Size, entry.When });
+        Written(new { entry.Session, entry.Repository, entry.Door, entry.Profile, entry.Used, entry.Size, entry.When });
 
     /// <summary>One account's share, as the route and the slice write it.</summary>
     public static JsonNode Account(AccountUsage account) => Written(new { account.Agent, account.Profile, account.Sessions, account.Used });

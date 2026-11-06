@@ -16,7 +16,7 @@ const READ = '2026-10-05T10:42:00Z';
 const UNTIL = '2026-10-06T04:42:00Z';
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, wire: 'pipe',
+  harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, transport: 'native',
   ownLogin: 'unknown', ownRead: null,
   profiles: [
     { name: 'account-1', home: 'H/account-1', login: 'out', read: READ, account: 'you@work.example' },

@@ -31,7 +31,7 @@ internal sealed class NativeLimits(Func<DoorFailure, AgentError> read, Action<Ag
     {
         switch (reading)
         {
-            case WireReading.Failed { Replayed: false, Failure: { Door: "pipe", Where: DoorWhere.Result } failure }:
+            case WireReading.Failed { Replayed: false, Failure: { Door: "native", Where: DoorWhere.Result } failure }:
                 var error = read(failure);
                 if (error.Kind == AgentErrorKind.Limit) _turn = error;
                 return;

@@ -303,14 +303,14 @@ public sealed class TurnStopTests : IDisposable
         await Until(() => session.Service.State(session.Id) == "completed" && session.Usage.Sessions.Count == 1, () => session.Seen());
 
         var measured = Assert.Single(session.Usage.Sessions);
-        Assert.Equal(("claude-code", "heard a longer one".Length * 1000L, 200_000L), (measured.Harness, measured.Used, measured.Size));
+        Assert.Equal(("claude-code", "heard a longer one".Length * 1000L, 200_000L), (measured.Door, measured.Used, measured.Size));
 
         // A text door measures nothing, so it adds nothing: still the one entry, still Claude Code's. (The
         // stand-in services number their sessions alike, so the ids themselves cannot tell them apart.)
         await using var text = await Chat("stub");
         Assert.True(text.Runner.Finish(text.Id));
         await Until(() => text.Service.State(text.Id) == "completed", () => text.Seen());
-        Assert.Equal("claude-code", Assert.Single(text.Usage.Sessions).Harness);
+        Assert.Equal("claude-code", Assert.Single(text.Usage.Sessions).Door);
     }
 
     /// <summary>

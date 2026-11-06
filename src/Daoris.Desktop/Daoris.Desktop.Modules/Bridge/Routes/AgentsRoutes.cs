@@ -135,8 +135,8 @@ public sealed class AgentsRoutes(DriverContext context)
                     // to the owner until it said.
                     toolchain?.Product,
                     toolchain?.Maker,
-                    // Its transport in the page's word, as its sheet says it (COAGENT1e).
-                    Wire = harnesses.Adapters.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Wire: var wire } ? wire : null,
+                    // Its transport, as its sheet says it (COAGENT1e).
+                    Transport = harnesses.Adapters.Facts.Of(report.Adapter)?.Door(report.Adapter) is { Transport: var transport } ? transport : null,
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = harnesses.Structured(report.Adapter),

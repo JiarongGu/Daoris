@@ -20,7 +20,7 @@ public sealed class HostPolicyRetryTests
     [InlineData(Transport.Protocol, RetryRun.Pass, DoorWhere.Prompt, RetryRule.None)]
     // The native door: no episode on any run.
     [InlineData(Transport.Native, RetryRun.QuestTurn, DoorWhere.Result, RetryRule.None)]
-    [InlineData(Transport.Native, RetryRun.QuestTurn, DoorWhere.Harness, RetryRule.None)]
+    [InlineData(Transport.Native, RetryRun.QuestTurn, DoorWhere.Lines, RetryRule.None)]
     [InlineData(Transport.Native, RetryRun.Conversation, DoorWhere.Result, RetryRule.None)]
     [InlineData(Transport.Native, RetryRun.Pass, DoorWhere.Result, RetryRule.None)]
     public void Host_policy_s_retry_table_is_today_s_by_door_phase_and_run(Transport door, RetryRun run, string where, RetryRule rule)

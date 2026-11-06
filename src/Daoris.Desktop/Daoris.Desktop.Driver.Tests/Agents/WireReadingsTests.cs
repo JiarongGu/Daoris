@@ -80,7 +80,7 @@ public sealed class WireReadingsTests : IDisposable
             ReadingSinks.On<WireReading>(readings.Add), new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: new HarnessWords());
 
         var failed = Assert.Single(readings.OfType<WireReading.Failed>());
-        Assert.Equal(new DoorFailure("pipe", null, null, null, "API Error: 500 overloaded", DoorWhere.Result), failed.Failure);
+        Assert.Equal(new DoorFailure("native", null, null, null, "API Error: 500 overloaded", DoorWhere.Result), failed.Failure);
         // The conversation the stream named is one reading too, before anything ended.
         Assert.Equal("c1", Assert.Single(readings.OfType<WireReading.ConversationNamed>()).Conversation);
     }
@@ -169,11 +169,11 @@ public sealed class WireReadingsTests : IDisposable
     public void The_native_door_s_failed_result_read_as_a_limit_is_its_turn_s_limit_told_once_and_a_protocol_failure_is_none()
     {
         var met = new List<AgentError>();
-        var part = new NativeLimits(failure => failure.Door == "pipe" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, met.Add);
+        var part = new NativeLimits(failure => failure.Door == "native" ? Limited : Limited with { Kind = AgentErrorKind.Fatal }, met.Add);
 
         part.Read(new WireReading.Failed(DoorFailures.OfResult("You've hit your limit")));
         part.Read(new WireReading.Failed(DoorFailures.OfPrompt(new AcpRefusal("overloaded", errorKind: "overloaded", code: -32603, words: "overloaded"))));
-        part.Read(new WireReading.Failed(new DoorFailure("pipe", null, null, null, "You've hit your limit", DoorWhere.Harness)));
+        part.Read(new WireReading.Failed(new DoorFailure("native", null, null, null, "You've hit your limit", DoorWhere.Lines)));
         part.Read(new WireReading.Failed(DoorFailures.OfResult("replayed")) { Replayed = true });
         part.Read(new WireReading.Shown("You've hit your limit"));
         Assert.Empty(met);

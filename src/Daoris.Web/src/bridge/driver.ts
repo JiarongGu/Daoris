@@ -79,9 +79,9 @@ export type DriverState = {
    * answered by declarations only. Never null: the bridge leaves a null out, and absent is how
    * none reads.
    */
-  intakeAdapter?: string;
+  intakeAgent?: string;
   /** The agent Ask Daoris runs on (HELP1, D89), or "" for none; left out where none is set. */
-  helperAdapter?: string;
+  helperAgent?: string;
   /**
    * Ask Daoris's access mode as the person chose it (HELPMODE1a2, D183 point 2): `restricted` or `full`, what each conversation's
    * next turn takes (ACCESSSWAP1); a value the page does not know reads as restricted (`helpModeOf`). Left out where none is set:

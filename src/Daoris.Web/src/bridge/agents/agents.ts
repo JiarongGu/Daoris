@@ -59,8 +59,8 @@ export type HarnessRoster = {
 export type UsedSession = {
   session: string;
   repository: string;
-  harness: string;
-  /** The account it ran as, or null for the harness's own configuration home. */
+  door: string;
+  /** The account it ran as, or null for the door's own configuration home. */
   profile: string | null;
   /** Context held at its high-water mark, and the window it was held against. */
   used: number;

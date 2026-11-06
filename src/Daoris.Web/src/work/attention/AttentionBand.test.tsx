@@ -80,7 +80,7 @@ const READ = '2026-10-01T10:42:00Z';
 const ROSTER: HarnessRoster = {
   settingsPath: 'harnesses.json', adapter: 'claude-code',
   harnesses: [{
-    harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, wire: 'pipe',
+    harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, transport: 'native',
     profiles: [
       { name: 'account-1', home: 'H/account-1', login: 'out', read: READ },
       { name: 'account-2', home: 'H/account-2', login: 'in', read: READ },

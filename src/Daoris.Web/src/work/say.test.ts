@@ -196,10 +196,10 @@ describe('tooLong', () => {
   /** §2.4: the native door takes the words as one argument, so its box refuses words past the bound before sending. */
   it('holds a driven session on the native door to the bound, and nothing else', () => {
     const long = 'x'.repeat(NATIVE_WORDS_LIMIT + 1);
-    expect(tooLong(long, { door: 'pipe', kind: 'driven' })).toBe(true);
-    expect(tooLong('x'.repeat(NATIVE_WORDS_LIMIT), { door: 'pipe', kind: 'driven' })).toBe(false);
-    expect(tooLong(long, { door: 'acp', kind: 'driven' })).toBe(false);
-    expect(tooLong(long, { door: 'pipe', kind: 'chat' })).toBe(false);
+    expect(tooLong(long, { door: 'native', kind: 'driven' })).toBe(true);
+    expect(tooLong('x'.repeat(NATIVE_WORDS_LIMIT), { door: 'native', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'protocol', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'native', kind: 'chat' })).toBe(false);
     expect(tooLong(long, { door: null, kind: 'driven' })).toBe(false);
   });
 });

@@ -759,7 +759,7 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, takesKey: false, ownLogin: 'in', ownRead: READ,
         profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/codex/account-1', login: 'out', read: READ }],
@@ -810,7 +810,7 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
       }],
@@ -854,7 +854,7 @@ describe('the Agents place', () => {
       settingsPath: ROSTER.settingsPath,
       adapter: 'claude-code',
       harnesses: [{
-        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', transport: 'protocol',
         present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
         signsIn: true, deviceCode: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [], profiles: [],
       }],
@@ -1556,7 +1556,7 @@ describe('the Agents place', () => {
         harnesses: [
           ...ROSTER.harnesses,
           {
-            harness: 'acme-agent', present: true, version: '(not asked)', problem: null, wire: 'acp',
+            harness: 'acme-agent', present: true, version: '(not asked)', problem: null, transport: 'protocol',
             machineDefault: null, pinned: null, managed: null, pinnable: false, profiles: [], plugin: 'acme.gate',
           },
         ],
