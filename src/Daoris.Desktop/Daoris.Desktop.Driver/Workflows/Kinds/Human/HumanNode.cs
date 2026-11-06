@@ -26,6 +26,9 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
 
     public override NodePart Part(NodeDeclaration node) => new(NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris);
 
+    /// <summary>A step added from the palette is a task, reached with <c>done</c>; the editor turns it into an approval by declaring <c>approved</c>.</summary>
+    public override IReadOnlyList<string> Outcomes => Task;
+
     public override string? Title => "Your task";
 
     public override NodeLook Look => NodeLook.You;

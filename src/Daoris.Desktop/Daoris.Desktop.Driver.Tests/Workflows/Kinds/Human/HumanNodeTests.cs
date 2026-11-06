@@ -96,6 +96,15 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
+    public void The_palette_offers_a_task_with_its_done_route_and_a_rejected_wire_from_it()
+    {
+        var human = WorkflowPalette.Build([]).Kinds.Single(kind => kind.Kind == NodeKinds.Human);
+        Assert.Equal(["done"], human.Outcomes);
+        Assert.Contains(WireKinds.When, human.Leaves);
+        Assert.Contains(WireKinds.Rejected, human.Leaves);
+    }
+
+    [Fact]
     public async Task A_press_is_refused_where_the_node_waits_on_no_such_press()
     {
         BoundTo(ApprovalGraph);

@@ -134,6 +134,8 @@
   "workflow.flow.wire.wait": "在它等待的工作完成后",
   "workflow.flow.wire.trigger": "每次它触发时",
   "workflow.flow.wire.recorded": "按它的 `{{kind}}` 连线，按原文显示",
+  "workflow.outcome.human.done": "已完成",
+  "workflow.outcome.human.approved": "已批准",
   "workflow.outcome.monitor.merged": "已合并",
   "workflow.outcome.monitor.closed": "未合并即关闭",
   "workflow.outcome.wait": "等你处理",
