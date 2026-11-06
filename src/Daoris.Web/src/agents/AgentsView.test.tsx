@@ -7,8 +7,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 // The Agents place in SHELL mode (UX6e, D150 §5): the list of agents and an agent's page, its accounts with their last known
 // state and when each was read, and every act on it, over the mocked bridge. Moved from Settings → Agents' suite with the
-// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e), its assertions read on the page they are on now.
-
+// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e).
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
@@ -16,15 +15,8 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   eventHandlers: new Map<string, (payload: unknown) => void>(),
 }));
 
-// The page reads every agent fact from the roster's `agents` half (COAGENT1e); a roster this suite builds names its doors only, so
-// the answer carries the sheet a driver would make from them, unless the test wrote its own.
 vi.mock('@shenora/react', async () => ({
-  ...(await import('../test/sliceShell')).mockedShell(async (...call: unknown[]) => {
-    const answer = await (invoke as (...args: unknown[]) => Promise<unknown>)(...call);
-    const roster = answer as { harnesses?: Parameters<(typeof import('./agentsFixtures'))['sheetsOf']>[0]; agents?: unknown } | null;
-    if (call[1] !== 'HARNESSES' || !roster?.harnesses || roster.agents) return answer;
-    return { ...roster, agents: (await import('./agentsFixtures')).sheetsOf(roster.harnesses) };
-  }, { notifyReady }),
+  ...(await import('../test/sliceShell')).mockedShell((await import('./agentsFixtures')).sheeted(invoke), { notifyReady }),
   useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
     eventHandlers.set(`${module}.${type}`, handler);
   },

@@ -40,6 +40,12 @@ export function sheetsOf(doors: readonly ToolDoor[], rows: (door: ToolDoor) => S
   });
 }
 
+/** A bridge's `invoke` whose roster answer carries the `agents` half made from its doors, unless the test wrote its own. */
+export const sheeted = (invoke: (...call: any[]) => Promise<unknown>) => async (...call: any[]): Promise<unknown> => {
+  const answer = await invoke(...call) as { harnesses?: ToolDoor[]; agents?: unknown } | null;
+  return call[1] !== 'HARNESSES' || !answer?.harnesses || answer.agents ? answer : { ...answer, agents: sheetsOf(answer.harnesses) };
+};
+
 /** The roster's tools with their sheet, as the place builds them from a roster that carries `agents`. */
 export const toolsOf = (doors: readonly ToolDoor[], rows?: (door: ToolDoor) => SheetRow[]): Tool[] => byTool(doors, sheetsOf(doors, rows));
 

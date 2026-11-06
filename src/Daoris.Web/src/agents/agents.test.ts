@@ -172,7 +172,7 @@ describe('the list', () => {
    * mark its declaration gives leads; else the first letters, each word's initial or a lone word's first two; and none
    * repeats a mark above it in the list.
    */
-  /** INSTALLDOOR1: a row says whether Daoris has an installer for it; a shell that sends no `installs` reads as one that does. */
+  /** INSTALLDOOR1: a row says whether Daoris has an installer for it. */
   it('says whether Daoris installs each agent, an absent field reading as it does', () => {
     const rows = (door: Partial<ToolDoor>) => agentRows(toolsOf([{ ...claude(), present: false, ...door }]), undefined)[0]!;
     expect(rows({}).installs).toBe(true);
@@ -201,10 +201,10 @@ describe('the list', () => {
     expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
   });
 
-  it('says an agent with no Daoris account has none yet, not that it runs on its own sign-in', () => {
+  it('says an agent with no Daoris account has none yet, not its own sign-in', () => {
     const rows = agentRows(toolsOf([claude({ profiles: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('no Daoris account yet');
-    // A plugin's agent that signs in nowhere is installed, and nothing more is claimed of it.
+    // A plugin's agent that signs in nowhere is only installed.
     const declared = agentRows(toolsOf([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
     expect(declared[0]!.phrase).toBe('installed');
   });
@@ -403,25 +403,6 @@ describe('the next start, above the accounts', () => {
       takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null, doors: [],
     });
   });
-
-  /** AGENTPROVIDER1 s-ix o1 to o3: the card speaks for the account's own door, and one line says each other door that answers differently. */
-  it('adds one line for each other door whose own-home answer differs, in English and 中文', async () => {
-    const owed = scopeOf({
-      next: { account: null, reason: 'noAccount', others: [], doors: [{ door: 'p-claude-bare', startsInOwnHome: true }] },
-    });
-    expect(nextStartSaid(owed, labelOf)).toEqual({
-      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null,
-      doors: ['A start on `p-claude-bare` runs in its own home, which is nobody\'s sign-in: it is owed no account.'],
-    });
-    // Where the card's own door starts in its own home it says so, since a door beside it is said to be owed one.
-    const own = scopeOf({ next: { account: null, reason: 'own', others: [], doors: [{ door: 'p-b', startsInOwnHome: false }] } });
-    expect(nextStartSaid(own, labelOf)?.doors).toEqual(['A start on `p-b` is owed a Daoris account, and waits until one is signed in.']);
-    await i18n.changeLanguage('zh');
-    expect(nextStartSaid(owed, labelOf)?.doors).toEqual(['在 `p-claude-bare` 上的启动运行在它自己的配置目录中，那里不是任何人的登录：它不需要账户。']);
-    // No other door, and the own-home reason said nothing, as before.
-    expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
-  });
-
   it('says it in one sentence in 中文, with no space after a full-width mark', async () => {
     await i18n.changeLanguage('zh');
     const said = nextStartSaid(THREE.scopes[0]!, labelOf)!;

@@ -173,6 +173,23 @@ export const NotInstalledNoInstaller: Story = {
  * with the fallback that applies. *Ways in* is open here because the agent is not installed.
  */
 export const TheSheet: Story = { args: NotInstalled.args };
+
+/**
+ * The card speaks for the account's own door, and says one line for each other door whose own-home answer differs (AGENTPROVIDER1 row
+ * s-ix o1 to o3): here a plugin's door beside Claude Code that starts in its own home where Claude Code's start is owed an account.
+ */
+export const CardDoors: Story = {
+  args: {
+    use: {
+      ...CLAUDE_USE,
+      scopes: [{
+        ...CLAUDE_USE.scopes[0]!,
+        next: { account: null, reason: 'noAccount', others: [], doors: [{ door: 'p-claude-bare', startsInOwnHome: true }] },
+      }],
+    },
+  },
+};
+export const CardDoorsChinese: Story = { args: CardDoors.args, decorators: [chinese] };
 export const TheSheetChinese: Story = { args: NotInstalled.args, decorators: [chinese] };
 
 /** An account that is an API key:its handle, *unchecked*, and no sign-in. */
