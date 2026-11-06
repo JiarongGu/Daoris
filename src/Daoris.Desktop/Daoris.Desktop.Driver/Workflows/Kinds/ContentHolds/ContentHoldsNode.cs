@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldNodes"/>): D88's proof that the work holds a commit no
+/// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldReading"/>): D88's proof that the work holds a commit no
 /// branch of the person's holds, and that neither the line nor such a branch holds it by content (SQUASHTIDY1f).
 /// </summary>
 [NodeKind(NodeKinds.ContentHolds, NodeGroup.Checks, NodeKinds.QuestHolds)]
@@ -15,15 +15,17 @@ internal sealed class ContentHoldsNode : BuiltInNode, IObserves
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
 
     /// <summary>Its switches, on where not written.</summary>
-    public override IReadOnlyList<NodeOptionField> Options { get; } = [.. HoldNodes.Options[NodeKinds.ContentHolds].Select(NodeOptionFields.Switch)];
+    public override IReadOnlyList<NodeOptionField> Options { get; } = [.. ContentHoldsReading.Options.Select(NodeOptionFields.Switch)];
 
-    public override string? Problem(NodeDeclaration node) => HoldNodes.Problem(node);
+    public override string? Problem(NodeDeclaration node) => HoldReading.Problem(node, ContentHoldsReading.Options);
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.ContentHolds);
+    public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node) => HoldReading.Problems(graph, node);
+
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.ContentHolds);
 
     public override string? Title => "What the line holds";
 
     public override NodeLook Look => NodeLook.Holds;
 
-    public NodeObservation Observe(NodeReading reading) => HoldNodes.Observe(reading.Unit, reading.Node, reading.Binding, reading.Git);
+    public NodeObservation Observe(NodeReading reading) => ContentHoldsReading.Observe(reading);
 }

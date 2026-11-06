@@ -85,13 +85,13 @@ public static class NodeKinds
     public const string Review = "review";
 
     /// <summary>
-    /// The quest's own holds as a step before the landing (LANDNODE1k, <see cref="HoldNodes"/>): its done or submission standing, not taken back,
+    /// The quest's own holds as a step before the landing (LANDNODE1k, <see cref="HoldReading"/>): its done or submission standing, not taken back,
     /// and not held for the person's yes (D133) or its evidence's verdict (D144). An older build reads it as no kind and holds the run whole.
     /// </summary>
     public const string QuestHolds = "quest.holds";
 
     /// <summary>
-    /// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldNodes"/>): D88's proof that the work holds a commit
+    /// What the line already holds, as a step before the landing (LANDNODE1k, <see cref="HoldReading"/>): D88's proof that the work holds a commit
     /// no branch of the person's holds, and that neither the line nor such a branch holds it by content (SQUASHTIDY1f).
     /// </summary>
     public const string ContentHolds = "content.holds";

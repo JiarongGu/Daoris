@@ -18,14 +18,14 @@ internal sealed class ReviewNode : BuiltInNode, IObserves, IPressed
 
     public override NodePart Part(NodeDeclaration node) => new(NodeKinds.Review, WorkflowParticipation.You, WorkflowExecutor.Daoris, WorkflowPress.Accept);
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Review);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Review);
 
     public override string? Title => "Your Accept";
 
     public override NodeLook Look => NodeLook.You;
 
     /// <summary>Reached by the person's Accept, read from the landing it made as a <c>land</c>'s reach is (LANDNODE1c2).</summary>
-    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Handed(reading, NodeSource.Person);
+    public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Person);
 
     /// <summary>The person's Accept, and their changes with their words (LANDNODE1c2, DECIDE1c).</summary>
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Accept, NodeWordActs.Changes];

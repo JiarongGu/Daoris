@@ -23,7 +23,7 @@ public sealed class PushNodeTests
 
     private static NodeMoved Applied(WorkUnit unit, NodeGitReads? git = null)
     {
-        var observation = BuiltInNodes.Observe(unit, Push, Graph, 1, git);
+        var observation = NodeObserving.Observe(unit, Push, Graph, 1, git);
         Assert.Null(observation.Refused);
         Assert.NotNull(observation.Move);
         var started = new NodeStatus(unit.Id, Push.Id, NodeStates.Active) { Attempt = 1, Tries = 1, Binding = new NodeAcceptance(unit.Id, "t1", Graph, Push.Id, 1, 1) };
@@ -39,14 +39,14 @@ public sealed class PushNodeTests
         var reached = Applied(unit, new NodeGitReads(RemoteTip: _ => "t1"));
         Assert.Equal((NodeStates.Reached, NodeSource.Git), (reached.Status.State, reached.Status.By));
         Assert.Equal("landings.json#feature/x", reached.Status.Current!.Evidence!.Ref);
-        Assert.Null(BuiltInNodes.Observe(unit, Push, Graph, 1, new NodeGitReads(RemoteTip: _ => "t0")).Outcome);
-        Assert.Null(BuiltInNodes.Observe(Unit(Landed()), Push, Graph, 1).Outcome);
+        Assert.Null(NodeObserving.Observe(unit, Push, Graph, 1, new NodeGitReads(RemoteTip: _ => "t0")).Outcome);
+        Assert.Null(NodeObserving.Observe(Unit(Landed()), Push, Graph, 1).Outcome);
     }
 
     [Fact]
     public void Not_yet_is_no_outcome_and_only_the_push_acts_refusal_fails_it()
     {
-        var observed = BuiltInNodes.Observe(Unit(), Push, Graph, 1);
+        var observed = NodeObserving.Observe(Unit(), Push, Graph, 1);
         Assert.Equal(((string?)null, (NodeMove?)null), (observed.Outcome, observed.Move));
         Assert.False(string.IsNullOrWhiteSpace(observed.Said));
         Assert.Equal(NodeSource.Git, NodeKit.Row(NodeKinds.Push)!.FailureBy);

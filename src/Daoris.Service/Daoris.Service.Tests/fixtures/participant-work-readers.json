@@ -436,7 +436,7 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workflows/Kinds/Opinion/OpinionNode.cs": {
+    "Workflows/Kinds/Opinion/OpinionGateReading.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },

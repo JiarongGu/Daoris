@@ -26,7 +26,7 @@ internal sealed class ClaimedNode : BuiltInNode, IObserves
     /// <summary>The work step as design work, which a build role takes too.</summary>
     public override IReadOnlyList<string> RoleTakes { get; } = [RoleWork.Design, RoleWork.Build];
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Claimed);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Claimed);
 
     public override string? Title => "The work";
 
@@ -34,5 +34,5 @@ internal sealed class ClaimedNode : BuiltInNode, IObserves
 
     public override bool EndsByTheLine => true;
 
-    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Claimed(reading);
+    public NodeObservation Observe(NodeReading reading) => ClaimedReading.Observe(reading);
 }

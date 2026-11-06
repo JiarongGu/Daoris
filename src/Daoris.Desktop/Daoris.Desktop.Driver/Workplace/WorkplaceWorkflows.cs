@@ -42,7 +42,7 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>
     /// The person's words where <paramref name="node"/>, the look of a chat run's graph, stands skipped by them or their skip waits on the run's
-    /// record; null otherwise (see <c>RunNodeWords.SkippedLook</c>).
+    /// record; null otherwise (see <c>LookReading.SkippedWords</c>).
     /// </summary>
     string? SkippedLook(string home, string run, string? node);
 

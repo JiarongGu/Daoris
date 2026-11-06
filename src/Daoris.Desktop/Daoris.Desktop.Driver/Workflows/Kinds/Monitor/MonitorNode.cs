@@ -42,7 +42,7 @@ internal sealed class MonitorNode : BuiltInNode, IObserves
         }
     }
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Monitor);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Monitor);
 
     public override string? Title => "The pull request's watch";
 
