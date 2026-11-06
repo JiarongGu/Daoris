@@ -55,6 +55,12 @@ public static class PluginEvents
 
     public const string NotHeld = "not-held";
 
+    /// <summary>
+    /// A <c>work/event</c> event told as <c>events.missed</c> in its place, its required field outside its shape (EVENTHOOK1b, §4.3):
+    /// <c>kind</c>, <c>field</c>, never the value. A plugin stopped for answering late there is <see cref="Stopped"/> with <see cref="Late"/>.
+    /// </summary>
+    public const string Unsent = "event.unsent";
+
     /// <summary>A frame from a plugin not taken (FABRIC-PERFORM1a, §C4): its code (<see cref="WorkRefusals"/>) and how many it stands for.</summary>
     public const string Step = "plugin.step";
 

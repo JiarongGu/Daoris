@@ -26,6 +26,9 @@ public sealed class LandPerformer(
     /// <summary>Whether this process holds the home's lease, as the node records ask it; null asks the lease itself. A test's stand-in sets it.</summary>
     public Func<bool>? HoldsLease { get; init; }
 
+    /// <summary>Where a try that landed a branch or moved a chain's on is told at <c>work/event</c> (EVENTHOOK1b), once, as it is kept.</summary>
+    public Action<WorkEvent>? Told { get; init; }
+
     private IWorkplaceWorkflows Flows => WorkplaceWorkflows.Current;
 
     // The last try of each session: a refusal is tried again only once the tree moves.
@@ -375,6 +378,7 @@ public sealed class LandPerformer(
         }
 
         log?.Invoke(LandingLine.Auto(entry.Session, entry.Repository, entry.Workspace, code, made is null ? null : commits, uncommitted));
+        if (code is LandingCode.Landed or LandingCode.Advanced) Told?.Invoke(new WorkEvent(WorkEventKinds.WorkLanded, Now()) { Session = entry.Session, Quest = entry.Quest, Code = code });
         return $"landing  session {entry.Session} (#{entry.Quest} → {entry.Repository}): {line}";
     }
 

@@ -125,6 +125,9 @@ public sealed class HookProcess : IHookChannel
     /// <summary>The API token for the plugin process one start makes (<see cref="PluginHostToken"/>), set by <see cref="HookSet"/> around that start alone.</summary>
     internal static readonly AsyncLocal<string?> HostToken = new();
 
+    /// <summary>The <c>work/event</c> handshake for the one start <see cref="HookSet"/> makes of a plugin on that point, set around that start alone.</summary>
+    internal static readonly AsyncLocal<WorkEventHandshake?> Events = new();
+
     /// <summary>
     /// The longest frame read from the plugin's stdout (FABRIC-PERFORM1a, round 2): a plugin that speaks a work point is held to the work
     /// wire's <see cref="WorkBounds.FrameBytes"/> on every frame, and any other to <see cref="HookPeer.AnswerBytes"/>, which no answer at the
@@ -165,7 +168,7 @@ public sealed class HookProcess : IHookChannel
         var started = new HookProcess(process, peer, stderr, clock);
         try
         {
-            await peer.InitializeAsync(home, plugin.Data, hooks.Points, ct).ConfigureAwait(false);
+            await peer.InitializeAsync(home, plugin.Data, hooks.Points, ct, events: Events.Value).ConfigureAwait(false);
         }
         catch
         {
@@ -183,6 +186,8 @@ public sealed class HookProcess : IHookChannel
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 
     public Task ChangedAsync(object payload, CancellationToken ct) => _peer.ChangedAsync(payload, ct);
+
+    public Task EventAsync(object frame, CancellationToken ct) => _peer.EventAsync(frame, ct);
 
     public IReadOnlyList<string> Capabilities => _peer.Capabilities;
 

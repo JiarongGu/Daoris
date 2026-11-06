@@ -96,13 +96,13 @@ public static class HookFrames
         (string Name, object? Value)[] carried =
         [
             ("session", told.Session), ("quest", told.Quest), ("ask", told.Ask), ("state", told.State?.ToLowerInvariant()),
-            ("adapter", told.Adapter), ("strikes", told.Strikes), ("code", told.Code),
+            ("adapter", told.Adapter), ("strikes", told.Strikes), ("code", told.Code), ("confirmation", told.Confirmation), ("end", told.End),
         ];
         foreach (var (name, value) in carried)
         {
             var required = fields.Required.Contains(name);
             if (!required && !fields.Optional.Contains(name)) continue;
-            if (value is not null && WorkEventGrammar.Fits(name, value, adapters)) frame[name] = value;
+            if (value is not null && WorkEventGrammar.Fits(name, value, adapters, told.Kind)) frame[name] = value;
             else if (required) return Missed(name);
         }
 

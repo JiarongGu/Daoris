@@ -84,13 +84,20 @@ internal static class DriveConsole
         // FOUNDATION1 l-iv: the service's journal read from this process's come-up, so `session.ended` is written for every end, whoever wrote it.
         // FOUNDATION1 m-ii: and this host's own teller of the driven work's news, from a cursor it keeps, so a park made just before a restart is told once after it.
         var news = new News(home);
+        // The plugins that speak (D64): their processes live as long as this host does, and are stopped
+        // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
+        // What the set does with each, without their words, goes to this host's machine log (PLUGUI1d).
+        await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log, hostToken: PlaceHostTokens.For(home));
         var hostNews = new NewsTeller(
             news, "host", row => !row.Marks.Contains("chat", StringComparer.Ordinal), () => DateTimeOffset.UtcNow,
             async pieces =>
             {
                 foreach (var piece in pieces)
                 {
-                    var item = await NewsAttention.OfAsync(service, piece, closing.Token);
+                    var record = await NewsAttention.ReadAsync(service, piece, closing.Token);
+                    // EVENTHOOK1b (D244's note): the driven work's parks and ends told at `work/event` as they are claimed.
+                    if (WorkEventNews.Of(piece, record) is { } happened) hooks.Tell(happened);
+                    var item = NewsAttention.Of(piece, record);
                     // Kept in Notifications whatever the switch says (NOTIFY2f): the desktop's windows read the record again and say what this host wrote.
                     Notices.Keep(home, [item], DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));
                     if (NotifyRule.Tells(item, NotifyRule.SwitchOn(configPath))) Console.WriteLine($"  !  {item.Line}");
@@ -103,7 +110,13 @@ internal static class DriveConsole
         _ = Task.Run(
             () => JournalFeed.RunAsync(
                 service,
-                [new JournalTeller(sessionLog.TellAsync), new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position))],
+                [
+                    // EV-F: the quests' moves first, its sink never waiting.
+                    new WorkEventTeller(hooks.Tell, () => DateTimeOffset.UtcNow).Teller,
+                    new JournalTeller(sessionLog.TellAsync),
+                    WorkEventNews.Gapped(
+                        new JournalTeller(hostNews.TellAsync, () => news.Cursor("host"), position => news.Advance("host", position)), hooks.Tell, () => DateTimeOffset.UtcNow),
+                ],
                 log, closing.Token),
             closing.Token);
         // SESSWATCH1a (D200): no session is ended on time; --quiet-end ends one of this run unheard that long, and says so.
@@ -149,11 +162,6 @@ internal static class DriveConsole
         {
             Console.WriteLine($"driver: nothing is opted in — name repositories under \"drivable\" in {configPath}");
         }
-
-        // The plugins that speak (D64): their processes live as long as this host does, and are stopped
-        // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
-        // What the set does with each, without their words, goes to this host's machine log (PLUGUI1d).
-        await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log, hostToken: PlaceHostTokens.For(home));
 
         // The loop's start is over: its first look begins, and what ends the driver from here is `unhandled` (HOSTSTART2).
         entryPoint.Running();
@@ -202,6 +210,8 @@ internal static class DriveConsole
                         report, ticked.ForgivenAt, token => service.SessionList.Kept.JsonAsync(token), closing.Token);
                     // The look's own news, told once across restarts by the said-set and not by a first look's baseline (FOUNDATION1 m-iv).
                     var events = AttentionNews.Told(news, attention.Observe(report, read), DateTimeOffset.UtcNow);
+                    // EVENTHOOK1b: a quest's park told at `work/event` as the person is told it.
+                    foreach (var parked in events) if (WorkEventNews.Of(parked, DateTimeOffset.UtcNow) is { } happened) hooks.Tell(happened);
                     // Kept in Notifications whatever the switch says (NOTIFY2f, the notification design §2.5): the desktop's windows
                     // read the record again and say what this host wrote; a write refused is logged and dropped.
                     Notices.Keep(home, events, DateTimeOffset.UtcNow, why => log.Warn("notices.refused", ("why", why)));

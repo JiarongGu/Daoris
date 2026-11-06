@@ -38,6 +38,14 @@ public interface IHookChannel : IAsyncDisposable
         Task.FromException(PluginFailures.Mark(
             new DriverException($"this channel does not answer `{HookPoints.StateChanged}`."), PluginEvents.Errored));
 
+    /// <summary>
+    /// One <c>work/event</c> frame (EVENTHOOK1b), its answer awaited and never read. A channel that has no such answer fails as the plugin's
+    /// error, which the point's teller contains.
+    /// </summary>
+    Task EventAsync(object frame, CancellationToken ct) =>
+        Task.FromException(PluginFailures.Mark(
+            new DriverException($"this channel does not answer `{HookPoints.Event}`."), PluginEvents.Errored));
+
     /// <summary>The capabilities the plugin's handshake named that this build knows (FABRIC-PERFORM1a): <see cref="WorkWire.Capability"/>.</summary>
     IReadOnlyList<string> Capabilities => [];
 

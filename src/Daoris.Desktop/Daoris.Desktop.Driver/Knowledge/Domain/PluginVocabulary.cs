@@ -70,6 +70,18 @@ public static class HookPoints
     /// whose every point the kit scaffolds, answers in its test and lets a person try.
     /// </summary>
     public static readonly IReadOnlyList<string> Work = [Watch, Step, Perform];
+
+    /// <summary>
+    /// An observation (EVENTHOOK1b, the event hook design §4): what moved in the work cycle, as ids and closed codes, told only by the loop
+    /// that holds the home's lease (<see cref="WorkEventPoint"/>), each frame's answer awaited before the next and never read.
+    /// </summary>
+    public const string Event = "work/event";
+
+    /// <summary>
+    /// The points told by the lease's loop alone, and no loop point: a plugin on one is kept running only where its loop holds the home.
+    /// Not yet in <see cref="All"/>: the kit's entry and sample join it as the work wire's did (FABRIC-PERFORM1e).
+    /// </summary>
+    public static readonly IReadOnlyList<string> Told = [Event];
 }
 
 /// <summary>

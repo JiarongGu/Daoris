@@ -65,15 +65,16 @@ public sealed class HookPeer(
     /// </summary>
     /// <param name="patience">How long the handshake waits, where it is not the peer's: the kit's trial waits its points' own
     /// patience here, however short a patience it gives the points' calls (PLUGKIT2).</param>
+    /// <param name="events">For a plugin on <see cref="HookPoints.Event"/>: the grammar, the last <c>seq</c> minted and the build (§4.1).</param>
     public async Task InitializeAsync(
-        string home, string data, IReadOnlyList<string> declared, CancellationToken ct, TimeSpan? patience = null)
+        string home, string data, IReadOnlyList<string> declared, CancellationToken ct, TimeSpan? patience = null, WorkEventHandshake? events = null)
     {
         _pump ??= PumpAsync(_stopping.Token);
 
-        var answer = await RequestAsync(
-            "initialize",
-            new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared },
-            ct, patience).ConfigureAwait(false);
+        object parameters = events is null
+            ? new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared }
+            : new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared, events = new { grammar = events.Grammar, seq = events.Seq, build = events.Build } };
+        var answer = await RequestAsync("initialize", parameters, ct, patience).ConfigureAwait(false);
 
         // 🔴 Every read checks the shape first (REV3): a property read on the wrong kind throws
         // InvalidOperationException, which is not a DriverException, so it escaped the tick's catch and
@@ -109,7 +110,8 @@ public sealed class HookPeer(
                 }
 
                 // The work points (FABRIC-PERFORM1a) are this build's too, spoken only by the lease's loop.
-                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal))
+                if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal)
+                    && !HookPoints.Told.Contains(name, StringComparer.Ordinal))
                 {
                     // PLUGHOOK1a (D148 point 8): a point is additive, so a plugin that grew one keeps the points this build has.
                     // Refusing it whole made an older build lose the plugin's landing. Said once, and never asked there.
@@ -169,6 +171,10 @@ public sealed class HookPeer(
     /// <summary>An observation (STATEHUB1g): the answer is waited for, as <see cref="EndedAsync"/>'s is, and never read.</summary>
     public async Task ChangedAsync(object payload, CancellationToken ct) =>
         await RequestAsync($"hook/{HookPoints.StateChanged}", payload, ct).ConfigureAwait(false);
+
+    /// <summary>One <c>work/event</c> frame (EVENTHOOK1b): the answer is waited for, so the next waits on it, and never read.</summary>
+    public async Task EventAsync(object frame, CancellationToken ct) =>
+        await RequestAsync($"hook/{HookPoints.Event}", frame, ct).ConfigureAwait(false);
 
     /// <summary>
     /// The query's frame (PLUGHOOK1a, design §2.2), and its answer read by shape (<see cref="PullRequestAnswers.Read"/>): a

@@ -74,7 +74,10 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
 
     /// <summary>The runtime's door, landing as the performer does: over the fixture's world, trees and faked plugin.</summary>
     private LandingDoor Door() => new(() => new LandPerformer(
-        _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true });
+        _home, _world, new SessionTrees(_home), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), _lines.Add) { HoldsLease = () => true, Told = _told.Add });
+
+    // What the performer told at `work/event` (EVENTHOOK1b).
+    private readonly List<WorkEvent> _told = [];
 
     /// <summary>A branch made for the person, no plugin asked.</summary>
     private const string BranchLand = """{"method":"branch","pattern":"feature/{quest}-{slug}"}""";
@@ -355,6 +358,9 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         await door.IdleAsync();
 
         Assert.Equal(await HeadAsync(tree), (await GitAsync(root, "rev-parse", PushBranch)).Trim());
+        // EVENTHOOK1b: the landing told once at `work/event`, with its code.
+        var landed = Assert.Single(_told);
+        Assert.Equal((WorkEventKinds.WorkLanded, LandingCode.Landed, "q1"), (landed.Kind, landed.Code, landed.Quest));
     }
 
     /// <summary>
