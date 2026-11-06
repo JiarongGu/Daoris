@@ -14,7 +14,7 @@ public static class OpinionPosture
     public const string CopyAlone = "copy-alone";
 
     /// <summary>What held a reviewer on <paramref name="adapter"/>: its rules where it takes them, else its copy alone.</summary>
-    public static string Of(ISessionAdapter adapter) => adapter.TakesSettings ? RulesAndCopy : CopyAlone;
+    public static string Of(AgentDoor adapter) => adapter.Can.TakesSettings ? RulesAndCopy : CopyAlone;
 
     /// <summary>The posture as the record says it (design §5.2).</summary>
     public static string Said(string posture) => posture == RulesAndCopy

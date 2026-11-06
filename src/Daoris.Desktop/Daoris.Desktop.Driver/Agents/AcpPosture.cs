@@ -22,7 +22,7 @@ namespace Daoris.Driver;
 /// future harness's right.</para>
 ///
 /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-/// full access, a <see cref="PostureAsked.Required"/> posture of the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
+/// full access, a <see cref="PostureAsked.Required"/> posture of the adapter's <see cref="AgentDoor.FullPosture"/>, and a driven
 /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
 /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
 /// person's two ways on (<see cref="AcpSession.Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency

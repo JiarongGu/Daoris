@@ -131,10 +131,10 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         }
 
         var isHelp = WordsNever.IsHelp(listed);
-        ISessionAdapter agent;
+        AgentDoor agent;
         try
         {
-            agent = context.Harnesses.Adapters.Resolve(ranOn);
+            agent = context.Harnesses.Adapters.Door(ranOn);
         }
         catch (DriverException)
         {
@@ -158,7 +158,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         var selection = picked
             ? null!
             : await context.Harnesses
-                .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
+                .SelectAsync(agent.Id.Value, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
         Elsewhere? elsewhere = null;
         var answer = picked ? NoRoom : new LineAnswer.Elsewhere(selection, NextHold.Ready);
         if (!picked && (!selection.Allowed || string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))
@@ -192,7 +192,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn);
             }
 
-            return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
+            return new StartedFrom(null, false, null, $"no other account of {agent.Id.Value} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
         }
 
         // The start the one walk counted, given back below unless the new part opens. Going on another agent, the walk over its actor's other
@@ -288,11 +288,11 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
                 // on another agent (LIMITGOON2), by its actor's walk over its other choices, told the earlier maker's trailer (MAKERTRAIL2).
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
+                            prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
                             leftBy: LeftBy(prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
+                            prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
                             moves: moves)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
@@ -317,7 +317,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var opened = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
             var account = opened?.Profile;
-            var onto = opened?.Adapter is { Length: > 0 } went ? went : agent.Name;
+            var onto = opened?.Adapter is { Length: > 0 } went ? went : agent.Id.Value;
             var opening = HandOverNotes.MovedFrom(sessionId, ranOn, prior.Profile, HandOverWhy.Limit, high, brief.Text.Length);
             var words = held.Words;
             var refusedFiles = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files ?? [])).ToList();
@@ -519,7 +519,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     /// the mode standing now; null places it on <paramref name="agent"/>, as LIMITGOON1's move to its next account does.
     /// </param>
     internal async Task<ChatStart> HelpStartAsync(
-        PriorSession prior, ISessionAdapter agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
+        PriorSession prior, AgentDoor agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
         IReadOnlyList<ActorEffective>? order = null)
     {
         if (await help.SetAsideHelpAsync(null, prior.Workspace, ct).ConfigureAwait(false) is { } answering)
@@ -527,7 +527,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
         }
 
-        var placed = await runner.PlaceHelpAsync(agent.Name, config, prior.Workspace, ct, carries: prior.Session, order: order).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(agent.Id.Value, config, prior.Workspace, ct, carries: prior.Session, order: order).ConfigureAwait(false);
         if (placed is not { SessionId: { } id, Adapter: { } resolved, Selection: { } selection }) return new ChatStart(null, placed.Message);
         try
         {
@@ -583,8 +583,8 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>The part it moves from, as its record says it ran (MAKERTRAIL2): its harness, that harness's maker and its models.</summary>
-    internal static EarlierMaker LeftBy(PriorSession prior, ISessionAdapter ran) =>
-        new(ran.Name, ran.Toolchain?.Maker, prior.Ran?.Models ?? []);
+    internal static EarlierMaker LeftBy(PriorSession prior, AgentDoor ran) =>
+        new(ran.Id.Value, ran.Toolchain?.Maker, prior.Ran?.Models ?? []);
 
     /// <summary>What <see cref="ElsewhereAsync"/> came to: the choices to walk, or the line its conversation waits under and why.</summary>
     internal sealed record Elsewhere(IReadOnlyList<ActorEffective>? Order, Noted? Stays, string Why);

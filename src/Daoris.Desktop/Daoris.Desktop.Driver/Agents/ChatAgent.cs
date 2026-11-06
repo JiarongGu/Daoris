@@ -8,25 +8,25 @@ namespace Daoris.Driver;
 /// conversation's runner, its turns, its account reads and what it is told hold this and the <see cref="TransportRun"/> it makes, never the
 /// adapter seam, so row t replaces what is beneath a conversation here, as it does beneath the run.
 /// </summary>
-internal sealed class ChatAgent(ISessionAdapter adapter)
+internal sealed class ChatAgent(AgentDoor adapter)
 {
     /// <summary>The door's name, which a record, a reading and a log line name the agent by.</summary>
-    public string Name => adapter.Name;
+    public string Name => adapter.Id.Value;
 
     /// <summary>The variables its program reads for the model and the effort, which the open's asked choice reads from its spawn.</summary>
-    public SpawnChoiceVariables ChoiceVariables => adapter.ChoiceVariables();
+    public SpawnChoiceVariables ChoiceVariables => adapter.Spawned().ChoiceVariables;
 
     /// <summary>What the conversation's door can do (<see cref="DoorAbilities"/>).</summary>
-    public DoorAbilities Abilities => adapter.Abilities();
+    public DoorAbilities Abilities => adapter.Can;
 
     /// <summary>Whether the agent takes Daoris's rules file: a flag on the pipe, the session's meta on the protocol door.</summary>
-    public bool TakesSettings => adapter.TakesSettings;
+    public bool TakesSettings => adapter.Can.TakesSettings;
 
     /// <summary>The protocol door's posture a conversation asks for where its place names none.</summary>
-    public string? Posture => adapter.AcpPosture;
+    public string? Posture => adapter.Postures.Ordinary;
 
     /// <summary>The agent's mode that asks nothing, which Ask Daoris's full access runs under; null where Daoris knows none.</summary>
-    public string? FullPosture => adapter.FullPosture;
+    public string? FullPosture => adapter.Postures.Full;
 
     /// <summary>Whether the protocol door reads a failure by its typed code before its words.</summary>
     public bool TypedFailures => adapter.Toolchain?.ErrorWords?.TypedFailures == true;
@@ -43,7 +43,7 @@ internal sealed class ChatAgent(ISessionAdapter adapter)
     public TransportRun Run(ITransportHost host, TransportStart start) => new(host, adapter, start);
 
     /// <summary>The rules file named on the pipe's command line.</summary>
-    public void HandSettings(ProcessStartInfo info, string rules) => adapter.HandSettings(info, rules);
+    public void HandSettings(ProcessStartInfo info, string rules) => adapter.Spawned().HandSettings(info, rules);
 
     /// <summary>The rules file and the skill plugins carried on the protocol door's <c>session/new</c>.</summary>
     public object? Meta(string rules, IReadOnlyList<string> plugins) => adapter.AcpSessionMeta(rules, plugins);

@@ -8,7 +8,7 @@ internal static class MovedParts
     {
         if (prior.Adapter is not { Length: > 0 } ran) return null;
         string? maker;
-        try { maker = context.Adapters.Resolve(ran).Toolchain?.Maker; }
+        try { maker = context.Adapters.AgentNamed(ran)?.Maker; }
         catch (DriverException) { maker = null; }
         return new EarlierMaker(ran, maker, prior.Ran?.Models ?? []);
     }

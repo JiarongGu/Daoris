@@ -119,7 +119,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
         // Its agent is the one whose conversation it is; a record naming none goes on with its role's choice, Chat's order, never the
         // machine's `adapter` key (FOUNDATION1j part iii, the foundation design §2.4's first row). Chat off, or its entry unread, is said below.
-        ISessionAdapter? resolved = null;
+        AgentDoor? resolved = null;
         var named = record?.Adapter;
         var unchosenWords = (string?)null;
         if (record is not null)
@@ -131,7 +131,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
                     ? opened
                     : StartPlan.ContinuedOn(
                         record, config, "chat", context.Conversations.RoleOf(sessionId)?.Role, RoleCatalog.ReadHome(context.Home), new RolePlace());
-                resolved = context.Harnesses.Adapters.Resolve(named);
+                resolved = context.Harnesses.Adapters.Door(named);
             }
             catch (DriverException unchosen)
             {
@@ -197,17 +197,17 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         // refused exactly when the person needed it. An account the person picked stays the one account (§3.5(d)): it waits while it cools.
         // FOUNDATION1d-ii part 4: the new part's open moves the person's words, and any of theirs kept since this read, in its own step.
         var started = help
-            ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
+            ? await HelpStartAsync(record, agent.Id.Value, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
                     // TREEGONE2: a closed quest's session whose tree went (the course moves no conversation's) grows a fresh tree from the line.
-                    record.Repository!, agent.Name, config, onEnded, record.Profile, ownTree: tree is null ? true : null, ct: ct, tree: tree,
+                    record.Repository!, agent.Id.Value, config, onEnded, record.Profile, ownTree: tree is null ? true : null, ct: ct, tree: tree,
                     from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: move.Where.Source != CourseAccountSource.Pick,
                     moves: Moves(record, words))
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
         var high = RotatedOpening.ContextOf(null, context.Events, sessionId);
-        var ranOn = record.Adapter ?? agent.Name;
+        var ranOn = record.Adapter ?? agent.Id.Value;
         var opening = HandOverNotes.MovedFrom(sessionId, ranOn, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
         var moving = MovedWords.Moving(started);
         var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
@@ -216,9 +216,9 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var taken = (!moving || moved is { Words.Count: > 0 }) && await handOver.SayHandedOver(to, message, moved?.Shown).ConfigureAwait(false);
 
         // The move, said on the part it left, where the person wrote it, and in the machine log, by profile name (D125 point 7).
-        var on = HandOverNotes.MovedOn(to, agent.Name, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
+        var on = HandOverNotes.MovedOn(to, agent.Id.Value, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
         context.Note(sessionId, on);
-        context.Service.AccountSaid(Continuations.Moved(to, sessionId, ranOn, agent.Name, record.Profile, record.Profile, HandOverWhy.Resume, briefed: true));
+        context.Service.AccountSaid(Continuations.Moved(to, sessionId, ranOn, agent.Id.Value, record.Profile, record.Profile, HandOverWhy.Resume, briefed: true));
 
         if (!taken)
         {

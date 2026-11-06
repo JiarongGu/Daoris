@@ -62,7 +62,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // One that was fenced goes on to its door's write, which is where it delivers; a run that never writes ends it as it is let go.
             if (carry is not null && delivering is null) await carry.EndAsync().ConfigureAwait(false);
 
-            var adapter = context.Adapters.Resolve(agent);
+            var adapter = context.Adapters.Door(agent);
             // What it may read and write outside its tree: the rules it is handed, and the sentence every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
             // What the cut-off session's line left in Daoris's own record: Daoris's brief of the whole line, every word it took and each
@@ -105,7 +105,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // Daoris's rules; and those checks kept by its id for `run-heavy`, let go as its run ends, a graph version's `callMinutes`
             // beside them for its long-call watch.
             var checks = SessionChecks.Of(config, quest.To, process);
-            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
+            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.Can.TakesSettings);
             var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var asking = await StartTargets.WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
@@ -130,7 +130,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 Access = permissions,
                 // What the entry the walk took names, carried on every run; a continuation keeps its record's, and its choice with it,
                 // so a part carried on from Build's second choice says it is that one.
-                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
+                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Id.Value)),
                 Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,

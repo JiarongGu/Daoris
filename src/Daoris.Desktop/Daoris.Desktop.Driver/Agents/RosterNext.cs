@@ -14,13 +14,13 @@ internal sealed class RosterNext(HarnessRoster roster)
     /// <exception cref="DriverException">No agent of that name on this machine.</exception>
     public AgentLastRead? LastRead(string adapter, DriverConfig config, string? workspace = null, StartKind kind = StartKind.Driven)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        if (resolved.Toolchain is not { } toolchain) return null;
-        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
+        var resolved = roster.Adapters.Door(adapter);
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return null;
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
         var settings = roster.Settings;
         var named = settings.Set(owner);
         // As the walk reads its scope: where the person named no account, the agent's Daoris accounts on this machine (OWNSPACE1a).
-        var ours = named.List.Count == 0 && named.Begins is null && !toolchain.StartsInOwnHome;
+        var ours = named.List.Count == 0 && named.Begins is null && !toolchain.Home.StartsInOwnHome;
         var scope = ours ? roster.Walked(named, owner, toolchain) : named;
         var now = roster.Clock();
         var (order, facts) = roster.OrderOf(owner, scope, kind, picked: null, ownHome: false, now);
@@ -43,15 +43,15 @@ internal sealed class RosterNext(HarnessRoster roster)
             ? []
             : [.. order.Select(account => new AccountLastRead(account, Before(owner, account, now, fact: FactOf(facts, account)), ReadOf(account)))];
 
-        var known = roster._binaries.TryGetValue(resolved.Name, out var binary) ? binary : null;
+        var known = roster._binaries.TryGetValue(resolved.Id.Value, out var binary) ? binary : null;
         // The binary a start would run (TOOL2/D57): an explicit command, then a pin's managed install, which is its presence.
-        if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 } && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
+        if (config.Commands.GetValueOrDefault(resolved.Id.Value) is not { Count: > 0 } && settings.ResolveVersion(resolved.Id.Value, workspace, chosen: null) is { } pinned)
         {
-            var managed = HarnessSettings.ManagedBinary(roster.Home, resolved.Name, pinned, toolchain.Binary) is not null;
-            return new AgentLastRead(resolved.Name, owner, managed, managed ? (known is { Present: true } ? known.Version : pinned) : null, accounts) { Pinned = pinned };
+            var managed = HarnessSettings.ManagedBinary(roster.Home, resolved.Id.Value, pinned, toolchain.Program.Binary) is not null;
+            return new AgentLastRead(resolved.Id.Value, owner, managed, managed ? (known is { Present: true } ? known.Version : pinned) : null, accounts) { Pinned = pinned };
         }
 
-        return new AgentLastRead(resolved.Name, owner, known?.Present, known is { Present: true } ? known.Version : null, accounts);
+        return new AgentLastRead(resolved.Id.Value, owner, known?.Present, known is { Present: true } ? known.Version : null, accounts);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ internal sealed class RosterNext(HarnessRoster roster)
         var toolchain = OwnersToolchain(agent);
         if (toolchain is not null) scope = roster.Walked(scope, agent, toolchain);
         // The card speaks for the account's own door; each other door whose answer differs is said apart (s-ix o1 to o3).
-        var doors = toolchain is null ? [] : DoorsDiffering(agent, toolchain.StartsInOwnHome);
+        var doors = toolchain is null ? [] : DoorsDiffering(agent, toolchain.Home.StartsInOwnHome);
         if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []) { Doors = doors };
 
         var now = roster.Clock();
@@ -106,10 +106,10 @@ internal sealed class RosterNext(HarnessRoster roster)
         var differing = new List<DoorStart>();
         foreach (var name in roster.Adapters.Names.Order(StringComparer.Ordinal))
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
-                toolchain = roster.Adapters.Resolve(name).Toolchain;
+                toolchain = roster.Adapters.AgentNamed(name);
             }
             catch (DriverException)
             {
@@ -117,7 +117,7 @@ internal sealed class RosterNext(HarnessRoster roster)
             }
 
             if (toolchain is null || !string.Equals(roster.Adapters.OwnerOfAgent(name).Value, owner, StringComparison.OrdinalIgnoreCase)) continue;
-            if (toolchain.StartsInOwnHome != cardState) differing.Add(new DoorStart(name, toolchain.StartsInOwnHome));
+            if (toolchain.Home.StartsInOwnHome != cardState) differing.Add(new DoorStart(name, toolchain.Home.StartsInOwnHome));
         }
 
         return differing;
@@ -129,15 +129,15 @@ internal sealed class RosterNext(HarnessRoster roster)
     /// (CODEXACCT1); null where none declares one. What <see cref="Next"/> reads whether a start may run in its own home by
     /// (OWNSPACE1a), since the page asks it by the owner.
     /// </summary>
-    private HarnessToolchain? OwnersToolchain(string owner)
+    private AccountAgent? OwnersToolchain(string owner)
     {
-        HarnessToolchain? door = null;
+        AccountAgent? door = null;
         foreach (var name in roster.Adapters.Names)
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
-                toolchain = roster.Adapters.Resolve(name).Toolchain;
+                toolchain = roster.Adapters.AgentNamed(name);
             }
             catch (DriverException)
             {
@@ -149,7 +149,7 @@ internal sealed class RosterNext(HarnessRoster roster)
             door ??= toolchain;
         }
 
-        return door ?? roster.Adapters.ToolchainOf(owner);
+        return door ?? roster.Adapters.AgentNamed(owner);
     }
 
     /// <summary>
@@ -163,10 +163,10 @@ internal sealed class RosterNext(HarnessRoster roster)
         var setUp = new List<string>();
         foreach (var name in roster.Adapters.Names)
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
-                toolchain = roster.Adapters.Resolve(name).Toolchain;
+                toolchain = roster.Adapters.AgentNamed(name);
             }
             catch (DriverException)
             {
@@ -273,7 +273,7 @@ internal sealed class RosterNext(HarnessRoster roster)
     /// not signed out, as the last reading of each says (ROSTER1). Nothing is asked of an account.
     /// </summary>
     internal async Task<IReadOnlyList<string>> ReadyAsync(
-        string adapter, HarnessToolchain toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
+        string adapter, AccountAgent toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
     {
         var owner = roster.Adapters.OwnerOfAgent(adapter).Value;
         var others = HarnessSettings.Profiles(roster.Home, owner)
@@ -300,9 +300,9 @@ internal sealed class RosterNext(HarnessRoster roster)
     public async Task<StartWiring> WiringAsync(
         string adapter, DriverConfig config, string? workspace, CancellationToken ct = default)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
-        var toolchain = resolved.Toolchain;
-        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
+        var resolved = roster.Adapters.Door(adapter);
+        var toolchain = roster.Adapters.AgentNamed(resolved.Id.Value);
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
         var settings = roster.Settings;
 
         // The start's one set (POOL1a2, the account-pool design §2.4): where it begins, the order's first, read as the machine's
@@ -310,10 +310,10 @@ internal sealed class RosterNext(HarnessRoster roster)
         var scope = toolchain is null ? null : settings.Set(owner);
         var profileFrom = scope?.Begins is null ? ChoiceFrom.Unset : ChoiceFrom.Machine;
         // The same precedence `SelectAsync` applies: a command `driver.json` names has the last word.
-        var commanded = config.Commands.GetValueOrDefault(resolved.Name) is { Count: > 0 };
+        var commanded = config.Commands.GetValueOrDefault(resolved.Id.Value) is { Count: > 0 };
         var (pinned, versionFrom) = commanded || toolchain is null
             ? (null, ChoiceFrom.Unset)
-            : settings.ResolveVersionFrom(resolved.Name, workspace, chosen: null);
+            : settings.ResolveVersionFrom(resolved.Id.Value, workspace, chosen: null);
 
         // Asked as a start would ask, and counted as none: a panel starts nothing.
         // And asking no account nor binary (ROSTER1, D150 point 5): read from the last readings, as a view opens.
@@ -322,7 +322,7 @@ internal sealed class RosterNext(HarnessRoster roster)
         // The account a start would take (TOOL4f, TOOL6b): the walk's, with where the scope begins beside it when that is
         // another, so the panel never shows an account a start would not take; where begins, when the start is held.
         return new StartWiring(
-            resolved.Name, owner, selection.Profile ?? scope?.Begins, profileFrom,
+            resolved.Id.Value, owner, selection.Profile ?? scope?.Begins, profileFrom,
             selection.Version ?? pinned, versionFrom, commanded, selection.Refusal)
         {
             RotatedFrom = selection.Rotated?.From,

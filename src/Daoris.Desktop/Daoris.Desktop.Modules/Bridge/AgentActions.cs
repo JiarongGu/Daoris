@@ -155,7 +155,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// </param>
     /// <returns>The account a sign-in reaches: the one named, or a new account's fresh id; null for any other action.</returns>
     internal async Task<string?> StartProcessActionAsync(
-        string harness, string action, string? profile, string? version, HarnessToolchain toolchain,
+        string harness, string action, string? profile, string? version, AccountAgent toolchain,
         IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null,
         IReadOnlyList<string?>? joins = null, string? name = null, SignInWay way = SignInWay.Browser, bool switching = false)
     {
@@ -458,7 +458,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// <param name="toolchain">The account agent's toolchain, whose own flow signs in (CODEXACCT1).</param>
     /// <param name="run">What the account agent runs as: its named command, its pin, else PATH's (D57 rule 4).</param>
     private async Task<int> SignInAsync(
-        string harness, string owner, string fresh, HarnessToolchain toolchain, HarnessCommand run,
+        string harness, string owner, string fresh, AccountAgent toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
         string? name, Life life, SignInWay way)
     {
@@ -527,7 +527,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// from that one reading rather than asking the tool again; where the reading failed, the end reads as before.
     /// </remarks>
     private async Task<int> SignInToAsync(
-        string harness, string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
+        string harness, string owner, string account, AccountAgent toolchain, HarnessCommand run, string profileHome,
         Action<string> stream, DriverConfig config, Action<HarnessRun> track, Life life,
         SignInWay way)
     {
@@ -689,7 +689,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// that cannot start a session.
     /// </remarks>
     private async Task<int> PinAsync(
-        string harness, HarnessToolchain toolchain, Action<string> stream, string version,
+        string harness, AccountAgent toolchain, Action<string> stream, string version,
         CancellationToken ct, Action<HarnessRun> started)
     {
         var code = await HarnessActions.PinAsync(
@@ -706,7 +706,7 @@ public sealed class AgentActions(IEventBus events, DriverLoop loop)
     /// runs its own updater. The machine's pin, the one the roster shows.
     /// </summary>
     private Task<int> UpdateAsync(
-        string harness, HarnessToolchain toolchain, IReadOnlyList<string>? command, Action<string> stream,
+        string harness, AccountAgent toolchain, IReadOnlyList<string>? command, Action<string> stream,
         CancellationToken ct, Action<HarnessRun> started) =>
         HarnessActions.UpdateAsync(
             toolchain, command, _loop.Harnesses.Home, harness,

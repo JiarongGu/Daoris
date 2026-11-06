@@ -43,7 +43,7 @@ public static class HarnessProbe
     /// </param>
     public static async Task<HarnessReport> ProbeAsync(
         string adapter,
-        HarnessToolchain toolchain,
+        AccountAgent toolchain,
         IReadOnlyList<string>? command,
         HarnessSettings settings,
         string home,
@@ -75,14 +75,14 @@ public static class HarnessProbe
                 $"pinned to {run.Pinned} on this machine, and nothing is installed at that version — "
                 + $"`daoris agent pin {adapter} {run.Pinned}` installs it, and "
                 + $"`daoris agent unpin {adapter}` goes back to PATH",
-                toolchain.ProfileVariable,
+                toolchain.Home.Variable,
                 settings.FirstOf(owner),
                 []);
         }
 
-        var version = toolchain.ProbeByPresence
+        var version = toolchain.Program.ProbeByPresence
             ? (Ran: resolved.Count > 0 && CommandPresence.Resolvable(resolved[0]), Output: "", Problem: (string?)null)
-            : await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct, isManaged)
+            : await AskAsync(resolved, toolchain.Program.VersionArguments, profileHome: null, toolchain, ct, isManaged)
                 .ConfigureAwait(false);
 
         var present = version.Ran;
@@ -95,7 +95,7 @@ public static class HarnessProbe
             var held = HarnessKeys.Of(home, owner, name);
             // An account that is a key is asked WITH its key (AGT3), as a session would run it, so
             // the roster says what the tool says — and names it by the key's handle, never the key.
-            var key = toolchain.KeyVariable is { Length: > 0 } variable && held is not null
+            var key = toolchain.Accounts.KeyVariable is { Length: > 0 } variable && held is not null
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
             var said = prior?.Profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -120,7 +120,7 @@ public static class HarnessProbe
             present,
             present ? FirstLine(version.Output) : null,
             present ? null : version.Problem,
-            toolchain.ProfileVariable,
+            toolchain.Home.Variable,
             // The order's first, where the machine's default was (POOL1a2, the account-pool design §2.2).
             settings.FirstOf(owner),
             profiles,
@@ -172,7 +172,7 @@ public static class HarnessProbe
     /// <param name="lockPath">The account's <see cref="ProbeLock"/>, asked under it (TOOL6g); null asks with none.</param>
     /// <param name="key">An account that is a key, asked with it as a session runs it (AGT3); null for a sign-in.</param>
     public static async Task<(LoginState Login, string? Account)> AskLoginAsync(
-        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        string adapter, AccountAgent toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct = default, string? lockPath = null,
         IReadOnlyDictionary<string, string>? key = null)
     {
@@ -187,7 +187,7 @@ public static class HarnessProbe
     /// </summary>
     /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
     internal static async Task<LoginAnswer> AskAccountAsync(
-        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        string adapter, AccountAgent toolchain, IReadOnlyList<string>? command,
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
         IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
     {
@@ -210,17 +210,17 @@ public static class HarnessProbe
     /// the screen's ran <c>PATH</c>'s, and a machine whose only <c>codex</c> is the pin could not sign one in.
     /// </remarks>
     public static HarnessCommand CommandOf(
-        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home,
+        string adapter, AccountAgent toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home,
         string? workspace = null)
     {
         if (command is { Count: > 0 }) return new HarnessCommand(adapter, command, null, null);
         if (settings.ResolveVersion(adapter, workspace, chosen: null) is not { } pinned)
         {
-            return new HarnessCommand(adapter, toolchain.Binary, null, null);
+            return new HarnessCommand(adapter, toolchain.Program.Binary, null, null);
         }
 
-        return HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is { } managed
-            ? new HarnessCommand(adapter, [managed, .. toolchain.Binary.Skip(1)], managed, pinned)
+        return HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Program.Binary) is { } managed
+            ? new HarnessCommand(adapter, [managed, .. toolchain.Program.Binary.Skip(1)], managed, pinned)
             : new HarnessCommand(adapter, [], null, pinned);
     }
 
@@ -240,11 +240,11 @@ public static class HarnessProbe
     /// <param name="patience">How long the lock is waited for (<see cref="ProbeLock.Patience"/> where null).</param>
     /// <returns>The answer, and whether the question was asked: none asked is no reading (ROSTER1).</returns>
     private static async Task<LoginAnswer> LoginAsync(
-        IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
+        IReadOnlyList<string> resolved, AccountAgent toolchain, string? profileHome, bool managed,
         CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
         Func<bool>? busy = null, LoginRead kept = default, TimeSpan? patience = null)
     {
-        if (toolchain.LoginCheck is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
+        if (toolchain.Accounts.Login is not { } question) return new LoginAnswer(LoginState.Unknown, null, false);
 
         // One status question per account at a time, in this process and across them (TOOL6g).
         await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, patience, ct).ConfigureAwait(false);
@@ -272,7 +272,7 @@ public static class HarnessProbe
         IReadOnlyList<string> resolved,
         IReadOnlyList<string> arguments,
         string? profileHome,
-        HarnessToolchain toolchain,
+        AccountAgent toolchain,
         CancellationToken ct,
         bool managed = false,
         IReadOnlyDictionary<string, string>? account = null)

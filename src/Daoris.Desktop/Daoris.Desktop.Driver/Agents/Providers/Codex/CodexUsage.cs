@@ -228,7 +228,7 @@ public static class CodexUsage
     /// <param name="managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
     /// <param name="workingDirectory">Where the process runs, or null for the caller's (Claude's read runs in an empty folder).</param>
     internal static ProcessStartInfo Prepare(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null,
+        IReadOnlyList<string> command, AccountAgent toolchain, string? profileHome, string? managed = null,
         string? workingDirectory = null)
     {
         var info = new ProcessStartInfo

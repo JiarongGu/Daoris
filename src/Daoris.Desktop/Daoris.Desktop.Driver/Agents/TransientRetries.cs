@@ -13,7 +13,7 @@ internal static class TransientRetries
     /// </param>
     /// <param name="profile">The account the run is on, for the machine log; null for the tool's own sign-in.</param>
     internal static TransientRetry For(
-        ProviderRegistry adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
+        ProviderRegistry adapters, AgentDoor adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
         ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
         Func<CancellationToken, Task<bool>> wanted, int tries = 5, DateTimeOffset? deadline = null)
     {
@@ -27,7 +27,7 @@ internal static class TransientRetries
             {
                 var read = AgentErrors.Read(adapters, adapter, DoorFailures.OfPrompt(refused), clock.GetUtcNow(), harnesses.Zone);
                 log?.Write("info", "agent.error", [
-                    ("session", sessionId), ("adapter", adapter.Name), ("account", profile), ("kind", read.Spelled), ("by", read.By),
+                    ("session", sessionId), ("adapter", adapter.Id.Value), ("account", profile), ("kind", read.Spelled), ("by", read.By),
                 ]);
                 return read;
             },
@@ -35,14 +35,14 @@ internal static class TransientRetries
             KeepGoOn = keepGoOn,
             Began = (episode, next) =>
             {
-                var noted = TransientRetry.Retrying(adapter.Name, episode.Words, next, tries);
+                var noted = TransientRetry.Retrying(adapter.Id.Value, episode.Words, next, tries);
                 output?.Append(sessionId, noted.Note);
                 events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
             },
             Tried = (episode, number, next) =>
             {
                 log?.Write("info", "agent.transient", [
-                    ("session", sessionId), ("adapter", adapter.Name), ("account", profile), ("by", episode.First.By), ("try", number),
+                    ("session", sessionId), ("adapter", adapter.Id.Value), ("account", profile), ("by", episode.First.By), ("try", number),
                     ("next", next),
                 ]);
                 // AGENTERRORS1a2 (§5.1, §8): the record's quiet event, a try going, which the head says nothing for.

@@ -8,17 +8,17 @@ internal static class CommitTrailers
     // The registration declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
     // MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
-    internal static string For(ISessionAdapter adapter, EarlierMaker? earlier = null) =>
+    internal static string For(AgentDoor adapter, EarlierMaker? earlier = null) =>
         earlier is not null && !SameMaker(adapter, earlier) ? $"{Own(adapter)}\n\n{Left(earlier)}" : Own(adapter);
 
     /// <summary>The maker a door's registration states (the door's own for a plugin's, else its provider's).</summary>
-    internal static string? MakerOf(ISessionAdapter adapter) => LegacyDoor.Of(adapter).Maker;
+    internal static string? MakerOf(AgentDoor adapter) => LegacyDoor.Of(adapter).Maker;
 
-    private static string Own(ISessionAdapter adapter)
+    private static string Own(AgentDoor adapter)
     {
         var maker = MakerOf(adapter);
         if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
-            return $"This start runs on `{adapter.Name}`, made by Anthropic. Use the model actually running this session for commit attribution. "
+            return $"This start runs on `{adapter.Id.Value}`, made by Anthropic. Use the model actually running this session for commit attribution. "
                 + "Your Claude harness adds its Co-Authored-By trailer; let it do so and do not add a duplicate or another maker's trailer.";
 
         var identity = maker switch
@@ -28,7 +28,7 @@ internal static class CommitTrailers
             _ => "AGENT (MAKER, MODEL) <your maker's attribution address>",
         };
         var on = maker is { Length: > 0 } ? $", made by {maker}" : "";
-        return $"This start runs on `{adapter.Name}`{on}. End every commit message you write with a Co-Authored-By trailer naming your own maker and the model actually running this session:\n\n"
+        return $"This start runs on `{adapter.Id.Value}`{on}. End every commit message you write with a Co-Authored-By trailer naming your own maker and the model actually running this session:\n\n"
             + $"Co-Authored-By: {identity}\n\n"
             + "Replace MODEL with the model your harness reports for this run, not an account default or a model from an earlier session's brief. "
             + "If no model identity is reported, say model unreported rather than invent one. "
@@ -56,8 +56,8 @@ internal static class CommitTrailers
     }
 
     /// <summary>One maker where both harnesses name theirs; else one harness, since a maker this build does not know is told apart by its harness.</summary>
-    private static bool SameMaker(ISessionAdapter adapter, EarlierMaker earlier) =>
+    private static bool SameMaker(AgentDoor adapter, EarlierMaker earlier) =>
         MakerOf(adapter) is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
             ? string.Equals(maker, earlier.Maker, StringComparison.OrdinalIgnoreCase)
-            : string.Equals(adapter.Name, earlier.Adapter, StringComparison.OrdinalIgnoreCase);
+            : string.Equals(adapter.Id.Value, earlier.Adapter, StringComparison.OrdinalIgnoreCase);
 }

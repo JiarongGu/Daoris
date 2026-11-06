@@ -45,10 +45,10 @@ public static class PartnerConfigurations
     /// <paramref name="hardDeny"/> as handed, which are empty where its agent takes no rules.
     /// </summary>
     public static PartnerConfiguration Of(
-        ISessionAdapter adapter, string? harnessVersion, string copy, RuleLists rules, IReadOnlyList<string> hardDeny, bool guarded,
+        AgentDoor adapter, string? harnessVersion, string copy, RuleLists rules, IReadOnlyList<string> hardDeny, bool guarded,
         string system) =>
-        new(adapter.Name, harnessVersion, adapter.AcpPosture, CopyAlone, HarnessDefault, system,
-            Digest(adapter.AcpPosture, copy, adapter.TakesSettings ? rules : RuleLists.Empty, adapter.TakesSettings ? hardDeny : [], adapter.TakesSettings && guarded));
+        new(adapter.Id.Value, harnessVersion, adapter.Postures.Ordinary, CopyAlone, HarnessDefault, system,
+            Digest(adapter.Postures.Ordinary, copy, adapter.Can.TakesSettings ? rules : RuleLists.Empty, adapter.Can.TakesSettings ? hardDeny : [], adapter.Can.TakesSettings && guarded));
 
     /// <summary>
     /// The digest of what Daoris passes: each list in ordinal order, so the same rules in another order digest alike, and the copy's

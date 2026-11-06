@@ -63,10 +63,10 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
         var listed = SessionRecords.Parse(json).First(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         var isHelp = WordsNever.IsHelp(listed);
         if (isHelp && switching) return null;
-        ISessionAdapter agent;
+        AgentDoor agent;
         try
         {
-            agent = context.Harnesses.Adapters.Resolve(ranOn);
+            agent = context.Harnesses.Adapters.Door(ranOn);
         }
         catch (DriverException)
         {
@@ -95,7 +95,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             // asking the roster again, so a second walk neither names another account nor counts a start never made.
             // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
             selection = await context.Harnesses
-                .SelectAsync(agent.Name, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
+                .SelectAsync(agent.Id.Value, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
                 .ConfigureAwait(false);
             var same = string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase);
             if (!selection.Allowed || (lost is null && same))
@@ -126,7 +126,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
 
         if (answer == LimitMove.NoRoom && elsewhere?.Order is null)
         {
-            return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own.");
+            return new StartedFrom(null, false, null, $"no other account of {agent.Id.Value} has room, so `{sessionId}` waits on its own.");
         }
 
         // The start the one walk counted, given back unless the new part opens; going on another agent, the walk over its actor's other
@@ -183,11 +183,11 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
                 ? await owner.HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
                 : elsewhere is { Order: { } order }
                     ? await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
+                            prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
                             leftBy: LimitMove.LeftBy(prior, agent), moves: moves)
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
-                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
+                            prior.Repository!, agent.Id.Value, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection,
                             moves: moves)
                         .ConfigureAwait(false);
             if (started.SessionId is not { } to)
@@ -256,7 +256,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             // The agent and account the new part opened on: the walk's, which is another agent where its own had no account left.
             var landed = await context.Service.RecordAsync(to, ct).ConfigureAwait(false);
             var account = landed?.Profile;
-            var onto = landed?.Adapter is { Length: > 0 } went ? went : agent.Name;
+            var onto = landed?.Adapter is { Length: > 0 } went ? went : agent.Id.Value;
             if (lost is not null) context.Note(sessionId, LimitNotes.ResumeRefused(lost));
             context.Note(sessionId, HandOverNotes.MovedOn(to, onto, account, moveWhy, null, message.Brief?.Text.Length ?? 0));
             context.Service.AccountSaid(

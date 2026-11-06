@@ -22,10 +22,10 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
             return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {choice.Sentence}") { Code = HelperWhy.NotStarted };
         }
 
-        ISessionAdapter adapter;
+        AgentDoor adapter;
         try
         {
-            adapter = _context.Adapters.Resolve(helper);
+            adapter = _context.Adapters.Door(helper);
         }
         catch (DriverException error)
         {
@@ -73,7 +73,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
 
                 try
                 {
-                    adapter = _context.Adapters.Resolve(nextHelper);
+                    adapter = _context.Adapters.Door(nextHelper);
                 }
                 catch (DriverException error)
                 {
@@ -96,7 +96,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
 
     /// <summary>The helper's turn from its record's open to its record's end, in its copy.</summary>
     private async Task<HelperPassRun> ReadHelperInCopyAsync(
-        HelperPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy,
+        HelperPassAsk ask, ReviewerChoice choice, AgentDoor adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy,
         OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
@@ -191,14 +191,14 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
-                            sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                            sessionId, ask.Repository, adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
                     // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
                     // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
                     if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
                     {
-                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Id.Value, notOffered);
                         await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
                         _context.Harnesses.Release(selection.Number, sessionId);
                         return Ended(refusedEnd.State, refusedEnd.Note) with { NotOffered = true };
@@ -214,7 +214,7 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
                     var transient = !byPerson && !limited && TransientEnded.Of(ended, timedOut: exitCode is null) is not null;
-                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Helper, adapter.Name, timedOut: exitCode is null);
+                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Helper, adapter.Id.Value, timedOut: exitCode is null);
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);

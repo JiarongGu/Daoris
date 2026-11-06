@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>A weekly reset, once told, is that account's</b>: the maker fixes it at one time each week (C1), so where the
-/// agent's toolchain says so (<see cref="HarnessToolchain.WeekFixed"/>) it is carried a week at a time once it passes, and
+/// agent's toolchain says so (<see cref="AccountAgent.WeekFixed"/>) it is carried a week at a time once it passes, and
 /// otherwise it is dropped at its reset (Codex: not read on any maker's page). Only a reset the agent named counts: a
 /// limit that named none told nothing about its week.</para>
 ///

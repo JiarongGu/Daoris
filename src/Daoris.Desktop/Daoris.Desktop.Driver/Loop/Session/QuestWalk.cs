@@ -26,10 +26,10 @@ internal sealed class QuestWalk(string home, DriverConfig config, LoopContext co
         var quest = start.Quest;
         var adopted = registry.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Adopted ?? true;
         var access = AccessRules.Resolve(config, quest.To, start.Workspace);
-        (string Code, string Why)? Gate(ActorEffective entry, ISessionAdapter adapter)
+        (string Code, string Why)? Gate(ActorEffective entry, AgentDoor adapter)
         {
             if (DrivenAccess.For(access, quest.To, adapter).Refusal is { } unposed) return (StartPasses.NoPosture, unposed);
-            return Adoption.Drives(adapter.Abilities(), adopted)
+            return Adoption.Drives(adapter.Can, adopted)
                 ? null
                 : (StartPasses.NoConnector, adopted
                     ? $"`{entry.Agent}` cannot take a quest here: its servers do not inherit its environment, so `{quest.To}`'s own `.mcp.json` would not reach it"

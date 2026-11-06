@@ -73,10 +73,10 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return owner.Held(sessionId, HeldWords.Program(unchosen.Message));
         }
 
-        ISessionAdapter? adapter = null;
+        AgentDoor? adapter = null;
         try
         {
-            adapter = _context.Harnesses.Adapters.Resolve(ranOn);
+            adapter = _context.Harnesses.Adapters.Door(ranOn);
         }
         catch (DriverException)
         {
@@ -88,14 +88,14 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var kept = _context.Conversations.Read(sessionId);
         var why = adapter is null
             ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(record, adapter.Name, adapter.Resumes, record.Profile, kept);
+            : Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, record.Profile, kept);
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Unkept);
             // 🔴 SESSCTX1c part B (D189 point 3): no id kept, or a door that cannot resume, proves its conversation lost, so it goes on by
             // itself in a new part handed the brief; anything else waits for the person, the brief ready. A lost conversation is decided by
             // the move it goes on in (ConversationLost, which knows the walk's answer); what cannot go on is the course's hold here.
-            if (adapter is not null && reason.Lost) return await owner.LostAsync(record, reason, adapter.Name, config, onEnded, held: true, ct).ConfigureAwait(false);
+            if (adapter is not null && reason.Lost) return await owner.LostAsync(record, reason, adapter.Id.Value, config, onEnded, held: true, ct).ConfigureAwait(false);
             owner.Decide(record, judged: reason.Code, agentGone: adapter is null);
             return owner.CannotGoOn(record, reason, ranOn);
         }
@@ -120,7 +120,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         // LIMITSWITCH2 (D137's note of 2026-10-25): cooling, and another account of its agent ready, the person's words go on now in a new part
         // there, through the ended limit move's body, which walks once and opens on what it judged; otherwise they wait for the earliest
         // reset of any account of its agent, never its own alone.
-        var resume = await owner.SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
+        var resume = await owner.SwitchableAsync(record, adapter.Id.Value, config, known.Workspace, ct).ConfigureAwait(false);
         var course = owner.Decide(record, answer: resume.Answer);
         if (resume.Switched || course is LineCourse.Move { Why: CourseFromWhy.Retry })
         {
@@ -147,12 +147,12 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return new(null, resume.Selection.Refusal);
         }
 
-        if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Name);
+        if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Id.Value);
         var selection = resume.Selection;
         if (!selection.Allowed) return owner.Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
+        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept) is { } account)
         {
-            return owner.CannotGoOn(record, account, adapter.Name);
+            return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
 
         // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first, before the words that waited.
@@ -202,7 +202,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
         var counted = CountTexts.GoOn(LineCountsRead.FactsOf(_context.Home, sessionId, json).Counts);
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
+            woke is { } until ? LimitNotes.Resumed(until) : OpeningNote(words, adapter.Id.Value, selection.Version, record.HarnessVersion),
             Continuations.AfterWords(inSync, counted),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
@@ -241,14 +241,14 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
     /// the help chat's set-aside and room; the help chat calls nothing here.
     /// </summary>
     private async Task<ChatStart> HelpGoingOnAsync(
-        PriorSession record, ISessionAdapter adapter, HarnessConversation kept, DriverConfig config,
+        PriorSession record, AgentDoor adapter, HarnessConversation kept, DriverConfig config,
         Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
     {
         var sessionId = record.Session;
 
         // Its account by name, as a chat's, among the machine's accounts (D89): going on keeps the account it ran on.
         var resume = await _context.Harnesses
-            .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
+            .ResumeAsync(adapter.Id.Value, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
             .ConfigureAwait(false);
         var course = owner.Decide(record, answer: resume.Answer);
         if (resume.Waits || course is LineCourse.Wait)
@@ -259,12 +259,12 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
         }
 
-        if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Name);
+        if (resume.Elsewhere is { } elsewhere) return owner.CannotGoOn(record, elsewhere, adapter.Id.Value);
         var selection = resume.Selection;
         if (!selection.Allowed) return owner.Held(sessionId, HeldWords.Refused(selection));
-        if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
+        if (Continuations.Judge(record, adapter.Id.Value, adapter.Can.Resumes, selection.Profile, kept) is { } account)
         {
-            return owner.CannotGoOn(record, account, adapter.Name);
+            return owner.CannotGoOn(record, account, adapter.Id.Value);
         }
 
         // Its own workspace's running one alone (ASKSCOPE1a): another workspace's runs on beside it.
@@ -296,7 +296,7 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             kept.Conversation, words,
             woke is { } until
                 ? LimitNotes.Resumed(until)
-                : Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+                : Continuations.OpeningNoted(adapter.Id.Value, selection.Version, record.HarnessVersion, answer: false),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files))
         {
             // LIMITRESUME1c (D206 §3.5): the words its account's limit refused, handed again first.

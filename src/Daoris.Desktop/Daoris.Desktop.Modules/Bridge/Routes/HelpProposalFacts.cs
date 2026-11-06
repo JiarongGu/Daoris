@@ -147,7 +147,7 @@ public sealed class HelpProposalFacts(DriverContext context)
                         Product = toolchain?.Product,
                         Owner = owner,
                         Accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner),
-                        SettingsKnown = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile is { Length: > 0 },
+                        SettingsKnown = _loop.Harnesses.AccountAgentOf(report.Adapter)?.SettingsFile is { Length: > 0 },
                     };
                 })],
                 // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them.

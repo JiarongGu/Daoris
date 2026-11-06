@@ -22,7 +22,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// </summary>
     public UsageQuestion? UsageOf(string adapter) =>
         roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.UsageOf(new DoorId(roster.Adapters.Resolve(adapter).Name)) as UsageQuestion
+            ? roster.Adapters.UsageOf(new DoorId(roster.Adapters.Door(adapter).Id.Value)) as UsageQuestion
             : null;
 
     /// <summary>
@@ -257,7 +257,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
             else
             {
                 if (UsageCommand(question, config) is not { } command) return null;
-                var toolchain = roster.AccountToolchain(adapter) ?? roster.Toolchain(adapter)!;
+                var toolchain = roster.AccountAgentOf(adapter) ?? roster.AgentOf(adapter)!;
                 // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
                 // person's own sign-in and might refresh their token (D197 point 3).
                 var profileHome = HarnessSettings.ProfileHome(roster.Home, owner, account);
@@ -269,7 +269,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
             // else the walk's readings as they are (a stand-in's, reader 0).
             var now = roster.Clock();
             var key = account;
-            var door = roster.Adapters.Resolve(adapter).Name;
+            var door = roster.Adapters.Door(adapter).Id.Value;
             if (readings is UsageAnswer answer)
             {
                 roster.History(owner, key, door, answer.Seen, answer.Source, answer.Reader, now, session: null, answer.Plan);

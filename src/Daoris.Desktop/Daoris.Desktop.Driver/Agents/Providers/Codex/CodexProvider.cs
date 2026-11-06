@@ -16,8 +16,7 @@ internal static class CodexProvider
 
     public static Provider Registration()
     {
-        var holder = CodexAccounts.Toolchain;
-        var pool = PoolFacts.Of(holder);
+        var pool = CodexAccounts.Pool;
         var door = new AgentDoor(
             new DoorId("codex-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
             // The binary is the adapter's own bin, `codex-acp`, verified against the installed package's `bin` map.
@@ -47,9 +46,9 @@ internal static class CodexProvider
 
         return new Provider(
             new ProviderId(CodexAccounts.Agent),
-            new ProviderIdentity(holder.Product, holder.Maker, holder.Mark, StandIn: false, DeclaredBy: []),
+            CodexAccounts.Identity,
             [door],
-            Known<ToolSpec>.Declared(ToolSpecs.Of(holder), Evidence),
+            Known<ToolSpec>.Declared(CodexAccounts.Program, Evidence),
             Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(CodexAccounts.Agent), null, pool), Evidence),
             // What Codex says when a limit refuses a turn (TOOL4k) and how an account's windows are asked (CODEXUSE1) are the agent's:
             // its built door is read through them, and a harness naming `codex` still reads its sign-in alone (its `Lent` part below).

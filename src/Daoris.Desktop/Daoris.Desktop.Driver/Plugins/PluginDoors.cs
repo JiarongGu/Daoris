@@ -24,6 +24,6 @@ public static class PluginDoors
         harness.FullPosture,
         harness.AskingPosture);
 
-    /// <summary>The door <paramref name="harness"/> makes for <paramref name="plugin"/>, as the adapter set carries it.</summary>
-    public static ISessionAdapter Adapter(PluginHarness harness, string plugin) => DeclaredDoors.Adapter(Declare(harness, plugin));
+    /// <summary>The provider <paramref name="harness"/> makes for <paramref name="plugin"/>, with its one door, as the registry carries it.</summary>
+    public static Provider Provider(PluginHarness harness, string plugin) => DeclaredDoors.Provider(Declare(harness, plugin));
 }

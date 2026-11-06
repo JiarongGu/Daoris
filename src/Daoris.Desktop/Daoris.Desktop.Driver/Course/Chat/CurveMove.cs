@@ -96,9 +96,9 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         RotationScope scope;
         try
         {
-            var resolved = _context.Harnesses.Adapters.Resolve(adapter);
-            if (resolved.Toolchain is not { } toolchain) return null;
-            (agent, owner) = (resolved.Name, _context.Harnesses.Adapters.OwnerOfAgent(resolved.Name).Value);
+            var resolved = _context.Harnesses.Adapters.Door(adapter);
+            if (_context.Harnesses.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return null;
+            (agent, owner) = (resolved.Id.Value, _context.Harnesses.Adapters.OwnerOfAgent(resolved.Id.Value).Value);
             scope = _context.Harnesses.Settings.Set(owner);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or JsonException)

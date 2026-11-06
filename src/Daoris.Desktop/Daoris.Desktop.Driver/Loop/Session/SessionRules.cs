@@ -29,7 +29,7 @@ internal static class SessionRules
     /// <param name="heavy">What its run's checks hand it: under <c>light</c>, each heavy gate's declared command denied exactly beside the
     /// person's rules, and auto mode's classifier told the heavy gates are the verification's.</param>
     public static (string? File, object? Meta, HandedSection Handed) Hand(
-        string home, ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
+        string home, AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job, AcrossReach? across, string? said,
         bool opinion, bool helper, IReadOnlyList<string>? plugins, string? brainstorm,
         IReadOnlyList<string>? continued, HeavyHanded? heavy, bool partner)
@@ -93,9 +93,9 @@ internal static class SessionRules
             // Which agent made each call, and each subagent's start and stop: the part's children bound by its lineage.
             ChildLineage.PathOf(home, sessionId)));
         var handed = Handed(takes: true, rules, composed, workspace, repository);
-        if (!adapter.Abilities().RulesOnWire)
+        if (!adapter.Can.RulesOnWire)
         {
-            adapter.HandSettings(info, file);
+            adapter.Spawned().HandSettings(info, file);
             return (file, null, handed);
         }
 
@@ -114,14 +114,14 @@ internal static class SessionRules
     }
 
     /// <summary>The protocol-door posture a brainstorm's pass asks; null for every other session, and for a pass whose harness a rule narrows.</summary>
-    public static string? PassPosture(SessionTarget target, ISessionAdapter adapter) =>
+    public static string? PassPosture(SessionTarget target, AgentDoor adapter) =>
         target.Brainstorm is not null ? BrainstormPermissions.Posture(adapter) : null;
 
     /// <summary>
     /// The permission rules a session was handed, kept in its instruction's account: how many in each list, the scopes they were composed
     /// for, the hard denials and the tree guard. The rules file goes when the run does, and the account keeps what it held by count.
     /// </summary>
-    /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="ISessionAdapter.TakesSettings"/>).</param>
+    /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="AgentDoor.TakesSettings"/>).</param>
     /// <param name="handed">The rules as handed: the composition, with any read of the quest's files, reach across and job's own.</param>
     public static HandedSection Handed(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository)
     {

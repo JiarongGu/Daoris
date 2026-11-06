@@ -83,7 +83,7 @@ public sealed class AgentsRoutes(DriverContext context)
                 var pinned = settings.ResolveVersion(report.Adapter, null, null);
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
-                var settingsFile = harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
+                var settingsFile = harnesses.AccountAgentOf(report.Adapter)?.SettingsFile;
                 var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
@@ -219,7 +219,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// auth login</c> alone. Public for the fast half's table, which reads it without the roster the route asks.
     /// </summary>
     public static (bool SignsIn, bool TakesKey, bool DeviceCode) AccountActs(HarnessRoster harnesses, string adapter) =>
-        harnesses.AccountToolchain(adapter) is { } agent
+        harnesses.AccountAgentOf(adapter) is { } agent
             ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 },
                agent.LoginArguments is { Count: > 0 } && agent.DeviceLoginArguments is { Count: > 0 })
             : (false, false, false);
@@ -233,7 +233,7 @@ public sealed class AgentsRoutes(DriverContext context)
         string? first = null;
         foreach (var name in _loop.Harnesses.Known)
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
                 toolchain = _loop.Harnesses.Toolchain(name);
@@ -325,7 +325,7 @@ public sealed class AgentsRoutes(DriverContext context)
             wiring.Refusal,
         };
 
-        HarnessToolchain? Known(string adapter)
+        AccountAgent? Known(string adapter)
         {
             try
             {

@@ -25,7 +25,7 @@ internal sealed class NativeGoOn(LoopContext context)
     /// closed quest with an uncommitted tree resumes the conversation once more in Daoris's own words. Null never carries on.
     /// </param>
     internal async Task<AgentRunEnd> GoOnAsync(
-        TransportRun run, DrivenInbox held, ISessionAdapter adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
+        TransportRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
         List<ChatMessage> left, CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
     {
@@ -103,7 +103,7 @@ internal sealed class NativeGoOn(LoopContext context)
             }
 
             ended = await GoneOnAsync(
-                    run, held, sessionId, conversation, words, NativeWords.Prompt(words), NativeWords.Opening(adapter.Name, words), ended, ct)
+                    run, held, sessionId, conversation, words, NativeWords.Prompt(words), NativeWords.Opening(adapter.Id.Value, words), ended, ct)
                 .ConfigureAwait(false);
         }
 

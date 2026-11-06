@@ -220,7 +220,7 @@ internal interface ITransportHost
     /// A resume's process given the environment a start has (<c>Driver.Prepare</c>). Never asked of a host whose runs are handed no selection,
     /// as a conversation's are: it goes on through a start of its own (MSG1c).
     /// </summary>
-    ProcessStartInfo Prepared(ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
+    ProcessStartInfo Prepared(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         throw new NotSupportedException("a conversation goes on through a start of its own, never through its run's go-on.");
 
     /// <summary>How long an agent whose session ended with its own background work still running is given to exit once its stdin closed (DONEEND1).</summary>

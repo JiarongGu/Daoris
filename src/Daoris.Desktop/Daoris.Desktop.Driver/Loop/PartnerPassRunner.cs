@@ -43,10 +43,10 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {choice.Sentence}") { Code = PartnerWhy.NotMeasured };
         }
 
-        ISessionAdapter adapter;
+        AgentDoor adapter;
         try
         {
-            adapter = _context.Adapters.Resolve(agent);
+            adapter = _context.Adapters.Door(agent);
         }
         catch (DriverException error)
         {
@@ -98,7 +98,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
     }
 
     private async Task<PartnerPassRun> TurnAsync(
-        PartnerPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId,
+        PartnerPassAsk ask, ReviewerChoice choice, AgentDoor adapter, HarnessSelection selection, string agent, string sessionId,
         PartnerConfiguration configuration, OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
@@ -174,14 +174,14 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 {
                     if (used is not null)
                     {
-                        _context.Usage?.Record(new UsageEntry(sessionId, repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                        _context.Usage?.Record(new UsageEntry(sessionId, repository, adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
                     // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
                     // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
                     if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
                     {
-                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Id.Value, notOffered);
                         await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
                         _context.Harnesses.Release(selection.Number, sessionId);
                         return Ended(refusedEnd.State, PartnerEnds.Answered, refusedEnd.Note) with { NotOffered = true };
@@ -197,7 +197,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                     conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
                     var transient = !byPerson && !limited && TransientEnded.Of(ended, timedOut: exitCode is null) is not null;
-                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Partner, adapter.Name, timedOut: exitCode is null);
+                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Partner, adapter.Id.Value, timedOut: exitCode is null);
 
                     await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
                     var end = transient ? PartnerEnds.Transient : PartnerTurns.End(byPerson, exitCode, limited);

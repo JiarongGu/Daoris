@@ -117,7 +117,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
         LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null, bool picked = false)
     {
-        var resolved = roster.Adapters.Resolve(adapter);
+        var resolved = roster.Adapters.Door(adapter);
         var trigger = new LineTrigger(newSession, limited);
         var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
 
@@ -131,7 +131,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
             _ => SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, ask.NotOffered && named is not null ? [named] : null),
         };
 
-        if (resolved.Toolchain is not { } toolchain)
+        if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain)
         {
             // An adapter with no accounts has nothing to ask for: it spawns as it always did.
             var spawned = await LineAccount.DecideAsync(LineOwn.Without, trigger, LineConstraint.None, line, Walk).ConfigureAwait(false);
@@ -141,10 +141,10 @@ internal sealed class RosterSelection(HarnessRoster roster)
         // The own account's reading judged for the asked model before anything is asked of it (D205 §3.5(a)): one that refuses it is an
         // account that cannot carry the words, never ended or cooled.
         var unoffered = !string.IsNullOrWhiteSpace(account) && model is not null
-            && AgentOffers.Offers(roster.Home, resolved.Name, (await roster.ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false))?.Version,
+            && AgentOffers.Offers(roster.Home, resolved.Id.Value, (await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false))?.Version,
                 account.Trim(), roster.Clock()).Session.Judge(model) is not null;
 
-        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
         // A record on a Daoris account is judged against the set a start walks (POOL1a2, the account-pool design §2.4), whatever its
         // workspace; one that began in the tool's own home is judged against no scope (F1, ResumeAccount.Judge).
         var settled = roster.Settings.Set(owner);
@@ -274,9 +274,9 @@ internal sealed class RosterSelection(HarnessRoster roster)
     /// the scope's one account, more its list, walked by the rotation's own order and allowance rules; none leaves it naming
     /// nothing, which a start holds on (<see cref="RotationWords.NoAccountOf"/>), never running in the person's own tool home.
     /// </summary>
-    internal RotationScope Walked(RotationScope scope, string owner, HarnessToolchain toolchain)
+    internal RotationScope Walked(RotationScope scope, string owner, AccountAgent toolchain)
     {
-        if (scope.List.Count > 0 || scope.Begins is not null || toolchain.StartsInOwnHome) return scope;
+        if (scope.List.Count > 0 || scope.Begins is not null || toolchain.Home.StartsInOwnHome) return scope;
 
         IReadOnlyList<string> mine;
         try

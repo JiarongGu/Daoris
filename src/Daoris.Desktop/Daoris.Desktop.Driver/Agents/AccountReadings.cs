@@ -17,7 +17,7 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 
 /// <summary>
 /// How one agent says an account's windows (TOOL6c, D130 §5.2): its entry in the readings table, declared on its toolchain as
-/// <see cref="HarnessToolchain.Windows"/>, beside <see cref="HarnessToolchain.Limits"/>.
+/// <see cref="AccountAgent.Windows"/>, beside <see cref="AccountAgent.Limits"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>An entry grows only with a recorded frame</b> (§5.2): every window it names, every status word and the credits

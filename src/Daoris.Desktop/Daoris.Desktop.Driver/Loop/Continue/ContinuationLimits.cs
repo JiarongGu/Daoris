@@ -21,13 +21,13 @@ internal sealed class ContinuationLimits(LoopContext context)
     /// </summary>
     internal bool LimitResumes(PriorSession limited, string agent)
     {
-        ISessionAdapter adapter;
-        try { adapter = _context.Adapters.Resolve(agent); } catch (DriverException) { return false; }
-        if (!adapter.Abilities().HeldOnWire) return false;
+        AgentDoor adapter;
+        try { adapter = _context.Adapters.Door(agent); } catch (DriverException) { return false; }
+        if (!adapter.Can.HeldOnWire) return false;
 
         var asIfWords = limited with { Said = [new SaidWordView(null, LimitResume.Words, DateTimeOffset.UnixEpoch, [], true) { From = DaorisWords.From }] };
         return Continuations.Judge(
-            ConversationTrees.Stands, asIfWords, adapter.Name, adapter.Resumes, limited.Profile, _context.Conversations.Read(limited.Session)) is null;
+            ConversationTrees.Stands, asIfWords, adapter.Id.Value, adapter.Can.Resumes, limited.Profile, _context.Conversations.Read(limited.Session)) is null;
     }
 
     /// <summary>

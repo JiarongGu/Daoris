@@ -24,9 +24,9 @@ internal static class NativePrompt
     /// Whether the prompt's write returned (FOUNDATION1f-iv part b): what a carry-on's moved words' <c>sent</c> waits for. False for a start
     /// that wrote nothing here and for a write the pipe refused.
     /// </returns>
-    internal static async Task<bool> WriteAsync(Process process, ISessionAdapter adapter, string prompt, CancellationToken ct)
+    internal static async Task<bool> WriteAsync(Process process, AgentDoor adapter, string prompt, CancellationToken ct)
     {
-        if (adapter.Abilities().Transport != Transport.Native || !process.StartInfo.RedirectStandardInput) return false;
+        if (adapter.Can.Transport != Transport.Native || !process.StartInfo.RedirectStandardInput) return false;
         try
         {
             await process.StandardInput.WriteAsync(prompt.AsMemory(), ct).ConfigureAwait(false);

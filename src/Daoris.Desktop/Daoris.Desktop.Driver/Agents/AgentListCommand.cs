@@ -33,7 +33,7 @@ internal static class AgentListCommand
 
         foreach (var name in AgentsCommand.Named(world, path).Where(each => set.DeclaredBy(each) is null))
         {
-            var toolchain = set.ToolchainOf(name)!;
+            var toolchain = set.AgentNamed(name)!;
             var report = await ProbeAsync(name, toolchain, settings, home, set.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
             Say("");
             // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
@@ -51,13 +51,13 @@ internal static class AgentListCommand
             // What an installed agent can do, from its sheet; one not installed is no session to ask it of.
             if (report.Present && set.Facts.Of(name)?.Door(name) is { } sheet) Say($"{Under}{SheetLine.Of(sheet)}");
 
-            if (!report.Present && toolchain.Install is not null) Say($"{Under}`daoris agent install {name}` installs it, with its own installer");
+            if (!report.Present && toolchain.Program.Install is not null) Say($"{Under}`daoris agent install {name}` installs it, with its own installer");
 
             // The pin, and whether it is in force (TOOL2/D57): a pin whose directory is not there is said missing, with what the driver does
             // about it, since running whatever is on PATH would be a different tool than the one asked for.
             if (settings.ResolveVersion(name, null, chosen: null) is { } pinned)
             {
-                var binary = HarnessSettings.ManagedBinary(home, name, pinned, toolchain.Binary);
+                var binary = HarnessSettings.ManagedBinary(home, name, pinned, toolchain.Program.Binary);
                 Say($"{Under}pinned {pinned} — "
                     + (binary is not null ? $"managed: {binary}" : "NOT INSTALLED, so the driver refuses to start a session on it"));
                 if (binary is null) Say($"{Under}`daoris agent pin {name} {pinned}` installs it");
@@ -70,7 +70,7 @@ internal static class AgentListCommand
 
             // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its owner
             // listed them with what the agent said of each.
-            if (toolchain.AccountOf is { Length: > 0 } owner && set.ToolchainOf(owner) is { } owned)
+            if (toolchain.AccountOf is { Length: > 0 } owner && set.AgentNamed(owner) is { } owned)
             {
                 var whose = owned.Product ?? owner;
                 Say($"{Under}its accounts are {whose}'s, listed under `{owner}`: this is another way {whose} runs on them");
@@ -84,11 +84,11 @@ internal static class AgentListCommand
         // question is asked whether it is THERE rather than run, as the roster asks it: an ACP agent started bare waits on its stdin.
         foreach (var name in set.Names.Where(each => set.DeclaredBy(each) is not null))
         {
-            var toolchain = set.ToolchainOf(name)!;
+            var toolchain = set.AgentNamed(name)!;
             Say("");
-            var command = toolchain.Binary.Count > 0 ? toolchain.Binary[0] : "";
+            var command = toolchain.Program.Binary.Count > 0 ? toolchain.Program.Binary[0] : "";
             string state;
-            if (toolchain.ProbeByPresence)
+            if (toolchain.Program.ProbeByPresence)
             {
                 state = CommandPresence.Resolvable(command) ? "present (no version question declared)" : $"absent — `{command}` is not there";
             }
@@ -115,7 +115,7 @@ internal static class AgentListCommand
     /// in <c>reads.json</c> at the answer's moment. A pin with nothing installed at it is absent, its accounts listed unknown.
     /// </summary>
     private static async Task<HarnessReport> ProbeAsync(
-        string name, HarnessToolchain toolchain, HarnessSettings settings, string home, string owner, DateTimeOffset now, CancellationToken ct)
+        string name, AccountAgent toolchain, HarnessSettings settings, string home, string owner, DateTimeOffset now, CancellationToken ct)
     {
         var report = await HarnessProbe.ProbeAsync(
             name, toolchain, command: null, settings, home, ct, accountOf: owner,
@@ -162,7 +162,7 @@ internal static class AgentListCommand
     /// start (TOOL6f), and, where a start would otherwise reach the person's own sign-in, that Daoris starts none there (D175).
     /// </summary>
     private static List<string> AccountLines(
-        string name, HarnessToolchain toolchain, HarnessReport report, HarnessSettings settings, string home, ProviderRegistry set,
+        string name, AccountAgent toolchain, HarnessReport report, HarnessSettings settings, string home, ProviderRegistry set,
         DateTimeOffset now, TimeZoneInfo zone)
     {
         var owner = set.OwnerOfAgent(name).Value;
@@ -200,7 +200,7 @@ internal static class AgentListCommand
         // The set (POOL1b, the account-pool design §5.1): its order, how it is used beneath it (TOOL6a) and its next start (TOOL6f), one
         // for every workspace.
         var says = AgentAccountsCommand.Says(set, owner);
-        var product = set.ToolchainOf(owner)?.Product ?? owner;
+        var product = set.AgentNamed(owner)?.Product ?? owner;
         if (scope.List.Count > 0)
         {
             lines.Add($"{Under}{"order".PadRight(col)} {string.Join(", then ", scope.List.Select(Shown))}, for every workspace");
@@ -212,7 +212,7 @@ internal static class AgentListCommand
 
         // Then the person's own sign-in, outside the set (D197 point 3, §3): no state, never asked. Its cool-off is Daoris's own record of a
         // conversation begun there, which `profile ready --own` still ends.
-        if (toolchain.AccountOf is null && toolchain.LoginArguments is not null && report.Present)
+        if (toolchain.AccountOf is null && toolchain.Accounts.LoginArguments is not null && report.Present)
         {
             // OWNSPACE1d (D175): Daoris never starts in it; what began there is read where it is and goes on there.
             lines.Add($"{Under}your own sign-in, the account `{name}` uses at your own terminal, is not one of Daoris's accounts:");

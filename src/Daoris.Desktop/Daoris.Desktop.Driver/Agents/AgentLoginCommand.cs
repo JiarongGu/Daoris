@@ -31,15 +31,15 @@ internal static class AgentLoginCommand
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "login", "<agent>", world, path);
-        if (toolchain.LoginArguments is not { Count: > 0 })
+        if (toolchain.Accounts.LoginArguments is not { Count: > 0 })
         {
             throw new AgentWords(
-                $"`{name}` declares no login flow — log in with its own tooling, pointing {toolchain.ProfileVariable} at the profile directory.");
+                $"`{name}` declares no login flow — log in with its own tooling, pointing {toolchain.Home.Variable} at the profile directory.");
         }
 
         // CODEXLOGIN1: the tool's own sign-in first, its device code where asked.
         var byCode = args.Contains("--device-code");
-        if (byCode && toolchain.DeviceLoginArguments is not { Count: > 0 })
+        if (byCode && toolchain.Accounts.DeviceLoginArguments is not { Count: > 0 })
         {
             throw new AgentWords($"`{name}` signs in by no device code, so nothing was signed in — its own sign-in is its one way.");
         }
@@ -73,12 +73,12 @@ internal static class AgentLoginCommand
 
         // The same verb by the other way, said where one way did not sign in (CODEXLOGIN1): a workspace may refuse either.
         var typed = string.Join(' ', ["daoris agent login", name, .. args.Skip(2).Where(word => word != "--device-code")]);
-        string? otherWay = toolchain.DeviceLoginArguments is not { Count: > 0 } ? null
+        string? otherWay = toolchain.Accounts.DeviceLoginArguments is not { Count: > 0 } ? null
             : byCode ? $"`{typed}` signs in through your browser instead."
             : $"`{typed} --device-code` signs in with a device code instead.";
 
         // The browser's ports, each tried once before anything is made: where none can be taken, refused in the driver's words.
-        if (!byCode && toolchain.LoginPorts is { Count: > 0 } ports)
+        if (!byCode && toolchain.Accounts.LoginPorts is { Count: > 0 } ports)
         {
             var held = new List<(int Port, PortHold Hold)>();
             foreach (var port in ports)
@@ -110,7 +110,7 @@ internal static class AgentLoginCommand
 
     /// <summary>One sign-in's run: the flow at this terminal, then its end published under the home's lease.</summary>
     private sealed class SignIn(
-        AgentsWorld world, string agent, HarnessToolchain toolchain, string home, string path, HarnessSettings before, HarnessCommand binary,
+        AgentsWorld world, string agent, AccountAgent toolchain, string home, string path, HarnessSettings before, HarnessCommand binary,
         IReadOnlyList<string> login, CancellationToken ct)
     {
         private void Say(string line) => world.Instance.Out.WriteLine(line);

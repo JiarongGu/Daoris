@@ -96,7 +96,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// </summary>
     public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
 
-    internal string? CoolingAgent(ISessionAdapter resolved) => Cooling.CoolingAgent(resolved);
+    internal string? CoolingAgent(AgentDoor resolved) => Cooling.CoolingAgent(resolved);
 
     /// <inheritdoc cref="RosterCooling.LimitsOf"/>
     public LimitWords? LimitsOf(string adapter) => Cooling.LimitsOf(adapter);
@@ -193,7 +193,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public IReadOnlyList<string> Known => adapters.Names;
 
     /// <summary>This harness's toolchain, or null for an adapter that declares none.</summary>
-    public HarnessToolchain? Toolchain(string adapter) => adapters.Resolve(adapter).Toolchain;
+    public AccountAgent? AgentOf(string adapter) => adapters.AgentNamed(adapter);
 
     /// <summary>
     /// Whether this harness's door carries a conversation's STRUCTURE (D76 §1): the protocol door, or a
@@ -204,10 +204,10 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// conversation that lives in the console on a text one — rather than guessing from the emptiness,
     /// which told a fresh chat on a structured door that its door carries only text (CONV3b).
     /// </remarks>
-    public bool Structured(string adapter) => Structured(adapters.Resolve(adapter));
+    public bool Structured(string adapter) => Structured(adapters.Door(adapter));
 
     /// <inheritdoc cref="Structured(string)"/>
-    public static bool Structured(ISessionAdapter adapter) => adapter.Abilities().Structured;
+    public static bool Structured(AgentDoor adapter) => adapter.Can.Structured;
 
     /// <inheritdoc cref="RosterReport.ReportAsync"/>
     public Task<HarnessReport?> ReportAsync(string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, string? account = null)
@@ -236,7 +236,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
 
     internal bool AskAgain(string owner, string account, DateTimeOffset? read) => Reporting.AskAgain(owner, account, read);
 
-    internal Task<HarnessProbe.LoginAnswer> AskOneAsync(string adapter, HarnessToolchain toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
+    internal Task<HarnessProbe.LoginAnswer> AskOneAsync(string adapter, AccountAgent toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
         => Reporting.AskOneAsync(adapter, toolchain, owner, account, config, ct);
 
     /// <inheritdoc cref="RosterReport.Busy"/>
@@ -246,33 +246,29 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public Task<LoginRead> LoginOfAsync(string adapter, DriverConfig config, string profile, CancellationToken ct = default)
         => Reporting.LoginOfAsync(adapter, config, profile, ct);
 
-    /// <inheritdoc cref="RosterReport.AccountToolchain"/>
-    public HarnessToolchain? AccountToolchain(string adapter) => Reporting.AccountToolchain(adapter);
-
     /// <summary>
     /// The variable a key for this adapter's accounts is handed to the tool in, or null where its accounts take no key from Daoris: the
     /// one reader, the window's key actions and the terminal's <c>agent key</c> alike, through the registry's account agent.
     /// </summary>
     public string? KeyVariableOf(string adapter) =>
         Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? Adapters.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null
+            ? Adapters.AccountAgentOf(new DoorId(Adapters.Door(adapter).Id.Value))?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null
             : null;
 
     /// <summary>Whether this adapter's agent carries a window a week at a time once it passes (<c>WeekFixed</c>), read from its account agent's pool through the registry.</summary>
     public bool WeekFixedOf(string adapter) =>
         Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-        && Adapters.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.WeekFixed == true;
+        && Adapters.AccountAgentOf(new DoorId(Adapters.Door(adapter).Id.Value))?.Accounts.WeekFixed == true;
 
     /// <inheritdoc cref="RosterReport.AccountAgentOf"/>
-    public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) => Reporting.AccountAgentOf(adapter);
+    public AccountAgent? AccountAgentOf(string adapter) => Reporting.AccountAgentOf(adapter);
 
     /// <inheritdoc cref="RosterReport.SignInCommand"/>
     public HarnessCommand? SignInCommand(string adapter, DriverConfig config) => Reporting.SignInCommand(adapter, config);
 
-    internal (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
-        => Reporting.AccountAgent(name, toolchain);
+    internal AccountAgent AnswersFor(string name, AccountAgent own) => Reporting.AnswersFor(name, own);
 
-    internal string ReportingDoor(string name, HarnessToolchain toolchain) => Reporting.ReportingDoor(name, toolchain);
+    internal string ReportingDoor(string name, AccountAgent toolchain) => Reporting.ReportingDoor(name, toolchain);
 
     /// <inheritdoc cref="RosterReport.RosterAsync"/>
     public Task<IReadOnlyList<HarnessReport>> RosterAsync(DriverConfig config, bool refresh = false, CancellationToken ct = default)
@@ -299,7 +295,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal Task<HarnessSelection> ChooseAsync(string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct, bool own = false, string? model = null, bool asks = true)
         => Selecting.ChooseAsync(adapter, config, workspace, chosen, kind, counts, ct, own, model, asks);
 
-    internal RotationScope Walked(RotationScope scope, string owner, HarnessToolchain toolchain) => Selecting.Walked(scope, owner, toolchain);
+    internal RotationScope Walked(RotationScope scope, string owner, AccountAgent toolchain) => Selecting.Walked(scope, owner, toolchain);
 
     internal static HarnessSelection NoAccount(string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names)
         => RosterSelection.NoAccount(owner, signedOut, names);
@@ -352,7 +348,7 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     internal Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now, long except = 0)
         => Upcoming.Facts(owner, list, now, except);
 
-    internal Task<IReadOnlyList<string>> ReadyAsync(string adapter, HarnessToolchain toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
+    internal Task<IReadOnlyList<string>> ReadyAsync(string adapter, AccountAgent toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
         => Upcoming.ReadyAsync(adapter, toolchain, config, picked, now, ct);
 
     /// <inheritdoc cref="RosterNext.WiringAsync"/>

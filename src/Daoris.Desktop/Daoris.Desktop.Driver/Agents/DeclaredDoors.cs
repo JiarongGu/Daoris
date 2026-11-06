@@ -33,20 +33,16 @@ public static class DeclaredDoors
         string.IsNullOrEmpty(declared.AccountOf) ? null : new AccountKey(declared.AccountOf),
         InstructionsPart.None);
 
-    /// <summary>The door a declaration makes, as today's readers ask it of an adapter, until row t takes the seam away.</summary>
-    public static ISessionAdapter Adapter(DeclaredDoor declared)
-    {
-        var door = Door(declared);
-        return new LegacyDoor(Provider(door), door);
-    }
-
     /// <summary>
     /// The provider of a door a declaration made, made from the declaration alone: its id the door's, no program of its own, and the
-    /// account pool the door's own key names. The registry groups it with the provider its door's account key names.
+    /// account pool the door's own key names, which the registry's pool joins to the provider its door's account key names. A plugin's
+    /// harness takes Claude Code's skill layout, and no rule language of its own.
     /// </summary>
+    public static Provider Provider(DeclaredDoor declared) => Provider(Door(declared));
+
     private static Provider Provider(AgentDoor door) => new(
         new ProviderId(door.Id.Value),
-        new ProviderIdentity(null, door.Identity.Maker, null, false, [door.Identity.DeclaredBy!]),
+        new ProviderIdentity(door.Identity.Product, door.Identity.Maker, null, false, [door.Identity.DeclaredBy!]),
         [door],
         Known<ToolSpec>.Absent,
         Known<AccountsPart>.Declared(new AccountsPart(door.AccountOf ?? new AccountKey(door.Id.Value), null, PoolFacts.None), "a plugin's declaration"),
@@ -56,7 +52,7 @@ public static class DeclaredDoors
         Known<ISettingsFile>.Absent,
         Known<IChildVocabulary>.Absent,
         Known<IRuleLanguage>.Absent,
-        Known<ISkillLayout>.Absent,
+        Known<ISkillLayout>.Declared(ClaudeSkills.Layout, "a plugin's harness takes Claude Code's skill layout"),
         Known<IConversationHome>.Absent,
         Reach.Everywhere,
         Known<VocabularyPart>.Absent);
