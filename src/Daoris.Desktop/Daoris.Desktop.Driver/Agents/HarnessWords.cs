@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -13,10 +11,9 @@ public sealed class HarnessWords
     private readonly Queue<string> _lines = new();
     private string? _failure;
 
-    // BGWAIT1c: the commands it backgrounded still running, by task id; whether its turn's `result` came; what the harness ended after it.
+    // BGWAIT1c: the commands it backgrounded still running, by task id, and those the harness ended after its turn.
     private readonly Dictionary<string, string> _running = new(StringComparer.Ordinal);
     private readonly List<string> _cut = [];
-    private bool _turnEnded;
     private bool _modelRefused;
 
     /// <summary>A run begins: what the run before it said is not this one's ending.</summary>
@@ -29,55 +26,30 @@ public sealed class HarnessWords
             _modelRefused = false;
             _running.Clear();
             _cut.Clear();
-            _turnEnded = false;
         }
     }
 
     /// <summary>
-    /// A line of the native door's structured stdout, read for the session's own background work (BGWAIT1c;
-    /// docs/2026-09-30-console3-native-streams-evidence.md): a command it backgrounded (<c>task_started</c>, never a subagent's),
-    /// the turn's end (<c>result</c>), and that command ended after it (<c>task_updated</c> <c>killed</c>, or its
-    /// <c>task_notification</c> <c>stopped</c>), which only the harness does there, since the door has no stop for one task.
-    /// Work that ended before the turn did is no cut. Read before a console's streams take the line, so a run with no console
-    /// reads the same; read from the line's one frame, never parsed again.
+    /// A reading of the session's own background work (BGWAIT1c; docs/2026-09-30-console3-native-streams-evidence.md): a command it
+    /// backgrounded started (<see cref="WireReading.TaskStarted"/>, never a subagent, which is a child), and that command ended after its turn's
+    /// result in a kill's or a stop's word (<see cref="WireReading.TaskEnded"/>), which only the harness does there, since the door has no stop
+    /// for one task. Work that ended before the turn did is no cut. Told as each reading is said, whether or not a console keeps the streams
+    /// beside; every other reading passes over.
     /// </summary>
-    public void Heard(NativeFrame frame)
+    public void Read(WireReading reading)
     {
-        if (!frame.IsObject) return;
-        var root = frame.Root;
-        var type = frame.Type;
         lock (_gate)
         {
-            if (type == "result")
+            switch (reading)
             {
-                _turnEnded = true;
-                return;
-            }
-
-            if (type != "system" || Text(root, "task_id") is not { Length: > 0 } id) return;
-            switch (Text(root, "subtype"))
-            {
-                case "task_started" when Text(root, "task_type") != "local_agent":
-                    _running[id] = Text(root, "description") is { Length: > 0 } named ? named : id;
+                case WireReading.TaskStarted started:
+                    _running[started.Task] = started.Name is { Length: > 0 } named ? named : started.Task;
                     break;
-                case "task_updated" when root.TryGetProperty("patch", out var patch) && patch.ValueKind == JsonValueKind.Object:
-                    Ended(id, Text(patch, "status"));
-                    break;
-                case "task_notification":
-                    Ended(id, Text(root, "status"));
+                case WireReading.TaskEnded { Word: not (null or "running" or "pending") } ended when _running.Remove(ended.Task, out var name):
+                    if (ended.AfterTurn && ended.Word is "killed" or "stopped") _cut.Add(name);
                     break;
             }
         }
-
-        // Called under the gate: an ending of a command still running, cut where the turn had ended before it.
-        void Ended(string id, string? status)
-        {
-            if (status is null or "running" or "pending" || !_running.Remove(id, out var name)) return;
-            if (_turnEnded && status is "killed" or "stopped") _cut.Add(name);
-        }
-
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
     /// <summary>A line the harness wrote itself: on its stderr, or outside its protocol.</summary>

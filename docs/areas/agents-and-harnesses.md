@@ -59,8 +59,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
 | `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `StructuredOutput`, `NativePrompt` | same names | The native door: capture, `stream-json` mapping, the prompt written on stdin |
-| `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the children it says (`NativeChildren`), the run's own ending (`HarnessWords`), the streams beside (`ClaudeStreams`, a child's words included) and the dialect's mapper each take, none parsing the text again |
-| `NativeChildren` | `NativeChildren.cs` | The children a native stream says: a subagent's `task_started` and its `task_notification`, each read once per child into one `ChildSeen` or `ChildEnded` reading on the run's sink, in the wire's own words; the protocol door's `AcpStreams` says its announcements and ends the same way |
+| `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the children and background tasks it says (`NativeChildren`, `NativeTasks`), the streams beside (`ClaudeStreams`, for a child's words and a command's output path) and the dialect's mapper each take, none parsing the text again |
+| `NativeChildren` | `NativeChildren.cs` | The children a native stream says: a subagent's `task_started` and its `task_notification`, each read once per child into one `ChildSeen` (the call its lines name among it) or `ChildEnded` reading on the run's sink, in the wire's own words; the protocol door's `AcpStreams` says its announcements and ends the same way |
+| `NativeTasks` | `NativeTasks.cs` | The background commands a native stream says: a `task_started` of any type but a subagent's, and its `task_notification` in its word or else its `task_updated`'s, each read once per task into one `TaskStarted` or `TaskEnded` reading on the run's sink, an end after the turn's `result` marked so, and at the stream's close a task its update ended whose notification never came (a process Daoris ended at its turn's end) ended in the update's word, one with no ending word saying none; the capture and the layer run hand each child's and task's reading to the run's ending (`HarnessWords`) and the streams beside (`ClaudeStreams`), which open, end and cut by it and read no start or end off the frame (`NativeWorkFramesCensusTests`) |
 | `HarnessRoster` | `HarnessRoster.cs` (hub, 26 KB) | One judgement for every start, kept as one-line doors to the units below, with the roster's state and settings reads |
 | `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
 | `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach. What each account carried (`SessionUsage.ByAccount`) is counted by agent, each session keeping its door |
@@ -375,10 +376,12 @@ Agents page, and `orient-index` and `code-map` once files move.
   `ChildBindings`' fold names no agent: each line is learnt, and each call read as the child it came from (`ChildCall`), by the
   reader its agent's `IChildVocabulary` gives (`ClaudeChildLines`, joining a call by the hook's tool use; `CodexChildLines`, a thread
   with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; each native line is read once
-  (`NativeFrame`), and `NativeChildren`, `HarnessWords`, `ClaudeStreams` and the mapper take that frame; the lineage is Participants'
+  (`NativeFrame`), and `NativeChildren`, `NativeTasks`, `ClaudeStreams` and the mapper take that frame; the lineage is Participants'
   part of the run's sink (`LineageReadings`, which `SessionHold` and `ChatWatch` compose), written from each door's `ChildSeen` and
-  `ChildEnded` readings alone, each said once and stamped with its process's lineage token, the labels bounded as it writes (l's rest:
-  `ClaudeStreams` and `HarnessWords` still read a child's or a task's start and end off the frame, not from those readings); the open's
+  `ChildEnded` readings alone, each said once and stamped with its process's lineage token, the labels bounded as it writes, and the
+  native run's ending (`HarnessWords`) and its streams beside (`ClaudeStreams`) read a child's and a background task's start and end
+  from those readings and `TaskStarted` and `TaskEnded` alone, every recorded Claude Code stream saying its words as before
+  (`RecordedStreamWordsTests`); the open's
   refused model is one
   `WireReading.ModelRefused`, said by
   the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii is built (D243 for
@@ -475,7 +478,8 @@ Agents page, and `orient-index` and `code-map` once files move.
   the layer's stdin write returns and acknowledged once the agent names its conversation; a go-on carries the held words, a retry the
   words the ended process never acknowledged. Its readings say nothing of an end Daoris made (a bound, the quiet, a registered stop) or
   of a clean exit before the agent stated its end, as today's capture says nothing of a stream without its result, and its ending is
-  the harness's own words with what its stream said of its background work (`HarnessWords`, each raw frame handed by the seat). A
+  the harness's own words with what its stream said of its background work (`HarnessWords`, told the child and task readings each raw
+  frame the seat hands says, on the run's sink too). A
   move's parity is the oracle's
   (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by

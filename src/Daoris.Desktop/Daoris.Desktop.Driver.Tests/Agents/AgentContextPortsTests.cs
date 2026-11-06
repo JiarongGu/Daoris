@@ -149,7 +149,7 @@ public sealed class AgentContextPortsTests
         Assert.Equal(0, events.Subscriptions);
         var streamCalls = output.Streams.Calls;
         var reader = new ClaudeStreams(output.Streams, _ => { });
-        Assert.True(reader.Take(NativeFrame.Of("{\"type\":\"system\",\"subtype\":\"task_started\",\"task_id\":\"b1\",\"description\":\"task\",\"task_type\":\"local_bash\"}")));
+        reader.Read(new WireReading.TaskStarted("b1") { Kind = "local_bash", Name = "task" });
         Assert.Contains("open:task/b1:task", streamCalls);
         await reader.EndAllAsync();
         Assert.Contains("end:task/b1:session-ended", streamCalls);
