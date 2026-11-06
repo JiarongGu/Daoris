@@ -184,7 +184,11 @@ public sealed class CourseVocabularyTests
         ["Course/Chat/ChatHelperWords.cs"] = "FOUNDATION1h branch 7: the helper's go-on",
         ["Course/Chat/ChatRunner.StartFrom.cs"] = "FOUNDATION1h branch 8: start-from",
         ["Course/Chat/StartWith.cs"] = "FOUNDATION1h branch 8: start-with",
-        ["WorkOrders/StaffCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at the look",
+        ["Course/Chat/StaffCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at a line's place",
+        ["WorkOrders/StaffSnapshotCourse.cs"] = "STAFFPOLICY1e: a role policy's met condition read into the course's facts at the look over the snapshot",
+        ["Course/Chat/ConversationRules.cs"] = "CONTEXTDRIVE1n: a conversation's course reads the rules",
+        ["Course/Chat/LimitRuled.cs"] = "CONTEXTDRIVE1n: a conversation's limit move under the rules",
+        ["Course/Chat/TransientMove.cs"] = "CONTEXTDRIVE1n: a conversation's transient move under the rules",
     };
 
     /// <summary>

@@ -106,10 +106,6 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workplace/LandPerformer.cs": {
-      "reads": "other",
-      "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
-    },
     "Workplace/LandedBranchJson.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
@@ -127,7 +123,7 @@
       "row": "1j",
       "note": "reads the start target's marks to tell a one-turn start (an intake, a reviewer, a helper, a partner, a brainstorm); the start plan's (§2.4)"
     },
-    "Agents/Spawning.cs": {
+    "Loop/Session/SpawnRequests.cs": {
       "reads": "tells",
       "row": "1j",
       "note": "reads the start target's marks to tell a one-turn start (an intake, a reviewer, a helper, a partner, a brainstorm); the start plan's (§2.4)"
@@ -145,6 +141,20 @@
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
+    },
+    "Course/Chat/ConversationRules.cs": {
+      "reads": "tells",
+      "row": "1h",
+      "note": "tells Ask Daoris's record for the rules' place: a conversation under a supervisor rule is judged as a conversation unless it is Ask Daoris's"
+    },
+    "Course/Chat/TransientMove.cs": {
+      "reads": "tells",
+      "row": "1h",
+      "note": "tells a conversation (a chat record with no ask) for the one move a rule may make at a transient end; an intake or a driven record never moves this way"
+    },
+    "Loop/DriverOpinions.cs": {
+      "reads": "other",
+      "note": "the transient end's opinion reason beside a timed-out exit; no record's mark tells a work"
     },
     "Participants/Chat/ChatRunBinds.cs": {
       "reads": "other",
@@ -426,7 +436,7 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workflows/Nodes/OpinionNode.cs": {
+    "Workflows/Kinds/Opinion/OpinionNode.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },

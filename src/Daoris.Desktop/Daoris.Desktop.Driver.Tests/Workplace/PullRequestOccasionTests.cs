@@ -18,11 +18,10 @@ public sealed class PullRequestOccasionTests
     /// <summary>
     /// The occasions that may ask, each by the method it is asked from: LAND3's tidy, the clean-up's look, bringing up to date's
     /// look after its fetch, <i>Ask again</i> (PLUGHOOK1c), and the due moments of FABRIC-END6 (the fabric events design §A4.3, the
-    /// owner's yes in D173's part C note), which amend D148 point 2's list; and LANDNODE1e's reconcile of a delivery whose plugin
-    /// dispatch left no answer, which runs inside a person's landing and only for a plugin that declared <c>hooks.key</c>. Nothing
-    /// else joins them.
+    /// owner's yes in D173's part C note), which amend D148 point 2's list. The reconcile of a delivery whose plugin dispatch left no
+    /// answer asks the plugin by its own wire (<c>ReconcileStepAsync</c>), never the query. Nothing else joins them.
     /// </summary>
-    private static readonly string[] Occasions = ["CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync", "ReconcileAsync"];
+    private static readonly string[] Occasions = ["CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync"];
 
     [Fact]
     public void The_loop_keeps_no_process_for_the_query_and_has_nothing_to_ask_it()

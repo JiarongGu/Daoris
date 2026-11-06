@@ -125,7 +125,7 @@ internal sealed class PlanRound
             // A line an account's limit cut off whose role's policy asks, or whose bound of moves is reached, waits for the person's yes.
             if (Snapshot.PolicyHolds.TryGetValue(quest.Id, out var limitHold) && quest.Status is "Open" or "Taken"
                 && Snapshot.LastRun.TryGetValue(quest.Id, out var limitedHeld)
-                && (limitedHeld.Limit || StaffCourse.EndedQuiet(limitedHeld) || StaffCourse.FailedStrike(limitedHeld)))
+                && (limitedHeld.Limit || StaffSnapshotCourse.EndedQuiet(limitedHeld) || StaffSnapshotCourse.FailedStrike(limitedHeld)))
             {
                 considerations.Add(HoldVerdicts.PolicyHeld(quest, limitedHeld, limitHold));
                 continue;

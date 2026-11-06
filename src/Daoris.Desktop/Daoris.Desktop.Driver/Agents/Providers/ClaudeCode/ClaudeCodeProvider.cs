@@ -22,7 +22,7 @@ internal static class ClaudeCodeProvider
         Plan: @"""subscriptionType""\s*:\s*""([^""]+)""");
 
     /// <summary>Its id, which the settings' <em>questions</em> pause also keeps as its one value: the console's way of asking (D184 point 4).</summary>
-    public const string Id = "claude-code";
+    public const string Id = ConsoleProviderId.Value;
 
     private const string Evidence ="Claude Code's declaration";
 

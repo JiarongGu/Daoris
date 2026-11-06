@@ -48,12 +48,11 @@ public sealed partial class SettledReadersCensusTests
         ["WatchNodes.cs"] = "the integration transport's word about a conflict: kept, the conflict told to the session",
         ["IntegrateRoutes.cs"] = "the owner's *rebase it* of a superseded commit (INTEGRATE1h): kept, the disposition answered only then",
         ["ReviewLandingWorld.cs"] = "the landing's word to a session, said through the landing world: kept",
-        ["TreesConsole.cs"] = "the terminal's tree word to a session: kept",
-        ["TreesLandDesk.cs"] = "the window's Accept carrying a session on (LANDBACK1 part 1): kept, and the person's yes is kept with it",
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",
         ["TogetherRoutes.cs"] = "Bring them together's word to a line's head (LINESTOGETHER1d): kept, or the press says the head could not be told",
         ["OverlapsToldLook.cs"] = "Daoris's word to each of two running units changing one path, told once: kept, the told mark written, no answer read",
         ["LongCalls.cs"] = "Daoris's word to a session whose call ran long, through its inbox: held or settled, it reads only that the inbox was not closed",
+        ["QuietWord.cs"] = "the watcher's word to a quiet session, through its inbox: kept with no word where settled, its id read only where there is one, and the episode told either way",
     };
 
     /// <summary>The doors that stay today's: they ask for no settled answer and read what they always read.</summary>

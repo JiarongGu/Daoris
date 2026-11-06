@@ -158,7 +158,7 @@ public sealed record PriorSession(
     /// this one attempted is settled as this one comes up, before any go-on (COWORK1c, <see cref="UncertainWords"/>); one this shell
     /// attempted and kept waiting after a failed turn goes again (TURNFAIL1).
     /// </summary>
-    public IReadOnlyList<SaidWordView> Waiting => Said is { } said ? [.. said.Where(word => !DaorisKeys.IsWatch(word.Key))] : [];
+    public IReadOnlyList<SaidWordView> Waiting => Said is { } said ? [.. said.Where(word => !WatchKeys.Is(word.Key))] : [];
 
     /// <summary>
     /// The second opinions whose findings wait among its words (XAGENT1e, D155 point 7), each once, in the order handed: another
@@ -239,7 +239,7 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// </summary>
     public string? From { get; init; }
 
-    /// <summary>Its producer's key (COWORK1b, the design §6): Daoris's fact's, read by <see cref="DaorisKeys"/>; null for a word kept with none.</summary>
+    /// <summary>Its producer's key (COWORK1b, the design §6): Daoris's fact's, read by <c>DaorisKeys</c>; null for a word kept with none.</summary>
     public string? Key { get; init; }
 
     /// <summary>

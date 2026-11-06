@@ -63,7 +63,7 @@ public sealed class TransientOwnersTests : IDisposable
     {
         var ask = new AskView("a1", "work", "use the config", state, "intake") { Quests = [.. Enumerable.Range(0, quests).Select(at => $"q{at}")] };
 
-        Assert.Equal(settled, TransientOwners.Settled(0, ask));
-        Assert.True(TransientOwners.Settled(0, null));
+        Assert.Equal(settled, IntakeObservation.Settled(0, ask));
+        Assert.True(IntakeObservation.Settled(0, null));
     }
 }

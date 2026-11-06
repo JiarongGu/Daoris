@@ -217,6 +217,9 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     /// </summary>
     public string PromptWithFiles => Composed(ChatFiles.PathLines(Files));
 
+    /// <summary>Whether this is the watcher's word to a quiet session (SESSWATCH1b), which resets no answers-alone count and is never left waiting.</summary>
+    public bool IsWatch => DaorisKeys.IsWatch(Daoris?.Key);
+
     private string Composed(string afterWords) => string.Join(
         "\n\n",
         new[] { Brief?.Text, Briefing, Process?.Words, Preface, Draft?.Words }.Where(part => !string.IsNullOrEmpty(part))
@@ -238,7 +241,7 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : I
     {
         Kind = SessionEventKind.User,
         // SESSWATCH1b: the watcher's word to a quiet session, which resets no answers-alone count.
-        Watcher = DaorisKeys.IsWatch(message.Daoris?.Key) ? true : null,
+        Watcher = message.IsWatch ? true : null,
         // COWORK1d: a helper's answer taken at a step of a turn is Daoris's words around that helper's claim too.
         Origin = message.Persons ? "person" : Senders.Target,
         // SUPERVISOR1a-i: the supervisor's, on the owner's behalf, never the person's.

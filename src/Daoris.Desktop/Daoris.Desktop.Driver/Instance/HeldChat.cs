@@ -141,10 +141,10 @@ public sealed class HeldChat(InstanceWorld world)
         }
 
         // Judged from its size before the instance is asked to read it; the route's own ground judges what it reads.
-        if (new FileInfo(path).Length > ChatFiles.MaxBytes)
+        if (new FileInfo(path).Length > ChatAttachmentLimit.MaxBytes)
         {
             await world.Error.WriteLineAsync(
-                $"chat: `{Path.GetFileName(path)}` is larger than {ChatFiles.MaxBytes / (1024 * 1024)} MB, so nothing was attached.").ConfigureAwait(false);
+                $"chat: `{Path.GetFileName(path)}` is larger than {ChatAttachmentLimit.MaxBytes / (1024 * 1024)} MB, so nothing was attached.").ConfigureAwait(false);
             return;
         }
 

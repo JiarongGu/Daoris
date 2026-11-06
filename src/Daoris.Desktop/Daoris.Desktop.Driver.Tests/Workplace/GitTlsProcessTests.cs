@@ -69,7 +69,7 @@ public sealed class GitTlsProcessTests : IClassFixture<GitTlsHost>, IDisposable
         using var process = Process.Start(info)!;
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         return (process.ExitCode, await output, await error);
     }
 

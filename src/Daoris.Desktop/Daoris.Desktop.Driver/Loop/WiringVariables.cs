@@ -97,6 +97,8 @@ public static class WiringVariables
     public static IReadOnlyDictionary<string, string> SetAside { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["DAORIS_TARGET"] = "handed to a session by the driver: its target",
+        ["DAORIS_GIT_IDENTITY"] = "set by the git remote helper on its transport alone: the identity an HTTPS act is carried as, which the credential door answers for",
+        ["DAORIS_HOST_TOKEN"] = "a secret handed to one plugin process by the driver around its start: the API token of the identity serving the place's origin; never shown, its value or whether it is set",
         // SUPERVISOR1a-ii (D208 §2.2): a secret, so never shown, its value or whether it is set: every Daoris process removes it at its entry.
         ["DAORIS_ROLE_KEY"] = "a role's holder key (STEWARDROLE1a-i: shared by every role its holder holds), handed only to the holder's tab of the terminal panel at the owner's appointment; a secret never shown, removed from every Daoris process at its entry and from every start",
         ["DAORIS_BRAINSTORM_ID"] = "handed to a brainstorm's pass by the driver: the brainstorm it serves",

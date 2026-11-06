@@ -64,6 +64,10 @@ public static class PartnerStates
     /// </summary>
     public static bool Reserves(string state) => state is Approved or Preparing;
 
+    /// <summary>The states from which a piece is ending or already ended: what a retry of its partner's turn is no longer wanted for.</summary>
+    public static bool Finished(string state) =>
+        state is Ending or Held or Answered or Handed or TakenIn or NotTakenIn or Discarded or Imported;
+
     /// <summary>
     /// The states that count toward a lead's two open pieces, from <see cref="Approved"/> on (the design §2.3 step 2), so two looks
     /// cannot both pass the second; a piece whose end is not known stays open until the person's act.
