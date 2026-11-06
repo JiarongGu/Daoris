@@ -116,6 +116,18 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)))
         {
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{grown.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
+            // D245: a part its chain's tidy ended at this tip is ended by that record alone, and none of the proofs below judge it again.
+            if (ChainTidies.Of(standing, repository, grown.Branch, tip) is { } tidied)
+            {
+                var ended = new EndVerdict(EndState.Ended, EndBy.Tidied, tidied.Landing.Branch,
+                    InventoryWords.ProofSaid(EndBy.Tidied, tidied.Landing.Branch)) { Tip = tip, Line = line };
+                var tidiedHeld = Next(grown.Held, ended, await OnAtAsync(ended).ConfigureAwait(false), identity, now);
+                if (tidiedHeld == grown.Held) continue;
+                context.Grown.Hold(grown.Repository, grown.Branch, tidiedHeld);
+                written++;
+                continue;
+            }
+
             // FABRIC-END2d: a fact ended through a landing rests on that landing's end, so it holds while that end holds this pass.
             if (grown.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)
                 && (kept.By != EndBy.Landed || (ends.TryGetValue(kept.On, out var on) && on.End.Ended))) continue;

@@ -37,6 +37,9 @@ internal static class EndBy
     /// <summary>A session branch a completed pull request carried.</summary>
     public const string Carried = "carried";
 
+    /// <summary>A part of a chain its workflow's <c>tidy</c> ended once the chain's pull request merged (D245): its record, never a proof here.</summary>
+    public const string Tidied = "tidied";
+
     /// <summary>
     /// A landing branch whose own proofs did not end it, inside another landing branch whose own proof did (FABRIC-END2d, D102's group,
     /// as <see cref="LandedCleanups.JudgeLandedAsync"/> proves it): that one's history holds its commits.

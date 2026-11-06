@@ -67,8 +67,8 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
 /// <remarks>
 /// <para><b>Each fact has its one writer, unchanged</b>: the landing writes <c>handed</c>'s entry; the end judgement's keeper,
 /// <see cref="EndKeeping"/>, the kept fact <c>line</c> reads; the plugin answers' writers <c>Pushed</c> and <c>PullRequestState</c>;
-/// the service, through its quest exchange, the done <c>claimed</c> reads. The tidy is no node: no node removes anything (§E9), and
-/// what it removed is the inventory's (§D3).</para>
+/// the service, through its quest exchange, the done <c>claimed</c> reads. The look's tidy is no node, and what it removed is the
+/// inventory's (§D3); a run's <c>tidy</c> (D245) is Daoris's performed step, read here from what its door wrote on the landing.</para>
 /// <para><b>Not yet is no outcome</b>: git's proofs never fail. A record that cannot establish the outcome without a git read
 /// (<see cref="NodeGitReads"/>) leaves it unknown, and an unknown owner's unit is unknown, never ended (canary 27).</para>
 /// </remarks>
@@ -76,7 +76,7 @@ public static class BuiltInNodes
 {
     /// <summary>The kinds observed from records.</summary>
     public static readonly IReadOnlyList<string> Observed =
-        [NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Push, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds];
+        [NodeKinds.Claimed, NodeKinds.Land, NodeKinds.Review, NodeKinds.Push, NodeKinds.Line, NodeKinds.QuestHolds, NodeKinds.ContentHolds, NodeKinds.Monitor, NodeKinds.Tidy];
 
     /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
     public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
@@ -169,6 +169,12 @@ public static class BuiltInNodes
                     ? Reached(NodeSource.Git, unit.End.Revision, LandedBranches.FileName, holder.Branch, unit.End.Said)
                     : Reached(NodeSource.Git, unit.End.Revision, SessionBranches.FileName, branch?.Branch ?? unit.Subject.Artifact ?? unit.Id, unit.End.Said);
 
+            // D245: the watch on the pull request and the tidy of its chain, each read from the landing record at the landing's tip.
+            case NodeKinds.Monitor or NodeKinds.Tidy:
+                var seen = node.Kind == NodeKinds.Monitor ? CompletionNodes.Monitor(landing) : CompletionNodes.Tidy(landing);
+                return seen is { Reached: true, Landing: { } on }
+                    ? Reached(NodeSource.Landing, on.Tip, LandedBranches.FileName, on.Branch, seen.Said)
+                    : Seen(null, seen.Said);
             default:
                 // G8: Daoris's push (the push act) wrote the commit it pushed on the landing; the node is reached when git's remote-tracking ref holds it.
                 if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(null, "the branch was not pushed yet");
