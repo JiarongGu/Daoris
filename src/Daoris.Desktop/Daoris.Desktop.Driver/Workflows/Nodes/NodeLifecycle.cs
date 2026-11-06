@@ -5,7 +5,7 @@ public sealed record NodeTransition(string From, string To, string By, string Wh
 
 /// <summary>
 /// Where one node stands on the unit it acts on (FABRIC-NODE1; §E2): its state, and what the lifecycle needs to judge the next move.
-/// A value, never a store: an observed built-in's is derived from its records at each read (<see cref="BuiltInNodes"/>), and an
+/// A value, never a store: an observed built-in's is derived from its records at each read (<see cref="NodeObserving"/>), and an
 /// attempt's store is the unit's canonical record, kept by the rows that first start one (§E7, <i>unit records keep §D6's attempts</i>).
 /// </summary>
 /// <param name="Unit">The unit it acts on (<see cref="WorkUnit.Id"/>).</param>

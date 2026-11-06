@@ -245,7 +245,7 @@ public sealed class NodeRuntimeRunTests : NodeRunFixture
         Assert.Equal((NodeStates.Reached, NodeSource.Requests, "quests#q9"), (reached.State, reached.By, reached.Acceptance!.Evidence!.Ref));
 
         // Another session's quest holds nothing of this run's.
-        Assert.Empty(WorkRequestsNode.Published([RunHome.Quest("q9", "Open") with { PublishedBy = "someone-else" }], ["s1"]));
+        Assert.Empty(WorkRequestsReading.Published([RunHome.Quest("q9", "Open") with { PublishedBy = "someone-else" }], ["s1"]));
     }
 
     /// <summary>

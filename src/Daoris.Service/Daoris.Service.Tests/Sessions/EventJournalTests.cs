@@ -596,7 +596,7 @@ public sealed class EventJournalTests : IAsyncLifetime
         var order = new List<string>();
         while (await reader.ReadAsync()) order.Add(reader.GetString(0));
 
-        Assert.Equal(["sessions:opened", "asks:ask", "sessions:state", "quest_log:quest-op", "channel:message", "asks:ask"], order);
+        Assert.Equal(["sessions:opened", "asks:ask", "sessions:state", "quest_log:quest-op", "quests:opened", "channel:message", "asks:ask"], order);
         Assert.NotNull(quest);
     }
 
@@ -695,6 +695,7 @@ public sealed class EventJournalTests : IAsyncLifetime
 
         await using var count = alone.CreateCommand();
         count.CommandText = "SELECT count(*) FROM event_journal";
-        Assert.Equal(1L, Convert.ToInt64(await count.ExecuteScalarAsync(), CultureInfo.InvariantCulture));
+        // A publish is its operation's row and the cache's opened row.
+        Assert.Equal(store == "quests" ? 2L : 1L, Convert.ToInt64(await count.ExecuteScalarAsync(), CultureInfo.InvariantCulture));
     }
 }

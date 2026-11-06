@@ -49,7 +49,7 @@ public static class RequestHolds
                     scope.Quests.LastOrDefault()?.Id, asked?.Updated) { Request = true });
             }
 
-            if (WorkRequestsNode.Declined(scope.Requests) is not { } declined) continue;
+            if (WorkRequestsReading.Declined(scope.Requests) is not { } declined) continue;
             foreach (var node in each.Graph.Nodes.Where(node => node.Kind == NodeKinds.WorkRequests))
             {
                 if (WorkPerformer.StatusOf(kept, node.Id).State != NodeStates.Active || kept.Pending.Any(word => word.Node == node.Id)) continue;

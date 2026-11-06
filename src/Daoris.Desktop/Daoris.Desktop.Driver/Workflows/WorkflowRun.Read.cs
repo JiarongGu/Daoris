@@ -382,7 +382,7 @@ public static class WorkflowRunReader
         var serving = mine.Where(session => session.Quest is { } quest && workIds.Contains(quest)).Select(session => session.Id).ToList();
         var helpers = sessions.Where(session => session is { Piece: null, Opinion: null, Teammate: false } && session.Serves is { } served
             && serving.Any(each => string.Equals(each, served, StringComparison.OrdinalIgnoreCase)));
-        return WorkRequests.Draw(WorkRequestsNode.Published(reads.EveryQuest, serving, workIds), work, helpers);
+        return WorkRequests.Draw(WorkRequestsReading.Published(reads.EveryQuest, serving, workIds), work, helpers);
     }
 
     /// <summary>

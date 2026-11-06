@@ -8,7 +8,7 @@ internal sealed class LineNode : BuiltInNode, IObserves
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Landing;
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Line);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Line);
 
     public override string? Title => "On the line";
 
@@ -18,5 +18,5 @@ internal sealed class LineNode : BuiltInNode, IObserves
 
     public override bool EndsByTheLine => true;
 
-    public NodeObservation Observe(NodeReading reading) => BuiltInNodes.Line(reading);
+    public NodeObservation Observe(NodeReading reading) => LineEndReading.Observe(reading);
 }

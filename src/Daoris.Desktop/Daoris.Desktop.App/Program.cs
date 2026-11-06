@@ -285,6 +285,9 @@ internal static class Program
         builder.Services.AddSingleton<OpenFolder>(sp =>
             folder => sp.GetRequiredService<IShellLauncher>().OpenDirectory(folder));
         builder.Services.AddIpcModule<LogModule>();
+        // This Daoris's set-up presses change the person's account's variables, never the machine's (WIRING1e): the Windows account's,
+        // where there is one.
+        if (Daoris.Driver.WindowsAccountEnvironment.Exists) builder.Services.AddSingleton<Daoris.Driver.IAccountEnvironment, Daoris.Driver.WindowsAccountEnvironment>();
         // The person's own shells for the terminal view (CONSOLE4a, D96): each under a pseudo-console, typed at
         // and read over the bridge alone. The container disposes the module as the app ends, and every
         // terminal with it; each shell's job object ends with this process besides.

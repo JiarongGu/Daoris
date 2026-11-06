@@ -247,7 +247,7 @@ public static class WorkflowRunNodes
                 Acceptance = status.Binding! with
                 {
                     Evidence = authority.Evidenced
-                        ? new NodePort(BuiltInNodes.EvidenceSchema(node.Kind), $"{Record}#{step.Step.Id}", status.Binding.SubjectRevision, null)
+                        ? new NodePort(NodeObserving.EvidenceSchema(node.Kind), $"{Record}#{step.Step.Id}", status.Binding.SubjectRevision, null)
                         : null,
                 },
             },

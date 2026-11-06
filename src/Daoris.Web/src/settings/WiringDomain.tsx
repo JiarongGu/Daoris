@@ -2,16 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type DownloadCleared, type SpacePlan, type SpaceStarted, standingOf, useClearDownloads, useDriver, useOpenLogFolder,
-  useSetStandingConfirmation, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
+  useSetStandingConfirmation, useSetupWiring, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { useSetKeep } from '../bridge/driver';
 import { failure, useErrorNotify } from '../design/ui';
 import { sentence } from '../locales/format';
 import { standingSaid } from '../person/standing';
 import type { StarterDoor } from '../help/starters';
+import type { SetupAnswer } from '../data/wiring';
+import type { Answered } from '../work/InlineConfirm';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
+import { setupSaid } from './wiring/setupSaid';
+import { WiringAddressRow } from './wiring/WiringAddressRow';
 import { WiringCards } from './wiring/WiringCards';
+import { WiringPathRow } from './wiring/WiringPathRow';
+import { WiringTerminalLine } from './wiring/WiringTerminalLine';
 import { WiringDownloads } from './wiring/WiringDownloads';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
@@ -29,9 +35,11 @@ const FILE_DOORS: Record<string, StarterDoor> = {
 
 /**
  * Settings → This Daoris (WIRING1c, the this-Daoris design §2): how this install is set up here, read from the shell's one
- * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows, and sets only the keep rules**: the domain that sets a thing
- * keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing
- * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses; the Disk space card's *Change…* (KEEP1d),
+ * reader (`SYSTEM_WIRING`, WIRING1b) and drawn as cards. **It shows, and sets only the keep rules and the account's wiring**: the
+ * domain that sets a thing keeps its control, and a row whose value is set elsewhere carries a door to where. Its acts are the Downloads row's clearing
+ * (CACHECLEAR1), listed first and then pressed, which removes only what nothing uses; setting the wiring up (WIRING1e): *Open* by a
+ * row's id, *Put on my PATH*, *Copy a terminal line* and *Change the service's address*, each said first inside its row, on the
+ * account alone; the Disk space card's *Change…* (KEEP1d),
  * the keep rules, which have no other place on the page (the cleanup design §8, the this-Daoris design §9); and that card's *Free up
  * space…* (KEEP1e), listed first and then pressed, removing exactly what was listed.
  *
@@ -47,7 +55,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const { query, measure } = useSystemWiring();
   // The update is the shell's own state, not the wiring's (UPDATE1b): the Versions card's line.
   const update = useUpdateState();
-  // The one press of this page that opens a folder, the Machine log's own (LOG1c); the rest are WIRING1e's.
+  // The Logs card's own *Open folder* (LOG1c); every other row opens by its id (WIRING1e, below).
   const openLogs = useOpenLogFolder();
   const [busy, setBusy] = useState(false);
   // CACHECLEAR1: the Downloads row's list, read once the person opens it, and the one press after it (D88's shape).
@@ -73,6 +81,8 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setStanding = useSetStandingConfirmation();
   const [offRefused, setOffRefused] = useState<string | null>(null);
   const [offUnwritten, setOffUnwritten] = useState(false);
+  // WIRING1e: setting it up from the page: Open by id, the account's PATH and the service's address, each said first inside its row.
+  const setup = useSetupWiring();
   const asked = useRef(false);
   useErrorNotify(query.error, notify);
 
@@ -97,6 +107,12 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
 
   if (!query.data) return <DomainLoading rows={6} />;
   const wiring = query.data;
+  const accountAddress = wiring.variables.find((variable) => variable.name === 'DAORIS_SERVICE_URL');
+  // A press's end told to its ask: done, or the refusal in the catalogue's words. The wiring is read again as the route declares.
+  const ended = (answered: Answered) => ({
+    onSuccess: (answer: SetupAnswer) => (answer.done ? answered.done() : answered.refused(setupSaid(t, answer.why, answer.message))),
+    onError: (error: unknown) => answered.refused(sentence(error)),
+  });
   const list = (
     <WiringDownloads
       listing={downloads.data}
@@ -180,6 +196,26 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
               onError: (error) => setOffRefused(sentence(error)),
             });
           }}
+        />
+      )}
+      onOpen={(folder) => setup.open.mutate(folder, {
+        onSuccess: (answer) => { if (!answer.done) notify(setupSaid(t, answer.why, answer.message)); },
+        onError: failure(notify),
+      })}
+      terminalSetup={(
+        <>
+          <WiringPathRow terminal={wiring.terminal} busy={setup.path.isPending} onPress={(on, answered) => setup.path.mutate(on, ended(answered))} />
+          <WiringTerminalLine
+            facts={{ home: wiring.folder.path, url: wiring.service.url, bin: wiring.terminal.bin ?? null }}
+            onCopy={(line) => { void navigator.clipboard?.writeText(line).then(() => notify(t('settings.daoris.setup.line.copied')), () => {}); }}
+          />
+        </>
+      )}
+      addressSetup={(
+        <WiringAddressRow
+          account={accountAddress?.accountSet && accountAddress.account !== null ? accountAddress.account : null}
+          busy={setup.address.isPending}
+          onPress={(url, answered) => setup.address.mutate(url, ended(answered))}
         />
       )}
       onOpenLogFolder={() => openLogs.mutate(undefined, {

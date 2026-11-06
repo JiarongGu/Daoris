@@ -39,7 +39,7 @@ internal sealed class WorkplaceWorkflowsOperations : IWorkplaceWorkflows, IWorkp
     }
 
     public string? SkippedLook(string home, string run, string? node) =>
-        RunNodeWords.SkippedLook(new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), node);
+        LookReading.SkippedWords(new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), node);
 
     public ReviewWord KeepReviewWord(string home, Func<bool>? holdsLease, IWorkplaceProcess process, DateTimeOffset now, string? words = null)
     {

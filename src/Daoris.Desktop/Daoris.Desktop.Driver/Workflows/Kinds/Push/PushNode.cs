@@ -33,7 +33,7 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts
         }
     }
 
-    public override string? Evidence => BuiltInNodes.EvidenceSchema(NodeKinds.Push);
+    public override string? Evidence => NodeObserving.EvidenceSchema(NodeKinds.Push);
 
     public override string? Title => "The push";
 

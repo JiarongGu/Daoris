@@ -27,7 +27,7 @@ public static class PullRequestReading
             return new(null, $"it reads a {WorkUnitKind.Branch} unit's pull request, and this is a {reading.Unit.Kind}") { Refused = NodeRefusal.NotThisUnit };
         }
 
-        return reading.Unit.OwnerKnown ? Of(BuiltInNodes.LandingOf(reading.Unit)) : new(null, "no record names its unit, so nothing of it is said") { Unknown = true };
+        return reading.Unit.OwnerKnown ? Of(NodeObserving.LandingOf(reading.Unit)) : new(null, "no record names its unit, so nothing of it is said") { Unknown = true };
     }
 
     /// <summary>The state of <paramref name="landing"/>'s pull request.</summary>

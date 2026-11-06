@@ -300,6 +300,13 @@ internal static class QuestSchema
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // EVENTHOOK1d-i (D244 point 1): and each move the replay writes to the cache, the source of the quest kinds an outside session hears.
+        await using (var moves = db.Command())
+        {
+            moves.CommandText = EventJournal.QuestsSchema;
+            await moves.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         return newer;
     }
 }

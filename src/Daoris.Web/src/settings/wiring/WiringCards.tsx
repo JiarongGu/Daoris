@@ -28,7 +28,15 @@ export type WiringDoors = {
  * shell's one answer. The domain (`WiringDomain`) holds the hooks and hands the answer here; a story hands a fixture, so
  * the whole domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1). A molecule: every state by props.
  */
-export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, standing }: {
+export function WiringCards({
+  wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, standing, onOpen, terminalSetup, addressSetup,
+}: {
+  /** *Open* on a folder or file row, by the id the read gave (WIRING1e). */
+  onOpen?: (id: string) => void;
+  /** The Terminal card's set-up rows (WIRING1e): *Put on my PATH* and *Copy a terminal line*. */
+  terminalSetup?: ReactNode;
+  /** The Service card's *Change the service's address* (WIRING1e). */
+  addressSetup?: ReactNode;
   wiring: SystemWiring;
   /** The install's update, the shell's own state (UPDATE1b): the Versions card's line. */
   update?: UpdateState;
@@ -47,11 +55,11 @@ export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLog
   return (
     <>
       <WiringHead kind={wiring.folder.kind} />
-      <WiringFolders wiring={wiring} busy={busy} onMeasure={onMeasure} downloads={downloads} onDownloads={onDownloads} />
+      <WiringFolders wiring={wiring} busy={busy} onMeasure={onMeasure} downloads={downloads} onDownloads={onDownloads} onOpen={onOpen} />
       {space}
-      <WiringService wiring={wiring} />
+      <WiringService wiring={wiring} setup={addressSetup} />
       <WiringLoop loop={wiring.loop} onDriver={doors.driver} />
-      <WiringFiles files={wiring.files} onDoor={doors.file} />
+      <WiringFiles files={wiring.files} onDoor={doors.file} onOpen={onOpen} />
       <WiringVariablesCard variables={wiring.variables} />
       <WiringVersions
         versions={wiring.versions}
@@ -60,7 +68,7 @@ export function WiringCards({ wiring, update, busy = false, onMeasure, onOpenLog
         onTools={doors.tools}
         onDriver={doors.driver}
       />
-      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} standing={standing} />
+      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} standing={standing} setup={terminalSetup} />
       <WiringKnowledge knowledge={wiring.knowledge} tier={wiring.service.tier} tierWhy={wiring.service.tierWhy} onAi={doors.ai} />
       <WiringLogs logs={wiring.logs} onOpenFolder={onOpenLogFolder} onLog={doors.logs} />
       {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}

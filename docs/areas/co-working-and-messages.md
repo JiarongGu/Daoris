@@ -249,7 +249,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (rows d, f, i): the terminal's `sessions helper --after --to-me` and `sessions pass`; Ask Daoris's `session` cards for the person's helper doors; the dialog's *Write a piece*, *Second opinion* and *Work alongside* doors; the glossary's *co-worker* and *lead*; row i, the lead's wait on its own partner.
 - **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case). The lead's own `partner_ask` has no row.
-- **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel.
+- **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel as a member of its own, under the person's Confirm (`docs/2026-11-06-event-channel-design.md` §5, proposed; chunks CJ-A to CJ-D).
 - No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.
