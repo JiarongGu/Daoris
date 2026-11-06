@@ -15,6 +15,7 @@ public sealed class ChannelMemberRollTests : IAsyncLifetime
     private SqliteConnection _connection = null!;
     private AskDesk _asks = null!;
     private SessionLedger _ledger = null!;
+    private SessionStore _sessions = null!;
     private ChannelDesk _channel = null!;
     private QuestExchange _exchange = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-11-06T09:00:00Z");
@@ -29,7 +30,7 @@ public sealed class ChannelMemberRollTests : IAsyncLifetime
         await _connection.OpenAsync();
         var quests = await QuestStore.OpenAsync(_connection);
         var askStore = await AskStore.OpenAsync(_connection);
-        var sessions = await SessionStore.OpenAsync(_connection);
+        var sessions = _sessions = await SessionStore.OpenAsync(_connection);
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(), DisclosurePolicy.LocalOnly, registry: new Registry());
@@ -77,6 +78,22 @@ public sealed class ChannelMemberRollTests : IAsyncLifetime
 
         await _channel.Members.LeaveAsync(member.Id, ChannelMember.ByPerson, Now.AddMinutes(3));
         Assert.Empty(await _channel.Roll.ListAsync(ask.Id, null));
+    }
+
+    /// <summary>What a part asked of a helper is open while the helper runs, though no part of the line does: the channel is not spent until it ends.</summary>
+    [Fact]
+    public async Task CHANNELJOIN1_a_channel_is_not_spent_while_a_helper_a_part_asked_still_runs()
+    {
+        var (ask, quest, session) = await AskedAsync();
+        await JoinAsync(ask: ask.Id);
+        await _exchange.RespondAsync(quest.Id, "decline", "not ours", Now.AddMinutes(1));
+        await _ledger.AdvanceAsync(session.Id, "failed", null, null, null, Now.AddMinutes(2));
+        var helper = (await new HelperDesk(_sessions).OpenAsync(new HelperOpen(session.Id, "codex-acp", Path.Combine(_root, "trees", "helper")), Now.AddMinutes(3))).Session!;
+
+        Assert.False(Assert.Single(await _channel.Roll.ListAsync(ask.Id, null)).Spent);
+
+        await _ledger.AdvanceAsync(helper.Id, "failed", null, null, null, Now.AddMinutes(4));
+        Assert.True(Assert.Single(await _channel.Roll.ListAsync(ask.Id, null)).Spent);
     }
 
     /// <summary>A channel is asked by its ask or by a session of its line, which the line's channel is read as; with no argument every member on the machine is listed.</summary>

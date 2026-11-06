@@ -164,7 +164,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     terminal say; a set-up parks at its line's rule; `STATE`'s `strikes` answers the retried quest's rule, else the machine's;
     `driver list` points to `role supervisor`. The cap stays a machine setting outside the rules. (from D229, D232)
 40. Rules are read with `driver role supervisor` and written with `driver role rules`, `SET_ROLE`/`SET_ROLES` naming
-    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The page writes
+    `supervisor` with `rules`, or `role_propose`. A rules press carrying a role's field is `mixed-shape`. The terminal names a
+    rule's roles after an `@` on each `--set`, `--off` or `--clear` (`SupervisorRulesFlags`), so Ask Daoris's card twin is
+    one command that clears the place and writes the rules the judge accepted, and the card carries the place and its rules
+    before and after as fields (`HelpRulesView`) that the page words from its catalogue in both languages (`RulesChange`). The page writes
     them in a fold under each place's Roles (`SupervisorRulesFold`, over `ROLES`' `supervisor` sets and counts), whole
     at the revision read, each rule saying what it replaces and keeping its roles whole (a rule set for several roles is
     drawn with them and written back as read); a role's editor says the rules naming it and writes none,
@@ -172,7 +175,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     `most`). A held answer carries its rule (`AnswerRuleWords`), a parked quest the failures rule's number
     (`parksAt`), and a hold on an ask or the moves bound words the rule; the head, the foot and *What needs you* say
     one in one sentence, and *Change the rule…* opens the place whose rule it is (`ruleDoor`, handed down by the frame as
-    `onChangeRule`). `SESSION_SUPERVISOR` answers, beside the decisions, the line's `counts` (each with the rule it acts
+    `onChangeRule`; a place that is not the machine, a workspace or a repository opens nothing). `SESSION_SUPERVISOR` answers, beside the decisions, the line's `counts` (each with the rule it acts
     by) and the `acts` the rules made: *Details* draws each count and its Supervisor line, and the head's chip
     (`supervisionChip`) names a count a rule holds the line at or one short of it. The room says each place's rules
     (`HelpRoomRules`); the window says *supervisor rule* and *count*. (from D229)
@@ -270,7 +273,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 2. D229 point 5 (a rule is a holder of the supervisor role) vs `Modules/Platform/StandingConfirmation.cs:172-176` (holders
    are `terminal` and `actor`; rules are a store set through the role door). Same meaning; the code's split reads right.
 3. D229's 2026-11-04 note (`daoris role rules`, `daoris role supervisor`) vs `Roles/RoleVerbs.cs` (`driver role rules`):
-   Ask Daoris's role cards print the note's form as their terminal twin (`Help/Proposals/HelpRoleProposals.cs`, `RulesTerminal`
+   Ask Daoris's role cards print the note's form as their terminal twin (`Roles/SupervisorRulesFlags.cs`, `Terminal`
    and the role card's command), while the verb's own grammar and help say `driver role`. The verb's grammar reads right.
 4. D226 (seven conditions, each with its actions) vs `Roles/StaffPolicyDoor.cs:12-34` (moves for four; signed-out,
    model-refused and budget are the walk's). Code reads right.
@@ -292,11 +295,7 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
 
 ## Open
 
-- **CONTEXTDRIVE1k (rest):** the room's goldens, regenerated at SCOPEVERIFY2; Ask Daoris's `role_propose` rules card is
-  the driver's one English sentence (`HelpRoleProposals.RulesPlan`), not yet a catalogue's words in both languages.
 - **CONTEXTDRIVE1j:** `refer`, the agent supervisor's *course* act.
-- **CONTEXTDRIVE1t (rest):** `RuledLine.Line` and `StaffPlace.Line` are carried and read by nothing now; a stored `line:`
-  set is read by nothing and the web's `ruleDoor` still opens one by its repository.
 - **CONTEXTDRIVE1l, m:** the installed proof. No class named `HelpCoverageTests` exists in the tree, so the hooks' coverage
   rows owed at CONTEXTDRIVE1g have nowhere to go until the coverage test that names them is written.
 - **STAFFPOLICY1h/i:** selection by measurement; the installed proof. A conversation's hand-over by the agent's ask

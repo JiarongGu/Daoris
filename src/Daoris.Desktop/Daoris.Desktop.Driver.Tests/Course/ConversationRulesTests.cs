@@ -46,7 +46,7 @@ public sealed class ConversationRulesTests : IDisposable
     {
         var rules = Rules(Ruled());
 
-        Assert.Equal(TransientRetry.Bound, rules.Tries(RoleWork.Chat, "engine", null, "c1"));
+        Assert.Equal(TransientRetry.Bound, rules.Tries(RoleWork.Chat, "engine", null));
         Assert.Null(rules.Judge(Chat(), "c1", StaffConditions.Transient));
     }
 
@@ -56,7 +56,7 @@ public sealed class ConversationRulesTests : IDisposable
         var staff = Ruled(Rule(SupervisorRules.Tries, 2, SupervisorRules.Weighted), Rule(SupervisorRules.Moves, 3, SupervisorRules.Ask));
         var rules = Rules(staff);
 
-        Assert.Equal(2, rules.Tries(RoleWork.Chat, "engine", null, "c1"));
+        Assert.Equal(2, rules.Tries(RoleWork.Chat, "engine", null));
         var ruled = rules.Judge(Chat(), "c1", StaffConditions.Transient);
 
         Assert.NotNull(ruled);

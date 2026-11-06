@@ -9,6 +9,7 @@ import {
   type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
   type WorkflowRun, type WorkflowRunAnswer,
 } from './run';
+import { outcomeSaid } from './graphFlow';
 import { bindingProblemSaid } from './place/effective';
 import { whySaid } from './routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
@@ -47,7 +48,7 @@ const notTakenIn = notTakenBy;
 const plain = (text: string) => text.replace(/`/g, '');
 
 /** One route a decision leads along (SETUPUX1u): its outcome, where it goes on in words, and whether the outcome it returned ruled it out. */
-type Route = { outcome: string; to: string; notTaken: boolean };
+type Route = { outcome: string; said: string; to: string; notTaken: boolean };
 
 /**
  * A decision's routes, in the graph's order: each `when` wire by its outcome, to the steps that follow it in a chain; and, where it returned
@@ -70,11 +71,12 @@ function routesOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, s
     }
     return titles.map((id) => plain(stepTitle(t, byId.get(id)!.step)));
   };
+  const said = (outcome: string) => outcomeSaid(t, step.step.kind, outcome);
   const routes = wires.map((wire): Route => ({
-    outcome: wire.outcome ?? '', to: follow(wire.to).join(t('workflow.listJoin')), notTaken: returned !== null && returned !== wire.outcome,
+    outcome: wire.outcome ?? '', said: said(wire.outcome ?? ''), to: follow(wire.to).join(t('workflow.listJoin')), notTaken: returned !== null && returned !== wire.outcome,
   }));
   if (returned !== null && !wires.some((wire) => wire.outcome === returned)) {
-    routes.push({ outcome: returned, to: t('workflow.graph.noFurther'), notTaken: false });
+    routes.push({ outcome: returned, said: said(returned), to: t('workflow.graph.noFurther'), notTaken: false });
   }
   return routes;
 }
@@ -89,7 +91,7 @@ function Routes({ routes }: { routes: Route[] }) {
         <li key={route.outcome} className="m-0 grid min-w-0 grid-cols-[1.25ch_minmax(0,1fr)] gap-x-1.5">
           <span aria-hidden className="font-mono text-ink-faint">{index === routes.length - 1 ? '└' : '├'}</span>
           <span className="min-w-0">
-            <Inline text={t('workflow.run.routeTo', { outcome: route.outcome, to: route.to })} />
+            <Inline text={t('workflow.run.routeTo', { outcome: route.said, to: route.to })} />
             {route.notTaken && <span className="ml-1.5 text-ink-faint">{t('workflow.run.notTaken.state')}</span>}
           </span>
         </li>
@@ -125,7 +127,8 @@ function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step
  */
 function StepBrief({ run, step, here, pill, onPick }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; onPick: () => void }) {
   const { t } = useTranslation();
-  const outcome = run.graph?.outcomes?.[step.step.id] ?? null;
+  const returned = run.graph?.outcomes?.[step.step.id] ?? null;
+  const outcome = returned === null ? null : outcomeSaid(t, step.step.kind, returned);
   const routes = pill ? routesOf(t, run, step) : [];
   return (
     <div className="mt-1 grid min-w-0 gap-1">
@@ -175,7 +178,8 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   const { t } = useTranslation();
   // DECIDE1c: a node the outcomes reached leave no route to says so in place of its state's words; a decision says the outcome it reached.
   const notTaken = notTakenIn(run, step);
-  const outcome = run.graph?.outcomes?.[step.step.id] ?? null;
+  const returned = run.graph?.outcomes?.[step.step.id] ?? null;
+  const outcome = returned === null ? null : outcomeSaid(t, step.step.kind, returned);
   const said = notTaken ? t('workflow.run.notTaken.said') : runSaid(t, step);
   const added = addedSaid(t, step);
   const kind = step.step.kind;

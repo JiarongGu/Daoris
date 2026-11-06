@@ -428,8 +428,8 @@ export function App() {
               placements={placements}
               layout={view === 'sessions' ? undefined : renderView()}
               onOpenSessions={() => open('sessions')}
-              onChangeRule={(place, repository) => {
-                const door = ruleDoor(place, repository);
+              onChangeRule={(place) => {
+                const door = ruleDoor(place);
                 if (door) open(door.view, door.item, door.part);
               }}
               group={listGroup}

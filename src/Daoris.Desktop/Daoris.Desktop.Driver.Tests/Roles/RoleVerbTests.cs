@@ -259,14 +259,14 @@ public sealed class RoleVerbTests : IDisposable
     {
         Reach();
 
-        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--set", "answers-alone=3:hold", "--roles", "build"));
+        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--set", "answers-alone=3:hold@build"));
 
         var set = Rules.Of("repository:daoris");
         var rule = Assert.Single(set.Rules);
         Assert.Equal((1L, "answers-alone", 3, "hold", "build"), (set.Revision, rule.Count, rule.At, rule.Do, rule.Roles!.Single()));
         Assert.Contains("the supervisor's rules for repository:daoris set: answers-alone at 3: hold for build", _out.ToString());
 
-        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--roles", "build", "--clear", "answers-alone", "--off", "answers-alone"));
+        Assert.Equal(0, await Run("rules", "--place", "repository:daoris", "--clear", "answers-alone@build", "--off", "answers-alone@build"));
         Assert.Equal(("off", 2L), (Assert.Single(Rules.Of("repository:daoris").Rules).Do, Rules.Of("repository:daoris").Revision));
 
         _out.GetStringBuilder().Clear();
@@ -296,11 +296,37 @@ public sealed class RoleVerbTests : IDisposable
     public async Task CONTEXTDRIVE1q_a_ladder_is_refused_at_the_terminal_and_by_the_judge()
     {
         Reach();
-        Assert.Equal(2, await Run("rules", "--place", "machine", "--roles", "build", "--set", "limits=1:weighted,1:wait:30", "--set", "moves=3:ask"));
+        Assert.Equal(2, await Run("rules", "--place", "machine", "--set", "limits=1:weighted,1:wait:30@build", "--set", "moves=3:ask@build"));
         Assert.Contains("is not one `<at>:<do>[:<minutes>]`", _error.ToString());
-        Assert.Equal(0, await Run("rules", "--place", "machine", "--roles", "build", "--set", "limits=1:weighted", "--set", "moves=3:ask"));
-        Assert.Equal(2, await Run("rules", "--place", "machine", "--roles", "build,chat", "--set", "limits=1:wait:30"));
+        Assert.Equal(0, await Run("rules", "--place", "machine", "--set", "limits=1:weighted@build", "--set", "moves=3:ask@build"));
+        Assert.Equal(2, await Run("rules", "--place", "machine", "--set", "limits=1:wait:30@build,chat"));
         Assert.Contains("(ladder)", _error.ToString());
+    }
+
+    /// <summary>CONTEXTDRIVE1k: a card's twin is one command that writes the press's rules whole as the judge accepted them, roles per rule.</summary>
+    [Fact]
+    public async Task CONTEXTDRIVE1k_the_card_s_twin_is_one_judged_write_of_the_same_rules()
+    {
+        Reach();
+        var press = new SupervisorRulesPress("repository:daoris", 0,
+        [
+            new SupervisorRule("", "limits", "episode", 1, "weighted", null, "repository:daoris", ["build"]),
+            new SupervisorRule("", "limits", "episode", 1, "wait", 30, "repository:daoris", ["chat"]),
+            new SupervisorRule("", "answers-alone", "in-a-row", 3, "hold", null, "repository:daoris", null),
+            new SupervisorRule("", "moves", "day", 3, "ask", null, "repository:daoris", ["build"]),
+            new SupervisorRule("", "failures", "since-try-again", 1, "off", null, "repository:daoris", ["chat"]),
+        ]);
+        var twin = SupervisorRulesFlags.Terminal(press);
+
+        Assert.Equal(
+            "daoris role rules --place repository:daoris --clear all --set limits=1:weighted@build --set limits=1:wait:30@chat --set answers-alone=3:hold --set moves=3:ask@build --off failures@chat", twin);
+        var exit = await Run(twin.Split(' ')[2..]);
+        Assert.True(exit == 0, _error.ToString());
+
+        var written = Rules.Of("repository:daoris").Rules;
+        static IEnumerable<string> Said(IEnumerable<SupervisorRule> rules) =>
+            rules.Select(rule => $"{rule.Count} {rule.At} {rule.Do} {rule.UpTo} {string.Join(",", rule.Roles ?? [])}").Order();
+        Assert.Equal(Said(press.Rules), Said(written));
     }
 
     /// <summary>CONTEXTDRIVE1d (D205 point 9): a rule is a staffing-class press, so a session's terminal under full access is refused it.</summary>

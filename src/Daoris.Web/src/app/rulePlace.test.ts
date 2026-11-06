@@ -9,8 +9,7 @@ describe('the place a rule is changed at', () => {
     expect(ruleDoor('repository:engine')).toEqual({ view: 'agents', item: null, part: { placeOf: 'engine', placeSection: 'roles', placeRow: 'supervisor' } });
   });
 
-  it("sends a line's own rule to the repository the line runs in, and to nothing where that is not known", () => {
-    expect(ruleDoor('line:412', 'engine')).toEqual({ view: 'agents', item: null, part: { placeOf: 'engine', placeSection: 'roles', placeRow: 'supervisor' } });
+  it('refuses a line place, which holds no rules of its own', () => {
     expect(ruleDoor('line:412')).toBeNull();
   });
 });

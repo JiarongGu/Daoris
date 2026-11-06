@@ -337,7 +337,7 @@ internal sealed class ChatRun(
                     })
                 {
                     Limit = ConversationRules.Of(Context).Tries(
-                        actor is { Length: > 0 } ? actor : helpMode is not null ? RoleWork.AskDaoris : RoleWork.Chat, place.Name, place.Workspace, sessionId),
+                        actor is { Length: > 0 } ? actor : helpMode is not null ? RoleWork.AskDaoris : RoleWork.Chat, place.Name, place.Workspace),
                     PastBound = () => Interlocked.Exchange(ref transientTurn, 1),
                     Tried = (episode, number, next) =>
                     {

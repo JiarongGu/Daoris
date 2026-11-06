@@ -260,7 +260,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             ? TransientRetries.For(
                 context.Adapters, adapter, context.Harnesses, service, context.Events, output, wiring.Watch, log, sessionId, target.QuestId ?? sessionId,
                 prior?.Profile, wiring.RetryClock, transientWanted,
-                tries: StaffCourse.Tries(context.Harnesses.StaffFor(home), context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace, target.QuestId ?? sessionId)),
+                tries: StaffCourse.Tries(context.Harnesses.StaffFor(home), context.Conversations.RoleOf(sessionId)?.Role ?? actor, new StaffPlace(target.Repository, prior?.Workspace)),
                 deadline: minutes is { } bound ? wiring.RetryClock.GetUtcNow().AddMinutes(bound) : null)
             : null;
         var protocol = abilities.HeldOnWire;

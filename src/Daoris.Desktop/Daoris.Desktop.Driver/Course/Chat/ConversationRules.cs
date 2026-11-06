@@ -13,8 +13,8 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
         new(Staff(context), new SupervisorRuleActs(context.Home, context.Events), context.Harnesses.Clock is { } read ? new ReadClock(read) : null);
 
     /// <summary>The tries a conversation's transient episode makes: the lowest <c>at</c> of its line's effective tries rules, else D210's five.</summary>
-    public int Tries(string role, string? repository, string? workspace, string line) =>
-        StaffCourse.Tries(staff, role, new StaffPlace(repository, workspace, line));
+    public int Tries(string role, string? repository, string? workspace) =>
+        StaffCourse.Tries(staff, role, new StaffPlace(repository, workspace));
 
     /// <summary>
     /// What the rules make of <paramref name="record"/>'s line at <paramref name="condition"/> (<see cref="StaffConditions.Transient"/> past its
@@ -25,7 +25,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
     public ConversationRuled? Judge(PriorSession record, string line, string condition, DateTimeOffset? until = null)
     {
         if (staff is null) return null;
-        var ruled = RuledLine.Of(staff.Home, record, line);
+        var ruled = RuledLine.Of(staff.Home, record);
         var (role, place) = (ruled.Role, ruled.Place);
         StaffPolicy? policy;
         StaffMoved moved;
@@ -52,7 +52,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
         var course = CourseDecision.Decide(
             new CourseFacts(head, CourseBoundary.BetweenTurns, Policy: fact),
             condition == StaffConditions.Limit ? CourseTrigger.LimitEnd : CourseTrigger.TransientPastBound);
-        return new ConversationRuled(role, place, policy, action, course, moved);
+        return new ConversationRuled(role, line, place, policy, action, course, moved);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
     public bool Counted(ConversationRuled ruled, string session, string condition, string? from) =>
         staff is not null
         && staff.Moves.Decided(
-            ruled.Place.Line!, ruled.Role, session, condition, ruled.Action.Do, from,
+            ruled.Line, ruled.Role, session, condition, ruled.Action.Do, from,
             read => !StaffJudge.OnCondition(ruled.Policy, condition, new StaffLine(true, read.Moves)).MovesBound);
 
     /// <summary>
@@ -94,7 +94,7 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
             var book = staff.Rules();
             var effective = book.For(ruled.Role, ruled.Place.Repository, ruled.Place.Workspace);
             if (SupervisorRuleBook.Acting(effective, count, does) is not { } rule) return;
-            acts.Record(new RuleActed(ruled.Place.Line!, session, rule, book.RevisionOf(rule.Place), n, true, point, (clock ?? TimeProvider.System).GetUtcNow()));
+            acts.Record(new RuleActed(ruled.Line, session, rule, book.RevisionOf(rule.Place), n, true, point, (clock ?? TimeProvider.System).GetUtcNow()));
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
@@ -125,4 +125,4 @@ internal sealed class ConversationRules(StaffLedger? staff, SupervisorRuleActs? 
 /// What the rules made of a conversation's line at one condition (CONTEXTDRIVE1n): its role and place, the policy the rules make, the action
 /// read, the course's answer, and its moves in the window.
 /// </summary>
-internal sealed record ConversationRuled(string Role, StaffPlace Place, StaffPolicy Policy, StaffAction Action, LineCourse Course, StaffMoved Moved);
+internal sealed record ConversationRuled(string Role, string Line, StaffPlace Place, StaffPolicy Policy, StaffAction Action, LineCourse Course, StaffMoved Moved);

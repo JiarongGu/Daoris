@@ -35,7 +35,7 @@ public sealed class PlannedRuleActsTests : IDisposable
         new([new SupervisorRuleSet(SupervisorRules.Machine, 2, [.. SupervisorRuleBook.Seeded(3), .. more])]);
 
     private static IReadOnlyList<RuleActed> Acts(Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, int? moves = 4) =>
-        PlannedRuleActs.Of(snapshot, plan, book, (quest, _) => new RuledLine(RoleWork.Build, quest.To, null, quest.Id), _ => moves, At);
+        PlannedRuleActs.Of(snapshot, plan, book, (quest, _) => new RuledLine(RoleWork.Build, quest.To, null), _ => moves, At);
 
     private static PriorSession EndedTransient(string session, int tries) => Last with
     {

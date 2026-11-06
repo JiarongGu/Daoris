@@ -425,6 +425,9 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// <summary>For a role change the judge takes (FOUNDATION1y-i): the change, its choices and the revision read; null for every other kind.</summary>
     public HelpRoleChange? Role { get; init; }
 
+    /// <summary>For the supervisor's rules at a place: the rules before and after as fields, which the page words from its catalogue; null for every other plan.</summary>
+    public HelpRulesView? Rules { get; init; }
+
     // The session kind's.
 
     /// <summary>
