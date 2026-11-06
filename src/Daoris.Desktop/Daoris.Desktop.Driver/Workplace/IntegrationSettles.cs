@@ -16,7 +16,7 @@ internal sealed record IntegrationSettled(IReadOnlyList<IntegrationSettlement> M
 /// The integration run's settle step (INTEGRATE1e parts e4a and e4b, D215; the integration design §5.2 step 9, §5.7): for each promoted member,
 /// the commits its branch made after its request froze judged against the promoted line (<see cref="IntegrationAfterLanding"/>), and each member
 /// settled with its request closed. Contained is said and nothing is kept; new is said as offered by the rule's own <c>request</c> (§4.6); a
-/// superseded commit is never dropped: its branch's work is kept on a recovery ref first (<see cref="ContentHolds.KeepDiscardedAsync"/>), then
+/// superseded commit is never dropped: its branch's work is kept on a recovery ref first, in an act the journal records (<see cref="RecoveryKeeps"/>), then
 /// its disposition is written, pending, in the same end that settles the member, so a crash between them leaves the ref and no disposition,
 /// which the rerun repairs by finding the ref it made. A member whose ref cannot be made is not settled and the step ends <c>held</c>.
 /// </summary>
@@ -70,7 +70,7 @@ internal static class IntegrationSettles
     /// and the step ends <c>held</c> (tried again at the next look); the others are settled. Never ends the candidate: its tidy and close follow.
     /// </summary>
     /// <param name="afterKeep">A test's seam, called once every ref is kept and before the end is returned (the settle effect's own point).</param>
-    public static async Task<IntegrationStepEnd> EndAsync(string root, IntegrationSettled settled, Func<Task>? afterKeep, CancellationToken ct)
+    public static async Task<IntegrationStepEnd> EndAsync(string home, string repository, string root, IntegrationSettled settled, Func<Task>? afterKeep, CancellationToken ct)
     {
         var changes = new List<IntegrationMemberChange>();
         var closes = new List<IntegrationRequestClose>();
@@ -88,7 +88,8 @@ internal static class IntegrationSettles
             }
 
             // The branch's work is on a ref of its own before anything else is written: never settled, never dropped, without it.
-            var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, member.Branch, member.BranchTip, ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            var (reference, why) = await RecoveryKeeps.KeepAsync(home, root, repository, member.Branch, member.BranchTip).ConfigureAwait(false);
             var by = string.Join(", ", member.Superseded.Select(each => TextBounds.ShortCommit(each.By ?? "", 8)).Distinct(StringComparer.Ordinal));
             var count = $"{member.Superseded.Count} {Commits(member.Superseded.Count)}";
             if (reference is null)

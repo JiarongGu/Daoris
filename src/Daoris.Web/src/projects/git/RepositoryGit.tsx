@@ -67,11 +67,13 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
  * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
  * (UX6h3b).
  */
-export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts, deleted }: {
+export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts, deleted, unrecorded }: {
   repository: string;
   read: GitRead<BranchListValue>;
   /** The deletes the journal holds (ONEWAY1r), listed under the branches with each one's Undo; absent, the tab lists none. */
   deleted?: readonly GitDeletedRef[];
+  /** The commits kept for recovery that no journal record names, said under the deletes. */
+  unrecorded?: number;
   /** *New branch or tag* (GITAPP2c), made at the line's commit; absent, the tab offers none. */
   acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
@@ -94,7 +96,7 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, a
   return (
     <div className="grid gap-4">
       <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} acts={acts} />
-      {acts && deleted && <DeletedRefs rows={deleted} acts={acts} />}
+      {acts && deleted && <DeletedRefs rows={deleted} unrecorded={unrecorded} acts={acts} />}
     </div>
   );
 }

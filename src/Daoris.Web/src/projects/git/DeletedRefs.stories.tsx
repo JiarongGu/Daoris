@@ -44,6 +44,10 @@ export const Narrow: Story = {
 };
 export const NarrowChineseDark: Story = { args: Narrow.args, decorators: [storyWidths.narrow, chinese, dark] };
 
+/** Commits kept for recovery before every keep was journaled, counted under the list. */
+export const Unrecorded: Story = { args: { unrecorded: 4 } };
+export const UnrecordedChinese: Story = { args: { unrecorded: 4 }, decorators: [storyWidths.half, chinese] };
+
 /** An Undo the driver refused, in its sentence. */
 export const Refused: Story = {
   args: { acts: { undo: async () => ({ refused: true, said: 'a branch named `spike/renderer` already exists, so act `d1` was not undone' }) } },

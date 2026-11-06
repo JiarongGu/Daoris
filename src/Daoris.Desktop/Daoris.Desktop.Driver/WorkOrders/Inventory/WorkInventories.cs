@@ -88,7 +88,8 @@ public static class WorkInventories
 
             // CLEANUP1: each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
             // FABRIC-UNKNOWN1: the same listing names the repository's daoris/* branches, so they cost no further git start.
-            var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(root, repository, RecoveryRetention.Made(landings, repository), ct).ConfigureAwait(false);
+            var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(
+                root, repository, RecoveryRetention.Made(landings, repository), ct, RecoveryKeeps.Recorded(home, repository)).ConfigureAwait(false);
             if (listed is null)
             {
                 unread(repository, $"git could not list `{repository}`'s recovery refs: {err}");

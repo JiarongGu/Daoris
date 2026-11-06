@@ -158,6 +158,7 @@
   "projects.git.deleted.by.window": "你在窗口中",
   "projects.git.deleted.by.terminal": "你在终端中",
   "projects.git.deleted.kept": "它的提交已保留以便找回。",
+  "projects.git.deleted.unrecorded": "另有 {{count}} 处为找回而保留的提交没有记入日志：它们是在每次保留都记入日志之前留下的，仍由旧的找回列表照管，直到逐一移除。",
   "projects.git.deleted.undoLabel": "撤销删除 {{name}}",
   "projects.git.deleted.closed.undone": "已撤销：它已恢复。",
   "projects.git.deleted.closed.nameTaken": "无法撤销：名为 {{name}} 的分支或标签已重新存在。",

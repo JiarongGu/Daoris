@@ -15,10 +15,10 @@ public sealed record RecoveryGone(string Ref, string Commit, string Holder);
 /// never another recovery ref; and never a symbolic ref (re-check), whatever its name, read by git's own <c>%(symref)</c>: a name that
 /// points at a session branch would dangle once the sweep removes that branch. A ref named by hand under the prefix is treated as Daoris's own, since git keeps no word of who made it
 /// (no reflog is written outside <c>refs/heads/</c>): it goes only on the same rule, its commit kept by the person's own ref.
-/// <para><b>Transitional (ONEWAY1r, D228):</b> a delete's record, its Undo and its list are the journal's (<see cref="DeletedBranches"/>); this
-/// reader and its dating from a ref's reflog remain only for a recovery ref the journal's record does not name, one a door kept before every
-/// delete was journaled. It ends when no ref under <c>refs/daoris/discarded/</c> stands without a journal record naming it, past its
-/// <see cref="Kept"/> days; ONEWAY1af deletes it, with <see cref="RecoveryDropping"/>.</para>
+/// <para><b>Dated from the journal's act</b> (ONEWAY1r, D228): every door keeps its ref through an act the journal records
+/// (<see cref="RecoveryKeeps"/>), and a ref a record names is dated from that act. <b>Transitional:</b> the dating from a ref's reflog remains
+/// only for a ref no record names, one a door kept before every keep was journaled, which <see cref="RecoveryCensus"/> counts. It ends when
+/// that census reads zero in every repository on the install; ONEWAY1af deletes it, with <see cref="RecoveryDropping"/>.</para>
 /// </remarks>
 public static class RecoveryRetention
 {
@@ -27,8 +27,8 @@ public static class RecoveryRetention
 
     /// <summary>
     /// The date from which the look removes it, where a branch or a tag holds its commit and its date was read; null otherwise. Counted from
-    /// when the ref was made, its reflog's first entry (RECOVERYDATE1); a ref with no reflog, made before that or by hand, from its commit's
-    /// date, so it may go sooner after it was made, and loses nothing, since the holder keeps every commit and message it kept.
+    /// the act that kept it; for a ref no record names, from its reflog's first entry (RECOVERYDATE1), else from its commit's date, so it may
+    /// go sooner after it was made, and loses nothing, since the holder keeps every commit and message it kept.
     /// </summary>
     public static DateTimeOffset? Until(RecoveryRef each) => each is { Held: true, Dated: { } dated } ? dated + Kept : null;
 
@@ -55,10 +55,11 @@ public static class RecoveryRetention
     /// did not read; where the holders did not read, each ref's <see cref="RecoveryRef.Held"/> is null, never false (D57).
     /// </summary>
     /// <param name="landed">The branches Daoris's landings made here (<see cref="Made"/>): no holders.</param>
+    /// <param name="recorded">The refs the journal's acts name, each with its act's moment (<see cref="RecoveryKeeps.Recorded"/>); null reads none.</param>
     internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread)> ReadAsync(
-        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
+        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
     {
-        var (refs, unread, _) = await ReadWithBranchesAsync(root, repository, landed, ct).ConfigureAwait(false);
+        var (refs, unread, _) = await ReadWithBranchesAsync(root, repository, landed, ct, recorded).ConfigureAwait(false);
         return (refs, unread);
     }
 
@@ -67,8 +68,9 @@ public static class RecoveryRetention
     /// read, so no further git start, and never a holder (<see cref="Holds"/> leaves <c>daoris/</c> out), so never a recovery ref's keeper.
     /// </summary>
     internal static async Task<(IReadOnlyList<RecoveryRef>? Refs, string? Unread, IReadOnlyList<StandingBranch> Standing)> ReadWithBranchesAsync(
-        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct)
+        string root, string repository, IReadOnlyCollection<string> landed, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
     {
+        recorded ??= new Dictionary<string, DateTimeOffset>();
         // One listing of the recovery refs and of every branch and tag, each with whether it is symbolic (CLEANUP1, re-check), by tabs: a
         // ref name holds none.
         var (code, listed, err) = await WorkingTree.GitAsync(
@@ -100,11 +102,14 @@ public static class RecoveryRetention
         var alone = listedCode == 0
             ? unheld.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal)
             : null;
-        var made = await MadeAsync(root, [.. rows.Select(parts => parts[2])], ct).ConfigureAwait(false);
+        string[] unrecorded = [.. rows.Select(parts => parts[2]).Where(each => !recorded.ContainsKey(each))];
+        var made = unrecorded.Length == 0 ? new Dictionary<string, DateTimeOffset>() : await MadeAsync(root, unrecorded, ct).ConfigureAwait(false);
         return ([.. rows.Select(parts => new RecoveryRef(repository, parts[2])
         {
             Commit = parts[0],
-            Dated = made is null ? null
+            Recorded = recorded.ContainsKey(parts[2]),
+            Dated = recorded.TryGetValue(parts[2], out var act) ? act
+                : made is null ? null
                 : made.TryGetValue(parts[2], out var at) ? at
                 : long.TryParse(parts[1], out var seconds) ? DateTimeOffset.FromUnixTimeSeconds(seconds) : null,
             Held = alone is null ? null : !alone.Contains(parts[0]),
@@ -112,9 +117,9 @@ public static class RecoveryRetention
     }
 
     /// <summary>
-    /// When each of <paramref name="refs"/> was made (RECOVERYDATE1): its reflog's oldest entry, which <see cref="ContentHolds.KeepDiscardedAsync"/>
-    /// writes with <c>--create-reflog</c>, in one <c>log --walk-reflogs</c>. A ref with no reflog (made before it, or by hand) is not
-    /// named, and is dated by its commit; null where git did not answer, so no ref is dated and none goes at this look (D57).
+    /// When each of <paramref name="refs"/>, which no journal record names, was made (RECOVERYDATE1): its reflog's oldest entry, in one
+    /// <c>log --walk-reflogs</c>. A ref with no reflog (made before it, or by hand) is not named, and is dated by its commit; null where git did
+    /// not answer, so no such ref is dated and none goes at this look (D57). Transitional, with the census (<see cref="RecoveryCensus"/>).
     /// </summary>
     private static async Task<IReadOnlyDictionary<string, DateTimeOffset>?> MadeAsync(string root, IReadOnlyList<string> refs, CancellationToken ct)
     {
@@ -144,10 +149,11 @@ public static class RecoveryRetention
     /// without the person.
     /// </summary>
     /// <param name="landed">The branches Daoris's landings made here (<see cref="Made"/>): no holders.</param>
+    /// <param name="recorded">The refs the journal's acts name, each with its act's moment (<see cref="RecoveryKeeps.Recorded"/>); null reads none.</param>
     internal static async Task<IReadOnlyList<RecoveryGone>> TidyAsync(
-        string root, string repository, IReadOnlyCollection<string> landed, DateTimeOffset now, CancellationToken ct)
+        string root, string repository, IReadOnlyCollection<string> landed, DateTimeOffset now, CancellationToken ct, IReadOnlyDictionary<string, DateTimeOffset>? recorded = null)
     {
-        var (refs, _) = await ReadAsync(root, repository, landed, ct).ConfigureAwait(false);
+        var (refs, _) = await ReadAsync(root, repository, landed, ct, recorded).ConfigureAwait(false);
         var gone = new List<RecoveryGone>();
         foreach (var each in refs ?? [])
         {

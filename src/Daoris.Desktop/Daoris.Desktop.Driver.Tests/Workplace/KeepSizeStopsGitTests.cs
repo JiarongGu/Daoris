@@ -14,12 +14,13 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class KeepSizeStopsGitTests : KeepSizeFixture
 {
     /// <summary>
-    /// 🔴 Codex's reads (the design's finding 1, the branch's finding 2): the exact tip's holder rests in the branch delete's own transaction.
-    /// The ref just written at the tip removed before the delete refuses it: the branch stands with the commits, the folder is <c>refused</c>,
-    /// never armed. Then a real resume: the branch with no tree deleted by the look marks it <c>deleted</c>, and its record is kept.
+    /// 🔴 Codex's reads (the design's finding 1, the branch's finding 2): the exact tip's holder rests in the branch delete's own transaction,
+    /// which makes the recovery ref at the tip. Its name taken at another commit before the delete refuses it: the branch stands with the
+    /// commits, the folder is <c>refused</c>, never armed. Then a real resume, the name free again: the branch with no tree deleted by the look
+    /// marks it <c>deleted</c>, and its record is kept.
     /// </summary>
     [Fact]
-    public async Task A_tip_ref_removed_before_the_delete_refuses_it_and_the_refusal_resumes()
+    public async Task A_recovery_name_taken_before_the_delete_refuses_it_and_the_refusal_resumes()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
@@ -33,11 +34,13 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
         TidyPass pass;
         using (SetAsideFaults.Within(new SetAsideFault
                {
-                   AfterTipHeld = async held => await GitAsync(held, "update-ref", "-d", $"refs/daoris/discarded/{tree.Branch}"),
+                   AfterTipHeld = async held => await GitAsync(held, "update-ref", $"refs/daoris/discarded/{tree.Branch}", "main~1"),
                }))
         {
             pass = await trees.TidyEmptyAsync(root, "engine", "default", NoneRunning);
         }
+
+        await GitAsync(root, "update-ref", "-d", $"refs/daoris/discarded/{tree.Branch}");
 
         var refused = Assert.Single(pass.Results, result => result.Item.Branch == tree.Branch);
         Assert.False(refused.Removed);

@@ -86,8 +86,8 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
             .Distinct(StringComparer.Ordinal);
 
     /// <summary>
-    /// One part ended: its tip kept on a recovery ref, then its branch deleted through the journal resting on that ref, never one a tree has
-    /// checked out (git's own delete refuses that, and the journal's does not ask). Null where its branch is gone already.
+    /// One part ended: its tip kept on a recovery ref in an act of the journal's, then its branch deleted through the journal resting on that
+    /// ref, never one a tree has checked out (git's own delete refuses that, and the journal's does not ask). Null where its branch is gone already.
     /// </summary>
     private async Task<TidiedPart?> EndAsync(TidyStart start, string branch, IReadOnlyDictionary<string, string> trees, CancellationToken ct)
     {
@@ -95,11 +95,12 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
         var (stands, at, _) = await WorkingTree.GitAsync(start.Root, ["rev-parse", "--verify", "--quiet", full], ct).ConfigureAwait(false);
         if (stands != 0 || !WorkingTree.IsCommitId(at.Trim())) return null;
         var tip = at.Trim();
-        var (kept, why) = await ContentHolds.KeepDiscardedAsync(start.Root, branch, tip, ct).ConfigureAwait(false);
+        // Kept whether or not the branch goes: a part whose branch stays is ended all the same, and the press removes it on that record once
+        // its tree is gone, resting on this ref.
+        var (kept, why) = await RecoveryKeeps.KeepAsync(home, start.Root, start.Repository, branch, tip).ConfigureAwait(false);
         if (kept is null) return new TidiedPart(branch, tip) { Kept = $"its commits could not be kept on a recovery ref ({why})" };
-        // A part whose branch stays is ended all the same, its recovery ref kept: the press removes it on that record once its tree is gone.
         if (trees.GetValueOrDefault(branch) is { } tree) return new TidiedPart(branch, tip) { KeptOn = kept, Kept = $"it is checked out at {tree}" };
-        var gone = await JournaledDeletes.DeleteAsync(home, start.Root, start.Repository, branch, tip, [(kept, tip)], () => LateAsync(start.Root, branch, tip))
+        var gone = await JournaledDeletes.DeleteAsync(home, start.Root, start.Repository, branch, tip, [], _ => LateAsync(start.Root, branch, tip), new RecoveryName(kept, false))
             .ConfigureAwait(false);
         return new TidiedPart(branch, tip) { KeptOn = kept, Act = gone.Act, Kept = gone.Kept ?? (gone.Said is { } said ? $"git would not delete it: {said}" : null) };
     }

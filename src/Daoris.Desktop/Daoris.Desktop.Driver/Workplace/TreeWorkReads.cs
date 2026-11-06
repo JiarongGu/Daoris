@@ -221,19 +221,9 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     }
 
     /// <summary>
-    /// The recovery ref an unforced discard of <paramref name="branch"/> at <paramref name="judged"/> would keep its commits at
-    /// (SQUASHTIDY1c's <see cref="ContentHolds.KeepDiscardedAsync"/>), named without making it: the first of its names no ref holds, or one
-    /// that holds that commit already. Null where every name is taken.
+    /// The recovery ref an unforced discard of <paramref name="branch"/> at <paramref name="judged"/> would keep its commits at, named as the
+    /// delete's act names it (<see cref="RecoveryKeeps.NameAsync"/>) without making it. Null where every name is taken.
     /// </summary>
-    private static async Task<string?> DiscardedNameAsync(string root, string branch, string judged, CancellationToken ct)
-    {
-        for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
-        {
-            var reference = ContentHolds.DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
-            var (exists, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (exists != 0 || at.Trim() == judged) return reference;
-        }
-
-        return null;
-    }
+    private static async Task<string?> DiscardedNameAsync(string root, string branch, string judged, CancellationToken ct) =>
+        (await RecoveryKeeps.NameAsync(root, branch, judged, ct).ConfigureAwait(false)).Name?.Ref;
 }

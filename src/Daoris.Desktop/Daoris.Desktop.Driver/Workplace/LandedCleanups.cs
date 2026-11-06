@@ -193,33 +193,30 @@ internal sealed class LandedCleanups(
 
                 // Only while it is still the commit judged (SQUASHTIDY1c): git's own -d asks only whether HEAD holds the
                 // commits, and a squash merge put none of them anywhere, so the proof made here is the one that counts.
-                // Its commits are kept on a ref of their own first (SQUASHTIDY1e), as a session branch's are (SQUASHTIDY1c): a squash
-                // carries the aggregate content only, so their own history and messages live on this branch alone. A merged
+                // Its commits are kept on a ref of their own in the delete's act (SQUASHTIDY1e), as a session branch's are (SQUASHTIDY1c): a
+                // squash carries the aggregate content only, so their own history and messages live on this branch alone. A merged
                 // branch's tip is on the line, so nothing is lost and no ref is made.
-                string? keptAt = null;
+                RecoveryName? keep = null;
                 if (now.Item.Kind != LandedKind.Merged)
                 {
-                    var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, item.Branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
-                    if (reference is null)
+                    var (name, why) = await RecoveryKeeps.NameAsync(root, item.Branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
+                    if (name is null)
                     {
                         results.Add(new(now.Item, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept") { Session = session });
                         continue;
                     }
 
-                    keptAt = reference;
+                    keep = name;
                 }
 
-                // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read before the recovery
-                // ref was made, verified in the delete's own transaction; nothing is read again here.
-                var kept = await content.DeleteJudgedAsync(root, item.Repository, item.Branch, now.Tip, now.Rests, ct).ConfigureAwait(false);
+                // FABRIC-END4a, third review: what the judgement again's proof returned, each ref at the commit it read, verified in the delete's
+                // own transaction beside the recovery ref it makes; nothing is read again here.
+                var keptAt = keep?.Ref;
+                var kept = await content.DeleteJudgedAsync(root, item.Repository, item.Branch, now.Tip, now.Rests, ct, keep).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
                     proven.Add(now.Item);
-                }
-                else
-                {
-                    await ContentHolds.DropKeptAsync(root, item.Branch, keptAt, now.Tip, CancellationToken.None).ConfigureAwait(false);
                 }
 
                 results.Add(kept is null
@@ -245,7 +242,7 @@ internal sealed class LandedCleanups(
             {
                 if (why != LandedGone.Missing) context.Recorded.Gone(entry, why);
                 else if (!await ends.KeepGoneAsync(root, repository, entry, line, ct).ConfigureAwait(false)
-                         && await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
+                         && await WentAsync(context.Home, root, entry, ct).ConfigureAwait(false) is { } went)
                 {
                     context.Recorded.Gone(entry, went.Why, went.MovedTo, went.KeptOn, went.MovedToAt);
                 }
@@ -473,7 +470,7 @@ internal sealed class LandedCleanups(
                 {
                     // CLEANUP1b: the line holds what its landing recorded, so its end is kept and the entry retired with it.
                 }
-                else if (await WentAsync(root, entry, ct).ConfigureAwait(false) is { } went)
+                else if (await WentAsync(context.Home, root, entry, ct).ConfigureAwait(false) is { } went)
                 {
                     context.Recorded.GoneAs(entry, went.Why, went.MovedTo, went.KeptOn, went.MovedToAt);
                 }
@@ -494,7 +491,7 @@ internal sealed class LandedCleanups(
     /// A local branch holding it by ancestry is <see cref="LandedGone.Moved"/> to that branch, a branch of the person's named first: a rename,
     /// or a branch made from it, so the work goes on and is never read as the person's end. Else <see cref="LandedGone.Missing"/>; and where
     /// neither a tag nor a recovery ref holds it, its commit is first kept on a recovery ref of the landing's name
-    /// (<see cref="ContentHolds.KeepDiscardedAsync"/>), which nothing else holds and so stays until the person deletes it: the record never
+    /// (<see cref="RecoveryKeeps.KeepAsync"/>), which nothing else holds and so stays until the person deletes it: the record never
     /// goes as the only way back to it. A remote-tracking ref does not count, since a fetch moves or prunes it (SQUASHTIDY1c 6), as the
     /// recovery refs' holders do not (<see cref="RecoveryRetention"/>). A commit this repository no longer has, which git's own collection
     /// took once nothing held it, is missing with nothing to keep. Null, writing nothing, where git could not say or the ref was not made:
@@ -507,7 +504,7 @@ internal sealed class LandedCleanups(
     /// git's word that the landing's own branch is still absent, so a branch made again after this read refuses it and nothing is written.</para>
     /// <para>One <c>for-each-ref --contains</c> for each landing read missing, once; one <c>update-ref --stdin</c> where nothing holds it.</para>
     /// </remarks>
-    private static async Task<(string Why, string? MovedTo, string? KeptOn, string? MovedToAt)?> WentAsync(string root, LandedBranch entry, CancellationToken ct)
+    private static async Task<(string Why, string? MovedTo, string? KeptOn, string? MovedToAt)?> WentAsync(string home, string root, LandedBranch entry, CancellationToken ct)
     {
         var (code, listed, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", entry.Tip, $"--format={ContentHolds.UnaliasedFormat}"], ct)
             .ConfigureAwait(false);
@@ -534,8 +531,7 @@ internal sealed class LandedCleanups(
             return (LandedGone.Missing, null, null, null);
         }
 
-        var (kept, _) = await ContentHolds.KeepDiscardedAsync(root, entry.Branch, entry.Tip, CancellationToken.None, absent: $"refs/heads/{entry.Branch}")
-            .ConfigureAwait(false);
+        var (kept, _) = await RecoveryKeeps.KeepAsync(home, root, entry.Repository, entry.Branch, entry.Tip, absent: $"refs/heads/{entry.Branch}").ConfigureAwait(false);
         return kept is null ? null : (LandedGone.Missing, null, kept, null);
     }
 

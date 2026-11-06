@@ -681,11 +681,12 @@ export const useGitStashPlan = (repository: string | null, workspace: string) =>
   });
 };
 
-const readDeletes = readPlanOf<{ rows: GitDeletedRef[] }>((value) => ({
+const readDeletes = readPlanOf<{ rows: GitDeletedRef[]; unrecorded: number }>((value) => ({
   rows: (value.rows ?? []).map((row) => ({
     act: row.act, kind: row.kind === 'tag' ? 'tag' : 'branch', name: row.name, commit: row.commit, at: row.at, press: row.press,
     recovery: row.recovery ?? null, closed: row.closed ?? null,
   })),
+  unrecorded: typeof value.unrecorded === 'number' ? value.unrecorded : 0,
 }));
 
 /** A repository's deletes as its journal holds them, each with its Undo, read when the Branches tab opens and again after any ref act. */
