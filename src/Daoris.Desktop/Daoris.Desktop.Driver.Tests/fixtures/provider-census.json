@@ -44,6 +44,7 @@
     ["Daoris.Desktop.Driver/Agents/Domain/Measurement.cs", "\"claude-code-acp\"", "-", "measurement", "the measurements table names the door each row was measured on, beside its evidence document (COAGENT1 §3.5)"],
     ["Daoris.Desktop.Driver/Agents/DoorFailures.cs", "\"pipe\"", "i", "behaviour", "the native door's failure kind, by the transport's word"],
     ["Daoris.Desktop.Driver/Agents/DoorFailures.cs", "\"protocol\"", "i", "behaviour", "the protocol door's refusal kind, by the transport's word"],
+    ["Daoris.Desktop.Driver/Agents/Layer/LayerRefusals.cs", "\"protocol\"", "i", "behaviour", "a refused model's phase on a layer door, by the transport's word, as DoorFailures says it"],
     ["Daoris.Desktop.Driver/Agents/Layer/LayerStart.cs", "\"pipe\"", "i", "behaviour", "a layer start's failure door, the native transport's word, as DoorFailures says it"],
     ["Daoris.Desktop.Driver/Agents/RosterWalk.cs", "\"claude\"", "d", "behaviour", "an agent's program name in the roster"],
     ["Daoris.Desktop.Driver/Agents/RosterWalk.cs", "\"claude-code\"", "d", "behaviour", "the roster's per-agent facts, copy by copy"],

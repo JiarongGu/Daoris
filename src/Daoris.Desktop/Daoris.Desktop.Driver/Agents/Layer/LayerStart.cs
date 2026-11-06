@@ -28,6 +28,15 @@ internal sealed record LayerStart(string Door, string Prompt, string Transcript,
 
     public AgentToolPolicy Policy { get; init; } = AgentToolPolicy.Write;
 
+    /// <summary>The agent's own permission mode in place of the policy's (Lyntai's AG25, LQ4): today's driven mode.</summary>
+    public string? PermissionMode { get; init; }
+
+    /// <summary>The effort the start's choice asked (AG26, LQ5).</summary>
+    public string? Effort { get; init; }
+
+    /// <summary>The plugin folders the start composed (AG27, LQ6), each fully qualified.</summary>
+    public IReadOnlyList<string> Plugins { get; init; } = [];
+
     /// <summary>The clock a failure is seen on.</summary>
     public TimeProvider Clock { get; init; } = TimeProvider.System;
 }

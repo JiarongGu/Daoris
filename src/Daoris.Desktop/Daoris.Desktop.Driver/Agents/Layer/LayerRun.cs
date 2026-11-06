@@ -105,19 +105,22 @@ internal sealed class LayerRun(LayerRegistration registration, LayerStart start,
     private Task BeginAsync(string? resume)
     {
         if (_turn is not null) return Task.FromException(new InvalidOperationException("a layer run is one turn: a resume is a run of its own."));
-        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals));
+        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals), registration.Steps);
         _file = AgentContext.Current.OpenTranscript(start.Transcript, append: resume is not null);
         _runner = new LauncherRunner(seat with { Outside = Own, Error = Own }, patience: null, exists);
         Container = LayerContainer.ForSpawn(registration, _runner);
         var session = Container.Open(registration.Door, start.Kind);
-        var options = new AgentSessionOptions
+        // The door's own options type where it has one (`with` keeps it), the turn's members the layer carries set on it.
+        var options = (registration.Options?.Invoke(start.Prompt, Carriers) ?? new AgentSessionOptions { Prompt = start.Prompt }) with
         {
-            Prompt = start.Prompt,
             ResumeToken = resume,
             WorkingDirectory = start.WorkingDirectory,
             Account = start.Account,
             Model = start.Model,
             ToolPolicy = start.Policy,
+            PermissionMode = start.PermissionMode,
+            Effort = start.Effort,
+            PluginDirectories = start.Plugins,
         };
         _turn = Task.Run(() => TurnAsync(session, options));
         return Task.CompletedTask;

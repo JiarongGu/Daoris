@@ -6,9 +6,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The Daoris path over a scenario program (the agent-lyntai design §6.3, 1b-i): a native door Daoris runs on <see cref="TransportRun"/>,
 /// its spawn the program's command with the prompt on its input, its wire read by <see cref="ScenarioDialect"/>, its failure read at the
-/// conclusion from the door's tables, each thing it did observed for the oracle.
+/// conclusion from the door's tables, each thing it did observed for the oracle. Given <paramref name="door"/>, a shipped door is the path's
+/// own, its dialect and tables as it ships them and its spawn the program's command (1d).
 /// </summary>
-internal sealed class ParityDaorisPath(string home) : IDisposable
+internal sealed class ParityDaorisPath(string home, Func<ISpawn, Provider>? door = null) : IDisposable
 {
     public const string Door = "parity-daoris";
 
@@ -16,14 +17,25 @@ internal sealed class ParityDaorisPath(string home) : IDisposable
 
     public void Dispose() => _service.Dispose();
 
+    /// <summary>The shipped door <paramref name="id"/> as the path's own: its provider narrowed to it, its spawn the one handed.</summary>
+    public static Func<ISpawn, Provider> Shipped(string id) => spawn =>
+    {
+        var provider = Assert.Single(TestDoors.Shipped(id));
+        return provider with
+        {
+            Doors = [.. provider.Doors.Select(each => each with { Spawn = Known<ISpawn>.Declared(spawn, "the parity's program") })],
+        };
+    };
+
     /// <summary>One turn of <paramref name="command"/> with <paramref name="prompt"/>, observed.</summary>
     public async Task<ParityObservation> RunAsync(IReadOnlyList<string> command, string prompt, DateTimeOffset start, CancellationToken ct)
     {
         Directory.CreateDirectory(Path.Combine(home, "engine"));
         var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions));
         var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), home, processes);
-        var registry = TestDoors.Registry(TestDoors.Door(Door, resumes: true, spawn: new Spawn(command), dialect: new ScenarioDialect()));
-        var adapter = registry.Door(Door);
+        var spawn = new Spawn(command);
+        var registry = TestDoors.Registry(door?.Invoke(spawn) ?? TestDoors.Door(Door, resumes: true, spawn: spawn, dialect: new ScenarioDialect()));
+        var adapter = registry.Door(Assert.Single(Assert.Single(registry.Providers).Doors).Id.Value);
         var target = new SessionTarget("q-1", "title", "body", "asker", "engine", Path.Combine(home, "engine"), "http://127.0.0.1:9") { Home = home };
         var transcript = Path.Combine(home, "daoris.log");
         var seen = new ParityObservation("daoris", start);

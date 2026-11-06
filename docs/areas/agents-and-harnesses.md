@@ -437,14 +437,23 @@ Agents page, and `orient-index` and `code-map` once files move.
   (`AgentRun` over one turn per call, a resume a start of its own, an operation the layer's members do not carry refused before a
   write) and the registry's layer view (`LayerView`: bound doors by the registry's spelling and by run kind, their layer doors and
   claims). The conformance suite's fourth view runs the registry through that view on its run kind (`LayerConformanceTests`). All of it
-  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). A move's parity is the oracle's
+  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). Claude Code's driven kind has its binding, not yet
+  taken by a start (`ClaudeDrivenLayer`): Lyntai's Claude door over the program a start resolved, its two refused-model entries, a tool
+  call read by Claude Code's own vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and
+  servers files (a door's `Options`) carried as today's spawn carries them. A move's parity is the oracle's
   (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
   first appearance, a time by its interval from the run's start, a named library clock within its interval), a held case holding
   alike only on the same missing reader. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
   scenario alike (a refused model, a denial, the context and tokens by model, the unannounced start and a meter-only failure among them)
   but for a tool step's kind, which the Claude reader derives from the tool's name, and the context a count written to the cache
-  adds, which the layer's tick does not carry (`LayerParityProcessTests`). A
+  adds, which the layer's tick does not carry (`LayerParityProcessTests`). A difference the oracle knows is a named gap, set apart
+  before the rest is compared and failing once it sets nothing apart (`ParityGap`). Over every recorded Claude Code stream, today's
+  door and the driven binding read alike but for three (`ClaudeDrivenParityProcessTests`): the init's reading of what the harness
+  loaded, which the layer's start does not carry; an answer's words no delta streamed, which today's reader shows and the layer's does
+  not; and a clean exit with no result, no failure today and a failed turn on the layer. Their spawns hand Claude Code the same
+  arguments on each driven mode but for the three flow tools the layer's door always denies, and today's `default` mode, which it
+  refuses (`ClaudeDrivenSpawnParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
   waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). Codex's account
   windows are read through the layer where the driver carries it (`LayerUsageRead` over each provider folder's `Layer/` vendor,
@@ -469,7 +478,10 @@ Agents page, and `orient-index` and `code-map` once files move.
   conversation's cooling line is recorded before its turn's end, which `LimitHeld` reads limited (a failed result's subtype, never
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
-  answer. The measurement needs the owner's yes.
+  answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
+- Row d of the agent-layer adoption: a driven start taking the binding, which waits on its gaps (the init's loaded reading and an
+  answer's unstreamed words, requests to the sibling library; the `default` mode; row s-ii) and on the run's own steps today's driven
+  run takes (its lineage token, the downloads it keeps, the person's go-ons, the native resume's one retry, the watch's quiet).
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access

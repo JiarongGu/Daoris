@@ -76,6 +76,26 @@ internal static class LayerTestProvider
         return ["node", program, file];
     }
 
+    /// <summary>
+    /// A production door's layer registration spawns one program with its own arguments: a shim in <paramref name="scratch"/> running
+    /// <paramref name="command"/> (a scenario's) before them.
+    /// </summary>
+    public static string Shim(string scratch, IReadOnlyList<string> command, string name)
+    {
+        var quoted = string.Join(' ', command.Select(each => $"\"{each}\""));
+        if (OperatingSystem.IsWindows())
+        {
+            var cmd = Path.Combine(scratch, name + ".cmd");
+            File.WriteAllText(cmd, $"@{quoted} %*\r\n");
+            return cmd;
+        }
+
+        var sh = Path.Combine(scratch, name + ".sh");
+        File.WriteAllText(sh, $"#!/bin/sh\nexec {quoted} \"$@\"\n");
+        File.SetUnixFileMode(sh, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        return sh;
+    }
+
     private const string Program = """
         import { readFileSync } from 'node:fs';
         const args = process.argv.slice(2);
