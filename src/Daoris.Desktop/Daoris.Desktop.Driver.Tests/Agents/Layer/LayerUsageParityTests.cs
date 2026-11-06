@@ -63,6 +63,7 @@ public sealed class LayerUsageParityTests : IDisposable
         Claude("a used window with no reset", ClaudeUsageTests.Body(W(10, null), W(50, At(9))));
         Claude("a reset made up", ClaudeUsageTests.Body(W(0, null), W(4, At(9))));
         Claude("scoped weeks and the server's rows", ClaudeUsageTests.ScopedWeeks, Unrecognised);
+        Claude("a row scoped by an object, as the installed server answers", ClaudeUsageTests.ObjectScope);
         Claude("not signed in", """{"subscription_type":null,"rate_limits_available":false,"rate_limits":{"five_hour":null,"seven_day":null}}""");
         foreach (var row in ClaudeUsageTests.Unread)
         {

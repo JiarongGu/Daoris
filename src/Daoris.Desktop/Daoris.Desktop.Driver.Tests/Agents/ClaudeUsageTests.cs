@@ -180,6 +180,39 @@ public sealed class ClaudeUsageTests
         Assert.Equal("max", answer.Plan);
     }
 
+    /// <summary>
+    /// The installed server's rows as a signed-in account answers them (measured 2026-11-07, D248's note; every value a placeholder): a
+    /// row's <c>scope</c> an object naming a model and a surface, beside rows whose scope is null.
+    /// </summary>
+    internal static string ObjectScope => $$$"""
+        {"subscription_type":"team","rate_limits_available":true,"rate_limits":{
+          "five_hour":{{{Window(23, At(3.5))}}},"seven_day":{{{Window(79, At(100.25))}}},"seven_day_opus":null,"seven_day_sonnet":null,
+          "limits":[
+            {"kind":"session","percent":23,"severity":"normal","resets_at":"{{{At(3.5)}}}","scope":null},
+            {"kind":"weekly_all","percent":79,"severity":"warning","resets_at":"{{{At(100.25)}}}","scope":null},
+            {"kind":"weekly_scoped","percent":40,"severity":"normal","resets_at":"{{{At(100.25)}}}",
+             "scope":{"model":{"id":"claude-model-example","display_name":"Model Example"},"surface":null}}],
+          "extra_usage":null},
+         "session":{"total_cost_usd":0}}
+        """;
+
+    [Fact]
+    public void A_row_whose_scope_is_an_object_is_kept_with_no_scope_and_the_walk_reads_its_two()
+    {
+        var answer = Answer(ObjectScope);
+
+        Assert.Equal([new WindowReading("session", 0.23, Parsed(3.5)), new WindowReading("weekly", 0.79, Parsed(100.25))], answer);
+        Assert.Equal(
+            [
+                new WindowSeen("five_hour", "session", null, 300, 0.23, 0.01, Parsed(3.5), UsageHistory.ResetSaid),
+                new WindowSeen("seven_day", "weekly", null, 10080, 0.79, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+                new WindowSeen("limits:session", null, null, 300, 0.23, 0.01, Parsed(3.5), UsageHistory.ResetSaid),
+                new WindowSeen("limits:weekly_all", null, null, 10080, 0.79, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+                new WindowSeen("limits:weekly_scoped", null, null, 10080, 0.4, 0.01, Parsed(100.25), UsageHistory.ResetSaid),
+            ],
+            answer.Seen);
+    }
+
     [Fact]
     public void A_not_signed_in_answer_keeps_nothing_for_the_history()
     {

@@ -55,12 +55,21 @@ internal static class ClaudeUsageLayer
             var minutes = row.Kind == "session" ? (int)ClaudeUsage.SessionLength.TotalMinutes
                 : row.Kind.StartsWith("weekly", StringComparison.Ordinal) ? (int)ClaudeUsage.WeekLength.TotalMinutes : (int?)null;
             Kept(seen, new WindowSeen(
-                $"limits:{row.Kind}", null, row.Scope is { Length: > 0 } scope ? scope : null, minutes, row.UsedPercent / 100,
+                $"limits:{row.Kind}", null, ScopeOf(row), minutes, row.UsedPercent / 100,
                 LayerUsageRead.Precision(row.UsedStep), row.ResetsAt, row.ResetsAt is null ? null : UsageHistory.ResetSaid));
         }
 
         return new(walk, seen, reading.Plan is { Length: > 0 } plan ? plan : null);
     }
+
+    /// <summary>
+    /// A row's scope under today's name: the word a string scope wrote. A scope the server wrote as an object, naming a model (with its
+    /// <see cref="AgentAllowanceLimit.ScopeName"/>) or a <see cref="AgentAllowanceLimit.Surface"/>, is a row today's reader keeps with no
+    /// scope, so the model and the surface are not kept here either. A model named with no display name reads as a word would: the
+    /// reading cannot tell the two apart, and no recorded answer has one.
+    /// </summary>
+    private static string? ScopeOf(AgentAllowanceLimit row) =>
+        row.ScopeName is null && row.Surface is null && row.Scope is { Length: > 0 } scope ? scope : null;
 
     /// <summary>As today's reader keeps a window: one that says something, a window said twice its last.</summary>
     private static void Kept(List<WindowSeen> seen, WindowSeen window)
