@@ -352,7 +352,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   `TablesPart` and its `Lent` words (a plugin's door states its toolchain's once in both; `codex-acp` says Codex's limits, as it
   lends them); a candidate's read floor is its provider's (s-iii, `SwitchCandidate.Floor`), and the page's is the accounts answer's
   `readFloor` per agent, its question's own, a minute only for a shell that names none. `alt-stub` (`Providers/AltStub/`) is built: its own
-  limit, window and sign-in grammar and home variable, one line in `Providers.Built()`, its pending file beside its program.
+  limit, window and sign-in grammar and home variable, one line in `Providers.Built()`, its pending file beside its program. Its native door is Daoris-run on today's plain capture as `stub`'s
+  is and passes the stream cases `stub`'s does; its protocol door's frames cases wait on row `j` (D248's note), its others on `l` and `n`. Neither
+  door has an own-vocabulary stream reader yet (the native door's waits on LQ13's turn at AGENTLYNTAI1f-ii, the protocol door's on AG15 at j).
 - **AGENTPROVIDER1** host rows (h, l, m-ii, n, o, p, q, r, s, u): every provider's and door's program is Install's `ToolSpec`
   (`Install/ToolSpec.cs`; the old toolchain's facts reach it through `ToolSpecs.Of` until row t), the pin's install is one decision,
   `PinInstall.Plan`, which the window's actions and the terminal's `agent pin` and `agent update` both ask, each running what it names
