@@ -162,7 +162,7 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
         {
             Failure = LayerFailures.Normalize(
                 ended.Failure ?? new AgentFailure(AgentFailureKind.Fatal, "no-failure-fields"), door, DoorWhere.Result, ended.Diagnostic,
-                clock.GetUtcNow(), coolOff);
+                clock.GetUtcNow(), coolOff, ended.Turn);
             ModelRefused = _refusals.Refused(Failure, door, DoorWhere.Result, ranNothing: !_ran, stopped: false);
             failed.Add(new WireReading.Failed(Failure.Failure));
         }

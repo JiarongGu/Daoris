@@ -48,13 +48,13 @@ public sealed class LayerParityProcessTests : IDisposable
     {
         @out = new object[]
         {
-            new { t = "text", text = "working" }, new { t = "end", kind = "Fatal", by = "tests:fatal", subtype = Failed, why = "it broke", delivery = "Taken" },
+            new { t = "text", text = "working" }, new { t = "end", kind = "Fatal", by = "tests:fatal", subtype = Failed, why = "it broke" },
         },
     };
 
     private static readonly object Unheard = new
     {
-        @out = new object[] { new { t = "end", kind = "Fatal", by = "tests:fatal", subtype = Failed, why = "it broke", delivery = "NeverSent" } },
+        @out = new object[] { new { t = "end", kind = "Fatal", by = "tests:fatal", subtype = Failed, why = "it broke" } },
     };
 
     private static readonly ParityPair RefusedPair = new("unread", "layer:" + LayerTestProvider.RefusedBy);
@@ -65,7 +65,7 @@ public sealed class LayerParityProcessTests : IDisposable
         @out = new object[]
         {
             new { t = "refused" },
-            new { t = "end", kind = "Fatal", by = LayerTestProvider.RefusedBy, restricts = "model", subtype = Failed, why = "it broke", delivery = "NeverSent" },
+            new { t = "end", kind = "Fatal", by = LayerTestProvider.RefusedBy, restricts = "model", subtype = Failed, why = "it broke" },
         },
     };
 
@@ -75,7 +75,7 @@ public sealed class LayerParityProcessTests : IDisposable
         @out = new object[]
         {
             new { t = "text", text = "working" }, new { t = "refused" },
-            new { t = "end", kind = "Fatal", by = LayerTestProvider.RefusedBy, restricts = "model", subtype = Failed, why = "it broke", delivery = "Taken" },
+            new { t = "end", kind = "Fatal", by = LayerTestProvider.RefusedBy, restricts = "model", subtype = Failed, why = "it broke" },
         },
     };
 
@@ -128,6 +128,15 @@ public sealed class LayerParityProcessTests : IDisposable
         {
             new { t = "start", id = "status-id", announced = false }, new { t = "start", id = "conv-1" }, new { t = "text", text = "hello" },
             new { t = "end", subtype = "success" },
+        },
+    };
+
+    /// <summary>A failed turn that showed a meter alone: the layer's own stamp counts it as the prompt taken, Daoris's hearing does not (AG37).</summary>
+    private static readonly object Metered = new
+    {
+        @out = new object[]
+        {
+            new { t = "end", kind = "Fatal", by = "tests:fatal", subtype = Failed, why = "it broke", usage = Counts },
         },
     };
 
@@ -255,6 +264,15 @@ public sealed class LayerParityProcessTests : IDisposable
     }
 
     [Fact]
+    public async Task A_prompt_s_delivery_is_read_from_what_its_turn_showed_a_meter_alone_being_unheard()
+    {
+        var (daoris, layer) = await BothAsync(Metered);
+
+        ParityOracle.Equal(daoris, layer, Relation, [Fatal]);
+        Assert.Contains(layer.Seen, each => each.Channel == ParityChannel.Failure && each["delivery"] == "NeverSent");
+    }
+
+    [Fact]
     public async Task A_refused_model_on_a_turn_that_ran_nothing_is_the_ending_s_refused_model_on_both_paths()
     {
         var (daoris, layer) = await BothAsync(Refused);
@@ -283,6 +301,7 @@ public sealed class LayerParityProcessTests : IDisposable
         { "an undeclared pair", "in no pair the relation declares" },
         { "a declared pair the scenario does not expect", "the scenario expects" },
         { "a delivery read Taken where its prompt's own turn was not heard", "delivery" },
+        { "the layer's own stamp read where the turn's evidence is", "delivery" },
     };
 
     [Theory]
@@ -302,10 +321,11 @@ public sealed class LayerParityProcessTests : IDisposable
             "a declared pair the scenario does not expect" =>
                 (Broke, Ending(failure => new AgentFailure(failure.Kind, "tests:broken") { Delivery = failure.Delivery })),
             "a delivery read Taken where its prompt's own turn was not heard" =>
-                (Unheard, Ending(failure => new AgentFailure(failure.Kind, failure.By) { Delivery = AgentDelivery.Taken })),
+                (Unheard, Turned(new AgentTurnEvidence(null, [AgentShownKind.Text]))),
+            "the layer's own stamp read where the turn's evidence is" => (Metered, Turned(null)),
             _ => throw new ArgumentOutOfRangeException(nameof(plant), plant, null),
         };
-        var expected = spec == Refused ? [RefusedPair] : spec == Broke || spec == Unheard ? [Fatal] : Array.Empty<ParityPair>();
+        var expected = spec == Refused ? [RefusedPair] : spec == Broke || spec == Unheard || spec == Metered ? [Fatal] : Array.Empty<ParityPair>();
 
         var (daoris, honest) = await BothAsync(spec);
         var (_, layer) = await BothAsync(spec, planted);
@@ -317,6 +337,9 @@ public sealed class LayerParityProcessTests : IDisposable
 
     private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Dropping<T>() =>
         read => read.Where((each, at) => !(each is T && at == read.ToList().FindIndex(first => first is T)));
+
+    private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Turned(AgentTurnEvidence? turn) =>
+        read => read.Select(each => each is LayerEnded ended ? ended with { Turn = turn } : each);
 
     private static Func<IReadOnlyList<AgentStreamEvent>, IEnumerable<AgentStreamEvent>> Announcing() =>
         read => read.Select(each => each is LayerStarted started ? started with { Announced = true } : each);

@@ -126,6 +126,7 @@ internal static class LayerTestProvider
             SessionEnded? ended = null;
             SessionEnded? faulted = null;
             string? conversation = null;
+            List<AgentShownKind> shown = [];
             await using (lines.ConfigureAwait(false))
             {
                 while (true)
@@ -148,10 +149,13 @@ internal static class LayerTestProvider
                     foreach (var each in Read(line))
                     {
                         if (each is SessionStarted started) conversation ??= started.SessionId;
+                        if (Shown(each) is { } kind && !shown.Contains(kind)) shown.Add(kind);
                         if (each is SessionEnded terminal)
                         {
                             if (ended is not null) continue;
                             ended = terminal;
+                            yield return Stamped(terminal, shown);
+                            continue;
                         }
 
                         yield return each;
@@ -161,12 +165,39 @@ internal static class LayerTestProvider
 
             if (ended is null)
             {
-                yield return faulted ?? new SessionEnded(
+                yield return Stamped(faulted ?? new SessionEnded(
                     ProviderVerdict.Failed, true, null, conversation, null, "no output produced (no terminal result)")
                 {
                     Failure = new AgentFailure(AgentFailureKind.Fatal, "no-terminal-event"),
-                };
+                }, shown);
             }
+        }
+
+        /// <summary>The kind of event a turn showed, as the layer's loop counts one after the write (a start is none).</summary>
+        private static AgentShownKind? Shown(AgentStreamEvent each) => each switch
+        {
+            TextDelta => AgentShownKind.Text,
+            Thinking => AgentShownKind.Thinking,
+            ToolCall => AgentShownKind.ToolCall,
+            ToolResult => AgentShownKind.ToolResult,
+            UsageLive or UsageFinal or UsageReading => AgentShownKind.Usage,
+            PlanUpdated => AgentShownKind.Plan,
+            _ => null,
+        };
+
+        /// <summary>The terminal with what the turn showed, and the layer's own delivery stamp, which counts a meter as the prompt taken.</summary>
+        private static SessionEnded Stamped(SessionEnded terminal, List<AgentShownKind> shown)
+        {
+            var delivery = shown.Any(kind => kind is AgentShownKind.ToolCall or AgentShownKind.ToolResult) ? AgentDelivery.Uncertain
+                : shown.Count > 0 ? AgentDelivery.Taken : AgentDelivery.NeverSent;
+            return terminal with
+            {
+                Turn = new AgentTurnEvidence(null, [.. shown]),
+                Failure = terminal.Failure is null ? null : new AgentFailure(terminal.Failure.Kind, terminal.Failure.By)
+                {
+                    Restriction = terminal.Failure.Restriction, Delivery = delivery,
+                },
+            };
         }
 
         private static IEnumerable<AgentStreamEvent> Read(string line)
@@ -224,7 +255,6 @@ internal static class LayerTestProvider
                                 "model-capacity" => new AgentRestriction(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown),
                                 _ => null,
                             },
-                            Delivery = Text("delivery") is { } delivery ? Enum.Parse<AgentDelivery>(delivery) : default,
                         },
                     };
                     break;

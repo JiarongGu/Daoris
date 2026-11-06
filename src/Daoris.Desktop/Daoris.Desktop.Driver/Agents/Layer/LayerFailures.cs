@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para>The layer's recovery keeps a kind and an instant it resolved, never how the reset was stated, so the instant reaches D125's
 /// bounds as <see cref="ResetPrecision.Resolved"/>, with no grace; the stated reset, its window, what was hit and an access failure's
-/// reason are the later parts' (1b-iii), each landing before the move that reads it.</para>
+/// reason are the later parts' (1b-iii), each landing before the move that reads it. The delivery is read from what the prompt's own turn
+/// showed (<see cref="LayerDelivery"/>), the layer's own stamp standing only for a terminal that states no turn.</para>
 /// </remarks>
 internal static class LayerFailures
 {
@@ -22,8 +23,9 @@ internal static class LayerFailures
     /// <param name="door">The bound door's transport word, for the log (<c>protocol</c>, <c>pipe</c>).</param>
     /// <param name="words">The terminal's own text, for the log alone: no word is read again.</param>
     /// <param name="coolOff">D125's default cool-off, for a recovery not stated.</param>
+    /// <param name="turn">What the turn showed after its prompt was written, which the delivery is read from; null where the layer states none.</param>
     public static NormalizedFailure Normalize(
-        AgentFailure failure, string door, string where, string? words, DateTimeOffset seen, TimeSpan coolOff)
+        AgentFailure failure, string door, string where, string? words, DateTimeOffset seen, TimeSpan coolOff, AgentTurnEvidence? turn = null)
     {
         var kind = KindOf(failure.Kind);
         var by = Mark + failure.By;
@@ -39,7 +41,7 @@ internal static class LayerFailures
             limit,
             Access: null,
             restriction,
-            DeliveryOf(failure.Delivery));
+            LayerDelivery.Of(turn) ?? DeliveryOf(failure.Delivery));
     }
 
     /// <summary>The four kinds, agreeing one to one.</summary>
