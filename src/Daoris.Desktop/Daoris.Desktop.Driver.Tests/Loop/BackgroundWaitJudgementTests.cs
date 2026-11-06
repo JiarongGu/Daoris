@@ -261,7 +261,8 @@ public sealed class BackgroundWaitJudgementTests : IDisposable
     public async Task A_tree_that_cannot_be_read_owes_nothing()
     {
         _ledger.Move("q1", "Done");
-        var folder = Path.Combine(TestHomes.Root, "daoris-turn-carry-none-" + Guid.NewGuid().ToString("N")[..8]);
+        // Where no repository lies above: git walks up from a folder under the checkout into the checkout's own, which has a tree to read.
+        var folder = Path.Combine(Path.GetTempPath(), "daoris-turn-carry-none-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(folder);
         try
         {
