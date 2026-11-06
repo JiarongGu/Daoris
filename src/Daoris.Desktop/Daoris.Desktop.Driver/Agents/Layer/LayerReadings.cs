@@ -26,6 +26,10 @@ namespace Daoris.Driver;
 internal sealed class LayerReadings(
     string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null, Func<LayerToolCall, SessionEvent>? steps = null)
 {
+    private const string NoResult = "no-result-frame";
+
+    private const string NoTerminal = "no-terminal-event";
+
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
 
     private readonly LayerRefusals _refusals = refusals ?? LayerRefusals.None;
@@ -56,6 +60,12 @@ internal sealed class LayerReadings(
     /// <summary>The turn's failure as Daoris's outcome; null where it did not fail or was stopped.</summary>
     public NormalizedFailure? Failure { get; private set; }
 
+    /// <summary>Whether Daoris ended the process (its bound, its watch's quiet, a stop it registered): its executor says that end.</summary>
+    public Func<bool> Killed { get; init; } = () => false;
+
+    /// <summary>Whether the process exited clean, read once the terminal is in.</summary>
+    public Func<bool> Clean { get; init; } = () => false;
+
     /// <summary>Daoris asked a stop before the terminal: the terminal that follows is the stop, never the fatal exit after the kill.</summary>
     public void Stop() => _stopping = Ended is null;
 
@@ -63,12 +73,47 @@ internal sealed class LayerReadings(
     public IReadOnlyList<WireReading> Read(AgentStreamEvent evt)
     {
         if (evt is TextDelta { ParentCallId: null } or Thinking { ParentCallId: null } or LayerToolCall { ParentCallId: null }) _ran = true;
-        return Translate(evt);
+        var read = Translate(evt);
+
+        // Today's capture hands what the init says it loaded before the conversation that frame names, so the naming waits for the frame's
+        // next event, or for anything else said first (Flush).
+        lock (_held)
+        {
+            if (evt is LayerStarted && read.Count > 0)
+            {
+                _naming = read;
+                return [];
+            }
+
+            if (_naming is not { } naming) return read;
+            _naming = null;
+            return evt is AgentLoaded ? [.. read, .. naming] : [.. naming, .. read];
+        }
     }
+
+    /// <summary>The naming held for the init's reading, handed before a line the harness said outside a frame or on stderr; none held is none.</summary>
+    public IReadOnlyList<WireReading> Flush()
+    {
+        lock (_held)
+        {
+            var naming = _naming ?? [];
+            _naming = null;
+            return naming;
+        }
+    }
+
+    private readonly object _held = new();
+
+    private IReadOnlyList<WireReading>? _naming;
 
     private IReadOnlyList<WireReading> Translate(AgentStreamEvent evt) => evt switch
     {
         LayerStarted started => Named(started),
+        AgentLoaded loaded =>
+        [
+            new WireReading.Loaded(new WireLoaded(
+                loaded.Tools, [.. loaded.McpServers.Select(server => new WireServer(server.Name, server.Status ?? ""))], loaded.Skills, loaded.Plugins)),
+        ],
         TextDelta text =>
         [
             .. text.Text.Split('\n').Select(Shown),
@@ -154,6 +199,10 @@ internal sealed class LayerReadings(
         if (Ended is not null) return [];
         Ended = ended;
         if (_stopping) return Closing([], "— the turn was stopped", "cancelled");
+
+        // Today's capture says nothing of a stream that ended without its result: the end Daoris made of the process, or a clean exit before
+        // the agent stated its end (Lyntai's `no-result-frame`, or the turn's `no-terminal-event` where no message came first).
+        if (Killed() || (Clean() && (ended.Subtype == NoResult || ended.Failure?.By == NoTerminal))) return [];
 
         var subtype = ended.Subtype ?? (ended.IsError ? "error" : "success");
         var failed = new List<WireReading>();

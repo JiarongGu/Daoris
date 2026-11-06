@@ -144,30 +144,11 @@ public sealed class LayerRunProcessTests : IDisposable
 
         var choice = await Assert.ThrowsAsync<DriverException>(() => run.ApplyChoiceAsync(null!, CancellationToken.None));
         var task = await Assert.ThrowsAsync<DriverException>(() => run.StopTaskAsync("t1", CancellationToken.None));
-        var retry = await Assert.ThrowsAsync<DriverException>(() => run.ResumeAsync("conv-1", CancellationToken.None, new NoResumeState()));
 
         Assert.Contains(LayerRun.ChoiceAbility, choice.Message);
         Assert.Contains(LayerRun.TaskAbility, task.Message);
-        Assert.Contains(LayerRun.RetryAbility, retry.Message);
         Assert.Null(run.Words);
         Assert.Empty(readings);
         Assert.Null(run.Container);
-    }
-
-    private sealed class NoResumeState : IResumeState
-    {
-        public bool Named => false;
-
-        public bool Refused => false;
-
-        public bool Retried => false;
-
-        public void Opened()
-        {
-        }
-
-        public void Again()
-        {
-        }
     }
 }

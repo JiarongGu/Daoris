@@ -99,7 +99,10 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Request = request, Selection = goesOnAs,
         };
-        await using var run = new TransportRun(wiring.Transport, context.Adapters, adapter, start);
+        // A native door's driven start is the layer's run where the driver carries Lyntai's layer and binds that door's driven kind
+        // (AGENTLYNTAI1d, D248's note), today's transport otherwise; the steps below are the same on either.
+        await using HeldRun run = (adapter.Can.HeldOnWire ? null : DrivenRuns.Of(adapter.Id.Value, wiring.Transport, start, request))
+            ?? new TransportRun(wiring.Transport, context.Adapters, adapter, start);
         await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
         spawned?.Invoke();
 
@@ -281,8 +284,8 @@ internal sealed class SessionHold(IRunWiring wiring)
             Quiet = watched?.Ending ?? default,
             QuietEnding = ending is null ? null : () => ending.Say(Observation.Quiet(watched!.EndedMinutes ?? 0)),
 
-            Protocol = !protocol ? null : _door.For(
-                run, sessionId, cwd, prompt,
+            Protocol = !protocol || run is not TransportRun transport ? null : _door.For(
+                transport, sessionId, cwd, prompt,
 
                 // The posture rides with it because it is the adapter's: harnesses name the same boundary differently, and one does not
                 // name it on the wire. A driven session's asking or unrestricted permission prompts name the adapter's mode, required.

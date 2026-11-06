@@ -181,6 +181,11 @@ internal interface ITransportHost
     /// <summary>A stream a run reads, stamping its session heard at each line (SESSWATCH1a).</summary>
     TextReader Hearing(TextReader reader, string sessionId);
 
+    /// <summary>The same stamp for a run that reads no stream of its own, told each raw line its runner reads (AGENTLYNTAI1d).</summary>
+    void Heard(string sessionId)
+    {
+    }
+
     /// <summary>
     /// A process's lineage token (COWORKVIEW1a): issued, its <c>start</c> written and set on the spawn's environment, all before the spawn;
     /// <paramref name="moved"/> where its run's move issued it already (<c>Driver.Bracketed</c>).

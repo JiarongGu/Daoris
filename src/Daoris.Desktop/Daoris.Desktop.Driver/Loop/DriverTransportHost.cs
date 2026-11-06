@@ -17,6 +17,8 @@ internal sealed class DriverTransportHost(Driver driver) : ITransportHost
 
     public TextReader Hearing(TextReader reader, string sessionId) => driver.Hearing(reader, sessionId);
 
+    public void Heard(string sessionId) => driver.Watch.Heard(sessionId);
+
     public string Bracketed(string sessionId, ProcessStartInfo info, string? moved) => LineageBrackets.Bracketed(Home, sessionId, info, moved);
 
     public Task<Process?> SpawnedAsync(string proc, Func<Task<Process?>> spawn) => LineageBrackets.Spawned(proc, spawn);

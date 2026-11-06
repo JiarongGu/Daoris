@@ -36,12 +36,52 @@ public sealed class LayerReadingsTests
     {
         var translation = Readings();
 
-        var first = translation.Read(new SessionStarted("conv-1"));
-        var again = translation.Read(new SessionStarted("conv-2"));
+        var first = translation.Read(new SessionStarted("conv-1")).Concat(translation.Flush()).ToList();
+        var again = translation.Read(new SessionStarted("conv-2")).Concat(translation.Flush()).ToList();
 
         Assert.Equal("conv-1", Assert.IsType<WireReading.ConversationNamed>(Assert.Single(first)).Conversation);
         Assert.Empty(again);
         Assert.Equal("conv-1", translation.Conversation);
+    }
+
+    /// <summary>Today's capture hands what the init says it loaded before the conversation the same frame names.</summary>
+    [Fact]
+    public void The_init_s_reading_of_what_loaded_comes_before_the_conversation_it_names()
+    {
+        var translation = Readings();
+
+        var started = translation.Read(new SessionStarted("conv-1"));
+        var loaded = translation.Read(new AgentLoaded(["Bash"], [new AgentLoadedServer("daoris", null)], [], ["p1"]));
+
+        Assert.Empty(started);
+        Assert.Collection(
+            loaded,
+            each => Assert.Equal(
+                new WireLoaded(["Bash"], [new WireServer("daoris", "")], [], ["p1"]), Assert.IsType<WireReading.Loaded>(each).Init),
+            each => Assert.Equal("conv-1", Assert.IsType<WireReading.ConversationNamed>(each).Conversation));
+    }
+
+    /// <summary>
+    /// A clean exit before the agent stated its end, and the end Daoris made of the process, say nothing and fail nothing, as today's capture
+    /// says nothing of a stream that ended without its result; a failed exit's terminal is still the turn's failure.
+    /// </summary>
+    [Theory]
+    [InlineData("no-result-frame", false, true, false, 0)]
+    [InlineData(null, true, true, false, 0)]
+    [InlineData(null, true, false, true, 0)]
+    [InlineData(null, true, false, false, 3)]
+    public void A_terminal_the_stream_never_stated_says_nothing_on_a_clean_exit_or_after_Daoris_s_kill(
+        string? subtype, bool failed, bool clean, bool killed, int said)
+    {
+        var translation = new LayerReadings("pipe", TimeProvider.System, TimeSpan.FromHours(1)) { Clean = () => clean, Killed = () => killed };
+
+        var read = translation.Read(new SessionEnded(failed ? ProviderVerdict.Failed : ProviderVerdict.Ok, failed, subtype, null, null, "why")
+        {
+            Failure = failed ? new AgentFailure(AgentFailureKind.Fatal, "no-terminal-event") : null,
+        });
+
+        Assert.Equal(said, read.Count);
+        Assert.Equal(said > 0, translation.Failure is not null);
     }
 
     [Fact]
@@ -140,7 +180,7 @@ public sealed class LayerReadingsTests
         var translation = Readings();
 
         Assert.Empty(translation.Read(new SessionStarted("status-id") { Announced = false }));
-        var named = translation.Read(new SessionStarted("conv-1"));
+        var named = translation.Read(new SessionStarted("conv-1")).Concat(translation.Flush()).ToList();
 
         Assert.Equal("conv-1", Assert.IsType<WireReading.ConversationNamed>(Assert.Single(named)).Conversation);
         Assert.Equal("conv-1", translation.Conversation);

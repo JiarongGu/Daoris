@@ -34,6 +34,10 @@ internal static class ParityObserver
                 break;
             case WireReading.Failed:
                 break;
+            case WireReading.Loaded loaded:
+                // What the init says the harness loaded, never the run's stamp on it, which each path gives its own run.
+                seen.Add(ParityChannel.Events, nameof(WireReading.Loaded), ("init", JsonSerializer.Serialize(loaded.Init)));
+                break;
             default:
                 seen.Add(ParityChannel.Events, reading.GetType().Name, ("reading", JsonSerializer.Serialize<object>(reading)));
                 break;

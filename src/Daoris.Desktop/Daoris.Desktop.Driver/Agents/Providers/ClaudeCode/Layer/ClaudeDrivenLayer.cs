@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Lyntai;
 using Lyntai.Agents;
 
@@ -45,4 +46,33 @@ internal static class ClaudeDrivenLayer
     /// <summary>The binding of the driven kind alone, over <paramref name="command"/>.</summary>
     public static LayerBinding Binding(string command) =>
         new(Registration(command), AgentDoorKinds.Cli, new HashSet<StartKind> { StartKind.Driven });
+
+    [ModuleInitializer]
+    internal static void Install() => DrivenRuns.Bind(Door, Run);
+
+    /// <summary>
+    /// A driven start's run on the layer, held by its executor: the program the start resolved (its file and the arguments before
+    /// <c>-p</c>) started in place of the door's command, under the environment its shell composed; the mode, model, effort and plugin
+    /// folders it was handed carried by the layer's options, its rules and servers files by the carriers. A partner's piece stays on today's
+    /// transport, its job one the launcher's seat does not name.
+    /// </summary>
+    internal static HeldRun? Run(ITransportHost host, TransportStart start, SpawnRequest request)
+    {
+        if (start.Piece is not null) return null;
+        var args = start.Info.ArgumentList;
+        var plugins = args.Select((arg, at) => (arg, at)).Where(each => each.arg == "--plugin-dir" && each.at + 1 < args.Count)
+            .Select(each => args[each.at + 1]).ToList();
+        return new LayerRun(
+            Registration(Door),
+            Start(new LayerStart(Door, Prompt: "", Transcript: "", AccountLimits.DefaultCoolOff), request, plugins) with
+            {
+                WorkingDirectory = start.Info.WorkingDirectory is { Length: > 0 } cwd ? cwd : null,
+            },
+            new LauncherSeat(ContainedKind.Agent, start.Whose, host.Home, host.Log)
+            {
+                Program = (start.Info.FileName, [.. args.TakeWhile(arg => arg != "-p")]),
+            },
+            exists: _ => true,
+            new LayerHold(host, start));
+    }
 }
