@@ -4,23 +4,29 @@ import type { RoleChangePress, SupervisorCountRead, SupervisorRuleSetRead, Super
 export const SUPERVISOR = 'supervisor';
 export const MACHINE = 'machine';
 
-/** One rule as the editor holds it: text while typed, so a half-typed number or an IME composition survives. */
-export type RuleDraft = { key: number; count: string; at: string; do: string; upTo: string; role: string };
+/**
+ * One rule as the editor holds it: text while typed, so a half-typed number or an IME composition survives. `roles` is the rule's
+ * whole set as read, none for every role: a rule set at the terminal for two roles is written back for both.
+ */
+export type RuleDraft = { key: number; count: string; at: string; do: string; upTo: string; roles: readonly string[] };
 
 /** A place's rules as the editor holds them, with the revision they were read at. */
 export type RulesDraft = { place: string; revision: number; rows: RuleDraft[] };
 
-/** The one role a rule names, or none for every role. */
-const roleOf = (rule: SupervisorRuleWire): string => rule.roles?.[0] ?? '';
+/** The roles a rule names, none for every role. */
+export const rolesOf = (rule: Pick<SupervisorRuleWire, 'roles'>): readonly string[] => rule.roles ?? [];
+
+/** Whether two rules name the same roles, in any order. */
+export const sameRoles = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((role) => b.includes(role));
+
+/** One rule read into the editor. */
+export const rowOf = (rule: SupervisorRuleWire, key: number): RuleDraft => ({
+  key, count: rule.count, at: String(rule.at), do: rule.do, upTo: rule.upTo === null || rule.upTo === undefined ? '' : String(rule.upTo), roles: rolesOf(rule),
+});
 
 /** The draft a place opens with, from its set in `ROLES`; a place that holds none opens empty at revision 0. */
 export function draftOf(place: string, set: SupervisorRuleSetRead | undefined): RulesDraft {
-  return {
-    place, revision: set?.revision ?? 0,
-    rows: (set?.rules ?? []).map((rule, key) => ({
-      key, count: rule.count, at: String(rule.at), do: rule.do, upTo: rule.upTo === null || rule.upTo === undefined ? '' : String(rule.upTo), role: roleOf(rule),
-    })),
-  };
+  return { place, revision: set?.revision ?? 0, rows: (set?.rules ?? []).map(rowOf) };
 }
 
 /** The place's set among `read`, if it holds one. */
@@ -28,7 +34,7 @@ export const setOf = (read: SupervisorRulesRead | undefined, place: string): Sup
 
 /** The count a new rule starts on: the first not yet ruled for every role here, else the first. */
 export function nextCount(counts: readonly SupervisorCountRead[], rows: readonly RuleDraft[]): SupervisorCountRead | undefined {
-  return counts.find((count) => !rows.some((row) => row.count === count.count && row.role === '')) ?? counts[0];
+  return counts.find((count) => !rows.some((row) => row.count === count.count && row.roles.length === 0)) ?? counts[0];
 }
 
 /** The action a count offers first: never `off` or `refer`, which a person chooses. */
@@ -37,7 +43,7 @@ const firstAction = (count: SupervisorCountRead): string => count.actions.find((
 /** A new rule on `count`: its least threshold and its first action. */
 export function blankRule(count: SupervisorCountRead, key: number): RuleDraft {
   const action = firstAction(count);
-  return { key, count: count.count, at: String(count.least), do: action, upTo: action === 'wait' ? '30' : '', role: '' };
+  return { key, count: count.count, at: String(count.least), do: action, upTo: action === 'wait' ? '30' : '', roles: [] };
 }
 
 /** A rule moved to another count keeps what it can: its threshold held to the count's bounds, its action the count's first if it does not allow it. */
@@ -58,7 +64,7 @@ export function sameAsStored(draft: RulesDraft, set: SupervisorRuleSetRead | und
   const was = draftOf(draft.place, set).rows;
   return was.length === draft.rows.length && was.every((row, at) => {
     const now = draft.rows[at]!;
-    return row.count === now.count && row.at === now.at && row.do === now.do && row.upTo === now.upTo && row.role === now.role;
+    return row.count === now.count && row.at === now.at && row.do === now.do && row.upTo === now.upTo && sameRoles(row.roles, now.roles);
   });
 }
 
@@ -72,7 +78,7 @@ export function pressOf(draft: RulesDraft): RoleChangePress {
   const rules = draft.rows.map((row): SupervisorRuleWire => ({
     count: row.count, at: Number(row.at), do: row.do,
     ...(row.do === 'wait' ? { upTo: Number(row.upTo) } : {}),
-    ...(row.role ? { roles: [row.role] } : {}),
+    ...(row.roles.length > 0 ? { roles: [...row.roles] } : {}),
   }));
   return { change: 'set', id: SUPERVISOR, place: draft.place, rules, rulesRevision: draft.revision };
 }
@@ -84,7 +90,7 @@ export function placeKey(kind: 'machine' | 'workspace' | 'repository', id: strin
 
 /** The wider place's rules on the count and role of `row`, which this place's own rule replaces. */
 export function replaced(row: RuleDraft, wider: readonly SupervisorRuleWire[]): SupervisorRuleWire[] {
-  return wider.filter((rule) => rule.count === row.count && (rule.roles?.[0] ?? '') === row.role);
+  return wider.filter((rule) => rule.count === row.count && sameRoles(rolesOf(rule), row.roles));
 }
 
 /** The machine's rules a repository or workspace reads on the counts it holds none of its own. */
