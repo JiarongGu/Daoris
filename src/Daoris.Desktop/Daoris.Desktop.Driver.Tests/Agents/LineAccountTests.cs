@@ -234,7 +234,7 @@ public sealed class LineAccountTests : IDisposable
     {
         public string Name => name;
 
-        public SessionWire Wire => SessionWire.Pipe;
+        public Transport Transport => Transport.Native;
 
         public HarnessToolchain? Toolchain => toolchain;
 

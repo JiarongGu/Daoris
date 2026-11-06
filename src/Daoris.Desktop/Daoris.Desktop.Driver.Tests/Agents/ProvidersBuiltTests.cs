@@ -215,7 +215,7 @@ public sealed class ProvidersBuiltTests
 
         Assert.IsType<LegacyDoor>(door);
         Assert.Equal(old.Name, door.Name);
-        Assert.Equal(old.Wire, door.Wire);
+        Assert.Equal(old.Transport, door.Transport);
         Assert.Equal(old.Interactive, door.Interactive);
         Assert.Equal(old.Resumes, door.Resumes);
         Assert.Equal(old.TakesSettings, door.TakesSettings);
@@ -248,7 +248,7 @@ public sealed class ProvidersBuiltTests
 
         Assert.IsType<LegacyDoor>(door);
         Assert.Equal(old.Name, door.Name);
-        Assert.Equal(old.Wire, door.Wire);
+        Assert.Equal(old.Transport, door.Transport);
         Assert.Equal(old.Interactive, door.Interactive);
         Assert.Equal(old.Resumes, door.Resumes);
         Assert.Equal(old.TakesSettings, door.TakesSettings);

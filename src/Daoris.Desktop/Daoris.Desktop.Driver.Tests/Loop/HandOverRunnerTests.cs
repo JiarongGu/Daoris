@@ -31,7 +31,7 @@ public sealed class HandOverRunnerTests : IDisposable
     {
         public string Name => name;
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

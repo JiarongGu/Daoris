@@ -282,14 +282,14 @@ public sealed class ProviderCensusTests
     [Fact]
     public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {
-        const string file = "Daoris.Desktop.Driver/Agents/TransportRun.cs";
+        const string file = "Daoris.Desktop.Driver/Install/ClaudeReleaseSource.cs";
         var source = File.ReadAllText(Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), file)).Replace("\r\n", "\n");
 
-        var more = Census(Sources().Where(each => each.File != file).Append((file, source + "\nvar again = wire == SessionWire.Acp;")));
-        var fewer = Census(Sources().Where(each => each.File != file).Append((file, source.Replace("SessionWire.Acp", "Other"))));
+        var more = Census(Sources().Where(each => each.File != file).Append((file, source + "\nvar again = ClaudeReleases.Newest;")));
+        var fewer = Census(Sources().Where(each => each.File != file).Append((file, source.Replace("ClaudeReleases", "Other"))));
 
         Assert.Empty(Problems(more, TheFixture.Value));
-        Assert.Contains($"{file}: SessionWire.Acp is no site now: take it off the fixture", Problems(fewer, TheFixture.Value));
+        Assert.Contains($"{file}: ClaudeReleases is no site now: take it off the fixture", Problems(fewer, TheFixture.Value));
     }
 
     /// <summary>A provider's own folder names its own types, and another's where its registration declares the reference.</summary>

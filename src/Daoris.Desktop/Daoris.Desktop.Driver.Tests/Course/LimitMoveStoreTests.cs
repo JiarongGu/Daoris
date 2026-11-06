@@ -142,7 +142,7 @@ public sealed class LimitMoveStoreTests : IDisposable
     {
         public string Name => "talk";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

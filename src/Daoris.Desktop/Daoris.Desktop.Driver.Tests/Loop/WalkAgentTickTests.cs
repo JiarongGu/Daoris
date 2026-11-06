@@ -284,7 +284,7 @@ public sealed class WalkAgentTickTests : IDisposable
     {
         public string Name => "acp-other";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

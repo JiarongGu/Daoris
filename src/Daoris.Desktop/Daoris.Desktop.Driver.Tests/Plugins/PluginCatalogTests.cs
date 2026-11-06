@@ -350,7 +350,7 @@ public sealed class PluginCatalogTests : IDisposable
         var adapter = adapters.Resolve("acme-agent");
 
         Assert.Contains("acme-agent", adapters.Names);
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.Equal("edits", adapter.AcpPosture);
         Assert.True(adapter.Interactive);
 

@@ -181,7 +181,7 @@ public sealed class AccessSwapTickTests : IDisposable
 
         public string Name => _stub.Name;
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

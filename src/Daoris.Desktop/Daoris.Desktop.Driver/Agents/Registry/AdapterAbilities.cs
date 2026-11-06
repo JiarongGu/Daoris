@@ -9,7 +9,7 @@ public static class AdapterAbilities
     /// <summary>What <paramref name="adapter"/>'s door can do (<see cref="DoorAbilities"/>).</summary>
     public static DoorAbilities Abilities(this ISessionAdapter adapter) => adapter is LegacyDoor legacy
         ? DoorAbilities.Of(legacy.Door)
-        : DoorAbilities.Of(TransportOf(adapter.Wire), adapter.Interactive, adapter.Resumes, adapter.TakesSettings, adapter.StructuredOutput() is not null);
+        : DoorAbilities.Of(adapter.Transport, adapter.Interactive, adapter.Resumes, adapter.TakesSettings, adapter.StructuredOutput() is not null);
 
     /// <summary>The abilities of the door named <paramref name="name"/> in <paramref name="adapters"/>, null where none is.</summary>
     public static DoorAbilities? AbilitiesOf(this AdapterSet adapters, string name)
@@ -23,7 +23,4 @@ public static class AdapterAbilities
             return null;
         }
     }
-
-    /// <summary>The old seam's wire in the contract's word, for an adapter made a provider (row q moves the plugins' doors).</summary>
-    public static Transport TransportOf(SessionWire wire) => wire == SessionWire.Acp ? Transport.Protocol : Transport.Native;
 }

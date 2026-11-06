@@ -32,7 +32,7 @@ public sealed class ClaudeAcpTests : IDisposable
     public void It_is_a_protocol_door_session_and_takes_stdin()
     {
         var adapter = Adapter();
-        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.Equal(Transport.Protocol, adapter.Transport);
 
         var info = adapter.Prepare(Target(_home), command: null);
         // The driver writes JSON-RPC frames into it, unlike a pipe-door session which is given its
@@ -186,7 +186,7 @@ public sealed class ClaudeAcpTests : IDisposable
     {
         var pipe = AdapterSet.Built().Resolve("claude-code");
 
-        Assert.Equal(SessionWire.Pipe, pipe.Wire);
+        Assert.Equal(Transport.Native, pipe.Transport);
         Assert.True(pipe.Interactive);
     }
 }

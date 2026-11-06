@@ -27,11 +27,11 @@ public sealed class StartWiringTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, SessionWire wire) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public ProcessStartInfo Prepare(SpawnRequest request) => new();
 
@@ -57,10 +57,10 @@ public sealed class StartWiringTests : IDisposable
             Package: "agent-cli");
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["agent"] = new Adapter("agent", toolchain, SessionWire.Pipe),
+            ["agent"] = new Adapter("agent", toolchain, Transport.Native),
             ["agent-acp"] = new Adapter("agent-acp", new HarnessToolchain(
                 Binary: ["node", script], VersionArguments: ["--version"],
-                ProfileVariable: "AGENT_HOME", AccountOf: "agent"), SessionWire.Acp),
+                ProfileVariable: "AGENT_HOME", AccountOf: "agent"), Transport.Protocol),
         };
         return new HarnessRoster(new AdapterSet(adapters), Settings);
     }

@@ -89,7 +89,7 @@ public sealed class AcpStubAdapter : ISessionAdapter
 {
     public string Name => "acp-stub";
 
-    public SessionWire Wire => SessionWire.Acp;
+    public Transport Transport => Transport.Protocol;
 
     /// <summary>
     /// Interactive, so a conversation on this door can be gated with no model in it (CONV3b) — the

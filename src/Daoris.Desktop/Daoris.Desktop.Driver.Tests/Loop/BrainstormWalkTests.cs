@@ -35,7 +35,7 @@ public sealed class BrainstormWalkTests : IDisposable
     {
         public string Name => real.Name;
 
-        public SessionWire Wire => real.Wire;
+        public Transport Transport => real.Transport;
 
         public HarnessToolchain? Toolchain => toolchain;
 

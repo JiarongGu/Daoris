@@ -253,7 +253,7 @@ public sealed class SpawnTableTests
     {
         public string Name => "plugin-door";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public ProcessStartInfo Prepare(SpawnRequest request) => throw new NotSupportedException();
     }

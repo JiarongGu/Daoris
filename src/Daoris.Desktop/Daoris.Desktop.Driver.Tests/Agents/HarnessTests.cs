@@ -762,20 +762,20 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
-    private sealed class FakeAdapter(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe)
+    private sealed class FakeAdapter(HarnessToolchain? toolchain, Transport wire = Transport.Native)
         : ISessionAdapter
     {
         public string Name => "fake";
 
         /// <summary>Which door — the protocol one asks for the Agent SDK's executable seam (ACP2).</summary>
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public System.Diagnostics.ProcessStartInfo Prepare(SpawnRequest request) => new();
 
         public HarnessToolchain? Toolchain => toolchain;
     }
 
-    private static AdapterSet Set(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe) =>
+    private static AdapterSet Set(HarnessToolchain? toolchain, Transport wire = Transport.Native) =>
         new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = new FakeAdapter(toolchain, wire),
@@ -936,7 +936,7 @@ public sealed class HarnessSelectionTests : IDisposable
         File.WriteAllText(claude, "");
         new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
 
-        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), Transport.Protocol), Settings)
             .SelectAsync("fake", Config(), workspace: null, chosen: null);
 
         Assert.True(selection.Allowed);
@@ -965,7 +965,7 @@ public sealed class HarnessSelectionTests : IDisposable
     [Fact]
     public async Task With_no_claude_pinned_the_protocol_door_lets_the_sdk_find_its_own()
     {
-        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), Transport.Protocol), Settings)
             .SelectAsync("fake", Config(), workspace: null, chosen: null);
 
         Assert.True(selection.Allowed);

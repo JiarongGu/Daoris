@@ -32,7 +32,7 @@ public sealed class HelpGoOnTests : IDisposable
 
         public string Name => "native-talk";
 
-        public SessionWire Wire => SessionWire.Pipe;
+        public Transport Transport => Transport.Native;
 
         public bool Interactive => true;
 

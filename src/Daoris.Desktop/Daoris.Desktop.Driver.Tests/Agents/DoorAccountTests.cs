@@ -30,11 +30,11 @@ public sealed class DoorAccountTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, SessionWire wire) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public ProcessStartInfo Prepare(SpawnRequest request) => new();
 
@@ -64,7 +64,7 @@ public sealed class DoorAccountTests : IDisposable
         {
             ["owner-acp"] = new Adapter("owner-acp", new HarnessToolchain(
                 Binary: ["node", script], VersionArguments: ["--version"],
-                ProfileVariable: "OWNER_HOME", AccountOf: "owner"), SessionWire.Acp),
+                ProfileVariable: "OWNER_HOME", AccountOf: "owner"), Transport.Protocol),
         };
         if (withOwner)
         {
@@ -72,7 +72,7 @@ public sealed class DoorAccountTests : IDisposable
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "OWNER_HOME",
                 LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"),
-                KeyVariable: "OWNER_KEY"), SessionWire.Pipe);
+                KeyVariable: "OWNER_KEY"), Transport.Native);
         }
 
         return new HarnessRoster(new AdapterSet(adapters), Settings);

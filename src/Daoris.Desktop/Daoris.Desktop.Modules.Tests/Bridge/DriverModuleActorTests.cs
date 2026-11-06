@@ -182,7 +182,7 @@ public sealed class DriverModuleActorTests : DriverModuleBridge
     {
         public string Name => name;
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 

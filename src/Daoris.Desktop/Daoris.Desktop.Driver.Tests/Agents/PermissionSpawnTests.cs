@@ -350,7 +350,7 @@ public sealed class PermissionSpawnTests : IDisposable
     private sealed class RecordingAcpAdapter : ISessionAdapter
     {
         public string Name => "recording-acp";
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
         public bool TakesSettings => true;
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }

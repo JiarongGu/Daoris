@@ -13,11 +13,11 @@ public interface ISessionAdapter
     string Name { get; }
 
     /// <summary>
-    /// Which door the driver holds this harness's session over (D53). Default <see cref="SessionWire.Pipe"/>,
+    /// Which door the driver holds this harness's session over (D53). Default <see cref="Transport.Native"/>,
     /// so an adapter that says nothing behaves exactly as every adapter did before the door existed —
     /// the same silence-preserves rule the toolchain and the session trees follow.
     /// </summary>
-    SessionWire Wire => SessionWire.Pipe;
+    Transport Transport => Transport.Native;
 
     /// <summary>
     /// The permission posture D37 sanctions, in <b>this harness's own vocabulary</b>, for adapters
@@ -216,7 +216,7 @@ public interface ISessionAdapter
     /// door's agent says on its own wire whether it resumes, so it is asked there; a native door resumes only where its
     /// adapter knows the harness's own resume (<see cref="PrepareResume"/>).
     /// </summary>
-    bool Resumes => Wire == SessionWire.Acp;
+    bool Resumes => Transport == Transport.Protocol;
 
     /// <summary>
     /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation the request names (<see cref="SpawnRequest.Resume"/>),

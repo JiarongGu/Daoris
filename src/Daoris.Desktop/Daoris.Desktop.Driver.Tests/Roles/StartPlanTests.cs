@@ -47,7 +47,7 @@ public sealed class StartPlanTests : IDisposable
         {
             ["cool"] = new Adapter("cool", present),
             ["fine"] = new Adapter("fine", present),
-            ["piped"] = new Adapter("piped", present, SessionWire.Pipe),
+            ["piped"] = new Adapter("piped", present, Transport.Native),
         });
         _roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
     }
@@ -62,11 +62,11 @@ public sealed class StartPlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, SessionWire wire = SessionWire.Acp) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public HarnessToolchain? Toolchain => toolchain;
 
@@ -291,7 +291,7 @@ public sealed class StartPlanTests : IDisposable
     {
         var plan = Plan(
             ParticipantWork.Build,
-            (entry, adapter) => adapter.Wire == SessionWire.Pipe ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here") : null,
+            (entry, adapter) => adapter.Transport == Transport.Native ? (StartPasses.NoConnector, $"`{entry.Agent}` cannot take a quest here") : null,
             new ActorChoice("piped"), new ActorChoice("fine"));
         var walks = _roster.Selected;
 

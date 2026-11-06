@@ -46,11 +46,11 @@ public sealed class BuildWalkTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private sealed class Adapter(string name, HarnessToolchain toolchain, SessionWire wire = SessionWire.Acp) : ISessionAdapter
+    private sealed class Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) : ISessionAdapter
     {
         public string Name => name;
 
-        public SessionWire Wire => wire;
+        public Transport Transport => wire;
 
         public HarnessToolchain? Toolchain => toolchain;
 
@@ -64,7 +64,7 @@ public sealed class BuildWalkTests : IDisposable
         {
             ["cool"] = new Adapter("cool", present),
             ["fine"] = new Adapter("fine", present),
-            ["piped"] = new Adapter("piped", present, SessionWire.Pipe),
+            ["piped"] = new Adapter("piped", present, Transport.Native),
         });
         var roster = _roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool"), Drivable = ["engine"] }, "build", build);

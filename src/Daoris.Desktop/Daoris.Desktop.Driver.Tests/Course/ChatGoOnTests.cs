@@ -37,7 +37,7 @@ public sealed class ChatGoOnTests : IDisposable
     {
         public string Name => "talk";
 
-        public SessionWire Wire => SessionWire.Acp;
+        public Transport Transport => Transport.Protocol;
 
         public bool Interactive => true;
 
