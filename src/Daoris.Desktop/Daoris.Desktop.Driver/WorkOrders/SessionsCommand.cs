@@ -96,6 +96,9 @@ public static class SessionsCommand
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "at-work" => await AtWorkVerb.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
+            // A file for the look to act on, written the same with or without a running Daoris.
+            "partner-discard" => await SessionsPartnerCommand.ActAsync(world, ask.Ids[0], PartnerPersonActs.Discard, output).ConfigureAwait(false),
+            "partner-hand-over" => await SessionsPartnerCommand.ActAsync(world, ask.Ids[0], PartnerPersonActs.HandOver, output).ConfigureAwait(false),
             // A read, so no press and never through the running Daoris.
             "handback" => await SessionsHandback.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // The supervisor's holder's verb, through the running Daoris alone.

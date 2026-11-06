@@ -39,6 +39,7 @@ Prefixes: `Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/` = 
 | RoutingStanding, StandingBlock | `Driver/Participants/Domain/RoutingStanding.cs`, `Driver/Context/Domain/StandingBlock.cs:214` | The routing line told to a lead or a chat |
 | DriverHelpers, HelperTurn, HelperWaits, HelperKey | `Driver/Loop/DriverHelpers.cs`, `Driver/Loop/Helpers/HelperTurn.cs`, `Driver/Participants/Domain/HelperWaits.cs`, `Driver/Settings/HelperKey.cs` | A helper's ask judged, run and answered, its pass in `HelperTurn`; the lead's wait on its own helper; the `helpers` rule |
 | DriverPartners, PartnerAdmission | `Driver/Loop/DriverPartners.cs`, `Driver/Participants/Domain/PartnerAdmission.cs` | A piece's clone, one frozen commit, the two-piece bound, measured confinement |
+| PartnerPersonActs, PartnerPersonAct, PartnerActRunner | `Driver/Participants/Domain/PartnerPersonActs.cs`, `Participants/Partners/PartnerPersonAct.cs`, `Loop/PartnerActRunner.cs` | The person's *Discard…* and *Hand over what it left* as a file the look does, and the read of whether a handed piece was taken in |
 | OpinionDeliverer | `Driver/Loop/OpinionDeliverer.cs` | An opinion's findings through the one door (the gate is the review area's) |
 | DriverBrainstorms, DriverMeetings | `Driver/Loop/DriverBrainstorms.cs`, `DriverMeetings.cs` | Brainstorm passes and meeting turns at the look, under the cap |
 | AnswersAlone, AnswersAloneHold | `Driver/Course/Domain/AnswersAlone.cs`, `Driver/Course/GoOn/AnswersAloneHold.cs` | The answers-alone count, one admission per line, the hold where the line's rule says |
@@ -132,7 +133,12 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 30. A driven lead that ends its turn on its own helper ask, with no question or go-ahead on the person, ends `completed`
     (`ended.awaits-helper`), held and unparked; the answer reopens it once. A helper ending with no answer brings it to the person. (from D203)
 31. A partner writes one piece in a clone with no remote, at the asked commit. Daoris reads its files and writes one frozen commit; the
-    piece lands only when the lead merges it. At most two pieces are open per lead. Only the person asks one today. (from D199)
+    piece lands only when the lead merges it. At most two pieces are open per lead. Only the person asks one today. A handed piece is
+    taken in when the look first reads its commit as an ancestor of the lead's tree's branch (recorded with the lead's commit, never
+    unset; a cherry-pick is not that), and not taken in when the lead's record completed without it. The person's *Discard…* (a piece
+    holding work or a copy, never one taken in) and *Hand over what it left* (an uncertain one) are an act file, `<id>.act.json`,
+    from the page's `SESSION_PARTNER_ACT` or `sessions partner <piece> --discard | --hand-over`; the look removes the ref at the commit
+    it froze and the copy, or keeps, imports and hands the work, and is the one writer of the state. (from D199)
 32. A partner starts only where its confinement was measured in the configuration a start would hand it. (from D199)
 33. A second opinion is the landing rule's to ask, never an agent's. Its findings are a solicited answer at ordinary, marked as another
     agent's claims. (from D155, D188)
@@ -202,7 +208,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
 
 **Tests that pin it.** Driver: `ExchangesTests`, `ChannelReachTests`, `ChannelNextStepTickTests`, `ChannelCommandTests`,
 `DrivenInboxTests`, `DaorisWordsTests`, `AnswersAloneTests`, `AnswersAloneHoldTests`, `HelperJudgeTests`, `HelperLookTests`,
-`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
+`HelperWaitsTests`, `HelperWaitTickTests`, `PartnerAdmissionTests`, `PartnerActsTests`, `PartnerLandingTests` (git half), `SolicitedHandTests`, `RoutingStandingTests`, the `AtWork*Tests`,
 `Brainstorm*Tests`, `Meeting*Tests`, `StewardCommandTests`. Service: `ChannelTests`, `ChannelPartsTests`, `TeammateAskChannelTests`, `ChannelSyncTests`,
 `SendersTests`, `SolicitedAnswersTests`, `QuestExchangeTests`, `BrainstormDeskTests`, `MeetingDeskTests`, `McpChannelToolTests`,
 `McpRoleFilterTests`, `ToolClassesTests`. Modules: `AttentionStateSliceTests`, `StewardDeskTests`, `DriverModuleChannelTests`,
@@ -235,7 +241,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 
 - **STEER3**: measure Codex's `turn/steer` and Claude Code's stream-json input before a level uses them. **MSG1h**, **MSG1i**: next-step words on Codex and on the native door.
 - **COWORKUX1** (rows d, i): the head's *Co-workers* with its presses, *Bring in another agent…*, a member's thread with *Back to lead*, talking to a member as asking again.
-- **COAGENT1b2, 1c, 1e, 1g**: a piece's later acts and landing proofs; a conversation as the lead; the provider sheet; a hand-over that waits for children. The lead's own `partner_ask` has no row.
+- **COAGENT1b2** (built: *Discard…*, *Hand over what it left*, the taken-in read; left: the not-taken-in verdict at the landing's own moment where the lead's tree is gone, the retention proof through tidy, clear and sync, and the partner's real-process case) **, 1c, 1g**: a conversation as the lead; a hand-over that waits for children. The lead's own `partner_ask` has no row.
 - **CHANNELJOIN1**: an agent the owner runs outside Daoris joins a channel.
 - No row: a look handing a teammate's ask's messages to a part here that runs on its quest (today they wait for the agent's own
   `channel_read`); the person posting on a line's own channel; *Send to its session* from a line's own channel.

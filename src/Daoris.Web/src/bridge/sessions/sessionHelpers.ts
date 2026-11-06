@@ -90,6 +90,22 @@ export const useAskPartner = () => useMutation({
   },
 });
 
+/** What a piece's act (*Discard…*, *Hand over what it left*) answered: whether the driver's file holds it, else why not by its code. */
+export type PartnerActed = { acted: boolean; why: string | null; message: string };
+
+/**
+ * A piece's later act (COAGENT1b2, D199; the co-agent design §6.1): the person's *Discard…* or *Hand over what it left* on one of a
+ * session's pieces, the file the driver's next look takes and does. A refusal keeps its code for the page to word. The sessions and the
+ * driver are asked again by the state hub, and with them the session's pieces.
+ */
+export const usePartnerAct = () => useMutation({
+  mutationFn: async (act: { session: string; piece: string; act: 'discard' | 'hand-over' }): Promise<PartnerActed> => {
+    const answer = (await call('SESSION_PARTNER_ACT', { id: act.session, piece: act.piece, act: act.act })) as
+      { acted?: unknown; why?: unknown; message?: unknown } | null;
+    return { acted: answer?.acted === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
 /**
  * The pieces a session asked (the co-agent design §6.1), oldest first, each as the driver's look left it, read off this
  * machine's own files: shell-only, and asked only for a session of this machine's. Under the sessions' key, so a look's tick and the

@@ -5,7 +5,7 @@ import { Button } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PARTNER_REASONS } from '../noteLines';
 import { AskPartner, type PieceAsk } from './AskPartner';
-import { type PieceRow, shownOf, stoppable } from './pieceRows';
+import { discardable, handable, type PieceRow, shownOf, stoppable } from './pieceRows';
 
 /** What the frame hands the head for a session's pieces: the pieces, the agents' names, and the presses it can make. */
 export type PieceSection = {
@@ -23,6 +23,9 @@ export type PieceSection = {
   /** Stop a working piece's partner, its record's stop. */
   onStop?: (partner: string, answered: Answered) => void;
   stopping?: boolean;
+  /** *Discard…* and *Hand over what it left*, by the piece's id: the driver's next look does them. Absent, none is offered. */
+  onAct?: (piece: string, act: 'discard' | 'hand-over', answered: Answered) => void;
+  acting?: boolean;
 };
 
 /** Where one piece stands, in a line: its state in the person's words, its agent, and the facts Daoris read of its work. */
@@ -53,8 +56,9 @@ export function pieceLine(t: TFunction, row: PieceRow, nameOf: (agent: string) =
  *
  * @remarks
  * **Props only** (components §2): the frame reads the pieces and holds the presses. Without `ask` no ask is offered, without `onOpen`
- * no door, and without `onStop` no stop: a browser, a story. The acts the design names for a piece's later states (*Discard…*, *Hand
- * over what it left*) wait for the driver's acts they name.
+ * no door, and without `onStop` no stop: a browser, a story. A piece whose work or copy waits for the person takes *Discard…*
+ * (its ref and copy removed by the driver's next look), and one a restart left uncertain *Hand over what it left* (its work kept and
+ * handed), each through `onAct` and the inline confirmation.
  */
 export function Pieces({ section, headingId }: { section: PieceSection; headingId: string }) {
   const { t } = useTranslation();
@@ -90,19 +94,34 @@ export function Pieces({ section, headingId }: { section: PieceSection; headingI
 function PieceLine({ row, section }: { row: PieceRow; section: PieceSection }) {
   const { t } = useTranslation();
   const [stopping, setStopping] = useState(false);
-  const { nameOf, onOpen, onStop } = section;
+  const [acting, setActing] = useState<'discard' | 'hand-over' | null>(null);
+  const { nameOf, onOpen, onStop, onAct } = section;
   const door = onOpen && row.partner ? row.partner : null;
   const stop = onStop && stoppable(row) ? row.partner : null;
+  const discard = onAct && discardable(row);
+  const handOver = onAct && handable(row);
 
   return (
     <li data-piece={row.id} className="grid gap-1 rounded-control border border-line bg-raised px-3 py-2">
       <p className="m-0 min-w-0 whitespace-pre-wrap break-words text-body">{row.piece}</p>
       <p className="m-0 text-small text-ink-soft">{pieceLine(t, row, nameOf)}</p>
-      {(door || stop) && !stopping && (
+      {(door || stop || discard || handOver) && !stopping && !acting && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {door && <Button onClick={() => onOpen!(door)}>{t('work.pieces.open')}</Button>}
           {stop && <Button disabled={section.stopping} onClick={() => setStopping(true)}>{t('work.pieces.stop')}</Button>}
+          {handOver && <Button disabled={section.acting} onClick={() => setActing('hand-over')}>{t('work.pieces.handOver')}</Button>}
+          {discard && <Button disabled={section.acting} onClick={() => setActing('discard')}>{t('work.pieces.discard')}</Button>}
         </div>
+      )}
+      {acting && (
+        <InlineConfirm
+          label={t(acting === 'discard' ? 'work.pieces.discardTitle' : 'work.pieces.handOverTitle')}
+          says={t(acting === 'discard' ? 'work.pieces.discardSays' : 'work.pieces.handOverSays')}
+          meanIt={t(acting === 'discard' ? 'work.pieces.discardMeanIt' : 'work.pieces.handOverMeanIt')}
+          busy={section.acting}
+          onConfirm={(answered) => onAct!(row.id, acting, answered)}
+          onClose={() => setActing(null)}
+        />
       )}
       {stop && stopping && (
         <InlineConfirm

@@ -59,6 +59,15 @@ export function shownOf(row: Pick<PieceRow, 'state' | 'end'>): PieceShown {
 /** Whether a piece's partner is at work, which its *Stop…* ends: started, with its record named. */
 export const stoppable = (row: Pick<PieceRow, 'state' | 'partner'>): boolean => row.state === 'started' && Boolean(row.partner);
 
+/** The states whose work or copy waits for the person's *Discard…* (the design §6.1's table); a piece taken in, refused or discarded has none. */
+const DISCARDABLE = new Set(['held', 'imported', 'answered', 'handed', 'not-taken-in', 'uncertain']);
+
+/** Whether a piece takes *Discard…*, which removes its ref and its copy. */
+export const discardable = (row: Pick<PieceRow, 'state'>): boolean => DISCARDABLE.has(row.state);
+
+/** Whether a piece takes *Hand over what it left*: only one a restart left uncertain, whose work Daoris keeps and hands. */
+export const handable = (row: Pick<PieceRow, 'state'>): boolean => row.state === 'uncertain';
+
 /**
  * The head's partners (the design §6.1): the agents its pieces went to, each once in the order first asked, by the roster's name,
  * and how many are working. Null where the session asked none.
