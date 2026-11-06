@@ -121,12 +121,48 @@ public sealed class LayerReadingsTests
         Assert.Null(translation.Failure);
     }
 
-    [Fact]
-    public void What_the_layer_s_members_do_not_carry_yet_is_no_reading()
-    {
-        var translation = Readings();
+    private static readonly AgentRestriction OwnersModel = new(RestrictionCause.Unknown, RestrictionSubject.Model, RestrictionRecovery.OwnerAction);
 
-        Assert.Empty(translation.Read(new UsageLive(1, 2, 3)));
+    private static bool Refused(
+        string door, AgentFailureKind kind, string by, AgentRestriction? restriction, bool speaks = false, bool stops = false)
+    {
+        var translation = new LayerReadings(door, new FixedClock(Now), TimeSpan.FromHours(1), new LayerRefusals([LayerTestProvider.RefusedBy]));
+        if (speaks) translation.Read(new TextDelta("words"));
+        if (stops) translation.Stop();
+        translation.Read(new SessionEnded(ProviderVerdict.Failed, true, "error_during_execution", null, null, "why")
+        {
+            Failure = new AgentFailure(kind, by) { Restriction = restriction },
+        });
+        return translation.ModelRefused;
+    }
+
+    [Fact]
+    public void A_refused_model_is_the_ending_s_flag_by_its_whole_outcome_on_a_native_turn_that_ran_nothing()
+    {
+        Assert.True(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel));
+
+        // A limit and a capacity scoped to the model, another entry, no restriction, a turn that spoke, a stop, a protocol open's turn: none.
+        Assert.False(Refused("pipe", AgentFailureKind.Limit, LayerTestProvider.RefusedBy, OwnersModel with { Cause = RestrictionCause.Credit }));
+        Assert.False(Refused(
+            "pipe", AgentFailureKind.Transient, LayerTestProvider.RefusedBy, new(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown)));
+        Assert.False(Refused("pipe", AgentFailureKind.Fatal, "tests:other", OwnersModel));
+        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, null));
+        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, speaks: true));
+        Assert.False(Refused("pipe", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel, stops: true));
+        Assert.False(Refused("protocol", AgentFailureKind.Fatal, LayerTestProvider.RefusedBy, OwnersModel));
+    }
+
+    [Fact]
+    public void A_child_s_words_do_not_count_as_the_turn_having_run()
+    {
+        var translation = new LayerReadings("pipe", new FixedClock(Now), TimeSpan.FromHours(1), new LayerRefusals([LayerTestProvider.RefusedBy]));
+        translation.Read(new TextDelta("a child's") { ParentCallId = "c1" });
+        translation.Read(new SessionEnded(ProviderVerdict.Failed, true, "error_during_execution", null, null, "why")
+        {
+            Failure = new AgentFailure(AgentFailureKind.Fatal, LayerTestProvider.RefusedBy) { Restriction = OwnersModel },
+        });
+
+        Assert.True(translation.ModelRefused);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

@@ -52,7 +52,8 @@ internal static class ParityObserver
         foreach (var line in end.Ending.Lines) seen.Add(ParityChannel.HarnessWords, "word", ("text", line));
         seen.Add(
             ParityChannel.End, "end", ("exit", end.Exit?.ToString()), ("named", end.Named.ToString()), ("failed", end.Ending.Failed.ToString()),
-            ("stopped", stopped.ToString()));
+            ("stopped", stopped.ToString()),
+            ("modelRefused", end.Ending.ModelRefused.ToString()));
     }
 
     /// <summary>The failure as <see cref="AgentError"/> reads it, with the delivery the path read for the turn's words.</summary>

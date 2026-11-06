@@ -50,8 +50,14 @@ internal static class LayerTestProvider
     {
         var descriptor = Descriptor(door);
         return new(door, builder => builder.AddAgentProvider(
-            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command, plant))));
+            descriptor, services => new AgentProvider(descriptor, _ => new Session(services.GetRequiredService<IProcessRunner>(), command, plant))))
+        {
+            ModelRefusals = new HashSet<string>(StringComparer.Ordinal) { RefusedBy },
+        };
     }
+
+    /// <summary>The entry the tests' door spells a refused model with.</summary>
+    public const string RefusedBy = "tests:refused";
 
     /// <summary>A scenario's program in <paramref name="scratch"/>, saying what <paramref name="spec"/> says, as a command.</summary>
     /// <remarks>
@@ -208,6 +214,14 @@ internal static class LayerTestProvider
                     {
                         Failure = new AgentFailure(Enum.Parse<AgentFailureKind>(kind), Text("by") ?? "tests:failed")
                         {
+                            Restriction = Text("restricts") switch
+                            {
+                                // A model the agent refused (AG12), and the same subject under a limit or a capacity, which are not one.
+                                "model" => new AgentRestriction(RestrictionCause.Unknown, RestrictionSubject.Model, RestrictionRecovery.OwnerAction),
+                                "model-quota" => new AgentRestriction(RestrictionCause.Quota, RestrictionSubject.Model, RestrictionRecovery.Unknown),
+                                "model-capacity" => new AgentRestriction(RestrictionCause.Capacity, RestrictionSubject.Model, RestrictionRecovery.Unknown),
+                                _ => null,
+                            },
                             Delivery = Text("delivery") is { } delivery ? Enum.Parse<AgentDelivery>(delivery) : default,
                         },
                     };

@@ -37,6 +37,8 @@ internal sealed class ScenarioDialect : INativeDialect
                     },
                 },
             },
+            // The tool's own message, which no model wrote, saying the model it was handed is unknown (D205's pipe exception).
+            "refused" => new { type = "assistant", error = "model_not_found", message = new { role = "assistant", model = "<synthetic>", content = Array.Empty<object>() } },
             "end" when Text("kind") is not null =>
                 new { type = "result", subtype = Text("subtype") ?? "error_during_execution", is_error = true, result = Text("why") },
             "end" => new { type = "result", subtype = Text("subtype") ?? "success", is_error = false, result = Text("text") },

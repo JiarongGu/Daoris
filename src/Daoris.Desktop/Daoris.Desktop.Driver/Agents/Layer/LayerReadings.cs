@@ -22,13 +22,21 @@ namespace Daoris.Driver;
 /// <param name="door">The bound door's transport word, the failure's door.</param>
 /// <param name="clock">The clock the failure is seen on.</param>
 /// <param name="coolOff">D125's default cool-off, for a limit whose recovery is not stated.</param>
-internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan coolOff)
+internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null)
 {
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+
+    private readonly LayerRefusals _refusals = refusals ?? LayerRefusals.None;
 
     private TurnTokens? _tokens;
 
     private bool _stopping;
+
+    /// <summary>Whether the turn showed words, thinking or a call of the session's own: what today's guard on a refused model reads.</summary>
+    private bool _ran;
+
+    /// <summary>The failed turn was the door's refusal of the model it was handed: the ending's flag, set on the native door's failed result alone.</summary>
+    public bool ModelRefused { get; private set; }
 
     /// <summary>The conversation the door named first; null until one is.</summary>
     public string? Conversation { get; private set; }
@@ -43,7 +51,13 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
     public void Stop() => _stopping = Ended is null;
 
     /// <summary>The readings <paramref name="evt"/> is, in the order today's capture hands them.</summary>
-    public IReadOnlyList<WireReading> Read(AgentStreamEvent evt) => evt switch
+    public IReadOnlyList<WireReading> Read(AgentStreamEvent evt)
+    {
+        if (evt is TextDelta { ParentCallId: null } or Thinking { ParentCallId: null } or LayerToolCall { ParentCallId: null }) _ran = true;
+        return Translate(evt);
+    }
+
+    private IReadOnlyList<WireReading> Translate(AgentStreamEvent evt) => evt switch
     {
         LayerStarted started => Named(started.SessionId),
         TextDelta text =>
@@ -128,6 +142,7 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
             Failure = LayerFailures.Normalize(
                 ended.Failure ?? new AgentFailure(AgentFailureKind.Fatal, "no-failure-fields"), door, DoorWhere.Result, ended.Diagnostic,
                 clock.GetUtcNow(), coolOff);
+            ModelRefused = _refusals.Refused(Failure, door, DoorWhere.Result, ranNothing: !_ran, stopped: false);
             readings.Add(new WireReading.Failed(Failure.Failure));
         }
 
