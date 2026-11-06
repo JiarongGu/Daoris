@@ -118,7 +118,7 @@ public sealed class RelayOnceProcessTests : IDisposable
         await Tell($$$$"""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":1,"points":["work/event"],"events":{"run":"{{{{Run}}}}","seq":4,"grammar":2,"build":"{{{{Path.GetFileName(copy)}}}}"}}}""");
         var answered = 0;
         while (answered < 1 && await plugin.StandardOutput.ReadLineAsync() is { } line) answered += line.Contains("\"id\":1", StringComparison.Ordinal) ? 1 : 0;
-        await heard.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        await heard.Task.WaitAsync(Poll.Patience);
         await Tell($$$"""{"jsonrpc":"2.0","id":2,"method":"hook/work/event","params":{"run":"{{{Run}}}","seq":5,"missed":0,"kind":"session.parked","at":"2026-11-06T10:00:00Z","session":"4b62a9fe"}}""");
         await Tell($$$"""{"jsonrpc":"2.0","id":3,"method":"hook/work/event","params":{"run":"{{{Run}}}","seq":6,"missed":0,"kind":"work.landed","at":"2026-11-06T10:00:01Z","session":"4b62a9fe","code":"landed"}}""");
         while (answered < 3 && await plugin.StandardOutput.ReadLineAsync() is { } line) answered += line.Contains("\"result\"", StringComparison.Ordinal) ? 1 : 0;
@@ -138,6 +138,6 @@ public sealed class RelayOnceProcessTests : IDisposable
             ],
             ran.Out);
         Assert.False(File.Exists(file), "the relay's file outlived it");
-        await said.WaitAsync(TimeSpan.FromSeconds(30));
+        await said.WaitAsync(Poll.Patience);
     }
 }

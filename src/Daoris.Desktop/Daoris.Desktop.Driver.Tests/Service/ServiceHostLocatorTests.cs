@@ -13,9 +13,13 @@ public sealed class ServiceHostLocatorTests : IDisposable
     private readonly string _root = Path.Combine(
         TestHomes.Root, "daoris-locator-" + Guid.NewGuid().ToString("N")[..8]);
 
+    /// <summary>A folder no workspace lies above, which nothing under the checkout's fixture folder is: the locator walks up to the checkout's manifest.</summary>
+    private readonly string _bare = Path.Combine(Path.GetTempPath(), "daoris-locator-bare-" + Guid.NewGuid().ToString("N")[..8]);
+
     public void Dispose()
     {
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        if (Directory.Exists(_bare)) Directory.Delete(_bare, recursive: true);
     }
 
     [Fact]
@@ -235,7 +239,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void No_workspace_means_no_dev_candidates_and_no_crash()
     {
-        var lonely = Path.Combine(_root, "lonely");
+        var lonely = Path.Combine(_bare, "lonely");
         Directory.CreateDirectory(lonely);
 
         var candidates = ServiceHostLocator.Candidates(null, "/home", lonely);
@@ -252,7 +256,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void No_home_means_no_installed_candidates_either()
     {
-        var lonely = Path.Combine(_root, "lonely");
+        var lonely = Path.Combine(_bare, "lonely");
         Directory.CreateDirectory(lonely);
 
         var candidates = ServiceHostLocator.Candidates(null, home: null, lonely);

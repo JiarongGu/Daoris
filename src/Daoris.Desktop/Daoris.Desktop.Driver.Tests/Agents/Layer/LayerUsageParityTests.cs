@@ -152,7 +152,7 @@ public sealed class LayerUsageParityTests : IDisposable
     private (IReadOnlyList<string> Run, TestAgent Toolchain, UsageQuestion Question) Spawn(Case each)
     {
         var question = each.Claude ? ClaudeUsage.Question : CodexUsage.Question;
-        var program = Path.Combine(_home, "bin", each.Claude ? "claude.exe" : "codex.exe");
+        var program = Path.Combine(_home, "stand-ins", each.Claude ? "claude.exe" : "codex.exe");
         var toolchain = new TestAgent(
             Binary: [program], VersionArguments: ["--version"], ProfileVariable: each.Claude ? "CLAUDE_CONFIG_DIR" : "CODEX_HOME", ProbeByPresence: true);
         return ([program, .. question.Command.Skip(1)], toolchain, question);
@@ -162,8 +162,8 @@ public sealed class LayerUsageParityTests : IDisposable
     private async Task<ParityObservation> TodayAsync(Case each)
     {
         var (run, toolchain, _) = Spawn(each);
-        var home = Home(each);
-        var info = CodexUsage.Prepare(run, toolchain, home, managed: null, workingDirectory: each.Claude ? Path.Combine(home, "usage-read") : null);
+        var profile = Home(each);
+        var info = CodexUsage.Prepare(run, toolchain, profile, managed: null, workingDirectory: each.Claude ? Path.Combine(profile, "usage-read") : null);
         var server = new UsageServerStandIn(each.Claude, each.Body, each.Mode);
         var streams = new UsageServerStreams(server);
         var patience = TimeSpan.FromSeconds(5);

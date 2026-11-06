@@ -70,11 +70,12 @@ public sealed class BindingsLookTests : IDisposable
         Assert.True(File.Exists(FileOf("s2")));
     }
 
+    /// <summary>The store is the loop's own (it keeps each repository's workspace and the lines it made), so a look makes one; what this pins is that no import is made of a file that is not there.</summary>
     [Fact]
-    public async Task A_look_over_a_home_with_no_binding_file_makes_no_store()
+    public async Task A_look_over_a_home_with_no_binding_file_imports_nothing()
     {
         await Driver().TickAsync(_closing.Token).WaitAsync(Bound);
 
-        Assert.False(File.Exists(DesktopStore.LocationIn(_home)));
+        Assert.False(new HarnessConversations(_home).InStore());
     }
 }

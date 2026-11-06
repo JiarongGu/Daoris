@@ -20,6 +20,7 @@ public sealed class DaorisDriverWordsTests
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/SystemWiring.cs"] = 2,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/CommandWords.cs"] = 1,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DaorisHome.cs"] = 1,
+        ["src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Relay/RelayCommand.cs"] = 3,
         ["src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/WorkEventPlugins.cs"] = 2,
         ["src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeCensus.cs"] = 1,
         ["docs/guide/README.md"] = 1,
