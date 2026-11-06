@@ -1,19 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A registered door a test builds with the abilities, transport, postures, spawn and program facts it needs, read through the one
-/// reading every door has: what a test that needs a harness the shipped doors are not (a cooling account, a refused model, a
-/// protocol door that spawns nothing) holds instead of a class of its own. A door built here states its own identity, home and
-/// words, as a plugin's does, so it takes nothing from a provider and strips no other provider's variables.
+/// A registered door a test builds with the abilities, transport, postures, spawn and program facts it needs: what a test that needs
+/// a harness the shipped doors are not (a cooling account, a refused model, a protocol door that spawns nothing) holds instead of a
+/// class of its own. Each door comes as the provider that owns it by its own name, stating the program, accounts, words and identity
+/// a test's <see cref="TestAgent"/> gives it; a registry is made of providers alone (<see cref="Registry(IEnumerable{Provider})"/>).
 /// </summary>
 internal static class TestDoors
 {
     private const string Evidence = "a test door";
 
-    /// <summary>The door <paramref name="id"/> over <paramref name="toolchain"/>'s program, accounts and words.</summary>
-    public static ISessionAdapter Door(
+    /// <summary>The provider of the one door <paramref name="id"/>, over <paramref name="agent"/>'s program, accounts and words.</summary>
+    public static Provider Door(
         string id,
-        HarnessToolchain? toolchain = null,
+        TestAgent? agent = null,
         Transport transport = Transport.Native,
         bool interactive = false,
         bool takesSettings = false,
@@ -21,29 +21,35 @@ internal static class TestDoors
         PosturesPart? postures = null,
         ISpawn? spawn = null,
         IDialect? dialect = null,
-        InstructionsPart? instructions = null)
-    {
-        var door = Registered(id, toolchain, transport, interactive, takesSettings, resumes, postures, spawn, dialect, instructions);
-        return new LegacyDoor(ProviderOf(door, toolchain), door);
-    }
+        InstructionsPart? instructions = null) =>
+        ProviderOf(Registered(id, agent, transport, interactive, takesSettings, resumes, postures, spawn, dialect, instructions), agent);
+
+    /// <summary>The registry of the providers a test gives.</summary>
+    public static ProviderRegistry Registry(params IEnumerable<Provider> providers) => new(providers);
+
+    /// <summary>The registry of the providers a test names, each under its door's name.</summary>
+    public static ProviderRegistry Registry(IReadOnlyDictionary<string, Provider> named) => new(named.Values);
 
     /// <summary>Claude Code's <c>stream-json</c> as a native door's dialect: a door that reads a structured wire.</summary>
     public static IDialect StreamJson => new ClaudeNativeDialect();
 
     /// <summary>The spawn of a shipped door, for a test door that runs the same program and states something else beside it.</summary>
-    public static ISpawn SpawnOf(ISessionAdapter shipped) => ((LegacyDoor)shipped).Door.Spawn.Required;
+    public static ISpawn SpawnOf(AgentDoor shipped) => shipped.Spawned();
 
-    /// <summary>A shipped door stating the postures a test gives it, the rest as it ships.</summary>
-    public static ISessionAdapter Postured(ISessionAdapter shipped, PosturesPart postures)
+    /// <summary>A shipped door's provider, the door stating the postures a test gives it and the rest as it ships.</summary>
+    public static Provider Postured(AgentDoor shipped, PosturesPart postures)
     {
-        var door = (LegacyDoor)shipped;
-        return new LegacyDoor(door.Provider, door.Door with { Postures = postures });
+        var provider = ProviderRegistry.Built().ProviderOfDoor(shipped);
+        return provider with
+        {
+            Doors = [.. provider.Doors.Select(door => door.Id == shipped.Id ? door with { Postures = postures } : door)],
+        };
     }
 
-    /// <summary>The door's record, for a test that reads the registry rather than the old seam.</summary>
+    /// <summary>The door's record alone, for a test that reads a door without its provider.</summary>
     public static AgentDoor Registered(
         string id,
-        HarnessToolchain? toolchain = null,
+        TestAgent? agent = null,
         Transport transport = Transport.Native,
         bool interactive = false,
         bool takesSettings = false,
@@ -56,10 +62,8 @@ internal static class TestDoors
         transport,
         new DoorIdentity(null, null, null),
         Known<ToolSpec>.Absent,
-        toolchain is null ? new DoorHome(null, false, null) : new DoorHome(toolchain.ProfileVariable, toolchain.RunsInOwnHome, toolchain.TrustFile),
-        toolchain is null
-            ? LentPart.None
-            : new LentPart(PoolFacts.Of(toolchain), TablesPart.None, new UsagePart(toolchain.Usage)),
+        agent?.Home ?? new DoorHome(null, false, null),
+        agent is null ? LentPart.None : new LentPart(agent.Pool, TablesPart.None, new UsagePart(agent.Usage)),
         Known<IDoorOffers>.Absent,
         postures ?? new PosturesPart(null, null, null, null),
         Known<ISpawn>.Declared(spawn ?? new UnusedSpawn(), Evidence),
@@ -68,24 +72,24 @@ internal static class TestDoors
             Known<bool>.Declared(interactive, Evidence),
             resumes is { } r ? Known<bool>.Declared(r, Evidence) : Known<bool>.Absent,
             Known<bool>.Declared(takesSettings, Evidence)),
-        toolchain is null
+        agent is null
             ? new DoorTablesPart(null, null)
-            : new DoorTablesPart(toolchain.ErrorWords, toolchain.TurnReport, toolchain.Limits, toolchain.Windows, toolchain.SignIn, toolchain.Refused),
-        toolchain?.AccountOf is { Length: > 0 } of ? new AccountKey(of) : null,
+            : new DoorTablesPart(agent.ErrorWords, agent.TurnReport, agent.Limits, agent.Windows, agent.SignIn, agent.Refused),
+        agent?.AccountOf is { Length: > 0 } of ? new AccountKey(of) : null,
         instructions ?? InstructionsPart.None);
 
-    /// <summary>The provider that owns <paramref name="door"/> by its own name, stating the program, accounts, words and identity of the toolchain a test gave it.</summary>
-    public static Provider ProviderOf(AgentDoor door, HarnessToolchain? toolchain = null) => new(
+    /// <summary>The provider that owns <paramref name="door"/> by its own name, stating the program, accounts, words and identity a test gave it.</summary>
+    public static Provider ProviderOf(AgentDoor door, TestAgent? agent = null) => new(
         new ProviderId(door.Id.Value),
-        new ProviderIdentity(toolchain?.Product, toolchain?.Maker, toolchain?.Mark, false, []),
+        new ProviderIdentity(agent?.Product, agent?.Maker, agent?.Mark, false, []),
         [door],
-        toolchain is null ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(ToolSpecs.Of(toolchain), Evidence),
-        toolchain is null ? Known<AccountsPart>.Absent : Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(door.Id.Value), null, PoolFacts.Of(toolchain)), Evidence),
-        toolchain is null ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(TablesPart.Of(toolchain, true), Evidence),
-        toolchain is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(new UsagePart(toolchain.Usage), Evidence),
-        toolchain is null
+        agent is null ? Known<ToolSpec>.Absent : Known<ToolSpec>.Declared(agent.Program, Evidence),
+        agent is null ? Known<AccountsPart>.Absent : Known<AccountsPart>.Declared(new AccountsPart(new AccountKey(door.Id.Value), null, agent.Pool), Evidence),
+        agent is null ? Known<TablesPart>.Absent : Known<TablesPart>.Declared(agent.Tables(withErrors: true), Evidence),
+        agent is null ? Known<UsagePart>.Absent : Known<UsagePart>.Declared(new UsagePart(agent.Usage), Evidence),
+        agent is null
             ? Known<LentPart>.Absent
-            : Known<LentPart>.Declared(new LentPart(PoolFacts.Of(toolchain), TablesPart.Of(toolchain, false), new UsagePart(toolchain.Usage)), Evidence),
+            : Known<LentPart>.Declared(new LentPart(agent.Pool, agent.Tables(withErrors: false), new UsagePart(agent.Usage)), Evidence),
         Known<ISettingsFile>.Absent, Known<IChildVocabulary>.Absent,
         door.Abilities.TakesSettings.Value ? Known<IRuleLanguage>.Declared(ClaudeRules.Language, Evidence) : Known<IRuleLanguage>.Absent,
         Known<ISkillLayout>.Declared(ClaudeSkills.Layout, Evidence),
