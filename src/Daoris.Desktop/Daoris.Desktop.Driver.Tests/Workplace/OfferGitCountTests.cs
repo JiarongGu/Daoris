@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class OfferGitCountTests(ITestOutputHelper output) : LandedFixture
 {
     // The offer's own work, measured on the starts of its judgement.
-    private const int Ceiling = 12;
+    private const int Ceiling = 8;
 
     [Fact]
     public async Task A_tree_with_work_to_land_is_judged_with_no_git_asked_twice_and_within_its_ceiling()
@@ -39,9 +39,9 @@ public sealed class OfferGitCountTests(ITestOutputHelper output) : LandedFixture
         output.WriteLine(report);
         Assert.Equal(2, work!.Commits);
         Assert.True(starts.Count <= Ceiling, report);
-        // The refs are listed once from the tree and once from the checkout, two folders of the one repository; nothing else is asked twice.
+        // The refs are listed once for the repository, whichever of its folders asks; nothing is asked twice.
         Assert.All(starts.GroupBy(each => each), asked =>
-            Assert.True(asked.Count() <= (asked.Key.StartsWith("for-each-ref", StringComparison.Ordinal) ? 2 : 1), $"asked {asked.Count()} times: {asked.Key}\n{report}"));
+            Assert.True(asked.Count() <= 1, $"asked {asked.Count()} times: {asked.Key}\n{report}"));
         Assert.DoesNotContain(starts, each => each.StartsWith("log --format=%T", StringComparison.Ordinal));
     }
 }

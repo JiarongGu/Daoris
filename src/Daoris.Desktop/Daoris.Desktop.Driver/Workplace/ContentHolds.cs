@@ -74,8 +74,10 @@ internal sealed class ContentHolds(TreeContext context)
         }
 
         if (forms.Count == 0) return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
-        var (treeCode, tree, treeErr) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{tip}^{{tree}}"], ct)
-            .ConfigureAwait(false);
+        var listed = refs is null ? null : await refs.TreeOfAsync(tip, ct).ConfigureAwait(false);
+        var (treeCode, tree, treeErr) = (listed ?? RefSnapshot.TreeHeld(tip)) is { } known
+            ? (0, known, "")
+            : await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{tip}^{{tree}}"], ct).ConfigureAwait(false);
         if (treeCode != 0) return ContentProof.UnreadBy($"git could not read the branch's tree: {Said(treeErr)}");
 
         IReadOnlyList<string>? changed = null;

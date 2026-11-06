@@ -253,27 +253,32 @@ read as its object), *by id* those naming an id alone.
 | A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
 | The commit, switch and stash plans | 10, 7, 11 | 0, 0, 1 (`refs/stash`) | 2 (1), 2 (0), 3 (0) | `ViewGitCountTests` |
 | The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
-| Review, a tree ahead of its line, its second open | 23 | 0 | 2 (1) | `ReviewGitCountTests` |
-| Review, a tree the line holds by content | 24 | 0 | 3 (1) | `ReviewGitCountTests` |
-| A landed session's review | 7 | 1 (`--show-toplevel`) | 2 (1) | `ViewGitCountTests` |
-| The Accept offer of a tree of work | 12 | 0 | 2 (1) | `OfferGitCountTests` |
-| The look's tidy, six trees (two) | 26 (14) | 1 (`worktree list`, the judgement's own) | 7 (6) | `TidyGitCountTests` |
+| Review, a tree ahead of its line, its second open | 17 | 0 | 0 | `ReviewGitCountTests` |
+| Review, a tree the line holds by content | 18 | 0 | 1 (0) | `ReviewGitCountTests` |
+| A landed session's review | 6 | 0 | 2 (1) | `ViewGitCountTests` |
+| The Accept offer of a tree of work | 8 | 0 | 0 | `OfferGitCountTests` |
+| The look's tidy, six trees (two) | 20 (12) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
 | A session's start, to its spawn | 15 | 0 | 3 (0) | `StartGitCountTests` |
-| A squash press's landing | 29 | 2 (the head, the refs listed) | 6 (1) | `LandGitCountTests` |
-| A merge press's landing | 43 | 5 (the line's commit 3, the head, the refs listed) | 12 (2) | `LandGitCountTests` |
+| A squash press's landing | 25 | 0 | 4 (1) | `LandGitCountTests` |
+| A merge press's landing | 39 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
 
-The refs are listed from each folder a pass asks in: the offer and Review list them from the tree and the checkout, a landing three
-times. A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
+The rows above are as the cuts of PERF1 left them (measured again on the same fixtures); the refs are listed once for a repository in the
+offer and Review, and a landing lists them twice (its judgement's, and its press's after the write). A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
 (`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
 `ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
 (15), 17.3 s. The other test classes that start git are not counted yet.
 
 A held reader per repository does not earn its place on these figures. A view asks at most three object questions a pass, one of them
-by id, and the Git page's reads ask none once an id's answer is kept. Only a landing (6 and 12) and the tidy (each branch's tree by its
-tip's id) ask more, and the starts they would save are cut without a process kept: each branch's tree from the refs' one listing
-(`%(tree)`), the refs listed once a pass, the tree's head, branch and files in one `status --porcelain=v2 --branch`, and a fact read once
-where nothing wrote between. A held reader would still cost its lifetime, the repack hazard and the version floor (the git-app design
-§4.3), for at most 11 starts of a merge press's 43.
+by id, and the Git page's reads ask none once an id's answer is kept. A landing and the tidy asked more, and the starts are cut without
+a process kept (PERF1): each branch's tree is the refs' one listing's (`%(tree)`, `RefSnapshot.TreeHeld`, a commit's tree being the
+same in every folder of the repository); a read-only flow lists a repository's refs once whichever of its folders asks
+(`GitReadOnce`, `RefFiles.CommonDirOf` telling two folders of one repository by their `.git` files); the offer reads a tree's paths,
+head and branch in one `status --porcelain=v2 --branch` (`TreeStatus`); Review asks no count of origin's copy of the line where the
+repository's files hold none (`RefFiles.Absent`: a loose or packed ref, or a reftable repository, is never called absent); a landed
+review asks the checkout's top once. Left asked again: a landing's line commit (3) and head, which another process can move and a
+landing reads afresh before each act; the plans' top, head, branch and `refs/stash`, the state their press compares by; the tree's
+files and the status Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
+floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
 
 ## Where a change goes
 

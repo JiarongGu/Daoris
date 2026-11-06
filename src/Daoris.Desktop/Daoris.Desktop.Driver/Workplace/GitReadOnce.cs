@@ -119,8 +119,18 @@ internal sealed class GitReadOnce
         string root, string folder, IReadOnlyList<string> arguments, string reference,
         Func<Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
-        if (await RefSnapshot.ReadAsync(root, ct).ConfigureAwait(false) is { } listed && RefSnapshot.Parse(listed) is { } refs)
+        // A listing of this repository from another of its folders (its checkout, one of its trees) serves as well as one read here.
+        var common = RefFiles.CommonDirOf(root);
+        RefSnapshot.Refs? refs;
+        lock (_gate) refs = common is null ? null : _listings.FirstOrDefault(each => RefFiles.SameDir(each.Common, common))?.Refs;
+        refs ??= RefSnapshot.ListedFor(root)
+            ?? (await RefSnapshot.ReadAsync(root, ct).ConfigureAwait(false) is { } listed ? RefSnapshot.Parse(listed) : null);
+        if (refs is not null)
         {
+            lock (_gate)
+            {
+                if (!_listings.Any(each => ReferenceEquals(each.Refs, refs))) _listings.Add(new Listing(common, refs));
+            }
             if (refs.ByName.TryGetValue(reference, out var entry))
             {
                 if (entry.Type == "commit") return (0, entry.Object + "\n", "");
@@ -162,7 +172,26 @@ internal sealed class GitReadOnce
 
     private void Drop()
     {
-        lock (_gate) _asked = new Dictionary<string, Task<(int Code, string Stdout, string Stderr)>>(StringComparer.Ordinal);
+        lock (_gate)
+        {
+            _asked = new Dictionary<string, Task<(int Code, string Stdout, string Stderr)>>(StringComparer.Ordinal);
+            _listings.Clear();
+        }
+    }
+
+    // The refs listings this flow read to answer a branch's commit, kept so a commit's tree is read from them (see TreeOf); dropped with a write.
+    private readonly List<Listing> _listings = [];
+
+    private sealed record Listing(string? Common, RefSnapshot.Refs Refs);
+
+    /// <summary>
+    /// The tree of <paramref name="commit"/> where a listing this flow read has a ref at exactly it (an id names its tree in every
+    /// repository); null where none has, or no read-once flow is live. Nothing is started.
+    /// </summary>
+    internal static string? TreeOf(string commit)
+    {
+        if (Live is not { } once) return null;
+        lock (once._gate) return once._listings.Select(each => RefSnapshot.TreeIn(each.Refs, commit)).FirstOrDefault(tree => tree is not null);
     }
 
     private sealed class Ending(GitReadOnce once) : IDisposable
