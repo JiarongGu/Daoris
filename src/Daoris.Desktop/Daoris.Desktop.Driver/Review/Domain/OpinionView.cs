@@ -113,6 +113,9 @@ public static class OpinionViews
     /// </summary>
     public const string Limited = "limited";
 
+    /// <summary>A failed pass's code where its provider kept failing through the retry's bound (AGENTERRORS1d): the host's <c>Opinions.Transient</c>, which the gate reads as its own unavailable code.</summary>
+    public const string Transient = "transient";
+
     /// <summary>Wrong to land as it is.</summary>
     public const string Must = "must";
 

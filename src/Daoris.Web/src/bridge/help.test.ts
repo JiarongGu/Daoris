@@ -277,6 +277,7 @@ describe('Ask Daoris’s mode and what it was handed', () => {
     rules: { allow: ['Read'], ask: [], deny: ['Bash(git push:*)'] }, guarded: true,
     checkouts: [{ name: 'engine', workspace: 'aurora', path: 'C:/src/engine' }],
     lacks: [{ kind: 'shell', name: 'shell', door: 'mode', why: 'restricted', plugin: null }],
+    loaded: { tools: ['Read'], servers: [{ name: 'daoris-knowledge', status: 'connected' }], skills: ['browser:look'], plugins: [] },
   };
 
   it('reads a mode the driver does not know as restricted, as the driver does', () => {
@@ -293,7 +294,7 @@ describe('Ask Daoris’s mode and what it was handed', () => {
     const bare = wiredAnswer({ session: 'h1', recorded: true, receipts: [{ at: RECEIPT.at, mode: 'full', harness: 'codex-acp' }] }, 'h1');
     expect(bare.receipts[0]).toMatchObject({
       mode: 'full', harness: 'codex-acp', version: null, account: null, rules: null, tools: [], skills: [], servers: [],
-      checkouts: [], lacks: [], guarded: false,
+      checkouts: [], lacks: [], guarded: false, loaded: null,
     });
     // A conversation from before keeps none: not recorded.
     expect(wiredAnswer({ session: 'h1', recorded: false, receipts: [] }, 'h1')).toEqual({ session: 'h1', recorded: false, receipts: [] });

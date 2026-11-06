@@ -267,6 +267,15 @@ public static class Opinions
     /// </summary>
     public const string Limited = "limited";
 
+    /// <summary>
+    /// Its reviewer's provider kept failing through the retry's bound (AGENTERRORS1d, D210 point 8): the driver's gate reads it as
+    /// unavailable with this code and no <c>Until</c>, so only the person's press asks again.
+    /// </summary>
+    public const string Transient = "transient";
+
+    /// <summary>The code of the line the driver writes on a pass's end where its provider kept failing, spelled as the driver's <c>PeerNoteCodes.OpinionTransient</c>.</summary>
+    public const string TransientCode = "opinion.transient";
+
     /// <summary>The rule's fewest minutes for one pass, as its twins hold it (XAGENT1a).</summary>
     public const int FewestMinutes = 5;
 

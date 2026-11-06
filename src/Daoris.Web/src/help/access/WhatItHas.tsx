@@ -5,6 +5,7 @@ import { Button, Icon, PathText, Prose } from '../../design/ui';
 import { clockOf } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { lackDoor } from './modes';
+import { WhatItSaidLoaded } from './WhatItSaidLoaded';
 import type { StarterDoor } from '../starters';
 
 /**
@@ -130,6 +131,7 @@ function Receipt({ receipt, onDoor, onMode }: {
             </Rows>
           )}
         </Field>
+        <Field name="loaded"><WhatItSaidLoaded receipt={receipt} /></Field>
         <Field name="rules">
           {receipt.rules === null ? <span className="text-ink-soft">{t('help.wired.rules.none')}</span> : (
             <div className="grid gap-1">

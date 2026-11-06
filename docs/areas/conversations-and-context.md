@@ -26,7 +26,7 @@ of everything it handed, section by section.
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
 | `HelpStart` | `Help/HelpStart.cs` | Ask Daoris's start: placed in its workspace's room, the machine read within its bound, run; its replacement's open |
 | `ChatHelp`, `IChatHelping` | `Help/ChatHelp.cs`, `Course/Chat/ChatHelping.cs` | Executor `help-rooms`: a start from an earlier Ask Daoris conversation's words, a workspace's running one set aside, the room as it stands; the course reaches it by its port |
-| `HelpAccessSwap`, `HelpPlacement` | `Help/` | A change of Ask Daoris's access ending its running conversations at their turn's end, and the receipt of what a start was handed; the place Ask Daoris runs in, under its access |
+| `HelpAccessSwap`, `HelpPlacement` | `Help/` | A change of Ask Daoris's access ending its running conversations at their turn's end, and the receipt of what a start was handed, with what the native door's init frame said it loaded (`WireReading.Loaded` from `NativeInit`, kept by `HelpLoaded` on the newest receipt and shown beside it); the place Ask Daoris runs in, under its access |
 | `BriefedMove` | `Course/Chat/BriefedMove.cs` | The move to a new part handed Daoris's brief: by itself where a conversation is proven lost, or by the person's press |
 | `WordsStart`, `StartRequests` | `Course/Chat/` | The start on words: *Start a conversation with these words*, and a conversation opened on its first words, a request id answering a retry |
 | `ChatReplacement` | `Course/Chat/ChatReplacement.cs` | A start whose agent refused the model at its open: the re-ask, and the replacement opened with its words once the refused run let go |
@@ -278,7 +278,6 @@ of everything it handed, section by section.
 - **LIMITGOON1 (row i):** the limit move seen on the installed window.
 - **LIMITRESUME1 (ONEWAY1g row f):** the limit resume's remaining row on the installed doors.
 - **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow.
-- **HELPWIRED1b:** what the door says it loaded, beside what was handed.
 - **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and
   children.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)

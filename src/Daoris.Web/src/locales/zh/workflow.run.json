@@ -80,6 +80,7 @@
   "workflow.run.opinionWhy.signed-out": "其他厂商的已列阅读者都没有登录账户",
   "workflow.run.opinionWhy.not-independent": "已列阅读者中没有其他厂商的智能体",
   "workflow.run.opinionWhy.ended": "它的阅读者没给出意见就停了",
+  "workflow.run.opinionWhy.transient": "它的阅读者的服务方一直出错，没能给出意见",
   "workflow.run.opinionWhy.out-of-time": "它的阅读者在给出意见之前用完了时间",
   "workflow.run.opinionWhy.other": "其他厂商的已列阅读者都无法阅读它",
   "workflow.run.opinionTwin": "「仍然继续」在会话自己的页面上、它的第二意见旁边，也可在终端：`daoris session opinion show {{session}}` 列出尚未了结的，`daoris session opinion anyway {{session}} \"…\"` 不等它继续。",

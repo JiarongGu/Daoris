@@ -491,6 +491,7 @@ public static class WorkflowRunWords
         "signed-out" => "no listed reviewer of another maker has an account signed in",
         "not-independent" => "no listed reviewer is another maker's agent",
         "ended" => "its reviewer ended without saying one",
+        "transient" => "its reviewer's provider kept failing before it said one",
         "out-of-time" => "its reviewer ran out of its minutes before it said one",
         _ => "no listed reviewer of another maker could read it",
     };

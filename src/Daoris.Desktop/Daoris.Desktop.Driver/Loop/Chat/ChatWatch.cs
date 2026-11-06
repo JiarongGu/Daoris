@@ -86,7 +86,9 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 new RecordReadings(sessionId, Context.Output, Context.Events),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
-                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows))));
+                said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
+                // What the door says it loaded, kept beside what Ask Daoris's start handed (HELPWIRED1b).
+                HelpLoaded.Part(Context.Home, sessionId)));
             // The native door's go-on hands the run its ask, which the run's one retry reads and marks.
             await (goOn is null
                     ? run.OpenAsync(CancellationToken.None)

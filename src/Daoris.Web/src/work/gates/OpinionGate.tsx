@@ -280,6 +280,7 @@ function whyWords(t: ReturnType<typeof useTranslation>['t'], gate: Gate, who: st
     case 'not-independent': return t(`opinion.why.${gate.code}`);
     case 'cooling': return gate.until ? t('opinion.why.coolingUntil', { time: moment(gate.until) }) : t('opinion.why.cooling');
     case 'ended':
+    case 'transient':
     case 'out-of-time': return t(`opinion.why.${gate.code}`, { who: who || gate.reviewer || '' });
     default: return t('opinion.why.other');
   }

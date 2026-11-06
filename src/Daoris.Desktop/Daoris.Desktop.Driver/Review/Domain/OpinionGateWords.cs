@@ -117,6 +117,7 @@ public static class OpinionGateWords
         ReviewerUnavailable.SignedOut => "no listed reviewer of another maker has an account signed in",
         ReviewerUnavailable.NotIndependent => "no listed reviewer is another maker's agent",
         "ended" => $"{gate.Opinion?.Who ?? "its reviewer"} ended without saying one",
+        OpinionViews.Transient => $"{gate.Opinion?.Who ?? "its reviewer"}'s provider kept failing before it said one",
         "out-of-time" => $"{gate.Opinion?.Who ?? "its reviewer"} ran out of its minutes before it said one",
         _ => "no listed reviewer of another maker could read it",
     };

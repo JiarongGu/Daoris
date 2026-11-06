@@ -80,6 +80,7 @@
   "workflow.run.opinionWhy.signed-out": "no listed reviewer of another maker has an account signed in",
   "workflow.run.opinionWhy.not-independent": "no listed reviewer is another maker's agent",
   "workflow.run.opinionWhy.ended": "its reviewer ended without saying one",
+  "workflow.run.opinionWhy.transient": "its reviewer's provider kept failing before it said one",
   "workflow.run.opinionWhy.out-of-time": "its reviewer ran out of its minutes before it said one",
   "workflow.run.opinionWhy.other": "no listed reviewer of another maker could read it",
   "workflow.run.opinionTwin": "Go on anyway is on the session's own page, beside its second opinion, and at a terminal: `daoris session opinion show {{session}}` lists what is unsettled, and `daoris session opinion anyway {{session}} \"…\"` goes on without it.",

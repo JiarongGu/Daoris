@@ -164,7 +164,7 @@ internal sealed class PartnerPassRunner(LoopContext context, Driver driver)
                 handedPlan: ConnectorPlans.For(sessionId, null, [], ConnectorPlans.ConnectorOnly),
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 minutes: bound,
-                transientWanted: TransientEnded.Wanted(_context.Processes, sessionId),
+                transientWanted: TransientOwners.Partner(_context.Processes, sessionId, new PartnerFiles(home), piece),
                 noConnector: PartnerPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
                 // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in

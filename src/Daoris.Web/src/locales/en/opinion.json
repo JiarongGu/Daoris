@@ -48,6 +48,7 @@
   "opinion.why.signed-out": "no listed reviewer of another maker has an account signed in",
   "opinion.why.not-independent": "no listed reviewer is another maker's agent",
   "opinion.why.ended": "{{who}} ended without saying one",
+  "opinion.why.transient": "{{who}}'s provider kept failing before it said one",
   "opinion.why.out-of-time": "{{who}} ran out of its minutes before it said one",
   "opinion.why.other": "no listed reviewer of another maker could read it",
   "opinion.toPerson.recheck": "Its findings went to you: a recheck's findings never go back to the working session by themselves.",
