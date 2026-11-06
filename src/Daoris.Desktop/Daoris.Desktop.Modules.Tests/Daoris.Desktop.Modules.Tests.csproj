@@ -37,6 +37,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChanges.cs" Link="SessionChanges.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\SessionChangeShape.cs" Link="SessionChangeShape.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Trees\GitSeed.cs" Link="GitSeed.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\AccountStandIn.cs" Link="AccountStandIn.cs" />
     <!-- The scan of every console start's window (CONSOLEWINDOWS1), with the named exemptions, held once. -->
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Platform\NoConsoleStarts.cs" Link="NoConsoleStarts.cs" />
   </ItemGroup>

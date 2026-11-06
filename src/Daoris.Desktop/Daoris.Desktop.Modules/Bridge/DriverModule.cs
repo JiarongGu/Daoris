@@ -107,10 +107,14 @@ public sealed class DriverModule : ModuleBase
     /// The system's file picker, for a tool's *Browse…* (TOOLS7): the application hands in its window's dialog. Null
     /// where the host carries none, and the answer says so.
     /// </param>
-    public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null)
+    /// <param name="account">
+    /// The person's account's variables, for This Daoris's set-up presses (WIRING1e): the application hands in the Windows account's.
+    /// Null where the host keeps none: then those presses are refused as data.
+    /// </param>
+    public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null, IAccountEnvironment? account = null)
         : base(events: events)
     {
-        _context = new DriverContext(events, loop, openFolder, pickFile);
+        _context = new DriverContext(events, loop, openFolder, pickFile, account);
         _held = Registering(new HeldAnswers(events));
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the

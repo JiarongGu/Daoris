@@ -8,6 +8,12 @@ import type { Authored } from '../locales/authored';
 /** A fact's why where it is `null`: `window` (only the window knows), `adopted`, `not-measured`, `measuring`, … */
 type Why = string | null;
 
+/**
+ * How a set-up press of This Daoris ended (WIRING1e: `SYSTEM_OPEN_FOLDER`, `SYSTEM_PATH`, `SYSTEM_SERVICE_ADDRESS`): done, whether the
+ * account's environment is different now, or refused as data with a code the catalogue words and a sentence for a log.
+ */
+export interface SetupAnswer { done: boolean; changed: boolean; why?: string | null; message?: string | null }
+
 export interface WiringOld { entry: string; path: string; bytes: number | null; why: string }
 
 export interface WiringFolder {
@@ -76,6 +82,8 @@ export interface SystemWiring {
     & Record<string, string | null>;
   terminal: {
     launchers: { name: string; present: boolean }[]; launchersWhy: Why;
+    /** The install's folder of launchers (WIRING1e's *Put on my PATH* and the copied line name it); null in a development run. Added after the first shape. */
+    bin?: string | null;
     onAccountPath: boolean | null; onAccountPathWhy: Why; onMachinePath: boolean | null; onMachinePathWhy: Why;
     firstDaoris: { is: 'this' | 'another' | 'none'; path: string | null };
     address: { present: boolean; url: string | null; pid: number | null; since: string | null; taken: boolean | null; why: Why };
