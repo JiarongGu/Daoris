@@ -25,7 +25,7 @@ internal sealed class NativeGoOn(LoopContext context)
     /// closed quest with an uncommitted tree resumes the conversation once more in Daoris's own words. Null never carries on.
     /// </param>
     internal async Task<AgentRunEnd> GoOnAsync(
-        TransportRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
+        AgentRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
         List<ChatMessage> left, CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null)
     {
@@ -120,7 +120,7 @@ internal sealed class NativeGoOn(LoopContext context)
     /// takes part; Daoris commits nothing (D164).
     /// </summary>
     private async Task<AgentRunEnd?> CarryOnNativeAsync(
-        TransportRun run, DrivenInbox held, Func<CancellationToken, Task<TurnCarry>> carriesOn, string sessionId, int carried, ResumeAsk? resume,
+        AgentRun run, DrivenInbox held, Func<CancellationToken, Task<TurnCarry>> carriesOn, string sessionId, int carried, ResumeAsk? resume,
         AgentRunEnd ended, CancellationToken ct)
     {
         TurnCarry look;
@@ -163,7 +163,7 @@ internal sealed class NativeGoOn(LoopContext context)
     /// <param name="words">The held words this go-on carries, none for a carry-on, whose <paramref name="prompt"/> is Daoris's own.</param>
     /// <param name="opening">What the record opens the go-on with: the words under their ids, or the carry-on's note.</param>
     private async Task<AgentRunEnd> GoneOnAsync(
-        TransportRun run, DrivenInbox held, string sessionId, string conversation, IReadOnlyList<ChatMessage> words, string prompt,
+        AgentRun run, DrivenInbox held, string sessionId, string conversation, IReadOnlyList<ChatMessage> words, string prompt,
         IReadOnlyList<SessionEvent> opening, AgentRunEnd before, CancellationToken ct)
     {
         var up = false;

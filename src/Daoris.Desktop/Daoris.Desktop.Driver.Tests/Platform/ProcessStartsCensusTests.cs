@@ -283,7 +283,8 @@ public sealed class ProcessStartsCensusTests
 
     /// <summary>
     /// KEEP1b once (ONEWAY1h-i): the downloads an agent's start is handed are kept by its run's spawn (<see cref="TransportRun"/> through the
-    /// driver's port, or the conversation's since ONEWAY1h-iii), and no executor keeps them beside it.
+    /// driver's port, or the conversation's since ONEWAY1h-iii; a layer run's through its hold, AGENTLYNTAI1d), and no executor keeps them
+    /// beside it.
     /// </summary>
     [Fact]
     public void A_starts_downloads_are_kept_by_its_runs_spawn_and_by_no_executor_beside_it()
@@ -296,7 +297,7 @@ public sealed class ProcessStartsCensusTests
 
         Assert.Equal(
             [
-                "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
+                "Daoris.Desktop.Driver/Agents/Layer/LayerHold.cs", "Daoris.Desktop.Driver/Agents/TransportRun.cs", "Daoris.Desktop.Driver/Agents/TransportStart.cs",
                 "Daoris.Desktop.Driver/Loop/Chat/ChatTransportHost.cs", "Daoris.Desktop.Driver/Loop/DriverTransportHost.cs", "Daoris.Desktop.Driver/Workplace/DownloadKeeping.cs",
             ],
             keeping);

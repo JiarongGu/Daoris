@@ -37,6 +37,7 @@ public sealed class ClaudeDrivenSpawnParityProcessTests : IDisposable
     [Theory]
     [InlineData("acceptEdits")]
     [InlineData("bypassPermissions")]
+    [InlineData("default")]
     [InlineData(null)]
     public async Task A_driven_start_hands_Claude_Code_today_s_arguments_on_the_layer_but_for_the_flow_tools(string? mode)
     {
@@ -52,15 +53,6 @@ public sealed class ClaudeDrivenSpawnParityProcessTests : IDisposable
 
         Assert.Contains(FlowTools, layer);
         Assert.Equal(Pairs(info.ArgumentList.SkipWhile(each => each != "-p")), [.. layer.Where(each => each != FlowTools)]);
-    }
-
-    /// <summary>Today's driven <c>default</c> mode is a word the layer's door does not carry (its set is claude 2.1.319's), so it refuses the start.</summary>
-    [Fact]
-    public async Task Today_s_default_mode_is_refused_by_the_layer_s_door_before_a_spawn()
-    {
-        var spoke = await LayerArgumentsAsync(Request("default"), null, []);
-
-        Assert.Empty(spoke);
     }
 
     private async Task<IReadOnlyList<string>> LayerArgumentsAsync(SpawnRequest request, RunCarriers? carriers, IReadOnlyList<string> plugins)

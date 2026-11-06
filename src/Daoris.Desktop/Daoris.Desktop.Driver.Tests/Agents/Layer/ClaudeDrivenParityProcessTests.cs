@@ -39,49 +39,26 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
     ];
 
     /// <summary>
-    /// What the harness's <c>init</c> says it loaded (its tools, servers, skills and plugins), today's <c>Loaded</c> reading: the layer's
-    /// start carries the conversation alone, so this waits on a request to Lyntai.
+    /// A message's id: today's reader keeps the message's id on its words, a delta's and a whole message's alike, and the layer's words
+    /// carry none (Lyntai's <c>TextDelta</c> names no message), so this waits on a request to Lyntai. The words themselves are alike
+    /// (<see cref="An_answer_s_words_are_said_alike_on_both_paths"/>).
     /// </summary>
-    private static readonly ParityGap Loaded = new(
-        "the init's reading of what the harness loaded, which the layer's start does not carry",
-        seen => seen.Where(each => each.Channel == ParityChannel.Events && each.What == nameof(WireReading.Loaded)),
-        ParityGap.None);
+    private static readonly ParityGap MessageId = new(
+        "a message's id on its words, which the layer's words do not carry",
+        Messages,
+        Messages);
 
-    /// <summary>
-    /// An answer's words: both paths spawn with <c>--include-partial-messages</c>, and today's reader shows a complete message's words that
-    /// no delta streamed where the layer's reads words from the deltas alone. These streams carry no deltas, so the layer shows none. Closed
-    /// by Lyntai reading a complete message's unstreamed words, or shown alike on a driven stream recorded with its deltas.
-    /// </summary>
-    private static readonly ParityGap Answer = new(
-        "an answer's words no delta streamed, which today's reader shows and the layer's does not",
-        seen =>
-        {
-            var answers = seen.Where(each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Message).ToList();
-            var words = answers.Select(each => each["text"]).ToHashSet(StringComparer.Ordinal);
-            return answers.Concat(seen.Where(each => each.Channel is ParityChannel.Console or ParityChannel.Transcript && words.Contains(each["text"])));
-        },
-        ParityGap.None);
-
-    /// <summary>
-    /// A stream that ends on a clean exit with no result (these are cut from longer recordings): today's reads no failure, the layer's a
-    /// failed turn with no terminal, by its CLI turn's rule (Lyntai's D249).
-    /// </summary>
-    private static readonly ParityGap Unended = new(
-        "a clean exit with no result, no failure today and a failed turn on the layer",
-        seen => seen.Where(each => each.Channel == ParityChannel.End),
-        seen => seen.Where(each => each.Channel == ParityChannel.End
-            || (each.Channel == ParityChannel.Failure && each[ParityProjection.By] == "layer:no-terminal-event")
-            || (each.Channel is ParityChannel.Console or ParityChannel.Transcript && each["text"]?.EndsWith("(no terminal result)", StringComparison.Ordinal) == true)
-            || (each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Turn && each["stopReason"] == "error")));
+    private static IEnumerable<Observed> Messages(IReadOnlyList<Observed> seen) =>
+        seen.Where(each => each.Channel == ParityChannel.Events && each["kind"] == SessionEventKind.Message);
 
     /// <summary>The differences the oracle finds on each recorded stream, every one a named gap.</summary>
-    private static IReadOnlyList<ParityGap> Gaps(string fixture) => fixture switch
-    {
-        "native/claude-background-cut.stream.jsonl" => [Loaded, Answer],
-        "lineage/claude-family.stream.jsonl" or "lineage/claude-kill.stream.jsonl" => [Unended],
-        _ => [],
-    };
+    private static IReadOnlyList<ParityGap> Gaps(string fixture) =>
+        fixture == "native/claude-background-cut.stream.jsonl" ? [MessageId] : [];
 
+    /// <summary>
+    /// Each stream is read alike but for its named gaps: what the init says the harness loaded (Lyntai's <c>AgentLoaded</c>), an answer's
+    /// words no delta streamed (a whole message's words yielded once), and a clean exit with no result, which says nothing and fails nothing.
+    /// </summary>
     [Theory]
     [MemberData(nameof(Recorded))]
     public async Task Each_recorded_driven_stream_is_read_alike_on_both_paths_but_for_its_named_gaps(string fixture)
@@ -90,6 +67,15 @@ public sealed class ClaudeDrivenParityProcessTests : IDisposable
 
         var (rest, theirs) = ParityGap.Apart(daoris, layer, Gaps(fixture));
         ParityOracle.Equal(rest, theirs, Relation, []);
+    }
+
+    [Fact]
+    public async Task An_answer_s_words_are_said_alike_on_both_paths()
+    {
+        var (daoris, layer) = await BothAsync("native/claude-background-cut.stream.jsonl");
+
+        Assert.Equal(Messages(daoris.Seen).Select(each => each["text"]), Messages(layer.Seen).Select(each => each["text"]));
+        Assert.NotEmpty(Messages(layer.Seen));
     }
 
     /// <summary>A tool step's title and kind, which 1b-i's oracle found apart, are read alike through the door's own tool vocabulary.</summary>

@@ -63,7 +63,7 @@ internal static class LayerTestProvider
     /// <remarks>
     /// The spec's fields: <c>out</c>, lines said at once (a string as written, an object as its JSON); <c>err</c>, stderr lines first;
     /// <c>wait</c>, milliseconds before <c>after</c>'s lines; <c>hang</c>, never ending by itself; <c>echo</c>, its stdin said back;
-    /// <c>argv</c>, its arguments after the spec said back; <c>exit</c>, its code. A resume's conversation is said first, as
+    /// <c>argv</c>, its arguments after the spec said back; <c>env</c>, the variable it names said back; <c>exit</c>, its code. A resume's conversation is said first, as
     /// <c>resumed id</c>.
     /// </remarks>
     public static IReadOnlyList<string> Scenario(string scratch, object spec, string name = "scenario")
@@ -109,6 +109,7 @@ internal static class LayerTestProvider
           if (resume >= 0) say(`resumed ${args[resume + 1]}`);
           if (spec.argv) say(`argv ${JSON.stringify(args.slice(1))}`);
           if (spec.echo) say(`heard ${heard}`);
+          if (spec.env) say(`env ${process.env[spec.env] ?? ''}`);
           for (const line of spec.err ?? []) console.error(line);
           for (const line of spec.out ?? []) say(line);
           if (spec.wait) await new Promise((done) => setTimeout(done, spec.wait));

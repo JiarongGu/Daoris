@@ -428,7 +428,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   provider's. Left: every record still reads.
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
   agent-provider library, built against its local build. The reference and its census are in (rule 47). The host's policy for a
-  layer door stands on Daoris's own types, used by no door yet: the access evidence each account reader reads (`AccessEvidence`), the
+  layer door stands on Daoris's own types, read by Claude Code's driven door where the driver carries the layer: the access evidence each account reader reads (`AccessEvidence`), the
   trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
   readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
   (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
@@ -445,10 +445,22 @@ Agents page, and `orient-index` and `code-map` once files move.
   (`AgentRun` over one turn per call, a resume a start of its own, an operation the layer's members do not carry refused before a
   write) and the registry's layer view (`LayerView`: bound doors by the registry's spelling and by run kind, their layer doors and
   claims). The conformance suite's fourth view runs the registry through that view on its run kind (`LayerConformanceTests`). All of it
-  is used by no door yet and proven on the tests' own provider (`LayerTestProvider`). Claude Code's driven kind has its binding, not yet
-  taken by a start (`ClaudeDrivenLayer`): Lyntai's Claude door over the program a start resolved, its two refused-model entries, a tool
-  call read by Claude Code's own vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and
-  servers files (a door's `Options`) carried as today's spawn carries them. A move's parity is the oracle's
+  is proven on the tests' own provider (`LayerTestProvider`). Claude Code's driven kind is bound (`ClaudeDrivenLayer`): Lyntai's Claude
+  door over the program the start resolved (its file and the arguments before `-p`, the launcher's seat starting it in the door's
+  command's place) and the environment its shell composed, its two refused-model entries, a tool call read by Claude Code's own
+  vocabulary (a door's `Steps`), and the start's mode, model, effort and plugin folders with its rules and servers files (a door's
+  `Options`) carried as today's spawn carries them. Where the driver carries the layer, `SessionHold` holds a native door's driven start
+  on the run its door's binding answers (`DrivenRuns`, bound when the driver loads), today's `TransportRun` otherwise; both are a
+  `HeldRun`, the run and the hold's own steps around it, and a partner's piece stays on today's. A held `LayerRun` is one turn per
+  process, the first's, the native resume's one retry's and each go-on's, and takes today's steps through the same host
+  (`LayerHold`): the downloads kept, each process's lineage token issued and set on its environment, the process tracked and reaped,
+  each raw line stamped for the watch, the first process's wait under its start's minutes and the watch's quiet and a later one's under
+  the machine's, its turn drained and its lineage ended. Its prompt is the lines its native input hands the next process, written as
+  the layer's stdin write returns and acknowledged once the agent names its conversation; a go-on carries the held words, a retry the
+  words the ended process never acknowledged. Its readings say nothing of an end Daoris made (a bound, the quiet, a registered stop) or
+  of a clean exit before the agent stated its end, as today's capture says nothing of a stream without its result, and its ending is
+  the harness's own words with what its stream said of its background work (`HarnessWords`, each raw frame handed by the seat). A
+  move's parity is the oracle's
   (`Tests/Agents/Parity/`): what each path observed, by a fixed list of channels, compared exactly and in order but for the
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
   first appearance, a time by its interval from the run's start, a named library clock within its interval), a held case holding
@@ -457,11 +469,10 @@ Agents page, and `orient-index` and `code-map` once files move.
   but for a tool step's kind, which the Claude reader derives from the tool's name, and the context a count written to the cache
   adds, which the layer's tick does not carry (`LayerParityProcessTests`). A difference the oracle knows is a named gap, set apart
   before the rest is compared and failing once it sets nothing apart (`ParityGap`). Over every recorded Claude Code stream, today's
-  door and the driven binding read alike but for three (`ClaudeDrivenParityProcessTests`): the init's reading of what the harness
-  loaded, which the layer's start does not carry; an answer's words no delta streamed, which today's reader shows and the layer's does
-  not; and a clean exit with no result, no failure today and a failed turn on the layer. Their spawns hand Claude Code the same
-  arguments on each driven mode but for the three flow tools the layer's door always denies, and today's `default` mode, which it
-  refuses (`ClaudeDrivenSpawnParityProcessTests`). A
+  door and the driven binding read alike (`ClaudeDrivenParityProcessTests`), the init's reading of what the harness loaded handed
+  before the conversation its frame names, but for a message's id on its words, which the layer's words do not carry. Their spawns hand
+  Claude Code the same arguments on each driven mode, `default` among them, but for the three flow tools the layer's door always denies
+  (`ClaudeDrivenSpawnParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
   waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). Codex's account
   windows are read through the layer where the driver carries it (`LayerUsageRead` over each provider folder's `Layer/` vendor,
@@ -487,9 +498,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   `end_turn` or `cancelled`), so `LimitMove` moves it to the next account and its end says `limited`.
 - Row s-ii of the agent-layer adoption: a driven Claude Code start denies or keeps the three tools a headless turn cannot
   answer. The measurement needs the owner's yes; until it is made, the layer's door denying them is a gap of row d's spawn.
-- Row d of the agent-layer adoption: a driven start taking the binding, which waits on its gaps (the init's loaded reading and an
-  answer's unstreamed words, requests to the sibling library; the `default` mode; row s-ii) and on the run's own steps today's driven
-  run takes (its lineage token, the downloads it keeps, the person's go-ons, the native resume's one retry, the watch's quiet).
+- Row d of the agent-layer adoption: its installed proof, and two gaps the sibling library answers: a message's id on its words, and a
+  child's start and end and the streams beside, which the layer's members do not carry yet (AG18 with LQ7), so a layer run's lineage
+  file holds the process's token but no child and a watched console no stream of a background task.
 - **CODEXTOOLS1**: Codex's first tool catalogue waits for the connector to be ready.
 - **STEER3**, **MSG1h**, **MSG1i**: steering and next-step words measured on other doors (Codex, native).
 - **BGWAIT2b**, **SESSCTX1a**, **HELPMODE1a3**, **FABRIC-C2b**: woken-turn words, resume and fresh part per door, full access

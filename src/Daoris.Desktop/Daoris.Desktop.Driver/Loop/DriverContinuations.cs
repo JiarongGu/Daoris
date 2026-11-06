@@ -83,7 +83,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     internal static Func<SaidWordView, bool> Hands(bool resumed, bool switched) => WordsHandedOn.Hands(resumed, switched);
 
     internal Task<AgentRunEnd> GoOnAsync(
-        TransportRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
+        AgentRun run, DrivenInbox held, AgentDoor adapter, string sessionId, AgentRunEnd ended, ResumeAsk? resume,
         List<ChatMessage> left, CancellationToken ct, HarnessWords? own = null, Func<bool>? setupChanged = null,
         Func<CancellationToken, Task<TurnCarry>>? carriesOn = null) =>
         _native.GoOnAsync(run, held, adapter, sessionId, ended, resume, left, ct, own, setupChanged, carriesOn);

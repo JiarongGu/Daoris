@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
-internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapters, AgentDoor adapter, TransportStart start) : AgentRun, IAsyncDisposable
+internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapters, AgentDoor adapter, TransportStart start) : HeldRun
 {
     /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
     public const string LinesAbility = "a line written to a protocol door's process";
@@ -114,7 +114,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     /// Whether the run admits a native go-on with held words (MSG1b): a native door that resumes, handed the target and the selection its
     /// resume is prepared from. Where it admits none, its executor holds no words for it.
     /// </summary>
-    public bool GoesOn => !IsProtocol && adapter.Can.Resumes && _start.Target is not null && _start.Selection is not null;
+    public override bool GoesOn => !IsProtocol && adapter.Can.Resumes && _start.Target is not null && _start.Selection is not null;
 
     private bool IsProtocol => adapter.Transport == Transport.Protocol;
 
@@ -318,7 +318,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     /// its token, tracked and reaped, nothing reading it yet. For an executor whose own steps come between its spawn and its capture; the open
     /// spawns it otherwise.
     /// </summary>
-    internal async Task SpawnAsync(string sessionId, CancellationToken ct)
+    internal override async Task SpawnAsync(string sessionId, CancellationToken ct)
     {
         if (_spawned is not null) throw new InvalidOperationException("the run's process is started already.");
         if (_bracketed is null) await BracketAsync(sessionId, ct).ConfigureAwait(false);
@@ -335,7 +335,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     /// The start as its executor completed it before the open, once its process is up or before its spawn: its protocol's session, its prompt,
     /// its wait and what its tracking says, which its own steps made. The same process's, so its spawn is the one already made or to come.
     /// </summary>
-    internal void HandStart(TransportStart completed)
+    internal override void HandStart(TransportStart completed)
     {
         if (_opened is not null) throw new InvalidOperationException("the run is open already: its start is the one it opened with.");
         if (!ReferenceEquals(completed.Info, _start.Info) || completed.Whose != _start.Whose || completed.Piece != _start.Piece
@@ -349,14 +349,14 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     }
 
     /// <summary>The start the run holds, for an executor that completes it later (<see cref="HandStart"/>).</summary>
-    internal TransportStart Start => _start;
+    internal override TransportStart Start => _start;
 
     /// <summary>
     /// The run let go before its end (ANSWER2): as when its record will not move to working, its process ended, its <c>end</c> written unclean
     /// once its exit is read, and its capture observed, a failure there written with its reason, never left unawaited. A process spawned and
     /// never opened has no capture to observe.
     /// </summary>
-    internal async Task AbandonAsync()
+    internal override async Task AbandonAsync()
     {
         if (_spawned is not { } spawned) return;
         if (_opened is { } leg) await host.AbandonedAsync(spawned.SessionId, leg.Proc, leg.Process, leg.Capture).ConfigureAwait(false);
@@ -678,7 +678,7 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     /// capture still reading is observed and never waited for, as a start let go before its end always left it; the transcript the run holds
     /// is closed once nothing writes it. A token bracketed for a spawn that never came is let go.
     /// </summary>
-    public ValueTask DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         if (_disposed) return ValueTask.CompletedTask;
         _disposed = true;
