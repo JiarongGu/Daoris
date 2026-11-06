@@ -190,7 +190,7 @@ internal sealed class InboxState(Action<ChatQueue> changed)
         : new ChatQueue(Taking: true, [.. Held.Where(message => message.Daoris is null && message.Helped is null && !IsClaim(message))]);
 
     /// <summary>Another agent's claim on the ask's channel, as this inbox carries it (COWORK1d).</summary>
-    internal static bool IsClaim(ChatMessage message) => message.Channel is { Person: false };
+    internal static bool IsClaim(ChatMessage message) => message.Channel is { ByThisPerson: false };
 
     /// <summary>Whether a word held makes a turn of its own: any but a claim held only to ride (COWORK1d). Called under the gate.</summary>
     internal bool Turns() => Held.Any(word => !word.Rides);

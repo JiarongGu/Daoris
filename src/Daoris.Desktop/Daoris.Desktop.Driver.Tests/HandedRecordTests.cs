@@ -76,7 +76,7 @@ public sealed class HandedRecordTests : IDisposable
         Assert.Null(rules.None);
         Assert.Equal(
             $"the permission rules: {rules.Shown} handed beside it ({composed.Allow.Count} allow, 0 ask, {composed.Deny.Count} deny), "
-            + "composed from this machine's rules for workspace `work` and repository `reports`; 1 hard denial and the tree guard",
+            + "composed from this machine's rules for workspace `work` and repository `reports`; 2 hard denials and the tree guard",
             rules.Said);
     }
 

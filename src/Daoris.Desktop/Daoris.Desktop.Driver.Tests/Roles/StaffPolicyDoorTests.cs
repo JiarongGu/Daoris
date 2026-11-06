@@ -33,6 +33,8 @@ public sealed class StaffPolicyDoorTests : IDisposable
             """);
         Staffing = Make();
         Assert.Equal(StaffingImported.Done, Staffing.ImportFile().How);
+        // Every home holds the seeded machine rules, so a preset's moves are judged beside the tries rule a home always has.
+        Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));
     }
 
     public void Dispose()

@@ -15,7 +15,7 @@ internal sealed class QuestStandIn(Func<HttpRequestMessage, (HttpStatusCode Stat
 {
     /// <summary>A client over <paramref name="answer"/>, as the driver is handed one.</summary>
     public static ServiceClient Client(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)?> answer) =>
-        new("http://stand-in", null, new HttpClient(new QuestStandIn(answer)));
+        new("http://stand-in", null, new HttpClient(new SessionChanges(new QuestStandIn(answer))));
 
     /// <summary>The quest list as the service answers <c>GET /api/quests</c>.</summary>
     public static string List(IEnumerable<QuestView> quests) => new JsonArray([.. quests.Select(Json)]).ToJsonString();

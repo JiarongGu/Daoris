@@ -147,9 +147,6 @@ public sealed class SessionsThroughInstanceTests
             $$"""{"session":"{{Id}}","id":"w1","text":"instead","said":true}"""),
         "delete" => (new("delete") { Ids = [Id] }, "SESSION_DELETE", $$"""{"id":"{{Id}}","said":true}"""),
         "hand-over-no-agent" => (new("hand-over") { Ids = [Id] }, "SESSION_HAND_OVER", $$"""{"id":"{{Id}}","said":true}"""),
-        "start-from" => (new("start-from") { Ids = [Id] }, "SESSION_START_FROM", $$"""{"id":"{{Id}}","said":true}"""),
-        "hand-over" => (new("hand-over") { Ids = [Id], Agent = "codex", Account = "work" }, "SESSION_HAND_OVER",
-            $$"""{"id":"{{Id}}","agent":"codex","account":"work","said":true}"""),
         "helper" => (new("helper") { Ids = [Id], Text = "why?", Agent = "codex" }, "SESSION_HELPER_ASK",
             $$"""{"id":"{{Id}}","question":"why?","agent":"codex","said":true}"""),
         "helper-approve" => (new("helper-approve") { Ids = ["#7"] }, "SESSION_HELPER_APPROVE", """{"ask":"#7","said":true}"""),
@@ -175,8 +172,6 @@ public sealed class SessionsThroughInstanceTests
     [InlineData("reword")]
     [InlineData("delete")]
     [InlineData("hand-over-no-agent")]
-    [InlineData("start-from")]
-    [InlineData("hand-over")]
     [InlineData("helper")]
     [InlineData("helper-approve")]
     [InlineData("helper-decline")]
@@ -215,8 +210,6 @@ public sealed class SessionsThroughInstanceTests
     [InlineData("reword", "expired")]
     [InlineData("delete", "refused")]
     [InlineData("hand-over-no-agent", "expired")]
-    [InlineData("start-from", "refused")]
-    [InlineData("hand-over", "expired")]
     [InlineData("helper", "refused")]
     [InlineData("helper-approve", "expired")]
     [InlineData("helper-decline", "refused")]

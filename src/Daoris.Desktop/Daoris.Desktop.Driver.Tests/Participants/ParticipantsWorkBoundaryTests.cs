@@ -117,7 +117,7 @@ public sealed class ParticipantsWorkBoundaryTests : IDisposable
     {
         var tree = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Trees), "t1");
         var seen = new Requests(recordJson.Replace("{tree}", JsonEncodedText.Encode(tree).ToString()));
-        var service = new ServiceClient("http://stand-in", null, new HttpClient(seen));
+        var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(seen)));
         return (new ChatRunBinds(_home, service, new SessionEvents(Sessions)), seen, tree);
     }
 

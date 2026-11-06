@@ -66,7 +66,7 @@ public sealed class GoAheadsHandedTests
             "/api/sessions" => (HttpStatusCode.OK, SessionsOnTheAsk),
             _ => null,
         });
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(standIn)));
         var carryOn = SessionTarget.ForQuest(Quest(), "C:/somewhere/dashboards", service.BaseUrl) with
         {
             CutOff = "the agent's turn failed: the account reached its spend limit.",
@@ -113,7 +113,7 @@ public sealed class GoAheadsHandedTests
     public async Task A_follow_up_steps_session_is_handed_the_go_aheads_its_parents_sessions_asked()
     {
         var standIn = new StandIn(request => (HttpStatusCode.OK, request.RequestUri!.AbsolutePath == "/api/sessions" ? SessionsOnTheAsk : AskJson()));
-        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(standIn)));
         var step = new QuestView("q3", "ask #a1", "checker", "Check the figure", "Open it.", "Open") { Parent = "q2" };
 
         var handed = TargetPrompt.Compose(await Daoris.Driver.StartTargets.WithAskWordsAsync(

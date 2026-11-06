@@ -105,7 +105,8 @@ public sealed class DriverCommandTests
             .ToList();
         Assert.True(verbs.Count >= 8, $"expected the host's verbs, found {string.Join(", ", verbs)}");
 
-        HashSet<string> reached = ["drive"];
+        // `chat` is held by the running Daoris's conversation (D238), answered by the host before the tree is asked.
+        HashSet<string> reached = ["drive", "chat"];
         foreach (var group in CommandWords.Groups)
         {
             foreach (var verb in group.Verbs.Prepend("x"))
@@ -482,7 +483,7 @@ public sealed class DriverCommandTests
 
         var program = HostProgramSource.Read(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host"));
         // ONEWAY1l's usage lines: the usage names `--level` alone for a say (ONEWAY1ai-i: the host's header teaches no verb now).
-        var say = usage.Split('\n').Single(line => line.Contains("session say <id>", StringComparison.Ordinal));
+        var say = usage.Split('\n').Single(line => line.TrimStart().StartsWith("session say <id>", StringComparison.Ordinal));
         Assert.Contains("[--level ordinary|urgent|now]", say);
         Assert.DoesNotContain("--now", say);
         Assert.DoesNotContain("--now is --level now", usage);
@@ -497,7 +498,7 @@ public sealed class DriverCommandTests
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SessionsConsole.cs"));
         Assert.Contains("SessionsCommand.Read(args, out var problem)", console);
-        Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)", console);
+        Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, unadopted, log)", console);
         // MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal opens the terminal's own conversation,
         // as `chat` does, through the chat runner's one act the screen's `SESSION_START_FROM` calls, on Chat's order as the screen's press
         // walks it (FOUNDATION1j part iii, the foundation design §2.4's third row), never the machine's adapter.

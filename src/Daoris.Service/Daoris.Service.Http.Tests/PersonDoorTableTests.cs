@@ -206,9 +206,9 @@ public sealed class PersonDoorTableTests
         // its own confirmation (ONEWAY1n-i); less the park's answer route, whose job is the say door's alone (ONEWAY1k); and what waits
         // for one part on its line's channel, a read, and that part's acknowledgment, the driver's (COMMS1k); and one session's record
         // as the list answers it, and the list's change since a mark, reads (PERF1).
-        Assert.Equal(38, Routes.Count(route => route.Class == Open));
+        Assert.Equal(39, Routes.Count(route => route.Class == Open));
         Assert.Equal(5, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(32, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(31, Routes.Count(route => route.Class == Driver));
         Assert.Equal(36, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));
