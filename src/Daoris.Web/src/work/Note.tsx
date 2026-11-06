@@ -27,8 +27,6 @@ const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as con
 export function Note({ parts, className, clamp, compact = false, names }: {
   /** What the person calls each account, by id, for a note that names one (NOTENAME1); absent, an id is said as written. */
   names?: AccountNames;
-  /** The record's English, which rides beside its parts and is never read. */
-  note?: string | null;
   /** The note's lines, as the record answers them (LANG1a). */
   parts?: readonly NotePart[] | null;
   /** The type step and ink its words are set in, which the place showing it chooses. */

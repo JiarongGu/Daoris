@@ -113,7 +113,6 @@ const PARKED: Attention = {
   where: 'engine',
   since: at(38),
   note: {
-    note: 'It stopped with its quest still taken, to ask you: …',
     parts: [
       { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
       { words: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.', by: 'agent' },
@@ -797,7 +796,6 @@ export const Rows: StoryObj = {
             title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上，供上层调度器读取',
             where: '世界流式加载引擎',
             note: {
-              note: 'It stopped with its quest still taken, to ask you: …',
               parts: [
                 { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
                 { words: '有两条路可走；我建议在区块 API 上限流，这正是委托所要求的。', by: 'agent' },
@@ -843,7 +841,7 @@ const ANALYSIS = 'Two ways forward.\n\n1. Cap hydration in the scheduler — sma
 export const Parked: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingPerson note={ANALYSIS} onResolve={() => {}} />
+      <AwaitingPerson parts={[{ words: ANALYSIS, by: 'agent' }]} onResolve={() => {}} />
     </div>
   ),
 };
@@ -852,7 +850,7 @@ export const Parked: StoryObj = {
 export const ParkedWithNothingSaid: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingPerson note={null} onResolve={() => {}} />
+      <AwaitingPerson onResolve={() => {}} />
     </div>
   ),
 };
@@ -861,7 +859,7 @@ export const ParkedWithNothingSaid: StoryObj = {
 export const Resolving: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingPerson note={ANALYSIS} pending onResolve={() => {}} />
+      <AwaitingPerson parts={[{ words: ANALYSIS, by: 'agent' }]} pending onResolve={() => {}} />
     </div>
   ),
 };
@@ -890,7 +888,7 @@ const QUESTION = 'published nothing: the declarations did not settle ask `#0fda1
 export const IntakeAsking: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} />
+      <AwaitingIntake ask="0fda18" parts={[{ words: QUESTION, by: 'before' }]} onAnswer={() => {}} />
     </div>
   ),
 };
@@ -899,7 +897,7 @@ export const IntakeAsking: StoryObj = {
 export const IntakeAskingReadOnly: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingIntake ask="0fda18" note={QUESTION} />
+      <AwaitingIntake ask="0fda18" parts={[{ words: QUESTION, by: 'before' }]} />
     </div>
   ),
 };

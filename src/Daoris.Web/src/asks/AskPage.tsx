@@ -500,7 +500,7 @@ export function AskPage({
                 )}
                 <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>
-              <Note note={intake.note} parts={intake.noteParts} className="mt-1.5 text-body text-ink-soft" />
+              <Note parts={intake.noteParts} className="mt-1.5 text-body text-ink-soft" />
             </>
           ) : (
             <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>

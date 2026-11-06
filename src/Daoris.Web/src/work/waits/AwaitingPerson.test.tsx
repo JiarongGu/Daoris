@@ -10,7 +10,7 @@ const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: 
 const ANALYSIS ='Two ways forward.\n1. Cap in the scheduler.\n2. Cap in the chunk API.\nI recommend the second.';
 
 const show = (props: Partial<Parameters<typeof AwaitingPerson>[0]> = {}) =>
-  render(<AwaitingPerson note={ANALYSIS} parts={[{ words: ANALYSIS, by: 'agent' }]} onResolve={() => {}} {...props} />);
+  render(<AwaitingPerson parts={[{ words: ANALYSIS, by: 'agent' }]} onResolve={() => {}} {...props} />);
 
 describe('a session parked at a checkpoint', () => {
   it('renders the analysis word for word — options, recommendation and reason survive rewording badly', () => {
@@ -127,7 +127,7 @@ describe('a session parked at a checkpoint', () => {
   });
 
   it('renders with no analysis at all — a park with nothing said is still a park', () => {
-    show({ note: null, parts: null });
+    show({ parts: null });
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
   });
 

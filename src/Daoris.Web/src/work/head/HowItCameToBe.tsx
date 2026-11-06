@@ -360,7 +360,7 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
       {quest.note && (
         <Part title={t('work.trace.quest.close')}>
           {quest.noteParts?.length
-            ? <Note note={quest.note} parts={quest.noteParts} className="text-body text-ink" />
+            ? <Note parts={quest.noteParts} className="text-body text-ink" />
             : <Said>{quest.note}</Said>}
         </Part>
       )}

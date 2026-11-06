@@ -145,7 +145,7 @@ describe('what needs a person, worded', () => {
   });
 
   it('names a parked session by its derived identity, with the analysis it is waiting on', () => {
-    const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { note: 'two ways forward.' } });
+    const pushed = row('parked', 's1a2b3c4', '2026-09-21T10:00:00Z', { workspace: 'default', where: 'engine', note: { parts: [{ words: 'two ways forward.', by: 'agent' }] } });
 
     expect(words(pushed, { sessions: [session({ quest: '7a82cc', state: 'awaiting-person' })], quests: [quest({ status: 'Taken' })] })).toEqual({
       id: 's1a2b3c4',
@@ -153,15 +153,15 @@ describe('what needs a person, worded', () => {
       title: 'Expose a streaming budget on the chunk API',
       where: 'engine',
       since: '2026-09-21T10:00:00Z',
-      note: { note: 'two ways forward.' },
+      note: { parts: [{ words: 'two ways forward.', by: 'agent' }] },
     });
   });
 
   /** LANG1b: the record's note travels whole, its parts beside its English, for the row to word in the reader's language. */
   it('hands the row a parked session’s note with its parts, never an English sentence made of them', () => {
     const noteParts = [{ code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' }];
-    const item = words(row('parked', 's1a2b3c4', null, { where: 'engine', note: { note: 'It stopped…', parts: noteParts } }));
-    expect(item.note).toEqual({ note: 'It stopped…', parts: noteParts });
+    const item = words(row('parked', 's1a2b3c4', null, { where: 'engine', note: { parts: noteParts } }));
+    expect(item.note).toEqual({ parts: noteParts });
     expect(item.detail).toBeUndefined();
     // A record not in hand is named by its id.
     expect(item.title).toBe('#s1a2b3c4');
@@ -388,8 +388,9 @@ describe('an ask that waits on a person, worded', () => {
 
   it('is the ask’s one row where its intake parked asking, with the intake’s own note', () => {
     const note = 'published nothing: the declarations did not settle ask `#7c1e9a04b2d5`, so it asks you rather than guess.';
-    expect(words(row('intake', '7c1e9a04b2d5', '2026-09-21T09:45:00Z', { where: 'aurora', note: { note } }), { asks: [ask()] })).toEqual({
-      id: '7c1e9a04b2d5', kind: 'intake', title: 'The chunk streamer stalls on a cold cache.', where: 'aurora', since: '2026-09-21T09:45:00Z', note: { note },
+    const parts = [{ words: note, by: 'before' as const }];
+    expect(words(row('intake', '7c1e9a04b2d5', '2026-09-21T09:45:00Z', { where: 'aurora', note: { parts } }), { asks: [ask()] })).toEqual({
+      id: '7c1e9a04b2d5', kind: 'intake', title: 'The chunk streamer stalls on a cold cache.', where: 'aurora', since: '2026-09-21T09:45:00Z', note: { parts },
     });
   });
 

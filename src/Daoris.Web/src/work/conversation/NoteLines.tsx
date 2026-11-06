@@ -167,7 +167,7 @@ const LONG_NOTE = 240;
 export function NoteLine({ text, parts, under }: { text: string; parts?: readonly NotePart[]; under?: readonly Block[] }) {
   const { t, i18n } = useTranslation();
   const { names } = useContext(SaidDoors);
-  const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language, names) : text;
+  const worded = parts?.length ? noteText(t, { parts }, i18n.language, names) : text;
   const long = worded.length > LONG_NOTE;
   const [open, setOpen] = useState(!long);
   const [unfolded, setUnfolded] = useState(false);
@@ -175,7 +175,7 @@ export function NoteLine({ text, parts, under }: { text: string; parts?: readonl
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
         <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-        {parts?.length ? <Note note={text} parts={parts} names={names} compact /> : <Inline text={text} />}
+        {parts?.length ? <Note parts={parts} names={names} compact /> : <Inline text={text} />}
       </p>
       {long && (
         <button
