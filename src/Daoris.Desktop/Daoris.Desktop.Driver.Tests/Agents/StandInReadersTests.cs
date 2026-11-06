@@ -22,7 +22,7 @@ public sealed class StandInReadersTests
             ["stub"] = new StubAdapter(),
             ["acp-stub"] = new AcpStubAdapter(),
             ["claude-code"] = new ClaudeCodeAdapter(),
-            ["codex-acp"] = new CodexAcpAdapter(),
+            ["codex-acp"] = AdapterSet.Built().Resolve("codex-acp"),
         }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain }),
         "plugin" => AdapterSet.Built().WithPlugins(new SingleDoor(PluginDoors.Declare(new PluginHarness("acme-door", ["acme"]), "acme-plugin"))),
         _ => AdapterSet.Built(),

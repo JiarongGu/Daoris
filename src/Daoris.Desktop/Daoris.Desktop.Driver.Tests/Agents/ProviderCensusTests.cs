@@ -59,9 +59,9 @@ public sealed class ProviderCensusTests
     private static readonly (string Owner, string[] Types)[] ProviderTypes =
     [
         ("claude-code", ["ClaudeStreamJson", "ClaudeStreams", "ClaudeUsage", "ClaudeTrust", "ClaudeErrors", "ClaudeAcpErrors", "ClaudeAcp",
-            "ClaudeLimits", "ClaudeWindows", "ClaudeSignIn", "ClaudeReleases", "ClaudeReleaseDownloads", "ClaudeCodeAdapter", "ClaudeAcpAdapter"]),
-        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexErrors", "CodexReleases", "CodexReleaseDownloads", "CodexAcpAdapter"]),
-        ("dsh", ["DshProfile", "DshAdapter"]),
+            "ClaudeLimits", "ClaudeWindows", "ClaudeSignIn", "ClaudeReleases", "ClaudeReleaseDownloads", "ClaudeCodeAdapter"]),
+        ("codex", ["CodexUsage", "CodexAccounts", "CodexLimits", "CodexErrors", "CodexReleases", "CodexReleaseDownloads"]),
+        ("dsh", ["DshProfile"]),
         ("stub", ["StubAdapter", "AcpStubAdapter"]),
     ];
 

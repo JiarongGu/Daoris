@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Codex written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): agent <c>codex</c>, whose program,
 /// sign-in and status question are <see cref="CodexAccounts"/>' (CODEXACCT1), with its one door <c>codex-acp</c> on the protocol,
-/// which runs as its accounts. The door's facts are what <see cref="CodexAcpAdapter"/> declares until row t takes the class away; the
-/// shim (<see cref="LegacyDoor"/>) presents them to today's readers and a test holds the two sides equal.
+/// which runs as its accounts. The shim (<see cref="LegacyDoor"/>) presents its door to the adapter seam's readers.
 /// </summary>
 /// <remarks>
 /// What a harness naming <c>codex</c> reads of it is its sign-in alone, no words and no usage question, as today. Codex's limit

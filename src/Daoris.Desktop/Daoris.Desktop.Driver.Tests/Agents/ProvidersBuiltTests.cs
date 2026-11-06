@@ -20,10 +20,10 @@ public sealed class ProvidersBuiltTests
         ["stub"] = new StubAdapter(),
         ["acp-stub"] = new AcpStubAdapter(),
         ["claude-code"] = new ClaudeCodeAdapter(),
-        ["claude-code-acp"] = new ClaudeAcpAdapter(),
-        ["codex-acp"] = new CodexAcpAdapter(),
-        ["dsh"] = new DshAdapter(),
-    }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
+        ["claude-code-acp"] = AdapterSet.Built().Resolve("claude-code-acp"),
+        ["codex-acp"] = AdapterSet.Built().Resolve("codex-acp"),
+        ["dsh"] = AdapterSet.Built().Resolve("dsh"),
+    },new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
 
     private static Provider Listed(string id) => Providers.Built().Single(provider => provider.Id.Value == id);
 

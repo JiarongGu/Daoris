@@ -155,9 +155,9 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
         File.WriteAllText(Path.Combine(_tree, "AGENTS.md"), new string('a', 32_769));
         var facts = new StandingFacts { Repository = "engine" };
 
-        var codex = StandingBlocks.OnHarness(facts, new CodexAcpAdapter(), _tree);
+        var codex = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("codex-acp"), _tree);
         var claude = StandingBlocks.OnHarness(facts, new ClaudeCodeAdapter(), _tree);
-        var acp = StandingBlocks.OnHarness(facts, new ClaudeAcpAdapter(), _tree);
+        var acp = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("claude-code-acp"), _tree);
 
         Assert.Equal([".claude/skills"], codex.Skills);
         Assert.Equal(["engine:.claude/rules/a-rule.md", "engine:.claude/rules/b-rule.md"], codex.Rules!.Ids);
@@ -173,9 +173,9 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
 
         // An instruction file the harness reads whole carries no rule index.
         File.WriteAllText(Path.Combine(_tree, "AGENTS.md"), new string('a', 32_768));
-        Assert.Null(StandingBlocks.OnHarness(facts, new CodexAcpAdapter(), _tree).Rules);
+        Assert.Null(StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("codex-acp"), _tree).Rules);
         // A kind with no repository is told neither, only that its harness holds none of the person's denies.
-        Assert.Equal(new StandingFacts { NoDenies = true }, StandingBlocks.OnHarness(new StandingFacts(), new CodexAcpAdapter(), _tree));
+        Assert.Equal(new StandingFacts { NoDenies = true }, StandingBlocks.OnHarness(new StandingFacts(), AdapterSet.Built().Resolve("codex-acp"), _tree));
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public sealed class StandingBlockTests(ITestOutputHelper output) : IDisposable
     {
         var facts = new StandingFacts { Repository = "engine" };
 
-        var codex = StandingBlocks.OnHarness(facts, new CodexAcpAdapter(), _tree);
+        var codex = StandingBlocks.OnHarness(facts, AdapterSet.Built().Resolve("codex-acp"), _tree);
         var claude = StandingBlocks.OnHarness(facts, new ClaudeCodeAdapter(), _tree);
 
         Assert.True(codex.NoDenies);

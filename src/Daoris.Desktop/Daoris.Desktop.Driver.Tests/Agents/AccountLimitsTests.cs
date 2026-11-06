@@ -279,7 +279,7 @@ public sealed class AccountLimitsTests
     // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
 
     /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
-    private static LimitWords Codex => new CodexAcpAdapter().Toolchain!.Limits!;
+    private static LimitWords Codex => AdapterSet.Built().Registry.ToolchainOf("codex-acp")!.Limits!;
 
     /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
     private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
