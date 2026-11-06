@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTree, defaultOpen, layoutCode, ROOT } from './codeClusters';
 import { CYCLE_ACROSS_FOLDERS } from './codeFixtures';
-import { foldable, foldGroup } from './codeFolds';
+import { foldGroup } from './codeFolds';
 
 // CANVAS1f (the canvas design §4): one folder folded alone, its siblings and the folders above it left open.
 
@@ -27,18 +27,11 @@ describe('one folder folded alone', () => {
     expect(scene.lines.find((line) => line.from === 'folder:src/a' && line.to === 'b1')!.count).toBe(1);
   });
 
-  it('is offered for the open group a module is drawn in, never the root nor a closed one', () => {
-    const open = defaultOpen(tree);
-    expect(foldable(tree, open, 'a2')).toBe('folder:src/a/deep');
-    expect(foldable(tree, new Set(), 'a2')).toBeNull();
-    expect(tree.owner.get('top')).toBe(ROOT);
-    expect(foldable(tree, open, 'top')).toBeNull();
-  });
-
   it('folds a cycle across folders to its one card', () => {
     const cycles = buildTree(CYCLE_ACROSS_FOLDERS.modules, CYCLE_ACROSS_FOLDERS.dependencies);
     const open = defaultOpen(cycles);
-    const cycle = foldable(cycles, open, 'session')!;
+    const cycle = cycles.owner.get('session')!;
+    expect(cycle).not.toBe(ROOT);
     expect(cycles.groups.get(cycle)!.kind).toBe('cycle');
     const scene = layoutCode(cycles, foldGroup(cycles, open, cycle));
     expect(scene.world.boxes.has(cycle)).toBe(true);

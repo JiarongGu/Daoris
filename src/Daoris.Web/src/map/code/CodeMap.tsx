@@ -10,7 +10,7 @@ import { CodeCard } from './CodeCards';
 import { RING_MAX } from '../layers';
 import { MapTree } from '../list/MapTree';
 import { buildTree, type CodeLine, defaultOpen, dirOf, layoutCode, openingPath } from './codeClusters';
-import { foldable, foldGroup } from './codeFolds';
+import { foldGroup } from './codeFolds';
 import { codeListGroups } from './codeList';
 
 /** Zoom 10–250%: a repository of thousands is read from far, and a name is the type scale's at 100%. */
@@ -169,15 +169,15 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     onSelect(id);
   };
 
-  // One folder folded alone: the chosen module's own, which its choice holds open, so the choice is released and the focus goes to
-  // the card the module now stands in.
-  const folding = selected !== null && tree.modules.has(selected) ? foldable(tree, open, selected) : null;
-  const foldChosen = () => {
-    if (folding === null || selected === null) return;
+  // One folder folded alone, any open frame's: a choice inside it held it open, so the choice is released, and the focus goes to the
+  // card its first module now stands in.
+  const foldAt = (id: string) => {
+    const group = tree.groups.get(id);
+    if (!group) return;
     setLine(null);
-    setOpen(foldGroup(tree, open, folding));
-    focusing.current = selected;
-    onSelect(null);
+    setOpen(foldGroup(tree, open, id));
+    focusing.current = group.members[0] ?? null;
+    if (selected !== null && group.members.includes(selected)) onSelect(null);
   };
 
   const { outgoing, incoming } = useMemo(() => {
@@ -239,11 +239,6 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => { setLine(null); setHeld(null); }}>
         {t('code.foldAgain')}
       </Button>
-      {folding !== null && (
-        <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" data-code-fold="" onClick={foldChosen}>
-          {t('code.foldFolder', { name: nameOf(folding) })}
-        </Button>
-      )}
     </>
   );
   const list = (
@@ -267,6 +262,15 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
         renderNode={renderNode}
         renderEdges={(context) => <CodeEdges lines={scene.lines} context={context} focus={context.hovered ?? chosenCard} name={nameOf} />}
         tools={tools}
+        groupHead={(group) => (
+          <button
+            type="button" data-code-fold={group.id} aria-label={t('code.foldFolder', { name: nameOf(group.id) })}
+            onClick={() => foldAt(group.id)}
+            className="shrink-0 rounded-control px-1.5 text-meta text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            {t('code.fold')}
+          </button>
+        )}
         list={list}
       />
     </div>

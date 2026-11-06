@@ -30,6 +30,7 @@ import { PlaceRoles } from './setup/PlaceRoles';
 import type { PlaceDriving } from './setup/PlacePage';
 import { doorOf, draftOfAsk, type PlaceAsk, type SetUpDoor, type SetUpPage, type SetUpPlace, useSetUpPage } from './setup/placePlan';
 import { type PlaceAt, type PlaceEdit, type PlaceFlowHold, type PlaceSection, type PlaceView, usePlaceShell } from './setup/placeShell';
+import { useKeptPlace } from './setup/useKeptPlace';
 import { findPlace, placeAsk, rowOfFound, SetupMain, setUpPlaceOf, sourceDoor, useSetupPlaces } from './setup/SetupPlaces';
 import { SetupList } from './setup/SetupList';
 import { type RoleOpeners, useRolesPage } from './roles/RolesView';
@@ -188,7 +189,10 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
     onArrived?.();
   }, [arrivedHere, arrival, arrive, onArrived]);
   // A not-driven repository's row is not in the list's page: its own, read whole (`detail`), once it is chosen.
-  const chosenPlace = active && inSetup ? findPlace(places.read, modes?.place ?? null) : null;
+  const narrowed = places.search.trim() !== '' || places.needsLook;
+  const wantedPlace = active && inSetup ? modes?.place ?? null : null;
+  const keptPlace = useKeptPlace(findPlace(places.read, wantedPlace), wantedPlace, narrowed);
+  const chosenPlace = keptPlace;
   const importedDetail = usePlaces(
     chosenPlace?.kind === 'imported' ? { detail: { workspace: chosenPlace.workspace, repository: chosenPlace.repository } } : {},
     { enabled: chosenPlace?.kind === 'imported' },
@@ -226,7 +230,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   // A first answer still on its way; an answer that is no roster lists nothing.
   const loading = active && roster.data === undefined && roster.isPending;
   if (modes && inSetup) {
-    const placed = findPlace(places.read, modes.place);
+    const placed = keptPlace;
     const setUpPlace = setUp ? setUpPlaceOf(placed, modes.place, places.read) : null;
     const row = rowOfFound(placed, importedDetail.data?.detail ?? null);
     // A door to another place at a section and row: the shell holds it, and the list chooses the place.

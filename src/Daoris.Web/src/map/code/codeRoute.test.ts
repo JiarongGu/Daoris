@@ -35,6 +35,27 @@ describe('a line between two cards', () => {
   });
 });
 
+describe('a line in a crowd', () => {
+  it('is still routed round the card in its way where more than 64 cards stand within its reach', () => {
+    const boxes = new Map([['a', card(0, 0)], ['in the way', card(0, 64)], ['b', card(0, 128)]]);
+    // 80 cards beside the way, within reach, farther from the line than the one in it.
+    for (let at = 0; at < 80; at += 1) boxes.set(`crowd-${at}`, card(200 + (at % 8) * 150, -100 + Math.floor(at / 8) * 50));
+    const line = createRouter(boxes).route('a', 'b', 0);
+    expect(line.d).not.toContain(' C ');
+    for (const [id, box] of boxes) if (id !== 'a' && id !== 'b') expect(clear(line.points, box)).toBe(true);
+  });
+
+  it('is routed in each of more than 200 lines, since a short route is cheap', () => {
+    const boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
+    for (let at = 0; at < 250; at += 1) {
+      const x = at * 400;
+      boxes.set(`a${at}`, card(x, 0)); boxes.set(`m${at}`, card(x, 64)); boxes.set(`b${at}`, card(x, 128));
+    }
+    const router = createRouter(boxes);
+    for (let at = 0; at < 250; at += 1) expect(router.route(`a${at}`, `b${at}`, 0).d).not.toContain(' C ');
+  });
+});
+
 describe('the code map\'s lines', () => {
   it('pass no card between two layers apart: what a top module uses at the foot is drawn around the middle one', () => {
     const tree = buildTree(

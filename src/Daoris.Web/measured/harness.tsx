@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import { composeStories, setProjectAnnotations } from '@storybook/react-vite';
 import preview from '../.storybook/preview';
-import * as flow from '../src/design/Flow.stories';
+import * as flow from '../src/design/canvas/LifeFlow.stories';
 import * as ui from '../src/design/ui.stories';
 import * as quest from '../src/quests/QuestFlow.stories';
 import * as workspace from '../src/projects/workspace/WorkspacePage.stories';

@@ -181,17 +181,29 @@ describe('a cycle', () => {
 });
 
 describe('one folder folded alone', () => {
+  beforeEach(() => { measured.width = 900; });
+
   it('folds the chosen module\'s folder, releases the choice, keeps the others open and hands the focus to its card', async () => {
     const onChange = vi.fn();
     render(<Host map={CYCLE_ACROSS_FOLDERS} first="board" onChange={onChange} />);
-    expect(screen.queryByRole('button', { name: /^Fold src\/core/ })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Fold src/web' }));
     expect(onChange).toHaveBeenLastCalledWith(null);
     const card = screen.getByRole('button', { name: 'src/web, a folder of 1 module. Press to open' });
     expect(card).toHaveFocus();
     expect(screen.queryByRole('button', { name: /^board, depends on/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'rules, depends on 0' })).toBeInTheDocument();
-    expect(document.querySelector('[data-code-fold]')).toBeNull();
+    expect(document.querySelector('[data-code-fold="folder:src/web"]')).toBeNull();
+  });
+
+  it('is offered by every open folder, not only the chosen module\'s, and leaves the choice where it is', async () => {
+    const onChange = vi.fn();
+    render(<Host map={CYCLE_ACROSS_FOLDERS} first="board" onChange={onChange} />);
+    expect(document.querySelector('[data-code-fold="folder:src/web"]')).not.toBeNull();
+    expect(document.querySelector('[data-code-fold="folder:src/data"]')).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Fold src/data' }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /^src\/data, a folder of \d+ modules?\. Press to open$/ })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^board, depends on/ })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('folds a cycle across folders to its card, labelled with the folders it crosses', async () => {

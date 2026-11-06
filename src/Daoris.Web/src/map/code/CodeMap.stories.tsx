@@ -79,18 +79,23 @@ export const ACycleAcrossFolders: Story = { args: { map: CYCLE_ACROSS_FOLDERS } 
 export const ACycleAcrossFoldersChosen: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, decorators: [storyWidths.half] };
 export const ACycleAcrossFoldersChineseDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS }, decorators: [storyWidths.wide, chinese, inDark] };
 
-/** *Fold* pressed on the chosen module's folder, as a keyboard reaches it in the toolbar. */
-const foldChosen: Story['play'] = async ({ canvasElement }) => {
-  canvasElement.querySelector<HTMLButtonElement>('[data-code-fold]')?.click();
+/** *Fold* pressed in the header of the open frame a selector names: any folder's, chosen module or none. */
+const foldFrame = (selector: string): Story['play'] => async ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>(selector)?.click();
   await new Promise((settled) => requestAnimationFrame(settled));
 };
+const foldWeb = foldFrame('[data-code-fold="folder:src/web"]');
+const foldCycle = foldFrame('[data-code-fold^="cycle:"]');
 
-/** One folder folded alone: the chosen module's folder is a card again, the choice released, every other folder still open. */
-export const OneFolderFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldChosen };
-export const OneFolderFoldedNarrowChinese: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldChosen, decorators: [storyWidths.narrow, chinese] };
+/** One folder folded alone: its header's *Fold*, and the folder is a card again, the choice released, every other folder still open. */
+export const OneFolderFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldWeb };
+export const OneFolderFoldedNarrowChinese: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldWeb, decorators: [storyWidths.narrow, chinese] };
+/** A folder no module is chosen in, folded from its own header. */
+export const AnotherFolderFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'board' }, play: foldFrame('[data-code-fold="folder:src/data"]') };
+export const AnotherFolderFoldedChinese: Story = { ...AnotherFolderFolded, decorators: [storyWidths.wide, chinese] };
 /** The cycle across folders folded alone: one card, labelled with the folders it crosses. */
-export const ACycleAcrossFoldersFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen };
-export const ACycleAcrossFoldersFoldedDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldChosen, decorators: [storyWidths.half, inDark] };
+export const ACycleAcrossFoldersFolded: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldCycle };
+export const ACycleAcrossFoldersFoldedDark: Story = { args: { map: CYCLE_ACROSS_FOLDERS, initial: 'session' }, play: foldCycle, decorators: [storyWidths.half, inDark] };
 
 /**
  * Each zoom says less about the same cards (MAPUX1a): at 100% a module's id, a folder's name and ×n; at 50% the id's last segment; at
