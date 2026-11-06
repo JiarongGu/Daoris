@@ -14,10 +14,14 @@ public sealed class ChannelStore
     {
         _db = ConnectionGate.For(connection);
         Addressed = new(_db);
+        Members = new(_db);
     }
 
     /// <summary>A line's own channel and the messages to one part, kept apart from this store's.</summary>
     public ChannelAddressedStore Addressed { get; }
+
+    /// <summary>The agents outside Daoris on a channel (CHANNELJOIN1), never synced.</summary>
+    public ChannelMemberStore Members { get; }
 
     public static Task<ChannelStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
         ConnectionGate.For(connection).RunAsync(() => new ChannelStore(connection).EnsureSchemaAsync(ct), ct);
@@ -95,6 +99,7 @@ public sealed class ChannelStore
         // COWORK1d (the message-urgency design §9): a message's level, said on every message kept from now; a message from before says
         // none, which keeps its old reach and is never read as ordinary.
         await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
+        await ChannelMemberStore.EnsureSchemaAsync(_db, ct).ConfigureAwait(false);
 
         // FOUNDATION1 row k part 2 (D212, the foundation design §4.1): a message kept as a row of the event journal, minted by a trigger in the
         // statement that writes it. After the columns the trigger reads (`urgent` is the last added), so it names none that is not there.

@@ -24,6 +24,12 @@ public sealed record ChannelMessage(
     /// <summary>Whether the person wrote it: no session did. A session's message is that agent's claim, never the person's.</summary>
     public bool ByPerson => Session is null;
 
+    /// <summary>
+    /// Whether an agent outside Daoris posted it, a channel's member (CHANNELJOIN1): read from its poster's id, on this machine and on a
+    /// teammate's, where the id arrives behind the machine it came from. Still never the person's, and an older build reads it as a session's.
+    /// </summary>
+    public bool Outside => ChannelMember.IsId(Session);
+
     /// <summary>A question no message has answered yet; false for every other message. Read from the channel, never stored.</summary>
     public bool Open { get; init; }
 

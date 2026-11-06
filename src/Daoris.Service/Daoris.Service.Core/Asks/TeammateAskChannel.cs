@@ -145,7 +145,7 @@ public sealed class TeammateAskChannel(ChannelStore store, Func<string, Cancella
     }
 
     /// <summary>The words trimmed and bounded; <c>to</c> everyone or a repository the ask's messages name; <c>re</c> one of its messages.</summary>
-    private static (ChannelRefusal Refusal, string? Text, string? To, string? Re) Judge(
+    internal static (ChannelRefusal Refusal, string? Text, string? To, string? Re) Judge(
         IReadOnlyList<ChannelMessage> held, string? text, string? to, string? re)
     {
         var words = text?.Trim() ?? "";

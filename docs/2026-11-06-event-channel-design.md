@@ -354,12 +354,13 @@ M11 reads the record the steward keeps, never the owner's transcripts. The evide
 - **A member record**, `ChannelMember`, in the asks store beside `channel_addressed` (`Service/Asks/ChannelParts.cs`), in its own table
   `channel_members`, never synced: a membership is this machine's, as a message to one part is. It holds its id, minted as `o` and seven
   hex characters so it is never read for a session's; the channel's origin (`ask:<id>`, `session:<id>`, `quest:<id>`, or a teammate's
-  ask's); its own entry, `<origin>/outside:<id>`, the key of its read mark; its agent, one of this build's harness names or `other`; its
-  repository, one the registry holds, or none; the confirmation that admitted it; when it joined, when it last read or posted, and when and
-  why it left.
-- **Its messages name it.** A member's post is a `ChannelMessage` with `Session` its id, `Agent` and `Repository` its own, `Entry` its
-  entry, and `Outside: true` (null on every other). So it is never `ByPerson`, here or on a teammate's machine, and an older build or a
-  teammate's reads it as an agent's claim. Who said it is read by the one rule as `channel` (the co-working area's rule 17; the rules
+  ask's); its own entry, `<origin>/outside:<id>`; its agent, a short lowercase name or `other`; its repository, which the join's grounds
+  read in the registry, or none; the confirmation that admitted it; when it joined, when it last read or posted, when it last read (its
+  mark, one for an ask's channel and a line's alike), and when and why it left (`left` by itself, `removed` by the person).
+- **Its messages name it.** A member's post is a `ChannelMessage` with `Session` its id, `Agent` and `Repository` its own and `Entry` its
+  entry. `Outside` is read from the poster's id, here and behind the machine a teammate's message came from, and the doors answer it
+  `outside: true` (absent on every other); no column and no sync field carry it. So it is never `ByPerson`, here or on a teammate's
+  machine, and an older build or a teammate's reads it as an agent's claim. Who said it is read by the one rule as `channel` (the co-working area's rule 17; the rules
   named below are that area's): the sender twins and
   `fixtures/senders.json` gain the member's row with no new sender kind.
 - **Not a session record.** The ledger holds what the driver started and observes by its process (`SessionState`), which every look,
@@ -387,7 +388,9 @@ M11 reads the record the steward keeps, never the owner's transcripts. The evide
   card** (`StandingPlace.InAgentJob`): an agent Daoris runs is already a part and speaks as itself. An untold place is shown on the card.
 - **The person confirms**, on a card that names the channel as *At work* names it, the asking process as the system named it, its
   standing, the agent and the repository it claims, and what follows: *it reads this channel and posts as itself, never as you; it
-  cannot start, stop or steer any session*. Its grounds (CONFIRMWAIT1 §5): the channel still open to posts and the bounds not reached.
+  cannot start, stop or steer any session*. Its grounds (CONFIRMWAIT1 §5): the ask or the line's session, and the repository it claims;
+  the bounds are the service's, judged in the admission's own statement, so a join confirmed past them is answered `too-many`. An untold
+  place is said as `untold` on the terminal's *confirming* notice and on the card's `asked` line (`PipeOutsideOnly`).
 - **On Confirm** the shell presses the service's `POST /api/channel/members`, a `Person` door recorded as the person's admission, and
   the terminal hears the member's id, which it prints with the two verbs it may run. The verb holds no lease (`VerbLeases`, with its
   reason: its one write is the service's).

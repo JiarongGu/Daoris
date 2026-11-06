@@ -406,7 +406,7 @@ public sealed class ChannelParts(ChannelDesk desk, ChannelStore store, SessionLe
     /// A message's words, its <c>to</c> and its <c>re</c> judged on <paramref name="origin"/>'s channel: <c>to</c> everyone or one repository
     /// whose line of work is on the origin; <c>re</c> a message of the origin's channel, either table.
     /// </summary>
-    private async Task<(ChannelRefusal Refusal, string? Text, string? To, string? Re)> JudgeAsync(
+    internal async Task<(ChannelRefusal Refusal, string? Text, string? To, string? Re)> JudgeAsync(
         string origin, Ask? ask, string? text, string? to, string? re, CancellationToken ct)
     {
         var words = text?.Trim() ?? "";
@@ -460,5 +460,5 @@ public sealed class ChannelParts(ChannelDesk desk, ChannelStore store, SessionLe
     };
 
     /// <summary>Ten characters, so an addressed message's id is never one of an ask's channel's eight.</summary>
-    private static string NewId() => Guid.NewGuid().ToString("N")[..10];
+    internal static string NewId() => Guid.NewGuid().ToString("N")[..10];
 }

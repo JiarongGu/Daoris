@@ -302,6 +302,7 @@ public static class PersonDoors
         new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel") { Marks = OwnerMark.None("a message on the ask's channel, which names no quest") },
         // COMMS1k: the person's words on a line's own channel, a line on no ask held here.
         new("POST", "/api/channel/line", DoorClass.Person, "a message on a line's own channel") { Marks = OwnerMark.None("a message on a line's own channel, which names no quest") },
+        .. ChannelMemberRoutes.Doors,
         new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel") { Marks = OwnerMark.None("a read mark") },
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:accepted") },
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done") },

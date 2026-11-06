@@ -253,6 +253,12 @@ public static class PersonPresses
     public static InstanceRoute ChannelPost { get; } = Person("CHANNEL_POST");
 
     /// <summary>
+    /// <c>ask channel join &lt;ask&gt;</c> or <c>--line &lt;session&gt;</c> (CHANNELJOIN1b): an agent outside Daoris admitted to a channel as a
+    /// member of its own, on the person's Confirm; refused before any card from a process in an agents' job.
+    /// </summary>
+    public static InstanceRoute ChannelJoin { get; } = Person("CHANNEL_JOIN");
+
+    /// <summary>
     /// <c>place &lt;repository&gt;… --preset &lt;id&gt; … --apply [--accept …]</c> (AGENTSPLACE1b3): a place's plan applied, the configuration's changes and the
     /// acceptances chosen, and each adoption quest. The plan is the same ask's <c>PLACE_PLAN</c>, open, which the verb reads alone.
     /// </summary>
@@ -304,6 +310,7 @@ public static class PersonPresses
         ("opinion anyway <session>", OpinionAnyway),
         ("opinion myself <session>", OpinionMyself),
         ("ask channel <id> \"…\"", ChannelPost),
+        ("ask channel join <ask> | --line <session>", ChannelJoin),
         ("place <repository>… --preset <id> … --apply [--accept <repository>:<purpose>,…]", PlaceApply),
         ("plugins approve <id> <server>", PluginAction),
         ("plugins withdraw <id> <server>", PluginAction),
