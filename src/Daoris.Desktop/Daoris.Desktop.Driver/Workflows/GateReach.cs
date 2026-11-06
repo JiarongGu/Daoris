@@ -40,7 +40,7 @@ internal static class GateReach
     /// <summary>The paths changed from <paramref name="from"/> to <paramref name="commit"/> in <paramref name="checkout"/>, or null where git could not say.</summary>
     internal static async Task<IReadOnlyList<string>?> ChangedAsync(string checkout, string from, string commit, CancellationToken ct)
     {
-        var (code, names, _) = await WorkingTree.GitAsync(checkout, ["diff", "--name-only", "-z", "--no-renames", from, commit], ct).ConfigureAwait(false);
+        var (code, names, _) = await WorkingTree.GitAsync(checkout, ["--no-optional-locks", "diff", "--name-only", "-z", "--no-renames", from, commit], ct).ConfigureAwait(false);
         return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
