@@ -264,6 +264,64 @@ public sealed class RelayHostProcessTests : IDisposable
         Assert.False(Directory.Exists(copy), "a build none holds was kept: " + string.Join(", ", Directory.GetFileSystemEntries(Builds(home)).Select(Path.GetFileName)));
     }
 
+    /// <summary>
+    /// The host's own <c>drive --once</c> starts the <c>event-relay</c> plugin into its job: a relay already listening is found by the plugin, passes
+    /// the holder check by that job, and ends with its batch's closing line when the one tick is over and the plugin is stopped.
+    /// </summary>
+    [Fact]
+    public async Task Drive_once_starts_the_plugin_into_its_job_and_the_relay_takes_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var home = Path.Combine(_root, "home");
+        var where = await EndedAsync(Where(home));
+        Assert.Equal(0, where.Code);
+        var start = Regex.Match(Assert.Single(where.Out), "\"(?<copy>[^\"]+)\" events relay --once --home \"(?<home>[^\"]+)\"");
+        var plugins = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), "event-relay");
+        Directory.CreateDirectory(plugins);
+        foreach (var file in new[] { "plugin.json", "plugin.mjs" }) File.Copy(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "event-relay", file), Path.Combine(plugins, file));
+
+        var relay = Start(start.Groups["copy"].Value, ["events", "relay", "--once", "--home", start.Groups["home"].Value], new Dictionary<string, string?>());
+        var subscribers = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), PluginCatalog.DataFolder, "event-relay", "subscribers", $"{relay.Id}.json");
+        for (var tries = 0; !File.Exists(subscribers); tries++)
+        {
+            Assert.True(tries < 1500 && !relay.HasExited, "the relay wrote no subscriber file");
+            await Task.Delay(20);
+        }
+
+        var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        using var listener = new System.Net.HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+        var serving = Task.Run(async () =>
+        {
+            while (listener.IsListening)
+            {
+                System.Net.HttpListenerContext context;
+                try { context = await listener.GetContextAsync(); }
+                catch (Exception error) when (error is System.Net.HttpListenerException or ObjectDisposedException or InvalidOperationException) { return; }
+                var read = context.Request.HttpMethod == "GET" && context.Request.Url!.AbsolutePath is "/api/quests" or "/api/registry" or "/api/sessions";
+                var bytes = Encoding.UTF8.GetBytes(read ? "[]" : """{"error":"the stand-in answers only the tick's reads"}""");
+                context.Response.StatusCode = read ? 200 : 404;
+                context.Response.ContentType = "application/json";
+                await context.Response.OutputStream.WriteAsync(bytes);
+                context.Response.Close();
+            }
+        });
+
+        var drive = await EndedAsync(Start("dotnet", [DriverHostTests.HostDll(), "drive", "--once"],
+            new Dictionary<string, string?> { ["DAORIS_HOME"] = home, ["DAORIS_SERVICE_URL"] = $"http://127.0.0.1:{port}" }));
+        var ran = await EndedAsync(relay);
+        listener.Stop();
+        await serving;
+
+        Assert.True(drive.Code == 0, string.Join('\n', drive.Out.Concat(drive.Err)));
+        Assert.Equal(0, ran.Code);
+        Assert.StartsWith("Daoris: read up to [", ran.Out[^1], StringComparison.Ordinal);
+    }
+
     /// <summary>A plugin started through a version manager's shim: the shim is in the holder's agents' job and starts the plugin later, which the job holds too, so it is taken.</summary>
     [Fact]
     public async Task A_plugin_started_through_a_shim_inside_the_job_is_taken()
