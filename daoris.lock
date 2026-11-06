@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "e4bf7a5ad8ee7110cc83beeb7bd1640039220d193ba957db3b66349c77958919",
+  "canonDigest": "15f35ea726f468fec189f2736d749589b9424b6d80d66dcbf0bb6174a907751a",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -138,7 +138,7 @@
       "source": "packs/co-working/skills/co-working/SKILL.md",
       "target": "skills/co-working/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "6357d2393dfd99e625b860fe770a26f026753e8ad2ac258474c64a1a21ccf643"
+      "sha256": "e655d8a02a083f43fd4ebf6ace08f0215c624104c7cb659da680682b0a1825a0"
     },
     {
       "pack": "core",

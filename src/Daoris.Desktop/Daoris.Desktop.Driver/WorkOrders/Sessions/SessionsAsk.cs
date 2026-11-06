@@ -56,6 +56,12 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
     /// <summary>A piece's paths (<c>sessions partner … --paths</c>), each repository-relative as the person named it.</summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
 
+    /// <summary>A helper ask's <c>--after</c>: the answered ask it asks again after.</summary>
+    public string? After { get; init; }
+
+    /// <summary>A helper ask's <c>--to-me</c>: its answer is the person's until <c>sessions pass</c>.</summary>
+    public bool ToMe { get; init; }
+
     /// <summary>
     /// That the press runs under the person's standing confirmation: the pipe admitted it with no card. A stop's records gain
     /// <see cref="EndNoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering <c>running-here</c> where a

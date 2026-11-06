@@ -141,7 +141,7 @@ public sealed class MachineFactsTests
     [Fact]
     public async Task A_judge_cut_at_its_bound_is_said_once_as_late_and_never_as_an_error()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-facts-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-facts-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {

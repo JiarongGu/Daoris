@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 internal sealed class RefSnapshot
 {
     /// <summary>What <c>for-each-ref</c> prints of each ref, a space apart: no ref name holds a space.</summary>
-    internal const string Format = "%(refname) %(objectname) %(objecttype) %(upstream) %(upstream:short)";
+    internal const string Format = "%(refname) %(objectname) %(objecttype) %(upstream) %(upstream:short) %(tree)";
 
     private const string Heads = "refs/heads/";
     private const string Origin = "refs/remotes/origin/";
@@ -42,7 +42,7 @@ internal sealed class RefSnapshot
         (_read, _list) = (read, list);
 
     /// <summary>One ref as it was read.</summary>
-    internal sealed record Entry(string Name, string Object, string Type, string? Upstream, string? UpstreamShort);
+    internal sealed record Entry(string Name, string Object, string Type, string? Upstream, string? UpstreamShort, string? Tree = null);
 
     /// <summary>A read's refs by their full names, in git's order, and the same names blind to case.</summary>
     internal sealed class Refs(List<Entry> entries)
@@ -167,8 +167,8 @@ internal sealed class RefSnapshot
             var row = line.TrimEnd('\r');
             if (row.Trim().Length == 0) continue;
             var fields = row.Split(' ');
-            if (fields.Length != 5 || fields[0].Length == 0 || fields[1].Length == 0 || fields[2].Length == 0) return null;
-            entries.Add(new Entry(fields[0], fields[1], fields[2], Empty(fields[3]), Empty(fields[4])));
+            if (fields.Length is not (5 or 6) || fields[0].Length == 0 || fields[1].Length == 0 || fields[2].Length == 0) return null;
+            entries.Add(new Entry(fields[0], fields[1], fields[2], Empty(fields[3]), Empty(fields[4]), fields.Length == 6 ? Empty(fields[5]) : null));
         }
 
         return new Refs(entries);
@@ -282,6 +282,57 @@ internal sealed class RefSnapshot
         var (known, entry) = await LookAsync(Heads + branch, ct).ConfigureAwait(false);
         return known && entry is not null ? (true, entry.Upstream, entry.UpstreamShort) : (false, null, null);
     }
+
+    /// <summary>
+    /// The tree of the commit <paramref name="commit"/>, where a ref here points at exactly it, as <c>&lt;id&gt;^{tree}</c> answers; null
+    /// where none does (a branch moved on, or a commit no ref holds), and the caller asks git.
+    /// </summary>
+    internal async Task<string?> TreeOfAsync(string commit, CancellationToken ct)
+    {
+        if (await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return null;
+        return TreeIn(refs, commit);
+    }
+
+    /// <summary>
+    /// The tree of <paramref name="commit"/> from any listing this flow already holds, whichever folder it was read in: an id names its
+    /// tree in every repository, so a listing of the same repository from another tree of it answers as its own does. Nothing is
+    /// started; null where no held listing has a ref at exactly that commit.
+    /// </summary>
+    internal static string? TreeHeld(string commit)
+    {
+        foreach (var held in Held.Value ?? [])
+        {
+            Task<Refs?>? read;
+            lock (held._gate) read = held._refs;
+            if (read is not { IsCompletedSuccessfully: true, Result: { } refs }) continue;
+            if (TreeIn(refs, commit) is { } tree) return tree;
+        }
+
+        return GitReadOnce.TreeOf(commit);
+    }
+
+    /// <summary>
+    /// The listing a snapshot of this flow already read, for the repository <paramref name="folder"/> is a folder of: a tree of it and
+    /// its checkout list the same refs, so one start serves both (PERF1). Nothing is started; null where none is read.
+    /// </summary>
+    internal static Refs? ListedFor(string folder)
+    {
+        if (RefFiles.CommonDirOf(folder) is not { } common) return null;
+        foreach (var held in Held.Value ?? [])
+        {
+            if (held._root is not { } root || !RefFiles.SameDir(common, RefFiles.CommonDirOf(root))) continue;
+            Task<Refs?>? read;
+            lock (held._gate) read = held._refs;
+            if (read is { IsCompletedSuccessfully: true, Result: { } refs }) return refs;
+        }
+
+        return null;
+    }
+
+    /// <summary>The tree <paramref name="refs"/> read for the ref at exactly <paramref name="commit"/>; null where none is.</summary>
+    internal static string? TreeIn(Refs refs, string commit) =>
+        refs.Entries.FirstOrDefault(entry => entry.Type == "commit" && entry.Tree is not null
+            && string.Equals(entry.Object, commit, StringComparison.OrdinalIgnoreCase))?.Tree;
 
     /// <summary>The branches under <c>refs/heads/&lt;prefix&gt;</c> by their names under <c>refs/heads/</c>, in git's order; null where the read failed.</summary>
     internal async Task<IReadOnlyList<string>?> BranchesAsync(string prefix, CancellationToken ct)

@@ -76,7 +76,7 @@ public static class WorkBelief
     /// </summary>
     public static NodePort? Evidence(NodeDeclaration node, string invocation, string? revision, WorkEvidence? evidence) =>
         // A pull-request step's reference is the pull request's address, which the runtime writes on the landing (PullRequestStep).
-        PullRequestStep.PluginOf(node.Kind) is not null && PullRequestStep.IsAddress(evidence?.Url) ? new NodePort(node.Evidence ?? node.Kind, evidence!.Url!, revision, null)
+        PullRequestKind.PluginOf(node.Kind) is not null && PullRequestStep.IsAddress(evidence?.Url) ? new NodePort(node.Evidence ?? node.Kind, evidence!.Url!, revision, null)
         : evidence?.Ref is { } reference ? new NodePort(SchemaOf(reference) ?? node.Kind, reference, revision, null)
         : node.Evidence is null ? new NodePort(node.Kind, invocation, revision, null)
         : null;

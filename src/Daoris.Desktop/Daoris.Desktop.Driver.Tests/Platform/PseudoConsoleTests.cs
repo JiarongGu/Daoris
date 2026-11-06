@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class PseudoConsoleTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-pty-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-pty-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PseudoConsoleTests() => Directory.CreateDirectory(_folder);
 

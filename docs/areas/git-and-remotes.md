@@ -41,9 +41,10 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 | Go-aheads | `GitAsks.cs`, `GitDoorAsks.cs` | A door's `ask` as `run/git/asks/{id}.json`, its answer and its late grant; held only while Daoris runs |
 | `no-push` converted | `Transitional/Migration/GitPushStep.cs` | The home's migration: a switched-off `no-push` as the machine's Write `allow` and `no-publish` off |
 | The act engine | `ActRuns.cs`, `ActJournal.cs`, `ActReconciler.cs`, `ActSteps.cs`, `RefTransaction.cs` | Checkout lock, journal, steps in a named job, postconditions, recovery refs |
-| The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash; each with its terminal twin |
+| The person's acts | `GitFetchActs.cs`, `GitPushActs.cs`, `GitRefActs.cs`, `GitHistoryEdits.cs`, `StageActs.cs`, `ActCommits.cs`, `GitConflicts.cs`, `StashDrops.cs`, each `Git*Command.cs` | Fetch, push, refs, pick/revert/rebase, stage, commit, resolve, switch, stash (save, apply, drop); each with its terminal twin where one exists |
 | The push | `GitPushActs.cs`, `ActPushSteps.cs`, `GitPushCommand.cs`, `src/Daoris.Web/src/projects/git/PushRef.tsx` | One ref to origin under a grant the step writes and drops; `GIT_PUSH`, `GIT_PUSH_PLAN`, `git push`; *Push* and *Push tag* |
-| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; its record names the recovery ref the door kept at the commit |
+| Every delete | `JournaledDeletes.cs`, `ContentHolds.DeleteJudgedAsync` | A delete a door of Daoris's judged, or forced, as the journal's `ref.delete` act pressed by `daoris`, undone by `GIT_REF_UNDO`; where the door's rule keeps the commits, the recovery ref is made in the delete's own transaction, its record names it, and the Undo takes it back |
+| Every keep | `RecoveryKeeps.cs`, `RecoveryCensus.cs` | A recovery ref's one naming; a keep that deletes nothing as one `ref.keep` act; each ref a journal record names, dated from its act; the census of the refs no record names |
 | The deletes' list | `DeletedBranches.cs`, `GIT_DELETES`, `projects/git/DeletedRefs.tsx` | Every done `ref.delete` act of a repository from the journal alone, each with its Undo open or shut (undone, name stands again, commit gone), under the Branches tab in en and zh |
 | Reads | `GitReads*.cs`, `GitBranches*.cs`, `GitLaunch.cs`, `GitReadCache.cs` | The page's git reads through Tools' git, cached by commit id |
 | Line fetch, bring up to date | `TreeRefs.cs`, `TreeSync.cs` | `fetch origin <line>` past the doors and holds; ff-only, replay, delete what merged |
@@ -192,14 +193,19 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     held, the ref moved since shown, or the branch is `daoris/*`; a tag's Dangerous value is the door's to judge. It has no Undo; an end
     with no exit is unknown and never retried. A workflow's `push` step (G8) is the same act. (from D204, D241)
 37. Behind Setup's *Daoris may change this checkout's files* (`checkoutWrites`, off by default): stage by file, hunk or
-    line, commit, amend, resolve, switch and stash save or apply. (from D204)
+    line, commit, amend, resolve, switch and stash save, apply or drop (a drop of Daoris's own saves alone). (from D204)
 38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal; an act
     reached inside a flow that holds that lock alone already (a tidy, a removal) runs under it. A reconciler settles an open act;
     nothing is re-run. (from D204)
     Every branch delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE`, and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, `housekeeping_discard_branch`, a removal, a run's
     `tidy`) through `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`. The Branches tab lists them from the
-    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement and its own recovery ref, which the record names; only an opening undoing the branch it just made deletes one itself. A `tidy` (`TidyDoor`) judges nothing itself: the
+    journal alone (`GIT_DELETES`), each with its Undo. Each door keeps its judgement; the recovery ref its rule keeps is made in the
+    delete's own transaction, so a refused delete makes none, and a late checkout's put-back takes it back with the branch; a door that keeps
+    without deleting (a settled member, a tidied part, a detached tree, a missing landing) makes it in one `ref.keep` act. The record names it
+    and the retention dates it from that act. Only an opening undoing the branch it just made deletes one itself. Where git ended the transaction refusing, a ref
+    its list leaves out is gone only on `show-ref --exists`'s word (a broken one is unknown, never gone), and a branch standing at neither
+    the judged commit nor gone is said as the door says it: moved since it was judged, or unread. A `tidy` (`TidyDoor`) judges nothing itself: the
     `monitor` before it read the chain's pull request merged, and each part's delete rests on the recovery ref it kept the part's commits
     on. (from D204, D228, D245)
 39. Always refused: a hard reset, `clean`, any force, a remote delete, `push -u`, an act while a session runs there or a
@@ -234,6 +240,54 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     transaction, then the kept session goes on in its tree. It may lose again; Daoris never retries. (from D178)
 51. A take that reached the remote after the reopen stays a loss. The quest remote carries no git objects. (from D178)
 
+## Git's starts, counted
+
+Every git of Daoris's own reads starts through `GitRuns` and `GitLaunch`, which count it for a flow (`GitLaunch.Count`,
+`WorkingTree.Started`); a test counts a pass's starts at the process gate with the folder each ran in (`GitStartTally`). Measured on
+2026-11-06 on the count classes' fixtures, and held there as budgets. *Again* is the same command in the same folder asked again in the
+pass with no write between; *object* is what one held `git cat-file --batch` of the repository could answer instead (a name or an id
+read as its object), *by id* those naming an id alone.
+
+| View or landing | Starts | Again | Object (by id) | Held by |
+|---|---|---|---|---|
+| Branches (`GIT_BRANCHES`, one repository) | 3 | 0 | 1 (0) | `ViewGitCountTests` |
+| The checkout's branch (`CHECKOUT_BRANCH`) | 1 | 0 | 0 | `ViewGitCountTests` |
+| Changes (`GIT_CHANGES`), a file's hunks (`GIT_HUNKS`) | 5 each | 0 | 1 (0) each | `ViewGitCountTests` |
+| Graph, a file's history, blame (first open; kept by id after) | 1 each | 0 | 0 | `ViewGitCountTests` |
+| A commit, a compare (first open) | 2 each | 0 | 0 | `ViewGitCountTests` |
+| The commit, switch and stash plans | 8, 5, 7 | 0, 0, 0 | 1 (0), 1 (0), 1 (0) | `ViewGitCountTests` |
+| The deletes (`GIT_DELETES`, the journal holding none) | 0 | 0 | 0 | `ViewGitCountTests` |
+| Review, a tree ahead of its line, its second open | 17 | 0 | 0 | `ReviewGitCountTests` |
+| Review, a tree the line holds by content | 18 | 0 | 1 (0) | `ReviewGitCountTests` |
+| A landed session's review | 6 | 0 | 2 (1) | `ViewGitCountTests` |
+| The Accept offer of a tree of work | 8 | 0 | 0 | `OfferGitCountTests` |
+| The look's tidy, six trees (two) | 20 (12) | 1 (`worktree list`, the judgement's own) | 1 (0) | `TidyGitCountTests` |
+| A session's start, to its spawn | 15 | 0 | 3 (0) | `StartGitCountTests` |
+| A squash press's landing | 25 | 0 | 4 (1) | `LandGitCountTests` |
+| A merge press's landing | 39 | 3 (the line's commit) | 9 (0) | `LandGitCountTests` |
+
+The rows above are as the cuts of PERF1 left them (measured again on the same fixtures); the refs are listed once for a repository in the
+offer and Review, and a landing lists them twice (its judgement's, and its press's after the write). A test class's own git, each class alone with git's trace per process (`GIT_TRACE2_EVENT`) and the fixture's count
+(`DAORIS_TEST_GIT_SPAWNS`): `OfferGitCountTests` 43 starts (the fixture's 11), 3.7 s in git; `StartGitCountTests` 23, 1.8 s;
+`ViewGitCountTests` 125 (28), 7.1 s; `LandGitCountTests` 127 (7), 8.4 s; `TidyGitCountTests` 148 (19), 10.4 s; `ReviewGitCountTests` 180
+(15), 17.3 s. The other test classes that start git are not counted yet.
+
+A held reader per repository does not earn its place on these figures. A view asks at most three object questions a pass, one of them
+by id, and the Git page's reads ask none once an id's answer is kept. A landing and the tidy asked more, and the starts are cut without
+a process kept (PERF1): each branch's tree is the refs' one listing's (`%(tree)`, `RefSnapshot.TreeHeld`, a commit's tree being the
+same in every folder of the repository); a read-only flow lists a repository's refs once whichever of its folders asks
+(`GitReadOnce`, `RefFiles.CommonDirOf` telling two folders of one repository by their `.git` files); the offer reads a tree's paths,
+head and branch in one `status --porcelain=v2 --branch` (`TreeStatus`); Review asks no count of origin's copy of the line where the
+repository's files hold none (`RefFiles.Absent`: a loose or packed ref, or a reftable repository, is never called absent); a landed
+review asks the checkout's top once. The switch and stash plans (and the press that judges them) read head, branch, changed tracked paths and files in
+conflict in one `status --porcelain=v2 --branch -z` (`PlanStatus`), the stash plan hands the tip it read to the list instead of asking
+`refs/stash` again, and the commit plan reads the head's tree, parents and message in one `log` (`ActCommits.FactsAsync`). Left asked
+again: a landing's line commit (3), which the promotion reads before the gates (they can run long), under the checkout's lock before
+the move, and after it as the proof the move held, and its head, because another process can move either and a landing reads afresh
+before each act; the plans' top, the stash tip and the layout (each a read their press compares by); the tree's files and the status
+Review reads for its own diff. A held reader would still cost its lifetime, the repack hazard and the version
+floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
+
 ## Where a change goes
 
 - **How an act is carried or judged:** the doors (`GitDoors`, `GitRouting`, `GitWiring`), compiled into
@@ -255,7 +309,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
 under its grant on the SSH host, the same push refused without one, a tag refused by `deny` and passed by `allow`), `GitPushCommandTests`,
 `JournaledDeletesTests` (a judged and a forced delete journaled with their Undo, the one-way census), `PullRequestApiHostTests`, `GitHttpsTests`, `GitHttpsProcessTests` (an HTTPS identity's token on the TLS host with nothing beside git, the credential door's refusals), `GitIdentitiesTests`, `GitIdentityCommandTests`,
 `GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
-census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `GitRefActTests`, `GitHistoryEditTests`,
+census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `ViewGitCountTests` (each page read's git starts held to those measured), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
 `PullRequestPresetPluginTests`, `WorkflowSquashChainProcessTests` (land, push, pull-request, monitor and tidy against the stand-ins, a squash
 merge ending a two-part chain once with an Undo), `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
@@ -288,29 +342,38 @@ catalogues (`i18n:check`).
 
 - **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
   request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
-- **GITAUTH1b:** the doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`) run twice, with the runner's git and with the
-  MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/` and held to the list's
-  size and SHA-256); `GitHttpsProcessTests` still runs the runner's git alone, since which TLS backend the pinned MinGit trusts a
-  test certificate through is not measured, and MinGit ships no `git-http-backend`, so the HTTP host serves with the runner's.
+- **GITAUTH1b:** built. The doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`, `GitHttpsProcessTests`) run twice, with the
+  runner's git and with the MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/`
+  and held to the list's size and SHA-256; the `GitHttpsPinnedProcessTests` subclass). MinGit 2.56 carries both a Schannel and an
+  OpenSSL libcurl and its system file names none; the test certificate is trusted through OpenSSL (`http.sslBackend=openssl` with
+  `http.sslCAInfo`, `GitTlsHost.TrustedBy`), measured with all seven HTTPS facts passing. MinGit ships no `git-http-backend`, so the
+  HTTP host behind the TLS front serves with the runner's git.
 - **GITAUTH1c:** a key added on a real host and a real fetch (the steward's); the git setting's doors wait on Settings → Tools.
 - **GITAUTH1e:** built: Ask Daoris's sync card, for each host a fetch over SSH or HTTPS did not reach, offers *Add a git identity for
   host…*, which opens Settings → Git on its Add form with the host filled (`HelpSyncUnfetched.Host`, `StarterDoor.gitHost`). The
   browser sign-in, its `PhaseList` and its Cancel left with Git Credential Manager (D241). The card's and the screen's advice on
-  reaching an origin (`settings.sync.notFetched.ssh` and `.https`) still names a key its own ssh reads and a credential helper, from
-  before the identities.
+  reaching an origin (`settings.sync.notFetched.ssh` and `.https`) names a git identity for the host in Settings → Git, with an SSH
+  key or a token.
 - **GITAUTH1h:** the install, seen (the owner).
-- **GITAPP2:** Stash Drop stays deferred. The push's interruption (origin took the pack and the connection dropped before it said so:
+- **GITAPP2:** Stash Drop is built (`StashDrops.cs`, `StashDropSteps.cs`, `GIT_STASH_DROP`): it is offered only for a stash a done Save of
+  Daoris's own made, read from the Save step's journaled words (the commit saved; a message proves no ownership), by commit id, never
+  its place; the step finds the place as it runs and, where git names another commit it dropped, stores that one again and reports
+  not done (proved with a Save slipped in between the step's read and its git). It has no Undo: its answer and its record keep the commit
+  and `git stash store -m <message> <id>`, good until git clears unused objects. Its terminal twin is `daoris git stash drop <repository>
+  <commit> [--plan|--yes]` (`GitStashDropCommand`; `GIT_STASH_DROP` is a Person press with `said`, `person.route.GIT_STASH_DROP` its card's
+  words): the plan names the store-back command, `--yes` asks the window or runs the act itself, a session's terminal is refused. The push's interruption (origin took the pack and the connection dropped before it said so:
   unknown, never retried) and the person's `pre-push` hook refusing (not done, nothing sent) are proved against the stand-in SSH
   host (`GitPushActProcessTests`).
-- **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone. Left: the doors
-  still keep a recovery ref before they judge (`ContentHolds.KeepDiscardedAsync`), which `RecoveryRetention` dates from its reflog and
-  `RecoveryDropping` presses; both end, with their callers' own refs, when no ref under `refs/daoris/discarded/` stands without a journal
-  record naming it, and ONEWAY1af deletes them.
+- **ONEWAY1r:** a delete's record, its Undo and the page's list (`DeletedBranches`, `GIT_DELETES`) are the journal's alone, and every door's
+  recovery ref is kept through the journal's act and dated from it (`RecoveryKeeps`). Left: `RecoveryRetention`'s dating from a ref's reflog
+  and `RecoveryDropping`'s press stay for the refs under `refs/daoris/discarded/` no journal record names, which
+  `daoris work recovery drop --unheld --plan` counts (`RecoveryCensus`) and the Branches tab says under the deletes; once it reads zero on the
+  install, ONEWAY1af deletes both and the census (BL84).
 - **G9:** the pull-request plugins open and read through their services' REST APIs with `DAORIS_HOST_TOKEN` and run no git; the loop
   starts each one per place with that place's origin identity's token (D242). `gh` and `az` are no declared tool (`Tools.Declared`,
-  `resources.json`); left in the web: the tools page's fixtures, stories and tests, its two `why` words and the glossary line, and the
-  driver and modules tests that still name them as sample tools (the plugin tool checks and `fixtures/tools-text.json`).
+  `resources.json`), and no web fixture, story, test or sample plugin-tool message names either as a sample tool.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
 - **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).
-- **OPTIMIZE1a:** git's starts counted per view, then a held reader per repository.
+- **OPTIMIZE1a:** counted per view, landing and count class (*Git's starts, counted*); the held reader is not proposed. Left: the
+  cuts the figures name (PERF1's row), and the other test classes that start git counted beside a Process run.

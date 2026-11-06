@@ -29,7 +29,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         + $"Oct 3, 4pm ({Zone.Id})";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-limit-hold-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-limit-hold-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -113,7 +113,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var failed = Observation.Conclude(0, "Taken", turnFailed: Refusal);
 
         var (conclusion, limit) = driver.AccountLimited(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null), Refusal, "s1", new AcpUsage(370_104, 1_000_000));
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null), Refusal, "s1", new AcpUsage(370_104, 1_000_000));
 
         Assert.True(limit);
         var cooling = roster.CoolingOf("acp-stub", null);
@@ -148,7 +148,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var failed = Observation.Conclude(0, "Taken", turnFailed: said);
 
         var (conclusion, limit) = Driver(service, roster).AccountLimited(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null), said, "s1", used: null);
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null), said, "s1", used: null);
 
         Assert.True(limit);
         Assert.DoesNotContain("hit your", conclusion.Note);
@@ -195,7 +195,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var roster = Roster();
 
         var (conclusion, limit) = Driver(service, roster).AccountLimited(
-            new SessionConclusion(state, "it ended."), ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null),
+            new SessionConclusion(state, "it ended."), ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null),
             Refusal, "s1", used: null);
 
         Assert.False(limit);
@@ -211,7 +211,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var failed = new SessionConclusion("failed", "the agent's turn failed: Internal error: Overloaded");
 
         var (conclusion, limit) = Driver(service, roster).AccountLimited(
-            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null),
+            failed, ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null),
             "the ACP agent refused the call: Internal error: Overloaded", "s1", used: null);
 
         Assert.False(limit);
@@ -231,7 +231,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var driver = new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: Roster(), events: events);
 
         driver.AccountLimited(
-            new SessionConclusion("failed", "refused."), ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null),
+            new SessionConclusion("failed", "refused."), ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null),
             Refusal, "s1", used: null);
 
         Assert.Equal(3L, Assert.Single(lines).Data.Single(field => field.Key == "turn").Value);
@@ -251,7 +251,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var driver = new Daoris.Driver.Driver(service, Config.WithCoolOff(90), ProviderRegistry.Built(), _home, harnesses: roster);
 
         var (_, limit) = driver.AccountLimited(
-            new SessionConclusion("failed", "refused."), ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null),
+            new SessionConclusion("failed", "refused."), ProviderRegistry.Built().Door("acp-stub"), new HarnessSelection(null),
             NoTime, "s1", used: null);
 
         Assert.True(limit);
@@ -268,7 +268,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var roster = Roster();
         using var runner = new ChatRunner(service, ProviderRegistry.Built(), _home, new SessionProcesses(), harnesses: roster);
 
-        Assert.NotNull(runner.Limited("c1", new ChatAgent(ProviderRegistry.Built().Resolve("acp-stub")), profile: null, NoTime, TimeSpan.FromMinutes(25)));
+        Assert.NotNull(runner.Limited("c1", new ChatAgent(ProviderRegistry.Built(), ProviderRegistry.Built().Door("acp-stub")), profile: null, NoTime, TimeSpan.FromMinutes(25)));
 
         Assert.Equal(Seen.AddMinutes(25), roster.CoolingOf("acp-stub", null)!.Until);
     }
@@ -283,7 +283,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         using var runner = new ChatRunner(service, ProviderRegistry.Built(), _home, new SessionProcesses(), harnesses: roster, events: events);
-        var acp = new ChatAgent(ProviderRegistry.Built().Resolve("acp-stub"));
+        var acp = new ChatAgent(ProviderRegistry.Built(), ProviderRegistry.Built().Door("acp-stub"));
 
         var said = runner.Limited("c1", acp, profile: null, Refusal);
 
@@ -313,7 +313,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         using var service = _ledger.Client();
         using var runner = new ChatRunner(service, ProviderRegistry.Built(), _home, new SessionProcesses(), harnesses: Roster());
 
-        var said = runner.Limited("c1", new ChatAgent(ProviderRegistry.Built().Resolve("acp-stub")), "account-1", Refusal)!;
+        var said = runner.Limited("c1", new ChatAgent(ProviderRegistry.Built(), ProviderRegistry.Built().Door("acp-stub")), "account-1", Refusal)!;
 
         NoteAssert.Holds(said);
         var line = Assert.Single(said.Parts);

@@ -211,6 +211,8 @@ export function SessionRow({
     calling ? callLine(t, calling) : null,
     heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
     quiet ? t('work.rail.quiet', { time: elapsed(quiet) }) : null,
+    // SESSWATCH1b: Daoris's one word to it was kept; said once beside the quiet it speaks of.
+    quiet && pushed?.quietTold ? t('work.rail.quietTold') : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'

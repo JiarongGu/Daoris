@@ -30,15 +30,22 @@ internal static class ParityObserver
                 seen.Add(ParityChannel.Windows, "windows", ("windows", windows.Windows.GetRawText()));
                 break;
             case WireReading.StreamOpened or WireReading.StreamSaid or WireReading.StreamEnded:
-                seen.Add(ParityChannel.Streams, reading.GetType().Name, ("reading", JsonSerializer.Serialize<object>(reading)));
+                seen.Add(ParityChannel.Streams, reading.GetType().Name, Whole(reading));
                 break;
             case WireReading.Failed:
                 break;
             default:
-                seen.Add(ParityChannel.Events, reading.GetType().Name, ("reading", JsonSerializer.Serialize<object>(reading)));
+                seen.Add(ParityChannel.Events, reading.GetType().Name, Whole(reading));
                 break;
         }
     }
+
+    /// <summary>
+    /// A reading whole, its run's stamp with it, but for its process: the lineage token each process is issued is a generated id, compared by
+    /// first appearance, where the session, the generation and the place in the run's order are compared exactly.
+    /// </summary>
+    private static (string Name, string? Value)[] Whole(WireReading reading) =>
+        [("reading", JsonSerializer.Serialize<object>(reading with { Process = null })), (ParityProjection.Process, reading.Process)];
 
     /// <summary>The transcript's lines, in order.</summary>
     public static void Transcript(ParityObservation seen, string file)
@@ -52,7 +59,8 @@ internal static class ParityObserver
         foreach (var line in end.Ending.Lines) seen.Add(ParityChannel.HarnessWords, "word", ("text", line));
         seen.Add(
             ParityChannel.End, "end", ("exit", end.Exit?.ToString()), ("named", end.Named.ToString()), ("failed", end.Ending.Failed.ToString()),
-            ("stopped", stopped.ToString()));
+            ("stopped", stopped.ToString()),
+            ("modelRefused", end.Ending.ModelRefused.ToString()), ("usage", end.Usage?.ToString()));
     }
 
     /// <summary>The failure as <see cref="AgentError"/> reads it, with the delivery the path read for the turn's words.</summary>
@@ -89,6 +97,8 @@ internal static class ParityObserver
             fields.Add((name, value));
         }
 
+        // The models a turn's tokens were spent on are carried in memory for the usage history, so the record's own spelling leaves them out.
+        if (e.Models is { } models) fields.Add(("models", JsonSerializer.Serialize(models)));
         return [.. fields];
     }
 }

@@ -23,12 +23,13 @@ namespace Daoris.Driver;
 /// <para><b>A session's end is theirs.</b> Nothing the session started outlives it (ORPHAN1's job
 /// object), so whatever is still open when it ends is ended with it, and says so.</para>
 ///
-/// <para><b>The part's lineage</b> (COWORKVIEW1a) is told each child's announcement and the end its wire said, never the end a
+/// <para><b>Each child is a reading</b> (COWORKVIEW1a, AGENTPROVIDER1l): its announcement one <see cref="WireReading.ChildSeen"/> and the
+/// end its wire said one <see cref="WireReading.ChildEnded"/>, in the wire's own words, which the part's lineage keeps; never the end a
 /// session's close gives it: that is its process's own <c>end</c> line.</para>
 /// </remarks>
 internal sealed class AcpStreams(
     ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null,
-    ILineageWriter? lineage = null)
+    IReadingSink? children = null)
 {
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says
@@ -173,11 +174,12 @@ internal sealed class AcpStreams(
             _children[id] = new Child(id, streamId, name, onRoot, new AcpConsole(text => streams.Line(streamId, text), quiet));
         }
 
-        lineage?.Spawned(new LineageAnnouncement(
-            id, LineageLabels.Name(Json.Text(update, "name")), LineageLabels.Task(Json.Text(update, "task")))
+        children?.Read(new WireReading.ChildSeen(id, ChildSignal.Announced)
         {
             Parent = parent,
-            ByRoot = onRoot,
+            Depth = onRoot ? 1 : null,
+            Name = Json.Text(update, "name"),
+            Task = Json.Text(update, "task"),
         });
         streams.Open(new SessionStream(streamId, SessionStreamKind.Subagent, name));
         Say($"→ subagent: {AcpRender.OneLine(name)}");
@@ -216,7 +218,7 @@ internal sealed class AcpStreams(
         }
 
         // The wire's own word, or none: never the console's default.
-        if (tell) lineage?.Ended(id, said);
+        if (tell) children?.Read(new WireReading.ChildEnded(id, ChildSignal.Announced, said));
         if (!open) return true;
 
         child.Console.End();

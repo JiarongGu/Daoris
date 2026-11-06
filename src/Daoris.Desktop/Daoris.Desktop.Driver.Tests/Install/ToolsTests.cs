@@ -34,7 +34,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class ToolsTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-tools-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-tools-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>The placeholder a row writes where a whole path goes; each side spells its own.</summary>
     private const string Whole = "WHOLE";

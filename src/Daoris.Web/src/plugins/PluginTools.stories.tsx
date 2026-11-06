@@ -4,24 +4,24 @@ import type { ToolShown } from './catalog';
 import { PluginTools } from './PluginTools';
 import { InTheme } from './storyIcons';
 
-// A plugin's tools on its page (ADOSIGNIN1, D150 point 7), the Azure DevOps pull-request plugin's `az`: as its manifest says it
+// A plugin's tools on its page (ADOSIGNIN1, D150 point 7), a plugin's `ship` command line: as its manifest says it
 // before anyone has asked, after the person's Check with two unmet checks, a tool not found, a console open, and a press the
 // driver turned down; at the page's width (80rem), a window's main area (39rem) and the 400 px floor (25rem), in 中文 and in dark.
 
-const AZ: ToolShown = {
-  id: 'az', name: 'Azure CLI', for: 'Opens the pull request, and reads its status before pushing to it again.', versions: '>=2.0.79',
-  install: 'winget install -e --id Microsoft.AzureCLI',
+const SHIP: ToolShown = {
+  id: 'ship', name: 'Ship CLI', for: 'Opens the release, and reads its status before shipping to it again.', versions: '>=2.0.79',
+  install: 'winget install -e --id Ship.Cli',
   checks: [
-    { says: 'Its devops extension is added', fix: 'az extension add --name azure-devops', signIn: false, press: true },
-    { says: 'Signed in', fix: 'az login', signIn: true, press: true },
+    { says: 'Its deploy plugin is added', fix: 'ship plugin add deploy', signIn: false, press: true },
+    { says: 'Signed in', fix: 'ship login', signIn: true, press: true },
   ],
 };
 
 const UNMET: ToolShown = {
-  ...AZ, found: true, ok: true, version: '2.70.0', sentence: 'Azure CLI 2.70.0, the system\'s, in its range (2.0.79 or newer).',
+  ...SHIP, found: true, ok: true, version: '2.70.0', sentence: 'Ship CLI 2.70.0, the system\'s, in its range (2.0.79 or newer).',
   checks: [
-    { ...AZ.checks[0]!, ready: false, sentence: 'not ready: Its devops extension is added.' },
-    { ...AZ.checks[1]!, ready: false, sentence: 'not ready: Signed in.' },
+    { ...SHIP.checks[0]!, ready: false, sentence: 'not ready: Its deploy plugin is added.' },
+    { ...SHIP.checks[1]!, ready: false, sentence: 'not ready: Signed in.' },
   ],
 };
 
@@ -30,7 +30,7 @@ const nothing = () => {};
 const meta: Meta<typeof PluginTools> = {
   title: 'Plugins/PluginTools',
   component: PluginTools,
-  args: { plugin: 'azure-devops-pull-request', tools: [AZ], onCheck: nothing, onFix: nothing },
+  args: { plugin: 'azure-devops-pull-request', tools: [SHIP], onCheck: nothing, onFix: nothing },
   decorators: [(Story) => <div className="w-[39rem] max-w-full border border-line bg-page p-4"><Story /></div>],
 };
 export default meta;
@@ -45,7 +45,7 @@ const light: Decorator = (Story) => <InTheme theme="light"><Story /></InTheme>;
 /** As the manifest says it: nothing has been asked of the machine, so there is only *Check*, and no press. */
 export const Declared: Story = { decorators: [light] };
 
-/** Found, with the devops extension and the sign-in both unmet: *Set up* and *Sign in*, each naming the command it runs. */
+/** Found, with the deploy plugin and the sign-in both unmet: *Set up* and *Sign in*, each naming the command it runs. */
 export const Unmet: Story = { args: { tools: [UNMET] }, decorators: [light] };
 
 /** The same at the page's width, in light. */
@@ -72,14 +72,14 @@ export const UnmetFloorChinese: Story = { args: { tools: [UNMET] }, decorators: 
 /** The same at the 400 px floor, in dark. */
 export const UnmetFloorDark: Story = { args: { tools: [UNMET] }, decorators: [floor, dark] };
 
-/** Ready: the devops extension added and signed in, so no press; the standing is what the checks said. */
+/** Ready: the deploy plugin added and signed in, so no press; the standing is what the checks said. */
 export const Ready: Story = {
   args: {
     tools: [{
       ...UNMET,
       checks: [
-        { ...AZ.checks[0]!, ready: true, sentence: 'ready: Its devops extension is added.' },
-        { ...AZ.checks[1]!, ready: true, sentence: 'ready: Signed in.' },
+        { ...SHIP.checks[0]!, ready: true, sentence: 'ready: Its deploy plugin is added.' },
+        { ...SHIP.checks[1]!, ready: true, sentence: 'ready: Signed in.' },
       ],
     }],
   },
@@ -88,22 +88,22 @@ export const Ready: Story = {
 
 /** Not found: the plugin's own words for getting it, and no press, since a fix would have no tool to run. */
 export const NotFound: Story = {
-  args: { tools: [{ ...AZ, found: false, ok: false, sentence: '`az` is not on this machine\'s PATH.' }] },
+  args: { tools: [{ ...SHIP, found: false, ok: false, sentence: '`ship` is not on this machine\'s PATH.' }] },
   decorators: [light],
 };
 
 /** Not found, and the plugin names no way to get it. */
 export const NotFoundNoHint: Story = {
-  args: { tools: [{ ...AZ, install: null, found: false, ok: false }] },
+  args: { tools: [{ ...SHIP, install: null, found: false, ok: false }] },
   decorators: [floor, dark],
 };
 
 /** A console is open for the sign-in: every press waits, and the page says where the person acts. */
-export const ConsoleOpen: Story = { args: { tools: [UNMET], fixing: { tool: 'az', check: 2 } }, decorators: [light] };
+export const ConsoleOpen: Story = { args: { tools: [UNMET], fixing: { tool: 'ship', check: 2 } }, decorators: [light] };
 
 /** The same at the 400 px floor, in 中文 and in dark. */
 export const ConsoleOpenFloorChineseDark: Story = {
-  args: { tools: [UNMET], fixing: { tool: 'az', check: 2 } },
+  args: { tools: [UNMET], fixing: { tool: 'ship', check: 2 } },
   decorators: [floor, chinese, dark],
 };
 
@@ -128,7 +128,7 @@ export const FixNotDeclared: Story = {
 export const PressRefused: Story = {
   args: {
     tools: [UNMET],
-    refused: { tool: 'az', check: 2, why: 'not_found', message: '`az` is not on this machine\'s PATH.' },
+    refused: { tool: 'ship', check: 2, why: 'not_found', message: '`ship` is not on this machine\'s PATH.' },
   },
   decorators: [light],
 };

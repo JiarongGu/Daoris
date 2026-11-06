@@ -4,8 +4,9 @@ namespace Daoris.Driver;
 internal static class SessionsReading
 {
     /// <summary>The ask a helper's or a partner's verb read of the words, which those verbs hand on as the facet they read.</summary>
-    private static SessionsAsk MadeAsk(string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths) =>
-        new(verb) { Ids = ids, Text = text, Agent = agent, Paths = paths };
+    private static SessionsAsk MadeAsk(
+        string verb, IReadOnlyList<string> ids, string? text, string? agent, IReadOnlyList<string> paths, string? after, bool toMe) =>
+        new(verb) { Ids = ids, Text = text, Agent = agent, Paths = paths, After = after, ToMe = toMe };
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     internal static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -87,7 +88,7 @@ internal static class SessionsReading
                 problem = "`hand-over` takes one session's id, with `--agent <adapter>` to name the agent and, where one is wanted, `--account <name>`; "
                     + "or `--approve` or `--decline` for its agent's own ask to hand it over.";
                 return null;
-            case ["helper", ..]:
+            case ["helper" or "pass", ..]:
                 return SessionsHelperCommand.Read(args, out problem, MadeAsk);
             case ["supervise", ..]:
                 return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });

@@ -277,6 +277,15 @@ internal static class ActSteps
                 if (code != 0) return null;
                 var stands = listed.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(row => row.TrimEnd('\r').Split('\t'))
                     .Where(parts => parts.Length == 2).ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal);
+                // The list leaves a broken ref out, so where git did not make the transaction a ref it leaves out is gone only on git's own word.
+                if (step.ExitCode is not 0)
+                {
+                    foreach (var move in moves.Where(move => !stands.ContainsKey(move.Ref)))
+                    {
+                        if (!(await ContentHolds.MissingAsync(root, move.Ref, ct).ConfigureAwait(false)).Missing) return ActOutcomes.Unknown;
+                    }
+                }
+
                 return Whole(moves.Select(move => stands.GetValueOrDefault(move.Ref) is var now && now == move.After ? ActOutcomes.Done
                     : now == move.Before ? ActOutcomes.NotDone : ActOutcomes.Unknown));
             }

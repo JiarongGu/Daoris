@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HarnessRunTests
 {
-    private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);
+    private static readonly TestAgent Node = new(Binary: ["node"], VersionArguments: ["--version"]);
 
     private static Task Until(Func<bool> condition) => Poll.Until(condition, within: Poll.Patience);
 
@@ -81,7 +81,7 @@ public sealed class HarnessRunTests
     public async Task A_bare_command_that_is_a_windows_shim_starts()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var folder = Path.Combine(Path.GetTempPath(), "daoris-shim-" + Guid.NewGuid().ToString("N")[..8]);
+        var folder = Path.Combine(TestHomes.Root, "daoris-shim-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "rev3-shim.cmd"), "@echo shim %*\r\n");
         var saved = Environment.GetEnvironmentVariable("PATH");

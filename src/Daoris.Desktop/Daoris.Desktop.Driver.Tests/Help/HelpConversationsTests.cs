@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text;
 using System.Text.Json;
 using Daoris.Driver;
@@ -12,7 +13,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpConversationsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-history-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-history-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Monday = new(2026, 10, 5, 9, 0, 0, TimeSpan.Zero);
 

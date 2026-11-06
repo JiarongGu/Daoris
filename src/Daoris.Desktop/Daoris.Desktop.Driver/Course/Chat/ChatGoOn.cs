@@ -341,10 +341,10 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     /// </summary>
     internal ContinueReason? CannotGoOnWithFindings(PriorSession record)
     {
-        ISessionAdapter? adapter = null;
+        AgentDoor? adapter = null;
         try
         {
-            if (record.Adapter is { Length: > 0 } ranOn) adapter = _context.Harnesses.Adapters.Resolve(ranOn);
+            if (record.Adapter is { Length: > 0 } ranOn) adapter = _context.Harnesses.Adapters.Door(ranOn);
         }
         catch (DriverException)
         {
@@ -354,7 +354,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
         if (adapter is null) return ContinueWhy.Of(ContinueWhy.Refused);
         // Judged with the findings counted as the word that will wait, so an ended record with nothing waiting yet is not refused for it.
         var waiting = record with { Said = [.. record.Said ?? [], new SaidWordView(null, "", DateTimeOffset.UtcNow, [], Reopens: true) { By = "findings" }] };
-        return Continuations.Judge(waiting, adapter.Name, adapter.Resumes, record.Profile, _context.Conversations.Read(record.Session));
+        return Continuations.Judge(waiting, adapter.Id.Value, adapter.Can.Resumes, record.Profile, _context.Conversations.Read(record.Session));
     }
 
     /// <summary>
@@ -514,10 +514,10 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
             return null;
         }
 
-        ISessionAdapter adapter;
+        AgentDoor adapter;
         try
         {
-            adapter = _context.Harnesses.Adapters.Resolve(ranOn);
+            adapter = _context.Harnesses.Adapters.Door(ranOn);
         }
         catch (DriverException)
         {
@@ -526,7 +526,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
 
         var registry = await _context.Service.RegistryAsync(ct).ConfigureAwait(false);
         var known = registry.FirstOrDefault(r => string.Equals(r.Repository, record.Repository, StringComparison.OrdinalIgnoreCase));
-        return known is null ? null : await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
+        return known is null ? null : await SwitchableAsync(record, adapter.Id.Value, config, known.Workspace, ct).ConfigureAwait(false);
     }
 
     private Task<ChatStart> GoingOnAsync(

@@ -122,7 +122,9 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
             while (await process.StandardOutput.ReadLineAsync(CancellationToken.None).ConfigureAwait(false) is { } line)
             {
                 seat.Heard();
-                if (!NativeFrame.Of(line).IsObject) seat.Outside(line);
+                var frame = NativeFrame.Of(line);
+                seat.Framed(frame);
+                if (!frame.IsObject) seat.Outside(line);
                 yield return line;
             }
 
@@ -150,7 +152,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
     {
         // Not the tools' environment (TOOLS5): the start's environment is the one its shell composed before the layer's door was registered
         // (the agent-lyntai design §5.5), the tools' among it, handed whole in the seat.
-        var info = new ProcessStartInfo(command)
+        var info = new ProcessStartInfo(seat.Program?.File ?? command)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -161,6 +163,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        foreach (var arg in (IEnumerable<string>?)seat.Program?.Head ?? []) info.ArgumentList.Add(arg);
         foreach (var arg in args) info.ArgumentList.Add(arg);
         if (workingDirectory is { Length: > 0 }) info.WorkingDirectory = workingDirectory;
         Apply(info, seat.Environment);
@@ -218,6 +221,8 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
             {
                 lock (_gate) _written.Add(stdin);
                 await process.StandardInput.WriteAsync(stdin.AsMemory(), ct).ConfigureAwait(false);
+                await process.StandardInput.FlushAsync(ct).ConfigureAwait(false);
+                seat.Wrote();
             }
 
             process.StandardInput.Close();
@@ -256,7 +261,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
     {
         try
         {
-            if (process is { HasExited: false }) process.Kill(entireProcessTree: true);
+            if (process is { HasExited: false }) OwnedProcesses.End(process);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
         {

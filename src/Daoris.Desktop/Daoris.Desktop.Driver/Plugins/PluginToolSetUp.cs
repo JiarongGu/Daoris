@@ -151,7 +151,7 @@ public static class PluginToolSetUp
         try
         {
             // Through the start gate (PROCSTART2): a plugin tool's set-up is a press, so a person's start (PARALLEL1d).
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false);
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false);
         }
         catch (Win32Exception)
         {

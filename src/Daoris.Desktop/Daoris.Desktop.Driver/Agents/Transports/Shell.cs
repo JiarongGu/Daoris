@@ -46,7 +46,7 @@ internal static class Shell
     /// applied in this one place: a door that forgot one would spawn the wrong binary and record the pinned version beside it.
     /// </remarks>
     public static void Equip(
-        ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null,
+        ProcessStartInfo info, AccountAgent toolchain, string? profileHome, string? binary = null,
         Action<ProcessStartInfo>? seam = null, IReadOnlyDictionary<string, string>? account = null)
     {
         // What the account itself carries — an API key in the tool's own variable (AGT3), so no spawn of a key account goes out without it.
@@ -59,12 +59,12 @@ internal static class Shell
 
             // 🔴 And the version it was pinned at (AGT2): a pinned Claude Code reported its own auto-updates enabled, and would have moved
             // itself under the pin.
-            foreach (var (name, value) in toolchain.PinnedEnvironment ?? new Dictionary<string, string>()) info.Environment[name] = value;
+            foreach (var (name, value) in toolchain.Program.PinnedEnvironment ?? new Dictionary<string, string>()) info.Environment[name] = value;
         }
 
         // An agent npm installed starts as the node and script its `.cmd` shim would run, so no `cmd` stands before it and its arguments
         // are never read again by one (LAUNCHCHAIN1).
-        PackageStarts.Direct(info, toolchain.Package);
+        PackageStarts.Direct(info, toolchain.Program.Package);
 
         // 🔴 USE1f: what Windows can START, on the PATH the tools put first. A bare name from PATH starts only as an `.exe`, so an agent npm
         // installed globally (a `.cmd` shim) probed absent and every start on it was held, though the CLI found it.
@@ -76,7 +76,7 @@ internal static class Shell
 
         if (profileHome is null) return;
 
-        if (toolchain.ProfileVariable is not { Length: > 0 } variable)
+        if (toolchain.Home.Variable is not { Length: > 0 } variable)
         {
             throw new DriverException(
                 "that agent has no configuration-home variable, so Daoris cannot run it as a named "

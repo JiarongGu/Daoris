@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class CodeMapPromptTests : IDisposable
 {
     private readonly string _tree = Path.Combine(
-        Path.GetTempPath(), "daoris-code-map-prompt-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-code-map-prompt-" + Guid.NewGuid().ToString("N")[..8]);
 
     public CodeMapPromptTests() => Directory.CreateDirectory(_tree);
 

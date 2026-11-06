@@ -32,7 +32,10 @@ public sealed class DeclaredDoorsTests : IDisposable
         Assert.Equal("edits", door.Postures.Ordinary);
         Assert.Null(door.Postures.Full);
         Assert.True(door.Abilities.Interactive.Required);
-        Assert.False(door.Abilities.Resumes.IsKnown);
+        // The declaration has no resume: the door's is the protocol transport's, eligibility to negotiate at the open.
+        Assert.True(door.Abilities.Resumes.Required);
+        Assert.Equal(Eligibility.Applies, door.Abilities.Resumes.Applies);
+        Assert.False(door.Abilities.TakesSettings.Required);
         Assert.False(door.Dialect.IsKnown);
         Assert.Equal(LentPart.None, door.Lent);
         Assert.Equal(new DoorTablesPart(null, null), door.Tables);
@@ -59,14 +62,14 @@ public sealed class DeclaredDoorsTests : IDisposable
             """);
 
         var set = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Reserved));
-        var abilities = set.Resolve("named-door").Abilities();
+        var abilities = set.Door("named-door").Can;
 
         Assert.Equal("named", set.DeclaredBy("named-door"));
         Assert.True(abilities.Interactive);
         Assert.False(abilities.TakesSettings);
-        Assert.Null(set.Resolve("named-door").RuleLanguage());
+        Assert.Null(set.RuleLanguage(set.Door("named-door")));
         Assert.False(set.Door("named-door").Dialect.IsKnown);
-        Assert.Null(set.Resolve("named-door").Toolchain!.Limits);
+        Assert.Null(set.AgentNamed("named-door")!.Tables.Limits);
     }
 
     [Fact]
@@ -112,16 +115,17 @@ public sealed class DeclaredDoorsTests : IDisposable
     [Fact]
     public void A_declared_door_starts_its_command_on_an_open_stdin_and_holds_a_conversation()
     {
-        var adapter = With(Door("acme-door")).Resolve("acme-door");
+        var registry = With(Door("acme-door"));
+        var adapter = registry.Door("acme-door");
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
 
-        var start = adapter.Prepare(target, command: null);
-        var chat = adapter.PrepareChat(SpawnRequests.Chat("engine", _home, "http://localhost", null));
+        var start = registry.Start(adapter, target, command: null);
+        var chat = registry.Chat(adapter, SpawnRequests.Chat("engine", _home, "http://localhost", null));
 
         Assert.Equal("acme-agent", Path.GetFileNameWithoutExtension(start.FileName));
         Assert.True(start.RedirectStandardInput);
         Assert.Equal(Transport.Protocol, adapter.Transport);
-        Assert.True(adapter.Interactive);
+        Assert.True(adapter.Can.Interactive);
         Assert.NotNull(chat);
     }
 

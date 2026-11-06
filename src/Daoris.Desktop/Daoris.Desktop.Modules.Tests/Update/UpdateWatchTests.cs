@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -10,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class UpdateWatchTests : IDisposable
 {
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-update-watch-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-update-watch-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Source _source = new();
 

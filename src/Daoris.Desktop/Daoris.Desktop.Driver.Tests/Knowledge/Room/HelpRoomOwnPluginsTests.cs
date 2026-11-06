@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -34,7 +35,7 @@ public sealed class HelpRoomOwnPluginsTests
     [Fact]
     public void The_offers_the_room_lists_are_the_sound_ones_not_installed()
     {
-        var root = Path.Combine(Path.GetTempPath(), "daoris-help-offers-" + Guid.NewGuid().ToString("N")[..8]);
+        var root = Path.Combine(TestHomes.Root, "daoris-help-offers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var home = Path.Combine(root, "data");

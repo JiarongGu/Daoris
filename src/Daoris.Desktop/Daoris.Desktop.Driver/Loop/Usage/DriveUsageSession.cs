@@ -40,9 +40,14 @@ internal static class DriveUsageSession
           session hand-over <id> --approve|--decline
               your yes or no to a session's agent's own ask to hand it over that waits on you (the `handOver` rule's
               `ask`), as its page takes it: a yes hands it to the agent named at the driver's next look; a no says so.
-          session helper <id> "<question>" [--agent <name>]
+          session helper <id> "<question>" [--agent <name>] [--after <ask>] [--to-me]
               ask another agent, read-only, to answer one question about a session's work (D163): the driver takes
               it at its next look, and the answer comes back to that session as its next turn, marked as the helper's.
+              --after <ask> asks again after an answered ask, handing the helper that ask and its answer quoted;
+              --to-me keeps the answer for you, reaching the session only when you pass it.
+          session pass <ask>
+              a helper's answer kept for you (--to-me) handed to the session that asked, as the helper's word with
+              yours beside it, at the driver's next look.
           session helper --approve|--decline <ask>
               your yes or no to an agent's ask for a helper that waits on you (the `helpers` rule's `ask`), as its
               session's page takes it: a yes starts it at the driver's next look; a no refuses it and says so.

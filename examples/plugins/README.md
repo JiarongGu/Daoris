@@ -9,3 +9,4 @@ Tracked plugins a person can read, copy and install. Each folder is a plugin wit
 | [browser](browser/README.md), [in-app-browser](in-app-browser/README.md) | a browser connection for sessions |
 | [local-preview](local-preview/README.md) | one performed step with a temporary resource |
 | [local-release](local-release/README.md) | publish and release as performed steps: find, release, publish |
+| [event-relay](event-relay/README.md) | the work cycle's events passed to the relays on this machine, at `work/event` |

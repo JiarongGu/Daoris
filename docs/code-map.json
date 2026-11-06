@@ -52,6 +52,11 @@
       "summary": "the shell modules' tests"
     },
     {
+      "id": "Daoris.Desktop.OwnerStandIn",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn",
+      "summary": ""
+    },
+    {
       "id": "Daoris.Desktop.PieceStart",
       "path": "src/Daoris.Desktop/Daoris.Desktop.PieceStart",
       "summary": "Daoris's agents' launcher: joins this Daoris's agents' job and any piece's, then starts the harness inside them"
@@ -166,6 +171,11 @@
     {
       "from": "Daoris.Desktop.Driver.Tests",
       "to": "Daoris.Desktop.Launcher",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.OwnerStandIn",
       "kind": "project"
     },
     {

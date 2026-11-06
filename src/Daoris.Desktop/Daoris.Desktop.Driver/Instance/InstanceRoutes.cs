@@ -168,6 +168,9 @@ public static class PersonPresses
     /// <summary><c>sessions helper --decline &lt;ask&gt;</c>: the no to an agent's ask of a helper.</summary>
     public static InstanceRoute SessionHelperDecline { get; } = Person("SESSION_HELPER_DECLINE");
 
+    /// <summary><c>sessions pass &lt;ask&gt;</c>: a helper's answer kept for the person, passed to the session that asked.</summary>
+    public static InstanceRoute SessionHelperPass { get; } = Person("SESSION_HELPER_PASS");
+
     /// <summary><c>sessions partner &lt;id&gt; "…" --agent &lt;name&gt;</c>: the person's ask of a piece (COAGENT1b).</summary>
     public static InstanceRoute SessionPartnerAsk { get; } = Person("SESSION_PARTNER_ASK");
 
@@ -194,6 +197,9 @@ public static class PersonPresses
 
     /// <summary><c>git fetch &lt;repository&gt; --yes</c> (GITAPP2f, D204): origin's branches fetched into <c>refs/remotes/origin/*</c> alone, the person's yes.</summary>
     public static InstanceRoute GitFetch { get; } = Person("GIT_FETCH");
+
+    /// <summary><c>git stash drop &lt;repository&gt; &lt;commit&gt; --yes</c> (GITAPP2, D204): one stash of Daoris's own Save dropped by its commit id, the person's yes.</summary>
+    public static InstanceRoute GitStashDrop { get; } = Person("GIT_STASH_DROP");
 
     /// <summary><c>git push &lt;repository&gt; branch|tag &lt;name&gt; --yes</c> (GITAPP2g, n; D241 point 2): one ref pushed to origin under its grant, the person's yes.</summary>
     public static InstanceRoute GitPush { get; } = Person("GIT_PUSH");
@@ -293,6 +299,7 @@ public static class PersonPresses
         ("git branch <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git tag <repository> <name> [<commit>] --rename <new-name> --yes", GitRefRename),
         ("git fetch <repository> --yes", GitFetch),
+        ("git stash drop <repository> <commit> --yes", GitStashDrop),
         ("git push <repository> branch <name> [<commit>] --yes", GitPush),
         ("git push <repository> tag <name> [<commit>] --yes", GitPush),
         ("git pick <repository> <branch> <commit|A..B> --yes", GitHistoryEdit),
@@ -344,6 +351,7 @@ public static class PersonPresses
         ("sessions helper <id> \"…\"", SessionHelperAsk),
         ("sessions helper --approve <ask>", SessionHelperApprove),
         ("sessions helper --decline <ask>", SessionHelperDecline),
+        ("sessions pass <ask>", SessionHelperPass),
         ("sessions partner <id> \"…\" --agent <name>", SessionPartnerAsk),
         ("sessions partner <piece> --stop", SessionStop),
     ];

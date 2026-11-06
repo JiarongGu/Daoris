@@ -253,22 +253,8 @@ public static class GitRefActs
     /// <summary>The recovery ref's name under <see cref="ContentHolds.DiscardedPrefix"/>: a free one to make, or one that already stands at the commit (verified, not made).</summary>
     private static async Task<(string? Ref, bool Made, string? Refusal)> RecoveryNameAsync(string checkout, string name, string id, CancellationToken ct)
     {
-        for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
-        {
-            var reference = ContentHolds.DiscardedPrefix + name + (n == 1 ? "" : $"-{n}");
-            var (code, at, err) = await WorkingTree.GitAsync(checkout, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (code == 1)
-            {
-                var (missing, _) = await ContentHolds.MissingAsync(checkout, reference, ct).ConfigureAwait(false);
-                if (missing) return (reference, true, null);
-                return (null, false, $"git could not read whether `{ShortName(reference)}` stands, so nothing was deleted");
-            }
-
-            if (code != 0) return (null, false, $"git could not read the recovery ref ({ContentHolds.Said(err)}), so nothing was deleted");
-            if (at.Trim() == id) return (reference, false, null);
-        }
-
-        return (null, false, "every name for its recovery ref is taken, so nothing was deleted");
+        var (named, why) = await RecoveryKeeps.NameAsync(checkout, name, id, ct).ConfigureAwait(false);
+        return named is null ? (null, false, $"{why}, so nothing was deleted") : (named.Ref, named.Made, null);
     }
 
     /// <summary>The branch's section of the local configuration as the plan keeps it (file, scope, section, text), or null where it has none or the file does not read.</summary>
@@ -295,7 +281,7 @@ public static class GitRefActs
     private static async Task<ActRun> UndoDeleteAsync(ActRuns runs, ActRecord record, string checkout, string press, string? confirmed, CancellationToken ct)
     {
         var plan = JsonNode.Parse(record.Plan)!;
-        // A delete Daoris judged (JournaledDeletes) keeps its recovery ref by its own door's rule, so its record names none of its own.
+        // A delete Daoris judged (JournaledDeletes) names the recovery ref its door's rule kept, made by the act only where `recoveryMade` says so.
         var (full, id, recovery) = (plan["ref"]!.GetValue<string>(), plan["at"]!.GetValue<string>(), (string?)plan["recovery"]);
         var name = ShortName(full);
         var noun = full.StartsWith("refs/tags/", StringComparison.Ordinal) ? "tag" : "branch";

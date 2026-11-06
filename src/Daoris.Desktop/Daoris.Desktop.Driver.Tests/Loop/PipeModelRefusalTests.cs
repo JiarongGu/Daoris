@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Nothing here starts a process: the native door's output is fed through the real capture from text.</remarks>
 public sealed class PipeModelRefusalTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-pipe-refusal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-pipe-refusal-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 
@@ -56,11 +56,11 @@ public sealed class PipeModelRefusalTests : IDisposable
         return TransportRun.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);
     }
 
-    private static ISessionAdapter Adapter() => TestDoors.Door("fake", dialect: TestDoors.StreamJson);
+    private static Provider Adapter() => TestDoors.Door("fake", dialect: TestDoors.StreamJson);
 
     private Daoris.Driver.Driver Driver(ServiceClient service)
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["fake"] = Adapter() });
+        var adapters = TestDoors.Registry([Adapter()]);
         return new(service, DriverConfig.Empty with { Actors = StaffedRoles.On("fake") }, adapters, _home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }

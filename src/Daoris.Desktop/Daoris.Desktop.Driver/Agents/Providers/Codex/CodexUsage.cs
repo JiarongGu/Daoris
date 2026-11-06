@@ -228,7 +228,7 @@ public static class CodexUsage
     /// <param name="managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
     /// <param name="workingDirectory">Where the process runs, or null for the caller's (Claude's read runs in an empty folder).</param>
     internal static ProcessStartInfo Prepare(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null,
+        IReadOnlyList<string> command, AccountAgent toolchain, string? profileHome, string? managed = null,
         string? workingDirectory = null)
     {
         var info = new ProcessStartInfo
@@ -266,7 +266,7 @@ public static class CodexUsage
         {
             // Through the start gate (PROCSTART2): the usage page's read reaches here. A probe, so the background's
             // (PARALLEL1d); its caller's token ends its wait for a place as it ends the question (PARALLEL1e).
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false);
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Read, StartClass.Background, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
         {
@@ -305,7 +305,7 @@ public static class CodexUsage
 
         try
         {
-            if (!process.HasExited) ChildProcess.KillTree(process);
+            if (!process.HasExited) OwnedProcesses.End(process);
             process.WaitForExit(TimeSpan.FromSeconds(5));
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)

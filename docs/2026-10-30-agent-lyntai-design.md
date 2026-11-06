@@ -1073,6 +1073,19 @@ never a door's parity, which is each move's. 1c uses it over the usage port's tw
 and the usage history fixtures (`Tests/Agents/ClaudeUsageTests.cs:149-179`, `CodexUsageTests.cs:140-155`) *(C1-2)*; every move after uses it
 over its door.
 
+**Note, 2026-11-07: the layer path held, and a reading's lineage token in the projection (a correction before 1d's acceptance).** The run's
+stamp on each reading (`WireReading`'s session, generation, place in the run's order and process) is an observation the oracle reads with
+the reading. Both oracles ran the layer path unheld, a construction production never makes for a driven start (`ClaudeDrivenLayer.Run`
+always holds it), so its readings named no session and no process where today's named both, and the lineage readings BL71 added
+(`ChildSeen`, `ChildEnded`) met that difference on the two recorded family streams. The layer path is now held as a driven start holds it,
+over a driver's own host and handed the Daoris path's session (`ParityLayerPath`), so the session, the generation and the place are
+compared exactly. The process is the lineage token each process is issued fresh, a generated id whichever path ran, so it joins the
+projection's generated ids, compared by first appearance: a token on one path and none on the other fails, as one path's token mapped onto
+two of the other's does. The observer reads a reading whole with its process apart, and `Loaded`'s stamp, which it had set aside because
+each path then stamped its own run, is compared too. *Rejected* (D248's note of this date): carrying the session as a provenance checked
+against each path's own start, which would admit a layer run its executor does not hold as alike, and setting the stamp aside, which drops
+the field that names a child's process.
+
 ### 6.4 The 60 cases and the rows that close them (round 2)
 
 The pending lines as they stand at `f638a07c1` (`Tests/fixtures/providers/*/pending.json`, `Agents/Providers/Stub/pending.json`), and the
@@ -1156,6 +1169,42 @@ order:** a release freezes what it carries (Lyntai's D70; D235's tiers); Daoris 
 tier no open row touches, a member a row grows additively read as absent until its release, and reaches the uncertain parts last, after it has
 used the certain ones (descriptor, events, failure, usage, the ACP door), as Lyntai's layer §4 asks; packed-build evidence (§7.3) lets Lyntai
 change a member before a release freezes it.
+
+**Note, 2026-11-07: which moves can start, read at Lyntai `master` `1ece575b`** (its local build `3.5.3-local.1ece575`; its `CHANGELOG.md`
+*Unreleased*, `TASKS.md` Part 446 and D244 to D249). Of quest `67b2b07e7e34`'s rows, AG25 to AG37, AG42's event half and AG43 are built.
+AG38 (a held request's wait for the person), AG39 (the kept run, a design with no code filed yet), AG40 (an owner action's reason and the
+access readings), AG41 (a limit's window and the reset as stated), AG42's rest (a report's use and its overage and credit state, held by
+Lyntai for a real frame), AG44 (the restriction rules over a snapshot) and AG45 (a host's line reader under the CLI turn) are not. A-LQ10
+is declined (its D249). Where each request went: A-LQ3 to AG37 (per-prompt delivery), AG38 and AG39 (the kept run and an open repeated
+alone); A-LQ4 to AG25 and AG28, its second half still waiting on 1s-ii; A-LQ5 to AG26 and AG28; A-LQ6 to AG27; A-LQ7 to AG30 to AG32 beside
+AG10 and AG18, its woken turn and its replay told from live to AG39; A-LQ8 to AG36; A-LQ9 to AG29; A-LQ11 to AG40; A-LQ12 to AG43 and
+AG44; A-LQ13 to AG45; A-LQ16 to AG41 and AG42; A-LQ17 to AG33 to AG35.
+
+| Move | Waits on (its label, §9) | Landed | Can start |
+|---|---|---|---|
+| 1b-iii, AG12's refused model | AG12 | yes | **yes** |
+| 1b-iii, LQ17's readings with the opening evidence | AG33 (denials, tokens by model with its context window), AG34 (a protocol door's context figures), AG35 (the announced start) | yes | **yes** |
+| 1b-iii, LQ3's per-prompt and opening observations | AG37; an open repeated alone (AG39) | AG37 alone | **the per-prompt half**; the opening half waits on AG39 |
+| 1b-iii, LQ16's reset, window, what was hit and reports, with the D125 note | AG41, AG42 whole | AG42's event half, its report carrying no use | no |
+| 1b-iii, LQ11's access evidence | AG40 | no | no |
+| 1d (R-d) | 1s-ii; 1b-iii's R-d parts; LQ4 to LQ6 (AG25 to AG27); LQ7's CLI half; AG10, AG12, AG18; LQ11's access half (AG40); LQ16 (AG41, AG42 whole); LQ17 (AG33, AG35) | all but AG40, AG41, AG42's rest, LQ7's woken turn (AG39) and 1s-ii's measurement | no |
+| 1e-i, dsh (R-e1) | m-ii; its 1b-iii part; LQ3's ACP half, per-prompt (AG37) and its raw open repeated (AG39); LQ7's ACP half where dsh's children are read (AG31); LQ17's context half (AG34) | all but the open repeated alone, which AG39 only designs | no |
+| 1e-ii to 1e-iv (R-e) | as 1e-i, and the wait for a person (AG38), AG11, AG12, AG19, LQ4's ACP half (AG28), LQ8 (AG36), LQ11's access half (AG40), LQ16 where a door's limits name a window or a reset (AG41) | AG11, AG12, AG19, AG28, AG31, AG34, AG36, AG37; not AG38, AG39, AG40, AG41 | no |
+| 1f-i (R-f) | m-ii; 1d; LQ3's CLI half, the kept run (AG39) with per-prompt delivery (AG37) | m-ii, AG37 | no |
+| 1f-ii (R-f with LQ13) | 1f-i; AG45 | no | no |
+| j (R-j) | AG15; 1e | AG15 | no: its Lyntai need has landed, and it follows 1e |
+
+**What the parts that can start need first.** One local build carries all three, so they land as one part. (1) The changelog and the
+compare read since the local build the earlier moves took, for the members they compose, AG37's change to what a turn already did among
+them: a protocol session's start no longer counts toward `Taken`, and a protocol turn that stalls after its open resends where it resumed,
+which reaches 1b-i's retry table; at `1ece575` every layer and parity class passes unchanged, with and without the props. (2) The tests'
+provider (`LayerTestProvider`) speaking each new frame (a denial, tokens by model with the context window, a `usage_update`'s figures, an
+`init` beside a later frame carrying the id, a refused model), today's path's recorded cases beside it (`StructuredOutput`, `AcpMeasure`,
+`NativeInit`). (3) Lyntai's own labels read: AG33's denial `reason` is a guessed field, null in every shape it holds, and AG33's, AG34's and
+AG36's frames are SOURCE-DERIVED, not captures. **What would unblock the rest sooner.** AG42's rest waits for a real `rate_limit_event`
+frame with a use and the overage fields, the shape Daoris recorded on 2026-10-02 (`ClaudeWindows`, its use a fraction), which a quest can
+send. 1s-ii's measurement is Daoris's own and decides whether A-LQ4's second half is sent, which 1d waits on. 1c's Claude binding waits on
+Lyntai reading a model scope whose `id` is null (§9.2's 1c, measured 2026-11-07).
 
 ### 7.3 Building against changes not yet released
 
@@ -1394,6 +1443,27 @@ account's home reaches the vendor's server.
   the library, R-c closing on it, and the runner parses nothing of either protocol. Its case: a fake server that withholds
   `initialize`'s answer and fails on any later line arriving first, and one that answers it with an error, each read on both paths as
   today's reads them. Whether the installed servers tolerate the eager order is unmeasured and changes none of it.
+- **Measured, 2026-11-07: the `-p` difference is closed, and a second gap found.** One account of Claude Code's (account A) was asked
+  through each reader against the installed server (no model turn spent): the server started with `-p` answers the same
+  `get_usage` as today's without it (the same shape, the same week's use and reset), so `-p` changes no field of the answer. The
+  layer's read of that very answer was unknown (`unrecognised-answer`): a `limits[]` row's `scope` is an object
+  (`{"model":{…},"surface":null}`) where Lyntai's reader takes a string or null, and one value it cannot read makes the whole answer
+  unknown (its D237). Replayed offline, today's reader keeps the week and three history rows from the same answer, the layer's none, so
+  on a real account with a scoped row the layer reads nothing where today's reads the week: Lyntai's to correct (the request: its
+  reader reads a scope that is an object, and a row it cannot read skips that row, never the answer). One of five layer reads on
+  `-p` ended at the ten-second patience, the others answered in two to eleven seconds. Codex (account B, its one): both
+  readers answered the same two windows with the same use and the same week's reset, the session window's reset three seconds apart
+  between two reads, as a server that rolls an unopened window gives; no plan said by either.
+- **Measured again, 2026-11-07, on Lyntai's local build `3.5.3-local.1ece575`**, whose `7957c4ef` reads an object scope naming a
+  model's `id` and `display_name`. One read of account A through each path, no model turn spent: today's reader answered both windows
+  and five history rows (the two windows, `limits:session`, `limits:weekly_all`, `limits:weekly_scoped`); the layer's was still
+  `unrecognised-answer`. The installed server (Claude Code 2.1.319) names the scoped row's model by its display name alone, its `id`
+  null (`{"model":{"display_name":…,"id":null},"surface":null}`), and Lyntai's reader takes a model only with a non-empty id, so the
+  whole answer still reads unknown. The oracle holds both shapes (`ClaudeUsageTests.ObjectScope`): with an id the two reads agree, the
+  layer's `ScopeName` and `Surface` mapped as today's reader reads an object scope, with no scope kept; with a null id the layer's whole
+  answer is the named unrecognised gap. Claude Code's question stays on today's reader. What remains of Lyntai: a model scope with a
+  null id read by its display name, and a row its reader cannot read skipping that row, never the answer. The answer also carries
+  per-model arrays beside the windows (`model_scoped`, `weekly_scoped_shares`), which neither reader reads.
 - **What a person sees.** The Accounts screen's windows on both agents as before; the screenshot is that screen with a signed-in account of
   each, in English and Chinese.
 - **Proof.** §12's 1c line. **Waits for** R-a and R-c (LQ2's restated answer, LQ14, LQ15); neither of AG20's answers.

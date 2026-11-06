@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -129,7 +130,7 @@ public sealed class HostSupervisorNoHostTests
 public sealed class HostSupervisorTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-supervisor-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-supervisor-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<StandInHost> _standIns = [];
 

@@ -12,7 +12,7 @@ public sealed class AccountSetTests : IDisposable
 {
     private const string Agent = "claude-code";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-account-set-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-account-set-tests", Guid.NewGuid().ToString("N")[..8]);
 
     private string File_ => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 

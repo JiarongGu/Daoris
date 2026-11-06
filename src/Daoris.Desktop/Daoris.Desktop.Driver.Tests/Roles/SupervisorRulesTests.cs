@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// CONTEXTDRIVE1c (the context counters design §4.1, §4.4, §4.5): the rule supervisor's pure half over
-/// <c>fixtures/supervisor-rules.json</c>. Every refusal code, a line's effective rules by place, by role and by <c>off</c>, a ladder, the
-/// narrowest act, and the two bounds judged on a narrower place's effective set after a wider place's write.
+/// <c>fixtures/supervisor-rules.json</c>. Every refusal code (a ladder among them: one rule per count for a line's roles at a place), a line's
+/// effective rules by place, by role and by <c>off</c>, and the two bounds judged on a narrower place's effective set after a wider place's write.
 /// </summary>
 public sealed class SupervisorRulesTests
 {
@@ -67,7 +67,7 @@ public sealed class SupervisorRulesTests
         var failures = new List<string>();
         foreach (var each in Fixture["effective"]!.AsArray())
         {
-            var chain = SupervisorRules.Chain(each!["line"]?.GetValue<string>(), each["repository"]?.GetValue<string>(), each["workspace"]?.GetValue<string>());
+            var chain = SupervisorRules.Chain(each!["repository"]?.GetValue<string>(), each["workspace"]?.GetValue<string>());
             var effective = SupervisorRules.Effective(Sets(each["sets"]), chain, each["role"]?.GetValue<string>());
             var actual = effective.ToDictionary(pair => pair.Key, pair => string.Join(",", pair.Value.Select(rule => rule.Id)));
             var expected = each["expect"]!.AsObject().ToDictionary(pair => pair.Key, pair => string.Join(",", pair.Value!.AsArray().Select(id => id!.GetValue<string>())));
@@ -75,24 +75,6 @@ public sealed class SupervisorRulesTests
             {
                 failures.Add($"{each["name"]}: expected {JsonSerializer.Serialize(expected)}, got {JsonSerializer.Serialize(actual)}");
             }
-        }
-
-        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
-    }
-
-    [Fact]
-    public void Decide_acts_on_the_highest_at_reached_and_the_narrowest_act_of_the_counts()
-    {
-        var failures = new List<string>();
-        foreach (var each in Fixture["decide"]!.AsArray())
-        {
-            var rules = Rules(each!["rules"], "machine");
-            var effective = rules.GroupBy(rule => rule.Count).ToDictionary(group => group.Key, group => (IReadOnlyList<SupervisorRule>)[.. group.OrderBy(rule => rule.At)]);
-            var counts = each["counts"]!.AsArray().Select(count => new RuleCountRead(
-                count!["count"]!.GetValue<string>(), count["n"]?.GetValue<int>(), (count["known"]?.GetValue<string>() ?? "exact") != "unknown")).ToList();
-            var act = SupervisorRules.Decide(counts, effective);
-            var expect = each["expect"]?.GetValue<string>();
-            if (act?.Rule.Id != expect) failures.Add($"{each["name"]}: expected {expect ?? "none"}, got {act?.Rule.Id ?? "none"}");
         }
 
         Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));

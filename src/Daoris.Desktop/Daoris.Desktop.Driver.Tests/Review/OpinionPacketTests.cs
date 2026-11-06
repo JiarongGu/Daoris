@@ -16,7 +16,7 @@ public sealed class OpinionPacketTests : IDisposable
     private const string Base = "1111111111111111111111111111111111111111";
     private const string Tip = "2222222222222222222222222222222222222222";
 
-    private readonly string _tree = Path.Combine(Path.GetTempPath(), "daoris-opinion-packet-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-opinion-packet-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OpinionPacketTests() => Directory.CreateDirectory(_tree);
 
@@ -253,7 +253,7 @@ public sealed class OpinionPacketTests : IDisposable
     [InlineData("stub", OpinionPosture.CopyAlone)]
     public void Claude_Code_by_either_door_reads_by_its_rules_and_its_copy_and_every_other_agent_by_its_copy_alone(string adapter, string posture)
     {
-        Assert.Equal(posture, OpinionPosture.Of(ProviderRegistry.Built().Resolve(adapter)));
+        Assert.Equal(posture, OpinionPosture.Of(ProviderRegistry.Built().Door(adapter)));
     }
 
     [Fact]

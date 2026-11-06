@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class Acp3AdapterTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-acp3-tests", Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-acp3-tests", Guid.NewGuid().ToString("N")[..8]);
 
     public Acp3AdapterTests() => Directory.CreateDirectory(_home);
 
@@ -31,7 +31,7 @@ public sealed class Acp3AdapterTests : IDisposable
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
-    private static ISessionAdapter Adapter(string name) => ProviderRegistry.Built().Resolve(name);
+    private static AgentDoor Adapter(string name) => ProviderRegistry.Built().Door(name);
 
     // ---- the seam: a posture per adapter, in that adapter's own vocabulary --------------------
 
@@ -45,7 +45,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [InlineData("codex-acp", "agent")]              // read from codex-acp@1.12.0's own bundle
     public void Each_protocol_harness_states_the_posture_in_its_own_vocabulary(string name, string posture)
     {
-        Assert.Equal(posture, Adapter(name).AcpPosture);
+        Assert.Equal(posture, Adapter(name).Postures.Ordinary);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [InlineData("stub", null)]
     public void Each_harness_names_its_mode_that_asks_nothing_in_its_own_vocabulary(string name, string? full)
     {
-        Assert.Equal(full, Adapter(name).FullPosture);
+        Assert.Equal(full, Adapter(name).Postures.Full);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [InlineData("acp-stub")]
     public void An_adapter_whose_wire_carries_no_posture_names_none(string name)
     {
-        Assert.Null(Adapter(name).AcpPosture);
+        Assert.Null(Adapter(name).Postures.Ordinary);
     }
 
     // ---- dsh --------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Dsh_carries_the_posture_in_the_environment_because_its_wire_will_not()
     {
-        var info = Adapter("dsh").Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(Adapter("dsh"), Target(_home), command: null);
 
         Assert.Equal("workspace-write", info.Environment["DSH_PERMISSION_MODE"]);
         Assert.DoesNotContain("danger-full-access", info.Environment.Values);
@@ -109,13 +109,13 @@ public sealed class Acp3AdapterTests : IDisposable
     public void Dsh_boots_the_acp_profile_and_seams_on_its_home()
     {
         var adapter = Adapter("dsh");
-        var info = adapter.Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_home), command: null);
 
         Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(info.RedirectStandardInput);
         Assert.Contains("--profile", info.ArgumentList);
         Assert.Contains("acp", info.ArgumentList);
-        Assert.Equal("DSH_HOME", adapter.Toolchain!.ProfileVariable);
+        Assert.Equal("DSH_HOME", ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!.Home.Variable);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [InlineData("codex-acp")]
     public void The_target_is_never_an_argument_on_the_protocol_door(string name)
     {
-        var arguments = string.Join(' ', Adapter(name).Prepare(Target(_home), command: null).ArgumentList);
+        var arguments = string.Join(' ', ProviderRegistry.Built().Start(Adapter(name), Target(_home), command: null).ArgumentList);
 
         Assert.DoesNotContain("streaming budget", arguments);
         Assert.DoesNotContain("-p", arguments.Split(' '));
@@ -141,7 +141,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Dsh_has_no_login_question_to_ask()
     {
-        Assert.Null(Adapter("dsh").Toolchain!.LoginCheck);
+        Assert.Null(ProviderRegistry.Built().AgentNamed(Adapter("dsh").Id.Value)!.Accounts.Login);
     }
 
     // ---- codex ------------------------------------------------------------------------------
@@ -150,12 +150,12 @@ public sealed class Acp3AdapterTests : IDisposable
     public void Codex_acp_is_a_protocol_door_session_seamed_on_codex_home()
     {
         var adapter = Adapter("codex-acp");
-        var info = adapter.Prepare(Target(_home), command: null);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_home), command: null);
 
         Assert.Equal(Transport.Protocol, adapter.Transport);
         Assert.True(info.RedirectStandardInput);
-        Assert.Equal("CODEX_HOME", adapter.Toolchain!.ProfileVariable);
-        Assert.Equal("codex-acp", adapter.Toolchain!.Binary[0]);
+        Assert.Equal("CODEX_HOME", ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!.Home.Variable);
+        Assert.Equal("codex-acp", ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!.Program.Binary[0]);
     }
 
     /// <summary>
@@ -166,8 +166,8 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Codex_acp_borrows_the_account_of_codex_rather_than_owning_one()
     {
-        Assert.Equal("codex", Adapter("codex-acp").Toolchain!.AccountOf);
-        Assert.Null(Adapter("codex-acp").Toolchain!.LoginArguments);
+        Assert.Equal("codex", ProviderRegistry.Built().AgentNamed(Adapter("codex-acp").Id.Value)!.AccountOf);
+        Assert.Null(ProviderRegistry.Built().AgentNamed(Adapter("codex-acp").Id.Value)!.Accounts.LoginArguments);
     }
 
     /// <summary>
@@ -180,28 +180,28 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Every_door_with_a_home_variable_is_given_its_home_before_it_spawns()
     {
-        var demanding = ProviderRegistry.Built().Names
-            .Select(ProviderRegistry.Built().Resolve)
-            .Where(a => a.Toolchain is { ProfileVariable.Length: > 0, Binary.Count: > 0 })
+        var built = ProviderRegistry.Built();
+        var demanding = built.Names
+            .Where(name => built.AgentNamed(name) is { Home.Variable.Length: > 0, Program.Binary.Count: > 0 })
             .ToList();
 
-        Assert.Contains(demanding, adapter => adapter.Name == "codex-acp");
+        Assert.Contains(demanding, name => name == "codex-acp");
 
         Assert.NotEmpty(demanding);
 
         foreach (var adapter in demanding)
         {
-            var home = Path.Combine(_home, "profiles", adapter.Name);
+            var home = Path.Combine(_home, "profiles", adapter);
             Assert.False(Directory.Exists(home), "the profile must not exist before the spawn is prepared");
 
-            var info = adapter.Prepare(Target(_home), command: null);
-            Shell.Equip(info, adapter.Toolchain!, home);
+            var info = ProviderRegistry.Built().Start(adapter, Target(_home), command: null);
+            Shell.Equip(info, ProviderRegistry.Built().AgentNamed(adapter)!, home);
 
             Assert.True(
                 Directory.Exists(home),
-                $"`{adapter.Name}` exits before `initialize` when its home is missing, so preparing a "
+                $"`{adapter}` exits before `initialize` when its home is missing, so preparing a "
                 + "spawn under a named profile must create the directory");
-            Assert.Equal(home, info.Environment[adapter.Toolchain!.ProfileVariable!]);
+            Assert.Equal(home, info.Environment[ProviderRegistry.Built().AgentNamed(adapter)!.Home.Variable!]);
         }
     }
 
@@ -229,7 +229,7 @@ public sealed class Acp3AdapterTests : IDisposable
     public void Every_adapter_reads_its_session_as_utf8(string name)
     {
         var adapter = Adapter(name);
-        var info = adapter.Prepare(Target(_home), command: ["node", "agent.mjs"]);
+        var info = ProviderRegistry.Built().Start(adapter, Target(_home), command: ["node", "agent.mjs"]);
 
         Assert.Equal(System.Text.Encoding.UTF8, info.StandardOutputEncoding);
         Assert.Equal(System.Text.Encoding.UTF8, info.StandardErrorEncoding);
@@ -262,11 +262,12 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Every_protocol_adapter_declares_a_package_so_it_can_be_pinned()
     {
-        var acp = ProviderRegistry.Built().Names
-            .Select(ProviderRegistry.Built().Resolve)
-            .Where(a => a.Transport == Transport.Protocol && a.Toolchain is { Install: not null });
+        var built = ProviderRegistry.Built();
+        var acp = built.Names
+            .Select(built.Door)
+            .Where(a => a.Transport == Transport.Protocol && built.AgentNamed(a.Id.Value) is { Program.Install: not null });
 
-        Assert.All(acp, adapter => Assert.False(string.IsNullOrWhiteSpace(adapter.Toolchain!.Package)));
+        Assert.All(acp, adapter => Assert.False(string.IsNullOrWhiteSpace(ProviderRegistry.Built().AgentNamed(adapter.Id.Value)!.Program.Package)));
     }
 
     /// <summary>
@@ -298,10 +299,10 @@ public sealed class Acp3AdapterTests : IDisposable
     public void A_shared_name_means_the_same_binary_seam_and_tool_on_both_sides(
         string name, string binary, string seam, string product, string maker)
     {
-        var toolchain = Adapter(name).Toolchain!;
+        var toolchain = ProviderRegistry.Built().AgentNamed(Adapter(name).Id.Value)!;
 
-        Assert.Equal(binary, Assert.Single(toolchain.Binary));
-        Assert.Equal(seam, toolchain.ProfileVariable);
+        Assert.Equal(binary, Assert.Single(toolchain.Program.Binary));
+        Assert.Equal(seam, toolchain.Home.Variable);
         // AGT1: what a person calls it, and whose it is — `dsh` meant nothing until it said.
         Assert.Equal(product, toolchain.Product);
         Assert.Equal(maker, toolchain.Maker);
@@ -326,7 +327,7 @@ public sealed class Acp3AdapterTests : IDisposable
     {
         var set = ProviderRegistry.Built();
         var real = set.Names
-            .Where(name => set.Resolve(name).Toolchain is { Binary.Count: > 0 })
+            .Where(name => set.AgentNamed(name) is { Program.Binary.Count: > 0 })
             .ToList();
 
         var pinned = Twins.Select(row => (string)row[0]!).ToHashSet(StringComparer.OrdinalIgnoreCase);

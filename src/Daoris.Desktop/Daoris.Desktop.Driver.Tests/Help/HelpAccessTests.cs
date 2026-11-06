@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -9,7 +10,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpAccessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-help-access-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-access-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpAccessTests() => Directory.CreateDirectory(_home);
 
@@ -18,7 +19,7 @@ public sealed class HelpAccessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ChatAgent Adapter(string name) => new(ProviderRegistry.Built().Resolve(name));
+    private static ChatAgent Adapter(string name) => new(ProviderRegistry.Built(), ProviderRegistry.Built().Door(name));
 
     /// <summary>Restricted is Ask Daoris as it ran: the agent's asking mode asked for on the protocol door, no flag on the native one.</summary>
     [Theory]

@@ -38,8 +38,8 @@ public sealed class StartPlanStaffTests : IDisposable
         File.WriteAllText(Command, "");
         foreach (var agent in new[] { "cool", "fine" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").Save(Settings);
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        _adapters = TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),
@@ -68,7 +68,7 @@ public sealed class StartPlanStaffTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private StaffLedger Ledger => _roster.StaffFor(_home, () => StoreSettled.Yes);
 

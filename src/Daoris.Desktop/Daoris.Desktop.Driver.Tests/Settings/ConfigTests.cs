@@ -136,7 +136,7 @@ public sealed class ConfigTests
     [Fact]
     public void A_missing_file_loads_as_the_empty_config()
     {
-        var config = DriverConfig.Load(Path.Combine(Path.GetTempPath(), "daoris-no-such", "driver.json"));
+        var config = DriverConfig.Load(Path.Combine(TestHomes.Root, "daoris-no-such", "driver.json"));
 
         Assert.Empty(config.Drivable);
     }
@@ -218,7 +218,7 @@ public sealed class ConfigTests
     [Fact]
     public void Save_writes_atomically_and_load_reads_it_back()
     {
-        var path = Path.Combine(Path.GetTempPath(), "daoris-config-" + Guid.NewGuid().ToString("N")[..8], "driver.json");
+        var path = Path.Combine(TestHomes.Root, "daoris-config-" + Guid.NewGuid().ToString("N")[..8], "driver.json");
         try
         {
             DriverConfig.Empty.WithDrivable("Game", true).Save(path);

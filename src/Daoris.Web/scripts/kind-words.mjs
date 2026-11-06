@@ -1,11 +1,14 @@
 // The words of each node kind, beside the names check: every built-in kind has a title in the editor and on a run (`workflow.edit.kind.<kind>`,
 // `workflow.step.<kind>`), and each outcome it routes on is worded (`workflow.outcome.<kind>.<outcome>`), in every language. The kinds are
-// `NODE_KINDS` in the generated `src/bridge/generated/routes.ts`, read off the driver's kit; the generator writes that list one kind a line
+// `NODE_KINDS` in the generated `src/data/generated/service.ts`, read off the driver's kit; the generator writes that list one kind a line
 // as JSON, so plain JavaScript reads it with no TypeScript.
 import { existsSync, readFileSync } from 'node:fs';
-import { ROUTES } from './person-words.mjs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/** The kinds a generated routes file's `NODE_KINDS` lists, or null where it lists none. */
+export const SERVICE = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data', 'generated', 'service.ts');
+
+/** The kinds a generated service file's `NODE_KINDS` lists, or null where it lists none. */
 export function nodeKinds(text) {
   const start = text.indexOf('export const NODE_KINDS');
   const open = start < 0 ? -1 : text.indexOf('= [', start);
@@ -14,7 +17,7 @@ export function nodeKinds(text) {
 }
 
 /** The kinds the generated file at `path` lists, or null where it is not written or lists none. */
-export function readNodeKinds(path = ROUTES) {
+export function readNodeKinds(path = SERVICE) {
   return existsSync(path) ? nodeKinds(readFileSync(path, 'utf8')) : null;
 }
 

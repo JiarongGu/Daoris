@@ -13,7 +13,7 @@ public sealed class PluginActivityTests : IDisposable
     private const string Id = "acme.gate";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-activity-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-activity-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset Now = new(2026, 10, 1, 12, 0, 0, TimeSpan.Zero);
 

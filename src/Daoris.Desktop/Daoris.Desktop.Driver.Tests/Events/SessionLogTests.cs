@@ -19,7 +19,7 @@ public sealed class SessionLogTests : IDisposable
     private const string Ledger = "http://ledger.test";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-sessionlog-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-sessionlog-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = new(2026, 9, 30, 7, 10, 0, TimeSpan.Zero);
 

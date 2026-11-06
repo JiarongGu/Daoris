@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
+import { type HelpRulesShown, RulesChange } from './RulesChange';
 import type { StarterDoor } from './starters';
 
 /**
@@ -50,6 +51,8 @@ export type HelpProposal = {
   plugin?: HelpPluginShown | null;
   /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`, HELPPLUG1c). */
   grant?: HelpGrantShown | null;
+  /** A place's supervisor rules, before and after (`role`); the card words them from the catalogue. */
+  rules?: HelpRulesShown | null;
   /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
   /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
@@ -329,7 +332,7 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
 /**
  * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
- * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
+ * against — and the git identity an origin over SSH or HTTPS needs. Git's words are content.
  */
 function SyncNotFetched({ failed, lines, onGo }: {
   failed: NonNullable<HelpSyncShown['notFetched']>;
@@ -452,6 +455,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
+        : proposal.rules ? <RulesChange rules={proposal.rules} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}

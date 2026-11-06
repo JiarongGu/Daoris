@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class WorkEventWiringTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-workevent-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workevent-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly MachineLog _log;
     private DateTimeOffset _now = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
 
@@ -45,8 +45,9 @@ public sealed class WorkEventWiringTests : IDisposable
         set.Tell(new WorkEvent(WorkEventKinds.WorkLanded, _now) { Session = "7e95d2c1", Code = "landed" });
         set.Tell(new WorkEvent(WorkEventKinds.Missed, _now));
 
-        Assert.Equal(new WorkEventHandshake(WorkEventGrammar.Version, 2, RelayBuild.None), handshake);
         var frames = await channel.HeardAsync(3);
+        // The plugin's first line to a relay names the run, so the handshake says it (§4.1, §5.2).
+        Assert.Equal(new WorkEventHandshake((string)frames[0]["run"]!, WorkEventGrammar.Version, 2, RelayBuild.None), handshake);
         Assert.Equal([3L, 4L, 5L], frames.Select(frame => (long)frame["seq"]!));
         Assert.Equal([WorkEventKinds.SessionParked, WorkEventKinds.WorkLanded, WorkEventKinds.Missed], frames.Select(frame => (string)frame["kind"]!));
         Assert.All(frames, frame => Assert.Equal(set.Events.Run, frame["run"]));
@@ -181,6 +182,24 @@ public sealed class WorkEventWiringTests : IDisposable
         Assert.Equal(new WorkEvent(WorkEventKinds.SessionEnded, _now) { Session = "4b62a9fe", State = "failed" }, ended);
         Assert.Equal(new WorkEvent(WorkEventKinds.QuestParked, _now) { Quest = "48f8ed9121ec", Session = "4b62a9fe", Strikes = 3 }, questParked);
         Assert.Null(WorkEventNews.Of(new AttentionEvent(AttentionKind.Waiting, "", "engine"), _now));
+    }
+
+    /// <summary>An ending carries the adapter its record opened on, which the frame keeps only where it is one of this build's.</summary>
+    [Fact]
+    public void An_end_carries_the_adapter_its_record_opened_on_and_the_frame_keeps_it_only_for_a_known_adapter()
+    {
+        var record = new SessionView("4b62a9fe", "engine") { Adapter = "claude-code" };
+        var piece = new NewsTold(AttentionKind.Ended, "4b62a9fe", 8, "store", null, "failed", "ended.failed", "failed", _now);
+
+        var ended = WorkEventNews.Of(piece, record)!;
+        var known = HookFrames.Event(ended, "5d2e8c1a7b30", 1, 0, new HashSet<string> { "claude-code" });
+        var unknown = HookFrames.Event(ended, "5d2e8c1a7b30", 2, 0, new HashSet<string> { "other" });
+
+        Assert.Equal("claude-code", ended.Adapter);
+        Assert.Null(WorkEventNews.Of(piece, null)!.Adapter);
+        Assert.Equal("claude-code", known.Frame["adapter"]);
+        Assert.False(unknown.Frame.ContainsKey("adapter"));
+        Assert.Equal(WorkEventKinds.SessionEnded, unknown.Frame["kind"]);
     }
 
     [Fact]

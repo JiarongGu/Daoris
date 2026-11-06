@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class DrivenAccessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-driven-access-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-driven-access-" + Guid.NewGuid().ToString("N")[..8]);
 
     public DrivenAccessTests() => Directory.CreateDirectory(_home);
 
@@ -25,7 +25,7 @@ public sealed class DrivenAccessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name) => ProviderRegistry.Built().Resolve(name);
+    private static AgentDoor Adapter(string name) => ProviderRegistry.Built().Door(name);
 
     /// <summary>A repository's setup with its permission prompts set to <paramref name="value"/> at the repository, the rest today's.</summary>
     private static ResolvedAccess Permissions(string value) => AccessRules.ResolveLevels(
@@ -161,12 +161,12 @@ public sealed class DrivenAccessTests : IDisposable
             _home, PermissionRules.Add(PermissionFile.Empty, RuleScope.Machine, null, RuleList.Deny, "Read(//c/secrets/**)"));
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
-        var adapter = adapters.Resolve(name);
+        var adapter = adapters.Door(name);
         var tree = Path.Combine(_home, "engine");
 
         foreach (var permissions in new[] { AccessRules.Asking, AccessRules.Auto, AccessRules.Unrestricted })
         {
-            var info = adapter.Prepare(Target(tree) with { Access = DrivenAccess.For(Permissions(permissions), "engine", adapter) }, ["claude"]);
+            var info = ProviderRegistry.Built().Start(adapter, Target(tree) with { Access = DrivenAccess.For(Permissions(permissions), "engine", adapter) }, ["claude"]);
 
             var (file, meta, _) = driver.HandRules(adapter, info, $"s-{permissions}", null, "engine", tree, kept: null);
 

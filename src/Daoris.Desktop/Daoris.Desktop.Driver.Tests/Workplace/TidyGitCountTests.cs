@@ -47,12 +47,13 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
     // The end's judgement of a branch's own commits (PERF1g): where it left the line, which is also whether the line holds its tip, its
     // tree, and the files it changed. What no branch of the person's holds is one walk of every session branch, not a start a branch
     // (it was 5 a branch: the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds).
-    private const int PerBranch = 3;
+    private const int PerBranch = 2;
 
     // On six trees, 57 git starts before PERF1c and 38 after it: each tree's branch asked of the tree, the checkout's top and its trees
     // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch.
-    private const int Ceiling = 27;
+    // per branch. Measured 26 (OPTIMIZE1a, 2026-11-06), two trees 14: the checkout's trees listed twice, by the stages and by the
+    // judgement. Then 20, two trees 12: each branch's tree is the refs' one listing's (`%(tree)`), no start a branch.
+    private const int Ceiling = 20;
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>
     private async Task<List<string>> WarmLookAsync()

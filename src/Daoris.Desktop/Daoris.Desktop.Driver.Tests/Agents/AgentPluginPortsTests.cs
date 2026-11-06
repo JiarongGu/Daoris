@@ -31,7 +31,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Null(set.DeclaredBy("stub"));
             Assert.DoesNotContain("off-agent", set.Names);
             Assert.Contains("off-owner", set.Agents);
-            Assert.Equal("stand-command", set.Resolve("a-agent").Prepare(Target(), null).FileName);
+            Assert.Equal("stand-command", set.Start("a-agent", Target(), null).FileName);
         }
         Assert.Equal(built.WithPlugins(catalog).Agents, HarnessSettings.AgentsKnown(_home));
         var (folder, plugins) = ClaudeSkills.Layout.Write(_home, "s1", catalog.Skills("sessions"));
@@ -68,7 +68,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Assert.Throws<InvalidOperationException>(() => World().Adapters(_home));
             var built = ProviderRegistry.Built();
             var direct = built.WithPlugins(catalog);
-            Assert.Same(built.Resolve("stub"), direct.Resolve("stub"));
+            Assert.Same(built.Door("stub"), direct.Door("stub"));
             Assert.Null(direct.DeclaredBy("stub"));
             Assert.Equal("stand.plugin", direct.DeclaredBy("stand-agent"));
             // A plugin's adapter declares no layout, so it is handed the copies every such adapter was: in the order the catalogue gave.
@@ -76,7 +76,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             Plugin("acme.first", "first-agent", "first-owner");
             catalog.Sources = [Source("acme.second"), Source("acme.first")];
             var info = new ProcessStartInfo();
-            var (folder, plugins) = SpawnSkills.Hand(Adapter("stand-agent"), info, _home, "s2", catalog, "help");
+            var (folder, plugins) = SpawnSkills.Hand(StandAgent, StandAgent.Door("stand-agent"), info, _home, "s2", catalog, "help");
             Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2.plugins"), folder);
             Assert.Equal(["acme.second", "acme.first"], plugins.Select(Path.GetFileName));
             Assert.Equal(plugins, info.ArgumentList);
@@ -101,7 +101,7 @@ public sealed class AgentPluginPortsTests : IDisposable
             catalog.Failure = cancelled;
             var info = new ProcessStartInfo();
             Assert.Same(cancelled, Assert.Throws<OperationCanceledException>(() => SpawnSkills.Hand(
-                Adapter("stand-agent"), info, _home, "s3", catalog, "sessions")));
+                StandAgent, StandAgent.Door("stand-agent"), info, _home, "s3", catalog, "sessions")));
             Assert.Empty(info.ArgumentList);
             catalog.Failure = refused;
             Assert.Same(refused, Assert.Throws<IOException>(() => ClaudeSkills.Layout.Write(_home, "s4", catalog.Skills("help"))));
@@ -122,7 +122,9 @@ public sealed class AgentPluginPortsTests : IDisposable
 
     private SessionTarget Target() => new("q1", "Title", "Body", "person", "engine", _home, "http://localhost");
 
-    private static ISessionAdapter Adapter(string name) => TestDoors.Door(name, spawn: new PluginSpawn());
+    private static ProviderRegistry StandAgent => TestDoors.Registry(Adapter("stand-agent"));
+
+    private static Provider Adapter(string name) => TestDoors.Door(name, spawn: new PluginSpawn());
 
     private sealed class PluginSpawn : ISpawn
     {

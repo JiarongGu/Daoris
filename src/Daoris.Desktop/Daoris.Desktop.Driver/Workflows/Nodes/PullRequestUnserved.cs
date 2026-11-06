@@ -11,7 +11,7 @@ public static class PullRequestUnserved
     {
         foreach (var node in graph.Nodes)
         {
-            if (PullRequestStep.PluginOf(node.Kind) is not { } plugin) continue;
+            if (PullRequestKind.PluginOf(node.Kind) is not { } plugin) continue;
             var serves = plugins.Any(each => string.Equals(each.Id, plugin, StringComparison.OrdinalIgnoreCase)
                 && each.Points.Contains(HookPoints.Perform, StringComparer.Ordinal));
             if (!serves) return BindingProblem.ForUnserved(workflow, version, node.Id, plugin);

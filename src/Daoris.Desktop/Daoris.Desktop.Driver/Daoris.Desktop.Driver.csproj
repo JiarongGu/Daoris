@@ -32,9 +32,11 @@
     <PackageReference Include="Lyntai.Core" />
     <PackageReference Include="Lyntai.Providers.Basic" />
   </ItemGroup>
-  <!-- The adapter over it compiles under the same condition alone, so a build without the local build is today's driver. -->
+  <!-- The adapter over it, and each provider folder's `Layer/` naming its vendor's registration, compile under the same condition alone,
+       so a build without the local build is today's driver. -->
   <ItemGroup Condition="'$(DaorisLyntaiLayer)' != 'true'">
     <Compile Remove="Agents\Layer\**" />
+    <Compile Remove="Agents\Providers\*\Layer\**" />
   </ItemGroup>
 
   <!-- The tree guard's hook (PERM3), carried inside the assembly and written under the Daoris home on

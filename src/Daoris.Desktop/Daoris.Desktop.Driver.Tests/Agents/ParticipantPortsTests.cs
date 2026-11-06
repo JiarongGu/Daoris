@@ -10,14 +10,15 @@ public sealed class ParticipantPortsTests : IDisposable
     public ParticipantPortsTests() => Directory.CreateDirectory(_home);
     public void Dispose() => GitSeed.Discard(_home);
 
+    private const string Family = """
+        {"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"t1","spawn_depth":1,"task_type":"local_agent"}
+        {"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"t2","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}
+        """;
+
     [Fact]
-    public async Task The_installed_watcher_keeps_parents_unknowns_and_per_run_state_through_capture()
+    public async Task The_lineage_part_keeps_parents_unknowns_and_per_run_state_through_capture()
     {
-        Assert.IsType<ParticipantLineageStreams>(LineageStreams.Current);
-        const string lines = """
-            {"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"t1","spawn_depth":1,"task_type":"local_agent"}
-            {"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"t2","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}
-            """;
+        const string lines = Family;
         await Capture(lines, "s1", _home);
         var children = ChildLineage.Read(_home, "s1").Children;
         Assert.Equal([("a1", (string?)null), ("a2", "a1")], children.Select(child => (child.Native, child.Parent)));
@@ -32,59 +33,35 @@ public sealed class ParticipantPortsTests : IDisposable
         Assert.Null(ClaudeLineageHook.For(_home, "../unknown", ChildLineage.PathOf(_home, "unknown")));
     }
 
+    /// <summary>No transport names the lineage: the capture says each child as a reading, and a sink with no lineage part writes none.</summary>
     [Fact]
-    public async Task An_unrelated_writer_gets_each_line_before_mapping_and_none_after_capture()
+    public async Task A_run_whose_sink_has_no_lineage_part_says_its_children_and_writes_no_lineage()
     {
-        var actual = LineageStreams.Current;
-        var stand = new Streams();
-        try
-        {
-            LineageStreams.Current = stand;
-            await Capture("first\nsecond", "s1", _home);
-            Assert.Equal(["writer:s1:", "first", "second"], stand.Calls);
-            await Capture("unwatched", "s2", null);
-            Assert.Equal(3, stand.Calls.Count);
-            LineageStreams.Current.Writer(_home, "s3", "0123456789abcdef");
-            Assert.Equal("writer:s3:0123456789abcdef", stand.Calls[^1]);
-            LineageStreams.Current = null!;
-            await Assert.ThrowsAsync<InvalidOperationException>(() => Capture("never", "s3", _home));
-            await Capture("no lineage requested", "s4", null);
-        }
-        finally { LineageStreams.Current = actual; }
-        Assert.Same(actual, LineageStreams.Current);
+        var seen = new List<WireReading.ChildSeen>();
+
+        await Capture(Family, "s1", null, ReadingSinks.On<WireReading.ChildSeen>(seen.Add));
+
+        Assert.Equal([("a1", (string?)null), ("a2", "a1")], seen.Select(child => (child.Child, child.Parent)));
+        Assert.False(File.Exists(ChildLineage.PathOf(_home, "s1")));
     }
 
     [Fact]
     public void An_unrelated_access_fact_drives_native_arguments_and_the_higher_setup_judgement()
     {
-        var adapter = ProviderRegistry.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Door("claude-code");
         IAgentAccess facts = new Access();
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost") { Access = facts };
-        var args = adapter.Prepare(target, null).ArgumentList.ToList();
+        var args = ProviderRegistry.Built().Start(adapter, target, null).ArgumentList.ToList();
         Assert.Equal("stand-mode", args[args.IndexOf("--permission-mode") + 1]);
         Assert.Null(facts.ChangedIn(DriverConfig.Parse("{}"), adapter));
         Assert.Null(facts.SwapIn(DriverConfig.Parse("{}"), adapter));
         Assert.Equal("stand refused", target.Access.Unoffered("unknown", "none"));
     }
 
-    private Task Capture(string lines, string session, string? home) => HarnessCapture.CaptureStructuredAsync(
+    /// <summary>The native capture, its sink the part's lineage where <paramref name="home"/> is given, beside <paramref name="beside"/>.</summary>
+    private Task Capture(string lines, string session, string? home, IReadingSink? beside = null) => HarnessCapture.CaptureStructuredAsync(
         new StringReader(lines), new StringReader(""), Path.Combine(_home, session + ".log"),
-        ReadingSinks.None, new ClaudeStreamJson(), prompt: null, CancellationToken.None,
-        lineage: home is null ? null : LineageStreams.Current.Writer(home, session));
-
-    private sealed class Streams : ILineageStreams, ILineageWriter
-    {
-        public List<string> Calls { get; } = [];
-        public ILineageWriter Writer(string home, string sessionId, string? proc = null)
-        {
-            Calls.Add($"writer:{sessionId}:{proc}");
-            return this;
-        }
-
-        public void Stream(NativeFrame frame) => Calls.Add(frame.Line);
-        public void Spawned(LineageAnnouncement said) => Calls.Add("spawned:" + said.Agent);
-        public void Ended(string agent, string? state) => Calls.Add("ended:" + agent);
-    }
+        ReadingSinks.Of(beside, home is null ? null : new LineageReadings(home, session)), new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
     private sealed class Access : IAgentAccess
     {

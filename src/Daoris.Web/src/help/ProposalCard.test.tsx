@@ -103,7 +103,7 @@ const PLUGIN_OFFER: HelpProposal = {
   plugin: {
     id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0',
     command: ['node', '${plugin}/land.mjs'], points: ['work/land'], harnesses: [], servers: [],
-    copied: true, needs: ['gh, signed in: `gh auth login`.'],
+    copied: true, needs: ['an identity: Settings → Git.'],
   },
 };
 
@@ -599,7 +599,7 @@ describe('the kinds that reach every door', () => {
     expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
     expect(said.getByText(unreadable)).toBeInTheDocument();
     expect(said.getByText('game: last fetched 1d ago · tools: never fetched')).toBeInTheDocument();
-    expect(note.textContent).toMatch(/needs a key its own ssh reads, or core\.sshCommand/);
+    expect(note.textContent).toMatch(/add a git identity for its host in Settings → Git/);
     expect(note.textContent).not.toMatch(/credential helper/);
   });
 
@@ -653,7 +653,7 @@ describe('the kinds that reach every door', () => {
     await press(PLUGIN_OFFER, 'Apply');
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText(code('gh auth login'))).toBeInTheDocument();
+    expect(runs.getByText(/Settings → Git/)).toBeInTheDocument();
     expect(runs.getByText(/^needs:/)).toBeInTheDocument();
     expect(screen.getByText(code(PLUGIN_OFFER.terminal))).toBeInTheDocument();
   });

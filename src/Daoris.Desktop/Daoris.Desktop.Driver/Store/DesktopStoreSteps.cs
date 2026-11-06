@@ -627,5 +627,15 @@ internal static class DesktopStoreSteps
             );
             INSERT INTO continuation_made (one, at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
             """)),
+
+        // The context counters design §4.4: each repository's workspace as the registry placed it at the last look, Roles', so
+        // the rules' judge in any process weighs a write on the chain the lines read. No raise: an older build reads no table it does not know.
+        new(21, PolicyWriter, write => write.Execute(
+            """
+            CREATE TABLE repository_workspaces (
+              repository TEXT PRIMARY KEY COLLATE NOCASE,
+              workspace  TEXT NOT NULL
+            );
+            """)),
     ];
 }

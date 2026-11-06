@@ -14,7 +14,7 @@ public sealed class TreesWordsTests : IAsyncLifetime
     /// <summary>A press the census opens, as the trees verbs' will be once RPC1c confirms them in the window.</summary>
     private static readonly InstanceRoute Open = new(TreesRoutes.DriverModule, "TREES_PRESS", RouteClass.Open);
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-trees-words-tests", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-trees-words-tests", Guid.NewGuid().ToString("N")[..8]);
     private InstanceStandIn? _standIn;
     private string _home = "";
     private string _pipe = "";

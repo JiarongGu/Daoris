@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class MachineLogTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-log-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-log-" + Guid.NewGuid().ToString("N")[..8]);
 
     private DateTimeOffset _now = new(2026, 9, 30, 7, 10, 0, 123, TimeSpan.Zero);
 

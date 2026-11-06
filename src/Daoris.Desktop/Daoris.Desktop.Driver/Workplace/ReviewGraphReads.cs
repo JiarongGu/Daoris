@@ -262,6 +262,7 @@ internal static class ReviewGraphReads
             _common = common.Node;
             var set = CanonicalLine.Choose(context.Config(), repository, workspace, guess: null).Branch;
             var (code, commonDir, _) = await common.Answer.ConfigureAwait(false);
+            _commonDir = code == 0 ? commonDir : null;
             if (code != 0) return (null, common.Node);
             if (set is not null) return (set, common.Node);
             var root = Path.GetDirectoryName(commonDir.Trim())!;
@@ -270,6 +271,9 @@ internal static class ReviewGraphReads
         }
 
         private ReviewRead? _common;
+
+        // The repository's git directory as P answered it, set before the line is: what B's reads decide origin's copy absent by.
+        private volatile string? _commonDir;
 
         /// <summary>
         /// B1 and B2 once the line is known, with N↑ and N↓ beside them on both refs, speculatively. The counts are used where both B
@@ -289,19 +293,22 @@ internal static class ReviewGraphReads
 
                 var refs = ReviewRanges.LineRefs(line);
                 var needs = new[] { lineNode };
+                // Origin's copy of the line is not in the repository's files: neither it nor its counts are asked of git.
+                var originAbsent = _commonDir is { } commonDir && RefFiles.Absent(commonDir, refs[1]);
+                var counted = originAbsent ? refs[..1] : refs;
                 var here = _graph.Run("B1", needs, () => WorkingTree.GitAsync(_full, ["merge-base", "HEAD", refs[0]], _ct));
-                var origin = _graph.Run("B2", needs, () => WorkingTree.GitAsync(_full, ["merge-base", "HEAD", refs[1]], _ct));
-                var up = _graph.Run("N↑", needs, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", .. refs, "--not", "HEAD"], _ct), speculative: true);
-                var down = _graph.Run("N↓", needs, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", "HEAD", "--not", .. refs], _ct), speculative: true);
+                var origin = originAbsent ? default : _graph.Run("B2", needs, () => WorkingTree.GitAsync(_full, ["merge-base", "HEAD", refs[1]], _ct));
+                var up = _graph.Run("N↑", needs, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", .. counted, "--not", "HEAD"], _ct), speculative: true);
+                var down = _graph.Run("N↓", needs, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", "HEAD", "--not", .. counted], _ct), speculative: true);
 
                 var (hereCode, hereOut, _) = await here.Answer.ConfigureAwait(false);
-                var (originCode, originOut, _) = await origin.Answer.ConfigureAwait(false);
+                var (originCode, originOut, _) = originAbsent ? (1, "", "") : await origin.Answer.ConfigureAwait(false);
                 var hereBase = ReviewChoices.Shared(hereCode, hereOut);
-                var originBase = ReviewChoices.Shared(originCode, originOut);
+                var originBase = originAbsent ? null : ReviewChoices.Shared(originCode, originOut);
                 var known = new List<string>();
                 if (hereBase is not null) known.Add(refs[0]);
                 if (originBase is not null) known.Add(refs[1]);
-                bases.TrySetResult((hereBase, originBase, known, [here.Node, origin.Node]));
+                bases.TrySetResult((hereBase, originBase, known, [here.Node, originAbsent ? null : origin.Node]));
 
                 if (known.Count == 0)
                 {
@@ -311,7 +318,7 @@ internal static class ReviewGraphReads
                     return null;
                 }
 
-                if (known.Count == refs.Length)
+                if (known.Count == counted.Length)
                 {
                     up.Node.Use(true);
                     down.Node.Use(true);
@@ -324,7 +331,7 @@ internal static class ReviewGraphReads
                 // One ref answered: today's counts are on that one alone, asked again; the pair asked on both is wasted.
                 up.Node.Use(false);
                 down.Node.Use(false);
-                var basesNodes = new[] { here.Node, origin.Node };
+                var basesNodes = new[] { here.Node, originAbsent ? null : origin.Node };
                 var again = _graph.Run("N↑", basesNodes, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", .. known, "--not", "HEAD"], _ct));
                 var againDown = _graph.Run("N↓", basesNodes, () => WorkingTree.GitAsync(_full, ["rev-list", "--count", "HEAD", "--not", .. known], _ct));
                 _counts.TrySetResult(againDown.Node);

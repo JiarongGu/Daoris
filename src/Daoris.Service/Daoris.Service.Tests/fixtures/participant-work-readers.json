@@ -62,10 +62,10 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Roles/SupervisorRuleBook.cs": {
+    "Course/RuledLine.cs": {
       "reads": "tells",
       "row": "1q",
-      "note": "tells Ask Daoris's record by its help mode to give a supervisor rule its work; the start layer's (§2.3)"
+      "note": "tells Ask Daoris's record by its help mode to give a line's supervisor rules their work; the start layer's (§2.3)"
     },
     "Service/Domain/ChannelViews.cs": {
       "reads": "other",

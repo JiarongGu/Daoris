@@ -19,7 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AnswerContinuesTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-answer-tick-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-answer-tick-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -215,8 +215,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
         await ParkedAsync(service, Driver(service, "resumes"));
         await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
         var built = ProviderRegistry.Built();
-        var without = new ProviderRegistry(
-            built.Names.Where(name => name != "acp-stub").ToDictionary(name => name, built.Resolve, StringComparer.OrdinalIgnoreCase));
+        var without = TestDoors.Registry(TestDoors.Shipped([.. built.Names.Where(name => name != "acp-stub")]));
         var heard = Heard().Length;
 
         var look = await Driver(service, "resumes", set: without).RunOnceAsync().WaitAsync(Poll.Patience);
@@ -346,15 +345,14 @@ public sealed class AnswerContinuesTickTests : IDisposable
     {
         // Every built adapter, the stub whose accounts the protocol stub runs as among them, with the protocol stub postured.
         var built = ProviderRegistry.Built();
-        var adapters = new ProviderRegistry(built.Names.ToDictionary(
-            name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built().Where(provider => provider.Id.Value != "stub"), PosturedStub()]);
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), Config(Agent(), "modes", permissions), adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The protocol stub with Claude's words for its auto, asking and unrestricted modes.</summary>
-    private static ISessionAdapter PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
+    private static Provider PosturedStub() => TestDoors.Postured(BuiltDoors.AcpStub, new PosturesPart("auto", "default", "bypassPermissions", null));
 
     /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, takes the quest and asks which

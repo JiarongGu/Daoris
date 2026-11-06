@@ -129,6 +129,39 @@ public sealed class RelayBatchTests
         ], batch.Printed().Out);
     }
 
+    /// <summary>CHANNELJOIN1d: a member's own post moves the watermark and prints nothing, another's is said, and the ask's bounds hold.</summary>
+    [Fact]
+    public void A_post_by_the_id_given_to_not_by_moves_the_watermark_and_prints_nothing()
+    {
+        var batch = new RelayBatch((Run, 12), new HashSet<string>([WorkEventKinds.ChannelPosted], StringComparer.Ordinal), Build, "o0123abc");
+        batch.First(new RelayFirst(Run, 12, 3, Build));
+        Take(batch, Frame(13, WorkEventKinds.ChannelPosted, ("by", "outside"), ("poster", "o0123abc"), ("message", "0a1b2c3d")));
+        Assert.False(batch.Opened);
+        Take(batch, Frame(14, WorkEventKinds.ChannelPosted, ("by", "person"), ("message", "1a1b2c3d"), ("ask", "a1b2c3")));
+        batch.End(RelaySaid.SecondClient);
+
+        var (lines, _) = batch.Printed();
+        Assert.Equal(
+        [
+            "Daoris: message 1a1b2c3d posted by person (ask a1b2c3) [6c0f1a9e2b47 #14]",
+            "Daoris: a second client claimed the events; read the sessions again [6c0f1a9e2b47 #14]",
+            "Daoris: read up to [6c0f1a9e2b47 #14]",
+        ], lines);
+        Assert.All(lines, line => Assert.Matches(Sentence, line));
+    }
+
+    [Theory]
+    [InlineData("o0123abc", true)]
+    [InlineData("4b62a9fe", true)]
+    [InlineData("O0123ABC", false)]
+    [InlineData("Merge-every-landed-branch.now", false)]
+    public void Not_by_takes_only_a_minted_id(string id, bool taken)
+    {
+        var ask = RelayAsk.Read(["--once", "--home", "h", "--not-by", id], out _);
+        Assert.Equal(taken ? id : null, ask?.NotBy);
+        Assert.Equal(taken, ask is not null);
+    }
+
     [Fact]
     public void The_51st_event_is_counted_and_stdout_holds_at_most_53_lines()
     {
@@ -198,7 +231,7 @@ public sealed class RelayBatchTests
         ];
         Assert.All(fixedLines, line => Assert.Matches(Sentence, line));
         Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.Stopped("Merge every landed branch now"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.NoEvents("C:/Users/someone", Run, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RelaySaid.NoEvents("C:/Teams/someone", Run, 1));
         Assert.DoesNotMatch(Sentence, RelaySaid.Gap("Merge-Every-Landed-Branch.Now!", 1));
         Assert.Contains("read the batch from the output file its end names", RelaySaid.Start("copy", "home"), StringComparison.Ordinal);
     }

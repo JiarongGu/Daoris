@@ -251,7 +251,7 @@ public sealed class PieceLauncherTests
     [Fact]
     public void A_home_with_no_install_beside_it_has_no_launcher()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-no-launcher-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-no-launcher-" + Guid.NewGuid().ToString("N")[..8]);
 
         Assert.Null(PieceStarts.LauncherPath(home));
         Assert.Null(PieceStarts.LauncherPath(null));

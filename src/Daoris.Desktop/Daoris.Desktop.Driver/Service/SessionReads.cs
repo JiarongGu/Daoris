@@ -68,6 +68,7 @@ internal static class SessionReads
                 Ask = session.Ask,
                 Tree = session.Tree,
                 Quest = session.Quest,
+                Adapter = session.Adapter is { Length: > 0 } adapter ? adapter : null,
                 // Where its tree stood when it opened: what the sweep reads a lost done's evidence as changed from.
                 BaseCommit = session.BaseCommit is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code, handed on wherever the note is; null for a record from before parts.
@@ -96,6 +97,18 @@ internal static class SessionReads
             .Select(session => new LiveSession(session.Id ?? "", MomentOf(session.Created), session.Resolved is { } resolved ? [.. resolved.OfType<string>()] : null))];
 
     /// <summary>
+    /// An end that is another count's or no end of the work: a limit, a refused account, a choice not offered, a transient end, an update's
+    /// close, or the quiet end (the <c>quiet</c> rule's own). It is no failure and breaks no run of them.
+    /// </summary>
+    private static bool IsNeutral(SessionResponse session) =>
+        session.Limit || AccountRefused(session) || NotOffered(session)
+        || PartsOf(session)?.Any(part => part.Code is RecordNotes.EndedTransient or RecordNotes.UpdateClosed or RecordNotes.EndedQuiet) == true;
+
+    /// <summary>The one definition of a failure, for the quest's count and its run on one choice: a <c>failed</c> end or a cut-off, never a neutral one.</summary>
+    private static bool IsFailure(SessionResponse session) =>
+        !IsNeutral(session) && (IsState(session, "failed") || (IsState(session, "stopped") && session.Interrupted));
+
+    /// <summary>
     /// How often each quest has been failed (DRV6). Only <c>failed</c> counts, and a stop that was not the person's (D104): a
     /// <c>stood-down</c> session means somebody else took the quest first, a <c>declined</c> one closes it, a <c>stopped</c> one the person
     /// stopped was theirs. A failure that says <c>limit</c> is not a strike (TOOL4d), nor is one whose account was refused (ROSTER1b), whose
@@ -108,13 +121,7 @@ internal static class SessionReads
         foreach (var session in listed)
         {
             // A strike is this driver's own judgement of its own attempts: a teammate's failure there says nothing about this machine's next try.
-            if (IsTeams(session)) continue;
-            var cutOff = (IsState(session, "failed") && !session.Limit && !AccountRefused(session))
-                         || (IsState(session, "stopped") && session.Interrupted);
-            if (PartsOf(session)?.Any(part => part.Code == RecordNotes.UpdateClosed) == true) continue;
-            if (PartsOf(session)?.Any(part => part.Code == RecordNotes.EndedTransient) == true) continue;
-            if (NotOffered(session)) continue;
-            if (!cutOff) continue;
+            if (IsTeams(session) || !IsFailure(session)) continue;
             if (session.Quest is not { Length: > 0 } quest) continue;
 
             strikes[quest] = strikes.TryGetValue(quest, out var seen) ? seen + 1 : 1;
@@ -135,11 +142,9 @@ internal static class SessionReads
         {
             if (IsTeams(session) || session.Quest is not { Length: > 0 } quest) continue;
             var state = session.State ?? "";
-            if (state is "stood-down" or "") continue;
-            var parts = PartsOf(session);
-            if (session.Limit || AccountRefused(session) || NotOffered(session) || parts?.Any(part => part.Code is RecordNotes.EndedTransient or RecordNotes.UpdateClosed) == true) continue;
+            if (state is "stood-down" or "" || IsNeutral(session)) continue;
             var asked = Wired<ActorAsked>(session.Asked);
-            runs.Add((quest, session.Created, state, $"{session.Adapter}|{asked?.NamedModel}|{asked?.Effort.Value}"));
+            runs.Add((quest, session.Created, IsFailure(session) ? "failed" : state, $"{session.Adapter}|{asked?.NamedModel}|{asked?.Effort.Value}"));
         }
 
         var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);

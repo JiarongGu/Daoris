@@ -9,10 +9,10 @@ namespace Daoris.Driver;
 /// </summary>
 public enum SignInWay
 {
-    /// <summary>The tool's own sign-in (<see cref="HarnessToolchain.LoginArguments"/>), offered first.</summary>
+    /// <summary>The tool's own sign-in (<see cref="AccountAgent.LoginArguments"/>), offered first.</summary>
     Browser,
 
-    /// <summary>The tool's sign-in by a device code (<see cref="HarnessToolchain.DeviceLoginArguments"/>), offered beside it.</summary>
+    /// <summary>The tool's sign-in by a device code (<see cref="AccountAgent.DeviceLoginArguments"/>), offered beside it.</summary>
     DeviceCode,
 }
 
@@ -44,17 +44,17 @@ public static class SignInWays
     /// code asked of an agent that has none is refused, before anything starts.
     /// </summary>
     /// <param name="agent">The agent whose sign-in this is, named in the refusal.</param>
-    public static IReadOnlyList<string> Arguments(string agent, HarnessToolchain toolchain, SignInWay way)
+    public static IReadOnlyList<string> Arguments(string agent, AccountAgent toolchain, SignInWay way)
     {
         if (way == SignInWay.DeviceCode)
         {
-            return toolchain.DeviceLoginArguments is { Count: > 0 } device
+            return toolchain.Accounts.DeviceLoginArguments is { Count: > 0 } device
                 ? device
                 : throw new DriverException(
                     $"`{agent}` signs in by no device code, so nothing was signed in — its own sign-in is its one way.");
         }
 
-        return toolchain.LoginArguments is { Count: > 0 } own
+        return toolchain.Accounts.LoginArguments is { Count: > 0 } own
             ? own
             : throw new DriverException(
                 "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
@@ -80,7 +80,7 @@ public enum PortHold
 
 /// <summary>
 /// Whether a sign-in that waits for the browser's answer on a local port can have one (CODEXLOGIN1, D125's note): each port the
-/// tool tries (<see cref="HarnessToolchain.LoginPorts"/>), taken for a moment on the loopback address and let go, never read
+/// tool tries (<see cref="AccountAgent.LoginPorts"/>), taken for a moment on the loopback address and let go, never read
 /// from Windows' table of reserved ranges, since a range is not the only holder and the table is not the bind.
 /// </summary>
 /// <remarks>
@@ -124,9 +124,9 @@ public static class SignInPorts
     /// </summary>
     /// <param name="agent">The agent whose sign-in this is: <c>codex</c>.</param>
     /// <param name="hold">How a port is tried: <see cref="Hold"/>, unless a test's.</param>
-    public static string? Refusal(string agent, HarnessToolchain toolchain, Func<int, PortHold> hold)
+    public static string? Refusal(string agent, AccountAgent toolchain, Func<int, PortHold> hold)
     {
-        if (toolchain.LoginPorts is not { Count: > 0 } ports) return null;
+        if (toolchain.Accounts.LoginPorts is not { Count: > 0 } ports) return null;
         var held = new List<(int Port, PortHold Hold)>();
         foreach (var port in ports)
         {
@@ -135,10 +135,10 @@ public static class SignInPorts
             held.Add((port, now));
         }
 
-        var wayOut = toolchain.DeviceLoginArguments is { Count: > 0 }
+        var wayOut = toolchain.Accounts.DeviceLoginArguments is { Count: > 0 }
             ? "sign in with a device code instead."
             : "close what holds it, or restart, and try again.";
-        return $"{Held(agent, toolchain.LoginArguments ?? [], held)} Nothing was signed in — {wayOut}";
+        return $"{Held(agent, toolchain.Accounts.LoginArguments ?? [], held)} Nothing was signed in — {wayOut}";
     }
 
     /// <summary>

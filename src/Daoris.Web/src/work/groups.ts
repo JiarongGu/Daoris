@@ -86,7 +86,7 @@ export type SessionGrouping = {
    * timed from the hold, its title empty where the agent named none. `told`
    * (FABRIC-PIPELINE1c): Daoris told the session this call ran past its pipeline's bound.
    */
-  calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; heard?: string } | null;
+  calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
 };
 
 /** The characters a running call's head is said in at most (RAILLINE1), its ellipsis among them. */

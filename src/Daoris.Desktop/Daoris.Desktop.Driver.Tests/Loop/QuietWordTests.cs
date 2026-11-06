@@ -57,6 +57,9 @@ public sealed class QuietWordTests : IDisposable
         var kept = Assert.Single(said.Said);
         Assert.StartsWith("Daoris: nothing came from this session for 10 minutes.", kept.Text);
         Assert.Single(word.Told);
+        // The row says it was told, for as long as the episode lasts.
+        await Settled(() => _watch.QuietNow().TryGetValue("s1", out var mark) && mark.Told);
+        Assert.True(_watch.QuietNow()["s1"].Told);
 
         Run(Pace * 4);
         Assert.Single(said.Said);

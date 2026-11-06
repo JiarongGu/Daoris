@@ -11,7 +11,7 @@ public sealed class HostPolicyTrustedEntryTests : IDisposable
 {
     private static readonly DateTimeOffset Seen = new(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-host-policy-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-host-policy-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HostPolicyTrustedEntryTests() => Directory.CreateDirectory(_home);
 
@@ -46,7 +46,7 @@ public sealed class HostPolicyTrustedEntryTests : IDisposable
     public void Host_policy_s_trusted_sign_out_writes_today_s_sign_in_line_reading_no_words()
     {
         var roster = Roster();
-        var adapter = roster.Adapters.Resolve("acp-stub");
+        var adapter = roster.Adapters.Door("acp-stub");
 
         Assert.Null(RefusedAccounts.SignInRefused(roster, adapter, null, "words no sign-in table reads"));
         var line = RefusedAccounts.SignOut(roster, adapter, null);

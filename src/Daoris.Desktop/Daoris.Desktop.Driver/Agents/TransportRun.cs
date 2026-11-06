@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// <para>The token <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> is given governs the whole run, as the token <c>HoldAsync</c> is
 /// given does: the protocol door's session is driven on it, and the native capture reads on it.</para>
 /// </remarks>
-internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter, TransportStart start) : AgentRun, IAsyncDisposable
+internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapters, AgentDoor adapter, TransportStart start) : HeldRun
 {
     /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
     public const string LinesAbility = "a line written to a protocol door's process";
@@ -114,7 +114,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// Whether the run admits a native go-on with held words (MSG1b): a native door that resumes, handed the target and the selection its
     /// resume is prepared from. Where it admits none, its executor holds no words for it.
     /// </summary>
-    public bool GoesOn => !IsProtocol && adapter.Resumes && _start.Target is not null && _start.Selection is not null;
+    public override bool GoesOn => !IsProtocol && adapter.Can.Resumes && _start.Target is not null && _start.Selection is not null;
 
     private bool IsProtocol => adapter.Transport == Transport.Protocol;
 
@@ -144,7 +144,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     public override Task ResumeAsync(string conversation, CancellationToken ct, IResumeState? state = null)
     {
-        if (!adapter.Resumes) return Refused("a resume");
+        if (!adapter.Can.Resumes) return Refused("a resume");
         _resume = state;
         return _opened is null ? BeginAsync(conversation, ct) : NextProcessAsync(conversation, ct);
     }
@@ -178,7 +178,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
 
     // ---- The five members every executor uses today ----
 
-    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => _start.Session, () => _generation);
+    public override void HandSink(IReadingSink sink) => _sink = new StampedSink(sink, () => _start.Session, () => _generation, () => Proc);
 
     /// <summary>A reading the run's executor says beside its door's own: what a conversation's turn met that its session did not throw to the run.</summary>
     public void Read(WireReading reading) => Sink().Read(reading);
@@ -221,9 +221,9 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         if (!GoesOn) throw Unsupported("a go-on");
 
         var (target, selection) = (_start.Target!, _start.Selection!);
-        var next = adapter.PrepareResume(_start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
-        if (_carriers.Settings is not null) adapter.HandSettings(next, _carriers.Settings);
-        if (_carriers.Servers is not null) adapter.HandServers(next, _carriers.Servers);
+        var next = adapters.Resume(adapter, _start.Request! with { Resume = conversation }) ?? throw Unsupported("a resume");
+        if (_carriers.Settings is not null) adapter.Spawned().HandSettings(next, _carriers.Settings);
+        if (_carriers.Servers is not null) adapter.Spawned().HandServers(next, _carriers.Servers);
         var info = host.Prepared(adapter, target, selection, next);
 
         var sessionId = SessionOf();
@@ -318,7 +318,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// its token, tracked and reaped, nothing reading it yet. For an executor whose own steps come between its spawn and its capture; the open
     /// spawns it otherwise.
     /// </summary>
-    internal async Task SpawnAsync(string sessionId, CancellationToken ct)
+    internal override async Task SpawnAsync(string sessionId, CancellationToken ct)
     {
         if (_spawned is not null) throw new InvalidOperationException("the run's process is started already.");
         if (_bracketed is null) await BracketAsync(sessionId, ct).ConfigureAwait(false);
@@ -335,7 +335,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// The start as its executor completed it before the open, once its process is up or before its spawn: its protocol's session, its prompt,
     /// its wait and what its tracking says, which its own steps made. The same process's, so its spawn is the one already made or to come.
     /// </summary>
-    internal void HandStart(TransportStart completed)
+    internal override void HandStart(TransportStart completed)
     {
         if (_opened is not null) throw new InvalidOperationException("the run is open already: its start is the one it opened with.");
         if (!ReferenceEquals(completed.Info, _start.Info) || completed.Whose != _start.Whose || completed.Piece != _start.Piece
@@ -349,14 +349,14 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     }
 
     /// <summary>The start the run holds, for an executor that completes it later (<see cref="HandStart"/>).</summary>
-    internal TransportStart Start => _start;
+    internal override TransportStart Start => _start;
 
     /// <summary>
     /// The run let go before its end (ANSWER2): as when its record will not move to working, its process ended, its <c>end</c> written unclean
     /// once its exit is read, and its capture observed, a failure there written with its reason, never left unawaited. A process spawned and
     /// never opened has no capture to observe.
     /// </summary>
-    internal async Task AbandonAsync()
+    internal override async Task AbandonAsync()
     {
         if (_spawned is not { } spawned) return;
         if (_opened is { } leg) await host.AbandonedAsync(spawned.SessionId, leg.Proc, leg.Process, leg.Capture).ConfigureAwait(false);
@@ -409,7 +409,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
         var process = await host.SpawnedAsync(
                     proc, () => AgentStarts.StartAsync(info, piece is null ? ContainedKind.Agent : ContainedKind.Piece, whose, host.Home, host.Log, ct, piece))
                 .ConfigureAwait(false)
-            ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+            ?? throw new DriverException($"the {adapter.Id.Value} adapter's process did not start");
         _kept.Add(process);
         _kept.Add(host.Processes.Track(sessionId, process, _start.RefusesInput, _start.DrivesBrowser));
         _kept.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
@@ -435,8 +435,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
             // words went (MSG1b).
             var structured = HarnessCapture.CaptureStructuredAsync(
                 host.Hearing(process.StandardOutput, id), host.Hearing(process.StandardError, id), TranscriptOf(), Sink(), mapper, prompt: null, ct,
-                preamble, observed: _start.Observed, opened: opening, append: append, named: named,
-                own: _own, lineage: _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null);
+                preamble, observed: _start.Observed, opened: opening, append: append, named: named, own: _own);
             _captures.Add(structured);
             return new Leg(process, proc, structured) { Mapper = mapper, Structured = structured };
         }
@@ -456,7 +455,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     {
         var id = SessionOf();
         var sink = Sink();
-        var protocol = _start.Protocol ?? throw new InvalidOperationException($"the `{adapter.Name}` run was handed no protocol session to open.");
+        var protocol = _start.Protocol ?? throw new InvalidOperationException($"the `{adapter.Id.Value}` run was handed no protocol session to open.");
         var file = _file = AgentContext.Current.OpenTranscript(TranscriptOf(), append: conversation is not null);
 
         void Line(string text)
@@ -490,7 +489,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
             streams: ReadingStreams.Of(sink), onOptions: protocol.Options,
             onConversation: named => sink.Read(new WireReading.ConversationNamed(named)))
         {
-            Lineage = _start.LineageHome is { } home ? LineageStreams.Current.Writer(home, id, proc) : null,
+            Children = sink,
             TypedFailures = protocol.TypedFailures,
         };
         // What it says of its account's windows is a reading, as the native door's is: the sink's account part keeps it as it says it.
@@ -679,7 +678,7 @@ internal sealed class TransportRun(ITransportHost host, ISessionAdapter adapter,
     /// capture still reading is observed and never waited for, as a start let go before its end always left it; the transcript the run holds
     /// is closed once nothing writes it. A token bracketed for a spawn that never came is let go.
     /// </summary>
-    public ValueTask DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         if (_disposed) return ValueTask.CompletedTask;
         _disposed = true;

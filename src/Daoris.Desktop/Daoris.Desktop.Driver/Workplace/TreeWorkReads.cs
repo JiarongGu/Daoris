@@ -41,12 +41,24 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         using var once = GitReadOnce.Within();
         if (!HeldHere(tree) || TreeFolders.TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
 
-        uncommitted ??= await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
-        var (tipCode, tipOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
-            .ConfigureAwait(false);
-        var judged = tipCode == 0 ? tipOut.Trim() : null;
-        // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
-        var own = await TreeFollows.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        // The paths, the head and the branch are one start (status), not three; a status git could not give is asked as before.
+        string? judged, own;
+        if (await TreeStatus.ReadAsync(tree, ct).ConfigureAwait(false) is { } status)
+        {
+            uncommitted ??= status.Changed;
+            judged = status.Head;
+            // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
+            own = status.OwnBranch;
+        }
+        else
+        {
+            uncommitted ??= await UncommittedOfAsync(tree, ct).ConfigureAwait(false);
+            var (tipCode, tipOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
+                .ConfigureAwait(false);
+            judged = tipCode == 0 ? tipOut.Trim() : null;
+            own = await TreeFollows.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        }
+
         var work = new TreeWork(await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
         // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
         if (work.Commits is > 0 && judged is not null
@@ -209,19 +221,9 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     }
 
     /// <summary>
-    /// The recovery ref an unforced discard of <paramref name="branch"/> at <paramref name="judged"/> would keep its commits at
-    /// (SQUASHTIDY1c's <see cref="ContentHolds.KeepDiscardedAsync"/>), named without making it: the first of its names no ref holds, or one
-    /// that holds that commit already. Null where every name is taken.
+    /// The recovery ref an unforced discard of <paramref name="branch"/> at <paramref name="judged"/> would keep its commits at, named as the
+    /// delete's act names it (<see cref="RecoveryKeeps.NameAsync"/>) without making it. Null where every name is taken.
     /// </summary>
-    private static async Task<string?> DiscardedNameAsync(string root, string branch, string judged, CancellationToken ct)
-    {
-        for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
-        {
-            var reference = ContentHolds.DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
-            var (exists, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (exists != 0 || at.Trim() == judged) return reference;
-        }
-
-        return null;
-    }
+    private static async Task<string?> DiscardedNameAsync(string root, string branch, string judged, CancellationToken ct) =>
+        (await RecoveryKeeps.NameAsync(root, branch, judged, ct).ConfigureAwait(false)).Name?.Ref;
 }

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// it and the line the look reports. Built with the facts of the start it concludes, and handed to the hold as its conclusion.
 /// </summary>
 internal sealed class RunConclusion(
-    IRunWiring wiring, RunRound run, RunEndings endings, ISessionAdapter adapter, SessionTarget target, string transcript)
+    IRunWiring wiring, RunRound run, RunEndings endings, AgentDoor adapter, SessionTarget target, string transcript)
 {
     public async Task<StartRun> ConcludeAsync(int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended, CancellationToken ct)
     {
@@ -21,7 +21,7 @@ internal sealed class RunConclusion(
         if (used is not null)
         {
             context.Usage?.Record(new UsageEntry(
-                sessionId, quest.To, adapter.Name, selection.Profile,
+                sessionId, quest.To, adapter.Id.Value, selection.Profile,
                 used.Used, used.Size, DateTimeOffset.UtcNow));
         }
 
@@ -79,7 +79,7 @@ internal sealed class RunConclusion(
         // Its agent refused the choice at the open, before any prompt, so it ends `choice-not-offered`: no strike, its quest planned
         // again, no Ended notice, the reading kept before it ended.
         var notOffered = stop is null && ended.NotOffered is not null;
-        if (notOffered) conclusion = Observation.ChoiceNotOffered(adapter.Name, ended.NotOffered!);
+        if (notOffered) conclusion = Observation.ChoiceNotOffered(adapter.Id.Value, ended.NotOffered!);
 
         // Past its transient bound a failed end is `ended.transient`, no strike and no cool-off, its quest held for the person; and
         // Daoris's go-on comes off the record by its key where its take-off did not land.
@@ -101,7 +101,7 @@ internal sealed class RunConclusion(
         if (signedOutOn is not null && !context.Runs.TryReserve(wiring.MovingReservation(start))) signedOutOn = null;
         // The pipe door refused the model its choice named on a silent turn, so the account's reading is kept and the part ends with its
         // line, no strike; the next look starts what the walk then answers.
-        var refusedModel = wiring.ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
+        var refusedModel = wiring.ModelRefused(conclusion, adapter.Id.Value, selection, target.Asked?.NamedModel, ended, sessionId);
         var modelRefused = !ReferenceEquals(refusedModel, conclusion);
         conclusion = refusedModel;
         // A model its agent refused, at the open or on a silent pipe turn, moves the same start to the walk's next answer as an account's
@@ -111,7 +111,7 @@ internal sealed class RunConclusion(
             && (ended.NotOffered?.Value ?? target.Asked?.NamedModel) is { Length: > 0 } refusedValue
             && context.Runs.TryReserve(wiring.MovingReservation(start)))
         {
-            modelRefusedOn = (adapter.Name, refusedValue);
+            modelRefusedOn = (adapter.Id.Value, refusedValue);
         }
 
         (conclusion, var limited) = wiring.AccountLimited(
@@ -163,7 +163,7 @@ internal sealed class RunConclusion(
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,
                     ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)
+                    Quest: quest.Id, Adapter: adapter.Id.Value, Account: selection.Profile)
                 {
                     Limit = limited,
                     NotOffered = notOffered || modelRefused,

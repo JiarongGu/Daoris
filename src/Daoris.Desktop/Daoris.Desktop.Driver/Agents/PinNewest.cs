@@ -13,10 +13,10 @@ internal static class PinNewest
     /// <param name="npm">The package manager asked: npm, unless a test holds a stand-in.</param>
     /// <param name="transport">How a channel is reached: the network, unless a test holds its own.</param>
     public static async Task<string> AskAsync(
-        HarnessToolchain toolchain, string home, string pinned, IReadOnlyList<string>? npm, Action<string> write,
+        AccountAgent toolchain, string home, string pinned, IReadOnlyList<string>? npm, Action<string> write,
         CancellationToken ct, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null)
     {
-        if (toolchain.Channel is { Length: > 0 } channel)
+        if (toolchain.Program.Channel is { Length: > 0 } channel)
         {
             // No process asks the pointer, so stopping it is cancelling the request.
             using var asking = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -45,10 +45,10 @@ internal static class PinNewest
     }
 
     private static async Task<string> OnNpmAsync(
-        HarnessToolchain toolchain, IReadOnlyList<string> npm, string pinned, Action<string> write,
+        AccountAgent toolchain, IReadOnlyList<string> npm, string pinned, Action<string> write,
         CancellationToken ct, Action<HarnessRun>? started)
     {
-        var package = toolchain.Package!;
+        var package = toolchain.Program.Package!;
         var stays = $"Nothing was fetched or pinned, and the pin stays at {pinned}.";
         var heard = new List<string>();
 

@@ -15,10 +15,10 @@ public static class TargetPrompt
     /// before it left work uncommitted in the tree (MAKERTRAIL2). Its standing block is bound to the harness too: the tree's skills where
     /// it loads none itself, and the rules where it cuts the native instruction file (CONTEXTONE1c).
     /// </summary>
-    internal static SessionTarget ForStart(SessionTarget target, ISessionAdapter adapter) =>
+    internal static SessionTarget ForStart(SessionTarget target, ProviderRegistry adapters, AgentDoor adapter) =>
         target with
         {
-            CommitTrailer = CommitTrailers.For(adapter, target.InFlight.Count > 0 ? target.LeftBy : null),
+            CommitTrailer = CommitTrailers.For(adapters, adapter, target.InFlight.Count > 0 ? target.LeftBy : null),
             Block = target.Block is { } block ? AgentContext.Current.OnHarness(block, adapter, target.Root) : null,
         };
 

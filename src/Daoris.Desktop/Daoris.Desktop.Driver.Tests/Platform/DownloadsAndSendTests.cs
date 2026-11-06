@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class DownloadsAndSendTests : IDisposable
 {
     private readonly string _folder = Path.Combine(
-        Path.GetTempPath(), "daoris-downloads-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-downloads-" + Guid.NewGuid().ToString("N")[..8]);
 
     public DownloadsAndSendTests() => Directory.CreateDirectory(_folder);
 

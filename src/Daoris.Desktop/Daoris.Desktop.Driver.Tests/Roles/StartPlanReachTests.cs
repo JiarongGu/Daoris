@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// meeting, outside the plan, refuses the participant.
 /// </summary>
 /// <remarks>
-/// Nothing here starts a process: each agent is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>), as
+/// Nothing here starts a process: each agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>), as
 /// <c>StartPlanTests</c>' are, and no spawn is reached, so a passed choice is passed before anything is sent to it.
 /// </remarks>
 public sealed class StartPlanReachTests : IDisposable
@@ -28,12 +28,8 @@ public sealed class StartPlanReachTests : IDisposable
         File.WriteAllText(command, "");
         foreach (var agent in new[] { "cool", "fine" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").Save(Settings);
-        var present = new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-        });
+        var present = new TestAgent(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        _adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present)]);
         _roster = new HarnessRoster(_adapters, Settings);
     }
 
@@ -41,7 +37,7 @@ public sealed class StartPlanReachTests : IDisposable
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>The places a test opens, each to one provider.</summary>
     private sealed class Opened(params (string Provider, ReachPlace Place)[] places) : IReachOpenings

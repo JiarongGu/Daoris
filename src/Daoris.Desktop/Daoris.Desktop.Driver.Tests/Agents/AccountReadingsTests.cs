@@ -20,7 +20,7 @@ public sealed class AccountReadingsTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
-    private static readonly WindowWords Claude = BuiltDoors.Claude.Toolchain!.Windows!;
+    private static readonly WindowWords Claude = ProviderRegistry.Built().AgentNamed("claude-code")!.Tables.Windows!;
 
     /// <summary>The frame this branch's evidence recorded (§1.1), its moments placed against <paramref name="seen"/>.</summary>
     internal static string Recorded(DateTimeOffset seen) => Placed(Claude.Recorded[0].Frame, seen);
@@ -67,14 +67,14 @@ public sealed class AccountReadingsTests
     {
         var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
-            .Where(name => adapters.Resolve(name).Toolchain is { Windows: not null })
+            .Where(name => adapters.AgentNamed(name) is { Tables.Windows: not null })
             .Order(StringComparer.Ordinal)
             .ToArray();
 
         // The protocol doors run as their owners' accounts (AGT7), so their readings are their owners' tables'; Codex's
         // door forwards none of Codex's limits (evidence §4), so no table is declared for it.
         Assert.Equal(["alt-stub", "claude-code", "stub"], declaring);
-        var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-readings-unused", "harnesses.json"));
+        var roster = new HarnessRoster(adapters, Path.Combine(TestHomes.Root, "daoris-readings-unused", "harnesses.json"));
         Assert.Same(ClaudeWindows.Words, roster.WindowsOf("claude-code-acp"));
         Assert.Same(ClaudeWindows.Words, roster.WindowsOf("acp-stub"));
         // The second stand-in's are its own, through its protocol door too (row c): no real agent's words stand in for them.

@@ -439,10 +439,29 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return null;
     }
 
-    private static SessionEvent ToolCall(JsonElement block)
+    private static SessionEvent ToolCall(JsonElement block) =>
+        Step(Text(block, "name") ?? "tool", block.TryGetProperty("input", out var i) && i.ValueKind == JsonValueKind.Object ? i : default, Text(block, "id"));
+
+    /// <summary>
+    /// A Claude Code tool call as this reader shows it, from its name, its input as written and its id: what a reader of the same call
+    /// through another way in (the layer's Claude door, AGENTLYNTAI1d) shows alike.
+    /// </summary>
+    internal static SessionEvent Step(string name, string? input, string? id)
     {
-        var name = Text(block, "name") ?? "tool";
-        var input = block.TryGetProperty("input", out var i) && i.ValueKind == JsonValueKind.Object ? i : default;
+        if (input is null) return Step(name, default(JsonElement), id);
+        try
+        {
+            using var parsed = JsonDocument.Parse(input);
+            return Step(name, parsed.RootElement.ValueKind == JsonValueKind.Object ? parsed.RootElement : default, id);
+        }
+        catch (JsonException)
+        {
+            return Step(name, default(JsonElement), id);
+        }
+    }
+
+    private static SessionEvent Step(string name, JsonElement input, string? id)
+    {
         var path = input.ValueKind == JsonValueKind.Object
             ? Text(input, "file_path") ?? Text(input, "notebook_path") ?? Text(input, "path")
             : null;
@@ -450,7 +469,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return new SessionEvent
         {
             Kind = SessionEventKind.Tool,
-            Id = Text(block, "id"),
+            Id = id,
             Title = Title(name, input, path),
             ToolKind = KindOf(name),
             Status = "in_progress",

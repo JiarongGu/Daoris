@@ -11,11 +11,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// This table is the twin of the service's `RemoteConfigTests`. The two loaders are deliberate
 /// duplicates — this assembly links against no service code — so the tables move together, and a rule
 /// that appears in one only is a rule the other will contradict.
+/// One case sets the service's URL variable in the process's environment, which every class beside it reads, so it runs alone.
 /// </remarks>
+[Collection(Alone.Name)]
 public sealed class RemoteTargetTests : IDisposable
 {
     private readonly string _dir = Path.Combine(
-        Path.GetTempPath(), "daoris-remote-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-remote-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string ConfigPath => Path.Combine(_dir, "remotes.json");
 

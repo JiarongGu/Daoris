@@ -227,7 +227,7 @@ public sealed class GitBranchesCommandTests
     public async Task A_repository_named_with_no_checkout_here_is_refused()
     {
         var output = new StringWriter();
-        var sources = new GitBranchesSources([new RepoView("engine", true, null, "aurora")], DriverConfig.Empty, Path.GetTempPath());
+        var sources = new GitBranchesSources([new RepoView("engine", true, null, "aurora")], DriverConfig.Empty, TestHomes.Root);
 
         var exit = await GitBranchesCommand.RunAsync(new GitBranchesAsk { Repository = "engine" }, sources, output);
 

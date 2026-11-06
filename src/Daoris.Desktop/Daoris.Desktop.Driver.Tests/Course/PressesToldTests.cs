@@ -11,7 +11,7 @@ public sealed class PressesToldTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 16, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-told-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-told-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PressesToldTests() => Directory.CreateDirectory(_home);
 

@@ -7,10 +7,13 @@ public sealed record RecoveryRef(string Repository, string Ref)
     public string? Commit { get; init; }
 
     /// <summary>
-    /// When the ref was made, its reflog's first entry (RECOVERYDATE1); for a ref with no reflog, its commit's date (<c>committerdate</c>,
-    /// CLEANUP1), at or before it was made. Null where neither was read.
+    /// When the ref was kept: the journal's act that kept it; for a ref no record names, its reflog's first entry (RECOVERYDATE1), else its
+    /// commit's date (<c>committerdate</c>, CLEANUP1), at or before it was made. Null where none was read.
     /// </summary>
     public DateTimeOffset? Dated { get; init; }
+
+    /// <summary>Whether an act of the journal names it (<see cref="RecoveryKeeps"/>); false for a ref <see cref="RecoveryCensus"/> counts.</summary>
+    public bool Recorded { get; init; }
 
     /// <summary>
     /// Whether a branch or a tag of the person's holds its commit by ancestry (CLEANUP1, <see cref="RecoveryRetention.Holds"/>): true where

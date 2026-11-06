@@ -13,5 +13,5 @@ internal sealed class AgentContextOperations : IAgentContext
     public ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block) => InstructionAccounting.Intake(target, prompt, block);
     public string Parts(SessionTarget target) => SessionPartsText.Of(target);
     public StandingBlockTold Block(StandingFacts facts, int before) => StandingBlock.Fitted(facts, before);
-    public StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree) => StandingBlocks.OnHarness(facts, adapter, tree);
+    public StandingFacts OnHarness(StandingFacts facts, AgentDoor adapter, string tree) => StandingBlocks.OnHarness(facts, adapter, tree);
 }

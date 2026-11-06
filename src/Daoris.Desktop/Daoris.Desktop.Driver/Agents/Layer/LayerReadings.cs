@@ -15,23 +15,44 @@ namespace Daoris.Driver;
 /// nothing of the layer.
 /// </summary>
 /// <remarks>
-/// What the layer's released members do not carry is no reading yet: live usage and the usage readings (LQ17's context and its tokens by
-/// model), background tasks (AG18 with LQ7), and the native door's opening evidence, so the conversation is named by the first id the door
-/// yields (LQ17 widened tells the agent's own initialization apart, before a native door moves).
+/// The turn's own report (denials, the context against the window, tokens by model) is <see cref="LayerTurnReport"/>'s, said at the
+/// terminal as the native capture says it, and the conversation is the first the agent announced. What the layer's members do not carry is
+/// no reading yet: background tasks (AG18 with LQ7).
 /// </remarks>
 /// <param name="door">The bound door's transport word, the failure's door.</param>
 /// <param name="clock">The clock the failure is seen on.</param>
 /// <param name="coolOff">D125's default cool-off, for a limit whose recovery is not stated.</param>
-internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan coolOff)
+/// <param name="steps">The door's own reading of a tool call (<see cref="LayerRegistration.Steps"/>); null shows a call by its name alone.</param>
+internal sealed class LayerReadings(
+    string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null, Func<LayerToolCall, SessionEvent>? steps = null)
 {
+    private const string NoResult = "no-result-frame";
+
+    private const string NoTerminal = "no-terminal-event";
+
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+
+    private readonly LayerRefusals _refusals = refusals ?? LayerRefusals.None;
+
+    private readonly LayerTurnReport _report = new();
 
     private TurnTokens? _tokens;
 
+    private string? _model;
+
     private bool _stopping;
+
+    /// <summary>Whether the turn showed words, thinking or a call of the session's own: what today's guard on a refused model reads.</summary>
+    private bool _ran;
+
+    /// <summary>The failed turn was the door's refusal of the model it was handed: the ending's flag, set on the native door's failed result alone.</summary>
+    public bool ModelRefused { get; private set; }
 
     /// <summary>The conversation the door named first; null until one is.</summary>
     public string? Conversation { get; private set; }
+
+    /// <summary>The context at its high-water mark against the window the harness named; null where it reported none.</summary>
+    public AcpUsage? Usage => _report.Usage;
 
     /// <summary>The turn's one terminal; null until it ended.</summary>
     public LayerEnded? Ended { get; private set; }
@@ -39,13 +60,60 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
     /// <summary>The turn's failure as Daoris's outcome; null where it did not fail or was stopped.</summary>
     public NormalizedFailure? Failure { get; private set; }
 
+    /// <summary>Whether Daoris ended the process (its bound, its watch's quiet, a stop it registered): its executor says that end.</summary>
+    public Func<bool> Killed { get; init; } = () => false;
+
+    /// <summary>Whether the process exited clean, read once the terminal is in.</summary>
+    public Func<bool> Clean { get; init; } = () => false;
+
     /// <summary>Daoris asked a stop before the terminal: the terminal that follows is the stop, never the fatal exit after the kill.</summary>
     public void Stop() => _stopping = Ended is null;
 
     /// <summary>The readings <paramref name="evt"/> is, in the order today's capture hands them.</summary>
-    public IReadOnlyList<WireReading> Read(AgentStreamEvent evt) => evt switch
+    public IReadOnlyList<WireReading> Read(AgentStreamEvent evt)
     {
-        LayerStarted started => Named(started.SessionId),
+        if (evt is TextDelta { ParentCallId: null } or Thinking { ParentCallId: null } or LayerToolCall { ParentCallId: null }) _ran = true;
+        var read = Translate(evt);
+
+        // Today's capture hands what the init says it loaded before the conversation that frame names, so the naming waits for the frame's
+        // next event, or for anything else said first (Flush).
+        lock (_held)
+        {
+            if (evt is LayerStarted && read.Count > 0)
+            {
+                _naming = read;
+                return [];
+            }
+
+            if (_naming is not { } naming) return read;
+            _naming = null;
+            return evt is AgentLoaded ? [.. read, .. naming] : [.. naming, .. read];
+        }
+    }
+
+    /// <summary>The naming held for the init's reading, handed before a line the harness said outside a frame or on stderr; none held is none.</summary>
+    public IReadOnlyList<WireReading> Flush()
+    {
+        lock (_held)
+        {
+            var naming = _naming ?? [];
+            _naming = null;
+            return naming;
+        }
+    }
+
+    private readonly object _held = new();
+
+    private IReadOnlyList<WireReading>? _naming;
+
+    private IReadOnlyList<WireReading> Translate(AgentStreamEvent evt) => evt switch
+    {
+        LayerStarted started => Named(started),
+        AgentLoaded loaded =>
+        [
+            new WireReading.Loaded(new WireLoaded(
+                loaded.Tools, [.. loaded.McpServers.Select(server => new WireServer(server.Name, server.Status ?? ""))], loaded.Skills, loaded.Plugins)),
+        ],
         TextDelta text =>
         [
             .. text.Text.Split('\n').Select(Shown),
@@ -60,33 +128,46 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
         LayerToolResult result => Returned(result),
         PlanUpdated plan => [Said(new SessionEvent { Kind = SessionEventKind.Plan, Entries = [.. plan.Entries.Select(Entry)] })],
         UsageFinal usage => Counted(usage),
+        UsageLive live => Report(() => _report.Held(live)),
+        AgentToolDenied denial => Report(() => _report.Denied(denial, _titles)),
+        AgentModelUsage byModel => Report(() => _report.Split(byModel)),
+        ContextReading figures when figures.UsedTokens is not null || figures.WindowTokens is not null => [LayerTurnReport.Figures(figures)],
         LayerEnded ended => Ending(ended),
         _ => [],
     };
 
-    private IReadOnlyList<WireReading> Named(string conversation)
+    /// <summary>What the turn's own report keeps for its terminal: no reading yet.</summary>
+    private static IReadOnlyList<WireReading> Report(Action keep)
     {
-        if (Conversation is not null) return [];
+        keep();
+        return [];
+    }
+
+    /// <summary>
+    /// The conversation is the one the agent announced, the first kept: a later frame that only carries an id names nothing, as the native
+    /// door reads its initialization alone.
+    /// </summary>
+    private IReadOnlyList<WireReading> Named(LayerStarted started)
+    {
+        if (!started.Announced || Conversation is not null) return [];
+        var conversation = started.SessionId;
         Conversation = conversation;
         return [new WireReading.ConversationNamed(conversation)];
     }
 
     private IReadOnlyList<WireReading> Called(LayerToolCall call)
     {
-        var title = AcpRender.OneLine(call.Name);
+        var step = steps?.Invoke(call) ?? new SessionEvent
+        {
+            Kind = SessionEventKind.Tool,
+            Id = call.CallId,
+            Title = AcpRender.OneLine(call.Name),
+            Status = "in_progress",
+            Input = SessionEventText.Cut(call.ArgumentsJson, SessionEventText.RawLimit),
+        };
+        var title = AcpRender.OneLine(step.Title ?? call.Name);
         if (call.CallId is { } id) _titles[id] = title;
-        return
-        [
-            Shown($"→ {title}"),
-            Said(new SessionEvent
-            {
-                Kind = SessionEventKind.Tool,
-                Id = call.CallId,
-                Title = title,
-                Status = "in_progress",
-                Input = SessionEventText.Cut(call.ArgumentsJson, SessionEventText.RawLimit),
-            }),
-        ];
+        return [Shown($"→ {title}"), Said(step)];
     }
 
     private IReadOnlyList<WireReading> Returned(LayerToolResult result)
@@ -109,6 +190,7 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
     private IReadOnlyList<WireReading> Counted(UsageFinal usage)
     {
         _tokens = new TurnTokens(usage.InputTokens, usage.OutputTokens, usage.CacheReadTokens, usage.CacheCreateTokens);
+        _model = usage.Model;
         return [];
     }
 
@@ -116,32 +198,38 @@ internal sealed class LayerReadings(string door, TimeProvider clock, TimeSpan co
     {
         if (Ended is not null) return [];
         Ended = ended;
-        if (_stopping)
-        {
-            return [Shown("— the turn was stopped"), Said(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled", Tokens = _tokens })];
-        }
+        if (_stopping) return Closing([], "— the turn was stopped", "cancelled");
+
+        // Today's capture says nothing of a stream that ended without its result: the end Daoris made of the process, or a clean exit before
+        // the agent stated its end (Lyntai's `no-result-frame`, or the turn's `no-terminal-event` where no message came first).
+        if (Killed() || (Clean() && (ended.Subtype == NoResult || ended.Failure?.By == NoTerminal))) return [];
 
         var subtype = ended.Subtype ?? (ended.IsError ? "error" : "success");
-        var readings = new List<WireReading>();
+        var failed = new List<WireReading>();
         if (ended.IsError)
         {
             Failure = LayerFailures.Normalize(
                 ended.Failure ?? new AgentFailure(AgentFailureKind.Fatal, "no-failure-fields"), door, DoorWhere.Result, ended.Diagnostic,
-                clock.GetUtcNow(), coolOff);
-            readings.Add(new WireReading.Failed(Failure.Failure));
+                clock.GetUtcNow(), coolOff, ended.Turn);
+            ModelRefused = _refusals.Refused(Failure, door, DoorWhere.Result, ranNothing: !_ran, stopped: false);
+            failed.Add(new WireReading.Failed(Failure.Failure));
         }
 
-        readings.Add(Shown(ended.IsError && ended.Diagnostic is { Length: > 0 } why
-            ? $"— the turn failed ({subtype}): {why}"
-            : $"— the turn ended: {subtype}"));
-        readings.Add(Said(new SessionEvent
-        {
-            Kind = SessionEventKind.Turn,
-            StopReason = !ended.IsError && subtype == "success" ? "end_turn" : subtype,
-            Tokens = _tokens,
-        }));
-        return readings;
+        return Closing(
+            failed,
+            ended.IsError && ended.Diagnostic is { Length: > 0 } why ? $"— the turn failed ({subtype}): {why}" : $"— the turn ended: {subtype}",
+            !ended.IsError && subtype == "success" ? "end_turn" : subtype);
     }
+
+    /// <summary>The terminal as the capture says it: the failure, the lines (the denials', then its own), then the records (the denials', the context, the turn).</summary>
+    private IReadOnlyList<WireReading> Closing(IEnumerable<WireReading> failed, string line, string stopReason) =>
+    [
+        .. failed,
+        .. _report.Lines,
+        Shown(line),
+        .. _report.Events(),
+        Said(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = stopReason, Tokens = _tokens, Models = _report.Models(_tokens, _model) }),
+    ];
 
     private static PlanEntry Entry(LayerPlanEntry entry) => new(entry.Content, entry.Status switch
     {

@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class GitOwnInputScopedGitTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-own-scoped-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-own-scoped-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose() => GitSeed.Discard(_root);
 

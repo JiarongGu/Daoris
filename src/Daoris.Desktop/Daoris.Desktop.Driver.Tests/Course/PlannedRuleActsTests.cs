@@ -34,45 +34,57 @@ public sealed class PlannedRuleActsTests : IDisposable
     private static SupervisorRuleBook Book(params SupervisorRule[] more) =>
         new([new SupervisorRuleSet(SupervisorRules.Machine, 2, [.. SupervisorRuleBook.Seeded(3), .. more])]);
 
-    private static IReadOnlyList<RuleActed> Acts(Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book) =>
-        PlannedRuleActs.Of(snapshot, plan, book, (_, _) => RoleWork.Build, At);
+    private static IReadOnlyList<RuleActed> Acts(Snapshot snapshot, IReadOnlyList<Consideration> plan, SupervisorRuleBook book, int? moves = 4) =>
+        PlannedRuleActs.Of(snapshot, plan, book, (quest, _) => new RuledLine(RoleWork.Build, quest.To, null), _ => moves, At);
+
+    private static PriorSession EndedTransient(string session, int tries) => Last with
+    {
+        Session = session,
+        NoteParts = [new NotePart { Code = EndNoteCodes.EndedTransient.Code, Values = [new("count", (long)tries), new("minutes", 3L)] }],
+    };
 
     [Fact]
-    public void A_quest_the_failures_rule_parks_is_that_rule_s_act_at_the_count_it_stood_at()
+    public void CONTEXTDRIVE1s_a_park_says_the_failed_sessions_past_try_again_s_mark_not_the_records_count()
     {
-        var parked = new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 4, ParksAt = 3 };
+        // Parked at 3, Try again, three more failed: six in the records, three past the mark.
+        var parked = new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 6, FailedSince = 3, ParksAt = 3 };
 
         var act = Assert.Single(Acts(Looking(), [parked], Book()));
 
-        Assert.Equal(("q1", "s1", SupervisorRules.Failures, 3, 4, "start", 2L), (act.Line, act.Session, act.Rule.Count, act.Rule.At, act.N, act.Point, act.Revision));
+        Assert.Equal(("q1", "s1", SupervisorRules.Failures, 3, 3, "start", 2L), (act.Line, act.Session, act.Rule.Count, act.Rule.At, act.N, act.Point, act.Revision));
         Assert.Equal(SupervisorRules.Hold, act.Rule.Do);
     }
 
     [Fact]
-    public void A_transient_hold_is_the_tries_rule_s_act_on_the_session_that_ended_past_its_bound()
+    public void CONTEXTDRIVE1s_a_transient_hold_says_the_tries_its_episode_made()
     {
-        var held = HoldVerdicts.TransientHeld(Quest, Last with { Session = "s0" });
+        var held = HoldVerdicts.TransientHeld(Quest, EndedTransient("s0", 7));
 
         var act = Assert.Single(Acts(Looking(), [held], Book()));
 
-        Assert.Equal(("s0", SupervisorRules.Tries, TransientRetry.Bound, "episode"), (act.Session, act.Rule.Count, act.N, act.Point));
+        Assert.Equal(("s0", SupervisorRules.Tries, 7, "episode"), (act.Session, act.Rule.Count, act.N, act.Point));
     }
 
     [Fact]
-    public void A_move_a_rule_made_and_the_bound_of_moves_reached_are_each_a_rule_s_act()
+    public void CONTEXTDRIVE1s_a_move_and_the_bound_of_moves_say_the_count_each_read()
     {
         var tries = new SupervisorRule("build-tries", SupervisorRules.Tries, SupervisorRules.EpisodeWindow, 2, StaffActions.Weighted, null, SupervisorRules.Machine, [RoleWork.Build]);
         var moves = new SupervisorRule("build-moves", SupervisorRules.Moves, SupervisorRules.Windows[SupervisorRules.Moves], 3, SupervisorRules.Ask, null, SupervisorRules.Machine, [RoleWork.Build]);
         var book = Book(tries, moves);
+        var transient = Looking(new StaffMoving("s1", StaffConditions.Transient, null)) with
+        {
+            LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = EndedTransient("s1", 3) },
+        };
 
-        var moved = Assert.Single(Acts(Looking(new StaffMoving("s1", StaffConditions.Transient, null)), [], book));
-        Assert.Equal((SupervisorRules.Tries, StaffActions.Weighted, 2, "s1"), (moved.Rule.Count, moved.Rule.Do, moved.N, moved.Session));
+        var moved = Assert.Single(Acts(transient, [], book));
+        Assert.Equal((SupervisorRules.Tries, StaffActions.Weighted, 3, "s1"), (moved.Rule.Count, moved.Rule.Do, moved.N, moved.Session));
 
         var bound = new Consideration(Quest, StartVerdict.PolicyHeld, "bound") { HeldBy = Last, Said = new(SittingFact.MovesBound) { Session = "s1" } };
         var held = Assert.Single(Acts(Looking(), [bound], book));
-        Assert.Equal((SupervisorRules.Moves, SupervisorRules.Ask, 3), (held.Rule.Count, held.Rule.Do, held.N));
+        Assert.Equal((SupervisorRules.Moves, SupervisorRules.Ask, 4), (held.Rule.Count, held.Rule.Do, held.N));
 
-        // An ask the policy made on a limit is no moves bound: nothing is said for it here.
+        // A line whose moves did not read says no act it cannot count; an ask the policy made on a limit is no moves bound.
+        Assert.Empty(Acts(Looking(), [bound], book, moves: null));
         Assert.Empty(Acts(Looking(), [bound with { Said = new(SittingFact.PolicyAsk) }], book));
     }
 
@@ -82,15 +94,15 @@ public sealed class PlannedRuleActsTests : IDisposable
         var off = new SupervisorRule("no-failures", SupervisorRules.Failures, "in-a-row", 3, SupervisorRules.Off, null, SupervisorRules.Machine, null);
         var book = new SupervisorRuleBook([new SupervisorRuleSet(SupervisorRules.Machine, 1, [off])]);
 
-        Assert.Empty(Acts(Looking(), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 4 }], book));
-        Assert.Empty(Acts(new Snapshot([Quest], [], [], new Dictionary<string, int>()), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 4 }], Book()));
+        Assert.Empty(Acts(Looking(), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 4, FailedSince = 4 }], book));
+        Assert.Empty(Acts(new Snapshot([Quest], [], [], new Dictionary<string, int>()), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 4, FailedSince = 4 }], Book()));
     }
 
     [Fact]
     public void An_act_is_kept_once_on_its_session_through_the_rules_acts()
     {
         var acts = new SupervisorRuleActs(_home);
-        var act = Assert.Single(Acts(Looking(), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 3 }], Book()));
+        var act = Assert.Single(Acts(Looking(), [new Consideration(Quest, StartVerdict.Exhausted, "parked") { Failures = 3, FailedSince = 3 }], Book()));
 
         acts.Record(act);
 

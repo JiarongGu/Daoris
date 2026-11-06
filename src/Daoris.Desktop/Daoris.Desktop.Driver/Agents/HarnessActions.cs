@@ -45,7 +45,7 @@ public sealed class HarnessRun
         try
         {
             _download?.Cancel();
-            if (_process is { HasExited: false }) _process.Kill(entireProcessTree: true);
+            if (_process is { HasExited: false }) OwnedProcesses.End(_process);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or ObjectDisposedException)
         {
@@ -77,9 +77,9 @@ public static class HarnessActions
     /// version's, which the next version would lose. With no npm on the machine it refuses, naming <c>agent pin</c>.
     /// </remarks>
     public static Task<int> InstallAsync(
-        HarnessToolchain toolchain, Action<string> write, CancellationToken ct = default,
+        AccountAgent toolchain, Action<string> write, CancellationToken ct = default,
         Action<HarnessRun>? started = null) =>
-        toolchain.Install is { Count: > 0 } install
+        toolchain.Program.Install is { Count: > 0 } install
             ? RunAsync(OnTheSystem(install, Environment.GetEnvironmentVariable(Tools.PathVariable)), toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that agent declares no installer, so Daoris has no sanctioned way to install it. "
@@ -93,7 +93,7 @@ public static class HarnessActions
     /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
     /// <param name="npm">The package manager a package pin runs — npm, unless a test holds a stand-in.</param>
     public static Task<int> PinAsync(
-        HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
+        AccountAgent toolchain, string home, string harness, string version, Action<string> write,
         CancellationToken ct = default, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null,
         IReadOnlyList<string>? npm = null) =>
         // The plan is asked synchronously: a refused version or an npm the tools cannot run is the caller's to catch at the call.
@@ -105,7 +105,7 @@ public static class HarnessActions
     /// design §1.4); a package is installed redirected.
     /// </summary>
     private static async Task<int> RunPinAsync(
-        PinPlan plan, HarnessToolchain toolchain, string harness, string version, Action<string> write, CancellationToken ct,
+        PinPlan plan, AccountAgent toolchain, string harness, string version, Action<string> write, CancellationToken ct,
         Action<HarnessRun>? started, HttpMessageHandler? transport)
     {
         switch (plan.Way)
@@ -171,10 +171,10 @@ public static class HarnessActions
     /// configured command, not the copy sessions run. The CLI's <c>agent update</c> branches the same way.
     /// </remarks>
     /// <param name="pinned">This machine's pin for the door, or null.</param>
-    public static string? UpdateOf(HarnessToolchain toolchain, string? pinned) =>
+    public static string? UpdateOf(AccountAgent toolchain, string? pinned) =>
         !string.IsNullOrWhiteSpace(pinned)
-            ? toolchain.Package is { Length: > 0 } || toolchain.Channel is { Length: > 0 } ? "pin" : null
-            : toolchain.UpdateArguments is { Count: > 0 } ? "tool" : null;
+            ? toolchain.Program.Package is { Length: > 0 } || toolchain.Program.Channel is { Length: > 0 } ? "pin" : null
+            : toolchain.Program.UpdateArguments is { Count: > 0 } ? "tool" : null;
 
     /// <summary>
     /// Update a door (USE1a), by <see cref="UpdateOf"/>: move a pin to the newest release, or run the
@@ -188,14 +188,14 @@ public static class HarnessActions
     /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
     /// <param name="npm">The package manager a package door asks and installs with — npm, unless a test holds a stand-in.</param>
     public static Task<int> UpdateAsync(
-        HarnessToolchain toolchain, IReadOnlyList<string>? command, string home, string harness, string? pinned,
+        AccountAgent toolchain, IReadOnlyList<string>? command, string home, string harness, string? pinned,
         Action<string> pin, Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null,
         HttpMessageHandler? transport = null, IReadOnlyList<string>? npm = null) =>
         UpdateOf(toolchain, pinned) switch
         {
             "pin" => MovePinAsync(toolchain, home, harness, pinned!.Trim(), pin, write, ct, started, transport, npm),
             "tool" => RunAsync(
-                [.. toolchain.Command(command), .. toolchain.UpdateArguments!], toolchain, profileHome: null, write, ct, started),
+                [.. toolchain.Program.Command(command), .. toolchain.Program.UpdateArguments!], toolchain, profileHome: null, write, ct, started),
             _ => throw new DriverException(!string.IsNullOrWhiteSpace(pinned)
                 ? $"that agent is pinned at {pinned} and declares no package or release channel to find a newer "
                   + $"version in. Pin another with `daoris agent pin {harness} <version>`, or unpin it."
@@ -208,16 +208,16 @@ public static class HarnessActions
     /// pointer such as <c>latest</c>.
     /// </summary>
     private static async Task<int> MovePinAsync(
-        HarnessToolchain toolchain, string home, string harness, string pinned, Action<string> pin,
+        AccountAgent toolchain, string home, string harness, string pinned, Action<string> pin,
         Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport,
         IReadOnlyList<string>? npm)
     {
-        write(toolchain.Channel is { Length: > 0 }
+        write(toolchain.Program.Channel is { Length: > 0 }
             ? $"{harness} is pinned at {pinned}. Asking {toolchain.Maker ?? "its maker"}'s own release channel which release is newest."
-            : $"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
+            : $"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Program.Package} is newest.");
         var newest = await PinNewest.AskAsync(toolchain, home, pinned, npm, write, ct, started, transport).ConfigureAwait(false);
 
-        var move = PinMove.Decide(newest, pinned, HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null);
+        var move = PinMove.Decide(newest, pinned, HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Program.Binary) is not null);
         if (move == PinMoveKind.Stays)
         {
             write($"{pinned} is already the newest release — nothing was fetched, and the pin stays.");
@@ -300,7 +300,7 @@ public static class HarnessActions
     /// <param name="fresh">Whether this sign-in opens a new account's folder; false signs in to one that must be there.</param>
     /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
     public static async Task<int> LoginAsync(
-        HarnessToolchain toolchain, HarnessCommand run, string profileHome,
+        AccountAgent toolchain, HarnessCommand run, string profileHome,
         Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false,
         SignInWay way = SignInWay.Browser)
     {
@@ -338,7 +338,7 @@ public static class HarnessActions
     /// </remarks>
     /// <param name="way">The tool's own sign-in, first, or its device code (CODEXLOGIN1).</param>
     public static ProcessStartInfo PrepareLogin(
-        HarnessToolchain toolchain, HarnessCommand run, string profileHome, bool fresh, SignInWay way = SignInWay.Browser)
+        AccountAgent toolchain, HarnessCommand run, string profileHome, bool fresh, SignInWay way = SignInWay.Browser)
     {
         if (string.IsNullOrWhiteSpace(profileHome) || HarnessSettings.AccountAt(profileHome) is null)
         {
@@ -375,7 +375,7 @@ public static class HarnessActions
     /// session console takes, because this is a process like any other.
     /// </summary>
     internal static Task<int> RunAsync(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome,
+        IReadOnlyList<string> command, AccountAgent toolchain, string? profileHome,
         Action<string> write, CancellationToken ct, Action<HarnessRun>? started = null) =>
         RunAsync(Prepare(command, toolchain, profileHome), command, write, ct, started);
 
@@ -390,7 +390,7 @@ public static class HarnessActions
     /// <exception cref="DriverException">It could not be started.</exception>
     /// <exception cref="OperationCanceledException">Stopped before it started, waiting for a place at the start gate.</exception>
     public static async Task<int> TerminalRunAsync(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? home, Action<string> write,
+        IReadOnlyList<string> command, AccountAgent toolchain, string? profileHome, string? home, Action<string> write,
         CancellationToken ct, string? managed = null)
     {
         write($"  $ {string.Join(' ', command)}");
@@ -400,7 +400,7 @@ public static class HarnessActions
         Process process;
         try
         {
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (Win32Exception error)
@@ -424,7 +424,7 @@ public static class HarnessActions
     /// console's and it may have a window, the tools read from <paramref name="home"/>'s file (<see cref="TerminalRunAsync"/>).
     /// </summary>
     private static ProcessStartInfo Prepare(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null, bool terminal = false,
+        IReadOnlyList<string> command, AccountAgent toolchain, string? profileHome, string? managed = null, bool terminal = false,
         string? home = null)
     {
         var info = terminal
@@ -468,7 +468,7 @@ public static class HarnessActions
         {
             // Through the start gate (PROCSTART2): an agent's install or sign-in is a press, so a person's start (PARALLEL1d);
             // its caller's token ends its wait for a place as it ends the run (PARALLEL1e).
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (System.ComponentModel.Win32Exception)

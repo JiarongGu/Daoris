@@ -67,7 +67,7 @@ public static class StartPasses
 public sealed record SettledSelection(string Role, HarnessSelection Selection, ActorEffective? Chosen, IReadOnlyList<BuildPass> Passes)
 {
     /// <summary>The taken entry's agent as the walk resolved it; null for an order of one entry, whose agent the account walk is asked by name.</summary>
-    public ISessionAdapter? Adapter { get; init; }
+    public AgentDoor? Adapter { get; init; }
 
     /// <summary>The revision of the role's record the start took (FOUNDATION1x), kept on its binding; 0 for the seed.</summary>
     public long Revision { get; init; }
@@ -264,7 +264,7 @@ internal sealed class StartPlan
     /// The caller's own reason to pass an entry whose agent this machine has, before any of its accounts is asked: a code of
     /// <see cref="StartPasses"/> and the sentence that says why, or null where its accounts are asked.
     /// </summary>
-    public Func<ActorEffective, ISessionAdapter, (string Code, string Why)?>? Gate { get; init; }
+    public Func<ActorEffective, AgentDoor, (string Code, string Why)?>? Gate { get; init; }
 
     /// <summary>
     /// The seeded role of a work (the foundation design §2.2's table; C5-3.6): the role whose order a start of that work walks until row x reads
@@ -371,7 +371,7 @@ internal sealed class StartPlan
                 Log?.Write("info", "actor.chose", Line([.. chose]));
             }
 
-            return Taken(new SettledSelection(Role, walked.Selection!, taken, passes) { Adapter = _adapters.Resolve(taken.Agent), Revision = Revision }, taken);
+            return Taken(new SettledSelection(Role, walked.Selection!, taken, passes) { Adapter = _adapters.Door(taken.Agent), Revision = Revision }, taken);
         }
 
         GiveBack();
@@ -442,7 +442,7 @@ internal sealed class StartPlan
             return EntryTry.Passed(StartPasses.Unavailable, $"`{entry.Agent}` is not an agent on this machine");
         }
 
-        if (Gate?.Invoke(entry, _adapters.Resolve(entry.Agent)) is { } gated) return EntryTry.Passed(gated.Code, gated.Why);
+        if (Gate?.Invoke(entry, _adapters.Door(entry.Agent)) is { } gated) return EntryTry.Passed(gated.Code, gated.Why);
         var selection = await AccountsAsync(entry.Agent, entry.Model, passed, ct, counts, except).ConfigureAwait(false);
         return selection.Allowed ? EntryTry.Runs(selection) : EntryTry.Passed(StartPasses.Of(selection), selection.Refusal, selection);
     }

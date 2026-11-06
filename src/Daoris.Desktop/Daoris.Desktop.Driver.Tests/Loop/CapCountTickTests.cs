@@ -11,7 +11,7 @@ public sealed class CapCountTickTests : IDisposable
 {
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-capcount-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-capcount-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

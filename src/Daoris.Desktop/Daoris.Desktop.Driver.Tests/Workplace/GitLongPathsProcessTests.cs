@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Collection(Alone.Name)]
 public sealed class GitLongPathsProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-treelong-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-treelong-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Dictionary<string, string?> _was = [];
 
@@ -94,7 +94,7 @@ public sealed class GitLongPathsProcessTests : IDisposable
         var tree = await DeepTreeAsync();
         var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", tree, "http://localhost:5177") { Home = Home };
 
-        var handed = BuiltDoors.Stub.Prepare(target, Status);
+        var handed = ProviderRegistry.Built().Start("stub", target, Status);
         var bare = new ProcessStartInfo("git")
         {
             WorkingDirectory = tree,
@@ -122,7 +122,7 @@ public sealed class GitLongPathsProcessTests : IDisposable
         await Git(Repo, "config", "core.longpaths", "false");
 
         Assert.False(await GitLongPaths.NeededAsync(Repo, CancellationToken.None));
-        var info = BuiltDoors.Stub.Prepare(target, Status);
+        var info = ProviderRegistry.Built().Start("stub", target, Status);
         var count = info.Environment.TryGetValue("GIT_CONFIG_COUNT", out var held) && int.TryParse(held, out var number) ? number : 0;
         Assert.Single(Enumerable.Range(0, count), index => info.Environment[$"GIT_CONFIG_KEY_{index}"] == GitLongPaths.Key);
     }

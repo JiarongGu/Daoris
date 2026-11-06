@@ -318,6 +318,84 @@ public sealed class LineBatchingTests : IDisposable
         Assert.Contains(heard, call => call.Method == "POST" && call.Path.StartsWith("/api/asks/a1", StringComparison.Ordinal));
     }
 
+    /// <summary>The verification pipeline saved again with its check saying <c>failed: ask</c>, the person's standing say-so.</summary>
+    private void SaysAsk() => File.WriteAllText(WorkflowStore.PathOf(_home, "verify"),
+        $$"""{"id":"verify","name":"Verify","pipeline":"verification","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"terminal","schema":2,"graph":{{Graph.Replace("{\"ask\":\"fix\"}", "{\"ask\":\"fix\",\"failed\":\"ask\"}", StringComparison.Ordinal)}}}]}""");
+
+    [Fact]
+    public async Task A_failure_whose_check_says_failed_ask_is_asked_for_with_no_press_and_only_once()
+    {
+        SaysAsk();
+        var run = await SettledAsync(First, VerifyVerdicts.Failed);
+        var made = false;
+        var (service, heard) = ReviewChoiceStandIn.Of((method, path, _) => (method, path) switch
+        {
+            ("GET", "/api/asks") => (System.Net.HttpStatusCode.OK, made
+                ? $$"""[{"id":"a1b2c3","workspace":"default","sentence":"{{VerifyFixAsks.First("main", "suite", run.Run)}}","state":"Published","tier":"named"}]"""
+                : "[]"),
+            ("POST", "/api/asks") => (System.Net.HttpStatusCode.OK, """{"ask":{"id":"a1b2c3"},"message":"Asked."}"""),
+            _ => null,
+        });
+
+        Assert.Equal([new VerifyFixStanding.Owed(RunUnits.IdOf(run.Run), Check.Id, 1)], VerifyFixStanding.Of(Files));
+        var said = await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None);
+        made = true;
+        var again = await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None);
+
+        Assert.Contains("asked for a fix of the gate suite: #a1b2c3", Assert.Single(said), StringComparison.Ordinal);
+        Assert.Empty(again);
+        Assert.Single(heard, call => call.Method == "POST" && call.Path == "/api/asks");
+        // The failure stays the person's to see, with Run again and Not now.
+        Assert.Single(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_failure_whose_check_waits_for_the_press_asks_nothing_by_itself()
+    {
+        await SettledAsync(First, VerifyVerdicts.Failed);
+        var (service, heard) = ReviewChoiceStandIn.Of((_, _, _) => null);
+
+        Assert.Empty(VerifyFixStanding.Of(Files));
+        Assert.Empty(await VerifyFixStanding.AskAsync(service, Files, CancellationToken.None));
+        Assert.Empty(heard);
+    }
+
+    [Fact]
+    public void The_fix_ask_names_the_sessions_whose_landings_carried_the_batch()
+    {
+        var at = new DateTimeOffset(2026, 11, 6, 8, 0, 0, TimeSpan.Zero);
+        IntegrationRequest Landed(string id, string branch, string tip, int minutes, string? session = null) =>
+            new(id, "engine", "default", branch, tip, IntegrationRoutes.Merge, "main", IntegrationRequester.Press, new LandingIntegrate().Resolved(), at)
+            {
+                Session = session, ClosedAt = at.AddMinutes(minutes), ClosedWhy = IntegrationRequestCloses.Settled,
+            };
+        var settled = new[]
+        {
+            Landed("r3", "daoris/tree-b", Third, 3),
+            Landed("r2", "quest/fix-q2", Second, 2, session: "s-quest"),
+            Landed("r1", "daoris/tree-a", First, 1),
+        };
+        var sessions = new[]
+        {
+            new SessionRecord("s-b", "engine", "done") { Tree = Path.Combine("trees", "tree-b"), Created = at },
+            new SessionRecord("s-other", "web", "done") { Tree = Path.Combine("trees", "tree-b"), Created = at },
+        };
+
+        // The batch holds the second and third landings; the first landed before its base.
+        var carried = VerifyBatchSessions.Of(settled, new HashSet<string>([Second, Third], StringComparer.OrdinalIgnoreCase), sessions);
+
+        Assert.Equal(["s-quest", "s-b"], carried);
+        var run = new VerifyRun("v-0000000000000001", "engine", "default", "checkout", "verify", 1, _digest, Third, WorkflowLevels.RepositoryLanded, _now)
+        {
+            Line = "main", Base = First,
+        };
+        var result = new VerifyResult("i-1", Third, VerifyVerdicts.Failed, "why", [new VerifyGate("suite", "fail", 3)]) { Failed = "suite" };
+        var words = VerifyFixAsks.Sentence(run, "main", "suite", result, VerifyFixAsks.First("main", "suite", run.Run),
+            [new(Third, "3333333 third"), new(Second, "2222222 second")], carried);
+        Assert.Contains("- 3333333 third\n- 2222222 second", words.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.EndsWith("The batch landed from the sessions `s-quest`, `s-b`.", words, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Ask_for_a_fix_is_refused_on_a_verification_that_did_not_fail()
     {

@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class BrainstormPostureTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-posture-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-posture-" + Guid.NewGuid().ToString("N")[..8]);
 
     public BrainstormPostureTests() => Directory.CreateDirectory(_home);
 
@@ -40,7 +40,7 @@ public sealed class BrainstormPostureTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
-        var adapter = adapters.Resolve("claude-code");
+        var adapter = adapters.Door("claude-code");
         var info = new ProcessStartInfo("claude");
 
         var (file, _, _) = driver.HandRules(
@@ -119,7 +119,7 @@ public sealed class BrainstormPostureTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
-        var adapter = adapters.Resolve("claude-code-acp");
+        var adapter = adapters.Door("claude-code-acp");
 
         var (file, meta, _) = driver.HandRules(
             adapter, new ProcessStartInfo("claude-agent-acp"), $"brainstorm-b1-{turn}", null, null, tree: Room(turn), kept: null,
@@ -134,7 +134,7 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(expected["hardDeny"]!.GetValue<string>(), Strings(handed["autoMode"]!["hard_deny"]).Last());
         Assert.Null(BrainstormPermissions.Posture(adapter));
         Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(turn), adapter));
-        Assert.Equal("auto|acceptEdits", adapter.AcpPosture);
+        Assert.Equal("auto|acceptEdits", adapter.Postures.Ordinary);
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public sealed class BrainstormPostureTests : IDisposable
     {
         var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
-        var adapter = adapters.Resolve("codex-acp");
+        var adapter = adapters.Door("codex-acp");
 
         var (file, meta, handed) = driver.HandRules(
             adapter, new ProcessStartInfo("codex-acp"), "brainstorm-b1-g1", null, null, tree: Room("g1"), kept: null, brainstorm: BrainstormPermissions.Give);
@@ -156,8 +156,8 @@ public sealed class BrainstormPostureTests : IDisposable
         Assert.Equal(HandedNones.Agent, handed.None);
         var posture = Daoris.Driver.SessionRules.PassPosture(Pass(), adapter);
         Assert.Equal(new PostureAsked("read-only", Required: true).Wire(), posture);
-        Assert.NotEqual(adapter.AcpPosture, PostureAsked.Parse(posture).Modes);
-        Assert.NotEqual(adapter.FullPosture, PostureAsked.Parse(posture).Modes);
+        Assert.NotEqual(adapter.Postures.Ordinary, PostureAsked.Parse(posture).Modes);
+        Assert.NotEqual(adapter.Postures.Full, PostureAsked.Parse(posture).Modes);
         Assert.Contains("`read-only`", BrainstormPermissions.Unoffered("read-only", "it offers `agent`"), StringComparison.Ordinal);
     }
 
@@ -168,10 +168,10 @@ public sealed class BrainstormPostureTests : IDisposable
         var adapters = ProviderRegistry.Built();
         var quest = new SessionTarget("q1", "Quest", "", "Daoris", "", "tree", "");
 
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(quest, adapters.Resolve("codex-acp")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("dsh")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("acp-stub")));
-        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Resolve("claude-code")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(quest, adapters.Door("codex-acp")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("dsh")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("acp-stub")));
+        Assert.Null(Daoris.Driver.SessionRules.PassPosture(Pass(), adapters.Door("claude-code")));
     }
 
     [Theory]

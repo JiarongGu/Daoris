@@ -121,7 +121,7 @@ public sealed class GitRunnersEndTests : IDisposable
         using var cancel = new CancellationTokenSource();
         var started = new TaskCompletionSource<Process>(TaskCreationOptions.RunContinuationsAsynchronously);
         using (ProcessStarts.Within(info => Stand(info, started)))
-        using (ChildProcess.KillingWith(_ => throw new System.ComponentModel.Win32Exception(5, "refused by the test")))
+        using (OwnedProcesses.EndingWith(_ => throw new System.ComponentModel.Win32Exception(5, "refused by the test")))
         using (GitUnended.SaidTo(log))
         {
             var run = Run(runner, cancel.Token);

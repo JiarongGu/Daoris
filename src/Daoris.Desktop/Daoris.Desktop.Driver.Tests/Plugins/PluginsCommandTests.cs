@@ -13,7 +13,7 @@ public sealed class PluginsCommandTests : IDisposable
     private const string Secret = "s3cr3t-token-value";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-plugins-cmd-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-plugins-cmd-" + Guid.NewGuid().ToString("N")[..8]);
 
     public PluginsCommandTests()
     {

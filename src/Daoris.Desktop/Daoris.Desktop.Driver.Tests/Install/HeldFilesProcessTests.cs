@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class HeldFilesProcessTests : IDisposable
 {
-    private readonly string _folder = Path.Combine(Path.GetTempPath(), "daoris-held-cwd-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(TestHomes.Root, "daoris-held-cwd-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<Process> _spawned = [];
 

@@ -84,6 +84,9 @@ public sealed record Consideration(
     /// </summary>
     public int? Failures { get; init; }
 
+    /// <summary>For a quest its failed sessions park: the failed sessions past *Try again*'s mark, the count its failures rule read.</summary>
+    public int? FailedSince { get; init; }
+
     /// <summary>
     /// For a quest its failed sessions park: the failed sessions its line's failures rule parks at, as this look read it, which a retry's
     /// words say park it again.

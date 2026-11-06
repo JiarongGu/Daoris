@@ -46,7 +46,7 @@ internal static class DoctrineConsole
         Process? process;
         try
         {
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, CancellationToken.None).ConfigureAwait(false);
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, StartClass.Person, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Win32Exception error)
         {

@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Files and an in-process stand-in for the service only: the suite's fast half.</remarks>
 public sealed class SessionDeletionTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-delete-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-delete-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionDeletionTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

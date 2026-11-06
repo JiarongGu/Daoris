@@ -83,13 +83,13 @@ describe("a repository's Branches and History tabs", () => {
     answering();
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('engine');
-    expect(within(page).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
+    expect((await within(page).findAllByRole('tab')).map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Integration']);
     expect(asked('GIT_BRANCHES')).toEqual([]);
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
 
     const list = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
-    // Two sessions', three landed and the first five of yours (UX6h2a); the line is the list's head.
+    // Two sessions', three landed, five of yours (UX6h2a); the line heads the list.
     expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_BRANCHES', expect.objectContaining({ payload: { repository: 'engine', workspace: 'aurora' } }));
     expect(asked('GIT_GRAPH')).toEqual([]);

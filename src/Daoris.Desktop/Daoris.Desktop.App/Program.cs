@@ -360,6 +360,7 @@ internal static class Program
         builder.OnStopping(app =>
         {
             log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
+            Daoris.Driver.RunningProcessesLine.Write(log, Daoris.Driver.OwnedProcesses.Shared);
             // A start whose stages never all came (a host that never answered, a pipe another loop's lease kept) is said by now.
             stages.Write();
             // The secondary windows first, and disposed rather than abandoned: their threads are

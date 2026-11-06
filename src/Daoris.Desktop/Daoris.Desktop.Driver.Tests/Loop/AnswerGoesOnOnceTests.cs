@@ -21,7 +21,7 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     // ANSWERWAIT1: these are waits for signals and completed calls, not windows measuring the driver's timing.
     private static readonly TimeSpan Bound = Poll.Patience;
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-answer2-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-answer2-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
 

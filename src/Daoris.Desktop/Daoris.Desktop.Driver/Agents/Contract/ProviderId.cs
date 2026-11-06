@@ -36,7 +36,7 @@ public readonly record struct DoorId
 }
 
 /// <summary>
-/// The string every account record holds (the design §2.2, §5): today's <c>HarnessToolchain.Owner(name)</c>, an id of a kind of its
+/// The string every account record holds (the design §2.2, §5): today's <c>AccountAgent.Owner(name)</c>, an id of a kind of its
 /// own. A door's is its harness's <c>accountOf</c> verbatim, where it declares one, else its provider's id; never followed past that
 /// one level. It resolves to a pool (<see cref="AccountPool"/>), never to one provider.
 /// </summary>

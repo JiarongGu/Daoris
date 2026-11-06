@@ -55,6 +55,7 @@ public static class LineCounts
     public const string AnswersAlone = "answers-alone";
     public const string Failures = "failures";
     public const string FailuresOnChoice = "failures-on-choice";
+    public const string Tries = "tries";
     public const string Quiet = "quiet";
     public const string Limits = "limits";
     public const string Moves = "moves";
@@ -98,6 +99,7 @@ public static class LineCounts
 
         var newest = members.LastOrDefault();
         var atLeast = cut ? WalkCut : newest is null ? NoRecord : null;
+        counts.Add(FromRecords(Tries, "line", key, "episode", "ended.transient", evidence, () => TriesOf(newest), atLeast));
         counts.Add(FromRecords(Quiet, "line", key, "this-end", "ended.quiet", evidence, () =>
             newest?.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedQuiet.Code) == true ? 1 : 0, atLeast));
         counts.Add(FromRecords(Limits, "line", key, "this-end", "records", evidence, () => newest?.Limit == true ? 1 : 0, atLeast));
@@ -106,6 +108,13 @@ public static class LineCounts
             members.Count(member => member.FromWhy is { } why && HandedWhy.Contains(why)), cut ? WalkCut : null));
         return counts;
     }
+
+    /// <summary>The tries a run's episode made where it ended past its bound (<c>ended.transient</c>'s <c>count</c>); 0 for any other end.</summary>
+    public static int TriesOf(PriorSession? record) =>
+        record?.NoteParts?.FirstOrDefault(part => part.Code == EndNoteCodes.EndedTransient.Code)?.Value("count")?.ToString() is { } said
+        && int.TryParse(said, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var tries)
+            ? tries
+            : 0;
 
     private static LineCount AnswersAloneOf(LineKey key, IReadOnlyList<string> parts, LineEvidence evidence)
     {

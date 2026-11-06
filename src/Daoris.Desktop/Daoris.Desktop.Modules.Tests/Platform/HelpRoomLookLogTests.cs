@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -5,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>The room's session look timed into the machine log (SESSUX1h3b, D161's note, LOG1a/D94): a duration, never words.</summary>
 public sealed class HelpRoomLookLogTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-roomlook-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-roomlook-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HelpRoomLookLogTests() => Directory.CreateDirectory(_home);
 

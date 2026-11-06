@@ -11,7 +11,7 @@ public sealed class UpdateCommandTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 12, 30, 0, TimeSpan.Zero);
 
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-update-cmd-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-update-cmd-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Install => Path.Combine(_root, "install");
 

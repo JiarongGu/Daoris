@@ -169,7 +169,7 @@ public sealed class AgentContextPortsTests
         public ComposedInstruction Intake(SessionTarget target, string prompt, StandingBlockTold? block) { Check(); Target = target; Prompt = prompt; return Instruction; }
         public string Parts(SessionTarget target) { Check(); Target = target; return ""; }
         public StandingBlockTold Block(StandingFacts facts, int before) { Check(); return new("stand block", new HandedSection(HandedSections.Block, HandedSources.Machine, "stand block")); }
-        public StandingFacts OnHarness(StandingFacts facts, ISessionAdapter adapter, string tree) { Check(); return facts; }
+        public StandingFacts OnHarness(StandingFacts facts, AgentDoor adapter, string tree) { Check(); return facts; }
     }
     private sealed class Writer(List<string> calls) : StringWriter
     {

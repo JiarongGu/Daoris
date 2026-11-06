@@ -16,7 +16,7 @@ public sealed class OwnResumeReportTests : IDisposable
 
     private const string Machine = "claude-code";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-own-resume-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-own-resume-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OwnResumeReportTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 

@@ -148,7 +148,7 @@ public sealed class LineCountsTests : IDisposable
         var counts = Counts(Row("equal across a hand-over, a carry-on and a restart: named by any part of the line"), "s2");
 
         Assert.Equal(
-            ["answers-alone", "failures", "failures-on-choice", "quiet", "limits", "moves", "hand-overs"],
+            ["answers-alone", "failures", "failures-on-choice", "tries", "quiet", "limits", "moves", "hand-overs"],
             counts.Select(count => count.Count));
         Assert.All(counts, count =>
         {
@@ -157,6 +157,30 @@ public sealed class LineCountsTests : IDisposable
             Assert.Contains(count.Of, new[] { "line", "quest" });
         });
         Assert.Equal("quest", counts.Single(count => count.Count == LineCounts.Failures).Of);
+    }
+
+    [Fact]
+    public void CONTEXTDRIVE1s_tries_are_the_newest_part_s_episode_where_it_ended_past_its_bound_and_a_tries_hold_is_a_rule_s_hold()
+    {
+        var ended = new PriorSession("s1", null, "failed")
+        {
+            Quest = "q1", Kind = "driven",
+            NoteParts = [new NotePart { Code = EndNoteCodes.EndedTransient.Code, Values = [new("count", 5L), new("minutes", 4L)] }],
+        };
+        var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal) { ["s1"] = ended };
+        var evidence = new LineEvidence(records, new Dictionary<string, PartEvents?> { ["s1"] = new PartEvents([], false) },
+            new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new MovesAnswer(0, MovesAnswer.Read));
+
+        var tries = LineCounts.Of("s1", evidence).Single(count => count.Count == LineCounts.Tries);
+        Assert.Equal((5, LineCounts.Exact, "episode", "ended.transient"), (tries.N, tries.Known, tries.Window, tries.From));
+        Assert.Equal(0, LineCounts.Of("s1", evidence with { Records = new Dictionary<string, PriorSession>(StringComparer.Ordinal) { ["s1"] = ended with { NoteParts = [] } } })
+            .Single(count => count.Count == LineCounts.Tries).N);
+
+        var facts = LineCounts.Facts(LineCounts.Of("s1", evidence), new Dictionary<string, IReadOnlyList<SupervisorRule>>
+        {
+            [SupervisorRules.Tries] = [new SupervisorRule("t", SupervisorRules.Tries, SupervisorRules.EpisodeWindow, 5, SupervisorRules.Hold, null, SupervisorRules.Machine, null)],
+        });
+        Assert.True(SupervisorRuleHold.Holds(facts));
     }
 
     [Fact]

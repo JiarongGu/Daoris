@@ -20,7 +20,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 {
     private static readonly DateTimeOffset T0 = DateTimeOffset.UtcNow.AddHours(-2);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-say-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-say-" + Guid.NewGuid().ToString("N")[..8]);
 
     public SessionsSayCommandTests() => Directory.CreateDirectory(Sessions);
 

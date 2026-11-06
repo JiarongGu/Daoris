@@ -79,11 +79,11 @@ public sealed class AgentsRoutes(DriverContext context)
         return [.. roster.Select(report =>
             {
                 // Asked once per harness: every field below reads the same two answers.
-                var toolchain = harnesses.Toolchain(report.Adapter);
+                var toolchain = harnesses.AgentOf(report.Adapter);
                 var pinned = settings.ResolveVersion(report.Adapter, null, null);
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
-                var settingsFile = harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
+                var settingsFile = harnesses.AccountAgentOf(report.Adapter)?.Accounts.SettingsFile;
                 var accountActs = AccountActs(harnesses, report.Adapter);
                 return new
                 {
@@ -99,13 +99,13 @@ public sealed class AgentsRoutes(DriverContext context)
                     Managed = HarnessSettings.ManagedBinary(
                         harnesses.Home, report.Adapter,
                         pinned,
-                        toolchain?.Binary ?? []),
+                        toolchain?.Program.Binary ?? []),
                     // Whether this harness CAN be pinned at all. A harness that declares neither
                     // a package nor a maker's channel (AGT2b) has no version for Daoris to fetch,
                     // and a surface offering the control anyway would be a button whose only
                     // outcome is a refusal.
                     Pinnable = toolchain is { } pinnable
-                        && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
+                        && (pinnable.Program.Package is { Length: > 0 } || pinnable.Program.Channel is { Length: > 0 }),
                     // Whether this door can run a sign-in at all — the same rule: an agent that
                     // declares no login flow gets no "Sign in" whose only outcome is a refusal. Its
                     // agent's flow (AGT7, CODEXACCT1), as `TakesKey` reads its key: `codex-acp` has no
@@ -121,7 +121,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     // Whether Daoris has an installer for this door (AGENTMARK1) — the test `InstallAsync` makes, so a
                     // surface offering Install anyway is a button whose only outcome is a refusal; the page says
                     // How to install where this is false.
-                    Installs = toolchain?.Install is { Count: > 0 },
+                    Installs = toolchain?.Program.Install is { Count: > 0 },
                     // The mark this tool wears on the page's strip (AGENTMARK1), declared by the harness; null leaves the
                     // page to derive one.
                     Mark = toolchain?.Mark,
@@ -142,7 +142,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     Structured = harnesses.Structured(report.Adapter),
                     // Whether a session on this door is handed the rules file (PERM1, D72): the agent's
                     // page has *What it may do* only where Daoris hands its agent one (UX6e, D150 §5.1).
-                    TakesRules = harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
+                    TakesRules = harnesses.Adapters.Door(report.Adapter).Can.TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
                     Plugin = harnesses.Adapters.DeclaredBy(report.Adapter),
@@ -219,9 +219,9 @@ public sealed class AgentsRoutes(DriverContext context)
     /// auth login</c> alone. Public for the fast half's table, which reads it without the roster the route asks.
     /// </summary>
     public static (bool SignsIn, bool TakesKey, bool DeviceCode) AccountActs(HarnessRoster harnesses, string adapter) =>
-        harnesses.AccountToolchain(adapter) is { } agent
-            ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 },
-               agent.LoginArguments is { Count: > 0 } && agent.DeviceLoginArguments is { Count: > 0 })
+        harnesses.AccountAgentOf(adapter) is { } agent
+            ? (agent.Accounts.LoginArguments is { Count: > 0 }, agent.Accounts.KeyVariable is { Length: > 0 },
+               agent.Accounts.LoginArguments is { Count: > 0 } && agent.Accounts.DeviceLoginArguments is { Count: > 0 })
             : (false, false, false);
 
     /// <summary>
@@ -233,10 +233,10 @@ public sealed class AgentsRoutes(DriverContext context)
         string? first = null;
         foreach (var name in _loop.Harnesses.Known)
         {
-            HarnessToolchain? toolchain;
+            AccountAgent? toolchain;
             try
             {
-                toolchain = _loop.Harnesses.Toolchain(name);
+                toolchain = _loop.Harnesses.AgentOf(name);
             }
             catch (DriverException)
             {
@@ -325,11 +325,11 @@ public sealed class AgentsRoutes(DriverContext context)
             wiring.Refusal,
         };
 
-        HarnessToolchain? Known(string adapter)
+        AccountAgent? Known(string adapter)
         {
             try
             {
-                return _loop.Harnesses.Toolchain(adapter);
+                return _loop.Harnesses.AgentOf(adapter);
             }
             catch (DriverException)
             {
@@ -353,7 +353,7 @@ public sealed class AgentsRoutes(DriverContext context)
         var config = DriverConfig.Load(_loop.ConfigPath);
         // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
         // name it does not know: one mapping, one shape, and the driver's own sentence intact.
-        var toolchain = _loop.Harnesses.Toolchain(harness)
+        var toolchain = _loop.Harnesses.AgentOf(harness)
             ?? throw new DriverException(
                 $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
 

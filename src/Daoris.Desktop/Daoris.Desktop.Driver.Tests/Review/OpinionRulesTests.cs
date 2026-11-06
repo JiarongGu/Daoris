@@ -131,7 +131,7 @@ public sealed class OpinionRulesTests
     public void A_plugin_s_agent_is_one_family_by_its_owner_or_its_declared_maker_as_the_cli_judges_it(
         string name, string plugins, string working, string reviewer, bool same)
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-opinion-plugins-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-opinion-plugins-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             using var folders = JsonDocument.Parse(plugins);

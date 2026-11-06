@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ClaudeUsageProcessTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-claudeuse-run-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-claudeuse-run-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
@@ -66,7 +66,7 @@ public sealed class ClaudeUsageProcessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol);
 
     private static readonly UsageQuestion Question = new ClaudeUsageQuestion(
         "claude-stand-in",
@@ -75,15 +75,12 @@ public sealed class ClaudeUsageProcessTests : IDisposable
 
     private const string Arguments = "--input-format stream-json --output-format stream-json --verbose --strict-mcp-config";
 
-    private HarnessToolchain Toolchain => new(
+    private TestAgent Toolchain => new(
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "CLAUDE_CONFIG_DIR", ProbeByPresence: true,
         Usage: Question);
 
     private HarnessRoster Roster() =>
-        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["door"] = Adapter("door", Toolchain),
-        }), Settings);
+        new(TestDoors.Registry([Adapter("door", Toolchain)]), Settings);
 
     // The explicit command names the CLI's harness, as `driver.json`'s `commands` may name `claude-code`.
     private DriverConfig Config => DriverConfig.Empty with

@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class AgentStartsProcessTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-agent-starts-process-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _root = Path.Combine(TestHomes.Root, "daoris-agent-starts-process-" + Guid.NewGuid().ToString("N")[..8]);
 
     public AgentStartsProcessTests() => Directory.CreateDirectory(_root);
 

@@ -102,7 +102,7 @@ public sealed class PullRequestProofTests
     [Fact]
     public void A_plugin_that_cannot_be_asked_says_which_of_the_four_reasons()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-pr-asking-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-pr-asking-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             Install(home, "acme.asks", [HookPoints.State]);

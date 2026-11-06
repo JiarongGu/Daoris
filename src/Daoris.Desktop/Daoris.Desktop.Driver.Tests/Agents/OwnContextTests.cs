@@ -50,7 +50,7 @@ public sealed class OwnContextTests : IDisposable
     public void Two_accounts_spawns_hold_the_same_context_and_leave_both_homes_as_they_were(string name)
     {
         var adapters = ProviderRegistry.Built();
-        var adapter = adapters.Resolve(name);
+        var adapter = adapters.Door(name);
         using var service = new ServiceClient("http://127.0.0.1:9", null);
         var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, adapters, Home);
         var accounts = new[] { Account("first"), Account("second") };

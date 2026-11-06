@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-07 - A driven start and a conversation spawned with the process's home, and tests wrote into a real one (FIX11)
+
+- **Symptom:** CI runs 7 and 8 failed about 514 driver Process tests with `Value cannot be null (Parameter 'path1')` and a chat ledger
+  that found no row, while each class passed alone in a developer's shell. The gate clears `DAORIS_HOME`; the developer's shells
+  inherited it from the account's environment, where it names the owner's installed home.
+- **Root cause:** a driven start's and a conversation's spawn read the home from the process's environment instead of carrying their
+  own, so with no `DAORIS_HOME` they threw, and with one they used that home, so tests run in such a shell wrote into the installed
+  home. Product reads of the process's home remain in `GitRuns`, `TreeRefs`, `TreeSquashes` and `Tools.Hand` (FIX12).
+- **Fix:** each spawn carries its own home (650609f5b); the test host clears the inherited `DAORIS_*` and git variables and names a
+  scratch home, and `ProcessEnvironmentCensusTests` names every source that sets the process's environment with its why.
+- **Verify:** the Process half as one run, 514 to 4 failing (22 min, from 1 h 24); the installed home's data audit looks for the tests'
+  residue before it is cleaned.
+
+## 2026-11-06 - A journaled branch delete read a broken ref as removed, and a moved branch as unknown (FIX8)
+
+- **Symptom:** `JudgedDeleteGitTests` and `ContentProofLossTests` (git gate) failed: a branch git refused to delete because its ref
+  was broken was recorded deleted, and a branch that moved after it was judged was said *Daoris could not tell whether git deleted it*.
+- **Root cause:** ONEWAY1r (99f298bc9) made every judged branch delete a journaled act. The act's check after a ref step lists refs
+  with `for-each-ref`, which skips a broken ref silently, so a refused delete of a broken ref read as done; and `JournaledDeletes`
+  dropped git's refusal, so the door could not say the branch had moved since it was judged.
+- **Fix:** where git refused, `ActSteps.ReadAsync` reads a ref gone only when `show-ref --exists` says it is missing;
+  `JournaledDeletes` hands the refusal to the door, which reads what stands.
+- **Verify:** `JudgedDeleteGitTests` 15 of 15, `ContentProofLossTests` 24 of 24, with `git.process.runsettings`.
+
 ## 2026-11-06 - A door id nobody knows in Build's order crashed every tick (FIX5)
 
 - **Symptom:** `IntakeTests` and `DrivenSessionInputTests` (Process) failed with `UnknownDoorException` out of the look: a driver
@@ -23,7 +47,7 @@ repository.
   `local/lyntai-local.props` belongs (`tools/lyntai-local.mjs` writes that one). The sensitive gate's private patterns named no
   development folder, so nothing refused the path.
 - **Fix:** the file is gone from every commit of main: on the owner's call the history was rewritten without it (`git filter-repo
-  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushes the
+  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushed the
   remote's main (`leak-repair`). Records citing a rewritten commit cite its new SHA. The private patterns refuse the development folder's
   absolute path. The path named a folder, no user, account or private name.
 - **Verify:** `node tools/test-map.mjs --check`; the sensitive gate over the tree, which names nothing.

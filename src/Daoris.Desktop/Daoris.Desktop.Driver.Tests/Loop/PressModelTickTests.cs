@@ -28,7 +28,7 @@ public sealed class PressModelTickTests : IDisposable
     /// <summary>The reset the stand-in's limit sentence names: 3 October, 16:02 in the test's zone.</summary>
     private static readonly DateTimeOffset Until = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-press-model-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-press-model-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -67,12 +67,7 @@ public sealed class PressModelTickTests : IDisposable
     private static readonly ActorChoice Sonnet = new("acp-stub", "sonnet", "low");
 
     /// <summary>The stand-ins' adapters: the built stub's protocol door, and a second door onto another tool's accounts.</summary>
-    private static ProviderRegistry Adapters() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["stub"] = BuiltDoors.Stub,
-        ["acp-stub"] = BuiltDoors.AcpStub,
-        ["acp-other"] = WalkAgentTickTests.AcpOtherAdapter(),
-    });
+    private static ProviderRegistry Adapters() => TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), WalkAgentTickTests.AcpOtherAdapter()]);
 
     private DriverConfig Config(IReadOnlyList<ActorChoice> order) => ActorChoices.With(
         DriverConfig.Empty with

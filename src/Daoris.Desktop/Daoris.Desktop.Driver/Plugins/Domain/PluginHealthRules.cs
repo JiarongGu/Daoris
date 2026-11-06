@@ -167,7 +167,7 @@ public static class PluginHealthRules
 
         // A process the loop keeps for the work wire (FABRIC-PERFORM1a) runs as one kept for a loop point does.
         var speaksInLoop = entry.Manifest.Hooks?.Points.Any(point =>
-            HookPoints.Loop.Contains(point, StringComparer.Ordinal) || HookPoints.Work.Contains(point, StringComparer.Ordinal)) == true;
+            HookPoints.Loop.Contains(point, StringComparer.Ordinal) || HookPoints.Work.Contains(point, StringComparer.Ordinal) || point == HookPoints.Event) == true;
         return record.Up && speaksInLoop
             ? new(Running, record.UpSince, null, listening)
             : new(Ready, null, null, []);

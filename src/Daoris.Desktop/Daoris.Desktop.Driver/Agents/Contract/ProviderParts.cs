@@ -38,10 +38,6 @@ public sealed record PoolFacts(
     bool WeekFixed)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
-
-    public static PoolFacts Of(HarnessToolchain toolchain) => new(
-        toolchain.KeyVariable, toolchain.LoginCheck, toolchain.LoginArguments, toolchain.DeviceLoginArguments, toolchain.LoginPorts,
-        toolchain.SettingsFile, toolchain.WeekFixed);
 }
 
 /// <summary>
@@ -58,15 +54,12 @@ public sealed record AccountsPart(AccountKey Key, DoorId? References, PoolFacts 
 public sealed record TablesPart(LimitWords? Limits, WindowWords? Windows, SignInWords? SignIn, string? Refused, ErrorWords? ErrorWords)
 {
     public static TablesPart None { get; } = new(null, null, null, null, null);
-
-    public static TablesPart Of(HarnessToolchain toolchain, bool withErrors) => new(
-        toolchain.Limits, toolchain.Windows, toolchain.SignIn, toolchain.Refused, withErrors ? toolchain.ErrorWords : null);
 }
 
-/// <summary>How an account's windows are asked between turns (<see cref="UsageQuestion"/>); null asks nothing.</summary>
-public sealed record UsagePart(IUsageQuestion? Question)
+/// <summary>How an account's windows are read between turns (<see cref="IUsageRead"/>); null asks nothing.</summary>
+public sealed record UsagePart(IUsageRead? Read)
 {
-    public static UsagePart None { get; } = new((IUsageQuestion?)null);
+    public static UsagePart None { get; } = new((IUsageRead?)null);
 }
 
 /// <summary>
@@ -117,7 +110,7 @@ public sealed record DoorTablesPart(
 }
 
 /// <summary>
-/// The variables, files and wire keys an agent names of its own, which the census reads (the design §9). Stated absent in row a:
-/// the census's seed is its own fixture.
+/// The variables, files and wire keys an agent names of its own, which the censuses read through <see cref="ProviderVocabulary"/> (the
+/// design §9). A variable here is one its program reads, so it is kept in its own spawns and stripped from every other provider's (s-vi).
 /// </summary>
 public sealed record VocabularyPart(IReadOnlyList<string> Variables, IReadOnlyList<string> Files, IReadOnlyList<string> WireKeys);

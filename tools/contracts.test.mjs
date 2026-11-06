@@ -44,6 +44,19 @@ test('NODEKIT1: a kind\'s own file stales the page, read by its name; its door a
   }), hash);
 });
 
+test('AGENTPROVIDER1t: a provider\'s own files and the registration list stale the page, whose vocabulary they declare; its layer and program stale nothing', () => {
+  const agents = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/';
+  const hash = hashOf(sources);
+  assert.notEqual(hashOf({ ...sources, [`${agents}Providers/Codex/CodexProvider.cs`]: 'class CodexProvider;\n' }), hash);
+  assert.notEqual(hashOf({ ...sources, [`${agents}Providers/ClaudeCode/ClaudeTrust.cs`]: 'class ClaudeTrust;\n' }), hash);
+  assert.notEqual(hashOf({ ...sources, [`${agents}Registry/Providers.cs`]: 'class Providers;\n' }), hash);
+  assert.notEqual(hashOf({ ...sources, [`${agents}Registry/ProviderVocabulary.cs`]: 'class ProviderVocabulary;\n' }), hash);
+  assert.equal(hashOf({
+    ...sources, [`${agents}Providers/Codex/Layer/CodexLayerDoor.cs`]: 'x', [`${agents}Providers/Stub/Program/agent.mjs`]: 'x',
+    [`${agents}Providers/Stub/pending.json`]: 'x', [`${agents}Registry/ProviderRegistry.cs`]: 'x', [`${agents}AcpProtocol.cs`]: 'x',
+  }), hash);
+});
+
 test('CODESHAPE1: a file whose stamp is the hash is fresh; one missing, unstamped or stamped otherwise names itself and the command', () => {
   const hash = hashOf(sources);
   for (const output of Object.values(OUTPUTS)) {

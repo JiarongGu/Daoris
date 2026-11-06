@@ -163,13 +163,13 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
 
         // Asked BEFORE the record, like every hold a driven spawn asks: a record for a spawn that could
         // never happen would mark the ask served and explain nothing.
-        ISessionAdapter? one = null;
+        AgentDoor? one = null;
         SettledSelection settled;
         try
         {
             // An order of one is today's walk exactly: its agent resolved before any account is asked, a name this machine has no agent of
             // held on its sentence, as is anything else its one account walk throws. A walked order's walk throws as it always did.
-            if (order.Count == 1) one = _context.Adapters.Resolve(adapterName);
+            if (order.Count == 1) one = _context.Adapters.Door(adapterName);
             settled = await plan.ResolveAsync(ct).ConfigureAwait(false);
         }
         catch (DriverException error) when (order.Count == 1)
@@ -185,7 +185,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var chosen = settled.Chosen!;
         var passes = settled.Passes;
         var adapter = settled.Adapter ?? one!;
-        if (settled.Adapter is { } taken) adapterName = taken.Name;
+        if (settled.Adapter is { } taken) adapterName = taken.Id.Value;
 
         // The room, written from the circle's declarations as they stand now.
         string room;
@@ -209,7 +209,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // The same trust question a driven spawn asks (DEPLOY1): in a room the harness has not been
         // told to trust, the room's allow-list is inert — so it is asked only where the rules handed
         // over at spawn would not let the intake publish (D73), exactly as for a quest's session.
-        if (adapter.Home() is { TrustFile: { Length: > 0 } trustFile } doorHome
+        if (adapter.Home is { TrustFile: { Length: > 0 } trustFile } doorHome
             &&!_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
             var trustPath = ClaudeTrust.PathFor(trustFile, selection.ProfileHome, doorHome.Variable);
@@ -290,7 +290,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
             }
 
             // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
@@ -327,7 +327,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
-                            sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                            sessionId, $"ask #{ask.Id}", adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
                     // D205 §3.5(f): refused at the open, before any prompt. One write ends the record `choice-not-offered` and lets the
@@ -335,13 +335,13 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     // passes the refusing account by the reading kept; its process has stopped, so its one count is given back.
                     if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
                     {
-                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Id.Value, notOffered);
                         await service.EndRefusedIntakeAsync(sessionId, refusedEnd, ct).ConfigureAwait(false);
                         _context.Harnesses.Release(selection.Number, sessionId);
                         return new StartRun(
                             $"{refusedEnd.State}  intake {sessionId} ({named}): {refusedEnd.Note}", true,
                             new SessionEnded(sessionId, $"ask #{ask.Id}", refusedEnd.State, false, refusedEnd.Note,
-                                Adapter: adapter.Name, Account: selection.Profile));
+                                Adapter: adapter.Id.Value, Account: selection.Profile));
                     }
 
                     // What became of the ask is the observation — the intake's own account of it is not.
@@ -361,7 +361,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
                     // AGENTERRORS1d: past its transient bound the intake ends `intake.transient` and lets the ask go, as a limit's end does.
                     var transient = !byPerson && !limited && TransientEnded.Of(ended) is not null;
-                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Intake, adapter.Name);
+                    if (transient) conclusion = TransientEnded.Over(conclusion, ended, TransientEnded.Intake, adapter.Id.Value);
 
                     // LIMITRESUME1h (D206 design §3.8): a limit's end lets the ask go in the same step, so the look picks it again and its
                     // start is held by the cool-off as any start's is, never a strike; its record stays, naming the ask.
@@ -376,7 +376,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                             ? null
                             : new SessionEnded(
                                 sessionId, $"ask #{ask.Id}", conclusion.State, byPerson, conclusion.Note,
-                                Adapter: adapter.Name, Account: selection.Profile) { Limit = limited });
+                                Adapter: adapter.Id.Value, Account: selection.Profile) { Limit = limited });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

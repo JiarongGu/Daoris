@@ -44,7 +44,7 @@ const OFFERS: OfferShown[] = [
   },
   {
     id: 'land-github', name: 'Land on GitHub', version: '0.2.0', description: 'Pushes a landed branch and opens its pull request.',
-    problem: null, harnesses: [], points: ['work/land'], servers: [], needs: ['`gh` on the PATH, signed in'], installed: false,
+    problem: null, harnesses: [], points: ['work/land'], servers: [], needs: ['A git identity for the host (Settings → Git)'], installed: false,
   },
 ];
 

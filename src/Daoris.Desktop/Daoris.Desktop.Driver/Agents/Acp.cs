@@ -67,8 +67,8 @@ public sealed class AcpSession(
     /// </summary>
     public Func<string, string, string>? Unoffered { get; set; }
 
-    /// <summary>The part's lineage, told each child the streams beside it announce and end; null tells none.</summary>
-    public ILineageWriter? Lineage { get; init; }
+    /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
+    public IReadingSink? Children { get; init; }
 
     /// <summary>
     /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
@@ -171,7 +171,7 @@ public sealed class AcpSession(
     /// <summary>The background work its harness says it runs, read whether or not its streams are kept.</summary>
     private readonly AcpBackground _background = new();
 
-    /// <summary>The background work its harness says still runs, with when each began (<see cref="LongCalls"/>).</summary>
+    /// <summary>The background work its harness says still runs, with when each began (<see cref="LongCallLook"/>).</summary>
     public IReadOnlyList<RunningTask> BackgroundRunning => _background.RunningSince;
 
     /// <summary>Whether no turn runs and the session waits on its own background work.</summary>
@@ -373,7 +373,7 @@ public sealed class AcpSession(
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
-        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, lineage: Lineage);
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children);
         _pump = Reader.PumpAsync(incoming, _pumpStop.Token);
 
         var initialized = await RequestAsync(

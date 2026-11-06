@@ -52,13 +52,13 @@ public sealed class ActorRunTests : IDisposable
         var adapter = BuiltDoors.Claude;
         var target = new SessionTarget("q", "title", "body", "asker", "Owner", _home, "http://stand-in") { Asked = roundtrip };
         var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = roundtrip, Resume = "conv-1" };
-        foreach (var info in new[] { adapter.Prepare(target, null), adapter.PrepareResume(target, null, "conv-1"), adapter.PrepareChat(chat, null) })
+        foreach (var info in new[] { ProviderRegistry.Built().Start(adapter, target, null), ProviderRegistry.Built().Resume(adapter, target, null, "conv-1"), ProviderRegistry.Built().Chat(adapter, chat, null) })
         {
             var arguments = info.ArgumentList.ToList();
             Assert.Equal("default", arguments[arguments.IndexOf("--model") + 1]);
             Assert.DoesNotContain("--effort", arguments);
         }
-        Assert.DoesNotContain("--model", adapter.Prepare(target with { Asked = before }, null).ArgumentList);
+        Assert.DoesNotContain("--model", ProviderRegistry.Built().Start(adapter, target with { Asked = before }, null).ArgumentList);
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed class ActorRunTests : IDisposable
         Assert.Null(ActorOverride.Read(null));
 
         var chat = SpawnRequests.Chat("Owner", _home, "http://stand-in", null) with { Asked = asked.Overlaid(new ActorOverride("sonnet", null)), Resume = "conv-1" };
-        var arguments = BuiltDoors.Claude.PrepareChat(chat, null).ArgumentList.ToList();
+        var arguments = ProviderRegistry.Built().Chat("claude-code", chat, null).ArgumentList.ToList();
         Assert.Equal("sonnet", arguments[arguments.IndexOf("--model") + 1]);
         Assert.DoesNotContain("--effort", arguments);
     }

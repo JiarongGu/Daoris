@@ -6,42 +6,64 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The Daoris path over a scenario program (the agent-lyntai design §6.3, 1b-i): a native door Daoris runs on <see cref="TransportRun"/>,
 /// its spawn the program's command with the prompt on its input, its wire read by <see cref="ScenarioDialect"/>, its failure read at the
-/// conclusion from the door's tables, each thing it did observed for the oracle.
+/// conclusion from the door's tables, each thing it did observed for the oracle. Given <paramref name="door"/>, a shipped door is the path's
+/// own, its dialect and tables as it ships them and its spawn the program's command (1d).
 /// </summary>
-internal sealed class ParityDaorisPath(string home) : IDisposable
+internal sealed class ParityDaorisPath(string home, Func<ISpawn, Provider>? door = null) : IDisposable
 {
     public const string Door = "parity-daoris";
+
+    /// <summary>The session each path's run is handed, so the session its readings are stamped with is the same on both.</summary>
+    public const string Session = "s1";
 
     private readonly ServiceClient _service = new("http://127.0.0.1:9", null);
 
     public void Dispose() => _service.Dispose();
 
-    /// <summary>One turn of <paramref name="command"/> with <paramref name="prompt"/>, observed.</summary>
-    public async Task<ParityObservation> RunAsync(IReadOnlyList<string> command, string prompt, DateTimeOffset start, CancellationToken ct)
+    /// <summary>A driver over <paramref name="home"/>, its sessions there and no service reachable, and the target a path's start is for.</summary>
+    public static (Daoris.Driver.Driver Driver, SessionTarget Target) Over(ServiceClient service, string home)
     {
         Directory.CreateDirectory(Path.Combine(home, "engine"));
         var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.Sessions));
-        var driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), home, processes);
-        var adapter = TestDoors.Door(Door, resumes: true, spawn: new Spawn(command), dialect: new ScenarioDialect());
-        var target = new SessionTarget("q-1", "title", "body", "asker", "engine", Path.Combine(home, "engine"), "http://127.0.0.1:9") { Home = home };
+        var driver = new Daoris.Driver.Driver(service, DriverConfig.Empty, ProviderRegistry.Built(), home, processes);
+        return (driver, new SessionTarget("q-1", "title", "body", "asker", "engine", Path.Combine(home, "engine"), "http://127.0.0.1:9") { Home = home });
+    }
+
+    /// <summary>The shipped door <paramref name="id"/> as the path's own: its provider narrowed to it, its spawn the one handed.</summary>
+    public static Func<ISpawn, Provider> Shipped(string id) => spawn =>
+    {
+        var provider = Assert.Single(TestDoors.Shipped(id));
+        return provider with
+        {
+            Doors = [.. provider.Doors.Select(each => each with { Spawn = Known<ISpawn>.Declared(spawn, "the parity's program") })],
+        };
+    };
+
+    /// <summary>One turn of <paramref name="command"/> with <paramref name="prompt"/>, observed.</summary>
+    public async Task<ParityObservation> RunAsync(IReadOnlyList<string> command, string prompt, DateTimeOffset start, CancellationToken ct)
+    {
+        var (driver, target) = Over(_service, home);
+        var spawn = new Spawn(command);
+        var registry = TestDoors.Registry(door?.Invoke(spawn) ?? TestDoors.Door(Door, resumes: true, spawn: spawn, dialect: new ScenarioDialect()));
+        var adapter = registry.Door(Assert.Single(Assert.Single(registry.Providers).Doors).Id.Value);
         var transcript = Path.Combine(home, "daoris.log");
         var seen = new ParityObservation("daoris", start);
 
         await using (var run = new TransportRun(
-            new DriverTransportHost(driver), adapter,
-            new TransportStart(adapter.Prepare(target, null), StartClass.Background)
+            new DriverTransportHost(driver), registry, adapter,
+            new TransportStart(registry.Start(adapter, target, null), StartClass.Background)
             {
                 Target = target, Request = SpawnRequests.Of(target, null), Selection = new HarnessSelection(null), Prompt = prompt,
             }))
         {
-            run.HandStart(run.Start with { Session = "s1", Transcript = transcript, Own = new HarnessWords() });
+            run.HandStart(run.Start with { Session = Session, Transcript = transcript, Own = new HarnessWords() });
             run.HandSink(ParityObserver.Sink(seen));
             await run.OpenAsync(ct);
             var end = await run.EndAsync(ct);
             ParityObserver.Ended(seen, end, stopped: false);
             if (end.Ending.Failure is { } words)
             {
-                var error = AgentErrors.Read(ProviderRegistry.Built(), adapter, DoorFailures.OfResult(words), start, TimeZoneInfo.Utc);
+                var error = AgentErrors.Read(registry, adapter, DoorFailures.OfResult(words), start, TimeZoneInfo.Utc);
                 ParityObserver.Failed(seen, error, ParityObserver.Heard(seen));
             }
         }

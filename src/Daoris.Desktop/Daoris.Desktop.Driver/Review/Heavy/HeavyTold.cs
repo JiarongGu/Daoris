@@ -53,7 +53,7 @@ public static class HeavyTold
     /// since it asks nothing of it; where the agent takes Daoris's rules, each heavy gate's command is denied exactly and the classifier is
     /// told; where it takes none, the words say so and nothing is handed.
     /// </summary>
-    /// <param name="takesRules">Whether the session's agent takes Daoris's rules (<see cref="ISessionAdapter.TakesSettings"/>).</param>
+    /// <param name="takesRules">Whether the session's agent takes Daoris's rules (<see cref="AgentDoor.TakesSettings"/>).</param>
     public static HeavyHanded Hand(string root, string? home, string? repository, string? checks, bool takesRules)
     {
         var handed = HandChecks(root, home, repository, checks, takesRules);

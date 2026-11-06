@@ -23298,3 +23298,52 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **COAGENT1c** a conversation as the lead, and the head's menu; **COAGENT1g** a hand-over waits for the outgoing part's background work and children (D199). → `docs/2026-10-22-coagent-design.md`
 
   **Outcome** 2026-11-06: BL46: one rule decides who leads pieces, so a conversation in its own tree shows the Pieces section and its head's ⋯ asks another agent to work on a piece (`PartnerChatProcessTests`); a conversation's hand-over and an account move take the outgoing part's job before the stop, then end and wait for what it still holds, up to 30 seconds, and the old record says so (`chat.left-ended`, `chat.left-running`; `HandOverLeftProcessTests`). A quest's session's hand-over stays on COAGENT1.
+
+## REVIEW2-LEFT1 (2026-11-07)
+
+- [x] **REVIEW2-LEFT1 — what REVIEW2's fixes left** (tests): about 48 tick classes still root their homes under the OS temp, and the modules' `Bridge` home has no fixture. Proof: no test home under the OS temp, by the census. → `docs/2026-11-02-review2-findings.md`
+
+  **Outcome** 2026-11-07: every desktop test home roots under the checkout's `_fixtures/test-homes` (`TestHomes.Root`, 457 files moved by a count-asserted edit) and the modules' `Bridge` homes under `_fixtures/bridge-homes`; `TestHomesCensusTests` pins no `GetTempPath` or `GetTempFileName` in either test project but three named exceptions that create nothing there or need a folder outside any repository.
+
+## AGENTLYNTAI1a, 1b-i, 1b-ii and 1c (2026-11-07)
+
+- [x] **AGENTLYNTAI1a** the desktop builds on Lyntai's agent layer and nothing changes; **1b-i** the layer's adapter, the fourth view
+  and the oracle; **1b-ii** `alt-stub`, a third stand-in, by its folder alone; **1c** Claude Code's and Codex's account windows read
+  through the layer, as before (driver; D213, D240 point 8, D248). → `docs/2026-10-30-agent-lyntai-design.md` §9.2, §12
+
+  **Outcome** 2026-11-07: all four accepted by the owner. 1a (`6935a7865`): the reference holds only where this machine's local Lyntai
+  build is in use, a build without it is today's driver, the closure restores offline; its installed proof (the published app started
+  with feeds unreachable) stays on AGENTLYNTAI1. 1b-i (`8bbd98df0`, `9a2de82e5`, `50c20a25a`): the typed access failure, the host policy
+  on Daoris's own types, `Agents/Layer/`'s ingress, translations, containers, `LauncherRunner`, `LayerRun` and layer view, the suite's
+  fourth view and the parity oracle, on the tests' provider. 1b-ii: met by AP-H's folder (`1415b9626`); its own-vocabulary cases wait
+  on 1f-ii and AGENTPROVIDER1j. 1c (`78167b30d`, `55e372916`): `IUsageRead` read through the layer where the local build is in use,
+  today's reader the read without it; Claude Code's bound to the layer's read again once Lyntai read a null-id model.
+
+## MODELROLE1e2 and MODELROLE1l (2026-11-07)
+
+- [x] **MODELROLE1e2** what MODELROLE1e left: row d's hand-over and row f's editor; **MODELROLE1l** design and decision work starts on
+  its own role (driver, service, web; D205). → `docs/2026-10-23-actors-design.md`
+
+  **Outcome** 2026-11-07: e2 built with BL7 (`395b875ad`): a hand-over keeps its model and effort, a handed start takes the role's
+  choice, and the four fenced roles are edited in the one role editor (D233 choice 5); its partner case goes with COAGENT1. l built
+  (`a94212935`): Design is a seeded role on `opus` · high that design work takes with no model named. Both installed proofs are in the
+  installed batch.
+
+## GITAPP1 (2026-11-07)
+
+- [x] **GITAPP1 — Daoris's git as comprehensive as a git management app, and Review fast** (design; D202). → `docs/2026-10-23-git-app-design.md`
+
+  **Outcome** 2026-11-07: part one built (D202). Part two was measured as OPTIMIZE1a (BL54, `3453472de`): a review asks two or three
+  object questions of its 23 git starts, so a held reader is not worth adding and none is built.
+
+## GITAPP2 (2026-11-07)
+
+- [x] **GITAPP2 — the person's git acts and writes** (driver, modules, web; D204): a to n are built (g and n: one push act on the journal with a grant bound to its ref, *Push…* and *Push tag…* on the page; G7). Ask Daoris's sync card offers *Add a git identity for host…* where a fetch did not reach, and a push cut off mid-way and a refusing `pre-push` hook are proved. Stash Drop is built too (by commit id, offered only for a Save Daoris journaled, git naming another commit storing it back and reporting not done; no Undo, the commit and its `git stash store` kept on the answer and the journal). Its terminal twin is built (`daoris git stash drop <repository> <commit> [--plan|--yes]`, its card a person's press) and a race in which git names another commit stores it back and reports not done. → `docs/2026-10-23-git-writes-design.md` §12
+
+  **Outcome** 2026-11-07: every act of the design's §12 is built, Stash Drop last (by commit id, with its terminal twin and its race proof); the installed window's look goes with the installed batch.
+
+## SESSWATCH1 (2026-11-07)
+
+- [x] **SESSWATCH1 — a quiet session seen, worded and set by one door** (driver, service, web): 1a, 1c (`quietMinutes`, the one quiet setting at every door, `settings_quiet`, Ask Daoris's answer) and 1b in most part (the watcher's one word on every door that takes words) are built. Left: **1b**'s rest, the session row's *told* line on the page and `LongCalls`' look folded into the watcher's. → `docs/2026-10-23-session-watch-design.md` §9; `docs/areas/driving.md`, Open
+
+  **Outcome** 2026-11-07: 1a, 1b and 1c are built: the watcher's one word on every door that takes words, the session row's *told* line in en and zh, and `LongCalls`' look folded into the watcher's (`LongCallLook`, `CallBound`, BL78); 1d (measured on the install) and 1e (the automatic end, after 1d) stay open.

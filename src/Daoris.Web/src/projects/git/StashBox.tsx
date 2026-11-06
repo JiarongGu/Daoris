@@ -13,7 +13,7 @@ export type StashPlanValue = {
   why: string | null;
   hooks: readonly string[];
   /** The shared stash newest first, each by its commit id; `collides` counts its untracked paths already standing here. */
-  entries: readonly { id: string; message: string; untracked: boolean; collides: number }[];
+  entries: readonly { id: string; message: string; untracked: boolean; collides: number; mine: boolean }[];
   /** Why no stash could be applied now; null where one could. */
   applyWhy: string | null;
 };
@@ -28,14 +28,17 @@ export type StashBoxPress = { untracked: boolean; message: string; head: string 
  * **The stash box of the Changes tab** (GITAPP2k, D204, the git-writes design §8): *Save to the stash*, tracked files only unless *Include
  * untracked files* is ticked, and the plan's plain words that the stash is shared by every linked tree, sessions' included, so a Save here is
  * seen there. Beneath it the saved stashes, each with *Apply* by its commit id (GITAPP2l), which keeps the stash and leaves a conflict to
- * Resolve. Dropping one is not offered.
+ * Resolve, and *Drop* by its commit id for a stash a Save of Daoris's made (the answer names the command that stores it again); the others
+ * say they are dropped where they were made.
  *
  * @remarks **A molecule**: the plan arrives as a prop. `busy` holds the press while an act runs.
  */
-export function StashBox({ read, busy, onPress, onApply }: {
+export function StashBox({ read, busy, onPress, onApply, onDrop }: {
   read: GitRead<StashPlanValue>;
   busy: boolean;
   onApply: (press: StashApplyBoxPress) => void;
+  /** *Drop* by the stash's commit id, offered only for a stash a Save of Daoris's made. */
+  onDrop: (id: string) => void;
   /** `done` is called once the act is done, so the box clears its message. */
   onPress: (press: StashBoxPress, done: () => void) => void;
 }) {
@@ -94,6 +97,13 @@ export function StashBox({ read, busy, onPress, onApply }: {
                   >
                     {t('projects.git.stash.apply')}
                   </Button>
+                  {entry.mine ? (
+                    <Button aria-label={t('projects.git.stash.dropOne', { id: entry.id.slice(0, 12) })} disabled={busy} onClick={() => onDrop(entry.id)}>
+                      {t('projects.git.stash.drop')}
+                    </Button>
+                  ) : (
+                    <span className="text-small text-ink-soft">{t('projects.git.stash.notDropped')}</span>
+                  )}
                 </div>
               </li>
             ))}

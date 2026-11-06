@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process or asks git: each agent is present by a file look that asks nobody whether an account is signed in
-/// (<see cref="HarnessToolchain.ProbeByPresence"/>), as <c>BuildWalkTests</c>' are. The clock is the day the test runs, which names the
+/// (<see cref="TestAgent.ProbeByPresence"/>), as <c>BuildWalkTests</c>' are. The clock is the day the test runs, which names the
 /// machine log's file.
 /// </remarks>
 public sealed class StartPlanTests : IDisposable
@@ -42,13 +42,8 @@ public sealed class StartPlanTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").WithDefault("piped", "account-1").Save(Settings);
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["cool"] = Adapter("cool", present),
-            ["fine"] = Adapter("fine", present),
-            ["piped"] = Adapter("piped", present, Transport.Native),
-        });
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        _adapters = TestDoors.Registry([Adapter("cool", present), Adapter("fine", present), Adapter("piped", present, Transport.Native)]);
         _roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
     }
 
@@ -62,12 +57,12 @@ public sealed class StartPlanTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain, Transport wire = Transport.Protocol) => TestDoors.Door(name, toolchain, transport: wire, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     /// <summary>A quest's plan over <paramref name="choices"/> as the work's seeded role's order, its passes said under <c>quest:q1</c>.</summary>
     private StartPlan Plan(string work, params ActorChoice[] choices) => Plan(work, null, choices);
 
-    private StartPlan Plan(string work, Func<ActorEffective, ISessionAdapter, (string Code, string Why)?>? gate, params ActorChoice[] choices)
+    private StartPlan Plan(string work, Func<ActorEffective, AgentDoor, (string Code, string Why)?>? gate, params ActorChoice[] choices)
     {
         var config = ActorChoices.With(StaffedRoles.Config("cool"),StartPlan.RoleOf(work), choices);
         return new StartPlan(work, config, _roster, _adapters, _memory)
@@ -155,7 +150,7 @@ public sealed class StartPlanTests : IDisposable
         // `gone` asks no account walk; `cool`'s held and `fine`'s took the start: two walks asked, one start counted.
         Assert.Equal((counted + 1, walks + 2), (_roster.Mark(), _roster.Selected));
         Assert.Equal(_roster.Mark(), settled.Reservation);
-        Assert.Equal("fine", settled.Adapter!.Name);
+        Assert.Equal("fine", settled.Adapter!.Id.Value);
     }
 
     /// <summary>

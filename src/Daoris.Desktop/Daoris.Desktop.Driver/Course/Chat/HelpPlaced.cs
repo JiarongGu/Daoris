@@ -14,7 +14,7 @@ public sealed record HelpPlaced(string? SessionId, string Message)
     /// </summary>
     public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
 
-    internal ISessionAdapter? Adapter { get; init; }
+    internal AgentDoor? Adapter { get; init; }
 
     internal HarnessSelection? Selection { get; init; }
 

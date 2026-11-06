@@ -476,24 +476,24 @@ public sealed class Driver(
 
     internal Task<SessionConclusion> EndStoppedAsync(string sessionId, SessionStop stop) => StoppedRecord.EndAsync(service, sessionId, stop);
 
-    private SessionEquipment Equipment => LazyInitializer.EnsureInitialized(ref _equipment, () => new SessionEquipment(home, config, Variable));
+    private SessionEquipment Equipment => LazyInitializer.EnsureInitialized(ref _equipment, () => new SessionEquipment(home, config));
 
     private SessionEquipment? _equipment;
 
     internal (ProcessStartInfo Info, string? Notice) Prepare(
-        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
-        Equipment.Prepare(adapter, target, selection, prepared);
+        AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
+        Equipment.Prepare(Context.Adapters, adapter, target, selection, prepared);
 
-    internal bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
+    internal bool HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool) =>
         Equipment.HandedConnector(adapter, workspace, repository, tool);
 
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
-        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
+        AgentDoor adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null, string? brainstorm = null,
         IReadOnlyList<string>? continued = null, HeavyHanded? heavy = null, bool partner = false) =>
         SessionRules.Hand(
-            home, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
+            home, Context.Adapters, adapter, info, sessionId, workspace, repository, tree, kept, job, across, said, opinion, helper, plugins, brainstorm,
             continued, heavy, partner);
 
     internal (RuleLists Rules, IReadOnlyList<string> HardDeny, bool Guarded) PartnerHanded(string? workspace, string? repository) =>
@@ -504,26 +504,26 @@ public sealed class Driver(
     private AccountEndings? _accounts;
 
     internal (SessionConclusion Conclusion, bool Limit) AccountLimited(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, string sessionId,
         AcpUsage? used, LimitSeen? byCode = null) =>
         Accounts.Limited(conclusion, adapter, selection, turnFailed, sessionId, used, byCode);
 
-    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) =>
+    internal Action<JsonElement> Said(AgentDoor adapter, HarnessSelection selection, string sessionId) =>
         Accounts.Said(adapter, selection, sessionId);
 
-    internal NativeLimits NativeLimit(ISessionAdapter adapter) => Accounts.NativeLimit(adapter);
+    internal NativeLimits NativeLimit(AgentDoor adapter) => Accounts.NativeLimit(adapter);
 
-    internal SessionConclusion AccountRefused(SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended) =>
+    internal SessionConclusion AccountRefused(SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, HarnessEnding ended) =>
         Accounts.Refused(conclusion, adapter, selection, ended);
 
-    internal Noted RefuseAccount(ISessionAdapter adapter, HarnessSelection selection, string owner) => Accounts.Refuse(adapter, selection, owner);
+    internal Noted RefuseAccount(AgentDoor adapter, HarnessSelection selection, string owner) => Accounts.Refuse(adapter, selection, owner);
 
     internal SessionConclusion ModelRefused(
         SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId) =>
         Accounts.ModelRefused(conclusion, agent, selection, model, ended, sessionId);
 
     internal SessionConclusion AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
+        SessionConclusion conclusion, AgentDoor adapter, HarnessSelection selection, string? turnFailed, HarnessEnding? ended = null) =>
         Accounts.SignedOut(conclusion, adapter, selection, turnFailed, ended);
 
     internal SessionWatching Watching => LazyInitializer.EnsureInitialized(ref _watching, () => new SessionWatching(home, config, Context, output));

@@ -26,7 +26,7 @@ public sealed class WorkPerformerTests : IDisposable
         Perform = new NodePerform(Idempotent: true, Reconcile: true, Transient: []),
     };
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-perform-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-perform-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly Port _port = new();
 

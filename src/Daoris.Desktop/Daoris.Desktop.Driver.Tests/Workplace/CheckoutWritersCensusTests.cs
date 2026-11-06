@@ -28,6 +28,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["LinePulls.cs"] = (Checkout, "a line's pull (D109): `merge --ff-only` in the checkout that has the line out, read clean and on it under the hold; elsewhere the ref from the commit judged", ["merge@root", "update-ref@root"]),
         ["IntegrationPromotes.cs"] = (Checkout, "a promotion's move, background or a merge rule's press: `merge --ff-only` in the checkout that has the line out, read clean under the hold; elsewhere one verified `update-ref`", ["merge@checkout.Path", "update-ref@ask.Root"]),
         ["ActSteps.cs"] = (Checkout, "a git act's effect steps (GITAPP2a, D204): one `update-ref --stdin` transaction, and an index's entries replaced under git's own `index.lock` from a copy `update-index` builds, each git held in the act's job; the act's open records reconciled first under the hold", ["update-index@launch.Root", "update-ref@launch.Root"]),
+        ["StashDropSteps.cs"] = (Checkout, "a stash Drop (GITAPP2, D204): one `stash drop` of the shared `refs/stash`'s entry by the commit asked, found as it runs and read back from git's own words, and one `stash store` of the commit git dropped where the place moved under it, each in the act's job with its repository's hooks never skipped", ["stash@launch.Root"]),
         ["ActWorkSteps.cs"] = (Checkout, "a switch, a stash Save or a stash Apply (GITAPP2k, GITAPP2l, D204): one `switch --no-guess` of the checkout to a local branch, never forced, one `stash push` that writes the shared `refs/stash`, or one `stash apply <id>` that writes the tracked files and leaves the stash, each in the act's job with its repository's hooks never skipped", ["switch@launch.Root", "stash@?", "stash@launch.Root"]),
         ["ActCommits.cs"] = (Checkout,"a commit or an amend (GITAPP2i, D204): one `commit` of the act journal, its repository's hooks run and never skipped, in the act's job; the old tip kept first by a ref step, and the index only read on a private copy (`write-tree`)", ["commit@?"]),
 
@@ -47,7 +48,6 @@ public sealed partial class CheckoutWritersCensusTests
         ["TreeLandSyncs.cs"] = (Refs, "a session's branch following what landed, moved from the tip judged while its own tree is detached; a delivery's is TreeDeliveries' transaction instead", ["switch@full", "update-ref@sync.Root"]),
         ["TreeBranches.cs"] = (Refs,"a landing's new branch, and its advance from the recorded tip of a branch checked out in no tree; a delivery's are TreeDeliveries' transaction instead; its merge rule writes the checkout only through IntegrationPromotes' effect and holds nothing itself", ["branch@root", "update-ref@root"]),
         ["TreeSquashes.cs"] = (Refs, "a squash's advance, from the recorded tip of a branch checked out in no tree; a delivery's is TreeDeliveries' transaction instead", ["update-ref@root"]),
-        ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
         ["PartnerActRunner.cs"] = (Refs, "a discarded piece's ref dropped verified at the commit it was frozen as, then its copy removed", ["update-ref@root"]),
@@ -74,6 +74,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["ActSteps.cs"] = "ActRuns.cs",
         ["ActCommits.cs"] = "ActRuns.cs",
         ["ActWorkSteps.cs"] = "ActRuns.cs",
+        ["StashDropSteps.cs"] = "ActRuns.cs",
     };
 
     /// <summary>

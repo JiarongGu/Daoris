@@ -45,7 +45,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
         var cooling = AccountCooling.Read(roster.Home, now);
         // When an account was offered again (TOOL6e): a cool-off that ended within the day, while the file still holds it.
         var offered = Safe(() => AccountCooling.Offered(roster.Home, now)) ?? [];
-        var doors = new List<(string Owner, string Door, HarnessToolchain Toolchain)>();
+        var doors = new List<(string Owner, string Door, AccountAgent Toolchain)>();
         foreach (var name in roster.Adapters.Names)
         {
             if (Known(roster, name) is { } toolchain) doors.Add((roster.Adapters.OwnerOfAgent(name).Value, name, toolchain));
@@ -336,11 +336,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     private static bool Same(string? a, string? b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
-    private static HarnessToolchain? Known(HarnessRoster roster, string adapter)
+    private static AccountAgent? Known(HarnessRoster roster, string adapter)
     {
         try
         {
-            return roster.Toolchain(adapter);
+            return roster.AgentOf(adapter);
         }
         catch (DriverException)
         {
@@ -472,7 +472,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// ask it too, as the screen's own door.
     /// </summary>
     internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
-        harnesses.Toolchain(harness) is null
+        harnesses.AgentOf(harness) is null
             ? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.")
             : harnesses.Adapters.OwnerOfAgent(harness).Value;
 

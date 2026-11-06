@@ -56,7 +56,7 @@ public sealed class PartnerConfigurationTests
     [Fact]
     public void An_agent_that_takes_no_rules_digests_alike_for_every_copy()
     {
-        var codex = ProviderRegistry.Built().Resolve("codex-acp");
+        var codex = ProviderRegistry.Built().Door("codex-acp");
         var one = PartnerConfigurations.Of(codex, "0.162.0", "X:/daoris/trees/default/reports/p-pc000001", PartnerPermissions.Shape(Person), ["x"], guarded: true, "windows 10.0");
         var two = PartnerConfigurations.Of(codex, "0.162.0", "X:/daoris/trees/default/reports/p-pc000002", PartnerPermissions.Shape(RuleLists.Empty), [], guarded: false, "windows 10.0");
 
@@ -90,7 +90,7 @@ public sealed class PartnerConfigurationTests
     [Fact]
     public void Two_choices_of_the_partner_actor_are_one_admission_digest()
     {
-        var codex = ProviderRegistry.Built().Resolve("codex-acp");
+        var codex = ProviderRegistry.Built().Door("codex-acp");
         ActorEffective Entry(string model) => Assert.Single(ActorChoices.Effective(
             "partner", ActorChoices.With(DriverConfig.Empty, "partner", [new ActorChoice("codex-acp", model, "high")]), fence: ["codex-acp"]));
         var (opus, sonnet) = (Entry("opus"), Entry("sonnet"));

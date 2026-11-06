@@ -131,8 +131,9 @@ public sealed class HelpProposalBox(string? home)
         new HelpRepositoryProposalWriter(file).Propose(repository, workspace, why, session, at);
 
     /// <inheritdoc cref="HelpSessionProposalWriter.Propose"/>
-    public (string? Id, string Message) ProposeSession(string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at) =>
-        new HelpSessionProposalWriter(file).Propose(door, sessions, ended, why, session, at);
+    public (string? Id, string Message) ProposeSession(
+        string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at, SessionHelperProposal? helper = null) =>
+        new HelpSessionProposalWriter(file).Propose(door, sessions, ended, why, session, at, helper);
 
     /// <inheritdoc cref="HelpPauseProposalWriter.Propose"/>
     public (string? Id, string Message) ProposePause(string door, string? quest, string? ask, string why, string? session, DateTimeOffset at) =>

@@ -52,8 +52,8 @@ internal sealed class LayerContainer : IAsyncDisposable
         return Build(all, NoSpawn.Runner);
     }
 
-    /// <summary>A spawn's container: <paramref name="registration"/> alone, over <paramref name="runner"/>.</summary>
-    public static LayerContainer ForSpawn(LayerRegistration registration, LauncherRunner runner) => Build([registration], runner);
+    /// <summary>A spawn's container: <paramref name="registration"/> alone, over <paramref name="runner"/>, Daoris's launcher but in a test.</summary>
+    public static LayerContainer ForSpawn(LayerRegistration registration, IProcessRunner runner) => Build([registration], runner);
 
     /// <summary>The session of <paramref name="door"/>'s layer door <paramref name="kind"/>.</summary>
     public IAgentSession Open(string door, string kind)

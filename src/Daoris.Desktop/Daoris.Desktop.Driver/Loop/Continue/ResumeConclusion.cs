@@ -18,7 +18,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
     /// refused by a credential's refusal, the adapter's words or its owner's (the reader closes <c>AccountRefused</c>'s missing owner's
     /// fallback, the design §1.2), and signed out by a sign-in's words or an access code. The record's own end stays the refused resume's.
     /// </summary>
-    private void OpeningAccount(AgentError opening, ISessionAdapter adapter, HarnessSelection selection, string sessionId)
+    private void OpeningAccount(AgentError opening, AgentDoor adapter, HarnessSelection selection, string sessionId)
     {
         var words = opening.Failure.Words is { Length: > 0 } said ? said : opening.By;
         if (opening.Kind == AgentErrorKind.Limit)
@@ -31,14 +31,14 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         switch (opening.Access)
         {
             case AccessDisposition.Refused:
-                _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value);
+                _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Id.Value).Value);
                 return;
             case AccessDisposition.SignedOutByWords:
                 _driver.AccountSignedOut(SessionConclusion.Of("failed", DoorNotes.Failed(words)), adapter, selection, words);
                 return;
             default:
                 // Read by a code the door declares (`AuthRequiredCode`, an access kind or status): its sign-in is what it says ended.
-                _context.Harnesses.SignedOut(adapter.Name, selection.Profile);
+                _context.Harnesses.SignedOut(adapter.Id.Value, selection.Profile);
                 return;
         }
     }
@@ -57,7 +57,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
     /// </remarks>
 
     internal async Task<(StartRun? Run, ContinueReason? FellBack)> ConcludeResumedAsync(
-        QuestView quest, PriorSession park, ISessionAdapter adapter, HarnessSelection selection, ResumeAsk resume,
+        QuestView quest, PriorSession park, AgentDoor adapter, HarnessSelection selection, ResumeAsk resume,
         string workTree, string transcript, string? before, int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended,
         DateTimeOffset openedAt, CancellationToken ct)
     {
@@ -80,7 +80,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         // resume (SESSCTX1c, D189's amendment; HoldAsync tried it): it never opened it, which a crash, a failed sign-in or a flag it
         // rejected ends the same way, so it is `exited`, never `gone`, and the record carries on as any refused resume's does. Read from
         // the structure, never from its words.
-        if (resume.Refused is null && adapter.Abilities().ResumesByRestart && !resume.Named && exitCode is int failed && failed != 0)
+        if (resume.Refused is null && adapter.Can.ResumesByRestart && !resume.Named && exitCode is int failed && failed != 0)
         {
             resume.Refused = ContinueWhy.Of(ContinueWhy.Exited);
         }
@@ -116,13 +116,13 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                         : Continuations.WentNote(park, refused),
                     ct: ct, interrupted: !park.Parked && park.Interrupted, limit: !park.Parked && park.Limit)
                 .ConfigureAwait(false);
-            service.AccountSaid(_ledger.Took(park, adapter.Name, refused));
+            service.AccountSaid(_ledger.Took(park, adapter.Id.Value, refused));
             return (null, refused);
         }
 
         if (used is not null)
         {
-            _context.Usage?.Record(new UsageEntry(sessionId, quest.To, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+            _context.Usage?.Record(new UsageEntry(sessionId, quest.To, adapter.Id.Value, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
         }
 
         // XAGENT1e (design §6.4): another agent's findings it took are answered as its turn ends, read before the record moves,
@@ -186,7 +186,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
         // MODELROLE1c3 (D205 §3.5(a)): a pipe go-on run whose door refused its asked model on a silent turn keeps the account's reading and
         // ends with its line, no strike; its words wait for the next look, whose resume judges the reading and carries them elsewhere.
-        conclusion = _driver.ModelRefused(conclusion, adapter.Name, selection, park.Asked?.NamedModel, ended, sessionId);
+        conclusion = _driver.ModelRefused(conclusion, adapter.Id.Value, selection, park.Asked?.NamedModel, ended, sessionId);
         (conclusion, var limited) = _driver.AccountLimited(
             conclusion, adapter, selection, turnFailed, sessionId, used,
             byCode: ended.Transient?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null);
@@ -243,7 +243,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
         await service.AdvanceAsync(
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited, parts: conclusion.Parts)
             .ConfigureAwait(false);
-        service.AccountSaid(_ledger.Took(park, adapter.Name, why: null));
+        service.AccountSaid(_ledger.Took(park, adapter.Id.Value, why: null));
 
         // REVIEWENV1c (design §2.6, §3.4): a set-up step that went on with the person's not yet says a new set-up, posted with
         // the commit its tree holds now, its correction among it.
@@ -262,6 +262,6 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,
                     ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited, Reason = SessionEnded.ReasonOf(conclusion.Parts) }), null);
+                    Quest: quest.Id, Adapter: adapter.Id.Value, Account: selection.Profile) { Limit = limited, Reason = SessionEnded.ReasonOf(conclusion.Parts) }), null);
     }
 }

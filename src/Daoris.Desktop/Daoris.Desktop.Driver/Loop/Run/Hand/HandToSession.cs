@@ -62,7 +62,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // One that was fenced goes on to its door's write, which is where it delivers; a run that never writes ends it as it is let go.
             if (carry is not null && delivering is null) await carry.EndAsync().ConfigureAwait(false);
 
-            var adapter = context.Adapters.Resolve(agent);
+            var adapter = context.Adapters.Door(agent);
             // What it may read and write outside its tree: the rules it is handed, and the sentence every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
             // What the cut-off session's line left in Daoris's own record: Daoris's brief of the whole line, every word it took and each
@@ -105,8 +105,8 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // Daoris's rules; and those checks kept by its id for `run-heavy`, let go as its run ends, a graph version's `callMinutes`
             // beside them for its long-call watch.
             var checks = SessionChecks.Of(config, quest.To, process);
-            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.TakesSettings);
-            var checksKept = SessionChecks.Hold(home, sessionId, checks, LongCalls.MinutesOf(process));
+            var heavy = HeavyTold.Hand(workTree, home, quest.To, checks, adapter.Can.TakesSettings);
+            var checksKept = SessionChecks.Hold(home, sessionId, checks, CallBound.MinutesOf(process));
             using var checksHeld = new Disposer(() => SessionChecks.LetGo(checksKept));
             var asking = await StartTargets.WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), sessionId, service, ct).ConfigureAwait(false);
             // A carry-on's moved words are taken once its first prompt is written, and the take is what keeps the person's among them on
@@ -130,7 +130,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 Access = permissions,
                 // What the entry the walk took names, carried on every run; a continuation keeps its record's, and its choice with it,
                 // so a part carried on from Build's second choice says it is that one.
-                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Name)),
+                Asked = chosen?.Asked ?? (start.Resumes is { } carried ? carried.Asked : ActorAsked.Before(adapter.Id.Value)),
                 Choice = chosen?.From ?? start.Resumes?.Choice,
                 Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
@@ -245,13 +245,13 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
             var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
             // The skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
+            var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
             // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
             // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block
             // went through, where it went through one.
-            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
+            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
             var rules = wiring.HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
                 continued: blockFolder is null ? brief?.Kept : [.. brief?.Kept ?? [], blockFolder], heavy: heavy);

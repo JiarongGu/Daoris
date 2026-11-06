@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class FilePreviewTests : IDisposable
 {
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-preview-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-preview-" + Guid.NewGuid().ToString("N")[..8]);
 
     private string Tree => Path.Combine(_home, "work", "engine");
 

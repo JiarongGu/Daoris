@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
@@ -17,7 +18,7 @@ public sealed class LaterLaunchTests : IDisposable
 {
     private const string Service = "http://localhost:5177";
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-laterlaunch-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-laterlaunch-" + Guid.NewGuid().ToString("N")[..8]);
 
     // Each test's own instance name, so no two tests share a scope or a channel.
     private readonly string _name = "DaorisLaterLaunch" + Guid.NewGuid().ToString("N")[..8];

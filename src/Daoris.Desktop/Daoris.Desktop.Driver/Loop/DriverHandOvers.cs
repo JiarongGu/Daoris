@@ -417,7 +417,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
     {
         try
         {
-            return _context.Harnesses.Toolchain(adapter)?.AccountOf;
+            return _context.Harnesses.AgentOf(adapter)?.AccountOf;
         }
         catch (DriverException)
         {

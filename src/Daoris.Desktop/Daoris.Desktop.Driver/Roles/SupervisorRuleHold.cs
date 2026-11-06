@@ -11,7 +11,7 @@ public static class SupervisorRuleHold
     /// <summary>Whether a known count other than answers alone stands at or past a <c>hold</c> rule's number at a place.</summary>
     public static bool Holds(IReadOnlyList<CountFact>? counts) =>
         counts?.Any(count => count.Count != SupervisorRules.AnswersAlone && count.N is { } n
-            && count.Watch is { Do: SupervisorRules.Hold, Place: not null } watch && n >= watch.At) == true;
+            && count.Watch is { Do: SupervisorRules.Hold } watch && n >= watch.At) == true;
 
     /// <summary>
     /// The code that keeps a supervisor's answer from going on now, read again at its release: <c>supervisor-bound</c> where the line is at its

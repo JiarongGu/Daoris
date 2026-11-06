@@ -179,7 +179,8 @@ public sealed class StrikeTests
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "words": "account.refused", "by": "agent" }] }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": "account.refused" }""", true)]
     [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "note": "The agent refused the account for its sign-in." }""", true)]
-    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "noteParts": [{ "code": "account.refused" }] }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "noteParts": [{ "code": "account.refused" }] }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "noteParts": [{ "code": "ended.quiet" }] }""", false)]
     public void A_record_strikes_as_the_cli_counts_it(string record, bool strikes)
     {
         var counted = ServiceClient.ReadStrikes($"[{record}]");

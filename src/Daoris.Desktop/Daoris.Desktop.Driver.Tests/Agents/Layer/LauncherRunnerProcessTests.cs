@@ -129,7 +129,7 @@ public sealed class LauncherRunnerProcessTests : IDisposable
 
         while (Volatile.Read(ref _heard) == 0) await Task.Delay(20);
         runner.Stop();
-        await reading.WaitAsync(TimeSpan.FromSeconds(20));
+        await reading.WaitAsync(Poll.Patience);
 
         Assert.True(runner.Stopped);
         Assert.True(runner.Process!.HasExited);

@@ -18,7 +18,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class ModelRefusalTickTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-model-refusal-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-model-refusal-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _repository;
 
@@ -234,9 +234,7 @@ public sealed class ModelRefusalTickTests : IDisposable
     private (Daoris.Driver.Driver Driver, HarnessRoster Roster) PipeDriver(string url, string refuses)
     {
         var built = ProviderRegistry.Built();
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(
-            built.Names.Select(name => KeyValuePair.Create(name, built.Resolve(name))).Append(KeyValuePair.Create(PipeStub.Named, PipeStub.Door())),
-            StringComparer.OrdinalIgnoreCase));
+        var adapters = TestDoors.Registry([.. Providers.Built(), PipeStub.Door()]);
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var config = ActorChoices.With(
             DriverConfig.Empty with
@@ -262,9 +260,9 @@ public sealed class ModelRefusalTickTests : IDisposable
     {
         public const string Named = "pipe-stub";
 
-        public static ISessionAdapter Door() => TestDoors.Door(
+        public static Provider Door() => TestDoors.Door(
             Named,
-            new HarnessToolchain(
+            new TestAgent(
                 Binary: [], VersionArguments: [], ProfileVariable: StubProvider.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
                 RunsInOwnHome: true),
             dialect: TestDoors.StreamJson,

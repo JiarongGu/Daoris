@@ -16,7 +16,7 @@ public sealed class CurveMoveTests : IDisposable
     /// <summary>Ten minutes after the ledger's records were created (<c>2026-10-03T08:00:00Z</c>).</summary>
     private static readonly DateTimeOffset Now = new(2026, 10, 3, 8, 10, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-curve-move-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-curve-move-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly string _root;
 
@@ -53,16 +53,13 @@ public sealed class CurveMoveTests : IDisposable
     /// A conversation's agent on the protocol door with accounts and a usage question, answered in memory: nothing is probed or
     /// spawned. It refuses to prepare a conversation, after its record is open, so a start ends that record failed.
     /// </summary>
-    private static ISessionAdapter Talk(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
+    private static Provider Talk(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     private HarnessRoster Roster()
     {
-        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["talk"] = Talk("talk", new HarnessToolchain(
+        var adapters = TestDoors.Registry([Talk("talk", new TestAgent(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
-                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], []))),
-        });
+                Usage: new ClaudeUsageQuestion("talk", ["talk-agent", "usage"], [])))]);
         return new HarnessRoster(adapters, Settings)
         {
             Clock = () => _now,

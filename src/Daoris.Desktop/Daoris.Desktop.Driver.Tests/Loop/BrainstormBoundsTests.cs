@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class BrainstormBoundsTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-brainstorm-bounds-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-bounds-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-19T10:00:00Z");
 

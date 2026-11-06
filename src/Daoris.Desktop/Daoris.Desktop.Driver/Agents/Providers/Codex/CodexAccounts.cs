@@ -32,22 +32,26 @@ public static class CodexAccounts
     /// <summary>The agent whose accounts <c>codex-acp</c> runs as: its <c>AccountOf</c>.</summary>
     public const string Agent = "codex";
 
-    /// <summary>Codex's own mechanisms for its accounts, read by the roster and the modules for its doors (AGT7).</summary>
-    public static HarnessToolchain Toolchain { get; } = new(
-        Product: "Codex",
-        Mark: "Cx",
-        Maker: "OpenAI",
-        Binary: ["codex"],
-        VersionArguments: ["--version"],
-        ProfileVariable: "CODEX_HOME",
-        // Its own installer, the CLI's entry's, which `agent list` names where Codex is absent (PUSH1f2e4); no door runs it here.
-        Install: ["npm", "install", "-g", "@openai/codex"],
-        // Its own updater, run unpinned; a pin comes from the release's own package, by both of its published hashes (AGT2b), with no
-        // pinned environment: an executable outside Codex's own standalone layout gets no update action (the channel evidence, §2).
-        UpdateArguments: ["update"],
-        Channel: CodexReleases.Channel,
+    /// <summary>Who Codex is, who makes it and the mark its strip wears.</summary>
+    public static ProviderIdentity Identity { get; } = new("Codex", "OpenAI", "Cx", StandIn: false, DeclaredBy: []);
+
+    /// <summary>
+    /// Codex's own program, read by the roster and the modules for its doors (AGT7). Its own installer, the CLI's entry's, which
+    /// `agent list` names where Codex is absent (PUSH1f2e4); no door runs it here. Its own updater, run unpinned; a pin comes from
+    /// the release's own package, by both of its published hashes (AGT2b), with no pinned environment: an executable outside Codex's
+    /// own standalone layout gets no update action (the channel evidence, §2).
+    /// </summary>
+    public static ToolSpec Program { get; } = new(
+        ["codex"], ["--version"], ["npm", "install", "-g", "@openai/codex"], ["update"], Package: null, Channel: CodexReleases.Channel,
+        PinnedEnvironment: null, ProbeByPresence: false);
+
+    /// <summary>Codex's own sign-in, its status question and the ports its browser sign-in waits on.</summary>
+    public static PoolFacts Pool { get; } = new(
+        KeyVariable: null,
+        Login: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"),
         LoginArguments: ["login"],
-        LoginCheck: new LoginQuestion(["login", "status"], LoggedIn: @"(?m)^\s*logged in", LoggedOut: @"(?m)^\s*not logged in"),
         DeviceLoginArguments: ["login", "--device-auth"],
-        LoginPorts: [1455, 1457]);
+        LoginPorts: [1455, 1457],
+        SettingsFile: null,
+        WeekFixed: false);
 }

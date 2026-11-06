@@ -25,7 +25,7 @@ public sealed class HelpRoomWorkspacesTests
     [Fact]
     public void Each_repository_says_the_workflow_it_follows_and_each_workspace_its_kinds()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-room-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-room-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             StoredSteps.Add(home, new WorkflowVersionAdded("docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z",

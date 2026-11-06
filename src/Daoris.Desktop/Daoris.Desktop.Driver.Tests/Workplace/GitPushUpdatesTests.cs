@@ -199,7 +199,7 @@ public sealed class GitPushUpdatesTests
     [Fact]
     public void A_grant_is_read_without_being_taken_carries_its_refs_and_is_taken_once()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-grants-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-grants-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var now = DateTimeOffset.UtcNow;

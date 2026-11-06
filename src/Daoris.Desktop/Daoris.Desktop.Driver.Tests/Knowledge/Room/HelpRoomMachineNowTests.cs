@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -36,7 +37,7 @@ public sealed class HelpRoomMachineNowTests
     [Fact]
     public void The_plugins_are_described_from_the_catalogue()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-help-installed-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-help-installed-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var folder = DaorisHome.Entry(home, HomeEntry.Plugins,"example.lands");

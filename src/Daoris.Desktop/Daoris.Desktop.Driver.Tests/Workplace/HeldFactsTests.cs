@@ -13,7 +13,7 @@ public sealed partial class HeldFactsTests : IDisposable
 {
     private static readonly DateTimeOffset Then = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-held-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-held-" + Guid.NewGuid().ToString("N")[..8]);
 
     public HeldFactsTests() => Directory.CreateDirectory(_home);
 

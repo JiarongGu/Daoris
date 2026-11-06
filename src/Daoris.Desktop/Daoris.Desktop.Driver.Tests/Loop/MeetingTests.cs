@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class MeetingTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-meeting-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-meeting-" + Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-19T10:00:00Z");
 

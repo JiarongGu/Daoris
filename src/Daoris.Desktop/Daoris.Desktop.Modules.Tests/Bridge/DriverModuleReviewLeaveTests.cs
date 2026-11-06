@@ -239,18 +239,26 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
     private static string Request(string id, string type, object payload) =>
         JsonSerializer.Serialize(new { id, module = DriverModule.Name, type, payload });
 
-    /// <summary>The service, standing in: one session whose record names the fixture's tree and its base; nothing else.</summary>
+    /// <summary>
+    /// The service, standing in: one session whose record names the fixture's tree and its base, answered by the list and by its change
+    /// since no mark, the whole list, which the driver's kept list reads a record from; nothing else.
+    /// </summary>
     private sealed class Sessions(string tree, string baseCommit) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
-            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var records = new[] { new { id = Session, tree, baseCommit, repository = "engine", state = "ended" } };
+            var body = request.RequestUri!.AbsolutePath switch
             {
-                Content = new StringContent(
-                    request.RequestUri!.AbsolutePath == "/api/sessions"
-                        ? JsonSerializer.Serialize(new[] { new { id = Session, tree, baseCommit, repository = "engine", state = "ended" } })
-                        : "[]",
-                    System.Text.Encoding.UTF8, "application/json"),
+                "/api/sessions" => JsonSerializer.Serialize(records),
+                "/api/sessions/changes" => JsonSerializer.Serialize(new { whole = true, changed = records, order = new[] { Session }, mark = (string?)null }),
+                _ => "[]",
+            };
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
             });
+        }
     }
 }
 

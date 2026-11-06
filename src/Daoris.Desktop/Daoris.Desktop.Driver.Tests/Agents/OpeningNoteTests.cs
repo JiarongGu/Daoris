@@ -15,7 +15,7 @@ public sealed class OpeningNoteTests : IDisposable
 
     private static readonly DateTimeOffset Until = Now.AddHours(30);
 
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-opening-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(TestHomes.Root, "daoris-opening-" + Guid.NewGuid().ToString("N")[..8]);
 
     public OpeningNoteTests() => Directory.CreateDirectory(_home);
 

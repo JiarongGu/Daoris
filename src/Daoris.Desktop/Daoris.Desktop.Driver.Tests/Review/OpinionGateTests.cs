@@ -508,7 +508,7 @@ public sealed class OpinionGateTests
     [Fact]
     public void The_gates_record_keeps_each_ask_request_and_answer_and_a_session_takes_only_its_own_requests()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-opinion-gates-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-opinion-gates-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var gates = new OpinionGates(home);
@@ -539,7 +539,7 @@ public sealed class OpinionGateTests
     [Fact]
     public void An_opinion_owed_is_opened_again_for_the_same_session_and_closed_with_why()
     {
-        var home = Path.Combine(Path.GetTempPath(), "daoris-opinion-dues-" + Guid.NewGuid().ToString("N")[..8]);
+        var home = Path.Combine(TestHomes.Root, "daoris-opinion-dues-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             var dues = new OpinionDues(home);

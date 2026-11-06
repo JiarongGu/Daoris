@@ -30,6 +30,9 @@
     <!-- Built first and never referenced (COAGENT1b): the partner's launcher compiles driver files in by link, and
          `PieceLauncherProcessTests` starts the built program in a piece's job. -->
     <ProjectReference Include="..\Daoris.Desktop.PieceStart\Daoris.Desktop.PieceStart.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first and never referenced (D249): a test's owner, compiling the one management in by link, which
+         `OwnedProcessesProcessTests` kills to find what it started gone with it. -->
+    <ProjectReference Include="..\Daoris.Desktop.OwnerStandIn\Daoris.Desktop.OwnerStandIn.csproj" ReferenceOutputAssembly="false" />
     <!-- The service's HTTP host is not referenced (KEEPSIZE1b3): the merge tool runs gates of two components beside each other, and two
          builds of one project fight over its obj folder. `RealServiceHost` builds its own copy on first use, under this project's obj. -->
   </ItemGroup>

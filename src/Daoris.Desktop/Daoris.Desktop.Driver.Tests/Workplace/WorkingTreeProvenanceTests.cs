@@ -91,7 +91,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
     [Fact]
     public async Task A_folder_that_is_not_a_repository_throws()
     {
-        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
+        var plain = Path.Combine(TestHomes.Root, "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(plain);
         try
         {
@@ -110,7 +110,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
     [Fact]
     public async Task A_folder_that_is_not_a_repository_answers_nothing()
     {
-        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
+        var plain = Path.Combine(TestHomes.Root, "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(plain);
         try
         {

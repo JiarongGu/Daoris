@@ -37,7 +37,7 @@ const switchBox = (chosen = '', over: Partial<SwitchPlanValue> = {}): NonNullabl
   );
 };
 const stashBox = (over: Partial<StashPlanValue> = {}): NonNullable<ChangesActs['Stash']> => function Stash({ busy }) {
-  return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} onApply={nothing} />;
+  return <StashBox read={{ state: 'read', value: { ...GIT_STASH_PLAN_ENGINE, ...over } }} busy={busy} onPress={nothing} onApply={nothing} onDrop={nothing} />;
 };
 
 // GITAPP2h: every story below carries the presses (Stage, Unstage, Show changes) a tab has where the switch is on.

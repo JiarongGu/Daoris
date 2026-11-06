@@ -106,7 +106,7 @@ export const DownloadsCleared: Story = {
   render: () => clearing({
     cleared: [
       { kind: 'agent', name: 'claude-code', version: '2.0.1', unfinished: false, outcome: 'removed', bytes: 120_000_000 },
-      { kind: 'tool', name: 'gh', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 30_000_000, keeps: 'in-use', by: [] },
+      { kind: 'tool', name: 'git', version: '2.61.0', unfinished: false, outcome: 'kept', bytes: 30_000_000, keeps: 'in-use', by: [] },
     ],
   }),
 };

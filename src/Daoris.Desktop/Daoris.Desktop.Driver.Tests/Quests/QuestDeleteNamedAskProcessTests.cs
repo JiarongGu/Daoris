@@ -16,7 +16,7 @@ public sealed class QuestDeleteNamedAskProcessTests : IAsyncLifetime, IDisposabl
     private const string Words = "retire the old gadget naming across every service";
 
     private readonly string _home = Path.Combine(
-        Path.GetTempPath(), "daoris-questdelete-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-questdelete-" + Guid.NewGuid().ToString("N")[..8]);
 
     private RealServiceHost? _host;
     private ServiceClient? _client;

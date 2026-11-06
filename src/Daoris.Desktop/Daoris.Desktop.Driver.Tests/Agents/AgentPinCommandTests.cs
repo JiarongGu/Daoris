@@ -246,6 +246,7 @@ public sealed class AgentPinCommandTests : IDisposable
             string[] npm = OperatingSystem.IsWindows()
                 ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", "exit 3", "&&"]
                 : ["/bin/sh", "-c", "exit 3", "npm"];
+            Directory.CreateDirectory(HarnessSettings.ManagedHome(_held.Home, "dsh", "1.2.3"));
             HarnessSettings.Pin(_held.Wiring, _held.Home, "dsh", "1.2.3");
 
             var exit = await AgentsCommand.RunAsync(["update", "dsh"], _held.World(npm: npm), CancellationToken.None);

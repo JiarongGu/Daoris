@@ -81,7 +81,7 @@ internal static class ConformanceLiveCases
         ConformanceRun run, string scenario, string? resume = null, TransientRetry? retry = null, Func<Task>? meanwhile = null)
     {
         var seen = Path.Combine(run.Scratch, $"seen-{scenario}.txt");
-        using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run, "--scenario", scenario, "--seen", seen)))!;
+        using var process = Process.Start(run.Subject.Adapters.Start(run.Adapter, run.Target(), Program(run, "--scenario", scenario, "--seen", seen)))!;
         var lines = new List<string>();
         var session = new AcpSession(process.StandardOutput, process.StandardInput, line =>
         {
@@ -129,7 +129,7 @@ internal static class ConformanceLiveCases
 
         // The plain capture: what the program says reaches its transcript, and its end is its exit. The service it is handed answers
         // nothing, so its quest's take is said and never thrown.
-        using var process = Process.Start(run.Adapter.Prepare(run.Target(), Program(run)))!;
+        using var process = Process.Start(run.Subject.Adapters.Start(run.Adapter, run.Target(), Program(run)))!;
         var transcript = Path.Combine(run.Scratch, "transcript.txt");
         await HarnessCapture.CaptureAsync(process.StandardOutput, process.StandardError, transcript, ReadingSinks.None, CancellationToken.None).WaitAsync(Bound);
         await process.WaitForExitAsync().WaitAsync(Bound);
@@ -150,7 +150,7 @@ internal static class ConformanceLiveCases
         }
 
         // A conversation's turn: the person's words framed as the door frames them, the program's answer read.
-        using var process = Process.Start(run.Adapter.PrepareChat(run.Chat(), Program(run)))!;
+        using var process = Process.Start(run.Subject.Adapters.Chat(run.Adapter, run.Chat(), Program(run)))!;
         await process.StandardInput.WriteLineAsync(run.Adapter.FrameMessage("hello"));
         process.StandardInput.Close();
         var said = await process.StandardOutput.ReadToEndAsync().WaitAsync(Bound);
@@ -172,11 +172,11 @@ internal static class ConformanceLiveCases
             return;
         }
 
-        var resumed = adapter.PrepareResume(run.Target(), Program(run), "c-1");
+        var resumed = run.Subject.Adapters.Resume(adapter, run.Target(), Program(run), "c-1");
         if (door.Abilities.Resumes is not { IsKnown: true, Value: true })
         {
             // The unsupported resume's fallback, answered as today: nothing to resume with, so the continuation hands the brief.
-            Assert.False(adapter.Resumes);
+            Assert.False(adapter.Can.Resumes);
             Assert.Null(resumed);
             return;
         }
@@ -260,7 +260,7 @@ internal static class ConformanceLiveCases
         };
         var roster = new HarnessRoster(run.Subject.Adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         var door = run.TheDoor.Id.Value;
-        var toolchain = roster.AccountToolchain(door);
+        var toolchain = roster.AccountAgentOf(door);
         var signIn = roster.SignInCommand(door, config);
         Assert.NotNull(toolchain);
         Assert.NotNull(signIn);
@@ -277,8 +277,7 @@ internal static class ConformanceLiveCases
     {
         var door = run.TheDoor.Id.Value;
         // The stand-in's own doors, so the roster asks no other agent's program on this machine.
-        var standIn = new ProviderRegistry(run.Provider.Doors.ToDictionary(
-            each => each.Id.Value, each => run.Subject.Adapters.Resolve(each.Id.Value), StringComparer.OrdinalIgnoreCase));
+        var standIn = new ProviderRegistry([run.Provider], []);
         var roster = new HarnessRoster(standIn, DaorisHome.Entry(run.Home(), HomeEntry.Harnesses));
 
         var none = await roster.RosterAsync(DriverConfig.Empty).WaitAsync(Bound);

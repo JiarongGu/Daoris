@@ -23,7 +23,7 @@ public static class Continuations
     /// <param name="adapter">The adapter this machine's starts ride now.</param>
     /// <param name="doorResumes">
     /// Whether that adapter's door can resume at all: the protocol door's agent decides on its wire, so true for it;
-    /// the native door only where its adapter knows the harness's own resume (<see cref="ISessionAdapter.Resumes"/>).
+    /// the native door only where its adapter knows the harness's own resume (<see cref="AgentDoor.Resumes"/>).
     /// </param>
     /// <param name="profile">The account the start would run on, as the selection resolved it; null for the tool's own home.</param>
     /// <param name="kept">The conversation id kept for the park, or null.</param>

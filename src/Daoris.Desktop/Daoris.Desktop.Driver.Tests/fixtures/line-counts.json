@@ -268,7 +268,7 @@
       "expect": {}
     },
     {
-      "name": "a quiet end counts once and a limit end is no strike",
+      "name": "a quiet end counts once, as quiet only, and a limit end is no strike",
       "records": [
         { "id": "s1", "kind": "driven", "quest": "q1", "state": "failed", "adapter": "a1", "limit": true, "created": "2026-11-03T09:00:00Z" },
         {
@@ -281,7 +281,7 @@
       "expect": {
         "quiet": { "n": 1, "known": "exact" },
         "limits": { "n": 0, "known": "exact" },
-        "failures": { "n": 1, "known": "exact" },
+        "failures": { "n": 0, "known": "exact" },
         "hand-overs": { "n": 1, "known": "exact" }
       }
     },

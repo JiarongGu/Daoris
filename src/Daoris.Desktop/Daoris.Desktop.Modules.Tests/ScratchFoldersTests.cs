@@ -1,3 +1,4 @@
+using Daoris.Desktop.Driver.Tests;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -7,7 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class ScratchFoldersTests : IDisposable
 {
     private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-scratch-folders-" + Guid.NewGuid().ToString("N")[..8]);
+        TestHomes.Root, "daoris-scratch-folders-" + Guid.NewGuid().ToString("N")[..8]);
 
     public void Dispose()
     {

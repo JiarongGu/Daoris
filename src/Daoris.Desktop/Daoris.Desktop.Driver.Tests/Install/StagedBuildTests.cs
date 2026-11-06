@@ -15,7 +15,7 @@ public sealed class StagedBuildTests : IDisposable
 {
     private static readonly DateTimeOffset Start = new(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-staged-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _install = Path.Combine(TestHomes.Root, "daoris-staged-" + Guid.NewGuid().ToString("N")[..8]);
 
     public StagedBuildTests()
     {

@@ -65,11 +65,13 @@ function* files(dir, keep) {
 
 const rel = (root, file) => file.slice(root.length + 1).replaceAll('\\', '/');
 
-/** The agents' binaries the driver declares: each toolchain's `Binary: ["…"]` first word. */
+/** The agents' binaries the driver declares: each toolchain's `Binary: ["…"]` first word, or the first word of a `ToolSpec`'s program. */
 export function agentBinaries(root) {
   const found = new Set();
   for (const file of files(join(root, TOOLCHAINS), (f) => f.endsWith('.cs'))) {
-    for (const m of readFileSync(file, 'utf8').matchAll(/\bBinary:\s*\[\s*"([^"]+)"/g)) found.add(m[1]);
+    const text = readFileSync(file, 'utf8');
+    for (const m of text.matchAll(/\bBinary:\s*\[\s*"([^"]+)"/g)) found.add(m[1]);
+    for (const m of text.matchAll(/\b(?:new ToolSpec|ToolSpec \w+ \{ get; \} = new)\(\s*\[\s*"([^"]+)"/g)) found.add(m[1]);
   }
   return [...found].sort();
 }

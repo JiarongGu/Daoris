@@ -41,16 +41,12 @@ public sealed class ContinuedChoiceTests : IDisposable
 
     private string Command => Path.Combine(_home, "agent-here");
 
-    private static ISessionAdapter Adapter(string name, HarnessToolchain toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
+    private static Provider Adapter(string name, TestAgent toolchain) => TestDoors.Door(name, toolchain, transport: Transport.Protocol, spawn: new TestDoors.RefusingSpawn("nothing spawns here"));
 
     private ProviderRegistry Adapters()
     {
-        var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        return new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["first"] = Adapter("first", present),
-            ["second"] = Adapter("second", present),
-        });
+        var present = new TestAgent(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
+        return TestDoors.Registry([Adapter("first", present), Adapter("second", present)]);
     }
 
     /// <summary>Build's order: <c>first</c> · opus, then <c>second</c> · sonnet; the legacy <c>adapter</c> key written through as <c>first</c>.</summary>

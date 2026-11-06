@@ -50,7 +50,8 @@ public sealed class HelpTreesReadTests : IDisposable
         var (again, againMs, againStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
         // The line moves on, as a landing moves it: a tree that counted no commit keeps none by the refs' forward move alone.
         await CommitAsync(root, "landed.txt", "another session's work");
-        var (moved, movedMs, movedStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct));
+        var asked = new List<string>();
+        var (moved, movedMs, movedStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct), asked);
 
         _output.WriteLine($"{Kept} trees, the part's step: the home's first read {firstMs} ms ({firstStarts} git starts); "
                           + $"again, nothing moved {againMs} ms ({againStarts}); the line moved on {movedMs} ms ({movedStarts})");
@@ -59,11 +60,15 @@ public sealed class HelpTreesReadTests : IDisposable
         Assert.Equal(Expected(trees), Said(again));
         Assert.Equal(Expected(trees), Said(moved));
         Assert.Equal(Kept, againStarts);
-        // The trees with commits are walked again (about nineteen starts each, the content proof's); the rest are asked their
-        // status, after one ask of the line's move: 930 where the first read made 1409, on 2026-10-22. REVIEWLANDED1's replay form asked
-        // the landing's walk of each tree with commits, 1616; held to two starts where no commit can be on the line, 1273 (MAINRED1).
-        Assert.True(movedStarts < firstStarts, $"{movedStarts} git starts where the first read made {firstStarts}");
+        // The trees with commits are walked again (about twenty starts each, the content proof's); the rest are asked their status
+        // alone, after one ask of the line's move. Counted by walk, not against the first read: that read, made before the line moved,
+        // walks every tree, but a walk whose line is still where its branch left it compares nothing, so it costs less than the moved
+        // read's walks of a third of them (1068 starts against 1126 on 2026-11-06).
+        Assert.Equal(trees.Count(each => each.Commits > 0), asked.Count(IsWalk));
     }
+
+    /// <summary>A tree's walk, as its first start shows it: the tree's layout, asked in one question for the walk.</summary>
+    private static bool IsWalk(string start) => start.EndsWith(string.Join(' ', GitReadOnce.Layout), StringComparison.Ordinal);
 
     /// <summary>
     /// 🔴 A tree that changed is still read: a commit made in it, a file left uncommitted in it, its commits landed on the line, a
@@ -120,7 +125,7 @@ public sealed class HelpTreesReadTests : IDisposable
         Assert.Equal((1, 0), after[N(held.Path)]);
         Assert.Equal((0, 0), after[N(quiet)]);
         // A branch went, so no tree is held by the refs' forward move: each is walked again.
-        Assert.Contains(starts, start => start.EndsWith("rev-parse --show-toplevel", StringComparison.Ordinal));
+        Assert.Contains(starts, IsWalk);
     }
 
     /// <summary>A tree whose read nothing moved is asked its status alone, and still says what it holds uncommitted now.</summary>
@@ -282,10 +287,15 @@ public sealed class HelpTreesReadTests : IDisposable
         return new HelpTreesPart("engine", new HashSet<string>(["engine"], StringComparer.OrdinalIgnoreCase), new SessionLook(records, [], []));
     }
 
-    private static async Task<(HelpTrees Trees, long Ms, int Starts)> TimedAsync(Func<CancellationToken, Task<HelpTrees>> read)
+    private static async Task<(HelpTrees Trees, long Ms, int Starts)> TimedAsync(
+        Func<CancellationToken, Task<HelpTrees>> read, List<string>? asked = null)
     {
         var starts = 0;
-        WorkingTree.Started.Value = _ => Interlocked.Increment(ref starts);
+        WorkingTree.Started.Value = arguments =>
+        {
+            Interlocked.Increment(ref starts);
+            if (asked is not null) lock (asked) asked.Add(string.Join(' ', arguments));
+        };
         try
         {
             var watch = Stopwatch.StartNew();
