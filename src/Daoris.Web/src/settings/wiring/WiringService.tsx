@@ -21,7 +21,11 @@ const HELD_WORD: Record<string, string> = { hosted: 'hosted', adopted: 'adopted'
  * A molecule: drawn from props. A fact the reader could not give is its own words in its row and changes no other row; a
  * source is a word the catalogue holds, and a key is its audit prefix as a deployment's own `keys list` prints it.
  */
-export function WiringService({ wiring }: { wiring: Pick<SystemWiring, 'service' | 'remotes' | 'remotesWhy'> }) {
+export function WiringService({ wiring, setup }: {
+  wiring: Pick<SystemWiring, 'service' | 'remotes' | 'remotesWhy'>;
+  /** *Change the service's address* (WIRING1e), under the address row, drawn by the domain; none where the shell offers none. */
+  setup?: ReactNode;
+}) {
   const { t } = useTranslation();
   const { service, remotes, remotesWhy } = wiring;
 
@@ -51,6 +55,7 @@ export function WiringService({ wiring }: { wiring: Pick<SystemWiring, 'service'
       hint={source(service.from, 'DAORIS_SERVICE_URL')}
       control={<Fact value={service.url} why={service.urlWhy}><PathText path={service.url ?? ''} className="text-small text-ink-soft" /></Fact>}
     />,
+    ...(setup ? [<div key="setup">{setup}</div>] : []),
     <SettingRow
       key="held"
       label={t('settings.daoris.label.held')}

@@ -396,13 +396,18 @@ describe('Settings → This Daoris', () => {
     expect(logs.getByText('not there')).toBeTruthy();
   });
 
-  it('offers no press that opens, copies or changes anything: the page shows', async () => {
+  // WIRING1e: the set-up presses are offered, and none is pressed by opening the page (each is tested in WiringDomain.setup.test.tsx).
+  it('offers the set-up presses and presses none of them by itself', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
     await screen.findByRole('region', { name: 'Folders' });
 
     const pressed = screen.getAllByRole('button').map((button) => button.textContent);
-    expect(pressed.filter((name) => /^(Open folder|Copy terminal line|Put on my PATH|Change address)/.test(name ?? ''))).toEqual([]);
+    expect(pressed).toContain('Open folder');
+    expect(pressed).toContain('Copy line');
+    expect(pressed).toContain('Change…');
+    const routes = invoke.mock.calls.map(([, type]) => type);
+    expect(routes.filter((type) => ['SYSTEM_OPEN_FOLDER', 'SYSTEM_PATH', 'SYSTEM_SERVICE_ADDRESS'].includes(type))).toEqual([]);
   });
 
   // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).

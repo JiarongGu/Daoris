@@ -71,7 +71,7 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task Put_on_my_PATH_adds_the_launchers_folder_to_the_stand_in_account_and_tells_the_wiring()
+    public async Task Put_on_my_PATH_adds_the_launchers_folder_to_the_stand_in_account_and_declares_the_wiring()
     {
         var bin = Installed();
         var account = new AccountStandIn().With("PATH", @"C:\tools");
@@ -81,10 +81,8 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         Assert.True(done.GetProperty("done").GetBoolean());
         Assert.True(done.GetProperty("changed").GetBoolean());
         Assert.Equal(("PATH", (string?)@$"C:\tools;{bin}"), Assert.Single(account.Writes));
-        await UntilAsync(() => Raised.Any(m => m.Type == StatePublisher.Type));
-        Assert.Equal(
-            """{"scopes":["wiring"]}""",
-            JsonSerializer.Serialize(Raised.First(m => m.Type == StatePublisher.Type).Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+        // That it tells the wiring is declared on the route, which StatePublisherTests holds.
+        Assert.Equal("wiring", string.Join(",", StatePublisher.Names(DriverModule.Declared(new Shenora.Core.Ipc.IpcRequest { Id = "x", Module = DriverModule.Name, Type = "SYSTEM_PATH" })!.Scopes)));
     }
 
     [Fact]

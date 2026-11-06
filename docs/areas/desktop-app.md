@@ -215,7 +215,11 @@ web paths are under `src/Daoris.Web/src/`.
 56. A first start opens Settings → Get started while an agent with an account, Daoris's own agent or a repository is
     missing. Each step reads its state off the machine and names its screen and its command. (from D97, D50)
 57. Settings has nine domains: Get started, Appearance, AI features, This Daoris, Driver, Tools, Git, Browser, Machine
-    log. A domain is a `<Name>Domain.tsx` and one row in `settings/domains.ts`. (from D150, D75)
+    log. A domain is a `<Name>Domain.tsx` and one row in `settings/domains.ts`. (from D150, D75) This Daoris reads the wiring and
+    sets it up from the page (WIRING1e): *Open* on a folder or file row by its id, *Put on my PATH* / *Remove from my PATH* on the
+    account's `PATH` alone, *Copy a terminal line* (the page's clipboard, for PowerShell, Command Prompt or Git Bash) and *Change the
+    service's address* (the account's `DAORIS_SERVICE_URL`, this machine's addresses only), each said first inside its row, each
+    refusal data worded in both languages, and the wiring read again through the `wiring` scope.
 58. Agents has two modes, Agents and Setup. Setup is the tree of places (machine, workspace, repository), each a page
     with a head and three folded sections. The tree (`setup/SetupList.tsx`) is a WAI tree: one row in the tab order, ↑ ↓ Home
     End walk it, → and ← open, close and climb, Enter chooses; a workspace opens by its chevron or →, apart from being chosen.
