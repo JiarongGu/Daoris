@@ -1,6 +1,6 @@
 # MAPUX1: the Map's UI and UX
 
-Status: proposed 2026-11-06 for the owner's yes (D239), read on main at `014c286d7`. CANVAS1 (D224,
+Status: proposed 2026-11-06 for the owner's yes (D239), read on main at `c24a9a7a5`. CANVAS1 (D224,
 `docs/2026-11-02-canvas-design.md` §3.3, §3.4, §4) settled how the maps are drawn: the platform, the engine, the tiers, culling, the
 list, find and the viewport. The map design (`docs/2026-09-23-map-design.md`, D67 §3) settled what the maps draw. This design settles
 what the person comes to the Map for and what they see and do there: each zoom, choosing, finding, the list, the keyboard, and the

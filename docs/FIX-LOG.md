@@ -9,20 +9,22 @@ repository.
 
 - **Symptom:** `test-map` found an unplaced tracked file, `lyntai-local.props` at the repository's root: the local Lyntai build's props,
   whose feed is an absolute path on the developer's machine. It was on the remote's main.
-- **Root cause:** a builder's commit (286cb5ba6, 2026-11-05) staged a copy of the props written at the root, where only the ignored
+- **Root cause:** a builder's commit (ebd5b2893, 2026-11-05) staged a copy of the props written at the root, where only the ignored
   `local/lyntai-local.props` belongs (`tools/lyntai-local.mjs` writes that one). The sensitive gate's private patterns named no
   development folder, so nothing refused the path.
-- **Fix:** the file is removed (290df493c), and the private patterns refuse the development folder's absolute path. The history still
-  carries it: rewriting it, and the remote's, is the owner's call (`leak-repair`). The path names a folder, no user, account or private name.
+- **Fix:** the file is gone from every commit of main: on the owner's call the history was rewritten without it (`git filter-repo
+  --invert-paths --path lyntai-local.props --refs main`, 2026-11-06, a bundle of every ref kept first), and the owner force-pushes the
+  remote's main (`leak-repair`). Records citing a rewritten commit cite its new SHA. The private patterns refuse the development folder's
+  absolute path. The path named a folder, no user, account or private name.
 - **Verify:** `node tools/test-map.mjs --check`; the sensitive gate over the tree, which names nothing.
 
 ## 2026-11-06 - Every start inherited `DAORIS_HOST_TOKEN` where Daoris's own environment held it (FIX4)
 
 - **Symptom:** `GitSessionHoldsTests`, which names the tokens a session must never hold, was red: `DAORIS_HOST_TOKEN` was not taken out
   of what a start inherits, so a host's API token meant for one plugin process could reach an agent's session or git.
-- **Root cause:** G9 (60f23bc07) hands an identity's token to the one plugin process started for it through `DAORIS_HOST_TOKEN`,
+- **Root cause:** G9 (e95e8bec4) hands an identity's token to the one plugin process started for it through `DAORIS_HOST_TOKEN`,
   but did not add the variable to `GitWiring.Removed`, the list every start strips from what it inherits.
-- **Fix:** `GitWiring.Removed` names `GitRouting.HostTokenVariable` (5f10d09b9); the plugin's own start sets the variable after the
+- **Fix:** `GitWiring.Removed` names `GitRouting.HostTokenVariable` (04be48ec1); the plugin's own start sets the variable after the
   strip, so only that process holds it. `PluginHostToken.Variable` reads the one name.
 - **Verify:** `GitSessionHoldsTests`, `PluginHostTokenTests`, `HolderKeyStripTests`, `ToolsChildrenTests`.
 
