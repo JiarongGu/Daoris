@@ -91,6 +91,10 @@ if (args is ["events", .. var eventsArgs])
 // running desktop left in this home. A workspace build is no install, and keeps needing both named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
+// The home this program acts for, named once: what carries no home of its own (Daoris's own git, a probe's tools) reads it, never the
+// variable a process inherited.
+ProgramHome.Named = DaorisHome.Resolve();
+
 // The foundation design §19.15: the home's driver.json reads its staffing from the store, wired before any door or the
 // loop loads it.
 RoleStaffing.WireHome(Environment.GetEnvironmentVariable);

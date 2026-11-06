@@ -591,7 +591,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => RemoteFetches.Fetched(repository.Root, line, at);
 
         public async Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct) =>
-            (await TreeRefs.FetchAsync(repository.Root, line, ct, repository.Repository, repository.Workspace).ConfigureAwait(false)).Failed;
+            (await TreeRefs.FetchAsync(home, repository.Root, line, ct, repository.Repository, repository.Workspace).ConfigureAwait(false)).Failed;
 
         public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct) =>
             trees.AskAtMomentAsync(repository.Root, repository.Repository, repository.Workspace, entries, ct);

@@ -47,7 +47,7 @@ public sealed class ProcessEnvironmentCensusTests
         ["Workplace/GitRemoteRowsTests.cs"] = (OwnGitConfiguration, null),
         ["Workplace/GitLongPathsProcessTests.cs"] = (OwnGitConfiguration, null),
         ["Workplace/GitHistoryEditScopesTests.cs"] = ("each scope of git's configuration a history edit is read from (system, global, the environment's) is planted where git reads it", null),
-        ["Workplace/GitHoldsProcessTests.cs"] = (OwnGitConfiguration + ", HOME too; and an install's home is named as the process's, which the ssh door is found by", null),
+        ["Workplace/GitHoldsProcessTests.cs"] = (OwnGitConfiguration + ", HOME too", null),
         ["Workplace/GitSshHoldsProcessTests.cs"] = (OwnGitConfiguration + ", HOME too; and GIT_SSH_COMMAND names the stand-in server's key", null),
     };
 

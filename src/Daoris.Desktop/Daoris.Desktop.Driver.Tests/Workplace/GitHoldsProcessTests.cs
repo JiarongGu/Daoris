@@ -12,8 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Every git here is kept from the person's configuration and home: no system file (where Git for Windows names Git Credential
 /// Manager), an empty global file, a scratch home. So nothing reads a credential store, nothing starts GCM, and nothing reaches a real
 /// host.</para>
-/// <para>Alone: it sets the process's environment (the home <c>TreeRefs</c> resolves, and the git variables above), which every class
-/// beside it would share.</para>
+/// <para>Alone: it sets the process's environment (the git variables above), which every class beside it would share. The fetch is
+/// handed its home, as the driver hands its own.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Collection(Alone.Name)]
@@ -25,6 +25,9 @@ public sealed class GitHoldsProcessTests : IDisposable
 
     private string Home => Path.Combine(_root, "home");
 
+    /// <summary>The home the fetch acts for: <see cref="Home"/>, or an install's laid out by <see cref="Install"/>.</summary>
+    private string _home;
+
     private string Repo => Path.Combine(_root, "engine");
 
     public GitHoldsProcessTests()
@@ -35,7 +38,7 @@ public sealed class GitHoldsProcessTests : IDisposable
         File.WriteAllText(global, "");
         var scratch = Path.Combine(_root, "user");
         Directory.CreateDirectory(scratch);
-        Set(DaorisHome.Variable, Home);
+        _home = Home;
         Set("GIT_CONFIG_NOSYSTEM", "1");
         Set("GIT_CONFIG_GLOBAL", global);
         Set("HOME", scratch);
@@ -60,13 +63,13 @@ public sealed class GitHoldsProcessTests : IDisposable
         Assert.True(code == 0, error);
     }
 
-    private static async Task<(string? Failed, string? Url, int Fetches)> FetchAsync(string repo)
+    private async Task<(string? Failed, string? Url, int Fetches)> FetchAsync(string repo)
     {
         var fetches = 0;
         WorkingTree.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
         try
         {
-            var (failed, url) = await TreeRefs.FetchAsync(repo, "main", CancellationToken.None, "engine", "work");
+            var (failed, url) = await TreeRefs.FetchAsync(_home, repo, "main", CancellationToken.None, "engine", "work");
             return (failed, url, fetches);
         }
         finally
@@ -135,9 +138,8 @@ public sealed class GitHoldsProcessTests : IDisposable
         Directory.CreateDirectory(Path.Combine(install, "app", "bin"));
         File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
         File.WriteAllText(Path.Combine(install, "app", "bin", GitWiring.SshDoor), "");
-        var home = Path.Combine(install, "data");
-        Environment.SetEnvironmentVariable(DaorisHome.Variable, home);
-        return home;
+        _home = Path.Combine(install, "data");
+        return _home;
     }
 
     [Fact]

@@ -641,10 +641,10 @@ public static class Tools
     }
 
     /// <summary>
-    /// Hand a start the tools' environment, read now from <c>$DAORIS_HOME</c>'s file (D63's one seam), over the
-    /// <c>PATH</c> the start holds. A process with no home is handed the prompt variables alone.
+    /// Hand a start the tools' environment, read now from the file of the home its program named (<see cref="ProgramHome"/>), over the
+    /// <c>PATH</c> the start holds. A process whose program named no home is handed the prompt variables alone.
     /// </summary>
-    public static void Hand(ProcessStartInfo info) => Hand(info, DaorisHome.Resolve());
+    public static void Hand(ProcessStartInfo info) => Hand(info, ProgramHome.Named);
 
     /// <summary>
     /// Hand a start the tools' environment, read now from <paramref name="home"/>'s file; null hands the prompt variables alone

@@ -170,7 +170,8 @@ internal static class GitRuns
             }
         }
 
-        var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
+        // The program's home, never the variable the process inherited: a test's or a tool's process names none.
+        var (info, refusal) = GitStart(root, arguments, ProgramHome.Named);
         // A git the person chose that cannot run is git's answer, said in the resolution's words (TOOLS5): never PATH's.
         if (info is null) return (-1, "", refusal!);
         if (environment is not null)
@@ -240,7 +241,7 @@ internal static class GitRuns
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
     {
         // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
-        var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());
+        var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return null;
 
         Process? process = null;
@@ -362,7 +363,7 @@ internal static class GitRuns
             return take(run.Stdout.AsMemory()) ? run.ExitCode!.Value : 0;
         }
 
-        var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());
+        var (info, _) = GitStart(root, arguments, ProgramHome.Named);
         if (info is null) return -1;
 
         Process? process = null;

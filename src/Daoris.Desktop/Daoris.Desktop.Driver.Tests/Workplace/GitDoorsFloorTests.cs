@@ -92,7 +92,7 @@ public sealed class GitDoorsFloorTests : IDisposable
             WorkingTree.Started.Value = arguments => { if (arguments.Contains("fetch")) Interlocked.Increment(ref fetches); };
             try
             {
-                var (failed, _) = await TreeRefs.FetchAsync(Repo, "main", CancellationToken.None, "engine", "work");
+                var (failed, _) = await TreeRefs.FetchAsync(Home, Repo, "main", CancellationToken.None, "engine", "work");
                 Assert.Contains("2.30.1", failed, StringComparison.Ordinal);
                 Assert.Contains("2.31", failed, StringComparison.Ordinal);
 

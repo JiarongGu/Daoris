@@ -104,9 +104,9 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     }
 
     /// <summary>D109's fetch of the line, and its words in WSR7's where it failed; null where it fetched or there is no `origin`.</summary>
-    private static async Task<string?> FetchedAsync(string root, string line, string repository, string workspace, CancellationToken ct)
+    private async Task<string?> FetchedAsync(string root, string line, string repository, string workspace, CancellationToken ct)
     {
-        var (failed, url) = await FetchAsync(root, line, ct, repository, workspace).ConfigureAwait(false);
+        var (failed, url) = await FetchAsync(context.Home, root, line, ct, repository, workspace).ConfigureAwait(false);
         // No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
         if (failed is null || url is null) return null;
         return LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);

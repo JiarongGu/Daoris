@@ -105,7 +105,7 @@ internal sealed class TreeUpdates(
         if (TogetherGuard.Refusal(context.Home, full) is { } together) return new(false, $"Nothing was brought up to date: {together}.");
 
         // The one network step (point 2). FetchAsync names no address only where there is no `origin` at all: nothing to fetch.
-        var (failed, url) = fetched ? (null, null) : await FetchAsync(root, line, ct, repository, workspace).ConfigureAwait(false);
+        var (failed, url) = fetched ? (null, null) : await FetchAsync(context.Home, root, line, ct, repository, workspace).ConfigureAwait(false);
         var noOrigin = failed is not null && url is null;
         facts = facts with { NotFetched = noOrigin ? null : failed };
         if (facts.First() is not null) return Refused(facts);
@@ -173,7 +173,7 @@ internal sealed class TreeUpdates(
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return TreeStartSync.Nothing;
 
         // The one network step. No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
-        var (failed, url) = await FetchAsync(root, line, ct, repository, workspace).ConfigureAwait(false);
+        var (failed, url) = await FetchAsync(context.Home, root, line, ct, repository, workspace).ConfigureAwait(false);
         var fetch = failed is null || url is null
             ? ""
             : LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);

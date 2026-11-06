@@ -92,21 +92,20 @@ internal static class TreeRefs
     /// <para><b>Held, and not tried</b> (GITAUTH1a, the git-auth design §5.2): a failure whose class holds (<see cref="GitFailures"/>)
     /// holds origin (<see cref="GitHolds"/>), and while it is held no fetch connects, whichever path asks: the hold's sentence is the
     /// answer, at once. A fetch that passes lifts a hold over reads. <paramref name="repository"/> and <paramref name="workspace"/>
-    /// name the hold's row.</para>
+    /// name the hold's row; <paramref name="home"/> holds the holds, the caller's own, and null holds none.</para>
     /// </remarks>
     internal static async Task<(string? Failed, string? Url)> FetchAsync(
-        string root, string? line, CancellationToken ct, string repository = "", string? workspace = null) =>
+        string? home, string root, string? line, CancellationToken ct, string repository = "", string? workspace = null) =>
         line is null
             ? (null, null)
-            : await RemoteFetches.OnceAsync(root, line, token => FetchingAsync(root, line, repository, workspace, token), ct).ConfigureAwait(false);
+            : await RemoteFetches.OnceAsync(root, line, token => FetchingAsync(home, root, line, repository, workspace, token), ct).ConfigureAwait(false);
 
     private static async Task<(string? Failed, string? Url)> FetchingAsync(
-        string root, string line, string repository, string? workspace, CancellationToken ct)
+        string? home, string root, string line, string repository, string? workspace, CancellationToken ct)
     {
         // GITAUTH1b: the one reader, which takes Daoris's own prefix off the address the rewrite shows (the git-auth design §4.4).
         if (await GitRemotes.AddressOf(root, "origin", ct: ct).ConfigureAwait(false) is not { } address)
             return ("there is no `origin` remote here", null);
-        var home = DaorisHome.Resolve();
         // GITAUTH1c: a git older than the doors need reaches no remote of Daoris's (the git-auth design §4.1).
         if (home is not null && await GitWiring.RefusesAsync(home, repository, "origin", address, GitAct.Read, ct).ConfigureAwait(false) is { } older)
         {
