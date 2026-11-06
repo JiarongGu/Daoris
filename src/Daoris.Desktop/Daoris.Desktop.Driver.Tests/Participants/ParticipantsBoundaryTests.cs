@@ -21,44 +21,16 @@ public sealed class ParticipantsBoundaryTests : IDisposable
     // ——— The harness conversation file, as the store reads it
 
     [Fact]
-    public void A_conversation_file_reads_with_its_two_ids_trimmed_and_anything_less_reads_as_nothing()
+    public void A_kept_conversation_replaces_the_one_before_and_a_session_never_kept_reads_as_nothing()
     {
-        Directory.CreateDirectory(Sessions);
-        var store = new HarnessConversations(_home);
-        Write(store, "a1b2c3d1", """{"adapter":" claude-code-acp ","conversation":" c-1 "}""");
-        Write(store, "a1b2c3d2", """{"adapter":"claude-code-acp","conversation":"c-2","extra":true}""");
-        Write(store, "a1b2c3d3", """["claude-code-acp","c-3"]""");
-        Write(store, "a1b2c3d4", """{"adapter":"  ","conversation":"c-4"}""");
-        Write(store, "a1b2c3d5", """{"adapter":"claude-code-acp"}""");
-        Write(store, "a1b2c3d6", """{"adapter":"claude-code-acp","conversation":7}""");
-        Write(store, "a1b2c3d7", "not json at all");
-
-        Assert.Equal(new HarnessConversation("claude-code-acp", "c-1"), store.Read("a1b2c3d1"));
-        Assert.Equal(new HarnessConversation("claude-code-acp", "c-2"), store.Read("a1b2c3d2"));
-        foreach (var unread in new[] { "a1b2c3d3", "a1b2c3d4", "a1b2c3d5", "a1b2c3d6", "a1b2c3d7", "a1b2c3d8" })
-        {
-            Assert.Null(store.Read(unread));
-        }
-    }
-
-    [Fact]
-    public void A_kept_conversation_is_the_two_fields_written_whole_and_replaces_the_one_before()
-    {
-        var store = new HarnessConversations(_home);
+        var store = new HarnessConversations(_home, () => StoreSettled.Yes);
 
         store.Keep("a1b2c3d1", "claude-code-acp", "c-1");
         store.Keep("a1b2c3d1", "codex-acp", "c-2");
 
-        var bytes = File.ReadAllBytes(store.PathOf("a1b2c3d1"));
-        Assert.NotEqual(0xEF, bytes[0]);
-        var text = System.Text.Encoding.UTF8.GetString(bytes);
-        Assert.DoesNotContain('\r', text);
-        using var document = System.Text.Json.JsonDocument.Parse(text);
-        Assert.Equal(["adapter", "conversation"], document.RootElement.EnumerateObject().Select(each => each.Name));
         Assert.Equal(new HarnessConversation("codex-acp", "c-2"), store.Read("a1b2c3d1"));
+        Assert.Null(store.Read("a1b2c3d8"));
     }
-
-    private void Write(HarnessConversations store, string session, string json) => File.WriteAllText(store.PathOf(session), json);
 
     // ——— The page's no to a helper's ask
 

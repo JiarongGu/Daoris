@@ -29,7 +29,6 @@ public sealed class BindingRolesTests : IDisposable
     {
         var conversations = Newer();
         conversations.Keep("s1", "claude-code-acp", "c-1");
-        conversations.ImportFiles();
 
         conversations.KeepRole("s1", "designer", 4);
         conversations.Keep("s1", "claude-code-acp", "c-1-again");

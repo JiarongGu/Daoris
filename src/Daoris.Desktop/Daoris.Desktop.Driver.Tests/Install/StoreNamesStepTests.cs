@@ -53,7 +53,7 @@ public sealed class StoreNamesStepTests : IDisposable
         Assert.False(HasTable(store, "role_staffing_found"));
         Assert.Equal(["data/desktop.db"], run.Changed);
         Assert.True(File.Exists(Path.Combine(run.Copies, "data", "desktop.db")));
-        Assert.Equal(("codex-acp", "c-1"), new BindingStore(_home, () => StoreSettled.Yes, _ => null).Read("s1"));
+        Assert.Equal(("codex-acp", "c-1"), new BindingStore(_home, () => StoreSettled.Yes).Read("s1"));
     }
 
     [Fact]

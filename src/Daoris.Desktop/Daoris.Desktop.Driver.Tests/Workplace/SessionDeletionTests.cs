@@ -39,14 +39,13 @@ public sealed class SessionDeletionTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, $"{id}.log"), "the transcript\n");
         Directory.CreateDirectory(Path.Combine(Sessions, id, "files"));
         File.WriteAllText(Path.Combine(Sessions, id, "files", "shot.png"), "png");
-        File.WriteAllText(Path.Combine(Sessions, id + HarnessConversations.Suffix), "{}");
         // Every id a test keeps files for is a known record, so one mark's write keeps the others'.
         new SessionArchive(_home).Archive([id], [new SessionGrouping(id, SessionGroup.Ended, "completed")], ["c1", "c2", id], DateTimeOffset.UtcNow);
     }
 
     private bool AnyKept(string id) =>
         File.Exists(Path.Combine(Sessions, $"{id}.events.jsonl")) || File.Exists(Path.Combine(Sessions, $"{id}.log"))
-        || Directory.Exists(Path.Combine(Sessions, id)) || File.Exists(Path.Combine(Sessions, id + HarnessConversations.Suffix))
+        || Directory.Exists(Path.Combine(Sessions, id))
         || new SessionArchive(_home).Marks().ContainsKey(id);
 
     [Fact]
@@ -64,7 +63,7 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Equal(["DELETE /api/sessions/c1"], ledger.Deletes);
         Assert.False(AnyKept("c1"));
         Assert.True(AnyKept("c2"));
-        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "archived"], outcome.Removed);
         var line = Assert.Single(log.Lines(), each => each.Contains("\"session.deleted\"", StringComparison.Ordinal));
         Assert.Contains("\"session\":\"c1\"", line);
         Assert.Contains("\"kind\":\"chat\"", line);
@@ -104,7 +103,7 @@ public sealed class SessionDeletionTests : IDisposable
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
-        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "mark", "choice", "spawn", "held", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "mark", "choice", "spawn", "held", "archived"], outcome.Removed);
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + GoOnMarks.Suffix)));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + NewSessionChoices.Suffix)));
         Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.mcp.json")));
@@ -152,7 +151,7 @@ public sealed class SessionDeletionTests : IDisposable
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
-        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "hand-over", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "hand-over", "archived"], outcome.Removed);
         Assert.All(Boxes("c1"), file => Assert.False(File.Exists(file), file));
         Assert.All(Boxes("c2"), file => Assert.True(File.Exists(file), file));
     }
@@ -242,7 +241,7 @@ public sealed class SessionDeletionTests : IDisposable
 
         Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
         Assert.Equal(["DELETE /api/sessions/c1"], ledger.Deletes);
-        Assert.Equal(["record", "conversation", "files", "harness", "archived"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "files", "archived"], outcome.Removed);
         Assert.Equal(["transcript"], outcome.Stayed);
         Assert.True(File.Exists(transcript));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1.events.jsonl")));
@@ -329,7 +328,7 @@ public sealed class SessionDeletionTests : IDisposable
 
         var outcome = await new SessionDeletion(_home).DeleteAsync(service, "h1", PluginEvents.Screen, log: null);
 
-        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "help"], outcome.Removed);
+        Assert.Equal(["record", "conversation", "transcript", "files", "help"], outcome.Removed);
         Assert.False(File.Exists(kept.PathOf("h1")));
         Assert.Equal("Workspaces", kept.Read("h2").Name);
     }

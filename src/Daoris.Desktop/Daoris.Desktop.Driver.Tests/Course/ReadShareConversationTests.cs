@@ -112,19 +112,6 @@ public sealed class ReadShareConversationTests : IDisposable
         Assert.True(told);
     }
 
-    /// <summary>READSHARE1: <see cref="HarnessConversations.Read"/> (HarnessConversationFiles.Read) reads a conversation id while its move into place still holds it.</summary>
-    [Fact]
-    public void A_harness_conversation_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var conversations = new HarnessConversations(_home);
-        conversations.Keep("s1", "claude-code", "conv-0001");
-
-        var conversation = Held(conversations.PathOf("s1"), () => conversations.Read("s1"));
-
-        Assert.Equal(new HarnessConversation("claude-code", "conv-0001"), conversation);
-    }
-
     // ——— A hand-over's files (HandOverFiles, HandOverAskFiles).
 
     /// <summary>READSHARE1: <see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
@@ -274,12 +261,12 @@ public sealed class ReadShareConversationTests : IDisposable
     {
         if (!OperatingSystem.IsWindows()) return;
         var wired = new HelpWired(_home);
-        wired.Keep("h1", new HelpReceipt { At = At, Harness = "claude-code", Folder = "room", Account = "work" });
+        wired.Keep("h1", new HelpReceipt { At = At, Door = "claude-code", Folder = "room", Account = "work" });
 
         var read = Held(wired.PathOf("h1"), () => wired.Read("h1"));
 
         var receipt = Assert.Single(read);
-        Assert.Equal(("claude-code", "room", "work"), (receipt.Harness, receipt.Folder, receipt.Account));
+        Assert.Equal(("claude-code", "room", "work"), (receipt.Door, receipt.Folder, receipt.Account));
     }
 
     /// <summary>READSHARE1: <see cref="ConfiguredAccess.Read"/> reads the person's configured access while its move into place still holds it.</summary>

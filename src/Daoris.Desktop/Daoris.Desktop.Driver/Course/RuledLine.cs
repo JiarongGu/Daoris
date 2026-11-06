@@ -46,7 +46,7 @@ internal sealed record RuledLine(string Role, string? Repository, string? Worksp
         if (home is null) return StartPlan.RoleOf(work);
         try
         {
-            var bound = record is null ? null : new BindingStore(home, null, _ => null).RoleOf(record.Session)?.Role;
+            var bound = record is null ? null : new BindingStore(home, null).RoleOf(record.Session)?.Role;
             return RoleOrders.Bound(bound, work, RoleCatalog.ReadHome(home), new RolePlace(workspace, repository));
         }
         catch (Exception error) when (error is DriverException or DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)

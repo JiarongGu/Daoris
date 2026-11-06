@@ -31,7 +31,7 @@ public sealed class HelpChosenSettingsTests : IDisposable
     private void Handed(string session, params string[] settings) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
-            At = DateTimeOffset.UtcNow, Harness = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Settings = settings,
+            At = DateTimeOffset.UtcNow, Door = "codex-acp", Folder = HelpRoom.PathOf(_home, "aurora"), Settings = settings,
         });
 
     /// <summary>Ask Daoris's <c>h1</c> in workspace <c>aurora</c>, a driven <c>s1</c>; <c>engine</c> is aurora's, <c>rival</c> borealis's.</summary>
