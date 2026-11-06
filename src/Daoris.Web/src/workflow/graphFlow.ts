@@ -1,7 +1,7 @@
 import type { i18n as I18n, TFunction } from 'i18next';
 import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/FlowCanvas';
 import type { IconName } from '../design/ui';
-import { type ChartNode, type ChartPort, type ChartStep, variantOf } from './chart/stepKinds';
+import { type ChartNode, type ChartPort, type ChartStep, isPullRequestStep, variantOf } from './chart/stepKinds';
 
 // One drawing of a workflow graph for the place, the editor and a run (SETUPUX1n; D221, the Setup design's §2.3): a graph's steps and
 // ways on read onto `Flow`'s nodes and edges. Always in sections, so top to bottom or as the rail and never left to right; its
@@ -75,11 +75,11 @@ const record = (value: unknown): Record<string, unknown> =>
 const text = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 const names = (value: unknown): string[] => (Array.isArray(value) ? value.filter((each): each is string => typeof each === 'string') : []);
 
-const GLYPH: Record<string, IconName> = { claimed: 'stepWork', opinion: 'stepOpinion', look: 'stepLook', 'pull-request': 'stepPullRequest' };
+const GLYPH: Record<string, IconName> = { claimed: 'stepWork', opinion: 'stepOpinion', look: 'stepLook' };
 
-/** A step's glyph from its kind; a landing by its method. */
+/** A step's glyph from its kind; a landing by its method, a plugin's pull request as such. */
 const glyphOfKind = (kind: string, options: Record<string, unknown>): IconName | undefined =>
-  kind === 'land' ? (options.method === 'branch' ? 'stepBranch' : 'stepMerge') : GLYPH[kind];
+  kind === 'land' ? (options.method === 'branch' ? 'stepBranch' : 'stepMerge') : isPullRequestStep(kind) ? 'stepPullRequest' : GLYPH[kind];
 
 /**
  * A saved graph's JSON (a schema-2 graph, as a version or a shipped workflow holds it) read onto the drawing, each step titled by its kind.
