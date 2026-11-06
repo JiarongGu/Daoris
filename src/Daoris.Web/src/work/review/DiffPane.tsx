@@ -360,7 +360,7 @@ export function DiffPane({
         </p>
       )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
-          does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
+          does (D100). An answer without the rule carries no form, and the pane then claims nothing. */}
       {/* A branch that already stands, an entry's or a chain's, is moved on, not made (ACCEPTALL1g); the session's own lands as it
           stands (TREEFOLLOWWEB1). */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (

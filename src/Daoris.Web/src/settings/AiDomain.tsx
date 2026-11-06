@@ -73,7 +73,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
     <CardStack>
     <AiJobs
       search={search}
-      // Ask Daoris's access: absent on a shell older than the mode, which offers no choice.
+      // Ask Daoris's access: absent where the answer lacks it, which offers no choice.
       access={driver.data && 'helpMode' in driver.data
         ? {
           mode: helpMode,
@@ -86,7 +86,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
           onCancel: choice.cancel,
         }
         : undefined}
-      // Configured access: absent on a shell older than the grant, which keeps none.
+      // Configured access: absent where the answer lacks it, which keeps none.
       grants={served
         ? {
           // The agent Ask Daoris runs on, and whether it takes Claude's rules; with none named, nothing is unavailable on it yet.

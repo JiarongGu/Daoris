@@ -32,7 +32,7 @@ const quest = (over: Partial<Quest> = {}): Quest => aQuest({
 
 /**
  * SESSUX1j (D126 §9, the session management design §6.2): a quest's name is its short title, the service's answer, else
- * its title, from a host older than the field. One helper, so no two places name one quest differently.
+ * its title, where the field is absent. One helper, so no two places name one quest differently.
  */
 describe("an ask's name (HEAD2e)", () => {
   const ask = (over: Partial<Ask> = {}) => ({ sentence: 'Cap the hydration.\n\nSeen on the rig.', ...over }) as Ask;
@@ -41,7 +41,7 @@ describe("an ask's name (HEAD2e)", () => {
     expect(askName(ask({ short: ' Cold-cache stall ' }))).toBe('Cold-cache stall');
   });
 
-  it('is the first line of its sentence from an ask with none, or from a host older than the field', () => {
+  it('is the first line of its sentence from an ask with none, or where the answer lacks it', () => {
     expect(askName(ask())).toBe('Cap the hydration.');
     expect(askName(ask({ short: '  ' }))).toBe('Cap the hydration.');
     expect(askName(ask({ short: null }))).toBe('Cap the hydration.');
@@ -53,7 +53,7 @@ describe("a quest's name", () => {
     expect(questName(quest({ short: 'Streaming budget' }))).toBe('Streaming budget');
   });
 
-  it('is its title from a host older than the short title, or where the short title is blank', () => {
+  it('is its title where the field is absent, or where the short title is blank', () => {
     expect(questName(quest())).toBe('Expose a streaming budget on the chunk API');
     expect(questName(quest({ short: '  ' }))).toBe('Expose a streaming budget on the chunk API');
   });

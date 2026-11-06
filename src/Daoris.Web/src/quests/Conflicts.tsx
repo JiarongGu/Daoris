@@ -15,7 +15,7 @@ export type ForwardWait = 'closed' | 'heldHere' | 'heldBy' | 'taken' | 'source';
 /** One open conflict as its row reads it. */
 export type ConflictRow = {
   conflict: QuestConflict;
-  /** This machine's own lost take, whose two choices the row offers: never where the host names no machine (a browser, an older host). */
+  /** This machine's own lost take, whose two choices the row offers: never where the host names no machine (a browser). */
   mine: boolean;
   /** Its bring-forward lost again (a second loss): when it was made, and whether the reopen, not another machine's take, beat it. */
   lostAgain: { at: string; reopened: boolean } | null;

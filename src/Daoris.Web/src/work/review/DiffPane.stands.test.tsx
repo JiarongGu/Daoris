@@ -85,7 +85,7 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
     expect(await where(SAYS[language].standsPlugin)).toBeInTheDocument();
   });
 
-  it('says a new branch as before where none stands, or a shell older than the field answers none', async () => {
+  it('says a new branch as before where none stands, or the answer is none', async () => {
     await i18n.changeLanguage(language);
     answer({ ...PLAN, stands: false });
     pane();

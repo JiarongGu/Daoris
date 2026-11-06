@@ -7,7 +7,7 @@ import type { PanelTab } from '../frame/OutputPanel';
  */
 export type StreamRow = {
   key: string; kind: string; name: string; live: boolean; state: string | null;
-  /** Whether its harness said it can be stopped (CONSOLE3a); absent from a shell older than that. */
+  /** Whether its harness said it can be stopped (CONSOLE3a); absent where the answer lacks it. */
   canStop?: boolean;
 };
 

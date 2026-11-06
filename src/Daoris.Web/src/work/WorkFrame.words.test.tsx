@@ -83,7 +83,7 @@ describe('the box on every session that takes words', () => {
     expect((box as HTMLTextAreaElement).value).toBe('');
   });
 
-  /** Nothing known is nothing claimed: a driver that answers no reach (an older shell) offers an ended session no box. */
+  /** Nothing known is nothing claimed: a driver that answers no reach offers an ended session no box. */
   it('offers an ended session no box until the driver says words go on', async () => {
     driver({});
     show('s1a2b3c4');

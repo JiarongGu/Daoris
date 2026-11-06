@@ -285,7 +285,7 @@ describe("a quest's page words its session's note", () => {
 /**
  * CARRY2c (D80's CARRY2b note): a taken quest whose take is another machine's sits, and its page says why under *Sitting*.
  * In 中文 that was the driver's English; the tick now names whose the take is, so the page words it from those facts, and a
- * tick from an older shell, with no facts, still shows the driver's sentence. No Try again: nothing here can carry it on.
+ * tick with no facts, still shows the driver's sentence. No Try again: nothing here can carry it on.
  */
 describe("a quest's page says a take elsewhere", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

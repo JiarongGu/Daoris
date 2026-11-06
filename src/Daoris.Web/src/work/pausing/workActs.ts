@@ -19,7 +19,7 @@ import {
  * says is `pausing.ts`'s rule, said here in the catalogue's words with the scope's own name: a pause in one line, and a
  * failure for each session it meant to stop and could not; a resume, and what still holds a quest of it by its hold's own
  * sentence, translated by its verdict (UX5 U27) and worded from the facts the host hands beside it (CARRY2d), the driver's
- * sentence where an older host hands none; an abandon as how many of the listed pieces went. A refusal is the catalogue's
+ * sentence where the answer hands none; an abandon as how many of the listed pieces went. A refusal is the catalogue's
  * sentence for its code.
  */
 export function useWorkActs({ notify }: { notify: Notify }) {

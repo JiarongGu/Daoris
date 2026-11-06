@@ -14,7 +14,7 @@ import { shownStatus } from './records';
 export type QuestMovesDoor = {
   open: boolean;
   onToggle: () => void;
-  /** The moves once read; `null` from a host that keeps none (an older host, trap 18); absent while not read. */
+  /** The moves once read; `null` from a host that keeps none (trap 18); absent while not read. */
   moves?: QuestMove[] | null;
   /** A first read is on its way. */
   reading?: boolean;

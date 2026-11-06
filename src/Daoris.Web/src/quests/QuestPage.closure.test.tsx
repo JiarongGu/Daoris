@@ -110,7 +110,7 @@ describe('a source the person reopened', () => {
     expect(fact).toHaveTextContent('交付它的会话 s-7f3a21 会被告知。');
   });
 
-  it('names the session that said a submission’s ready, and none from an older host', async () => {
+  it('names the session that said a submission’s ready, and none where the answer has none', async () => {
     page({ quest: { ...SEALED, submission: { ...SEALED.submission!, session: 's-7f3a21' } } });
     expect(screen.getByText('Submitted').nextElementSibling).toHaveTextContent('by session s-7f3a21');
     cleanup();

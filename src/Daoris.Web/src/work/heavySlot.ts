@@ -50,7 +50,7 @@ const text = (value: unknown): string | null => (typeof value === 'string' && va
 const record = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
 
-/** The answer read field by field, an older shell's none or a shape it does not know read as nothing. */
+/** The answer read field by field, an absent answer or a shape it does not know read as nothing. */
 export function readHeavySlot(raw: unknown): HeavySlot | null {
   const answer = record(raw);
   const repository = text(answer?.repository);
@@ -83,7 +83,7 @@ function readRuns(raw: unknown): AdmissionRun[] {
     .map((row) => ({ kind: row.kind === 'queue' ? 'queue' as const : 'session' as const, session: text(row.session), what: row.what as string, since: row.since as string }));
 }
 
-/** The machine's admission, read field by field; an older shell's none or a shape it does not know is nothing. */
+/** The machine's admission, read field by field; an absent answer or a shape it does not know is nothing. */
 function readAdmission(raw: unknown): HeavyAdmission | null {
   const answer = record(raw);
   if (!answer || typeof answer.capacity !== 'number' || !(answer.capacity >= 1)) return null;

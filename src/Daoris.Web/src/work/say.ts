@@ -246,7 +246,7 @@ export function handOverSaid(
  * When the account a session's words wait for cools until (MSG1g2, D137 §2.2): MSG1g asks a resume for the account its record
  * ran on, so where that account cools the words wait for its reset. Read from the facts `ACCOUNTS` answers: by the agent that
  * owns the door's accounts (AGT7), the tool's own sign-in where the record names no account, and only while it has not
- * passed. Null where it is ready, where the page does not know its agent, and from a shell older than the facts.
+ * passed. Null where it is ready, where the page does not know its agent, and where the answer lacks it.
  */
 export function coolingFor(
   session: Pick<Session, 'adapter' | 'profile'>, doors: readonly ToolDoor[], answer: AccountsAnswer | null | undefined, now: Date,

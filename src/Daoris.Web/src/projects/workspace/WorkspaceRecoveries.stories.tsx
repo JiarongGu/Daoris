@@ -56,7 +56,7 @@ type Story = StoryObj<typeof meta>;
 /** Each kind kept: a folder until its date, a held ref, two refs nothing holds with their commands and *Delete…*. */
 export const Kept: Story = {};
 
-/** A shell older than the delete: the copyable commands alone. */
+/** An answer without the delete: the copyable commands alone. */
 export const CommandsOnly: Story = { args: { onDrop: undefined } };
 
 /** Only what something keeps until a date: nothing to delete, so no press. */

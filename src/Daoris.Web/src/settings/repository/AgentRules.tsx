@@ -47,7 +47,7 @@ export type RuleProposal = {
 
 /**
  * The driver's RULES answer (PERM1, D72): the file, the defaults, and every scope it holds — and since
- * PERM2 what agents proposed about them, which a shell older than that never sends.
+ * PERM2 what agents proposed about them, which an answer may carry none of.
  */
 export type AgentRulesState = {
   path: string; problem?: string; defaults: RuleDefault[]; scopes: RuleScopeRow[]; proposals?: RuleProposal[];

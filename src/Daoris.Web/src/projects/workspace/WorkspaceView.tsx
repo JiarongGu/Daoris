@@ -196,7 +196,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
   useErrorNotify(remote ? wiring.error : null, notify);
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   const nameOf = namer(t, harnesses);
-  // An older shell has never heard of the question: the section is absent rather than the page blank.
+  // An answer that carries no such question leaves the section is absent rather than the page blank.
   const starts = Array.isArray(answer.data?.starts) ? mine(answer.data.starts, workspace) : null;
   return (
     <>
@@ -292,7 +292,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
     <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
-      {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): a shell older than the field answers none. */}
+      {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): the answer is none. */}
       <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} onDrop={(groups) => dropRecoveries.mutateAsync(groups)} />
       {/* The card's spacing is this container's, as the sections above space themselves (R1): a card has no margin of its own. */}
       <div className="pt-4">
@@ -485,7 +485,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             use: (host, value) => setGitUse.mutateAsync({ scope: 'workspace', workspace, host, ...(value ? { value } : {}) }),
             ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
           },
-          // GITAUTH1f (§7.3): its git access as STATE sets it, over this machine's; absent on a shell older than it.
+          // GITAUTH1f (§7.3): its git access as STATE sets it, over this machine's; absent where the answer lacks it.
           access: state?.workspaceGitAccess ? {
             classes: resolveGitAccess([
               { classes: ofWorkspace(state.workspaceGitAccess)?.classes, source: 'workspace' },
@@ -504,7 +504,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
       || setGitAccess.isPending
       || retire.isPending,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
-    // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
+    // the levels as set, since the driver resolves only a repository's; the answer is none, and nothing is drawn.
     access: state && Array.isArray(state.workspaceAccess)
       ? {
           pauses: resolveAccess([
@@ -531,7 +531,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
           onError,
         }),
       },
-      // A shell older than LANG1c answers no table, and nothing is offered rather than a field whose save is refused.
+      // An answer without LANG1c carries no table, and nothing is offered rather than a field whose save is refused.
       language: state && Array.isArray(table)
         ? {
             set: ofWorkspace(state.workspaceLanguages)?.language,
@@ -547,7 +547,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // A shell older than READ1 answers no reading across, and nothing is offered.
+      // An answer without READ1 carries no reading across, and nothing is offered.
       read: state && Array.isArray(across.data?.repositories)
         ? {
             set: ofWorkspace(state.workspaceReadAcross)?.read,
@@ -559,7 +559,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // Where its repositories' work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews.
+      // Where its repositories' work is reviewed before it lands (REVIEWENV1a); the answer has no reviews.
       review: state && Array.isArray(state.workspaceReviews)
         ? {
             set: ofWorkspace(state.workspaceReviews)?.rule,
@@ -569,7 +569,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // Which other agent reads its repositories' work before it lands (XAGENT1a); a shell older than it answers no opinions.
+      // Which other agent reads its repositories' work before it lands (XAGENT1a); the answer has no opinions.
       opinion: state && Array.isArray(state.workspaceOpinions)
         ? {
             set: ofWorkspace(state.workspaceOpinions)?.rule,
@@ -579,8 +579,8 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // How its repositories' work is committed, and what a helper their agents ask for does (DOORS1b); a shell older than
-      // it answers neither, and neither is offered.
+      // How its repositories' work is committed, and what a helper their agents ask for does (DOORS1b); an answer without
+      // it carries neither, and neither is offered.
       commits: state && Array.isArray(state.workspaceCommits)
         ? {
             set: ofWorkspace(state.workspaceCommits)?.rule,
@@ -599,7 +599,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // What an agent's ask to hand its session over does in its repositories (MIXAGENT1c); none on a shell older than it.
+      // What an agent's ask to hand its session over does in its repositories (MIXAGENT1c); none where the answer lacks it.
       handOver: state && Array.isArray(state.workspaceHandOver)
         ? {
             set: ofWorkspace(state.workspaceHandOver)?.rule,

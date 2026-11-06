@@ -66,8 +66,8 @@ export type HeavySetup = {
   marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
   /**
-   * Which checks its sessions run (FABRIC-PIPELINE1b, D192 point 4), its row beside the gates, and the press that sets it; absent on a
-   * shell older than it, and the row is not drawn.
+   * Which checks its sessions run (FABRIC-PIPELINE1b, D192 point 4), its row beside the gates, and the press that sets it; absent where the
+   * answer lacks it, and the row is not drawn.
    */
   checks?: {
     /** The rule set for it; null where none is, which is today's. */
@@ -204,7 +204,7 @@ export type RepositorySetupProps = {
   heavy?: HeavySetup | null;
   /**
    * The landed route (FABRIC-PIPELINE1a): what verifies the work that lands, from its Workflow answer's start node, with its workspace
-   * and the person's press; absent until the driver has answered, and on a shell older than it.
+   * and the person's press; absent until the driver has answered, and where the answer lacks it.
    */
   landed?: (LandedSetup & { workspace: string }) | null;
   /** Its sessions' language and standing answer, where it can be driven. */

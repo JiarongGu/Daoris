@@ -371,7 +371,7 @@ describe('the next start', () => {
     expect(screen.getByRole('note', { name: /^Each start runs on the first ready account in the order, begun at its first; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last\./ })).toBeTruthy();
   });
 
-  /** An answer from a shell older than TOOL6e has no `next`: the row is not drawn. */
+  /** An answer with no `next`: the row is not drawn. */
   it('draws no row where the answer says nothing of the next start', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1' })} accounts={CHOICES} acts={acts()} />);
 

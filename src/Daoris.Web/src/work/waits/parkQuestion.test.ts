@@ -51,7 +51,7 @@ describe('readQuestion', () => {
     expect(readQuestion({ question: { ...asked, left: 'sign-in' } })?.left).toBeUndefined();
   });
 
-  it('reads none from an older shell, and nothing at all', () => {
+  it('reads none where the answer has none, and nothing at all', () => {
     expect(readQuestion(null)).toBeNull();
     expect(readQuestion({})).toBeNull();
   });

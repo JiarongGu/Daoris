@@ -519,7 +519,7 @@ export function useQuestsView({
           busy: reviewActs.busy,
           served: inReview ? inReview.find((row) => row.quest === quest.id)?.served ?? false : null,
         } : undefined}
-        // A shell older than the route answers something else, which is no run.
+        // An answer from another route is something else, which is no run.
         workflow={Array.isArray(questRun.data?.runs) && onOpenRun
           ? { runs: questRun.data.runs, onOpen: (run) => { if (run.session) onOpenRun(run.session); } }
           : undefined}

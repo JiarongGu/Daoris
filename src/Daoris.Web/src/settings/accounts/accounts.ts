@@ -120,7 +120,7 @@ export type NextStart = {
   /**
    * The doors onto the agent's accounts whose answer to *does a start run in its own home* differs from the one this answer speaks
    * for, the account's own door (AGENTPROVIDER1 row s-ix o1 to o3): each is said as its own line, never as the agent's. Absent from an
-   * older shell.
+   * absent answer.
    */
   doors?: { door: string; startsInOwnHome: boolean }[] | null;
 };
@@ -213,7 +213,7 @@ export type AgentAccounts = {
    * as its page opens ask (SWITCH1d). Left out where it is not, and neither is offered.
    */
   reads?: boolean;
-  /** How long a reading of its accounts stands, in seconds, its question's own; a shell older than that answers none. */
+  /** How long a reading of its accounts stands, in seconds, its question's own; none where the answer lacks it. */
   readFloor?: number | null;
   /**
    * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What

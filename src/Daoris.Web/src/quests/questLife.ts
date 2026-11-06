@@ -57,7 +57,7 @@ export const heldWord = (t: Translate, hold: QuestHold): string =>
  * @remarks
  * **It claims only what the record holds** (traps 19 and 20):
  * - **Without its moves**, Open is reached by every quest and the status it stands at is reached; a closed quest may or may not
- *   have been taken first, so its Taken is drawn neither reached nor not. An older host keeps no moves (`null`, trap 18), and
+ *   have been taken first, so its Taken is drawn neither reached nor not. A host that keeps no moves answers (`null`, trap 18), and
  *   neither does an empty history: the statuses are drawn as without them.
  * - **With its moves**, the path is what the log holds, in the order its history replays, never by time: a status is reached
  *   where a move the service's replay applied moved the quest into it, and a history from before the log (its publish and its

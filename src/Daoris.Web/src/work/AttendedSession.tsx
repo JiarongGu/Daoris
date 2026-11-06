@@ -175,7 +175,7 @@ export function AttendedSession({
   trace?: TraceDoor & { onSession?: (id: string) => void; onQuest?: (id: string) => void; onAsk?: (id: string) => void };
   /**
    * Where its work stands (FABRIC-MILESTONE1b, the fabric events design §D0), at the foot of its record: the end reached, the result
-   * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an older shell.
+   * kept, the clean-up and the recovery. Absent where the driver names no unit for it: a browser, a teammate's, or an answer that lacks it.
    */
   milestone?: MilestoneUnit | null;
   /** What was kept of the tree it ran in once the tree is let go (KEEPSIZE1). Absent while the tree stands or none is kept. */

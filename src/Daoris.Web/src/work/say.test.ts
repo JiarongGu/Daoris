@@ -234,7 +234,7 @@ describe('coolingFor', () => {
     expect(coolingFor({ adapter: 'claude-code', profile: null }, doors, answer(agent()), now)).toBeNull();
   });
 
-  it('says nothing cools for a ready account, a passed cool-off, another agent, or an answer an older shell gave', () => {
+  it('says nothing cools for a ready account, a passed cool-off, another agent, or an answer that lacks it', () => {
     expect(coolingFor({ adapter: 'claude-code', profile: 'work' }, doors, answer(agent()), now)).toBeNull();
     expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, answer(agent()), new Date('2026-10-04T14:00:00Z')))
       .toBeNull();

@@ -32,7 +32,7 @@ afterEach(async () => {
 });
 
 describe('the slot as the driver answers it', () => {
-  it('reads the holder at its gate and the waiters, and an older shell or a shape it does not know as nothing', () => {
+  it('reads the holder at its gate and the waiters, and an absent answer or a shape it does not know as nothing', () => {
     const read = readHeavySlot({
       repository: 'engine',
       holder: { session: 's-fts', gates: ['build', 'test:web', 7], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } },
@@ -77,7 +77,7 @@ describe('the machine admission (HEAVYQUEUE1)', () => {
     },
   };
 
-  it('reads the admission field by field, and an older shell none or a shape it does not know as nothing', () => {
+  it('reads the admission field by field, and an absent answer or a shape it does not know as nothing', () => {
     const read = readHeavySlot({
       repository: 'engine',
       waiters: [],

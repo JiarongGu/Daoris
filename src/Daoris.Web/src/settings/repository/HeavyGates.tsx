@@ -43,7 +43,7 @@ export type HeavyMarks = {
   marks: boolean | null;
   names: string[];
   refusal?: string | null;
-  /** The gates the file declares and does not mark heavy (FABRIC-PIPELINE1b); absent on a shell older than it. */
+  /** The gates the file declares and does not mark heavy (FABRIC-PIPELINE1b); absent where the answer lacks it. */
   light?: string[];
 };
 

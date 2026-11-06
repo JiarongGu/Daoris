@@ -27,7 +27,7 @@ describe('where an installed plugin came from', () => {
     expect(screen.getByText(/it is not a JSON object/)).toBeInTheDocument();
   });
 
-  it('says nothing for a shell older than the record', () => {
+  it('says nothing where the answer lacks it', () => {
     const { container } = render(<PluginSourceLine source={undefined} />);
     expect(container).toBeEmptyDOMElement();
   });

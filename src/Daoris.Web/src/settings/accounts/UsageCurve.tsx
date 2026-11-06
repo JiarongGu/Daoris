@@ -19,7 +19,7 @@ const yOf = (used: number) => BOX.top + (1 - Math.min(Math.max(used, 0), 100) / 
 
 /**
  * A curve across the whole window: its points, flat from the window's start to the first and from the last to its end. None where
- * no curve was answered (a shell older than PUSH1e), which draws no line.
+ * no curve was answered , which draws no line.
  */
 function across(points: readonly CurvePoint[]): CurvePoint[] {
   const first = points[0];

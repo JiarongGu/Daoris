@@ -47,9 +47,9 @@ export type SessionEntry = {
   group: SessionGroupName;
   /** The id of the newest part in the group the entry sits in: the row's record. */
   leading: string;
-  /** Where the first part's line ends; null where there is none (an ask's siblings). Absent from a host older than the head. */
+  /** Where the first part's line ends; null where there is none (an ask's siblings). Absent where the answer lacks it. */
   head?: string | null;
-  /** The part a row opens on: `leading` when the group is you or working, otherwise `head ?? leading`. Absent from an older host. */
+  /** The part a row opens on: `leading` when the group is you or working, otherwise `head ?? leading`. Absent where the answer has none. */
   opens?: string;
   parts: EntryPart[];
 };

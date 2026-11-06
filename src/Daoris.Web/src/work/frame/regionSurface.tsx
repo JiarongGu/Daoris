@@ -238,7 +238,7 @@ export function useRegionSurfaces({
       ? withWhose(
         <div className="p-3">
           <WorkflowRunView
-            // A shell older than the route answers something else, which is no run.
+            // An answer from another route is something else, which is no run.
             answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
             reading={workflowRun.isPending}
             refusal={workflowRun.error ? sentence(workflowRun.error) : null}

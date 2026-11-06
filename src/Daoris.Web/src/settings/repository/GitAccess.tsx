@@ -15,7 +15,7 @@ export type GitAccessOwner = Exclude<GitAccessSource, 'default'>;
 /** One class as it resolves (`LINES`' `gitAccess`): its value, `as-today` for a Write nothing set, and where it was set. */
 export type ResolvedGitClass = { class: string; value: string; source: GitAccessSource | (string & {}) };
 
-/** One repository's git access as the driver resolves it; absent on a shell older than it. */
+/** One repository's git access as the driver resolves it; absent where the answer lacks it. */
 export type RepositoryGitAccess = { repository: string; workspace: string; classes: ResolvedGitClass[] };
 
 /** One level as it is set (`STATE`'s `gitAccess`, `workspaceGitAccess`, `machineGitAccess`). */

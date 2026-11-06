@@ -176,7 +176,7 @@ describe('a closed quest’s note (QUESTCLOSE1b2)', () => {
     expect(screen.queryByText(/The person marked this done/)).toBeNull();
   });
 
-  it('draws a note from a host older than parts as it is kept', () => {
+  it('draws a note where the answer lacks it as it is kept', () => {
     page({ quest: { ...closed, noteParts: undefined } });
 
     expect(screen.getByText('The person marked this done: It is in the shared folder.')).toBeInTheDocument();

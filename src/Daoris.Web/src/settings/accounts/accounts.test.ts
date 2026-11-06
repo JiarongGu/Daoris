@@ -20,7 +20,7 @@ const agent = (over: Partial<AgentAccounts> = {}): AgentAccounts => ({
 });
 
 describe('the answer, read', () => {
-  it('finds an agent by its accounts\' owner, and nothing in an answer an older shell gave', () => {
+  it('finds an agent by its accounts\' owner, and nothing in an answer that lacks it', () => {
     expect(agentOf({ agents: [agent()] }, 'claude-code')?.agent).toBe('claude-code');
     expect(agentOf({ agents: [agent()] }, 'codex')).toBeNull();
     expect(agentOf(undefined, 'claude-code')).toBeNull();
