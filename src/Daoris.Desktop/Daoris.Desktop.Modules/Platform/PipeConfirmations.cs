@@ -30,11 +30,14 @@ public sealed record PipeConfirmationField(string Name, string Type, string Valu
 /// <see cref="Keyed"/> that it carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, §7.1); <see cref="Restored"/> that it
 /// was asked before Daoris restarted and waits again from its record, its <see cref="Asker"/> the record's word, never the system's (§8.1).
 /// <see cref="Hold"/> that its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238).
+/// <see cref="Standing"/> the code that says why the place its terminal runs in is not told as outside, or why the standing confirmation
+/// did not cover it (<see cref="StandingWhy"/>); null where nothing is to be said, which the card's words then leave out (CHANNELJOIN1c).
 /// </summary>
 public sealed record PipeConfirmation(
     string Id, string Module, string Route, IReadOnlyList<PipeConfirmationField> Fields, PipeAsker Asker,
     DateTimeOffset Asked, DateTimeOffset? Expires = null, DateTimeOffset? ShownAt = null, IReadOnlyList<PipeNamed>? Named = null,
-    bool WaitedOn = true, bool Checking = false, int? CheckWithin = null, bool Keyed = false, bool Restored = false, bool Hold = false);
+    bool WaitedOn = true, bool Checking = false, int? CheckWithin = null, bool Keyed = false, bool Restored = false, bool Hold = false,
+    string? Standing = null);
 
 /// <summary>What waits, told whole at each change, numbered so a window keeps the newest telling (as <c>UNDER_WAY</c> is).</summary>
 public sealed record PipeConfirmationsNow(long Seq, IReadOnlyList<PipeConfirmation> Waiting);
@@ -361,7 +364,8 @@ public sealed class PipeConfirmations : IDisposable
                 CheckWithin: checkWithin is { } within ? (int)Math.Ceiling(within.TotalMilliseconds) : null,
                 Keyed: @as?.Keyed ?? false,
                 Restored: @as?.Restored ?? false,
-                Hold: @as?.Hold ?? false), judge);
+                Hold: @as?.Hold ?? false,
+                Standing: standing), judge);
             // Its ask's line and its place are made together under the lock, so its end can be said only after its ask.
             Write("asked", held.Shown, standing);
             _waiting.Add(held);

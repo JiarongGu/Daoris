@@ -15,6 +15,8 @@
   "work.conversation.partner": "A partner’s answer, in Daoris’s words",
   "work.conversation.claimFrom": "A claim from {{repository}}’s session ({{agent}}), on the channel",
   "work.conversation.claimFromRepository": "A claim from {{repository}}’s session, on the channel",
+  "work.conversation.claimFromOutside": "A claim from an outside agent ({{who}}), on the channel",
+  "work.conversation.claimFromOutsideAgent": "A claim from an agent outside Daoris, on the channel",
   "work.conversation.inChannel": "Open the channel",
   "work.conversation.answers.yours": "Answers your question of {{time}}:",
   "work.conversation.answers.session": "Answers this session’s question of {{time}}:",

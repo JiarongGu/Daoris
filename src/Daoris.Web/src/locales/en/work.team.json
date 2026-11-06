@@ -36,5 +36,13 @@
   "work.team.again.cancel": "Cancel",
   "work.team.why.after": "That ask is not this session's.",
   "work.team.why.unanswered": "It has not answered yet.",
-  "work.team.why.lead": "Its answer goes to the lead already."
+  "work.team.why.lead": "Its answer goes to the lead already.",
+  "work.team.outside.tag": "outside Daoris",
+  "work.team.outside.other": "another agent",
+  "work.team.outside.in": "{{agent}} for {{repository}}",
+  "work.team.outside.joined": "joined {{time}}",
+  "work.team.outside.seen": "last read or posted {{time}}",
+  "work.team.outside.unseen": "has not read or posted yet",
+  "work.team.outside.remove": "Remove",
+  "work.team.outside.why": "It was not removed: {{code}}"
 }

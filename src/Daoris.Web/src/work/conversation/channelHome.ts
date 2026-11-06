@@ -1,7 +1,7 @@
 import type { Channel } from '../channel';
 
 /** Who posted a channel message, as the conversation that took it names them: their repository and their agent, as the person calls it. */
-export type ChannelPoster = { repository: string | null; agent: string | null };
+export type ChannelPoster = { repository: string | null; agent: string | null; outside?: boolean };
 
 /**
  * A channel message's home, seen from the conversation that took it (COMMS1h, the comms design §7): the message is drawn whole in the
@@ -28,7 +28,7 @@ export function channelHomeOf(
     posterOf: (message) => {
       const item = [...channel.items, ...(channel.addressed ?? [])].find((each) => each.kind === 'message' && each.id === message);
       if (!item || item.person) return undefined;
-      return { repository: item.repository ?? null, agent: item.agent ? nameOf(item.agent) : null };
+      return { repository: item.repository ?? null, agent: item.agent ? nameOf(item.agent) : null, ...(item.outside ? { outside: true } : {}) };
     },
     onOpen: () => open(),
   };

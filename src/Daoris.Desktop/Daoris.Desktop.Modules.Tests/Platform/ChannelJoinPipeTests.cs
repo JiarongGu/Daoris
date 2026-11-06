@@ -106,6 +106,24 @@ public sealed class ChannelJoinPipeTests : Bridge
         var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray());
         Assert.Equal(StandingWhy.Untold, waits.GetProperty("payload").GetProperty("standing").GetString());
         await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the join was never asked");
+        // CHANNELJOIN1c: the card record carries it, so the window words it beside the asker (no confirmation id is kept for it).
+        Assert.Equal(StandingWhy.Untold, Assert.Single(pipe.Confirmations.Now().Waiting).Standing);
+    }
+
+    [Fact]
+    public async Task A_join_from_a_place_told_outside_carries_no_standing_on_its_card()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var (pipe, _, _, services, client) = await ServeAsync(log, StandingPlace.Outside);
+        using var _s = services;
+        using var _p = pipe;
+        await using var _c = client;
+
+        await client.SendAsync(DriverModule.Name, "CHANNEL_JOIN", Join);
+
+        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the join was never asked");
+        Assert.Null(Assert.Single(pipe.Confirmations.Now().Waiting).Standing);
     }
 
     private static async Task Until(Func<bool> condition, Func<string> because)

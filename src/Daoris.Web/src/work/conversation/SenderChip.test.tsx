@@ -107,6 +107,30 @@ describe('COMMS1h the sender chips', () => {
     expect(channelHomeOf(null, nameOf, () => {})).toBeUndefined();
   });
 
+  /**
+   * CHANNELJOIN1c (the event-channel design §5.8): a message an agent outside Daoris posted as a member of the channel is headed as that
+   * member's, saying it is outside Daoris, and never as a session's, the person's or Daoris's own; in both languages.
+   */
+  it('CHANNELJOIN1c heads a member’s message as the member’s, outside Daoris, never as a session’s', async () => {
+    const member = { ...CHANNEL, items: [{ ...CHANNEL.items[0]!, session: 'o1a2b3c', repository: 'checker', agent: 'codex', outside: true }] };
+    const home = channelHomeOf(member, nameOf, () => {})!;
+    expect(home.posterOf?.('m4')).toEqual({ repository: 'checker', agent: 'Codex', outside: true });
+    const { container, unmount } = draw({ channel: home });
+    const label = container.querySelector('[data-word="e8"] [data-sender] > span > span:first-child')?.textContent;
+    expect(label).toBe('A claim from an outside agent (checker · Codex), on the channel');
+    expect(label).not.toMatch(/session/);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { container: chinese } = draw({ channel: home });
+      expect(chinese.querySelector('[data-word="e8"] [data-sender] > span > span:first-child')?.textContent)
+        .toBe('来自外部智能体（checker · Codex）的说法，发在频道里');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('COMMS1h reaches a chip’s door before the fold it heads, in the keyboard’s order', async () => {
     draw();
     const user = userEvent.setup();

@@ -4,6 +4,8 @@ import { Button, Menu } from '../../design/ui';
 import { type Answered, Refused } from '../InlineConfirm';
 import { HelperAsks, type HelperWaits, waitsOnWord } from '../waits/HelperAsks';
 import { BringInAgent, type BringInChoice } from './BringInAgent';
+import type { OutsideAgent } from './outsideAgents';
+import { OutsideAgentRow, type RemoveOutside } from './OutsideAgentRow';
 import { type MemberRow, memberRows } from './teamRows';
 
 type InConversation = Parameters<typeof HelperAsks>[0]['inConversation'];
@@ -22,6 +24,10 @@ export type CoWorkersProps = {
   passing?: boolean;
   /** *Bring in another agent…*'s choices (COWORKUX1f): none, and the ⋯ is not drawn. */
   choices?: readonly BringInChoice[];
+  /** The agents outside Daoris on this line's channel, each beside the members with the person's *Remove* (CHANNELJOIN1c). */
+  outside?: readonly OutsideAgent[];
+  onRemoveOutside?: RemoveOutside;
+  removingOutside?: boolean;
   inConversation?: InConversation;
   marked?: string;
 };
@@ -31,13 +37,15 @@ export type CoWorkersProps = {
  * parts strip's shape. A member's row opens its thread; an answer kept for the person offers *Pass to the lead*; an ask still waiting on
  * the person's yes keeps its presses and its wait's section. Its ⋯ holds *Bring in another agent…*. Nothing where nothing was asked.
  */
-export function CoWorkers({ session, helpers, lead, onPass, passing = false, choices, inConversation, marked }: CoWorkersProps) {
+export function CoWorkers({
+  session, helpers, lead, onPass, passing = false, choices, outside = [], onRemoveOutside, removingOutside, inConversation, marked,
+}: CoWorkersProps) {
   const { t } = useTranslation();
   const [bringing, setBringing] = useState(false);
   const onBringIn = choices && choices.length > 0 ? () => setBringing(true) : undefined;
   const waiting = helpers.asks.filter((ask) => pending(ask.state));
   const members = memberRows(t, helpers.asks.filter((ask) => !pending(ask.state)), helpers.nameOf);
-  if (helpers.asks.length === 0 && !onBringIn) return null;
+  if (helpers.asks.length === 0 && outside.length === 0 && !onBringIn) return null;
   const heading = `coworkers-${session}`;
   return (
     <section
@@ -59,11 +67,14 @@ export function CoWorkers({ session, helpers, lead, onPass, passing = false, cho
           </Menu.Root>
         )}
       </div>
-      {helpers.asks.length > 0 && (
+      {(helpers.asks.length > 0 || outside.length > 0) && (
         <ol className="m-0 grid list-none gap-0.5 p-0">
           <li data-team-lead className="px-2 py-1 text-small text-ink-soft">{t('work.team.lead', { agent: lead })}</li>
           {members.map((row) => (
             <Member key={row.ask.id} row={row} onOpen={helpers.onOpen} onPass={onPass} passing={passing} />
+          ))}
+          {outside.map((agent) => (
+            <OutsideAgentRow key={agent.id} agent={agent} nameOf={helpers.nameOf} onRemove={onRemoveOutside} removing={removingOutside} />
           ))}
         </ol>
       )}

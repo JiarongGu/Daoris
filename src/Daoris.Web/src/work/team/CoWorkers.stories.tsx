@@ -54,6 +54,20 @@ export const TeamChinese: Story = { decorators: [chinese] };
 /** The same in dark. */
 export const TeamDark: Story = { decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
 
+const OUTSIDE = [
+  { id: 'o1a2b3c4', agent: 'codex-acp', repository: 'checker', joined: '2026-11-06T09:00:00Z', seen: '2026-11-06T09:30:00Z' },
+  { id: 'o5d6e7f8', agent: 'other', repository: null, joined: '2026-11-06T09:10:00Z', seen: null },
+];
+
+/** CHANNELJOIN1c: the agents outside Daoris on the line's channel beside the co-workers, each as itself with *Remove* (§5.8). */
+export const OutsideAgents: Story = { args: { outside: OUTSIDE, onRemoveOutside: () => {} } };
+
+/** The same in 中文. */
+export const OutsideAgentsChinese: Story = { ...OutsideAgents, decorators: [chinese] };
+
+/** The same at the main area's 400 px floor. */
+export const OutsideAgentsNarrow: Story = { ...OutsideAgents, decorators: [sessionWidths.narrow] };
+
 /** *Bring in another agent…*: the doors in order, one the rules turn off with its reason. */
 export const BringIn: Story = {
   render: () => (

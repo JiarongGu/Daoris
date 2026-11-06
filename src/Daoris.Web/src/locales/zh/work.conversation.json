@@ -15,6 +15,8 @@
   "work.conversation.partner": "搭档的回答，附 Daoris 的说明",
   "work.conversation.claimFrom": "来自 {{repository}} 会话（{{agent}}）的说法，发在频道里",
   "work.conversation.claimFromRepository": "来自 {{repository}} 会话的说法，发在频道里",
+  "work.conversation.claimFromOutside": "来自外部智能体（{{who}}）的说法，发在频道里",
+  "work.conversation.claimFromOutsideAgent": "来自 Daoris 之外的智能体的说法，发在频道里",
   "work.conversation.inChannel": "打开频道",
   "work.conversation.answers.yours": "回答你 {{time}} 提的问题：",
   "work.conversation.answers.session": "回答本会话 {{time}} 提的问题：",

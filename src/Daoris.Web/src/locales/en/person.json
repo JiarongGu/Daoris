@@ -209,5 +209,6 @@
   "person.route.REGISTRY.WRITE_DECLARATION": "write a declaration into a repository",
   "person.route.REMOTES.SET": "wire a workspace to a remote",
   "person.route.REMOTES.REMOVE": "unwire a workspace from the remote it is wired to",
-  "person.route.PIPE.HOLD": "hold a conversation"
+  "person.route.PIPE.HOLD": "hold a conversation",
+  "person.standing.untold": "Daoris could not tell whether this terminal runs inside an agent it runs. Confirm only if you started this agent yourself."
 }

@@ -16,6 +16,8 @@ public sealed class ChannelMemberRoutes(HostWiring host) : IRouteModule
     [
         new("POST", "/api/channel/members", DoorClass.Person, "an outside agent's admission to a channel")
             { Marks = OwnerMark.None("an outside agent's admission, which names no quest") },
+        // The ids a listing holds are the members' only names, so it is the driver's read with the key, never an open one.
+        new("GET", "/api/channel/members", DoorClass.Driver, "the members of a channel"),
         new("GET", "/api/channel/members/{id}/messages", DoorClass.Agent, "an outside agent's read of its channel"),
         new("POST", "/api/channel/members/{id}/messages", DoorClass.Agent, "an outside agent's message on its channel"),
         new("POST", "/api/channel/members/{id}/leave", DoorClass.Agent, "an outside agent's leave of its channel"),
@@ -28,6 +30,7 @@ public sealed class ChannelMemberRoutes(HostWiring host) : IRouteModule
         if (host.Mode != ServiceMode.Local) return;
 
         routes.Map<JoinChannel, ChannelMemberResponse>(JoinAsync);
+        routes.Map<ListChannelMembers, ChannelMembersResponse>(ListAsync);
         routes.Map<ReadMemberChannel, MemberChannelResponse>(ReadAsync);
         routes.Map<PostMemberChannelMessage, ChannelPostResponse>(PostAsync);
         routes.Map<LeaveChannel, ChannelMemberResponse>(LeaveAsync);
@@ -38,6 +41,12 @@ public sealed class ChannelMemberRoutes(HostWiring host) : IRouteModule
         var joined = await Service.Channel.Members.JoinAsync(
             new ChannelJoin(request.Ask, request.Line, request.Agent, request.Repository, request.Confirmation), DateTimeOffset.UtcNow, ct);
         return joined.Member is { } member ? ToMember(member) : Refused(joined.Refusal);
+    }
+
+    private async Task<Answer<ChannelMembersResponse>> ListAsync(ListChannelMembers request, HttpContext http, CancellationToken ct)
+    {
+        var standing = await Service.Channel.Roll.ListAsync(request.Ask, request.Line, ct);
+        return new ChannelMembersResponse([.. standing.Select(each => ToMember(each.Member) with { Spent = each.Spent })]);
     }
 
     private async Task<Answer<MemberChannelResponse>> ReadAsync(ReadMemberChannel request, HttpContext http, CancellationToken ct)
@@ -65,7 +74,8 @@ public sealed class ChannelMemberRoutes(HostWiring host) : IRouteModule
 
     private async Task<Answer<ChannelMemberResponse>> LeaveAsync(LeaveChannel request, HttpContext http, CancellationToken ct)
     {
-        var why = host.Gate.IsAgent(http) ? ChannelMember.ByItself : ChannelMember.ByPerson;
+        // Without the key it is the member's own leave; with it, the person's Remove, or the look's end of one spent or quiet.
+        var why = host.Gate.IsAgent(http) ? ChannelMember.ByItself : request.Why == ChannelMember.Expired ? ChannelMember.Expired : ChannelMember.ByPerson;
         var left = await Service.Channel.Members.LeaveAsync(request.Id, why, DateTimeOffset.UtcNow, ct);
         return left.Member is { } member ? ToMember(member) : Refused(left.Refusal);
     }
