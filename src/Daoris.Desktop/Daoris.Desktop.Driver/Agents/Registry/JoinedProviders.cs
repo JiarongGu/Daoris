@@ -47,12 +47,12 @@ internal static class JoinedProviders
             else Add(made, key, door);
         }
 
-        var ofKey = joining.ToDictionary(door => door.Id.Value, StringComparer.OrdinalIgnoreCase);
+        var byName = joining.ToDictionary(door => door.Id.Value, StringComparer.OrdinalIgnoreCase);
         return
         [
             .. available.Select(provider => Join(provider, Joined(joined, provider.Id.Value))),
             .. own.Select(door => Join(Made(door.Id.Value, [door], new AccountsPart(new AccountKey(door.Id.Value), null, PoolFacts.None)), Joined(joined, door.Id.Value))),
-            .. referencing.Select(door => Referencing(door, carried, ofKey)),
+            .. referencing.Select(door => Referencing(door, carried, byName)),
             .. made.Select(each => Made(each.Key, Sorted(each.Value), new AccountsPart(new AccountKey(each.Key), null, PoolFacts.None))),
         ];
     }
