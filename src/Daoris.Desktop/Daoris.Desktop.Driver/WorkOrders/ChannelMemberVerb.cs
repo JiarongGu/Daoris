@@ -157,9 +157,9 @@ public static class ChannelMemberVerb
 
         var channel = ask.Ask is { } id ? $"ask #{id}'s channel" : $"the channel of session {ask.Line}'s line";
         output.WriteLine($"You joined {channel} as member {member.Id} ({member.Agent}{(member.Repository is { } repository ? $", {repository}" : "")}).");
-        output.WriteLine($"  Post:  daoris-driver ask channel --member {member.Id} \"…\" [--to <repository>] [--re <message>] [--question] [--urgent]");
-        output.WriteLine($"  Read:  daoris-driver ask channel --member {member.Id} [--since <moment>]");
-        output.WriteLine($"  Leave: daoris-driver ask channel leave --member {member.Id}");
+        output.WriteLine($"  Post:  daoris ask channel --member {member.Id} \"…\" [--to <repository>] [--re <message>] [--question] [--urgent]");
+        output.WriteLine($"  Read:  daoris ask channel --member {member.Id} [--since <moment>]");
+        output.WriteLine($"  Leave: daoris ask channel leave --member {member.Id}");
         output.WriteLine("Your posts are your own claims on the channel, never the person's: they start, stop and steer no session. Work for a repository is still a quest.");
         return 0;
     }
