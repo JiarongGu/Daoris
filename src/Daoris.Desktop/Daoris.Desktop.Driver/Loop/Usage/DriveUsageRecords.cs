@@ -34,7 +34,7 @@ internal static class DriveUsageRecords
               another live driver drives is refused, naming it; --share runs beside it on purpose. No
               session is ended on time: a quiet one is said, and --quiet-end ends one of this run
               unheard that long and carries it on, for a run nobody watches.
-          events relay --where  ·  events relay --once --home <home> [--since <run>:<seq>] [--kinds <kind,...>] [--session-pid <pid>]
+          events relay --where  ·  events relay --once --home <home> [--since <run>:<seq>] [--kinds <kind,...>] [--not-by <id>] [--session-pid <pid>]
               the work cycle's events for a session outside Daoris, through the event-relay plugin: --where lays
               this build's copy out in the home and prints the command to start in the background; --once,
               run from that copy, prints one batch of fixed lines (ids and codes, never words) and ends, its
