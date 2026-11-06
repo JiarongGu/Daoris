@@ -182,7 +182,9 @@ describe('What needs you on a machine', () => {
     await screen.findByRole('group', { name: 'Ready for you' });
     await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
 
-    expect([...new Set(asked())].sort()).toEqual(['HARNESSES']);
+    // The window's own hold reads every slice once the page's modules have loaded, which a loaded machine reaches before these rows:
+    // those reads are the window's, as `ShellSignals` makes them, and no ask of the band's.
+    expect([...new Set(asked().filter((type) => type !== 'STATE_SLICE'))].sort()).toEqual(['HARNESSES']);
     const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
   });
