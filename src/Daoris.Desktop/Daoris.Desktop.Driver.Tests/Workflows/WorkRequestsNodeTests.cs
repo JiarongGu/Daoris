@@ -89,7 +89,7 @@ public sealed class WorkRequestsNodeTests
         Assert.Null(declined.Move);
         Assert.Contains("#q2", declined.Said);
         Assert.Contains("declined", declined.Said);
-        Assert.Null(NodeAuthorities.BuiltIn[NodeKinds.WorkRequests].FailureBy);
+        Assert.Null(NodeKit.Row(NodeKinds.WorkRequests)!.FailureBy);
     }
 
     [Fact]

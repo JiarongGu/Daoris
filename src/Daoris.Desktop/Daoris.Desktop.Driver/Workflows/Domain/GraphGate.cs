@@ -114,7 +114,7 @@ public static class GraphGate
     /// <summary>The graph part for the door's facts.</summary>
     public static GraphGateState Judge(GraphGateFacts facts)
     {
-        var handed = facts.Graph.Nodes.First(node => NodeKinds.IsLanding(node.Kind));
+        var handed = facts.Graph.Nodes.First(node => node.Kind == NodeKinds.Land);
         var said = new GraphGateState(GraphGateStates.NotJudged, facts.Run) { Handed = handed.Id, Commit = facts.Commit };
         if (facts.Record is not { } record) return said with { State = GraphGateStates.Unread };
 

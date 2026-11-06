@@ -1,6 +1,9 @@
 namespace Daoris.Driver;
 
-/// <summary>The node kinds this build knows (§E2's authority table, §E4). A plugin's own node is <c>&lt;plugin&gt;/&lt;node&gt;</c>.</summary>
+/// <summary>
+/// The ids of the node kinds this build knows (§E2's authority table, §E4): the words the saved files, the page and the terminal use. Each is one
+/// unit's (<see cref="NodeKit"/>). A plugin's own node is <c>&lt;plugin&gt;/&lt;node&gt;</c>.
+/// </summary>
 public static class NodeKinds
 {
     /// <summary>The agent's done, on the ledger: a claim, and never the end (§C2).</summary>
@@ -104,21 +107,6 @@ public static class NodeKinds
     /// its commits kept on a recovery ref, and what it ended written on the landing record, which the keeper and the press read.
     /// </summary>
     public const string Tidy = "tidy";
-
-    /// <summary>Whether a kind is the graph's one landing: the performed <c>land</c>.</summary>
-    public static bool IsLanding(string kind) => kind is Land;
-
-    /// <summary>Whether a kind is a hold Daoris judges before the landing (LANDNODE1k).</summary>
-    public static bool IsHold(string kind) => kind is QuestHolds or ContentHolds;
-
-    public static readonly IReadOnlyList<string> BuiltIn = [Claimed, Push, Line, Human, Look, GoAhead, WaitUnit, QuestClose, All, Opinion, Stop, Check, Integrate, WorkRequests, Request, Land, Review, QuestHolds, ContentHolds, Monitor, Tidy];
-
-    /// <summary>Whether a kind is a plugin's own node: <c>&lt;plugin&gt;/&lt;node&gt;</c>, both parts named.</summary>
-    public static bool IsPlugin(string kind)
-    {
-        var slash = kind.IndexOf('/');
-        return slash > 0 && slash < kind.Length - 1 && kind.IndexOf('/', slash + 1) < 0 && !kind.Any(char.IsWhiteSpace);
-    }
 }
 
 /// <summary>
@@ -287,14 +275,14 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     /// remote-tracking ref beside the plugin's answer, and <c>pull-request</c> the plugin's answer to Daoris's own ask (<c>work/state</c>, with
     /// D148 point 4's checks) kept on the landing, so a frame naming either is never their outcome; nor is it git's, a person's or a record's.
     /// </summary>
-    public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKinds.IsPlugin(Kind);
+    public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKit.IsPlugin(Kind);
 
     /// <summary>
     /// Whether the person may settle an attempt whose outcome nothing else establishes (FABRIC-PERFORM1g; §D6, <i>unknown stops the step,
     /// and the person sees it</i>): a plugin's performed node alone, whose attempt the performer holds when reconciliation cannot say. Its
     /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
     /// </summary>
-    public bool PersonSettles => Reach == NodeReach.Performed && NodeKinds.IsPlugin(Kind);
+    public bool PersonSettles => Reach == NodeReach.Performed && NodeKit.IsPlugin(Kind);
 
     /// <summary>
     /// The source whose record passes the node over for its attempt's graph and run, where nothing is asked of it (FABRIC-WIRE1g): an
@@ -305,7 +293,7 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     public string? SkipBy { get; init; }
 }
 
-/// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>
+/// <summary>The authority by kind (§E2): each kind's unit's (<see cref="INodeKind.Authority"/>), a plugin's own node's from its declaration.</summary>
 /// <remarks>
 /// <para><b>Skips</b> (§E2 leaves which nodes allow one to the node; FABRIC-NODE1's reading, D173's note): git's proofs
 /// (<c>claimed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
@@ -315,69 +303,16 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 /// </remarks>
 public static class NodeAuthorities
 {
-    public static readonly IReadOnlyDictionary<string, NodeAuthority> BuiltIn = new Dictionary<string, NodeAuthority>(StringComparer.Ordinal)
-    {
-        [NodeKinds.Claimed] = new(NodeKinds.Claimed, NodeReach.Observed, NodeSource.Ledger, null, false, false, MayEnd: false, Evidenced: true),
-        [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
-        // G8: Daoris's push, reached when git's remote-tracking ref holds the pushed commit and failed by the push act's refusal. Never
-        // skipped, since a skip would read as pushed where nothing was; the person's doors are stop and Try again.
-        [NodeKinds.Push] = new(NodeKinds.Push, NodeReach.Performed, NodeSource.Git, NodeSource.Git, false, PersonSkips: false, true, true),
-        [NodeKinds.Human] = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
-        // §E4: the look is its gate, observed, and the person's *reviewed* is what reaches it.
-        // FABRIC-WIRE1h: the review gate's record passes it over where the chain's or the ask's choice turns it off for this work.
-        [NodeKinds.Look] = new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true, false) { SkipBy = NodeSource.Review },
-        [NodeKinds.GoAhead] = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
-        [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true, true),
-        [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true, true),
-        [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true, false),
-        // FABRIC-WORKFLOW2: D157's opinion never fails (a required one waits), and the person may pass it over, as its gate's
-        // unavailable reads as skipped today. A sink is the run stopped: never skipped, never the end, its receipt its path's.
-        // FABRIC-WIRE1g: the gate's own record passes it over where its rule asks none, or an optional one none could be had.
-        [NodeKinds.Opinion] = new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, null, false, true, true, true) { SkipBy = NodeSource.Opinion },
-        [NodeKinds.Stop] = new(NodeKinds.Stop, NodeReach.Observed, NodeSource.Path, null, false, false, MayEnd: false, Evidenced: false),
-        // FABRIC-PIPELINE1a (the pipeline design §4.1): reached and failed by the gates' exits, never skipped by its kind, since a skip
-        // would read as a verdict a stage and the line rest on; the person's doors on it are a new attempt and a stop.
-        [NodeKinds.Check] = new(NodeKinds.Check, NodeReach.Performed, NodeSource.Gates, NodeSource.Gates, false, false, true, true),
-        // INTEGRATE1n (§17.4): reached and failed by the integration record, never skipped, since a skip satisfies `after` and would read as
-        // integrated where nothing was; the person's door is the stop, which the record bounds (F50, row n2).
-        [NodeKinds.Integrate] = new(NodeKinds.Integrate, NodeReach.Waited, NodeSource.Integration, NodeSource.Integration, false, PersonSkips: false, true, true),
-        // INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and
-        // waiting on the person, so nothing fails it; the person's pass with words is the run's existing skip, and no record passes it over.
-        [NodeKinds.WorkRequests] = new(NodeKinds.WorkRequests, NodeReach.Observed, NodeSource.Requests, null, false, PersonSkips: true, true, true),
-        // INTEGRATE1p (§17.5): the commitment's, as `wait.unit`'s: the quest's done, or its taking under `until: taken`, and its decline. No
-        // skip of an active node: after a decline the person's *Go on without it…* is the failed node's own move.
-        [NodeKinds.Request] = new(NodeKinds.Request, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, PersonSkips: false, true, true),
-        // LANDNODE1a (land node design §2): reached when the landing record holds the bound tip, failed by the landing's own refusal. Never
-        // skipped, since a skip would read as landed; the person's doors are stop and Try again, and their Accept is a `review`'s.
-        [NodeKinds.Land] = new(NodeKinds.Land, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
-        // LANDNODE1c2: the person's Accept reaches it; nothing fails it, and it is never a graph's end. DECIDE1b: the person's changes, with
-        // words, are its rejection, so an `after` from it still means on Accept and a `rejected` or `back on: rejected` wire is the changes route.
-        [NodeKinds.Review] = new(NodeKinds.Review, NodeReach.Pressed, NodeSource.Person, null, true, PersonSkips: false, MayEnd: false, Evidenced: false),
-        // LANDNODE1k: reached by what Daoris reads at the bound tip; a hold that does not let go keeps it active with its reason, as `work.requests`
-        // is kept, since each can let go later and a failure would be a verdict routed on. The person's pass with words is the way past it.
-        [NodeKinds.QuestHolds] = new(NodeKinds.QuestHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
-        [NodeKinds.ContentHolds] = new(NodeKinds.ContentHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true),
-        // D245: read from the landing record. Neither is skipped, since a skip would read as merged or as tidied; the person's door is the stop.
-        [NodeKinds.Monitor] = new(NodeKinds.Monitor, NodeReach.Observed, NodeSource.Landing, null, false, PersonSkips: false, true, true),
-        [NodeKinds.Tidy] = new(NodeKinds.Tidy, NodeReach.Performed, NodeSource.Landing, NodeSource.Landing, false, PersonSkips: false, true, true),
-    };
+    /// <summary>The node's authority as this build reads it; null for a kind it does not know.</summary>
+    public static NodeAuthority? Of(NodeDeclaration node) => Of(node, NodeKit.Built);
 
     /// <summary>
-    /// The node's authority: its built-in kind's, or a plugin's own (its believed answer either way, a person only where declared, a
-    /// skip unless declared otherwise); null for a kind this build does not know. A plugin's answer is named <see cref="NodeSource.Plugin"/>
-    /// here alone: that the answer came from the declaring plugin is <see cref="WorkBelief.Completion"/>'s sender check, not the lifecycle's.
+    /// The node's authority as a build whose kit is <paramref name="kit"/> reads it: an older build's lacks a later kind, so a declaration naming
+    /// that kind is no kind there (INTEGRATE1n; §17.6 point 6).
     /// </summary>
-    public static NodeAuthority? Of(NodeDeclaration node) => Of(node, BuiltIn);
-
-    /// <summary>
-    /// The node's authority as a build whose built-in table is <paramref name="table"/> reads it: an older build's table lacks a later row, so
-    /// a declaration naming that kind is no kind there (INTEGRATE1n; §17.6 point 6).
-    /// </summary>
-    internal static NodeAuthority? Of(NodeDeclaration node, IReadOnlyDictionary<string, NodeAuthority> table) =>
-        table.TryGetValue(node.Kind, out var builtIn) ? builtIn
-        : NodeKinds.IsPlugin(node.Kind) ? new NodeAuthority(node.Kind, node.Reach, NodeSource.Plugin, NodeSource.Plugin, node.Rejectable, node.Skippable, true, true)
-        : null;
+    internal static NodeAuthority? Of(NodeDeclaration node, NodeKit kit) => kit.Find(node.Kind)?.Authority(node);
 }
+
 
 /// <summary>A declaration's own checks (§D4's <i>validated before saved</i>, the node's half; the wires' half is WIRE1a's).</summary>
 public static class NodeDeclarations
@@ -387,26 +322,21 @@ public static class NodeDeclarations
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
     /// fail, a timeout not above zero, an output named <c>evidence</c> (the evidence port's name, <see cref="WireEnd.Evidence"/>), or a
     /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's), or outcomes on a
-    /// built-in or a plugin's that break <see cref="NodeOutcomes.Problem"/> (DECIDE1b). Then
-    /// FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
+    /// built-in or a plugin's that break <see cref="NodeOutcomes.Problem"/> (DECIDE1b). Then the kind's own checks (<see cref="INodeKind.Problem"/>).
+    /// Then FABRIC-UNIT1d's (§D6): a <c>perform</c> on any node but a plugin's performed one, a transient code not of
     /// <see cref="NodePerform.CodeShape"/> or named twice, transient codes with no retry to take them, and a plugin's retry of more
-    /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled. Then INTEGRATE1n's: an
-    /// <c>integrate</c>'s <c>request</c> and <c>conflicts</c> (the unit's half of the install's policy, §17.4) each a text of the install's own
-    /// choices, judged here with the declaration so a cycle, a version and a stored file are held to one check; the graph's rules about where it
-    /// stands are <see cref="NodeGraphs.Problems"/>'s.
+    /// than one attempt that nothing could take: a transient code, on a node that is idempotent or reconciled. The graph's rules about where a
+    /// node stands are <see cref="NodeGraphs.Problems"/>'s.
     /// </summary>
-    public static string? Problem(NodeDeclaration node) => Problem(node, NodeAuthorities.BuiltIn);
+    public static string? Problem(NodeDeclaration node) => Problem(node, NodeKit.Built);
 
-    /// <summary>The option name round 4 gave <c>claimed</c> for the hold on the work's requests, refused by name (INTEGRATE1o, C28): the hold is <see cref="NodeKinds.WorkRequests"/>.</summary>
-    private const string WorkRequestsOption = "requests";
-
-    /// <summary>The declaration's checks as a build whose built-in table is <paramref name="table"/> makes them (INTEGRATE1n, §17.6 point 6).</summary>
-    internal static string? Problem(NodeDeclaration node, IReadOnlyDictionary<string, NodeAuthority> table)
+    /// <summary>The declaration's checks as a build whose kit is <paramref name="kit"/> makes them (INTEGRATE1n, §17.6 point 6).</summary>
+    internal static string? Problem(NodeDeclaration node, NodeKit kit)
     {
         if (string.IsNullOrWhiteSpace(node.Id)) return "id";
-        var authority = NodeAuthorities.Of(node, table);
-        if (authority is null) return NodeRefusal.UnknownKind;
-        var builtIn = table.ContainsKey(node.Kind);
+        if (kit.Find(node.Kind) is not { } unit) return NodeRefusal.UnknownKind;
+        var authority = unit.Authority(node);
+        var builtIn = unit is BuiltInNode;
         if (builtIn ? node.Reach != authority.Reach : node.Reach is not (NodeReach.Observed or NodeReach.Performed)) return "reach";
         if (node.Version < 1) return "version";
         if (node.Retry is { } retry && (retry.MaxAttempts < 1 || retry.DelaysSeconds.Any(delay => delay < 0) || authority.FailureBy is null)) return "retry";
@@ -417,13 +347,7 @@ public static class NodeDeclarations
         if (builtIn && !node.Skippable) return "skippable";
         // DECIDE1b: no built-in kind is a decision, and a plugin's outcomes keep the names a route is followed by.
         if (node.Outcomes.Count > 0 && (builtIn || NodeOutcomes.Problem(node.Outcomes) is not null)) return "outcomes";
-        if (node.Kind == NodeKinds.Integrate && IntegrateOptionProblem(node) is { } option) return option;
-        if (node.Kind == NodeKinds.Request && RequestOptions.Problem(node) is { } asked) return asked;
-        if (node.Kind == NodeKinds.Land && LandNodes.Problem(node) is { } landed) return landed;
-        if (NodeKinds.IsHold(node.Kind) && HoldNodes.Problem(node) is { } hold) return hold;
-        // INTEGRATE1o (§17.6 point 8, C28): the hold on the work's requests is the kind `work.requests`. Written as an option of `claimed`, a build
-        // that knows `claimed` would read it and run the work with the hold dropped, so no file may say it there.
-        if (node.Kind == NodeKinds.Claimed && node.Options.ContainsKey(WorkRequestsOption)) return WorkRequestsOption;
+        if (unit.Problem(node) is { } own) return own;
 
         // FABRIC-UNIT1d (§D6): how a plugin performs its node is that node's alone, and a retry or a transient code is refused where
         // it could never be taken, as a retry on a kind nothing can fail is. Daoris's own performed kind's retry stays its kind's.
@@ -441,21 +365,6 @@ public static class NodeDeclarations
         if (!builtIn && node.Retry is { MaxAttempts: > 1 } && !(node.Perform is { Transient.Count: > 0 } taken && (taken.Idempotent || taken.Reconcile)))
         {
             return "retry";
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// The first of an <c>integrate</c>'s options that holds no choice of the install's, by its name (INTEGRATE1n; §17.4): <c>request</c> is
-    /// one of <see cref="LandingIntegrate.Requests"/> and <c>conflicts</c> one of <see cref="LandingIntegrate.ConflictChoices"/>, each written as
-    /// text. Any other option is left as written, as a graph's options are opaque to a reader that does not know them.
-    /// </summary>
-    private static string? IntegrateOptionProblem(NodeDeclaration node)
-    {
-        foreach (var (name, choices) in new (string, IReadOnlyList<string>)[] { ("request", LandingIntegrate.Requests), ("conflicts", LandingIntegrate.ConflictChoices) })
-        {
-            if (node.Options.ContainsKey(name) && !(NodeOptions.Text(node, name) is { } text && choices.Contains(text, StringComparer.Ordinal))) return name;
         }
 
         return null;

@@ -14,8 +14,23 @@ namespace Daoris.Driver;
 /// and one given with none waits, since a rejection is said with its reason. Asked and unanswered, another act's answer, or none read: it
 /// waits, never reached or rejected on a guess. Who raises the go-ahead to the person is the session's ask (D135) or HUMAN1's door.</para>
 /// </remarks>
-public static class GoAheadNode
+[NodeKind(NodeKinds.GoAhead, NodeGroup.You, NodeKinds.Look)]
+public sealed class GoAheadNode : BuiltInNode
 {
+    public override NodeAuthority Row { get; } = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false);
+
+    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
+
+    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Text("act")];
+
+    public override NodePart Part(NodeDeclaration node) =>
+        new(WorkflowKinds.GoAhead, WorkflowParticipation.You, WorkflowExecutor.Daoris, Lowered: WorkflowKinds.GoAhead);
+
+    /// <summary>None: a go-ahead is named by its step's id.</summary>
+    public override string? Title => null;
+
+    public override NodeLook Look => NodeLook.You;
+
     /// <summary>What D135's answers say of <paramref name="node"/> for <paramref name="unit"/>'s work: the person's yes or refusal, or none.</summary>
     public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, IReadOnlyList<GoAheadView>? asked)
     {

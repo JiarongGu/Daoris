@@ -180,7 +180,7 @@ public static class WorkflowNamed
     private static string? OneLandingProblem(NodeGraph graph, int number)
     {
         string Named(string kind) => string.Join(" and ", graph.Nodes.Where(node => node.Kind == kind).Select(node => $"`{node.Id}`"));
-        var landings = graph.Nodes.Count(node => NodeKinds.IsLanding(node.Kind));
+        var landings = graph.Nodes.Count(node => node.Kind == NodeKinds.Land);
         if (landings == 0) return $"v{number}: its graph holds no landing (`{NodeKinds.Land}`), and a named workflow's graph lands its work once.";
         if (landings > 1) return $"v{number}: its graph holds {landings} landings, {Named(NodeKinds.Land)}, and a named workflow's graph lands its work once.";
         foreach (var (kind, what) in new[] { (NodeKinds.Opinion, "opinions"), (NodeKinds.Look, "looks") })

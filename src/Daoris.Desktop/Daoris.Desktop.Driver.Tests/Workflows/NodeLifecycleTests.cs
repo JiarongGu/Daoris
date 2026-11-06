@@ -18,15 +18,15 @@ public sealed class NodeLifecycleTests
     private static readonly NodeScope Run = new("graph-1", "run-1");
 
     /// <summary>Every built-in kind, and a plugin's own node: the same table for each.</summary>
-    public static TheoryData<string> Kinds() => new([.. NodeKinds.BuiltIn, "acme.deploy/deploy"]);
+    public static TheoryData<string> Kinds() => new([.. NodeKit.Kinds, "acme.deploy/deploy"]);
 
     private static NodeDeclaration Declared(string kind, NodeRetry? retry = null, bool rejectable = false) =>
-        new("n1", kind, 1, NodeAuthorities.BuiltIn.TryGetValue(kind, out var builtIn) ? builtIn.Reach : NodeReach.Performed)
+        new("n1", kind, 1, NodeKit.Row(kind)?.Reach ?? NodeReach.Performed)
         {
             Retry = retry ?? new NodeRetry(3, [5, 30]),
             Rejectable = rejectable,
             // FABRIC-UNIT1d: a plugin's performed node retries only a transient code, and only where it is idempotent or reconciled.
-            Perform = builtIn is null ? Retrying : null,
+            Perform = NodeKit.Row(kind) is null ? Retrying : null,
         };
 
     private static readonly NodePerform Retrying = new(Idempotent: true, Reconcile: false, ["unavailable"]);
@@ -235,8 +235,8 @@ public sealed class NodeLifecycleTests
 
         var claimed = Declared(NodeKinds.Claimed);
         Assert.Equal(NodeStates.Reached, NodeLifecycle.Apply(claimed, At(NodeStates.Active), Reach(NodeSource.Ledger)).Status.State);
-        Assert.False(NodeAuthorities.BuiltIn[NodeKinds.Claimed].MayEnd);
-        Assert.All(NodeAuthorities.BuiltIn.Values.Where(each => each.Kind != NodeKinds.Claimed), each => Assert.NotEqual(NodeSource.Ledger, each.ReachBy));
+        Assert.False(NodeKit.Row(NodeKinds.Claimed)!.MayEnd);
+        Assert.All(NodeKit.Built.Units.Select(unit => unit.Row).Where(each => each.Kind != NodeKinds.Claimed), each => Assert.NotEqual(NodeSource.Ledger, each.ReachBy));
     }
 
     /// <summary>Git's proofs never fail: not yet is pending. A plugin's failure needs its code.</summary>
@@ -590,8 +590,8 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void Integrate_waits_on_the_integration_record_and_is_never_skipped()
     {
-        Assert.Contains(NodeKinds.Integrate, NodeKinds.BuiltIn);
-        var authority = NodeAuthorities.BuiltIn[NodeKinds.Integrate];
+        Assert.Contains(NodeKinds.Integrate, NodeKit.Kinds);
+        var authority = NodeKit.Row(NodeKinds.Integrate)!;
         Assert.Equal((NodeReach.Waited, NodeSource.Integration, NodeSource.Integration), (authority.Reach, authority.ReachBy, authority.FailureBy));
         Assert.Equal((false, false, true, true, true), (authority.PersonJudges, authority.PersonSkips, authority.MayEnd, authority.Evidenced, authority.Dispatches));
         Assert.Null(authority.SkipBy);
@@ -633,7 +633,7 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void An_older_build_whose_table_omits_integrate_reads_it_as_no_kind()
     {
-        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.Integrate).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var older = NodeKit.Built.Without(NodeKinds.Integrate);
         var node = Declared(NodeKinds.Integrate);
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(node, older));
@@ -650,9 +650,9 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void WorkRequests_observes_the_quests_records_and_the_person_alone_may_pass_it_over()
     {
-        Assert.Contains(NodeKinds.WorkRequests, NodeKinds.BuiltIn);
+        Assert.Contains(NodeKinds.WorkRequests, NodeKit.Kinds);
         Assert.Equal("work.requests", NodeKinds.WorkRequests);
-        var authority = NodeAuthorities.BuiltIn[NodeKinds.WorkRequests];
+        var authority = NodeKit.Row(NodeKinds.WorkRequests)!;
         Assert.Equal((NodeReach.Observed, NodeSource.Requests, null), (authority.Reach, authority.ReachBy, authority.FailureBy));
         Assert.Equal((false, true, true, true), (authority.PersonJudges, authority.PersonSkips, authority.MayEnd, authority.Evidenced));
         Assert.Null(authority.SkipBy);
@@ -690,7 +690,7 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void An_older_build_reads_work_requests_as_no_kind_where_it_would_run_an_option_with_the_hold_dropped()
     {
-        var older = NodeAuthorities.BuiltIn.Where(pair => pair.Key != NodeKinds.WorkRequests).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var older = NodeKit.Built.Without(NodeKinds.WorkRequests);
         var kind = Declared(NodeKinds.WorkRequests) with { Retry = null };
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(kind, older));

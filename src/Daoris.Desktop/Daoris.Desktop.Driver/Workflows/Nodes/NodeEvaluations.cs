@@ -117,7 +117,7 @@ internal static class NodeEvaluations
     /// </summary>
     public static (WorkUnit Unit, string Tip)? Landed(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
     {
-        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } handed) return null;
+        if (governed.Scope is not { } scope || governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } handed) return null;
         if (statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance: { Subject: { } subject, Evidence.Revision: { } tip } }) return null;
         var unit = scope.Branch?.Id == subject ? scope.Branch : scope.Branches.FirstOrDefault(each => each.Id == subject);
         return unit is null ? null : (unit, tip);
@@ -138,7 +138,7 @@ internal static class NodeEvaluations
                 : null;
         }
 
-        if (governed.Graph.Nodes.FirstOrDefault(node => NodeKinds.IsLanding(node.Kind)) is not { } handed
+        if (governed.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } handed
             || statuses.GetValueOrDefault(handed.Id) is not { State: NodeStates.Reached, Acceptance.Evidence.Revision: { } tip })
         {
             return null;

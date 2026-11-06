@@ -58,12 +58,12 @@ public sealed class CompletionNodesTests : IDisposable
     [Fact]
     public void The_monitor_and_the_tidy_are_built_in_kinds_neither_skipped_nor_failed_by_the_person()
     {
-        Assert.Contains(NodeKinds.Monitor, NodeKinds.BuiltIn);
-        Assert.Contains(NodeKinds.Tidy, NodeKinds.BuiltIn);
-        Assert.False(NodeAuthorities.BuiltIn[NodeKinds.Monitor].PersonSkips);
-        Assert.False(NodeAuthorities.BuiltIn[NodeKinds.Tidy].PersonSkips);
-        Assert.Null(NodeAuthorities.BuiltIn[NodeKinds.Monitor].FailureBy);
-        Assert.Equal(NodeSource.Landing, NodeAuthorities.BuiltIn[NodeKinds.Tidy].FailureBy);
+        Assert.Contains(NodeKinds.Monitor, NodeKit.Kinds);
+        Assert.Contains(NodeKinds.Tidy, NodeKit.Kinds);
+        Assert.False(NodeKit.Row(NodeKinds.Monitor)!.PersonSkips);
+        Assert.False(NodeKit.Row(NodeKinds.Tidy)!.PersonSkips);
+        Assert.Null(NodeKit.Row(NodeKinds.Monitor)!.FailureBy);
+        Assert.Equal(NodeSource.Landing, NodeKit.Row(NodeKinds.Tidy)!.FailureBy);
         Assert.Equal([NodeKinds.Land, NodeKinds.Push, PullRequestSteps.Id, NodeKinds.Monitor, NodeKinds.Tidy], CompletionNodes.Set);
         Assert.All(new[] { NodeKinds.Land, NodeKinds.Push, NodeKinds.Monitor, NodeKinds.Tidy }, kind => Assert.True(CompletionNodes.RunBegins(kind)));
     }

@@ -21,8 +21,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Delivery presets | `Workflows/Domain/SetupPresets.cs` | *Set up…*'s deliveries, the suggestion, the remote platform's plugin, *Keep how it lands* |
 | Graph presets | `Workflows/Domain/WorkflowPresets.cs` | The shipped graphs for `workflow new --from`, with the opinion and look variants |
 | Saved workflows | `Workflows/WorkflowStore.cs`, `Workflows/Domain/WorkflowNamed.cs` | One file per workflow; versions appended whole; the one save judge |
-| Kinds and graph rules | `Workflows/Nodes/NodeContract.cs`, `Workflows/Nodes/NodeGraphs.cs` | The node kinds and states; `Problems()` refuses a graph that breaks a rule |
-| Palette | `Workflows/WorkflowPalette.cs` | What the editor offers per kind: alone, as a landing's tail, or retired |
+| Node kit | `Workflows/Kinds/` (`NodeKit`, `NodeKindAttribute`, `INodeKind`, `BuiltInNode`, `PluginStep`; one folder per kind, its declaration `<Kind>/<Kind>Node.cs`; `PullRequest/PullRequestStep.cs`) | Each kind's one declaration, marked `[NodeKind(id, group, after…)]`: its contract row, the subject a run binds it to, its options, its own declaration checks, its part on the run view and the step a version's person part reads it as, its offer and role, its evidence schema, its terminal title and its look. `NodeKit` is built once from the marks, in the picker's groups and their order (`docs/index/registered.md`); `NodeKit.Of` reads a built-in's unit, or a plugin's step as `PluginStep` with Daoris's half where its step name has one (`*/pull-request`); `Without(kind)` is an older build's kit. `NodeKitTests` holds the ids and the units equal both ways |
+| Kinds and graph rules | `Workflows/Nodes/NodeContract.cs`, `Workflows/Nodes/NodeGraphs.cs` | The kinds' ids (`NodeKinds`), the states, the authority row's shape and the checks every declaration is held to; `Problems()` refuses a graph that breaks a rule |
+| Palette | `Workflows/WorkflowPalette.cs` | What the editor offers, read from the kit's units in its order: alone, as a landing's tail, or retired |
 | Choosing | `Workflows/Domain/WorkflowSelection.cs` | Which workflow a chain's work follows, and the landed route |
 | Run binding | `Workflows/Domain/WorkflowRunBinding.cs`, `Workflows/WorkflowRunBindings.cs`, `Workflows/WorkflowRunStart.cs` | A run bound at its first start, kept in `workflows/runs/<run>.json` |
 | Process per gate | `Workflows/WorkflowProcesses.cs` | The binding and gate interface: a graph version read from its gate nodes; no binding, no workflow |
@@ -41,7 +42,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Run derivation | `Workflows/Domain/WorkflowRuns.cs`, `WorkflowChatSteps.cs`, `WorkflowReviewSteps.cs`, `WorkflowLandingSteps.cs` | A run derived from its records: the work and the pass in the derivation, the chat, review and landing steps each their own type; the run's records in files of their own |
 | Named workflow reading | `Workflows/Domain/WorkflowNamed.cs`, `NamedStepReading.cs`, `NamedStepCanon.cs`, `Workflows/WorkflowOperations.cs`, `WorkflowUsing.cs` | A saved file and its ids and plan to add a version; a version's steps read, and their canonical text and digest; the typed operations, with choosing a workflow for a place apart |
 | `daoris workflow` | `Workflows/DriverWorkflowsCommand.cs`, `WorkflowTerminal.cs`, `WorkflowListing.cs`, `WorkflowChoosing.cs`, `WorkflowWriting.cs` | The usage and the door; the terminal's flags, say and press; the reading, choosing and writing verbs |
-| Holds | `Workflows/Nodes/HoldNodes.cs`, `WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
+| Holds | `Workflows/Nodes/HoldNodes.cs`, `Workflows/Kinds/WorkRequests/WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
 | Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `NodeRunKeeping.StartTidies` | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
@@ -51,7 +52,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Tree landing | `Workplace/SessionTrees.cs`, `Workplace/TreeLands.cs` | The merge, the branch and the squash; the plan and its refusals, each read from the run's bound `land`. `TreeLands` is the front: `TreeLandPlans` says the plan before the press, `TreeMerges` is the merge form, `TreeBranches` the branch form and a chain's advance, `LandingPress` the landing itself, `LandingSayings` the words; a landing's records (`LandingSubject`, `LandingPlan`, `TreeLanding`, `SweepItem` and the rest) each sit in a file of their own beside them. `SessionTrees` keeps one-line doors; opening a tree is `TreeOpening`, reading where the trees stand `TreeListings` |
 | Delivery record | `Workplace/DeliveryStore.cs`, `DeliveryReconciler.cs`, `CurrentDeliveries.cs` | Each landing's phases written ahead, settled after a restart |
 | Landed branches, pull requests | `Workplace/LandedBranches.cs`, `PullRequestAsks.cs`, `PullRequestStates.cs`, `PullRequestBounds.cs`, `BranchTidying.cs` | `landings.json` (`LandedBranchJson` writes and reads it by hand), a pull request's state from its plugin, the look's tidy (`TidyHolders` the trees sessions hold, `TidyKeeping` what the look keeps beside the branches; `BranchTidying` keeps their doors and the saying) |
-| Integration | `Workflows/Nodes/IntegrateNode.cs`, `Workflows/IntegrationTransport.cs`, `Workflows/PlaceIntegrate.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; `PlaceIntegrate` the place's requester outside a run; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
+| Integration | `Workflows/Nodes/IntegrateStart.cs`, `Workflows/IntegrationTransport.cs`, `Workflows/PlaceIntegrate.cs`, `Workplace/IntegrationRequests.cs`, `IntegrationStore.cs`, `IntegrationLines.cs`, `Review/Integration/` | One request door, one run per line, its gates and judgement; `PlaceIntegrate` the place's requester outside a run; the store's step keeping is `IntegrationStepKeeping` and its row reading `IntegrationRows` |
 | Landing gate | `Review/SessionTreeGates.cs`, `Workflows/Domain/GraphGate.cs`, `GraphGates.cs`, `WorkflowGate.cs` | Whether work may land now, read once per decision and handed to every door |
 | Look and opinion | `Review/Domain/ReviewGate.cs`, `ReviewRules.cs`, `OpinionGate.cs` (with `OpinionGateFacts.cs`, `OpinionGateState.cs`, `OpinionGateWords.cs`, `OpinionAskKept.cs`, `OpinionPersonWord.cs`, `LandingGate.cs`), `OpinionRules.cs`, `Review/OpinionPresses.cs` | The review environment's levels; the second opinion and the person's words at it |
 | Entry Accept | `Review/EntryAccepts.cs`, `Workplace/EntryLands.cs`, `Workplace/TogetherPress.cs` | One Accept for an entry or an ask, part by part: the word kept for each part a `land` performs, the rest held; the plan |
@@ -236,14 +237,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Where a change goes
 
-- **A new step kind or a graph rule:** the kind in `Workflows/Nodes/NodeContract.cs`, its rule in `NodeGraphs.Problems()`, its
-  offer in `WorkflowPalette.cs`, its behaviour in a file of its own under `Workflows/Nodes/` (as `LandNodes.cs`, `HoldNodes.cs`).
-  A performed kind starts through `WorkPerformer`; an observed one is reached through `WorkObserver`.
+- **A new step kind:** its id in `NodeKinds` (`Workflows/Nodes/NodeContract.cs`) and its folder `Workflows/Kinds/<Kind>/`, whose
+  `<Kind>Node.cs` is a `BuiltInNode` marked `[NodeKind(id, group, after…)]` declaring its row, subject, options, own checks, part,
+  offer, title and look; nothing else lists it. Its state logic is still a file under `Workflows/Nodes/` (as `LandNodes.cs`,
+  `HoldNodes.cs`) the runtime dispatches by kind: a performed kind starts through `WorkPerformer`, an observed one is reached
+  through `WorkObserver`. A graph rule across kinds goes in `NodeGraphs.Problems()`.
 - **Which workflow work follows:** `Workflows/Domain/WorkflowSelection.cs`, held cell for cell by `fixtures/workflow-selection.json`.
 - **A shipped workflow or delivery:** a JSON file under `Defaults/workflows/`; `WorkflowDefaults` reads it, and the presets derive.
 - **How a landing behaves:** the method's options in `LandNodes.cs`; the act in `Workplace/` (`LandingDoor`, `SessionTrees`,
   `TreeLands`, the delivery files, `LandPerformer`).
-- **Integration:** `Workplace/Integration*.cs` and `Review/Integration/`; the node's half in `Workflows/Nodes/IntegrateNode.cs`.
+- **Integration:** `Workplace/Integration*.cs` and `Review/Integration/`; the node's declaration in `Workflows/Kinds/Integrate/IntegrateNode.cs`, its
+  start in `Workflows/Nodes/IntegrateStart.cs`.
 - **A gate or a hold at landing:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs` (the graph's part).
 - **An old shape to convert:** the release migration's workflow step, `Workflows/Migration/WorkflowMigration.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, and the page under `src/workflow/` or `src/agents/setup/`.
@@ -272,11 +276,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - D145 point 1 (a branch rule's `autoAccept`) vs `LandNodes.Reviewed` (no `review` step means no press): D227 reads right.
 - D88 (without `tidy` the tree stays; clean-up is the person's press) vs `BranchTidying.cs` (the look's own tidy): the code reads right.
 - D215 point 2 (the install's policy on a branch rule's `integrate`) vs `DriverConfig.LinePolicyOf` (`linePolicies` alone): D227's 1a note reads right.
-- D215 point 5 (no node added to any graph) vs `NodeContract.cs:60` (`integrate` kind) and `land` method `integrate`: the code reads right.
+- D215 point 5 (no node added to any graph) vs `Workflows/Kinds/Integrate/IntegrateNode.cs` (`integrate` kind) and `land` method `integrate`: the code reads right.
 - D221's rejection of a place's choice changing through `PLACE_APPLY` vs `PlacePlan.cs:336` (Apply chooses the copy): D227 reads right.
 - D157 and D223 (no zoom, no minimap) vs D224 and `workflow/chart/FlowChart.tsx:62`: D224 reads right; `WorkflowChart.tsx:353` still says "no zoom".
 - D186 point 3 (a flow placed left to right where it fits) vs D221/D223 (a workflow always top to bottom, `flowLayout.ts:291`): both right, each for its flows.
-- `NodeContract.cs:49-53` (`check` started by nothing) vs `Loop/Watch/WatchNodes.cs` (the check's executor wired): the code reads right.
+- `NodeContract.cs` (`NodeKinds.Check`: started by nothing) vs `Loop/Watch/WatchNodes.cs` (the check's executor wired): the code reads right.
 
 ## Open
 

@@ -2,7 +2,8 @@
  * The registered parts, for `docs/index/registered.md`: each seam's marks, read as text, in the order their root runs them.
  *
  * A seam is a sealed subclass of `PartAttribute` (`src/Daoris.Contracts/Parts/`) whose constructor takes the name, the phase
- * enum and the parts it comes after, in that order; its marks are `[<Seam>("name", <Phase>.<Value>, "after", …)]`. The order is
+ * enum and the parts it comes after, in that order; its marks are `[<Seam>("name", <Phase>.<Value>, "after", …)]`, where a name
+ * may be a string constant the sources declare (`NodeKinds.Land`), read as its value. The order is
  * `PartOrder.Of`'s: phase by phase in the enum's order, then each part after the parts it names, ties by code unit. A mark that
  * order refuses (a name declared twice, an after that is no part or runs later, a cycle) is listed apart with why: the root's
  * parts test fails on it, and the page still says where it is.
@@ -38,15 +39,37 @@ function seams(ctx, files) {
   return found.map((seam) => ({ ...seam, phases: enums.get(seam.phase) ?? [] })).sort((a, b) => compare(a.seam, b.seam));
 }
 
-function marks(ctx, files, { seam, phase }) {
-  const mark = new RegExp(`\\[\\s*${seam}\\s*\\(\\s*"([^"]+)"\\s*,\\s*${phase}\\.(\\w+)((?:\\s*,\\s*"[^"]*")*)\\s*\\)\\s*\\]`, 'g');
+/** A mark's argument: a string literal, or a constant named `<Class>.<Name>`. */
+const ARGUMENT = String.raw`(?:"[^"]*"|[A-Z]\w*\.[A-Z]\w*)`;
+
+/** Each `const string` the sources declare, by `<Class>.<Name>`: the class is the nearest one declared above it. */
+function constants(ctx, files) {
+  const found = new Map();
+  for (const file of files) {
+    const text = code(ctx.read(file));
+    const classes = [...text.matchAll(/\bclass\s+([A-Z]\w*)/g)];
+    for (const match of text.matchAll(/\bconst\s+string\s+([A-Z]\w*)\s*=\s*"([^"]*)"\s*;/g)) {
+      const owner = classes.filter((each) => each.index < match.index).at(-1)?.[1];
+      if (owner) found.set(`${owner}.${match[1]}`, match[2]);
+    }
+  }
+  return found;
+}
+
+/** An argument's text: a literal's, or the constant's value it names (its own name where no source declares it). */
+function argument(text, named) {
+  return text.startsWith('"') ? text.slice(1, -1) : named.get(text) ?? text;
+}
+
+function marks(ctx, files, { seam, phase }, named) {
+  const mark = new RegExp(`\\[\\s*${seam}\\s*\\(\\s*(${ARGUMENT})\\s*,\\s*${phase}\\.(\\w+)((?:\\s*,\\s*${ARGUMENT})*)\\s*\\)\\s*\\]`, 'g');
   const found = [];
   for (const file of files) {
     const text = code(ctx.read(file));
     for (const match of text.matchAll(mark)) {
-      const after = [...match[3].matchAll(/"([^"]*)"/g)].map((each) => each[1]);
+      const after = [...match[3].matchAll(new RegExp(ARGUMENT, 'g'))].map((each) => argument(each[0], named));
       const type = /\b(?:class|record)\s+([A-Z]\w*)/.exec(text.slice(match.index + match[0].length))?.[1] ?? '';
-      found.push({ name: match[1], phase: match[2], after, type, file, line: lineOf(text, match.index) });
+      found.push({ name: argument(match[1], named), phase: match[2], after, type, file, line: lineOf(text, match.index) });
     }
   }
   return found.sort((a, b) => compare(a.name, b.name) || compare(a.file, b.file) || a.line - b.line);
@@ -94,9 +117,10 @@ export function registeredPage(ctx, generated) {
     `${generated} Each root's parts by seam, in the order the root runs them: phase by phase, each after the parts it names, ties by name (\`PartOrder.Of\`). Each row names the mark's file and line.`,
   ];
   const all = seams(ctx, files);
+  const named = constants(ctx, files);
   if (!all.length) out.push('', 'No seam is declared in this tree.');
   for (const seam of all) {
-    const { ordered, refused } = orderParts(marks(ctx, files, seam), seam.phases);
+    const { ordered, refused } = orderParts(marks(ctx, files, seam, named), seam.phases);
     out.push('', `## \`${seam.seam}\``, '', `Phases, in order: ${seam.phases.join(', ') || '—'}. Declared in \`${seam.file}\`.`, '');
     if (!ordered.length && !refused.length) {
       out.push('No part is registered.');

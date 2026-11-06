@@ -354,23 +354,7 @@ public static class Involvement
     [
         .. graph.Nodes.Select(node =>
         {
-            var kind = node.Kind switch
-            {
-                NodeKinds.Claimed => WorkflowKinds.Work,
-                NodeKinds.Opinion => WorkflowKinds.Opinion,
-                NodeKinds.Look => WorkflowKinds.Look,
-                NodeKinds.Land => WorkflowKinds.Landing,
-                NodeKinds.GoAhead => WorkflowKinds.GoAhead,
-                // INTEGRATE1n: a graph-only kind, kept by its own kind and its node's id for the comparison's graph part (<see cref="Lowers"/>).
-                NodeKinds.Integrate => NodeKinds.Integrate,
-                NodeKinds.WorkRequests => NodeKinds.WorkRequests,
-                NodeKinds.Request => NodeKinds.Request,
-                // LANDNODE1k: the quest's holds, by its node id, whose `yes` the comparison reads.
-                NodeKinds.QuestHolds => NodeKinds.QuestHolds,
-                // A plugin's pull-request step (G8) is the person's merge on the platform, named by the plugin that opens it.
-                _ when PullRequestSteps.PluginOf(node.Kind) is not null => WorkflowKinds.PullRequest,
-                _ => null,
-            };
+            var kind = NodeKit.Of(node.Kind)?.Part(node).Lowered;
             if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestSteps.PluginOf(node.Kind))]);
             // LANDNODE1c2: a `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
             IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land

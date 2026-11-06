@@ -115,7 +115,7 @@ public static class BuiltInNodes
 
         if (!Observed.Contains(node.Kind)) return Seen(null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
         // LANDNODE1k: a hold reads the quest or the branch its run binds it to.
-        if (NodeKinds.IsHold(node.Kind)) return HoldNodes.Observe(unit, node, binding, git);
+        if (HoldNodes.Options.ContainsKey(node.Kind)) return HoldNodes.Observe(unit, node, binding, git);
         if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
         {
             return Seen(null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };

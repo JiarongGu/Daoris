@@ -10,13 +10,13 @@ public sealed class WorkflowPaletteTests
     [Fact]
     public void Every_built_in_kind_is_present_with_its_authority_and_its_option_fields()
     {
-        Assert.Equal(NodeKinds.BuiltIn, Bare.Kinds.Select(each => each.Kind));
+        Assert.Equal(NodeKit.Kinds, Bare.Kinds.Select(each => each.Kind));
         foreach (var kind in Bare.Kinds)
         {
-            var authority = NodeAuthorities.BuiltIn[kind.Kind];
+            var authority = NodeKit.Row(kind.Kind)!;
             Assert.Equal((authority.Reach, authority.ReachBy, authority.FailureBy, authority.PersonJudges, authority.PersonSkips, authority.MayEnd),
                 (kind.Reach, kind.ReachBy, kind.FailureBy, kind.PersonJudges, kind.PersonSkips, kind.MayEnd));
-            Assert.Equal(NodeOptionFields.Of(kind.Kind), kind.Options);
+            Assert.Equal(NodeKit.Of(kind.Kind)!.Options, kind.Options);
         }
 
         var land = Bare.Kinds.Single(each => each.Kind == NodeKinds.Land).Options;
@@ -36,8 +36,8 @@ public sealed class WorkflowPaletteTests
         Assert.DoesNotContain(NodeKinds.Claimed, failed);
         Assert.Contains(NodeKinds.Check, failed);
         var rejected = Bare.Wires.Single(each => each.Kind == WireKinds.Rejected).From!;
-        // DECIDE1b: a review's changes are its rejection.
-        Assert.Equal([NodeKinds.Human, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Review], rejected);
+        // DECIDE1b: a review's changes are its rejection. The kinds stand in the kit's order: the picker's groups, then their marks' order.
+        Assert.Equal([NodeKinds.Review, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human], rejected);
         Assert.Null(Bare.Wires.Single(each => each.Kind == WireKinds.After).From);
         Assert.Equal(NodeKinds.WaitUnit, Bare.Wires.Single(each => each.Kind == WireKinds.Wait).To);
         // WORKFLOWEDIT1b: no built-in kind is a decision, and a wait's source is another unit's, never a node of this graph.

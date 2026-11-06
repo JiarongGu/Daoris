@@ -244,25 +244,22 @@ public enum RunSubject
 }
 
 /// <summary>
-/// The cutover design §2.2's table, one for the runtime that binds a run's nodes and the run's view that names what each observes
-/// (FABRIC-CUTOVER1c, CUTOVER1e): a node's subject by its kind, and a plugin's or a check's by its place after <c>handed</c>.
+/// The cutover design §2.2's subjects, one for the runtime that binds a run's nodes and the run's view that names what each observes
+/// (FABRIC-CUTOVER1c, CUTOVER1e): a node's subject by its kind's unit (<see cref="INodeKind.Subject"/>), and a plugin's or a check's by its place
+/// after <c>handed</c>.
 /// </summary>
 public static class RunSubjects
 {
-    /// <summary>The subject <paramref name="node"/> observes, <paramref name="afterHanded"/> being the nodes a wire path leads to from <c>handed</c>.</summary>
-    public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) => node.Kind switch
-    {
-        // LANDNODE1k: the quest's holds are its newest work quest's; what the line holds, the branch's, as the landing's.
-        NodeKinds.Claimed or NodeKinds.QuestClose or NodeKinds.QuestHolds => RunSubject.Quest,
-        // INTEGRATE1o (§17.6 point 2): `work.requests` reads the quests the run's sessions published here, so its subject is the run itself.
-        // INTEGRATE1p (§17.5): a `request` binds the run, as `wait.unit` does; the quest it published is named by its attempt's key.
-        NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.WaitUnit or NodeKinds.Stop or NodeKinds.All or NodeKinds.WorkRequests
-            or NodeKinds.Request => RunSubject.Run,
-        NodeKinds.Opinion or NodeKinds.Look or NodeKinds.Review or NodeKinds.Land or NodeKinds.ContentHolds => RunSubject.Branch,
-        // INTEGRATE1n (§17.4): the landed branch at the tip `handed` recorded, wherever the graph wires it.
-        NodeKinds.Push or NodeKinds.Line or NodeKinds.Integrate or NodeKinds.Monitor or NodeKinds.Tidy => RunSubject.Landing,
-        _ => afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch,
-    };
+    /// <summary>
+    /// The subject <paramref name="node"/> observes, <paramref name="afterHanded"/> being the nodes a wire path leads to from <c>handed</c>; a kind this
+    /// build does not know by its place.
+    /// </summary>
+    public static RunSubject Of(NodeDeclaration node, IReadOnlySet<string> afterHanded) =>
+        NodeKit.Of(node.Kind)?.Subject(node, afterHanded) ?? Placed(node, afterHanded);
+
+    /// <summary>The subject of a node placed by the graph: the run's branch at its landing once a path from <c>handed</c> leads to it, else the run's branch.</summary>
+    public static RunSubject Placed(NodeDeclaration node, IReadOnlySet<string> afterHanded) =>
+        afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch;
 
     /// <summary>
     /// The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing. A <c>back</c>
@@ -271,7 +268,7 @@ public static class RunSubjects
     public static HashSet<string> AfterHanded(NodeGraph graph)
     {
         var after = new HashSet<string>(StringComparer.Ordinal);
-        var next = new Queue<string>(graph.Nodes.Where(node => NodeKinds.IsLanding(node.Kind)).Select(node => node.Id));
+        var next = new Queue<string>(graph.Nodes.Where(node => node.Kind == NodeKinds.Land).Select(node => node.Id));
         while (next.TryDequeue(out var from))
         {
             foreach (var wire in graph.Wires.Where(wire => wire.Kind != WireKinds.Back && wire.From is { Unit: null } source && source.Node == from && wire.To is { Unit: null }))

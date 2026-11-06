@@ -18,7 +18,7 @@ public sealed class GraphGatesTests
     private static NodeGraph Graph(params NodeDeclaration[] nodes) => new(nodes, [], [nodes[0].Id], nodes[^1].Id);
 
     private static NodeDeclaration Node(string kind, params (string Name, string Json)[] options) =>
-        new(kind, kind, 1, NodeAuthorities.BuiltIn[kind].Reach)
+        new(kind, kind, 1, NodeKit.Row(kind)!.Reach)
         {
             Options = options.ToDictionary(each => each.Name, each => each.Json),
         };

@@ -235,6 +235,35 @@ test("the registered parts are listed in their root's order, and a mark the orde
   assert.match(page, /`src\/Driver\/Passes\.cs:2`/);
 });
 
+test("a mark naming its part and the parts it comes after by a string constant is listed by the constant's value", () => {
+  const files = {
+    'src/Kit/NodeKindAttribute.cs': [
+      'enum NodeGroup { Work, Landing }',
+      'sealed class NodeKindAttribute(string name, NodeGroup group, params string[] after) : PartAttribute(name, group, after);',
+    ].join('\n'),
+    'src/Kit/NodeKinds.cs': 'static class NodeKinds { public const string Claimed = "claimed"; public const string Land = "land"; public const string Push = "push"; }',
+    'src/Kit/Kinds.cs': [
+      '[NodeKind(NodeKinds.Push, NodeGroup.Landing, NodeKinds.Land)] class PushNode { }',
+      '[NodeKind(NodeKinds.Land, NodeGroup.Landing)] class LandNode { }',
+      '[NodeKind("*/pull-request", NodeGroup.Landing, NodeKinds.Push)] class PullRequestStep { }',
+      '[NodeKind(NodeKinds.Claimed, NodeGroup.Work)] class ClaimedNode { }',
+    ].join('\n'),
+  };
+  const at = join(scratch, 'registered-constants');
+  for (const [path, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(at, path)), { recursive: true });
+    writeFileSync(join(at, path), content);
+  }
+  const page = planIndex(at, Object.keys(files)).get('docs/index/registered.md');
+  const rows = page.split('\n').filter((line) => /^\| (\d|refused)/.test(line)).map((line) => line.split(' | ').slice(0, 4).join(' | '));
+  assert.deepEqual(rows, [
+    '| 1 | `claimed` | Work | —',
+    '| 2 | `land` | Landing | —',
+    '| 3 | `push` | Landing | `land`',
+    '| 4 | `*/pull-request` | Landing | `push`',
+  ]);
+});
+
 test('the README lists the indexes kept by hand first, then the files it generates, then the large files', () => {
   const readme = readmeOf('kept-by-hand', {
     'daoris.json': JSON.stringify({ target: '.claude', documents: { router: 'docs/README.md', decisions: 'docs/decisions' } }),

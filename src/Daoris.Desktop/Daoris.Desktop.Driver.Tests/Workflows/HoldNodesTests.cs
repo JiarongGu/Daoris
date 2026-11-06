@@ -43,9 +43,9 @@ public sealed class HoldNodesTests
     {
         foreach (var kind in new[] { NodeKinds.QuestHolds, NodeKinds.ContentHolds })
         {
-            var authority = NodeAuthorities.BuiltIn[kind];
+            var authority = NodeKit.Row(kind)!;
             Assert.Equal((NodeReach.Observed, NodeSource.Holds, (string?)null, true, false), (authority.Reach, authority.ReachBy, authority.FailureBy, authority.PersonSkips, authority.MayEnd));
-            Assert.Contains(kind, NodeKinds.BuiltIn);
+            Assert.Contains(kind, NodeKit.Kinds);
             Assert.Null(NodeDeclarations.Problem(Hold(kind)));
         }
     }
@@ -63,7 +63,7 @@ public sealed class HoldNodesTests
     [Fact]
     public void An_older_build_whose_table_omits_the_holds_reads_them_as_no_kind()
     {
-        var older = NodeAuthorities.BuiltIn.Where(pair => !NodeKinds.IsHold(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
+        var older = NodeKit.Built.Without(NodeKinds.QuestHolds).Without(NodeKinds.ContentHolds);
 
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Hold(NodeKinds.QuestHolds), older));
         Assert.Equal(NodeRefusal.UnknownKind, NodeDeclarations.Problem(Hold(NodeKinds.ContentHolds), older));
@@ -186,7 +186,7 @@ public sealed class HoldNodesTests
     [Fact]
     public void Each_kind_has_its_option_fields()
     {
-        Assert.Equal(["yes", "evidence"], NodeOptionFields.Of(NodeKinds.QuestHolds).Select(field => field.Name));
-        Assert.Equal(["line", "proof"], NodeOptionFields.Of(NodeKinds.ContentHolds).Select(field => field.Name));
+        Assert.Equal(["yes", "evidence"], NodeKit.Of(NodeKinds.QuestHolds)!.Options.Select(field => field.Name));
+        Assert.Equal(["line", "proof"], NodeKit.Of(NodeKinds.ContentHolds)!.Options.Select(field => field.Name));
     }
 }

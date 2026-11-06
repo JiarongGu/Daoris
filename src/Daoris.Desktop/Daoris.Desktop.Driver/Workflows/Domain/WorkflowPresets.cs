@@ -47,7 +47,7 @@ public static class WorkflowPresets
         var nodes = next["nodes"]!.AsArray();
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
-        var landing = (string)nodes.First(node => NodeKinds.IsLanding((string)node!["kind"]!))!["id"]!;
+        var landing = (string)nodes.First(node => (string)node!["kind"]! == NodeKinds.Land)!["id"]!;
         // LANDNODE1c2: the gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
         var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
         var into = review ?? landing;

@@ -11,8 +11,26 @@ namespace Daoris.Driver;
 /// failure authority, so only the person's pass over it lets the flow go on (<see cref="RunNodeWords.Word"/>). Its view says it waits on them
 /// (<see cref="WorkRequests.Declined"/>). Quests not read wait, never reached on a guess.</para>
 /// </remarks>
-public static class WorkRequestsNode
+[NodeKind(NodeKinds.WorkRequests, NodeGroup.Checks, NodeKinds.Opinion)]
+public sealed class WorkRequestsNode : BuiltInNode
 {
+    /// <summary>
+    /// INTEGRATE1o (§17.3, C28): reached by the quests' records, each the run's sessions published here done. A decline holds it active and waiting
+    /// on the person, so nothing fails it; the person's pass with words is the run's skip, and no record passes it over.
+    /// </summary>
+    public override NodeAuthority Row { get; } =
+        new(NodeKinds.WorkRequests, NodeReach.Observed, NodeSource.Requests, null, false, PersonSkips: true, true, true);
+
+    /// <summary>INTEGRATE1o (§17.6 point 2): it reads the quests the run's sessions published here, so its subject is the run itself.</summary>
+    public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
+
+    /// <summary>A graph-only kind, kept by its node's id for the comparison's graph part (<see cref="Involvement.Lowers"/>).</summary>
+    public override NodePart Part(NodeDeclaration node) => NodePart.Automatic(node.Kind) with { Lowered = NodeKinds.WorkRequests };
+
+    public override string? Title => "The work's requests";
+
+    public override NodeLook Look => NodeLook.Holds;
+
     /// <summary>Where the quests' records are named in a reach's evidence: the exchange's own, by quest id.</summary>
     public const string Record = "quests";
 

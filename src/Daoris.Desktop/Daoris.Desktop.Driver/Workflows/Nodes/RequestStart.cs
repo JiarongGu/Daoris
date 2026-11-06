@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// <para><b>Reached, failed, waiting.</b> The quest's done reaches it (its taking under <c>until: taken</c>); its decline fails it with
 /// <see cref="RequestOptions.DeclinedCode"/>. A quest not in the projection is unknown, never passed. Nothing of the receiving repository's files is read.</para>
 /// </remarks>
-public sealed class RequestNode(NodeRecordFiles records, Func<IRequestPort?> port, Func<DateTimeOffset> clock)
+public sealed class RequestStart(NodeRecordFiles records, Func<IRequestPort?> port, Func<DateTimeOffset> clock)
 {
     private readonly List<string> _said = [];
 

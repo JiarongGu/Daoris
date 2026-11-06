@@ -125,7 +125,7 @@ public sealed class HomeIntegrationDoor(string home) : IIntegrationDoor
 /// <para><b>Settled here means the door has the request</b>, not that the integration ended: the node's own state, through the one table, is the
 /// request's (active while it is open, reached once settled, failed once handed back or dropped).</para>
 /// </remarks>
-public sealed class IntegrateNode(NodeRecordFiles records, Func<IIntegrationDoor?> door, Func<DateTimeOffset> clock)
+public sealed class IntegrateStart(NodeRecordFiles records, Func<IIntegrationDoor?> door, Func<DateTimeOffset> clock)
 {
     private readonly List<string> _said = [];
 
