@@ -33,6 +33,7 @@ driver would. The Plugins view is a catalogue with a page per plugin. All plugin
 | Ask Daoris grants | `Plugins/HelpGrants.cs` | `<home>/plugin-approvals.json`: a server's tools the person approved |
 | Health and log | `PluginHealth.cs`, `PluginLog.cs`, `PluginActivity.cs`, `Domain/PluginEvents.cs` | `plugin.*` lines; the loop's record of each plugin's health |
 | Work events' sources | `Plugins/WorkEventTeller.cs`, `Plugins/Domain/WorkEvent.cs`; `Workplace/WorkEnds.cs`; `Modules/Platform/PipeConfirmations.cs` (`Settled`) | The kinds read from records, each handed to a sink no loop wires yet: the journal's `quests` rows as `quest.published`, `quest.closed` and `quest.close-lost` with one `events.missed` at the teller's first place and at each incomplete batch; each end the end keeping writes, whichever caller asked; a press no terminal waits on, as it settles |
+| Work events' frame and teller | `Plugins/Domain/WorkEventGrammar.cs`, `HookFrames.Event` (`Plugins/Domain/HookPoints.cs`), `Plugins/WorkEventPoint.cs`, `Plugins/RelayBuild.cs` | `work/event`'s parts, wired to no hook set yet and not a point in `HookPoints.All`: the grammar (version 1: `session.parked`, `quest.parked`, `session.ended`, `work.landed`, `events.missed`, each kind's closed list of ids, codes, counts and a UTC time); the frame built by it, an optional field that fails left out and an event whose required field fails told as `events.missed` in its place; the teller, which mints every `seq` under one lock whether or not it tells, tells only while `Held`, keeps a queue of 256 and a teller per plugin that joined (the oldest dropped and counted in the next frame's `missed`), and stops a plugin after three late answers in a row; a build's hash over its whole bundle, 64 zeros where there is none |
 | Switch | `Plugins/PluginState.cs` | `<home>/plugins.json`: the disabled rows |
 | Doors | `PluginCommand.cs`, `PluginsCommand.cs`, `PluginKitCommand.cs`; `Modules/Bridge/Routes/PluginsRoutes.cs` | `daoris plugin` and `plugins`; the `PLUGIN*` routes |
 | Page | `src/Daoris.Web/src/plugins/`, `bridge/plugins.ts`, `settings/plugins/PluginSettings.tsx` | The view, list, plugin and offer pages, icon; Settings' read-only list |
@@ -130,7 +131,8 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
 
 **Tests.** `Daoris.Desktop.Driver.Tests/Plugins/` (`PluginCatalogTests`, `PluginKitTests`, `PluginInstallTests`,
 `PluginSourceTests`, `PluginShippedTests`, `PluginOfferTests`, `HookTests`, `HookStateTests`, `LandingPluginTests`,
-`PluginToolsTests`, `PluginToolSetUpTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`);
+`PluginToolsTests`, `PluginToolSetUpTests`, `PluginIconTests`, `PluginPackageTests`, `HelpGrantsTests`, `WorkEventTellerTests`,
+`WorkEventGrammarTests`, `WorkEventPointTests`, `RelayBuildTests`);
 `Workplace/WorkEndsGitTests`; `Daoris.Desktop.Modules.Tests/Platform/PipeConfirmationSettledTests`; the service's
 `Quests/QuestJournalTests`;
 `Daoris.Desktop.Modules.Tests/Bridge/` (`DriverModulePlugins*Tests`, `PluginsBothWaysTests`, `PluginRecordWiringTests`,
@@ -158,7 +160,11 @@ example's `node --test`.
 
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkWire.cs:354`).
-- EVENTHOOK1b, EVENTHOOK1c: the `work/event` point, and the `event-relay` example with `daoris events relay`.
+- EVENTHOOK1b's wiring: `work/event` in `HookPoints.All` and `Loop` with the kit's list, the channel's call and the handshake's `events`
+  (`run`, `seq`, `grammar`, `build`), the reconcile's lease read telling busy apart, the work wire's exit bookkeeping for a plugin at the
+  point, the attention watch's kinds and baseline told by both loops, `work.landed` from the landing, `event.unsent` in the catalogue, and
+  the page's gloss (`docs/2026-10-24-event-hook-design.md` §9). EVENTHOOK1c: the `event-relay` example with `daoris events relay`.
+  The measurements both rest on: `docs/2026-11-06-event-hook-measurements.md`.
 - EVENTHOOK1d: the quest kinds, `confirmation.ended` and `work.ended` told at `work/event` from their sources, the grammar's fields and the relay's words (`docs/2026-11-06-event-channel-design.md` §3, D244; chunk EV-F, after 1b and 1c).
 - EVENTHOOK1e: a relay that lives for the session (the same design §4; chunks EV-C to EV-E).
 - No row: D120's workshop (`<home>/plugins/.workshop/`, `plugin-sources.json`, `daoris plugin workshop`, *Send to a repository…*).
