@@ -85,7 +85,7 @@ public sealed class AcpStreamsTests
     {
         public List<LineageAnnouncement> Spawns { get; } = [];
         public List<(string, string?)> Ends { get; } = [];
-        public void Stream(string line) => throw new InvalidOperationException("the protocol door has no stream lines");
+        public void Stream(NativeFrame frame) => throw new InvalidOperationException("the protocol door has no stream lines");
         public void Spawned(LineageAnnouncement said) => Spawns.Add(said);
         public void Ended(string agent, string? state) => Ends.Add((agent, state));
     }

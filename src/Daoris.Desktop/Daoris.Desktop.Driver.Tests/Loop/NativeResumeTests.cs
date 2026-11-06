@@ -328,7 +328,7 @@ public sealed class NativeResumeTests
 
     private sealed class NoConversation : IStreamMapper
     {
-        public StreamMapped Read(string line) => StreamMapped.Nothing;
+        public StreamMapped Read(NativeFrame frame) => StreamMapped.Nothing;
 
         public AcpUsage? Usage => null;
     }

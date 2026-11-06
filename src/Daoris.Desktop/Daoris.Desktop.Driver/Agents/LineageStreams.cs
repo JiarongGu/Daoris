@@ -6,8 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 public interface ILineageWriter
 {
-    /// <summary>One raw line of the harness's stream, the pipe door's; the writer reads what it says of a subagent.</summary>
-    void Stream(string line);
+    /// <summary>One line of the pipe door's stream, as its one frame; the writer reads what it says of a subagent.</summary>
+    void Stream(NativeFrame frame);
 
     /// <summary>A child the protocol door announced.</summary>
     void Spawned(LineageAnnouncement said);

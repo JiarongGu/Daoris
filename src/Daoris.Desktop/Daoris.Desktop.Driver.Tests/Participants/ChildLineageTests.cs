@@ -115,10 +115,10 @@ public sealed class ChildLineageTests : IDisposable
     {
         var writer = ChildLineage.Writer(_home, "s1");
 
-        writer.Stream("""{"type":"system","subtype":"init","session_id":"c1"}""");
-        writer.Stream("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}""");
-        writer.Stream("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}""");
-        writer.Stream("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}""");
+        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"init","session_id":"c1"}"""));
+        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a1","tool_use_id":"toolu_1","subagent_type":"general-purpose","spawn_depth":1,"task_type":"local_agent"}"""));
+        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a2","tool_use_id":"toolu_2","subagent_type":"general-purpose","spawn_depth":2,"parent_task_id":"a1","task_type":"local_agent"}"""));
+        writer.Stream(NativeFrame.Of("""{"type":"system","subtype":"task_notification","task_id":"a2","status":"completed"}"""));
 
         var bound = ChildLineage.Read(_home, "s1");
         Assert.Equal(

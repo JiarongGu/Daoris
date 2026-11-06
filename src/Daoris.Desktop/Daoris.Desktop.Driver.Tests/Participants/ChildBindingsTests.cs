@@ -359,7 +359,7 @@ public sealed class ChildBindingsTests
     {
         var agents = new HashSet<string>(StringComparer.Ordinal);
         var at = DateTimeOffset.UnixEpoch;
-        string? Take(string line) => ChildBindings.StreamLine(line, at, agents);
+        string? Take(string line) => ChildBindings.StreamLine(NativeFrame.Of(line), at, agents);
 
         Assert.Equal(
             """{"at":"1970-01-01T00:00:00.000Z","by":"stream","event":"started","agent":"aadc0410bd5fa6a1e","depth":1,"type":"general-purpose","description":"Sibling A"}""",
@@ -385,12 +385,12 @@ public sealed class ChildBindingsTests
         var description = new string('d', 205) + "\nthe rest";
 
         var said = JsonNode.Parse(ChildBindings.StreamLine(
-            $$"""{"type":"system","subtype":"task_started","task_id":"a1","description":{{JsonSerializer.Serialize(description)}},"spawn_depth":1,"task_type":"local_agent"}""",
+            NativeFrame.Of($$"""{"type":"system","subtype":"task_started","task_id":"a1","description":{{JsonSerializer.Serialize(description)}},"spawn_depth":1,"task_type":"local_agent"}"""),
             DateTimeOffset.UnixEpoch, agents)!)!;
 
         Assert.Equal(new string('d', 200), (string?)said["description"]);
         Assert.Null(JsonNode.Parse(ChildBindings.StreamLine(
-            """{"type":"system","subtype":"task_started","task_id":"a2","description":"  ","spawn_depth":1,"task_type":"local_agent"}""",
+            NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a2","description":"  ","spawn_depth":1,"task_type":"local_agent"}"""),
             DateTimeOffset.UnixEpoch, agents)!)!["description"]);
     }
 
@@ -423,7 +423,7 @@ public sealed class ChildBindingsTests
     {
         var agents = new HashSet<string>(StringComparer.Ordinal);
         var at = DateTimeOffset.UnixEpoch;
-        const string started = """{"type":"system","subtype":"task_started","task_id":"a1","spawn_depth":1,"task_type":"local_agent"}""";
+        var started = NativeFrame.Of("""{"type":"system","subtype":"task_started","task_id":"a1","spawn_depth":1,"task_type":"local_agent"}""");
 
         Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.StreamLine(started, at, agents, "0123456789abcdef")!)!["proc"]);
         Assert.Equal("0123456789abcdef", (string?)JsonNode.Parse(ChildBindings.AcpStarted(new LineageAnnouncement("a1", null, null), at, "0123456789abcdef")!)!["proc"]);

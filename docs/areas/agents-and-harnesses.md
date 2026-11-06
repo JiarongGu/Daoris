@@ -59,6 +59,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
 | `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `StructuredOutput`, `NativePrompt` | same names | The native door: capture, `stream-json` mapping, the prompt written on stdin |
+| `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the lineage, the run's own ending (`HarnessWords`), the streams beside (`ClaudeStreams`, a child's words included) and the dialect's mapper each take, none parsing the text again |
 | `HarnessRoster` | `HarnessRoster.cs` (hub, 26 KB) | One judgement for every start, kept as one-line doors to the units below, with the roster's state and settings reads |
 | `RosterCooling`, `RosterReport`, `RosterSelection` | same names | Cool-offs, refusals and signed-out accounts; the Agents page's report, a press and an account's status question; choosing the harness and account of a start, a resume and a carry-on |
 | `RosterWalk`, `RosterNext`, `RosterStarts`, `RosterUsage` | same names | The account walk and its pass; the next start's reason, last reading and wiring; the numbered starts in flight; the usage questions and the accounts a switch could reach |
@@ -349,8 +350,10 @@ Agents page, and `orient-index` and `code-map` once files move.
   a Codex and a dsh session start as before without Claude Code's seam (s-v) and with no other provider's credential (s-vi);
   `ChildBindings`' fold names no agent: each line is learnt, and each call read as the child it came from (`ChildCall`), by the
   reader its agent's `IChildVocabulary` gives (`ClaudeChildLines`, joining a call by the hook's tool use; `CodexChildLines`, a thread
-  with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; the sink's rest (l: the lineage still
-  a writer the run makes rather than Participants' part, the four `stream-json` readers not yet one); the open's refused model is one
+  with no parent the root), and whether a later line moves a reading is the vocabulary's `Wake`; each native line is read once
+  (`NativeFrame`), and the lineage, `HarnessWords`, `ClaudeStreams` and the mapper take that frame; the sink's rest (l: the lineage
+  still a writer the run makes rather than Participants' part, and what the three read of the frame, a child's or a task's start and
+  end, not yet readings of their own); the open's refused model is one
   `WireReading.ModelRefused`, said by
   the transport's `RefusalReading` before the re-ask and kept by the offers store's part, `OfferRefusals`), m-ii is built (D243 for
   the native door: the words go through the run's `DoorInput`, the chat's retry is the run's own and replays what the ended
