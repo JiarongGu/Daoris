@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-06 - A door id nobody knows in Build's order crashed every tick (FIX5)
+
+- **Symptom:** `IntakeTests` and `DrivenSessionInputTests` (Process) failed with `UnknownDoorException` out of the look: a driver
+  configuration whose role order named a door the registry does not have stopped every tick, not only the start that would use it.
+- **Root cause:** AGENTPROVIDER1 s-i (bf93a2be4) made an unknown door id throw rather than read as the pinned door, and `PlanLook`
+  let the exception out: nothing between the role's order and the tick caught it.
+- **Fix:** `PlanLook` reads such a door as one that may not drive; the start that would have used it holds its quest with the
+  reason, and the tick goes on reporting (b85b8b7fe).
+- **Verify:** `IntakeTests` and `DrivenSessionInputTests` alone, 14 and 15 failing before, none after.
+
 ## 2026-11-06 - A root `lyntai-local.props` carrying a machine path was committed and pushed (FIX6)
 
 - **Symptom:** `test-map` found an unplaced tracked file, `lyntai-local.props` at the repository's root: the local Lyntai build's props,
