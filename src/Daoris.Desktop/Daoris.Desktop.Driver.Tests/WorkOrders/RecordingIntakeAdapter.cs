@@ -12,7 +12,7 @@ internal sealed class RecordingIntakeAdapter : ISpawn
 
     public string? HandedText { get; private set; }
 
-    public ISessionAdapter Door => TestDoors.Door(Name, takesSettings: true, spawn: this);
+    public Provider Door => TestDoors.Door(Name, takesSettings: true, spawn: this);
 
     public ProcessRecipe Start(SpawnRequest request) => _stub.Start(request);
 

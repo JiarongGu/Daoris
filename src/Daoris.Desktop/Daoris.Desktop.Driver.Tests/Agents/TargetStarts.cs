@@ -10,18 +10,18 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 internal static class TargetStarts
 {
-    extension(ISessionAdapter adapter)
+    extension(ProviderRegistry adapters)
     {
-        /// <summary>A driven start's process for <paramref name="target"/> under the machine's <paramref name="command"/>.</summary>
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            adapter.Prepare(SpawnRequests.Of(target, command));
+        /// <summary>A driven start's process on <paramref name="door"/> for <paramref name="target"/> under the machine's <paramref name="command"/>.</summary>
+        public ProcessStartInfo Start(string door, SessionTarget target, IReadOnlyList<string>? command) =>
+            adapters.Start(adapters.Door(door), SpawnRequests.Of(target, command));
 
         /// <summary>A native resume's process on <paramref name="conversation"/>, or null where the door resumes none.</summary>
-        public ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
-            adapter.PrepareResume(SpawnRequests.Of(target, command) with { Resume = conversation });
+        public ProcessStartInfo? Resume(string door, SessionTarget target, IReadOnlyList<string>? command, string conversation) =>
+            adapters.Resume(adapters.Door(door), SpawnRequests.Of(target, command) with { Resume = conversation });
 
-        /// <summary>A conversation's process for <paramref name="chat"/> under the machine's <paramref name="command"/>.</summary>
-        public ProcessStartInfo PrepareChat(SpawnRequest chat, IReadOnlyList<string>? command) =>
-            adapter.PrepareChat(chat with { Command = command });
+        /// <summary>A conversation's process on <paramref name="door"/> for <paramref name="chat"/> under the machine's <paramref name="command"/>.</summary>
+        public ProcessStartInfo Chat(string door, SpawnRequest chat, IReadOnlyList<string>? command) =>
+            adapters.Chat(adapters.Door(door), chat with { Command = command });
     }
 }

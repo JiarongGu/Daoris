@@ -572,10 +572,10 @@ internal sealed class LiveLimitHarness : IAsyncDisposable
     }
 
     /// <summary>The killed shell's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
-    private static ISessionAdapter Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+    private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     /// <summary>The curve's agent on the protocol door with accounts and a usage question, so the curve judges it and nothing is probed or spawned.</summary>
-    private static ISessionAdapter CurveTalk(HarnessToolchain toolchain, string door = "talk") => TestDoors.Door(door, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
+    private static Provider CurveTalk(TestAgent toolchain, string door = "talk") => TestDoors.Door(door, toolchain, transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("nothing spawns"));
 
     // ——— The stub agent, as the limit's process cases run it.
 
