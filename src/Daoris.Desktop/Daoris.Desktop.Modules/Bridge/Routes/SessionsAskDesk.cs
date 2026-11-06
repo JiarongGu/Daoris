@@ -44,15 +44,18 @@ internal sealed class SessionsAskDesk(DriverContext context)
             : SessionsHelperCommand.Unfit(id, asker);
         if (refused is var (why, sentence)) return Refused(why, sentence);
 
-        var asked = new HelperFiles(_loop.Home).WriteAsk(id, question, agent, DateTimeOffset.UtcNow);
-        _loop.Nudge();
-        return new
-        {
-            Asked = asked,
-            Why = (string?)null,
-            Message = $"Asked #{asked} for session {id}: the driver starts a helper on another agent at its next look, read-only, and "
-                      + "its answer comes back to that session as its next turn, marked as the helper's.",
-        };
+        // COWORKUX1d: the library writes it for both doors, `helper.person-asked` on the session where the answer goes to it.
+        var asked = HelperPersonAsk.Write(new HelperFiles(_loop.Home), _loop.Events, id, question, agent, press.After, press.ToPerson, DateTimeOffset.UtcNow);
+        if (asked.Asked is not null) _loop.Nudge();
+        return new { asked.Asked, asked.Why, asked.Message };
+    }
+
+    /// <summary><i>Pass to the lead</i> (COWORKUX1d): the library's judge, which marks the state for the look to hand.</summary>
+    public Task<object?> HelperPassAsync(SessionHelperPass press)
+    {
+        var answer = HelperPassToLead.Pass(new HelperFiles(_loop.Home), press.Session, press.Ask, DateTimeOffset.UtcNow);
+        if (answer.Wrote) _loop.Nudge();
+        return Task.FromResult<object?>(new { Passed = answer.Stands, answer.Why, answer.Message });
     }
 
     public Task<object?> HelpersAsync(SessionHelpers press, CancellationToken cancellationToken)
@@ -75,6 +78,11 @@ internal sealed class SessionsAskDesk(DriverContext context)
                 StartedOn = each.State?.Agent,
                 // a cooling ask's account's reset, which its row says.
                 Until = each.State?.Until is { } until ? Moments.Write(until) : null,
+                // COWORKUX1d: the ask it follows, where its answer goes, and whether the person's answer waits on their pass or was passed.
+                each.Ask.After,
+                each.Ask.To,
+                Kept = each.State is { State: HelperStates.Answered, Handed: HelperState.KeptForPerson, Passed: null },
+                Passed = each.State?.Passed is not null,
             })
             .ToList();
         return Task.FromResult<object?>(new { Helpers = helpers });

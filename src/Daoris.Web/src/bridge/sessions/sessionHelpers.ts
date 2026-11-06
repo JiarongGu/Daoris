@@ -24,11 +24,28 @@ export const word = (value: unknown): string | null => (typeof value === 'string
  * driver are asked again by the state hub (D169), and with the sessions the session's asks, which sit under their key.
  */
 export const useAskHelper = () => useMutation({
-  mutationFn: async (ask: { session: string; question: string; agent?: string | null }): Promise<HelperAsked> => {
+  mutationFn: async (ask: { session: string; question: string; agent?: string | null; after?: string; toPerson?: boolean }): Promise<HelperAsked> => {
+    // *Ask again…* (COWORKUX1d): the ask it follows, and from a member's thread an answer kept for the person.
     const answer = (await call('SESSION_HELPER_ASK', {
       id: ask.session, question: ask.question, ...(ask.agent ? { agent: ask.agent } : {}),
+      ...(ask.after ? { after: ask.after } : {}), ...(ask.toPerson ? { toPerson: true } : {}),
     })) as { asked?: unknown; why?: unknown; message?: unknown } | null;
     return { asked: word(answer?.asked), why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
+/** What *Pass to the lead* answered: whether the answer is passed, else why not by its code (`gone`, `lead`, `unanswered`). */
+export type HelperPassed = { passed: boolean; why: string | null; message: string };
+
+/**
+ * *Pass to the lead* (COWORKUX1d, the co-worker design §7): an answer the person asked for themselves sent to the session that asked, the
+ * helper's word with its mark unchanged and the person's press beside it, at the driver's next look. Read field by field.
+ */
+export const usePassHelper = () => useMutation({
+  mutationFn: async (pass: { session: string; ask: string }): Promise<HelperPassed> => {
+    const answer = (await call('SESSION_HELPER_PASS', { session: pass.session, ask: pass.ask })) as
+      { passed?: unknown; why?: unknown; message?: unknown } | null;
+    return { passed: answer?.passed === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
 
@@ -53,6 +70,11 @@ const readHelpers = (answer: unknown): HelperAskRow[] => {
       startedOn: word(row.startedOn),
       // A cooling ask's account's reset.
       until: word(row.until),
+      // COWORKUX1d: the ask it follows, where its answer goes, and whether the person's answer waits on their pass or was passed.
+      after: word(row.after),
+      to: word(row.to),
+      kept: row.kept === true,
+      passed: row.passed === true,
     }));
 };
 

@@ -36,6 +36,9 @@ public sealed class HelperFiles(string home)
                 {
                     // COWORK1d: an ask with no level is ordinary, today's delivery.
                     Urgent = element.TryGetProperty("urgent", out var urgent) && urgent.ValueKind == JsonValueKind.True,
+                    // COWORKUX1d: absent, a first ask whose answer goes to the lead.
+                    After = Text(element, "after") is { Length: > 0 } after ? after : null,
+                    To = Text(element, "to") == HelperAsk.ToPerson ? HelperAsk.ToPerson : null,
                 });
             }
         }
@@ -61,6 +64,7 @@ public sealed class HelperFiles(string home)
                 Agent = Text(element, "agent"),
                 Words = Text(element, "words"),
                 Until = Moments.Read(element, "until"),
+                Passed = Moments.Read(element, "passed"),
             };
         }
     }
@@ -84,8 +88,20 @@ public sealed class HelperFiles(string home)
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
             if (state.Words is not null) writer.WriteString("words", state.Words);
             if (state.Until is { } until) writer.WriteString("until", Moments.Write(until));
+            if (state.Passed is { } passed) writer.WriteString("passed", Moments.Write(passed));
             writer.WriteEndObject();
         });
+    }
+
+    /// <summary>
+    /// The ask <paramref name="ask"/> asks again after, with its answer as kept (COWORKUX1d): its answer file, or the last words its state
+    /// keeps. Null for a first ask, or where the earlier one is gone or holds no answer.
+    /// </summary>
+    public HelperEarlier? EarlierOf(HelperAsk ask)
+    {
+        if (ask.After is not { } after || Asks().FirstOrDefault(each => each.Id == after && each.Asker == ask.Asker) is not { } earlier) return null;
+        if (ReadAnswer(earlier.Id) is { } answer) return HelperEarlier.Of(earlier, answer.Answer, lastWords: false);
+        return ReadState(earlier.Id) is { LastWords: true, Words: { Length: > 0 } words } ? HelperEarlier.Of(earlier, words, lastWords: true) : null;
     }
 
     /// <summary>The helper's answer to an ask, or null where it said none or the file is unreadable.</summary>
@@ -183,9 +199,10 @@ public sealed class HelperFiles(string home)
 
     /// <summary>
     /// The ask a person's terminal writes, in the shape <c>helper_ask</c> writes (MIXAGENT2a-ii): with <c>askedBy: person</c>,
-    /// atomically. Returns its id.
+    /// atomically. Returns its id. A follow-up names the ask it follows (<paramref name="after"/>) and an answer kept for the person says
+    /// <c>to: person</c> (COWORKUX1d, the co-worker design §4.3), each after <c>askedBy</c> and only where set.
     /// </summary>
-    public string WriteAsk(string asker, string question, string? agent, DateTimeOffset at)
+    public string WriteAsk(string asker, string question, string? agent, DateTimeOffset at, string? after = null, bool toPerson = false)
     {
         var id = Guid.NewGuid().ToString("N")[..8];
         JsonFile.Write(PathOf(id, "ask"), writer =>
@@ -197,6 +214,8 @@ public sealed class HelperFiles(string home)
             if (agent is null) writer.WriteNull("agent");
             else writer.WriteString("agent", agent);
             writer.WriteString("askedBy", HelperAsk.ByPerson);
+            if (after is not null) writer.WriteString("after", after);
+            if (toPerson) writer.WriteString("to", HelperAsk.ToPerson);
             writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
         });

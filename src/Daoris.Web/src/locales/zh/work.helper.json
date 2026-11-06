@@ -6,7 +6,7 @@
   "work.helper.anyAgent": "由 Daoris 选择",
   "work.helper.meanIt": "提问",
   "work.helper.asked": "已请另一个智能体回答：它的回答会作为这个会话的下一轮送回，并标明是助手说的。",
-  "work.helper.heading": "助手",
+  "work.helper.heading": "同事",
   "work.helper.by.person": "你问的",
   "work.helper.by.agent": "智能体问的",
   "work.helper.of": "问 {{agent}}",

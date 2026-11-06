@@ -136,6 +136,15 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
     /// <param name="seen">How the look's own list showed the asker (<see cref="Seen"/>), kept with a hand held; null from a pass's own settling.</param>
     internal async Task<LookLine?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct, string? seen = null)
     {
+        // COWORKUX1d (the co-worker design §7): an answer kept for the person reaches no part of the line until they pass it. The helper's
+        // own conversation holds it, and nothing counts it, since it never reached the lead by itself.
+        if (ask.ForPerson && state.Passed is null)
+        {
+            files.WriteState(state with { Handed = HelperState.KeptForPerson });
+            owner.Forget(ask.Id);
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is answered for the person: it reaches session {ask.Asker} only once they pass it to the lead.");
+        }
+
         var service = _context.Service;
         // COMMS1b (the comms design §4.2): the host's one door for solicited answers keys the hand and walks the line to the store's bound
         // itself, and the look reads the head as that door does (SolicitedHand).
@@ -230,6 +239,12 @@ internal sealed class HelperSettling(DriverHelpers owner, LoopContext context)
         // rather than one marked handed that nothing here was told of. COMMS1b (§13 point 4): on the record the one door kept it on, or found it
         // waiting on, which a hand-over may have made another part than the look read; a word already waiting is dispatched as it waits.
         var holder = answer.Holder is { } held && held.Session != record.Session ? held : record;
+        // COWORKUX1d: a passed answer goes with the person's press beside it, before the turn that takes it, so the count reads their word.
+        if (state.Passed is not null && answer.Fate != SolicitedFate.Waiting)
+        {
+            _context.Events.Keep(holder.Session, AnswersAloneNotes.Passed(answer.Word is { } passed ? [passed] : []), say: null);
+        }
+
         var atNextStep = owner.Dispatch(
             state, holder, answer.Word, answer.Fate == SolicitedFate.Waiting ? answer.Text ?? composed : composed,
             ReferenceEquals(holder, record) ? inbox : owner.NextStepInbox(ask, holder), _context.Events);

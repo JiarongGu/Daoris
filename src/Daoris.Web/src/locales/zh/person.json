@@ -80,6 +80,7 @@
   "person.route.SESSION_HELPER_ASK": "请另一个智能体协助一个会话",
   "person.route.SESSION_HELPER_APPROVE": "同意某个智能体请求协助者的请求",
   "person.route.SESSION_HELPER_DECLINE": "拒绝某个智能体请求协助者的请求",
+  "person.route.SESSION_HELPER_PASS": "把助手的回答转给主导",
   "person.route.SESSION_MEMORY_DECIDE": "决定会话的记忆变更：批准或谢绝一项结束，或保留或丢弃它暂存的内容",
   "person.route.TOGETHER_PRESS": "请一个会话把其他会话的工作重放到它的分支上，以便一次采纳把它们一起落地",
   "person.route.TOGETHER_ASK_AGAIN": "在核对失败后，再请一个会话把其他会话的工作并入",

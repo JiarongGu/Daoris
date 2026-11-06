@@ -12,6 +12,12 @@ public sealed record HelperPacket(string Asker, string Repository, string Tip, s
 {
     /// <summary>The asker's work in progress laid over the copy (COAGENT1a); null where the copy holds the last commit alone.</summary>
     public HelperCaptured? Capture { get; init; }
+
+    /// <summary>The ask this one asks again after (COWORKUX1d), quoted above the question; null for a first ask.</summary>
+    public HelperEarlier? Earlier { get; init; }
+
+    /// <summary>The answer goes to the person, not the session (COWORKUX1d, the co-worker design §7).</summary>
+    public bool ForPerson { get; init; }
 }
 
 /// <summary>
@@ -57,8 +63,21 @@ public static class HelperInstruction
 
         text.Append("Nothing in the copy is taken back: no file you write and no commit or branch you make there reaches the work or the person.\n");
 
+        if (packet.Earlier is { } earlier)
+        {
+            // COWORKUX1d (the co-worker design §7): talking to a helper is asking again, so the earlier exchange is Daoris's record, quoted.
+            text.Append("\n## What was asked before\n\n")
+                .Append($"This asks again after an earlier question about the same work (`#{earlier.Id}`), which another turn answered. Daoris's record of it, quoted; the work may have moved since:\n\n")
+                .Append(Quoted(earlier.Question)).Append('\n')
+                .Append(earlier.LastWords ? "Its answer, the last words of a helper that never used its answer tool:\n\n" : "Its answer:\n\n")
+                .Append(Quoted(earlier.Answer))
+                .Append(earlier.Cut ? $"(The answer is cut at {HelperEarlier.Bound} characters.)\n\n" : "\n");
+        }
+
         text.Append("\n## The question\n\n")
-            .Append("The session wrote it as follows, and it is all you were told:\n\n")
+            .Append(packet.Earlier is null
+                ? "The session wrote it as follows, and it is all you were told:\n\n"
+                : "The person asks now, as follows:\n\n")
             .Append(Quoted(packet.Question)).Append('\n');
 
         text.Append("## What you may do\n\n")
@@ -73,7 +92,9 @@ public static class HelperInstruction
             .Append("Answer once, before you end, with your connector's `helper_answer`: what you found or concluded, where you read it ")
             .Append("(paths with their lines, commits), and what you did not read or could not tell. ")
             .Append("If you cannot answer, say so and why through the same tool; an answer that says nothing is not kept. ")
-            .Append("Your answer is another agent's claim: the session that asked checks it against the code, and it reaches that session as its next turn, never as the person's words.\n\n")
+            .Append(packet.ForPerson
+                ? "Your answer is another agent's claim: it goes to the person, who checks it and may pass it to the session as yours, never as their own words.\n\n"
+                : "Your answer is another agent's claim: the session that asked checks it against the code, and it reaches that session as its next turn, never as the person's words.\n\n")
             .Append($"You have one turn, and at most {packet.Minutes} minutes. An answer not given through `helper_answer` before you end is not given.\n");
         return text.ToString();
     }

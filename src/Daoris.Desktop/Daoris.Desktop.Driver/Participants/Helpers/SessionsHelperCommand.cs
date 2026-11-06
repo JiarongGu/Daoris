@@ -78,10 +78,13 @@ public static class SessionsHelperCommand
             return 1;
         }
 
-        string asked;
+        HelperPersonAsked asked;
         try
         {
-            asked = new HelperFiles(world.Home).WriteAsk(id, question, agent, DateTimeOffset.UtcNow);
+            // COWORKUX1d: the person's ask keeps `helper.person-asked` on the session, their word on the line, as the page's door does.
+            asked = HelperPersonAsk.Write(
+                new HelperFiles(world.Home), WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions)),
+                id, question, agent, after: null, toPerson: false, DateTimeOffset.UtcNow);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -90,7 +93,7 @@ public static class SessionsHelperCommand
         }
 
         output.WriteLine(
-            $"sessions: asked `#{asked}` for session {id}: the driver takes it at its next look and starts a helper on another agent, "
+            $"sessions: asked `#{asked.Asked}` for session {id}: the driver takes it at its next look and starts a helper on another agent, "
             + "read-only, within the limits; its answer comes back to that session as its next turn, marked as the helper's.");
         return 0;
     }

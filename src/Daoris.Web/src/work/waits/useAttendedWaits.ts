@@ -30,6 +30,7 @@ import type { WaitProps } from './WaitStrip';
 import { useWaitPanelHeight } from './waitPanelHeight';
 import { waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
+import { useTeam } from '../team/useTeam';
 
 /**
  * What waits on the attended session's person (WAITFOOT1b, D168 point 3): its helpers, pieces, hand-over, tool calls, answers
@@ -87,7 +88,15 @@ export function useAttendedWaits({
   const declineHandOver = useDeclineHandOver();
   // The head's helpers (MIXAGENT2b): the asks read above, the yes and the no (HELPERNO1) through the acts' one owner, and a door
   // to each helper.
+  // Its team (COWORKUX1): the lead, the pass, *Bring in another agent…*'s doors, and a member's thread, each on this machine's files.
+  const team = useTeam({
+    attended, here,
+    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+    attend: (id: string) => { chosen(); attend(id); },
+    open: (door) => { if (attended) actions.run(door, { session: attended }); },
+  });
   const helperWaits = attended && here && helperAsks.data ? {
+    team,
     asks: helperAsks.data,
     nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
     onApprove: (ask: string, answered: Answered) => actions.approveHelperNow(attended.id, ask, answered),

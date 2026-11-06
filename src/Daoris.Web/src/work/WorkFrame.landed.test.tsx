@@ -250,7 +250,7 @@ describe('a session’s page header and its acts', () => {
     });
     show('c0ffee11');
 
-    const asks = await screen.findByRole('region', { name: 'Helpers' });
+    const asks = await screen.findByRole('region', { name: /Co-work/ });
     expect(within(asks).getByText('The agent asked · waits for your yes')).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(within(asks).getByRole('button', { name: 'Let it ask' }));

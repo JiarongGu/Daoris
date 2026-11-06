@@ -5,6 +5,7 @@ import { Button } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { moment } from '../../locales/format';
 import { type Answered, Refused } from '../InlineConfirm';
+import type { TeamFacts } from '../team/useTeam';
 import { InConversation, SOUGHT } from './WaitAnchor';
 
 /**
@@ -31,6 +32,14 @@ export type HelperAskRow = {
   startedOn: string | null;
   /** When a cooling ask's account is ready again (LIMITRESUME1h); none where no cool-off says so, or a driver from before. */
   until?: string | null;
+  /** The ask this one asks again after (COWORKUX1d); none for a first ask. */
+  after?: string | null;
+  /** `person` where the answer is the person's to pass to the lead (COWORKUX1d); none where it goes to the session. */
+  to?: string | null;
+  /** The answer is kept for the person and waits on their *Pass to the lead*. */
+  kept?: boolean;
+  /** The person passed it to the lead. */
+  passed?: boolean;
 };
 
 /**
@@ -76,6 +85,8 @@ export type HelperWaits = {
   onDecline?: HelperApprove;
   onOpen?: (helper: string) => void;
   busy?: boolean;
+  /** The head's *Co-workers* and a member's thread (COWORKUX1): the lead, the pass, the dialog's doors and the thread. */
+  team?: TeamFacts | null;
 };
 
 /** The codes of a refusal the timeline's notes already word (`note.helper.why.*`, MIXAGENT2a-ii); any other is said as written. */

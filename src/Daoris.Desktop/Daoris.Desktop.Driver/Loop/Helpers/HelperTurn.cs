@@ -125,7 +125,13 @@ internal sealed class HelperTurn(LoopContext context, Driver driver)
 
         try
         {
-            var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound) { Capture = ask.Capture };
+            var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound)
+            {
+                Capture = ask.Capture,
+                // COWORKUX1d: a follow-up is handed the ask it follows as Daoris's record, and says where its answer goes.
+                Earlier = new HelperFiles(home).EarlierOf(ask.Ask),
+                ForPerson = ask.Ask.ForPerson,
+            };
             var target = new SessionTarget(
                 QuestId: "", $"Helper for session {ask.Ask.Asker}", "", "Daoris", ask.Repository, copy.Path, service.BaseUrl)
             {

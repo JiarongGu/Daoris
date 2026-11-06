@@ -24,6 +24,15 @@ public static class HelperAskWhy
 
     /// <summary>A no to an ask the driver's look has not read yet (HELPERNO1).</summary>
     public const string Unread = "unread";
+
+    /// <summary><i>Ask again…</i> after an ask that is not the session's (COWORKUX1d).</summary>
+    public const string After = "after";
+
+    /// <summary><i>Ask again…</i> or <i>Pass to the lead</i> on an ask with no answer yet (COWORKUX1d).</summary>
+    public const string Unanswered = "unanswered";
+
+    /// <summary><i>Pass to the lead</i> on an answer that goes to the lead already (COWORKUX1d).</summary>
+    public const string Lead = "lead";
 }
 
 /// <summary>What the person's yes or no did: whether it stands, the code of why not, a sentence, and whether it wrote the state.</summary>
