@@ -5,7 +5,7 @@ public sealed record ChannelMemberStanding(ChannelMember Member, bool Spent);
 
 /// <summary>
 /// The members a channel holds now (CHANNELJOIN1c), for the person's page and the driver's look. A channel's claims are spent once its ask
-/// has no quest open and no part of its line is still active here, judged as it is read and never stored, so a quest opened again, or a
+/// has no quest open and no part of its line, nor a helper a part asked, is still active here, judged as it is read and never stored, so a quest opened again, or a
 /// part started again, makes it not spent again. A channel whose ask this machine does not hold is judged by its parts alone.
 /// </summary>
 public sealed class ChannelMemberRoll(ChannelDesk desk, ChannelStore store, AskDesk asks, SessionLedger ledger)
@@ -48,10 +48,19 @@ public sealed class ChannelMemberRoll(ChannelDesk desk, ChannelStore store, AskD
         return !(await desk.QuestsOfAsync(held, ct).ConfigureAwait(false)).Any(q => q.Status is QuestStatus.Open or QuestStatus.Taken);
     }
 
-    /// <summary>The entries of this machine's parts still active: queued, starting, working or parked.</summary>
+    /// <summary>
+    /// The entries of this machine's parts still active (queued, starting, working or parked), and of each session an active helper still
+    /// serves: what a part asked of a helper is open while the helper runs, though the part has ended.
+    /// </summary>
     private async Task<IReadOnlyList<string>> ActiveEntriesAsync(CancellationToken ct)
     {
-        var active = await ledger.ListAsync(includeClosed: false, ct: ct).ConfigureAwait(false);
-        return [.. (await ledger.WithEntriesAsync(active.Where(s => s.Origin is null), ct).ConfigureAwait(false)).Select(s => s.Entry).OfType<string>()];
+        var active = (await ledger.ListAsync(includeClosed: false, ct: ct).ConfigureAwait(false)).Where(s => s.Origin is null).ToList();
+        var asked = new List<Session>();
+        foreach (var helper in active.Where(s => s.Serves is not null))
+        {
+            if (await ledger.FindAsync(helper.Serves!, ct).ConfigureAwait(false) is { } asker) asked.Add(asker);
+        }
+
+        return [.. (await ledger.WithEntriesAsync([.. active, .. asked], ct).ConfigureAwait(false)).Select(s => s.Entry).OfType<string>()];
     }
 }

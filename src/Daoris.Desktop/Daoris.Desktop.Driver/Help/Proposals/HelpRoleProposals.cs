@@ -163,19 +163,11 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         var before = new SupervisorRuleStore(home).Of(press.Place).Rules;
         static string Rules(IReadOnlyList<SupervisorRule> rules) => rules.Count == 0 ? "none here" : string.Join("; ", rules.Select(SupervisorRuleDoor.Said));
         var describe = $"Supervisor, {press.Place}: {Rules(before)} → {Rules(press.Rules)}. Lines here read it at their next go-on or start.";
-        return new HelpPlan(null, describe, RulesTerminal(press), null) { Role = new HelpRoleChange(RoleChange.Rules(press), null, null) };
-    }
-
-    /// <summary>The terminal's twin of a place's rules: the place cleared and each count's rule set, one command per set of roles.</summary>
-    private static string RulesTerminal(SupervisorRulesPress press)
-    {
-        var groups = press.Rules.GroupBy(rule => rule.Roles is { } roles ? string.Join(",", roles) : "").ToList();
-        if (groups.Count == 0) return $"daoris role rules --place {press.Place} --clear all";
-        return string.Join(" && ", groups.Select((group, index) =>
-            $"daoris role rules --place {press.Place}" + (group.Key.Length > 0 ? $" --roles {group.Key}" : "") + (index == 0 ? " --clear all" : "")
-            + string.Concat(group.Select(rule => rule.Do == SupervisorRules.Off
-                ? $" --off {rule.Count}"
-                : $" --set {rule.Count}={rule.At}:{rule.Do}" + (rule.UpTo is { } upTo ? $":{upTo}" : "")))));
+        return new HelpPlan(null, describe, SupervisorRulesFlags.Terminal(press), null)
+        {
+            Role = new HelpRoleChange(RoleChange.Rules(press), null, null),
+            Rules = new HelpRulesView(press.Place, before, press.Rules),
+        };
     }
 
     /// <summary>

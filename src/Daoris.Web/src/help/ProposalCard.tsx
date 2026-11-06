@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { PlaceAsk } from '../agents/setup/placePlan';
 import { Button, Inline } from '../design/ui';
+import { type HelpRulesShown, RulesChange } from './RulesChange';
 import type { StarterDoor } from './starters';
 
 /**
@@ -50,6 +51,8 @@ export type HelpProposal = {
   plugin?: HelpPluginShown | null;
   /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`, HELPPLUG1c). */
   grant?: HelpGrantShown | null;
+  /** A place's supervisor rules, before and after (`role`); the card words them from the catalogue. */
+  rules?: HelpRulesShown | null;
   /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
   /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
@@ -452,6 +455,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
       </p>
       {workflow
         ? composing ? <DraftChange workflow={workflow} /> : <WorkflowChange workflow={workflow} />
+        : proposal.rules ? <RulesChange rules={proposal.rules} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {grant && <GrantTools grant={grant} />}

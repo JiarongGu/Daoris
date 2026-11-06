@@ -123,10 +123,7 @@ public sealed class RoleVerb : ChoiceVerb
         });
     }
 
-    private const string RulesGrammar =
-        "`role rules --place machine|workspace:<id>|repository:<id> [--roles <id,…>] [--set <count>=<at>:<do>[:<minutes>]]… "
-        + "[--off <count>]… [--clear <count>|all]` (counts: answers-alone, failures, failures-on-choice, tries, quiet, limits, moves; "
-        + "`role supervisor [--place <place>]` says them)";
+    private const string RulesGrammar = SupervisorRulesFlags.Grammar;
 
     /// <summary>
     /// <c>role rules --place … --set|--off|--clear …</c> (CONTEXTDRIVE1d, the context counters design §7.6): the place's rules as stored, each
@@ -137,7 +134,6 @@ public sealed class RoleVerb : ChoiceVerb
     {
         var staffing = RoleStaffing.Of(world.ConfigPath) ?? throw new ChoiceWords(Unkept(world));
         string? place = null;
-        IReadOnlyList<string>? roles = null;
         var steps = new List<(string Flag, string Value)>();
         for (var at = 2; at < args.Count; at++)
         {
@@ -145,7 +141,6 @@ public sealed class RoleVerb : ChoiceVerb
             switch (args[at])
             {
                 case "--place": place = Value(); break;
-                case "--roles": roles = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--set" or "--off" or "--clear": steps.Add((args[at], Value())); break;
                 default: throw new ChoiceWords($"`{args[at]}` is not a flag of `role rules`: {RulesGrammar}.");
             }
@@ -154,32 +149,7 @@ public sealed class RoleVerb : ChoiceVerb
         if (place is null || steps.Count == 0) throw new ChoiceWords($"{RulesGrammar}.");
         var home = staffing.Ledger.Home;
         var stored = new SupervisorRuleStore(home).Of(place);
-        var rules = stored.Rules.ToList();
-        bool Same(SupervisorRule rule, string count) =>
-            rule.Count == count && (rule.Roles is null ? roles is null : roles is not null && rule.Roles.Order().SequenceEqual(roles.Order()));
-        foreach (var (flag, value) in steps)
-        {
-            if (flag == "--clear" && value == "all") { rules.Clear(); continue; }
-            var count = flag == "--set" ? value.Split('=', 2)[0] : value;
-            rules.RemoveAll(rule => Same(rule, count));
-            if (flag == "--off") rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), 1, SupervisorRules.Off, null, place, roles));
-            if (flag != "--set") continue;
-            // One rule per count for the press's roles: every executor acts on one, so a ladder is never written.
-            var step = value.Split('=', 2) is [_, var spec] ? spec.Trim() : throw new ChoiceWords($"`--set {value}` names no `<at>:<do>`: {RulesGrammar}.");
-            var parts = step.Split(':');
-            if (step.Contains(',', StringComparison.Ordinal) || parts.Length is < 2 or > 3
-                || !int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var threshold))
-            {
-                throw new ChoiceWords($"`{step}` is not one `<at>:<do>[:<minutes>]`: {RulesGrammar}.");
-            }
-
-            int? upTo = parts.Length == 3 && int.TryParse(parts[2], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var minutes)
-                ? minutes
-                : parts.Length == 3 ? throw new ChoiceWords($"`{parts[2]}` is not whole minutes: {RulesGrammar}.") : null;
-            rules.Add(new SupervisorRule("", count, SupervisorRules.Windows.GetValueOrDefault(count, ""), threshold, parts[1], upTo, place, roles));
-        }
-
-        var named = Named(rules);
+        var named = Named(SupervisorRulesFlags.Lay(stored.Rules, steps, place));
         var press = new SupervisorRulesPress(place, stored.Revision, named);
         if (SupervisorRuleDoor.Judge(home, press) is { } refused) throw new ChoiceWords($"`role rules`: {refused.Message} ({refused.Code})");
         var payload = new JsonObject

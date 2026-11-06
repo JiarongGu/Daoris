@@ -40,7 +40,7 @@ public sealed class RuledLineTests : IDisposable
         ScopedRole();
         var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal) { ["s1"] = Record };
 
-        var line = RuledLine.Of(_home, Record, "q1");
+        var line = RuledLine.Of(_home, Record);
         Assert.Equal(("engine-build", "engine"), (line.Role, line.Repository));
 
         var hold = AnswersAloneHold.For(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), new GoOnMarks(_home), _home);

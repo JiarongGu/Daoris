@@ -217,8 +217,11 @@ public sealed class HelpRoleProposalsTests : HelpProposalsFixture, IDisposable
         var plan = HelpProposals.Plan(Role("set", "supervisor", Press), DriverConfig.Empty, Machine);
 
         Assert.Null(plan.Refusal);
-        Assert.Equal("Supervisor, repository:daoris: none here → answers-alone at 3: hold for every role. Lines here read it at their next go-on or start.", plan.Describe);
         Assert.Equal("daoris role rules --place repository:daoris --clear all --set answers-alone=3:hold", plan.Terminal);
+        // CONTEXTDRIVE1k: the card carries the rules as fields, which the page words in its catalogue.
+        Assert.Equal("repository:daoris", plan.Rules!.Place);
+        Assert.Empty(plan.Rules.Before);
+        Assert.Equal(("answers-alone", 3, "hold"), (plan.Rules.After.Single().Count, plan.Rules.After.Single().At, plan.Rules.After.Single().Do));
         Assert.Equal(0, store.Of("repository:daoris").Revision);
 
         RoleDoor.Apply(Staffing, plan.Role!.Change);

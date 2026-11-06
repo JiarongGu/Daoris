@@ -65,7 +65,7 @@ public sealed class LineCountsRead(
     {
         var book = SupervisorRuleBook.Read(home);
         if (evidence.Records is not { } records) return null;
-        return RuledLine.Of(home, records.GetValueOrDefault(session), LineKeys.Of(session, records).Key).In(book);
+        return RuledLine.Of(home, records.GetValueOrDefault(session)).In(book);
     }
 
     /// <summary>The same, the records read from <paramref name="service"/> now.</summary>

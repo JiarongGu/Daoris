@@ -104,7 +104,7 @@ The agent's half is the canon skill `canon/packs/co-working/skills/co-working/SK
     record's last read. It names no part (`bad-part`); one never admitted or gone is `not-member`, its record and its messages' poster
     kept. Each join and leave journals a `member` row of the channel's family. The person's page lists a line's members from the
     driver-class `GET /api/channel/members` (the ids it holds are their only names, so never open), each with whether its channel's
-    claims are spent: its ask has no quest open and no part of its line is active here, judged as read and never stored. The look
+    claims are spent: its ask has no quest open, no part of its line is active here and no helper a part asked still runs, judged as read and never stored. The look
     ends a member whose claims are spent, or that neither read nor posted for 24 hours, by the person's key with `why` `expired`; the
     person's *Remove* ends it as `removed`, its own leave as `left`. A member is woken by `channel.posted` (`message` of 8 hex where kept
     here, `ask`, `poster`, `by` of `person`, `part`, `outside` or `teammate`, `urgent`), told from each `message` row by
@@ -272,8 +272,7 @@ and `universal`. The twin fixtures (`senders.json`, `participant-work.json`, `he
 - **CHANNELJOIN1** (`docs/2026-11-06-event-channel-design.md` §5; built: the member in the service and its doors, the join under the
   person's Confirm and the terminal's verb, the head's outside agents with *Remove*, the chip's *outside Daoris*, the card's `untold`
   words, the glossary's *outside agent* and the look's end of a membership; `channel.posted` told at `work/event` from each message
-  kept, the relay's `--not-by` and the co-working skill's section for an outside member). The admission keeps no confirmation id: nothing reads it, so the route is not handed it. A line's channel
-  is judged spent by its parts alone; what its parts asked of helpers is not read.
+  kept, the relay's `--not-by` and the co-working skill's section for an outside member). The admission keeps no confirmation id: nothing reads it, so the route is not handed it.
 - No row: *Send to its session* from a line's own channel.
 - **AGENTROOM1b**: `meeting_say`, so a real agent takes a meeting turn (today refused `no-message-tool`). **AGENTROOM1c**: `daoris meeting`. **AGENTROOM1d**: one account's turns one at a time across meetings. D177's floor request has no row.
 - **MEETUX1a-d**: a meeting from the window, its rounds and a brainstorm's document on their pages, a waiting meeting in *What needs you*.

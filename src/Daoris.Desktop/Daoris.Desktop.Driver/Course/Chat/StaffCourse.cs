@@ -31,7 +31,7 @@ internal static class StaffCourse
         {
             var facts = staff.Moves.LineFacts(quest.Id);
             var named = role ?? RuledLine.OfQuest(staff.Home, quest, null, workspace).Role;
-            return facts with { Moves = CourseOf(staff, named, new StaffPlace(quest.To, workspace, quest.Id))?.Moves ?? new Dictionary<string, StaffMove>() };
+            return facts with { Moves = CourseOf(staff, named, new StaffPlace(quest.To, workspace))?.Moves ?? new Dictionary<string, StaffMove>() };
         }
         catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
         {
@@ -42,7 +42,7 @@ internal static class StaffCourse
     /// <summary>The policy a part's move was made under and the opening note's sentence for it, in the rule's words.</summary>
     internal static (StaffPolicy? Policy, string Said) MoveSaid(StaffLedger staff, string role, string line, PriorSession left, string condition, int moves)
     {
-        var policy = CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace, line));
+        var policy = CourseOf(staff, role, new StaffPlace(left.Repository, left.Workspace));
         return (policy, MovedSaid(condition, policy, moves, ActorWords.Name(role)));
     }
 
@@ -85,7 +85,7 @@ internal static class StaffCourse
     /// </summary>
     internal static LineCourse? LimitWait(StaffLedger? staff, string role, PriorSession cut, DateTimeOffset now, StaffPlace? place = null)
     {
-        if (staff is null || CourseOf(staff, role, place ?? new(cut.Repository, cut.Workspace, cut.Quest)) is not { } policy
+        if (staff is null || CourseOf(staff, role, place ?? new(cut.Repository, cut.Workspace)) is not { } policy
             || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move) || move.Do != StaffActions.Wait) return null;
         var action = StaffJudge.OnCondition(policy, StaffConditions.Limit, new StaffLine(true, 0));
         return CourseDecision.Decide(
@@ -102,10 +102,10 @@ internal static class StaffCourse
     internal static void LimitMoved(StaffLedger? staff, string role, string line, PriorSession cut, ActorEffective? taken)
     {
         if (staff is null || taken is null || ChoiceOf(cut) is not { } was || was == StaffKey.Of(taken)) return;
-        if (CourseOf(staff, role, new(cut.Repository, cut.Workspace, line)) is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return;
+        if (CourseOf(staff, role, new(cut.Repository, cut.Workspace)) is not { } policy || !policy.Moves.TryGetValue(StaffConditions.Limit, out var move)) return;
         staff.Moves.Record(line, role, cut.Session, StaffConditions.Limit, move.Do, was.Text);
     }
 }
 
-/// <summary>A line as the supervisor's rules place it (CONTEXTDRIVE1e): its repository, its workspace where known, and its key.</summary>
-internal sealed record StaffPlace(string? Repository, string? Workspace, string? Line);
+/// <summary>A line as the supervisor's rules place it (CONTEXTDRIVE1e): its repository and its workspace where known.</summary>
+internal sealed record StaffPlace(string? Repository, string? Workspace);
