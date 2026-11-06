@@ -401,7 +401,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   keys; the page reads an agent's account acts and its lead door from the sheet, no `doors[0]` left; each door's sheet is drawn under
   *Ways in* in both languages; `agent list` says an installed agent's sheet in one line; the room names a tool by `IAgentFacts`; a
   manifest's harness may name `fullPosture` and `askingPosture`; the family rehearsal declares the Stub Two manifest) but for the
-  Stub Two phase's partner exchange (**COAGENT1e**), which the rehearsal has not yet run; s-ix o1 to o3 are built as the
+  Stub Two phase's partner exchange (**COAGENT1e**), which the rehearsal cannot run as designed: a production start is admitted by a
+  measured row of a real agent only (`PartnerMeasurements.Admitting`, no stand-in's row), and a declared stub has none, so the exchange
+  reaches no piece and its design (§8.4) waits on a decision of what admits the stub; s-ix o1 to o3 are built as the
   steward chose: the page's next start speaks for the account's own door and says one line (`NextStart.Doors`) for each other door
   whose own-home answer differs, so `provider-owner.json`'s `disagrees` cells stay the walk's own question and the page no longer
   mistakes them. s-vii is built: the head's leading agent (`leadingAgentOf`, by the roster's sheet) and the usage answer's account

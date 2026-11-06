@@ -275,6 +275,12 @@ suspended in a job of its own. Off Windows there are no jobs. The proof is `Owne
 grandchild found gone, against a control held by no job) and `ProcessStartsCensusTests` (each file's purpose, the starts and kills
 outside the management with why).
 
+The census is read once, as the application stops: `RunningProcessesLine` writes a `processes.running` line naming each purpose that
+still holds a process, by id, and nothing where none does (`RunningProcessesLineProcessTests`). The tests' own direct starts are named
+in `TestProcessStarts`, each file under a kind (a stand-in program, a Daoris program run whole, a kept host, an agent's command run bare,
+a probe, git through a counting seam, a source that only names a start, a process object never started); git past `TestGit.Past` or
+`TestGit.Ceiling` is `GitCeilingCensusTests`'s. Both desktop test projects hold it, and a start in an unlisted file fails.
+
 ## Where a change goes
 
 - **A new page piece goes in its place's folder** (`overview/`, `quests/`, `projects/`, `map/`, `knowledge/`, `agents/`,
@@ -337,5 +343,5 @@ outside the management with why).
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.
-- **OPTIMIZE1b**: D249 awaits the owner's acceptance. Left: the tests' own direct starts (fixtures run to their end, the service
-  hosts) are no purpose's; the census is read by no door or log yet.
+- **OPTIMIZE1b**: D249 is accepted and built, with the tests' own direct starts named (below) and the census read as the process stops
+  (`RunningProcessesLine`). No door reads the census while the window is open.
