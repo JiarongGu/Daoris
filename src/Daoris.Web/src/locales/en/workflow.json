@@ -16,6 +16,8 @@
   "workflow.part.accept": "you accept it",
   "workflow.part.merge": "you merge its pull request on the platform",
   "workflow.part.join": "; then ",
+  "workflow.part.fixWait": "you ask for a fix when a check fails (*Ask for a fix…*)",
+  "workflow.part.fixAsk": "{{said}} A failed verification asks for a fix without asking you.",
   "workflow.chart": "How work in {{name}} moves",
   "workflow.holds.says": "Before the work starts, {{plugins}} may hold it.",
   "workflow.listJoin": ", ",

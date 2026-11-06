@@ -2,13 +2,32 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { WorkflowStep } from './current';
 import { BRANCH_YOU_PUSH, INTEGRATE_OWNER, LIMITS } from './fixtures';
-import { edgeSaid, limitSaid, sourceSaid, stepSet, stepTitle } from './said';
+import { edgeSaid, limitSaid, partSaid, sourceSaid, stepSet, stepTitle } from './said';
 
 // INTEGRATE1n part n1 (the integration design §17.4): a graph's `integrate` node is a step this page words, as the driver's
 // `WorkflowRunWords.Title` words it in the terminal, so a workflow that names it does not read "a step this page has no words for".
 
 const stepOf = (kind: string): WorkflowStep => ({
   id: kind, kind, participation: 'agent', executor: 'agent', press: null, limit: null, source: { rule: null, level: 'default' }, settings: {}, runtime: 'built',
+});
+
+// The pipeline design §4.5: a verification's check whose failure waits is the person's part, its *Ask for a fix…*; one set to `failed: ask`
+// is their standing say-so, said in their part as a fix asked with no press of theirs; `stop` asks nothing.
+describe('partSaid on a verification', () => {
+  const check = (failed?: string): WorkflowStep => ({ ...stepOf('check'), executor: 'daoris', settings: failed ? { failed } : {} });
+
+  it('says a failed check waits for your Ask for a fix, in English and in 中文', () => {
+    expect(partSaid(i18n.getFixedT('en'), { steps: [check()] })).toBe('Your part: you ask for a fix when a check fails (*Ask for a fix…*).');
+    expect(partSaid(i18n.getFixedT('zh'), { steps: [check('wait')] })).toBe('你的部分：检查失败时，由你请人修复（*请人修复…*）。');
+  });
+
+  it('says a failed check asks for its fix without asking you where you set it, in English and in 中文', () => {
+    expect(partSaid(i18n.getFixedT('en'), { steps: [check('ask')] }))
+      .toBe('Your part: none. Nothing here waits for a press of yours. A failed verification asks for a fix without asking you.');
+    expect(partSaid(i18n.getFixedT('zh'), { steps: [check('ask')] }))
+      .toBe('你的部分：无。这里没有什么等你按下按钮。验证失败时，不问你便请人修复。');
+    expect(partSaid(i18n.getFixedT('en'), { steps: [check('stop')] })).toBe('Your part: none. Nothing here waits for a press of yours.');
+  });
 });
 
 describe('stepTitle', () => {
