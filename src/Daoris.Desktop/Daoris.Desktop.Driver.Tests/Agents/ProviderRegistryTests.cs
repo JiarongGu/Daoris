@@ -292,7 +292,7 @@ public sealed class ProviderRegistryTests : IDisposable
                 door ??= toolchain;
             }
 
-            return door ?? set.ToolchainOf(owner);
+            return door ?? set.Registry.ToolchainOf(owner);
         }
 
         return [.. set.Names.Where(name =>
@@ -355,7 +355,7 @@ public sealed class ProviderRegistryTests : IDisposable
         // `AgentsCommand` reads a door's settings file through its account agent and any other agent's own toolchain.
         string? Settings(string agent) => set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase)
             ? roster.AccountToolchain(agent)?.SettingsFile
-            : set.ToolchainOf(agent)?.SettingsFile;
+            : set.Registry.ToolchainOf(agent)?.SettingsFile;
         if (table.TryGetProperty("agents", out var agents))
         {
             foreach (var listed in agents.EnumerateObject())

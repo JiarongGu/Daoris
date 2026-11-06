@@ -35,7 +35,7 @@ public sealed class StandInReadersTests
     /// <summary>The verbs' operands as the code spelled them: each door that names a real program and each agent a door runs as.</summary>
     private static List<string> OldOperands(AdapterSet set)
     {
-        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
+        HarnessToolchain? Of(string each) => set.Registry.ToolchainOf(each);
         return [.. set.Reserved.Where(each => Of(each) is { Binary.Count: > 0 })];
     }
 

@@ -192,7 +192,7 @@ public sealed class ChatRunnerTests : IDisposable
         var own = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk });
         // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
         var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
-        Assert.Equal("acme.agent", live.DeclaredBy("acme-agent"));
+        Assert.Equal("acme.agent", live.Registry.DeclaredBy("acme-agent"));
         var ledger = new ChatLedger().Register("engine", Path.Combine(_home, "engine"));
         using var client = ledger.Client();
         using var runner = new ChatRunner(
