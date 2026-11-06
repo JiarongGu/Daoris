@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// (<see cref="Observation"/>), never from the session's word.</para>
 /// </remarks>
 public sealed class Driver(
-    ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
+    ServiceClient service, DriverConfig config, ProviderRegistry adapters, string home,
     SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null,
     HarnessRoster? harnesses = null,
     // Null where nobody keeps the usage record: the headless rehearsal driver and every test that does not care.
@@ -191,7 +191,7 @@ public sealed class Driver(
     public RunningSessions Running => Context.Runs;
 
     /// <summary>The build's own adapters, which each tick's plugins are laid over.</summary>
-    internal AdapterSet Built { get; } = adapters;
+    internal ProviderRegistry Built { get; } = adapters;
 
     internal RemoteSyncSet? Sync { get; } = sync;
 

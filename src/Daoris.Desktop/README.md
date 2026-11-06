@@ -32,7 +32,7 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 The driver's `Agents/` owns adapters, accounts, usage, retries and session processes, with pure account rules in `Agents/Domain/`
 and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Driver`; D212 records the remaining upward cuts.
 `Agents/Contract/` names the provider contract as records (AGENTPROVIDER1 row a, D213: `Provider`, `AgentDoor`, typed ids, `Known<T>`) and
-`Agents/Registry/` holds `ProviderRegistry.Of(AdapterSet)`, which answers each door's account owner and facts once. Row b adds the ports
+`Agents/Registry/` holds `ProviderRegistry` (`Built()`, `Joined`, `Resolve`), which answers each door's account owner and facts once. Row b adds the ports
 (`ISpawn`, the dialects, `IUsageQuestion`, `AgentRun`), `Providers.Built()`, the one registration list, and the stand-ins written on the contract
 in `Agents/Providers/Stub/`, which `LegacyDoor` presents to today's readers as adapters; the stand-in flag, the roster's listing and the verbs'
 operands read the registry. `Driver.Tests/Agents/ProviderConformanceTests.cs` is the conformance suite (design §10), every case run per provider
@@ -45,7 +45,7 @@ each operation by its door's evidence and refusing the words until m-ii; what it
 `Loop/DriverTransportHost.cs` from the driver and by `Loop/Chat/ChatTransportHost.cs` from the conversation's runner. Every executor holds it,
 the conversation's runner too (ONEWAY1h-iii): its start, end, stop and close are the run's, its session held open through
 `TransportRun.Session` for the words beside it until m-ii. `DriverWatch` takes an optional adapter
-set for its roster and each look's driver, `AdapterSet.Built()` when none is given.
+set for its roster and each look's driver, `ProviderRegistry.Built()` when none is given.
 A stand-in's program is one Node module in its folder's `Program/`, both doors chosen by the arguments its `provider.json` states, and the
 project's one glob (`Agents/Providers/*/Program/**`) carries it beside the driver, so the suite's live cases run it from their build output
 and the family rehearsal finds every stand-in from the `provider.json` files (`tools/stand-ins.mjs`) and drives the scenario contract over

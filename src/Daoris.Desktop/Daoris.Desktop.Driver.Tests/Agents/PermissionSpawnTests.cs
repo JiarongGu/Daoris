@@ -316,7 +316,7 @@ public sealed class PermissionSpawnTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
         };
         config = configure?.Invoke(config) ?? config;
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [adapter.Name] = adapter });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter> { [adapter.Name] = adapter });
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

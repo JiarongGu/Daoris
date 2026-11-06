@@ -22,7 +22,7 @@ public sealed class AgentCardDoorsTests : IDisposable
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins, id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), $$"""{ "id": "{{id}}", "harnesses": [ {{harnesses}} ] }""");
-        var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
         return new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => DateTimeOffset.Parse("2026-11-06T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture) };
     }
 
@@ -65,7 +65,7 @@ public sealed class AgentCardDoorsTests : IDisposable
     [Fact]
     public void No_built_agent_has_a_door_that_answers_differently()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
         Assert.All(new[] { "claude-code", "codex", "dsh" }, agent => Assert.Empty(roster.Next(agent).Doors));
     }

@@ -30,7 +30,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // 🔴 A door runs as its OWNER's accounts (AGT7): the owner's default, the owner's directory,
         // the owner's login question and key. The pin below stays the door's own — a door is a
         // different package at a different version (ACP2).
-        var owner = roster.Adapters.Registry.OwnerOfAgent(resolved.Name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(resolved.Name).Value;
         // The agent's one set, whatever the workspace (POOL1a2, the account-pool design §2.4): no start reads a workspace's scope.
         var named = settings.Set(owner);
         var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();

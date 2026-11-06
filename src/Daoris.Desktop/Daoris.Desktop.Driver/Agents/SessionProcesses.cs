@@ -488,6 +488,22 @@ public sealed class SessionProcesses(string? markers = null)
         lock (_gate) return Held(sessionId) is { } entry ? JobOf(entry) : null;
     }
 
+    /// <summary>
+    /// The running session's job, taken from its tracking (COAGENT1g): neither a stop nor the tracking's end closes it after this, so what
+    /// its process leaves running stays in it until the taker ends it and waits for it to empty, then disposes it. Null where none is held.
+    /// </summary>
+    public ProcessJob? TakeJob(string sessionId)
+    {
+        lock (_gate)
+        {
+            if (Held(sessionId) is not { } entry) return null;
+            var job = JobOf(entry);
+            entry.Job = null;
+            entry.Launched = false;
+            return job;
+        }
+    }
+
     // An entry's own job, under the gate: a stop ends the one it reached, whichever process answers the session once that one has exited.
     private static ProcessJob? JobOf(Entry entry)
     {

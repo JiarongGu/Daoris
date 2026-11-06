@@ -236,28 +236,8 @@ public static class NodeGraphs
             var method = NodeOptions.Text(land, "method");
             if (method is not null && LandNodes.Methods.Contains(method, StringComparer.Ordinal))
             {
+                // An integrate is the tail of its own method (G8).
                 var after = Reach([land.Id], ordered, forward: true);
-                // A push is Daoris's step after a landing that made a branch; an integrate is the tail of its own method (G8).
-                foreach (var late in byId.Values.Where(node => node.Kind == NodeKinds.Push && !after.Contains(node.Id)))
-                {
-                    Say(GraphRefusal.LandTail, null, late.Id, $"node `{late.Id}`: a `{NodeKinds.Push}` pushes the branch `{land.Id}` made, and no way from `{land.Id}` reaches it.");
-                }
-
-                // D245: a monitor watches the pull request a plugin's step opened, and a tidy ends what a monitor saw merged.
-                foreach (var (late, why) in CompletionGraphs.Unreached(byId.Values, ids => Reach(ids, ordered, forward: true)))
-                {
-                    Say(GraphRefusal.LandTail, null, late, why);
-                }
-
-                if (method != LandNodes.Branch)
-                {
-                    foreach (var extra in byId.Values.Where(node => node.Kind == NodeKinds.Push))
-                    {
-                        Say(GraphRefusal.LandTail, null, extra.Id, $"node `{extra.Id}` is a `{NodeKinds.Push}`, which pushes the branch of a `land` whose method is `{LandNodes.Branch}`: "
-                            + "choose that method on the landing.");
-                    }
-                }
-
                 if (method != LandNodes.Integrate)
                 {
                     foreach (var extra in integrates)
@@ -278,6 +258,13 @@ public static class NodeGraphs
                     }
                 }
             }
+        }
+
+        // D247: each kind's own rules of where its node stands (a push after a branch landing, a monitor on a step that reports a state, a tidy
+        // on a monitor's merged route), said against the node they are about.
+        foreach (var node in byId.Values)
+        {
+            if (NodeKit.Of(node.Kind) is { } unit) problems.AddRange(unit.Problems(graph, node));
         }
 
         // INTEGRATE1o (§17.3's graph rules): at most one `work.requests`, after a `claimed` and before every landing. After: a `claimed` of this graph

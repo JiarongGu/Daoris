@@ -45,7 +45,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | Holds | `Workflows/Nodes/HoldNodes.cs`, `Workflows/Kinds/WorkRequests/WorkRequestsNode.cs`, `Workplace/ContentHolds.cs` | `quest.holds`, `content.holds` and `work.requests` before the landing |
 | Land node | `Workflows/Nodes/LandNodes.cs`, `Workflows/Nodes/Landing.cs` | `land`'s options, their resolution at the bind, and `Landing`, the intent a run lands by (`LandNodes.LandingOf`); a process with no bound version declares `Landing.Merge` |
 | Pull-request step | `Workflows/Nodes/PullRequestSteps.cs`, `Workplace/PullRequestRecords.cs`, `NodeRunKeeping.KeepPullRequests` | A `<plugin>/pull-request` step's plugin, the bind's refusal where no plugin performs it, and the address its evidence gives written on the landing |
-| Monitor and tidy | `Workflows/Nodes/CompletionNodes.cs`, `CompletionGraphs.cs`, `Workplace/TidyDoor.cs`, `Workplace/ChainTidied.cs`, `Workflows/Kinds/Tidy/TidyNode.cs` (its door's start) | The prebuilt set past the landing; the watch on the pull request; the tidy of the chain's parts and its record, which the keeper and the press read |
+| Push, monitor and tidy | `Workflows/Kinds/Push/`, `Workflows/Kinds/Monitor/`, `Workflows/Kinds/Tidy/`, `Workflows/Kinds/PullRequest/PullRequestReading.cs`, `Workflows/Kinds/IWatchable.cs`, `Knowledge/Domain/ChainTidied.cs` | Each kind whole in its folder: its declaration and save rules (`<Kind>Node`), its reading (`PushReading`, `MonitorReading`, `TidyReading`) and its door (`PushDoor`, `TidyDoor`); the state a pull-request step reports, which a monitor watches; the tidy's record, which the keeper and the press read |
 | Landing door | `Workplace/LandingDoor.cs`, `Workplace/LandPerformer.cs`, `Workplace/LandTries.cs` | The runtime's landing off the pass, under the tree's hold and the delivery key; the performer of a run's `land`, its entry `LandEntry` and its tries' rules and notes (`LandTries`, `LandTryNotes`) |
 | Branch naming and notes | `Workplace/BranchPatterns.cs`, `Workplace/LandingNotes.cs`, `Plugins/LandingPlugins.cs` | A `land`'s pattern, ticket key, slug and chain subject; the conversation's notes of a press and a part left out; whether a named plugin performs pull-request steps (`LandingPlugins.ProblemOf`) |
 | Line policy | `Settings/LinePolicyKey.cs` | `linePolicies` and `workspaceLinePolicies` read, written and judged |
@@ -160,15 +160,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     landed by `push` or `pull-request` converted once (`PushedGraphs`, the home's `push-steps` step), and a delivery a pre-G8 build began
     for a plugin (`plugin-dispatched`, `plugin-answered`, the `push` and `pull-request` methods) is read, said and never sent again
     (`DeliveryReconciler`); both end when no home saved before G8's release can start, and G8-CONVERT1 deletes them. (from D241)
-    Past the pull request a place composes a `monitor` and a `tidy` (`CompletionNodes`, from the prebuilt set `land`, `push`,
-    `pull-request`, `monitor`, `tidy`, which the shipped pull-request delivery holds whole). The monitor is reached once the answer the
-    opening plugin gave through `work/state` (asked at D148's moments) says merged or closed, a squash read as merged; it never fails. The
-    tidy (`TidyDoor`, off the pass, under the lease) ends each part of the chain, the session branch of every unit its landing carries:
-    each part's commits kept on a recovery ref, its branch deleted through the journal (`JournaledDeletes`, with its Undo), one a tree has
-    checked out left standing and ended all the same, and what it ended written on the landing as `tidied` (`ChainTidied`). A request
-    closed without merging fails the tidy (`pull-request-closed`) and ends nothing. The save refuses a `monitor` no pull-request step
-    reaches and a `tidy` no `monitor` reaches (`CompletionGraphs`). The keeper (`EndKeeping`, `EndBy.Tidied`) and the press (`TreeSweeps`,
-    resting on the part's recovery ref) read that record for a part at the tip the tidy ended it at, and judge it no further. (from D245)
+    Past the pull request a place composes a `monitor` and a `tidy` from the prebuilt set `land`, `push`, `pull-request`, `monitor`,
+    `tidy`, which the shipped pull-request delivery holds whole. A `monitor` watches the one step wired straight into it by `after`
+    through that step's own state reading (`IWatchable`, which a pull-request step declares: `PullRequestReading`), and is reached with
+    the state as its outcome (`NodeSource.Watched`); open or unanswered it is pending, and it never fails. A pull request reports `merged`
+    once the answer the opening plugin gave through `work/state` (asked at D148's moments) says completed, a squash read as merged, and
+    `closed` once it says abandoned. The monitor declares those outcomes in the file, and the shipped delivery wires `when merged` to the
+    `tidy` and `when closed` to a person's task (`human`). The tidy (`TidyDoor`, off the pass, under the lease) ends each part of the
+    chain, the session branch of every unit its landing carries: each part's commits kept on a recovery ref, its branch deleted through
+    the journal (`JournaledDeletes`, with its Undo), one a tree has checked out left standing and ended all the same, and what it ended
+    written on the landing as `tidied` (`ChainTidied`). Nothing fails a tidy: where the request did not merge its door ends nothing. Each
+    kind's save rules are its own (`INodeKind.Problems`): the save refuses a `monitor` on no step, on two, after a step that reports no
+    state, or with outcomes other than that step's states in their order (`monitor-watch`), a `tidy` no monitor's `when merged` way
+    reaches (`tidy-merged`), and a `push` no way from a method's landing reaches or after a landing not of the `branch` method
+    (`land-tail`). The palette offers a monitor with its outcomes and its `when` ways. The keeper (`EndKeeping`, `EndBy.Tidied`) and the
+    press (`TreeSweeps`, resting on the part's recovery ref) read that record for a part at the tip the tidy ended it at, and judge it no
+    further. (from D245, D247)
 32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
     commit. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.

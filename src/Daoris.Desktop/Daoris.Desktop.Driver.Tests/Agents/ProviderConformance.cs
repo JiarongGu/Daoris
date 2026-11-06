@@ -38,9 +38,9 @@ internal sealed record ConformanceCase(
 /// A view of the providers the suite runs over: the registry over today's adapters, the registration list's providers as written on the
 /// contract, or a plugin's provider made in a test home. Each with the adapters its doors are presented through.
 /// </summary>
-internal sealed record ConformanceSubject(string Source, AdapterSet Adapters, ProviderRegistry Registry, IReadOnlyList<Provider> Providers)
+internal sealed record ConformanceSubject(string Source, ProviderRegistry Adapters, ProviderRegistry Registry, IReadOnlyList<Provider> Providers)
 {
-    /// <summary><c>ProviderRegistry.Of(AdapterSet.Built())</c>: every provider and door today's adapters hold.</summary>
+    /// <summary><c>ProviderRegistry.Built()</c>: every provider and door today's adapters hold.</summary>
     public const string RegistrySource = "registry";
 
     /// <summary><c>Providers.Built()</c>: the providers written on the contract, through the shim.</summary>
@@ -98,14 +98,14 @@ internal static class ConformanceSubjects
 
     private static IReadOnlyList<ConformanceSubject> Make()
     {
-        var built = AdapterSet.Built();
-        var registry = ProviderRegistry.Of(built);
+        var built = ProviderRegistry.Built();
+        var registry = built;
         // The agent a door runs as with no door of its own (`codex`) is reserved by its being a registered provider's id.
-        var listed = new AdapterSet(
+        var listed = new ProviderRegistry(
             new Dictionary<string, ISessionAdapter>(LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase),
             new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
         var plugins = WithPlugins(built);
-        var made = ProviderRegistry.Of(plugins);
+        var made = plugins;
 
         return
         [
@@ -118,7 +118,7 @@ internal static class ConformanceSubjects
     }
 
     /// <summary>The built set and a test home's two plugins, written as a person's would be, read, and the home removed.</summary>
-    private static AdapterSet WithPlugins(AdapterSet built)
+    private static ProviderRegistry WithPlugins(ProviderRegistry built)
     {
         var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "provider-conformance", "plugins-" + Guid.NewGuid().ToString("N")[..8]);
         try

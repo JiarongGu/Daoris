@@ -117,7 +117,7 @@ public sealed class DriverModulePluginsTests : DriverModuleBridge
                 { "id": "acme.gate", "version": "1.0.0", "hooks": { "command": ["node", "${plugin}/gate.mjs"], "points": ["session/ended"] } }
                 """);
             File.WriteAllText(Path.Combine(checkout, "gate.mjs"), "// v1");
-            PluginInstall.Add(Home, checkout, AdapterSet.Built().Names);
+            PluginInstall.Add(Home, checkout, ProviderRegistry.Built().Names);
             var bare = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.bare");
             Directory.CreateDirectory(bare);
             File.WriteAllText(Path.Combine(bare, "plugin.json"), """{ "id": "acme.bare" }""");

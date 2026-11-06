@@ -96,7 +96,7 @@ public sealed class HandOverAskTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: _processes,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))

@@ -466,7 +466,7 @@ public sealed class StartFromTests : IDisposable
     {
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         using var client = ledger.Client();
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,

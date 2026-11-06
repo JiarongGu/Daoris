@@ -24,7 +24,7 @@ public static class DriverChoiceVerbs
         new RoleVerb(),
         new WorkflowVerb(),
         new ReviewVerb(),
-        new OpinionVerb(home => AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names))),
+        new OpinionVerb(home => ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(home, ProviderRegistry.Built().Names))),
         new BrainstormsVerb(),
         new CommitsVerb(),
         new KeepVerb(),

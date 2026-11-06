@@ -192,7 +192,7 @@ public sealed class WorkspaceTrustTests : IDisposable
     [Fact]
     public void The_harnesses_that_keep_a_trust_record_are_the_two_doors_onto_Claude_Code()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
 
         var trusting = adapters.Names
             .Where(name => adapters.Resolve(name).Toolchain is { TrustFile: { Length: > 0 } })

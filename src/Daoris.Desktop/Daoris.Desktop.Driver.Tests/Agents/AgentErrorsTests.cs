@@ -14,9 +14,9 @@ public sealed class AgentErrorsTests
     private const string Overloaded =
         "Internal error: API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.";
 
-    private static readonly AdapterSet Built = AdapterSet.Built();
+    private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
-    private static AgentError Read(string adapter, int? code, string? kind, string? words, int? status = null, AdapterSet? set = null)
+    private static AgentError Read(string adapter, int? code, string? kind, string? words, int? status = null, ProviderRegistry? set = null)
     {
         var adapters = set ?? Built;
         return AgentErrors.Read(
@@ -122,7 +122,7 @@ public sealed class AgentErrorsTests
         var joined = Built.Names.ToDictionary(name => name, Built.Resolve, StringComparer.OrdinalIgnoreCase);
         joined["acp-owned"] = PluginDoors.Adapter(new PluginHarness("acp-owned", ["node"], AccountOf: "claude-code"), "owned-plugin");
         joined["acp-alone"] = PluginDoors.Adapter(new PluginHarness("acp-alone", ["node"]), "alone-plugin");
-        var set = new AdapterSet(joined);
+        var set = new ProviderRegistry(joined);
 
         Assert.Equal((AgentErrorKind.Transient, "owner:kind:overloaded"), Pair(Read("acp-owned", -32603, "overloaded", "Internal error", set: set)));
         Assert.Equal(AgentErrorKind.Transient, Read("acp-owned", -32603, null, Overloaded, set: set).Kind);

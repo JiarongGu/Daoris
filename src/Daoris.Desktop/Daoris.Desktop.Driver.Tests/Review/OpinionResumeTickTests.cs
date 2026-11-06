@@ -115,7 +115,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         Directory.CreateDirectory(profile);
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         await using var service = OpinionTickStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("claude-code") with
         {
             Drivable = ["engine"],
@@ -186,7 +186,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var ledger = new ChatLedger().Register("engine", _repository);
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = ledger.Client();
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
@@ -294,7 +294,7 @@ public sealed class OpinionResumeTickTests : IDisposable
 
     private Daoris.Driver.Driver Protocol(OpinionTickStandIn service, string mode)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],

@@ -34,7 +34,35 @@ public sealed class ProviderRegistry
     /// </param>
     public ProviderRegistry(
         IEnumerable<Provider> providers, IReadOnlyList<string> reserved, IReadOnlyDictionary<string, HarnessToolchain>? toolchains = null)
+        : this([.. providers], reserved, toolchains, null)
     {
+    }
+
+    /// <summary>
+    /// The registry over doors written as adapters (the dictionary of <see cref="ISessionAdapter"/> every test and the plugins' doors
+    /// still make): <paramref name="holders"/> the agents a door runs as with no door of that agent here, each by its toolchain
+    /// (CODEXACCT1); <paramref name="declared"/> every agent an installed plugin's harness names, enabled or not (POOLSTRAY1). None
+    /// by default, so a registry a test builds asks nobody.
+    /// </summary>
+    public ProviderRegistry(
+        IReadOnlyDictionary<string, ISessionAdapter> adapters, IReadOnlyDictionary<string, HarnessToolchain>? holders = null,
+        IReadOnlyCollection<string>? declared = null)
+        : this(new AdapterTable(adapters, holders, declared))
+    {
+    }
+
+    private ProviderRegistry(AdapterTable table) : this(ProviderRegistration.Of(table))
+    {
+    }
+
+    private ProviderRegistry(ProviderRegistration.Made made) : this(made.Providers, made.Reserved, made.Toolchains, made.Table)
+    {
+    }
+
+    private ProviderRegistry(
+        List<Provider> providers, IReadOnlyList<string> reserved, IReadOnlyDictionary<string, HarnessToolchain>? toolchains, AdapterTable? table)
+    {
+        _table = table ?? OverDoors(providers);
         _toolchains = toolchains ?? new Dictionary<string, HarnessToolchain>();
         foreach (var provider in providers)
         {
@@ -80,8 +108,43 @@ public sealed class ProviderRegistry
         RegisteredVariables.Register(this);
     }
 
-    /// <summary>The registry over today's adapters: doors grouped by the account key each declares (see <see cref="ProviderRegistration"/>).</summary>
-    public static ProviderRegistry Of(AdapterSet adapters) => ProviderRegistration.Of(adapters);
+    /// <summary>
+    /// The registry this build carries: every provider registered (<see cref="Providers.Built"/>) with its doors, and the agent
+    /// <c>codex-acp</c> runs as, which has no door of its own here (CODEXACCT1): its sign-in and status question. `claude-code` first
+    /// and supported, `codex` second and explicit (D23): an unknown name is an error naming what exists, never a silent fallback.
+    /// </summary>
+    public static ProviderRegistry Built() => new(
+        new Dictionary<string, ISessionAdapter>(LegacyDoor.Over(global::Daoris.Driver.Providers.Built()), StringComparer.OrdinalIgnoreCase),
+        new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
+
+    private readonly AdapterTable _table;
+
+    /// <summary>The table of a registry made over providers alone; a door named twice is left for the identity rules to refuse.</summary>
+    private static AdapterTable OverDoors(IEnumerable<Provider> providers)
+    {
+        var doors = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        foreach (var each in LegacyDoor.Over(providers)) doors.TryAdd(each.Key, each.Value);
+        return new AdapterTable(doors);
+    }
+
+    /// <summary>Every door this registry has, by name, in a stable order — what a roster enumerates.</summary>
+    public IReadOnlyList<string> Names => _table.Names;
+
+    /// <summary>
+    /// The agents whose accounts Daoris keeps (POOLSTRAY1, D197): each name run as a harness, each agent a door runs as, and each an
+    /// installed plugin's harness names, a disabled one's too, so turning a plugin off loses none of its wiring. A folder under the
+    /// account homes naming none of these is no agent (<see cref="HarnessSettings.AccountsOf"/>).
+    /// </summary>
+    public IReadOnlyList<string> Agents => _table.Agents;
+
+    /// <summary>The door named <paramref name="name"/> as the old seam's readers ask it; an unknown name is an error naming what exists.</summary>
+    public ISessionAdapter Resolve(string name) => _table.Resolve(name);
+
+    /// <summary>
+    /// This registry plus <paramref name="more"/> doors and the agents they declare. A name it carries is kept as it is, so nothing can
+    /// be replaced: a door joins, and the registry it joins is exactly what it was (<c>WithPlugins</c> says who offers the doors).
+    /// </summary>
+    public ProviderRegistry Joined(IEnumerable<ISessionAdapter> more, IEnumerable<string> declaredAgents) => new(_table.Joined(more, declaredAgents));
 
     /// <summary>Every provider, in id order, unavailable descriptors among them.</summary>
     public IReadOnlyList<Provider> Providers { get; }

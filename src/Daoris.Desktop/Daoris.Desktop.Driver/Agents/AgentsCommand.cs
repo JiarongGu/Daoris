@@ -255,7 +255,7 @@ public static class AgentsCommand
     {
         var set = world.Adapters(HarnessSettings.HomeOf(path));
         var roster = new HarnessRoster(set, path);
-        HarnessToolchain? Of(string each) => set.Registry.ToolchainOf(each);
+        HarnessToolchain? Of(string each) => set.ToolchainOf(each);
         var named = Named(set);
         var name = Operand(args, at) ?? throw new AgentWords($"`agent {verb}` needs {shape} — e.g. `daoris agent {verb} claude-code`");
         if (!named.Contains(name, StringComparer.Ordinal) || Of(name) is not { } toolchain)
@@ -273,13 +273,13 @@ public static class AgentsCommand
     internal static IReadOnlyList<string> Named(AgentsWorld world, string path) => Named(world.Adapters(HarnessSettings.HomeOf(path)));
 
     /// <summary>
-    /// The agents whose accounts this terminal's set knows (POOLSTRAY1, <see cref="AdapterSet.Agents"/>): what every read and write of the
+    /// The agents whose accounts this terminal's set knows (POOLSTRAY1, <see cref="ProviderRegistry.Agents"/>): what every read and write of the
     /// wiring here hands <see cref="HarnessSettings"/>, so a stray folder under the account homes is never read as an agent.
     /// </summary>
     internal static IReadOnlyList<string> Agents(AgentsWorld world, string path) => world.Adapters(HarnessSettings.HomeOf(path)).Agents;
 
     // The operands' rule (AGENTPROVIDER1 row b), read from the registry: a door, or the agent a door runs as, naming a binary.
-    private static List<string> Named(AdapterSet set) => [.. ProviderRegistry.Of(set).Operands()];
+    private static List<string> Named(ProviderRegistry set) => [.. set.Operands()];
 
     /// <summary>An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse.</summary>
     internal static string AccountNamed(string home, string owner, string given) =>
@@ -297,7 +297,7 @@ public static class AgentsCommand
         var path = WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
         var (name, toolchain, known, roster) = Agent(args, "settings", "<agent>", world, path);
-        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var edit = SettingsEdit([.. Operands(args, Valued).Skip(2)], FlagValue(args, "--for"));
 

@@ -118,7 +118,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     /// sentence, since a meeting's start is outside the plan and has no walk to pass them in (AGENTPROVIDER1 row u).
     /// </summary>
     internal static (List<MeetingParticipant> Taking, List<string> Left, List<string> Closed) Participants(
-        MeetingRequest request, BrainstormRule rule, AdapterSet adapters, ProviderReach reach)
+        MeetingRequest request, BrainstormRule rule, ProviderRegistry adapters, ProviderReach reach)
     {
         var taking = new List<MeetingParticipant>();
         var left = new List<string>();
@@ -154,7 +154,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     private async Task<string> FreezeAsync(MeetingRequest request, Snapshot snapshot, MeetingFiles files, CancellationToken ct)
     {
         var (taking, left, closed) = Participants(
-            request, _brainstorms.RuleOf(request.Repository, snapshot), _context.Adapters, new ProviderReach(_context.Adapters.Registry));
+            request, _brainstorms.RuleOf(request.Repository, snapshot), _context.Adapters, new ProviderReach(_context.Adapters));
         var outside = (left.Count == 0 ? "" : $" {string.Join(", ", left.Select(agent => $"`{agent}`"))} {(left.Count == 1 ? "is" : "are")} not in the policy, and take no turn.")
             + string.Concat(closed.Select(refused => $" {refused}, and takes no turn."));
         if (taking.Count < MeetingCommand.FewestAgents)

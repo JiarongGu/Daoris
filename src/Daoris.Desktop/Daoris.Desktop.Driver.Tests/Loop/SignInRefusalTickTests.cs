@@ -60,7 +60,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     public async Task A_start_refused_for_its_sign_in_marks_its_account_and_the_next_start_takes_another()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
@@ -121,7 +121,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     public async Task A_look_between_the_refused_end_and_the_next_run_finds_the_quest_reserved()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
@@ -168,7 +168,7 @@ public sealed class SignInRefusalTickTests : IDisposable
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1"])
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with
@@ -202,7 +202,7 @@ public sealed class SignInRefusalTickTests : IDisposable
     public async Task A_refused_account_last_read_signed_in_is_passed_in_the_same_start_without_a_status_question()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var config = DriverConfig.Empty with

@@ -20,7 +20,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
     /// </summary>
     public static bool Unadopted(DriverConfig config, string home)
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         try
         {
             return BuildDoor.Drives(home, config, built.WithPlugins(PluginCatalog.Load(home, built.Names)));

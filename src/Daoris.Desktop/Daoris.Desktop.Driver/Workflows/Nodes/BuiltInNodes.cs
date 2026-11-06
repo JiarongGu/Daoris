@@ -68,7 +68,7 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
 /// <para><b>Each fact has its one writer, unchanged</b>: the landing writes <c>handed</c>'s entry; the end judgement's keeper,
 /// <see cref="EndKeeping"/>, the kept fact <c>line</c> reads; the plugin answers' writers <c>Pushed</c> and <c>PullRequestState</c>;
 /// the service, through its quest exchange, the done <c>claimed</c> reads. The look's tidy is no node, and what it removed is the
-/// inventory's (§D3); a run's <c>tidy</c> (D245) is Daoris's performed step, read here from what its door wrote on the landing.</para>
+/// inventory's (§D3); a run's <c>tidy</c> (D245) is Daoris's performed step, read in its unit from what its door wrote on the landing.</para>
 /// <para><b>Not yet is no outcome</b>: git's proofs never fail. A record that cannot establish the outcome without a git read
 /// (<see cref="NodeGitReads"/>) leaves it unknown, and an unknown owner's unit is unknown, never ended (canary 27).</para>
 /// <para><b>Each kind's reading is its unit's</b> (D247): a kind that observes says so (<see cref="IObserves"/>) and calls its reading here.</para>
@@ -175,38 +175,6 @@ public static class BuiltInNodes
             : Reached(reading, NodeSource.Git, unit.End.Revision, SessionBranches.FileName, branch?.Branch ?? unit.Subject.Artifact ?? unit.Id, unit.End.Said);
     }
 
-    /// <summary>
-    /// A <c>push</c>'s (G8): Daoris's push (the push act) wrote the commit it pushed on the landing; reached when git's remote-tracking ref holds it.
-    /// </summary>
-    internal static NodeObservation Pushed(NodeReading reading)
-    {
-        if (OfBranch(reading) is { } refused) return refused;
-        var landing = LandingOf(reading.Unit);
-        if (landing is not { Pushed: true, PushedTip: { } pushed }) return Seen(reading, null, "the branch was not pushed yet");
-        if (reading.Git?.RemoteTip is not { } remoteTip)
-        {
-            return Seen(reading, NodeStates.Unknown, $"{TextBounds.ShortCommit(pushed, 8)} was pushed, and git's remote-tracking ref was not read");
-        }
-
-        return remoteTip(landing) switch
-        {
-            null => Seen(reading, NodeStates.Unknown, "git could not read the remote-tracking ref"),
-            var remote when string.Equals(remote, pushed, StringComparison.Ordinal) => Reached(reading, NodeSource.Git, pushed, LandedBranches.FileName,
-                landing.Branch, $"pushed at {TextBounds.ShortCommit(pushed, 8)}, and the remote-tracking ref holds it"),
-            _ => Seen(reading, null, "the remote-tracking ref does not hold the pushed commit"),
-        };
-    }
-
-    /// <summary>D245: a step past the pull request, read from the landing record at the landing's tip by <paramref name="seen"/>.</summary>
-    internal static NodeObservation Completion(NodeReading reading, Func<LandedBranch?, CompletionSeen> seen)
-    {
-        if (OfBranch(reading) is { } refused) return refused;
-        var read = seen(LandingOf(reading.Unit));
-        return read is { Reached: true, Landing: { } on }
-            ? Reached(reading, NodeSource.Landing, on.Tip, LandedBranches.FileName, on.Branch, read.Said)
-            : Seen(reading, null, read.Said);
-    }
-
     /// <summary>The landing a branch unit's <c>handed</c>, <c>pushed</c> and <c>pull-request</c> read: its newest standing, else its newest; null where none.</summary>
     public static LandedBranch? LandingOf(WorkUnit unit) =>
         unit.Records.Landings.LastOrDefault(each => each.GoneAt is null) ?? unit.Records.Landings.LastOrDefault();
@@ -221,29 +189,33 @@ public static class BuiltInNodes
     /// A branch unit's reading refused where it is not bound to its node, or is not a branch; unknown where no record names its unit, so nothing
     /// of it is said. Null where it reads.
     /// </summary>
-    private static NodeObservation? OfBranch(NodeReading reading) =>
+    internal static NodeObservation? OfBranch(NodeReading reading) =>
         Unbound(reading, WorkUnitKind.Branch)
         ?? (reading.Unit.OwnerKnown ? null : Seen(reading, NodeStates.Unknown, "no record names its unit, so nothing of it is said"));
 
+    /// <summary>A unit of another kind than the one the node observes is no observation, nor is one it is not bound to (<see cref="NotBound"/>).</summary>
+    private static NodeObservation? Unbound(NodeReading reading, string wants) =>
+        NotBound(reading) ?? (reading.Unit.Kind == wants ? null
+            : Seen(reading, null, $"it observes a {wants} unit, and this is a {reading.Unit.Kind}") with { Refused = NodeRefusal.NotThisUnit });
+
     /// <summary>
     /// A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>): the unit it observes, its subject on a
-    /// run's record (FABRIC-CUTOVER1a), never the record's own; nor is a unit of another kind than the one the node observes.
+    /// run's record (FABRIC-CUTOVER1a), never the record's own. Null where it is bound.
     /// </summary>
-    private static NodeObservation? Unbound(NodeReading reading, string wants)
+    internal static NodeObservation? NotBound(NodeReading reading)
     {
         var (unit, node, binding) = (reading.Unit, reading.Node, reading.Binding);
-        if (binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
-        {
-            return Seen(reading, null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound };
-        }
-
-        return unit.Kind == wants ? null : Seen(reading, null, $"it observes a {wants} unit, and this is a {unit.Kind}") with { Refused = NodeRefusal.NotThisUnit };
+        return binding.Observes != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version
+            ? Seen(reading, null, "its binding names another subject, node or version") with { Refused = NodeRefusal.NotBound }
+            : null;
     }
 
-    private static NodeObservation Seen(NodeReading reading, string? outcome, string said) =>
+    /// <summary>What the reading's node is observed as: <paramref name="outcome"/>, or none yet, with what its records say.</summary>
+    internal static NodeObservation Seen(NodeReading reading, string? outcome, string said) =>
         new(reading.Unit.Id, reading.Node.Id, reading.Node.Kind, outcome, said) { Attempt = reading.Binding.Attempt };
 
-    private static NodeObservation Reached(NodeReading reading, string source, string? revision, string record, string artifact, string said) =>
+    /// <summary>A reach by <paramref name="source"/>, its acceptance at <paramref name="revision"/> and its evidence the record's entry.</summary>
+    internal static NodeObservation Reached(NodeReading reading, string source, string? revision, string record, string artifact, string said) =>
         ReachedAt(reading, source, revision, revision, record, artifact, said);
 
     /// <summary>

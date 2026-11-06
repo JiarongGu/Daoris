@@ -57,7 +57,7 @@ public sealed class StartTreeCloseTests : IDisposable
     [Fact]
     public async Task A_close_after_the_starts_tree_opened_lets_the_tree_go_on_no_token_and_opens_no_record()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             _ledger.Client(),
             ActorChoices.With(

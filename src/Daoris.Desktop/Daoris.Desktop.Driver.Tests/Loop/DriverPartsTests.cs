@@ -25,7 +25,7 @@ public sealed class DriverPartsTests : IDisposable
     [Fact]
     public void The_look_runs_the_registered_passes_in_their_order_each_built_from_the_driver()
     {
-        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
+        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home);
 
         var order = driver.LookPasses.Order;
         Assert.Equal(
@@ -115,7 +115,7 @@ public sealed class DriverPartsTests : IDisposable
     [Fact]
     public async Task The_read_phase_takes_the_starts_opening_and_the_mark_then_the_snapshot_and_leaves_the_supervisor_s_bound_for_the_look()
     {
-        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
+        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home);
         var opening = new StartReservation("7", null, "engine", null);
         Assert.True(driver.Context.Runs.TryReserve(opening));
         var round = new LookRound(LookPart.Look, [], new LookState([]));

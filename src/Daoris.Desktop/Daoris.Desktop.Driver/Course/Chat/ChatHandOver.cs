@@ -376,14 +376,26 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     /// <summary>
     /// The old conversation ends by the runner's own end: its process is stopped and its record says so, returning once its watch
     /// has written it, or after <see cref="HandOverEnd"/>. One that already ended has nothing to stop. A limit's move ends the old part
-    /// the same way (<see cref="LimitMove"/>).
+    /// the same way (<see cref="LimitMove"/>). What the part left running in its tree is ended and waited for before this returns, so the
+    /// next part never starts beside it, and the old record says so where there was any (COAGENT1g, <see cref="PartLeftovers"/>).
     /// </summary>
     internal async Task EndForHandOverAsync(string sessionId)
     {
         if (!_context.Watching.TryGetValue(sessionId, out var watch)) return;
 
-        _context.Processes.Stop(sessionId, ChatEnded.EndedNote(stopped: false, notKept: false));
-        await Task.WhenAny(watch, Task.Delay(HandOverEnd)).ConfigureAwait(false);
+        var job = _context.Processes.TakeJob(sessionId);
+        PartLeft? left;
+        try
+        {
+            _context.Processes.Stop(sessionId, ChatEnded.EndedNote(stopped: false, notKept: false));
+            await Task.WhenAny(watch, Task.Delay(HandOverEnd)).ConfigureAwait(false);
+        }
+        finally
+        {
+            left = await PartLeftovers.EndAsync(job, PartLeftovers.Bound).ConfigureAwait(false);
+        }
+
+        if (left?.Note(PartLeftovers.Bound) is { } said) _context.Note(sessionId, said);
     }
 
     /// <summary>

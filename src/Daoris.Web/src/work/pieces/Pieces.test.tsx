@@ -134,6 +134,20 @@ describe('the Pieces section', () => {
       { piece: 'Make the window seven days.', agent: 'codex-acp', paths: ['src/window.ts', 'docs'] }, expect.anything());
   });
 
+  /** COAGENT1c: where the frame holds the ask, the head's ⋯ opens the same ask the section's press opens, and its close is the frame's. */
+  it('opens the ask the frame holds open, as the head’s ⋯ asks, and tells the frame of its own press and its close', async () => {
+    const onOpen = vi.fn();
+    const { rerender } = render(<Pieces section={section({ ask: { from: 'claude-code', roster, onAsk: vi.fn(), open: false, onOpen } })} headingId="h" />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ask another agent to work on a piece…' }));
+    expect(onOpen).toHaveBeenLastCalledWith(true);
+    expect(screen.queryByRole('textbox', { name: 'The piece' })).toBeNull();
+
+    rerender(<Pieces section={section({ ask: { from: 'claude-code', roster, onAsk: vi.fn(), open: true, onOpen } })} headingId="h" />);
+    expect(screen.getByRole('textbox', { name: 'The piece' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ask another agent to work on a piece…' })).toBeNull();
+  });
+
   it('says it in Chinese', async () => {
     await i18n.changeLanguage('zh');
     render(<Pieces

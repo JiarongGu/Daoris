@@ -77,7 +77,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// </param>
     public ChatRunner(
         ServiceClient service,
-        AdapterSet adapters,
+        ProviderRegistry adapters,
         string home,
         SessionProcesses processes,
         SessionOutput? output = null,

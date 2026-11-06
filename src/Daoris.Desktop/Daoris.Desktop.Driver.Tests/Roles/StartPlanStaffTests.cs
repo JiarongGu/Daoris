@@ -22,7 +22,7 @@ public sealed class StartPlanStaffTests : IDisposable
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "staffpolicy1c-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private readonly AdapterSet _adapters;
+    private readonly ProviderRegistry _adapters;
 
     private HarnessRoster _roster;
 
@@ -39,7 +39,7 @@ public sealed class StartPlanStaffTests : IDisposable
         foreach (var agent in new[] { "cool", "fine" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").Save(Settings);
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),

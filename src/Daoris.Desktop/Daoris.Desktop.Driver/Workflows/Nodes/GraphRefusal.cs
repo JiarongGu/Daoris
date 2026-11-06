@@ -119,4 +119,13 @@ public static class GraphRefusal
 
     /// <summary>A hold in a graph with no landing (LANDNODE1k): it judges the work before it lands, and nothing lands.</summary>
     public const string HoldUnlanded = "hold-unlanded";
+
+    /// <summary>
+    /// A <c>monitor</c> not on one step that reports a state (D245's note; D247 §4 point 1): the one node wired straight into it by <c>after</c>
+    /// reports none, or there are none or two, or its outcomes are not that step's states in their order.
+    /// </summary>
+    public const string MonitorWatch = "monitor-watch";
+
+    /// <summary>A <c>tidy</c> no monitor's <c>when merged</c> way reaches (D247 §4 point 5): it ends a chain only once its pull request merged.</summary>
+    public const string TidyMerged = "tidy-merged";
 }

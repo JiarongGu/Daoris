@@ -56,7 +56,7 @@ public sealed class LimitResumeTickTests : IDisposable
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
         var processes = new SessionProcesses { Close = ShellClose.Update("build-1") };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("acp-stub"),
@@ -92,7 +92,7 @@ public sealed class LimitResumeTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode, bool paused = false)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],

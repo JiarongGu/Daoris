@@ -252,7 +252,7 @@ public sealed class LineAccountTests : IDisposable
             AccountCooling.Cool(home, new CoolingEntry("fake", account, Seen.AddHours(hours), true, "session", Seen.AddMinutes(-5), "s1"), Seen);
 
         var roster = new HarnessRoster(
-            new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
             {
                 ["fake"] = Adapter("fake", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
                 ["elsewhere"] = Adapter("elsewhere", new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "ELSEWHERE_HOME", ProbeByPresence: true)),

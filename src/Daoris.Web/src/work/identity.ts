@@ -109,6 +109,14 @@ export function linkedSessions(
 export const isHelp = (session: Session): boolean => session.repository === HELP_REPOSITORY;
 
 /**
+ * Whether a session may lead a piece another agent writes (COAGENT1b, COAGENT1c; the driver's `StartAdmission.LeadsPiece`): a working
+ * session in a tree of its own, driven or a conversation, never a helper, a partner, a reviewer, an intake nor Ask Daoris's. The one rule
+ * the head's ⋯ and the Pieces section offer the ask by.
+ */
+export const leadsPieces = (session: Session): boolean =>
+  Boolean(session.tree) && !session.serves && !isOpinion(session) && !isIntake(session) && !isHelp(session);
+
+/**
  * Which machine holds this session — or null when it is the deployment's own.
  *
  * @remarks

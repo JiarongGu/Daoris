@@ -32,6 +32,8 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
   const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
   // The session whose helper's ask opens under the header (MIXAGENT2b, D163), the stop's way: of that session only.
   const [helperAsking, setHelperAsking] = useState<string | null>(null);
+  // The session whose Pieces section has its ask open (COAGENT1c), from the head's ⋯ or the section's own press: of that session only.
+  const [pieceAsking, setPieceAsking] = useState<string | null>(null);
   // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask (MIXAGENT1b-ii): the ask opens with
   // the choice made and its press carries the reason. Cleared by the head's own door, whose press is the person's.
   const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
@@ -49,6 +51,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
     setDeleteAsking((asked) => (asked === selected ? asked : null));
     setHandOverAsking((asked) => (asked === selected ? asked : null));
     setHelperAsking((asked) => (asked === selected ? asked : null));
+    setPieceAsking((asked) => (asked === selected ? asked : null));
     setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
@@ -100,6 +103,12 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
       setPauseAsking(null);
       setHelperAsking(id);
     },
+    // *Ask another agent to work on a piece…* (COAGENT1c): attended, its Pieces section's ask open, the one the section's press opens.
+    askPiece: (id) => {
+      chosen();
+      attend(id);
+      setPieceAsking(id);
+    },
     // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
     attend: (id) => {
       chosen();
@@ -133,7 +142,7 @@ export function useHeadAsks({ selected, chosen, attend, setDocked, closeDock, te
 
   return {
     archivingEnded, setArchivingEnded, stopAsking, setStopAsking, deleteAsking, setDeleteAsking, handOverAsking, setHandOverAsking,
-    helperAsking, setHelperAsking, handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
+    helperAsking, setHelperAsking, pieceAsking, setPieceAsking, handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
     answerFocus, setAnswerFocus, doors,
   };
 }

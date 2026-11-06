@@ -520,6 +520,36 @@
         ],
         "wires": [{ "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "line" }] },
       "problems": [{ "code": "land-tail", "wire": null, "node": "push", "words": "node `push` is a `push`, which pushes the branch of a `land` whose method is `branch`: choose that method on the landing." }] },
+    { "name": "a monitor after a push, which reports no state (D245's note)",
+      "graph": { "entries": ["land"], "end": "tidy",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
+          { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
+          { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
+          { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
+          { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "monitor" },
+          { "id": "c", "kind": "when", "from": "monitor", "to": "tidy", "outcome": "merged" }, { "id": "d", "kind": "when", "from": "monitor", "to": "closed", "outcome": "closed" }
+        ] },
+      "problems": [{ "code": "monitor-watch", "wire": null, "node": "monitor", "words": "node `monitor`: a `monitor` watches the one step before it that reports a state, and `push` reports no state to watch." }] },
+    { "name": "a tidy after a monitor on no merged route (D245's note)",
+      "graph": { "entries": ["land"], "end": "tidy",
+        "nodes": [
+          { "id": "land", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "branch" } },
+          { "id": "push", "kind": "push", "version": 1, "reach": "performed" },
+          { "id": "request", "kind": "acme-host/pull-request", "version": 1, "reach": "performed" },
+          { "id": "monitor", "kind": "monitor", "version": 1, "reach": "observed", "outcomes": ["merged", "closed"] },
+          { "id": "tidy", "kind": "tidy", "version": 1, "reach": "performed" },
+          { "id": "closed", "kind": "human", "version": 1, "reach": "pressed" }
+        ],
+        "wires": [
+          { "id": "a", "kind": "after", "from": "land", "to": "push" }, { "id": "b", "kind": "after", "from": "push", "to": "request" },
+          { "id": "c", "kind": "after", "from": "request", "to": "monitor" }, { "id": "d", "kind": "after", "from": "monitor", "to": "tidy" },
+          { "id": "e", "kind": "when", "from": "monitor", "to": "closed", "outcome": "closed" }
+        ] },
+      "problems": [{ "code": "tidy-merged", "wire": null, "node": "tidy", "words": "node `tidy`: a `tidy` ends the chain's parts once its pull request merged, and no `when merged` way from a `monitor` reaches it." }] },
     { "name": "an integrate land with no integrate after it (LANDNODE1a)",
       "graph": { "entries": ["land"], "end": "line",
         "nodes": [

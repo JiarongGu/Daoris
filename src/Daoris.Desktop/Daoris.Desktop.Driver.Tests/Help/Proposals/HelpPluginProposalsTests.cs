@@ -53,7 +53,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
             {
                 ["house-plugins"] = HousePlugins, ["game"] = Path.Combine(Checkouts, "game"), ["engine"] = null,
             },
-            Reserved = AdapterSet.Built().Names,
+            Reserved = ProviderRegistry.Built().Names,
         };
     }
 
@@ -250,7 +250,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
             "# x\n\n## What it needs\n\n- **pwsh**, signed in: `pwsh login`.\n");
         Offer("future", """{ "id": "future", "apiVersion": 99 }""");
         Offer("example.lands", """{ "id": "example.lands" }""");
-        return facts with { OffersFolder = OffersFolder, Offers = PluginOffers.Load(OffersFolder, _home, AdapterSet.Built().Names) };
+        return facts with { OffersFolder = OffersFolder, Offers = PluginOffers.Load(OffersFolder, _home, ProviderRegistry.Built().Names) };
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
     public void An_update_is_planned_from_where_the_plugin_came_from_saying_what_changes_and_no_path()
     {
         var facts = OfferMachine();
-        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), AdapterSet.Built().Names);
+        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), ProviderRegistry.Built().Names);
         System.IO.File.WriteAllText(Path.Combine(HousePlugins, "quiet-hours", PluginCatalog.ManifestName), QuietHours.Replace("1.0.0", "1.1.0"));
 
         var plan = HelpProposals.Plan(Of("plugin", "update", "acme.quiet-hours"), DriverConfig.Empty, facts);
@@ -314,7 +314,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
     public async Task An_offer_and_an_update_are_applied_through_the_screens_own_doors()
     {
         var facts = OfferMachine();
-        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), AdapterSet.Built().Names);
+        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), ProviderRegistry.Built().Names);
 
         var (installed, installing, _) = await ApplyAsync(Of("plugin", "add") with { Id = "p9", Offer = "github-pull-request" }, facts: facts);
         var (updated, updating, _) = await ApplyAsync(Of("plugin", "update", "acme.quiet-hours") with { Id = "p10" }, facts: facts);

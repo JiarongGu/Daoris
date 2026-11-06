@@ -135,7 +135,7 @@ public static class PluginPackageCommand
 {
     public const string Usage = "usage: daoris plugin install <file.nupkg>";
 
-    /// <param name="reservedHarnesses">The harnesses this build carries; null is <see cref="AdapterSet.Built"/>'s.</param>
+    /// <param name="reservedHarnesses">The harnesses this build carries; null is <see cref="ProviderRegistry.Built"/>'s.</param>
     public static int Install(string[] args, TextWriter output, string? home, IEnumerable<string>? reservedHarnesses = null)
     {
         try
@@ -164,7 +164,7 @@ public static class PluginPackageCommand
 
             if (home is null) throw new DriverException($"no Daoris home: a plugin is installed under it. Set {DaorisHome.Variable}.");
 
-            var installed = PluginPackage.Install(home, PluginFolders.WholePath(file), reservedHarnesses ?? AdapterSet.Built().Names);
+            var installed = PluginPackage.Install(home, PluginFolders.WholePath(file), reservedHarnesses ?? ProviderRegistry.Built().Names);
             var manifest = installed.Manifest;
             var folder = DaorisHome.Entry(home, HomeEntry.Plugins, manifest.Id);
             output.WriteLine($"plugins: installed `{manifest.Id}`{(manifest.Version.Length > 0 ? " " + manifest.Version : "")} at {folder}");

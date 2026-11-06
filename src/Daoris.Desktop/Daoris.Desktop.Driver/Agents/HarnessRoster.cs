@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 /// truth and the surfaces are editors over it (D50), so a profile default changed from a terminal
 /// takes effect on the next spawn without restarting anything.</para>
 /// </remarks>
-public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = null)
+public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPath = null)
 {
     // What each adapter's binary answered when last asked (ROSTER1): whether it is there, its version, why not. Asked of the
     // binary alone, once a process, and again at a press or where the binary may have changed.
@@ -144,14 +144,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         => Cooling.NewWait(agent, account, until, signedOut);
 
     /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare (D64).</summary>
-    public AdapterSet Adapters => adapters;
+    public ProviderRegistry Adapters => adapters;
 
     /// <summary>
     /// Answer for a different set from now on — the built-in adapters plus the plugins a tick just
     /// read. What each binary answered is keyed by harness name and survives: a harness that was there
     /// before is the same harness, and one that just arrived has simply not been asked yet.
     /// </summary>
-    public void Use(AdapterSet live) => adapters = live;
+    public void Use(ProviderRegistry live) => adapters = live;
 
     /// <summary>Where the wiring lives. The profile tree sits beside it.</summary>
     public string SettingsPath { get; } = settingsPath ?? HarnessSettings.ResolvePath();
@@ -168,7 +168,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public HarnessSettings Settings => HarnessSettings.LoadSet(SettingsPath, Agents);
 
     /// <summary>
-    /// The agents whose accounts this roster answers for (POOLSTRAY1, <see cref="AdapterSet.Agents"/>): what every write of the wiring
+    /// The agents whose accounts this roster answers for (POOLSTRAY1, <see cref="ProviderRegistry.Agents"/>): what every write of the wiring
     /// through it hands <see cref="HarnessSettings.Change"/>, so a folder under the account homes none of them names is never folded.
     /// </summary>
     public IReadOnlyList<string> Agents => adapters.Agents;
@@ -251,13 +251,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </summary>
     public string? KeyVariableOf(string adapter) =>
         Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? Adapters.Registry.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null
+            ? Adapters.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.KeyVariable is { Length: > 0 } variable ? variable : null
             : null;
 
     /// <summary>Whether this adapter's agent carries a window a week at a time once it passes (<c>WeekFixed</c>), read from its account agent's pool through the registry.</summary>
     public bool WeekFixedOf(string adapter) =>
         Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-        && Adapters.Registry.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.WeekFixed == true;
+        && Adapters.AccountAgentOf(new DoorId(Adapters.Resolve(adapter).Name))?.Accounts.WeekFixed == true;
 
     /// <inheritdoc cref="RosterReport.AccountAgentOf"/>
     public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) => Reporting.AccountAgentOf(adapter);

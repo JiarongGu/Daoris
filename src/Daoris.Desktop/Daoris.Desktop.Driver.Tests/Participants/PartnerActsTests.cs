@@ -109,7 +109,7 @@ public sealed class PartnerActsTests : IDisposable
         var keeper = new Keeper();
         var host = new OpinionStandIn().Session("s1", "working", tree: "trees/default/reports/s-1");
         var driver = new Daoris.Driver.Driver(
-            host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 }, AdapterSet.Built(), _home)
+            host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 }, ProviderRegistry.Built(), _home)
         {
             PartnerKeeps = keeper.KeepAsync,
             PartnerTrees = (_, _) => Task.FromResult<string?>("D:/checkouts/reports"),

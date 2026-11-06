@@ -82,7 +82,7 @@ public sealed class PartnerProcessTests : IDisposable
             // `codex-acp` runs as `codex`'s accounts: both are the stand-in, so nothing here falls back to an agent on the PATH.
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex-acp"] = ["node", agent ?? Agent()], ["codex"] = ["node", agent ?? Agent()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var choice = new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp writes it.")
         {
             Selection = new HarnessSelection(null, Version: Version),

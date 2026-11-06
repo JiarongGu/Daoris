@@ -108,7 +108,7 @@ public sealed class SignInRefusalsTests
     [Fact]
     public void A_door_reads_its_owner_s_words()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(Path.GetTempPath(), "daoris-signin-" + Guid.NewGuid().ToString("N")[..8], "harnesses.json"));
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Path.Combine(Path.GetTempPath(), "daoris-signin-" + Guid.NewGuid().ToString("N")[..8], "harnesses.json"));
 
         Assert.Same(Claude, roster.SignInOf("claude-code-acp"));
         Assert.Same(Claude, roster.SignInOf("acp-stub"));
@@ -119,7 +119,7 @@ public sealed class SignInRefusalsTests
 
     private static IEnumerable<(string Agent, SignInWords Words)> Declared()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         foreach (var name in new[] { "stub", "acp-stub", "claude-code", "claude-code-acp", "dsh", "codex-acp" })
         {
             if (adapters.Resolve(name).Toolchain?.SignIn is { } words) yield return (name, words);

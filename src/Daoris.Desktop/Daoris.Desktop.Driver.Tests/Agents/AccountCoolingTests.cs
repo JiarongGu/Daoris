@@ -347,7 +347,7 @@ public sealed class AccountCoolingTests : IDisposable
         AccountOf: accountOf, Limits: limits, RunsInOwnHome: true);
 
     private HarnessRoster Roster(params ISessionAdapter[] adapters) =>
-        new(new AdapterSet(adapters.ToDictionary(a => a.Name, a => a, StringComparer.OrdinalIgnoreCase)), Settings)
+        new(new ProviderRegistry(adapters.ToDictionary(a => a.Name, a => a, StringComparer.OrdinalIgnoreCase)), Settings)
         {
             Clock = () => _now,
             Zone = Zone,
@@ -607,12 +607,12 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public void The_protocol_stub_is_a_door_onto_the_stub_s_accounts_present_by_a_file_look()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
         var door = adapters.Resolve("acp-stub").Toolchain!;
         var stub = adapters.Resolve("stub").Toolchain!;
 
-        Assert.Equal("stub", adapters.Registry.OwnerOfAgent("acp-stub").Value);
+        Assert.Equal("stub", adapters.OwnerOfAgent("acp-stub").Value);
         Assert.Equal(stub.ProfileVariable, door.ProfileVariable);
         Assert.True(door.ProbeByPresence);
         Assert.Equal((0, (LimitWords?)null, (LoginQuestion?)null), (door.Binary.Count, door.Limits, door.LoginCheck));
@@ -622,7 +622,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_limit_on_the_protocol_stub_cools_the_stub_account_it_ran_as_and_holds_both_doors_onto_it()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
         Accounts("stub", "account-1", "account-2");
         new HarnessSettings().WithDefault("stub", "account-1").WithWorkspaceDefault("work", "stub", "account-2").Save(Settings);
@@ -645,7 +645,7 @@ public sealed class AccountCoolingTests : IDisposable
     [Fact]
     public async Task A_limit_on_the_protocol_stub_with_no_account_named_cools_the_stub_s_own_sign_in()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
         var limited = roster.Limited("acp-stub", null, Refusal, "s1");
 

@@ -239,7 +239,7 @@ internal sealed class TreesLandDesk(DriverLoop loop)
     /// graph choice that binds nothing, or why the home could not keep it.
     /// </summary>
     private ChatRunBound ChatRunBound(string run, string tree) => ChatRuns.BindFirst(
-        DriverConfig.Load(_loop.ConfigPath), _loop.Home, run, tree, WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)),
+        DriverConfig.Load(_loop.ConfigPath), _loop.Home, run, tree, WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names)),
         DateTimeOffset.UtcNow);
 
     /// <summary>

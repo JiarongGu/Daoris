@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 public static class HelperChoice
 {
     /// <summary>The names the walk is asked over: never a name the person's list does not allow, and never the asker's own family by default.</summary>
-    public static IReadOnlyList<string> Candidates(HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter)
+    public static IReadOnlyList<string> Candidates(HelperAsk ask, HelperRule rule, ProviderRegistry adapters, string? askerAdapter)
     {
         if (ask.Agent is { Length: > 0 } named)
         {
@@ -46,7 +46,7 @@ public static class HelperChoice
     /// </param>
     /// <exception cref="DriverException">A role record that does not read, or two roles taking the work in one scope.</exception>
     public static IReadOnlyList<ActorEffective> Order(
-        HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter, DriverConfig config, RoleCatalog? catalogue = null,
+        HelperAsk ask, HelperRule rule, ProviderRegistry adapters, string? askerAdapter, DriverConfig config, RoleCatalog? catalogue = null,
         string? workspace = null)
     {
         var fence = Candidates(ask, rule, adapters, askerAdapter);

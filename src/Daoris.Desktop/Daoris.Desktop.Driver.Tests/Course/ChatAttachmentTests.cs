@@ -261,7 +261,7 @@ public sealed class ChatAttachmentTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(

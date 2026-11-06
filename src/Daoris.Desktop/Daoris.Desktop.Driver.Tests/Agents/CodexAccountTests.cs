@@ -23,7 +23,7 @@ public sealed class CodexAccountTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private HarnessRoster Roster() => new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
+    private HarnessRoster Roster() => new(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
     /// <summary>
     /// The door's accounts are asked and signed in by <c>codex</c>, as <c>claude-code-acp</c>'s are by <c>claude-code</c>
@@ -62,7 +62,7 @@ public sealed class CodexAccountTests : IDisposable
     {
         var roster = Roster();
         var prepared = 0;
-        foreach (var door in AdapterSet.Built().Names)
+        foreach (var door in ProviderRegistry.Built().Names)
         {
             if (roster.AccountAgentOf(door) is not { Toolchain.LoginArguments: not null } agent) continue;
             // A command named for the agent, so the binary prepared is never PATH's, which a scratch home refuses (LIVELOGIN1).
@@ -103,12 +103,12 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal(["auth", "login"], roster.AccountToolchain("claude-code-acp")!.LoginArguments!);
         Assert.Equal("claude-code", roster.AccountAgentOf("claude-code")!.Value.Name);
         Assert.Equal("dsh", roster.AccountAgentOf("dsh")!.Value.Name);
-        var built = AdapterSet.Built();
-        Assert.Same(CodexAccounts.Toolchain, built.Registry.ToolchainOf("codex"));
-        Assert.Null(built.Registry.ToolchainOf("nobody"));
-        Assert.Equal(CodexAccounts.Agent, built.Registry.OwnerOfAgent("codex-acp").Value);
-        Assert.Equal("claude-code", built.Registry.OwnerOfAgent("claude-code-acp").Value);
-        Assert.Equal(CodexAccounts.Agent, built.Registry.ProviderOf(new DoorId("codex-acp")).Value);
+        var built = ProviderRegistry.Built();
+        Assert.Same(CodexAccounts.Toolchain, built.ToolchainOf("codex"));
+        Assert.Null(built.ToolchainOf("nobody"));
+        Assert.Equal(CodexAccounts.Agent, built.OwnerOfAgent("codex-acp").Value);
+        Assert.Equal("claude-code", built.OwnerOfAgent("claude-code-acp").Value);
+        Assert.Equal(CodexAccounts.Agent, built.ProviderOf(new DoorId("codex-acp")).Value);
     }
 
     /// <summary>
@@ -353,7 +353,7 @@ public sealed class CodexAccountTests : IDisposable
         var command = Path.Combine(_home, "door-here");
         File.WriteAllText(command, "");
         return new HarnessRoster(
-            new AdapterSet(
+            new ProviderRegistry(
                 new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["fake-door"] = Door("fake-door", new HarnessToolchain(

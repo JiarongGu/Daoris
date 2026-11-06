@@ -36,7 +36,7 @@ public sealed class DoorUpdateTests : IDisposable
         GitSeed.Remove(_home);
     }
 
-    private static HarnessToolchain Built(string name) => AdapterSet.Built().Resolve(name).Toolchain!;
+    private static HarnessToolchain Built(string name) => ProviderRegistry.Built().Resolve(name).Toolchain!;
 
     // ——— Which Update a door has, which is what the roster tells the page.
 

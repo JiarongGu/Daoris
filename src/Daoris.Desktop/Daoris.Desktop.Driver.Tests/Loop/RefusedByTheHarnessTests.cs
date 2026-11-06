@@ -50,7 +50,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         TestDoors.Door("fake", toolchain, wire, dialect: structured ? TestDoors.StreamJson : null);
 
     private HarnessRoster Roster(Transport wire = Transport.Native, bool structured = true) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter(wire, structured, new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,

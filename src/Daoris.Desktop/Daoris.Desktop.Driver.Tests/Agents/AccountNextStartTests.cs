@@ -45,7 +45,7 @@ public sealed class AccountNextStartTests : IDisposable
         AccountOf: accountOf, WeekFixed: true);
 
     private HarnessRoster Roster() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Toolchain()),
             ["fake-door"] = Adapter("fake-door", Toolchain(accountOf: "fake")),

@@ -62,7 +62,7 @@ public static class PluginTrials
     /// </summary>
     public static async Task<PluginTrial> TryInstalledAsync(string home, string id, TrialOptions? options = null, CancellationToken ct = default)
     {
-        var entry = PluginCatalog.Load(home, AdapterSet.Built().Names).Plugins
+        var entry = PluginCatalog.Load(home, ProviderRegistry.Built().Names).Plugins
             .FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new DriverException($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
 

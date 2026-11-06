@@ -81,7 +81,7 @@ public sealed class AgentsCommandTests : IDisposable
 
     private AgentsWorld World(
         string? marker = null, string? wiring = null, string input = "", Action? waiting = null, Func<DateTimeOffset>? now = null,
-        AdapterSet? adapters = null, string? path = null) => new()
+        ProviderRegistry? adapters = null, string? path = null) => new()
     {
         Instance = new InstanceWorld
         {
@@ -101,7 +101,7 @@ public sealed class AgentsCommandTests : IDisposable
         },
         Folder = _root,
         UserHome = Path.Combine(_root, "user"),
-        Adapters = _ => adapters ?? AdapterSet.Built(),
+        Adapters = _ => adapters ?? ProviderRegistry.Built(),
         Waiting = waiting,
         Now = now ?? (() => DateTimeOffset.UtcNow),
     };
@@ -371,7 +371,7 @@ public sealed class AgentsCommandTests : IDisposable
         }
 
         string[] Run(System.Text.Json.JsonElement answer) => [.. answer.GetProperty("run").EnumerateArray().Select(each => each.GetString()!)];
-        var binary = AdapterSet.Built().Resolve("claude-code-acp").Toolchain!.Binary;
+        var binary = ProviderRegistry.Built().Resolve("claude-code-acp").Toolchain!.Binary;
 
         var path = await Which("claude-code-acp");
         Assert.Equal("claude-code-acp", path.GetProperty("agent").GetString());
@@ -570,7 +570,7 @@ public sealed class AgentsCommandTests : IDisposable
             string[] install = OperatingSystem.IsWindows()
                 ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c", $"exit {exits}"]
                 : ["/bin/sh", "-c", $"exit {exits}"];
-            var set = new AdapterSet(
+            var set = new ProviderRegistry(
                 new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
                 new Dictionary<string, HarnessToolchain> { ["stand-in"] = new(["stand-in"], ["--version"], Install: install) });
 
@@ -674,14 +674,14 @@ public sealed class AgentsCommandTests : IDisposable
         public void Dispose() => _held.Dispose();
 
         /// <summary>A stand-in whose sign-in exits <paramref name="exits"/> and whose status names who signed in.</summary>
-        private static AdapterSet StandIn(int exits)
+        private static ProviderRegistry StandIn(int exits)
         {
             string[] shell = OperatingSystem.IsWindows() ? [Path.Combine(Environment.SystemDirectory, "cmd.exe"), "/d", "/c"] : ["/bin/sh", "-c"];
             var toolchain = new HarnessToolchain(
                 [shell[0]], ["--version"], ProfileVariable: "STAND_IN_HOME",
                 LoginArguments: [.. shell.Skip(1), $"exit {exits}"],
                 LoginCheck: new LoginQuestion([.. shell.Skip(1), "echo Logged in as seat@work.example"], "Logged in", "Not logged in", Account: @"as (\S+)"));
-            return new AdapterSet(
+            return new ProviderRegistry(
                 new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase),
                 new Dictionary<string, HarnessToolchain> { ["stand-in"] = toolchain });
         }
@@ -805,7 +805,7 @@ public sealed class AgentsCommandTests : IDisposable
             },
             Folder = _root,
             UserHome = Path.Combine(_root, "user"),
-            Adapters = _ => AdapterSet.Built(),
+            Adapters = _ => ProviderRegistry.Built(),
         };
     }
 

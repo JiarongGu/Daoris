@@ -58,7 +58,7 @@ public sealed class AgentSettingsTests : IDisposable
     public void The_file_is_the_tools_own_settings_json_declared_by_Claude_Code_alone()
     {
         Assert.Equal("settings.json", AgentSettings.FileName);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
             .Where(name => adapters.Resolve(name).Toolchain is { SettingsFile: { Length: > 0 } })
             .Order(StringComparer.Ordinal)

@@ -56,7 +56,7 @@ public sealed class ChatGoOnTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger, SessionEvents events, List<AccountLine>? lines = null)
     {
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = Talk(),
             ["acp-stub"] = BuiltDoors.AcpStub,
@@ -765,7 +765,7 @@ public sealed class ChatGoOnTests : IDisposable
     [Fact]
     public async Task A_sweep_the_service_does_not_answer_takes_nothing_up()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(ChatLedger.Url, null, new HttpClient(new Refusing()));
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,

@@ -344,7 +344,7 @@ public sealed class TurnStopTests : IDisposable
             setInterval(() => writeFileSync(process.argv[2], String(Date.now())), 100).unref();
             await new Promise((resolve) => setTimeout(resolve, 60000));
             """);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var runner = new ChatRunner(
@@ -394,7 +394,7 @@ public sealed class TurnStopTests : IDisposable
             """);
 
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
@@ -456,7 +456,7 @@ public sealed class TurnStopTests : IDisposable
             """);
 
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient(service.Url, null);
         var processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
         using var runner = new ChatRunner(
@@ -529,7 +529,7 @@ public sealed class TurnStopTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         var client = new ServiceClient(service.Url, null);

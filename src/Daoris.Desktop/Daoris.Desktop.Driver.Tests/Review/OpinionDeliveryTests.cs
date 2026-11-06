@@ -32,7 +32,7 @@ public sealed class OpinionDeliveryTests : IDisposable
             new OpinionRule(["codex-acp"], [OpinionRules.Landing]));
 
     private Daoris.Driver.Driver Driver(OpinionStandIn host, StandInGit? git = null) =>
-        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, AdapterSet.Built(), _home)
+        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, ProviderRegistry.Built(), _home)
         {
             OpinionGit = git is null ? WorkingTree.ReadGitAsync : git.Read,
             Passes = (_, _, _) => throw new InvalidOperationException("no recheck is asked here"),
@@ -604,25 +604,25 @@ public sealed class OpinionDeliveryTests : IDisposable
     private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain) => TestDoors.Door(name, toolchain);
 
     /// <summary>The build's own agents by name, each present by a file look, so a recheck's reviewer walk asks no real binary.</summary>
-    private (AdapterSet Adapters, HarnessRoster Roster) Machine()
+    private (ProviderRegistry Adapters, HarnessRoster Roster) Machine()
     {
         var command = Path.Combine(_home, "agent-here");
         File.WriteAllText(command, "");
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = AdapterSet.Built().Resolve(name).Toolchain!;
+            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
             adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        var set = new AdapterSet(adapters);
+        var set = new ProviderRegistry(adapters);
         return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     private Daoris.Driver.Driver ChatDriver(OpinionStandIn host, StandInGit git, IChatSendBacks? runner) =>
-        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, AdapterSet.Built(), _home)
+        new(host.Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, ProviderRegistry.Built(), _home)
         {
             OpinionGit = git.Read,
             Passes = (_, _, _) => throw new InvalidOperationException("no recheck is asked here"),

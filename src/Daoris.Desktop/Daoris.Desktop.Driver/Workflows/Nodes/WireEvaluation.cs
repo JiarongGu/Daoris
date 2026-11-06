@@ -134,7 +134,8 @@ public static class WireEvaluation
                 continue;
             }
 
-            var observation = observes.Observe(NodeReading.Of(run, subject, unit, node, binding));
+            var follows = Members(node.Id, wires).Select(id => nodes.FirstOrDefault(each => each.Id == id)).OfType<NodeDeclaration>().ToList();
+            var observation = observes.Observe(NodeReading.Of(run, subject, unit, node, binding, follows));
             if (observation.Move is not { } move || (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown)) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. FABRIC-RUN1f: an attempt with no scope kept
@@ -235,7 +236,7 @@ public static class WireEvaluation
             && (now[node.Id].State is NodeStates.Active or NodeStates.Unknown || now[node.Id].Unreconciled is not null));
     }
 
-    /// <summary>An <c>all</c> join's members, in wire-id order: its <c>after</c> wires' sources (§E7).</summary>
+    /// <summary>An <c>all</c> join's members, in wire-id order: its <c>after</c> wires' sources (§E7); any node's are what it follows.</summary>
     internal static IEnumerable<string> Members(string join, IReadOnlyList<Wire> wires) =>
         wires.Where(wire => wire.Kind == WireKinds.After && wire.To is { Unit: null } to && to.Node == join && wire.From is { Unit: null })
             .OrderBy(wire => wire.Id, StringComparer.Ordinal)

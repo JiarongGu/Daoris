@@ -16,17 +16,14 @@ public interface ITidyDoor : INodeDoor
 /// Performs a run's <c>tidy</c> (D245 point 1): once the landing's pull request merged, each part of its chain (the session branch of every unit
 /// the landing carries) is ended on the line. Its commits are kept on a recovery ref first, and its branch then goes through the journal's
 /// delete (<see cref="JournaledDeletes"/>, the <c>ref.delete</c> act with its Undo), resting on that ref. What it ended is
-/// written on the landing record (<see cref="ChainTidied"/>), the one judgement the keeper and the press read for those parts. A request
-/// closed without merging fails the node: the line does not hold the work, and nothing is ended.
+/// written on the landing record (<see cref="ChainTidied"/>), the one judgement the keeper and the press read for those parts. It starts only
+/// on a monitor's <c>when merged</c>, and where the request did not merge it ends nothing and fails nothing.
 /// </summary>
-/// <param name="home">The Daoris home whose landing, session and node records the tidy reads and writes.</param>
+/// <param name="home">The Daoris home whose landing and session records the tidy reads and writes.</param>
 /// <param name="log">Told what a tidy came to; the machine log's line.</param>
 /// <param name="runs">Whether a tidy may begin now: not while an update drains; null always may.</param>
 public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>? runs = null) : ITidyDoor
 {
-    /// <summary>The code a tidy whose pull request closed unmerged fails its node with.</summary>
-    public const string NotMerged = "pull-request-closed";
-
     private readonly ConcurrentDictionary<string, Task> _running = new(StringComparer.Ordinal);
 
     /// <inheritdoc/>
@@ -62,19 +59,12 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
     /// <summary>Completes once every tidy started has ended; a test's wait, and a closing loop's.</summary>
     public Task IdleAsync() => Task.WhenAll(_running.Values);
 
-    /// <summary>The chain's parts ended and their branches removed, or the node failed where its request closed unmerged.</summary>
+    /// <summary>The chain's parts ended and their branches removed, once its request merged; nothing otherwise.</summary>
     internal async Task PerformAsync(TidyStart start, CancellationToken ct)
     {
         var landings = new LandedBranches(home);
         if (landings.Of(start.Repository, start.Branch) is not { } landing || !string.Equals(landing.Tip, start.Tip, StringComparison.OrdinalIgnoreCase)) return;
-        if (landing.PullRequestState?.State == PullRequestStates.Abandoned)
-        {
-            log?.Invoke($"tidy  {start.Unit}: {landing.PullRequest} was closed without merging, so nothing of its chain is ended.");
-            Fail(start);
-            return;
-        }
-
-        if (!CompletionNodes.Merged(landing) || landing.Tidied?.Tip == start.Tip) return;
+        if (!PullRequestReading.IsMerged(landing) || landing.Tidied?.Tip == start.Tip) return;
         var trees = await TreeWorktrees.WorktreesAsync(start.Root, ct).ConfigureAwait(false);
         var parts = new List<TidiedPart>();
         foreach (var branch in PartsOf(landing))
@@ -131,17 +121,5 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
         var back = await RefTransaction.RestoreDeleted($"refs/heads/{branch}", tip).RunAsync(root, CancellationToken.None).ConfigureAwait(false);
         return back.Done ? $"it was checked out at {tree} as it went, so it was put back where it was"
             : $"it was checked out at {tree} as it went, and could not be put back ({back.Said})";
-    }
-
-    private void Fail(TidyStart start)
-    {
-        var records = new NodeRecordFiles(home);
-        records.Edit<bool>(start.Unit, record =>
-        {
-            var status = WorkPerformer.StatusOf(record, start.Node.Id);
-            if (status.State != NodeStates.Active) return (null, false);
-            var moved = NodeLifecycle.Apply(start.Node, status, new NodeMove(NodeStates.Failed, NodeCause.Authority) { Source = NodeSource.Landing, Attempt = status.Attempt, Code = NotMerged });
-            return (moved.Moved ? WorkPerformer.Kept(record, moved, NotMerged, DateTimeOffset.UtcNow) : null, moved.Moved);
-        });
     }
 }

@@ -58,7 +58,7 @@ public sealed class AccountGoalTickTests : IDisposable
     public async Task One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own()
     {
         var processes = new SessionProcesses();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();

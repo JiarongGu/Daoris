@@ -29,7 +29,7 @@ public sealed class PluginPackageTests : IDisposable
 
     private string Plugins => DaorisHome.Entry(Home, HomeEntry.Plugins);
 
-    private static IReadOnlyCollection<string> Reserved => AdapterSet.Built().Names;
+    private static IReadOnlyCollection<string> Reserved => ProviderRegistry.Built().Names;
 
     public PluginPackageTests() => Directory.CreateDirectory(Home);
 

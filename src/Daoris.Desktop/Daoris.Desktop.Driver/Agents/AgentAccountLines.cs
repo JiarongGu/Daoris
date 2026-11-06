@@ -24,11 +24,11 @@ internal static class AgentAccountLines
     /// its door's or a door onto it (AGT7), carries the frame's words (<c>Windows</c>) or asks its own server (<c>Usage</c>), as
     /// <c>codex-acp</c> asks for <c>codex</c>'s. The CLI's <c>windows</c>.
     /// </summary>
-    public static bool Says(AdapterSet set, string owner)
+    public static bool Says(ProviderRegistry set, string owner)
     {
-        IEnumerable<HarnessToolchain?> theirs = [set.Registry.ToolchainOf(owner), .. set.Names
-            .Select(name => (Name: name, Toolchain: set.Registry.ToolchainOf(name)))
-            .Where(each => each.Toolchain is not null && string.Equals(set.Registry.OwnerOfAgent(each.Name).Value, owner, StringComparison.OrdinalIgnoreCase))
+        IEnumerable<HarnessToolchain?> theirs = [set.ToolchainOf(owner), .. set.Names
+            .Select(name => (Name: name, Toolchain: set.ToolchainOf(name)))
+            .Where(each => each.Toolchain is not null && string.Equals(set.OwnerOfAgent(each.Name).Value, owner, StringComparison.OrdinalIgnoreCase))
             .Select(each => each.Toolchain)];
         return theirs.Any(toolchain => toolchain?.Windows is not null || toolchain?.Usage is not null);
     }

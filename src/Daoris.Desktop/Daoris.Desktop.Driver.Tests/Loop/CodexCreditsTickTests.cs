@@ -74,7 +74,7 @@ public sealed class CodexCreditsTickTests : IDisposable
     {
         Accounts("account-1", "account-2");
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Config(), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
@@ -106,7 +106,7 @@ public sealed class CodexCreditsTickTests : IDisposable
     {
         Accounts("account-1");
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Config(), adapters, _home, processes: new SessionProcesses(), harnesses: roster);

@@ -26,7 +26,7 @@ public sealed class SignedOutWaitTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly AdapterSet _adapters;
+    private readonly ProviderRegistry _adapters;
 
     public SignedOutWaitTests()
     {
@@ -39,7 +39,7 @@ public sealed class SignedOutWaitTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
-        _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),

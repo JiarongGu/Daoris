@@ -232,7 +232,7 @@ public sealed class UsageTurnsTests : IDisposable
     public void A_session_s_turns_are_kept_under_the_account_its_start_chose_from_its_ask_to_its_end_and_watched_once()
     {
         var events = Watched();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
         _ = driver.Said(adapters.Resolve("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "s1");
 
@@ -267,7 +267,7 @@ public sealed class UsageTurnsTests : IDisposable
     {
         // USAGECAP1a4: the pass's session id is brainstorm-<id>-<turn>; its start binds it as any other driven start does.
         var events = Watched();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home, events: events);
         _ = driver.Said(adapters.Resolve("claude-code-acp"), new HarnessSelection(null, Profile: "account-1"), "brainstorm-b1-1");
 
@@ -298,7 +298,7 @@ public sealed class UsageTurnsTests : IDisposable
     [Fact]
     public void Each_door_s_turn_report_means_per_turn_where_measured_and_codex_s_unknown_until_a_frame_is_recorded()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
 
         Assert.Equal(
             new TurnBinding("claude-code", "account-1", "claude-code", UsageHistory.PerTurn),
@@ -391,7 +391,7 @@ public sealed class UsageTurnsTests : IDisposable
     {
         const string Email = "someone@example.com", Org = "Acme Holdings", Key = "sk-ant-api03-secret", Words = "the agent said this";
         var events = Watched();
-        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(AdapterSet.Built(), AdapterSet.Built().Resolve("claude-code"), "account-1"));
+        UsageTurns.Bound(_home, events, "s1", TurnBinding.Of(ProviderRegistry.Built(), ProviderRegistry.Built().Resolve("claude-code"), "account-1"));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = $"{Words} {Email} {Key}", At = Now.AddMinutes(-1) });
 
         var mapper = new ClaudeStreamJson();

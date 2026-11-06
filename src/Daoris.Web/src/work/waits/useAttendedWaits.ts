@@ -31,6 +31,7 @@ import { useWaitPanelHeight } from './waitPanelHeight';
 import { waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
 import { useTeam } from '../team/useTeam';
+import { leadsPieces } from '../identity';
 
 /**
  * What waits on the attended session's person (WAITFOOT1b, D168 point 3): its helpers, pieces, hand-over, tool calls, answers
@@ -39,10 +40,13 @@ import { useTeam } from '../team/useTeam';
  */
 export function useAttendedWaits({
   t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-  boxWords, openView, work, talking, centre, onChangeRule,
+  boxWords, openView, work, talking, centre, onChangeRule, pieceAsking = null, setPieceAsking,
 }: {
   /** The door to the place whose supervisor rule held an answer: *Change the rule…* on the head and the strip; absent, it is not drawn. */
   onChangeRule?: (place: string) => void;
+  /** The session whose Pieces section has its ask open, the head's ⋯'s and the section's one state (COAGENT1c); absent, the section holds it. */
+  pieceAsking?: string | null;
+  setPieceAsking?: (session: string | null) => void;
   t: TFunction;
   notify: Notify;
   attended: Session | null;
@@ -77,10 +81,9 @@ export function useAttendedWaits({
   // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
   // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
   const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
-  // The pieces it asked other agents to write (COAGENT1b, D199): this machine's own files, so only for its own record. A driven session
-  // working in a tree of its own leads them; a conversation's lead is COAGENT1c's, and a partner, a helper, a reviewer or an intake
-  // leads none.
-  const leads = Boolean(attended && here && attended.kind !== 'chat' && !attended.serves && !attended.opinion && !attended.ask && attended.tree);
+  // The pieces it asked other agents to write (COAGENT1b, COAGENT1c, D199): this machine's own files, so only for its own record. A
+  // session working in a tree of its own leads them, driven or a conversation; a partner, a helper, a reviewer or an intake leads none.
+  const leads = Boolean(attended && here && leadsPieces(attended));
   const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
   // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): this machine's own files, so only for its own record.
   const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
@@ -117,6 +120,10 @@ export function useAttendedWaits({
       roster: agentRoster,
       busy: actions.askingPartner,
       onAsk: (asked, answered) => actions.askPartnerNow(attended, asked, answered),
+      ...(setPieceAsking ? {
+        open: pieceAsking === attended.id,
+        onOpen: (open: boolean) => setPieceAsking(open ? attended.id : null),
+      } : {}),
     } : undefined,
     onOpen: (partner: string) => {
       chosen();

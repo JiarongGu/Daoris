@@ -219,7 +219,7 @@ public sealed class PluginIconTests : IDisposable
             """);
         Write(Path.Combine(other, "icon.svg"), "svg");
 
-        var refused = PluginCatalog.Load(_home, AdapterSet.Built().Names).Plugins.Single(p => p.Manifest.Id == "acme.later");
+        var refused = PluginCatalog.Load(_home, ProviderRegistry.Built().Names).Plugins.Single(p => p.Manifest.Id == "acme.later");
 
         Assert.NotNull(refused.Problem);
         Assert.Empty(refused.Manifest.Harnesses);
