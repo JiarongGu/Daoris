@@ -17,13 +17,19 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 internal static partial class HostEnvironment
 {
+    /// <summary>The goldens' write switch (GOLDEN1), the suite's own and never Daoris's.</summary>
+    private const string GoldenWriteSwitch = "DAORIS_GOLDEN_WRITE";
+
     /// <summary>This run's home, under the checkout's scratch.</summary>
     public static string Home { get; } = Path.Combine(TestHomes.Root, "host-" + Environment.ProcessId);
 
     [ModuleInitializer]
     internal static void Set()
     {
-        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>().Where(name => Removed().IsMatch(name)).ToList())
+        // The goldens' write switch is the suite's own, never Daoris's (GOLDEN1), so it is the one kept.
+        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
+                     .Where(name => Removed().IsMatch(name) && !string.Equals(name, GoldenWriteSwitch, StringComparison.OrdinalIgnoreCase))
+                     .ToList())
         {
             Environment.SetEnvironmentVariable(name, null);
         }
