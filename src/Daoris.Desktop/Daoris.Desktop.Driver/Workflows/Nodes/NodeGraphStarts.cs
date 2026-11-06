@@ -10,24 +10,19 @@ namespace Daoris.Driver;
 internal static class NodeGraphStarts
 {
     /// <summary>
-    /// The nodes that can start while no look has passed (FABRIC-GRAPH1's review, finding 4): the entries, and each node whose eligibility
-    /// groups (<see cref="NodeWires.Groups"/>: all of an <c>allOf</c>, one of an <c>anyOf</c>, every group) and inputs can all be met so. A
-    /// reach's wire (<c>after</c>, <c>trigger</c>) or an input is met by a node that starts so and is no look; a failure's or a rejection's
-    /// by any node that starts so, a look included, since a look that fails has not passed.
+    /// The nodes that can start while no node <paramref name="gate"/> names has passed (FABRIC-GRAPH1's review, finding 4): the entries, and
+    /// each node whose eligibility groups (<see cref="NodeWires.Groups"/>: all of an <c>allOf</c>, one of an <c>anyOf</c>, every group) and
+    /// inputs can all be met so. A reach's wire (<c>after</c>, <c>trigger</c>) or an input is met by a node that starts so and is no gate; a
+    /// failure's or a rejection's by any node that starts so, a gate included, since a gate that fails has not passed. The gate is the
+    /// protected order's look (<see cref="LandingGuard.Passed"/>), or INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names. A
+    /// wire <paramref name="closed"/> names is never met, and closes its target as a route not taken does (DECIDE1d: a decision's other
+    /// outcomes' <c>when</c> wires).
     /// <para>An <c>all</c> join follows <see cref="WireEvaluation"/> (the re-check's finding 4): its <c>after</c> wires are its members and
     /// no group's, and it starts once every member is reached or skipped, or once any one has failed. All its members met so, it starts as
     /// any node does. A member that starts so and may fail (a look among them) starts it too, but only to fail at once while the rest
     /// still wait: then only its failure's and rejection's paths are met, never its pass, so a landing on them passes no look.</para>
     /// <para>A node fails only where its kind's authority lets something fail it, and a join only where a member may (the second re-check,
     /// finding 3: <see cref="MayFail"/>): a join of a look and a person's press has no failed path, so its failure's wire is never met.</para>
-    /// </summary>
-    internal static HashSet<string> StartsWithNoLook(Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local) =>
-        StartsWithout(byId, starts, local, node => node.Kind == NodeKinds.Look);
-
-    /// <summary>
-    /// The nodes that can start while no node <paramref name="gate"/> names has passed: <see cref="StartsWithNoLook"/>'s reading, whichever node
-    /// is the gate (the look's, and INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names). A wire <paramref name="closed"/> names
-    /// is never met, and closes its target as a route not taken does (DECIDE1d: a decision's other outcomes' <c>when</c> wires).
     /// </summary>
     internal static HashSet<string> StartsWithout(
         Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local, Func<NodeDeclaration, bool> gate, Func<Wire, bool>? closed = null)

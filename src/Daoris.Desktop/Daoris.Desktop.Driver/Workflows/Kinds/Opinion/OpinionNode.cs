@@ -29,4 +29,7 @@ public sealed class OpinionNode : BuiltInNode, IObserves
     public override string? Title => "Second opinion";
 
     public override NodeLook Look => NodeLook.Check;
+
+    /// <summary>A gate before every landing (FABRIC-WORKFLOW2), not asked to reach a look, whose set-up the review gate holds while an agent reads it.</summary>
+    public override LandingGuard Guard => LandingGuard.Before;
 }
