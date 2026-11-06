@@ -96,7 +96,10 @@ web paths are under `src/Daoris.Web/src/`.
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
     `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
-    end the hold, each told and logged `person.hold`. (from D156, D196, D238)
+    end the hold, each told and logged `person.hold`. The host's own held asks (`PersonConfirmations`) are bounded: five for asks naming a
+    session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
+    connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's.
+    (from D156, D196, D238)
 15. A standing confirmation the person grants in the window lets a terminal outside Daoris's agents stop or finish a
     session and hold or resume a repository with no card. Each use is logged and can be revoked at once. (from D201)
 
