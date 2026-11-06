@@ -197,14 +197,14 @@ public sealed class SpawnTableTests
     {
         var acp = AdapterSet.Built().Resolve("claude-code-acp");
         var pointed = acp.Prepare(Target(), null);
-        Shell.Equip(pointed, acp.Toolchain!, profileHome: null, claudeExecutable: "C:/toolchain/claude-code/2.1.300/claude.exe");
+        Shell.Equip(pointed, acp.Toolchain!, profileHome: null, seam: each => acp.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.Equal("C:/toolchain/claude-code/2.1.300/claude.exe", pointed.Environment[ClaudeAcp.ExecutableVariable]);
         Assert.Equal("1", pointed.Environment["DISABLE_UPDATES"]);
 
         var codex = AdapterSet.Built().Resolve("codex-acp");
         var plain = codex.Prepare(Target(), null);
         plain.Environment.Remove(ClaudeAcp.ExecutableVariable);
-        Shell.Equip(plain, codex.Toolchain!, profileHome: null, claudeExecutable: null);
+        Shell.Equip(plain, codex.Toolchain!, profileHome: null, seam: each => codex.PointAtClaude(each, "C:/toolchain/claude-code/2.1.300/claude.exe"));
         Assert.False(plain.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }
 

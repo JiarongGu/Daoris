@@ -13,7 +13,8 @@ internal static class SpawnEquipment
     {
         if (adapter.Toolchain is { } toolchain)
         {
-            Shell.Equip(info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable, selection.Environment);
+            Action<ProcessStartInfo>? seam = selection.ClaudeExecutable is { Length: > 0 } claude ? each => adapter.PointAtClaude(each, claude) : null;
+            Shell.Equip(info, toolchain, selection.ProfileHome, selection.Binary, seam, selection.Environment);
         }
 
         foreach (var (name, value) in adapter.ToolsUpFront) info.Environment[name] = value;

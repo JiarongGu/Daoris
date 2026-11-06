@@ -36,6 +36,12 @@ public interface ISpawn
     bool ClaudeSeam => false;
 
     /// <summary>
+    /// Points this spawn at the managed <c>claude</c> a start on a door that takes the seam was handed (<see cref="ClaudeSeam"/>), for the
+    /// shell to apply with the rest of the account's half; nothing by default.
+    /// </summary>
+    void PointAtClaude(ProcessStartInfo info, string managedClaude) { }
+
+    /// <summary>
     /// The variables its program reads for the model and the effort it runs with, which a start's environment may carry beside the command's
     /// flags; none by default. What a start's asked choice reads from its spawn is the command's flags and these.
     /// </summary>

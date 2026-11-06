@@ -69,7 +69,6 @@
     ["Daoris.Desktop.Driver/Agents/StubAdapters.cs", "ClaudeWindows", "e", "behaviour", "the window words handed by type"],
     ["Daoris.Desktop.Driver/Agents/StubAdapters.cs", "StubAdapter", "t", "behaviour", "the adapter class, with the old seam"],
     ["Daoris.Desktop.Driver/Agents/StubAdapters.cs", "id in a sentence", "t", "behaviour", "the stand-in's refusal, with its adapter"],
-    ["Daoris.Desktop.Driver/Agents/Transports/Shell.cs", "ClaudeAcp", "t", "behaviour", "Claude Code's seam applied where a door's spawn takes it (s-v), by type until the selection carries the door's own seam"],
     ["Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs", "ClaudeReleases", "f", "behaviour", "the proposal reads Claude Code's release source by type"],
     ["Daoris.Desktop.Driver/Help/Proposals/HelpRuleSettings.cs", "id in a sentence", "-", "words", "an id as the example in a proposal's command"],
     ["Daoris.Desktop.Driver/Install/ClaudeReleaseDownloads.cs", "\"claude\"", "-", "permanent", "Claude Code's signed channel's binary name, Install's own source (AGT2b; row f keeps it in Install)"],

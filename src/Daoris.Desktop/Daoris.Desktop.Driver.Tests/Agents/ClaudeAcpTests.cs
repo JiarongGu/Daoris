@@ -152,7 +152,7 @@ public sealed class ClaudeAcpTests : IDisposable
             info, adapter.Toolchain!,
             profileHome: Path.Combine(_home, "profile"),
             binary: null,
-            claudeExecutable: "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd");
+            seam: each => adapter.PointAtClaude(each, "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd"));
 
         Assert.Equal(
             "C:/somewhere/.daoris/toolchain/claude-code/2.1.278/claude.cmd",
@@ -172,7 +172,7 @@ public sealed class ClaudeAcpTests : IDisposable
     {
         var pipe = AdapterSet.Built().Resolve("claude-code");
         var info = pipe.Prepare(Target(_home), null);
-        Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, claudeExecutable: null);
+        Shell.Equip(info, pipe.Toolchain!, profileHome: null, binary: null, seam: null);
 
         Assert.False(info.Environment.ContainsKey(ClaudeAcp.ExecutableVariable));
     }

@@ -40,14 +40,14 @@ internal static class Shell
     /// start when its home variable names a path that is not there, and Daoris owns that location by design.
     /// </summary>
     /// <param name="binary">The managed executable in place of what the recipe resolved (TOOL2/D57), or null for <c>PATH</c>.</param>
-    /// <param name="claudeExecutable">The managed <c>claude</c> a door that runs Claude Code's program is pointed at, or null.</param>
+    /// <param name="seam">What the door's own spawn does to its process for its program (<see cref="ISpawn.PointAtClaude"/>), or null.</param>
     /// <remarks>
     /// 🔴 Every session's process, a probe's and a usage question's come through here, which is why the pin, the shim and the home are
     /// applied in this one place: a door that forgot one would spawn the wrong binary and record the pinned version beside it.
     /// </remarks>
     public static void Equip(
         ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null,
-        string? claudeExecutable = null, IReadOnlyDictionary<string, string>? account = null)
+        Action<ProcessStartInfo>? seam = null, IReadOnlyDictionary<string, string>? account = null)
     {
         // What the account itself carries — an API key in the tool's own variable (AGT3), so no spawn of a key account goes out without it.
         foreach (var (name, value) in account ?? new Dictionary<string, string>()) info.Environment[name] = value;
@@ -71,8 +71,8 @@ internal static class Shell
         info.FileName = HarnessActions.WindowsShim(
             info.FileName, info.ArgumentList, info.Environment.TryGetValue("PATH", out var path) ? path : null);
 
-        // A door running Claude Code's program finds its CLI through its own seam (ACP2, §1a); null leaves it unset.
-        ClaudeAcp.PointAtClaude(info, claudeExecutable);
+        // A door whose program needs a seam gets its own applied here (a door running Claude Code's program finds its CLI so, ACP2, §1a).
+        seam?.Invoke(info);
 
         if (profileHome is null) return;
 

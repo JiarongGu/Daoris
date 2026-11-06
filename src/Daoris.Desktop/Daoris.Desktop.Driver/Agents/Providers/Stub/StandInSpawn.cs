@@ -14,6 +14,11 @@ internal sealed class StandInSpawn(string id, string example, bool protocol) : I
 
     public bool ClaudeSeam => protocol;
 
+    public void PointAtClaude(System.Diagnostics.ProcessStartInfo info, string managedClaude)
+    {
+        if (protocol) ClaudeCodeSpawn.PointAt(info, managedClaude);
+    }
+
     private IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
             ? command
