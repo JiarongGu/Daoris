@@ -19,7 +19,7 @@ public sealed class ScratchSignInsTests : IDisposable
 
     private string Home => Path.Combine(_root, "home");
 
-    private static HarnessToolchain Claude => AdapterSet.Built().Resolve("claude-code").Toolchain!;
+    private static HarnessToolchain Claude => ProviderRegistry.Built().Resolve("claude-code").Toolchain!;
 
     [Fact]
     public void A_scratch_home_is_one_under_fixtures_or_the_temporary_folder()

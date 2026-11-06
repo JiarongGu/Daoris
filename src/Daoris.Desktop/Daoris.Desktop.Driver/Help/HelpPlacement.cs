@@ -37,7 +37,7 @@ internal static class HelpPlacement
             HelpRoom.Repository, room,
             (file, id) =>
             {
-                var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
+                var grants = HelpGrants.Read(home, PluginCatalog.Load(home, ProviderRegistry.Built().Names));
                 return HelpRoom.Rules(file, ChatFiles.Folder(home, id), handed, grants.Allow, grants.Ask, circle, housekeeping, access.Settings);
             },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture)

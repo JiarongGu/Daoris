@@ -103,7 +103,7 @@ public static class PluginsCommand
                         ["--writes", var named] => [.. named.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
                         _ => null,
                     };
-                    var grant = HelpGrants.Approve(Home(home), PluginCatalog.Load(Home(home), AdapterSet.Built().Names), id, server, writes);
+                    var grant = HelpGrants.Approve(Home(home), PluginCatalog.Load(Home(home), ProviderRegistry.Built().Names), id, server, writes);
                     var asked = grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).ToList();
                     var may = new List<string>();
                     if (grant.Server.Allow.Count > 0) may.Add($"read with {string.Join(", ", grant.Server.Allow)}");

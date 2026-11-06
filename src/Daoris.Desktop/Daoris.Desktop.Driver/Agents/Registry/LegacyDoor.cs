@@ -29,7 +29,7 @@ internal sealed class LegacyDoor : ISessionAdapter
         _toolchain = new(Declare);
     }
 
-    /// <summary>The adapters of every door of these providers, by name, as <see cref="AdapterSet"/> carries them.</summary>
+    /// <summary>The adapters of every door of these providers, by name, as <see cref="ProviderRegistry"/> carries them.</summary>
     public static IEnumerable<KeyValuePair<string, ISessionAdapter>> Over(IEnumerable<Provider> providers) =>
         providers.SelectMany(provider => provider.Doors.Select(door =>
             KeyValuePair.Create(door.Id.Value, (ISessionAdapter)new LegacyDoor(provider, door))));

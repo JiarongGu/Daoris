@@ -925,7 +925,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     {
         var service = _ledger.Client(timeout);
         var runs = new StandInRuns(service, _ledger);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
@@ -946,7 +946,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
             Stops = runs.Stops,

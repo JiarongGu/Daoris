@@ -61,12 +61,12 @@ internal sealed class HelpMachineDesk(DriverContext context)
         // This machine's sessions as the Sessions list places them, with what holds them as the loop's last look says.
         var sessions = read.Sessions is SessionLook look ? look with { Waits = _loop.Look.Waits } : null;
         // And the branches landings made here, so a hand-off names one the record holds.
-        var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+        var plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names);
         return HelpRoom.Describe(
             config, whole.Snapshot, read.Lines, whole.Roster, asks, whole.Standing,
             plugins, new LandedBranches(_loop.Home).All(),
             // The install's own plugins, which the helper may propose installing by id.
-            PluginOffers.Load(context.OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            PluginOffers.Load(context.OffersFolder, _loop.Home, ProviderRegistry.Built().Names),
             // What the last tick parked by its strikes, so a retry names a quest the drawer offers Retry on.
             _loop.Parked.Latest,
             // Daoris's browser as its files hold it, so a favorite removed is one kept.
@@ -80,7 +80,7 @@ internal sealed class HelpMachineDesk(DriverContext context)
             HelpGrants.Read(_loop.Home, plugins), read.Work?.Units, read.Work?.Unread, read.Work?.Recovery,
             read.NotReadYet,
             // What each line waits on.
-            waits: read.Waits, facts: _loop.Harnesses.Adapters.Registry.Facts);
+            waits: read.Waits, facts: _loop.Harnesses.Adapters.Facts);
     }
 
     /// <summary>

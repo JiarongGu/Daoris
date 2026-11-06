@@ -57,7 +57,7 @@ public sealed class ParticipantPortsTests : IDisposable
     [Fact]
     public void An_unrelated_access_fact_drives_native_arguments_and_the_higher_setup_judgement()
     {
-        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code");
         IAgentAccess facts = new Access();
         var target = new SessionTarget("q1", "Title", "Body", "person", "engine", _home, "http://localhost") { Access = facts };
         var args = adapter.Prepare(target, null).ArgumentList.ToList();

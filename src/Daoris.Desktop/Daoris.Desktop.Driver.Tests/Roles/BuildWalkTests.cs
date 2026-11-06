@@ -51,7 +51,7 @@ public sealed class BuildWalkTests : IDisposable
     private Daoris.Driver.Driver Driver(params ActorChoice[] build)
     {
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),

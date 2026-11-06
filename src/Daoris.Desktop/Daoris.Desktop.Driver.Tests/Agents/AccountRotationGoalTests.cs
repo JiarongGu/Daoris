@@ -49,7 +49,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         AccountOf: accountOf, WeekFixed: weekFixed);
 
     private HarnessRoster Roster() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", Toolchain()),
             // A door onto the fake agent's accounts (AGT7): its sessions are the fake agent's.

@@ -86,7 +86,7 @@ public sealed class CheckoutHoldTickTests : IDisposable
     // A driver per look, sharing the processes, as the watch builds one per look and hands it the run's memory of a role's acts.
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config, IRoleStarts? roles)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: _processes,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

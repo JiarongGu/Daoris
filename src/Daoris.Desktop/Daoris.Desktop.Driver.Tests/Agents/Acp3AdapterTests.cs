@@ -31,7 +31,7 @@ public sealed class Acp3AdapterTests : IDisposable
         "abc123", "Expose a streaming budget", "World streaming needs a per-frame cap.",
         "game", "engine", root, "http://localhost:5177");
 
-    private static ISessionAdapter Adapter(string name) => AdapterSet.Built().Resolve(name);
+    private static ISessionAdapter Adapter(string name) => ProviderRegistry.Built().Resolve(name);
 
     // ---- the seam: a posture per adapter, in that adapter's own vocabulary --------------------
 
@@ -180,8 +180,8 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Every_door_with_a_home_variable_is_given_its_home_before_it_spawns()
     {
-        var demanding = AdapterSet.Built().Names
-            .Select(AdapterSet.Built().Resolve)
+        var demanding = ProviderRegistry.Built().Names
+            .Select(ProviderRegistry.Built().Resolve)
             .Where(a => a.Toolchain is { ProfileVariable.Length: > 0, Binary.Count: > 0 })
             .ToList();
 
@@ -244,7 +244,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void The_roster_gained_two_configurations_of_the_door_and_lost_nothing()
     {
-        var names = AdapterSet.Built().Names;
+        var names = ProviderRegistry.Built().Names;
 
         Assert.Contains("dsh", names);
         Assert.Contains("codex-acp", names);
@@ -262,8 +262,8 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Every_protocol_adapter_declares_a_package_so_it_can_be_pinned()
     {
-        var acp = AdapterSet.Built().Names
-            .Select(AdapterSet.Built().Resolve)
+        var acp = ProviderRegistry.Built().Names
+            .Select(ProviderRegistry.Built().Resolve)
             .Where(a => a.Transport == Transport.Protocol && a.Toolchain is { Install: not null });
 
         Assert.All(acp, adapter => Assert.False(string.IsNullOrWhiteSpace(adapter.Toolchain!.Package)));
@@ -324,7 +324,7 @@ public sealed class Acp3AdapterTests : IDisposable
     [Fact]
     public void Every_adapter_with_a_real_binary_is_in_the_twin_table()
     {
-        var set = AdapterSet.Built();
+        var set = ProviderRegistry.Built();
         var real = set.Names
             .Where(name => set.Resolve(name).Toolchain is { Binary.Count: > 0 })
             .ToList();

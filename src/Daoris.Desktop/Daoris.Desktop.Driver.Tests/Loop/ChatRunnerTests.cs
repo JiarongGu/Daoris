@@ -101,13 +101,13 @@ public sealed class ChatRunnerTests : IDisposable
             throw new HttpRequestException("the stand-in answers nothing");
     }
 
-    private AdapterSet Declared()
+    private ProviderRegistry Declared()
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
-        return AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        return ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
     }
 
     /// <summary>
@@ -154,7 +154,7 @@ public sealed class ChatRunnerTests : IDisposable
     [Fact]
     public async Task A_harness_declared_after_the_runner_was_built_is_found_through_the_roster_s_live_set()
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         var roster = new HarnessRoster(built, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var service = new ServiceClient("http://127.0.0.1:1", null);
         var runner = new ChatRunner(service, built, _home, new SessionProcesses(), harnesses: roster);
@@ -189,10 +189,10 @@ public sealed class ChatRunnerTests : IDisposable
               "servers": [ { "name": "tickets", "command": ["node", "tickets.mjs"] } ] }
             """);
         var talk = new PipeTalk(Path.Combine(_home, "no-such-harness.exe"));
-        var own = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk.Door });
+        var own = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk.Door });
         // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
         var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
-        Assert.Equal("acme.agent", live.Registry.DeclaredBy("acme-agent"));
+        Assert.Equal("acme.agent", live.DeclaredBy("acme-agent"));
         var ledger = new ChatLedger().Register("engine", Path.Combine(_home, "engine"));
         using var client = ledger.Client();
         using var runner = new ChatRunner(

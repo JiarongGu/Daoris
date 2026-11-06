@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// working agent's family over, plugins' harnesses among them, are handed it by Loop (<paramref name="adapters"/>, by the home).
 /// </summary>
 /// <param name="adapters">The machine's agents with the plugins beside the file's home as the driver reads them (XAGENT1b2).</param>
-public sealed class OpinionVerb(Func<string, AdapterSet> adapters) : ChoiceVerb
+public sealed class OpinionVerb(Func<string, ProviderRegistry> adapters) : ChoiceVerb
 {
     public override string Word => "opinion";
 

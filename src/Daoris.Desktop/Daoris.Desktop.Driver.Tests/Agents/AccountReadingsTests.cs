@@ -65,7 +65,7 @@ public sealed class AccountReadingsTests
     [Fact]
     public void Claude_Code_and_the_stub_mirroring_it_declare_the_table_and_a_door_reads_its_owner_s()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var declaring = adapters.Names
             .Where(name => adapters.Resolve(name).Toolchain is { Windows: not null })
             .Order(StringComparer.Ordinal)

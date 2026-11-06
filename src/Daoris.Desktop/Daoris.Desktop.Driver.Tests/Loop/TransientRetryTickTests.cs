@@ -51,7 +51,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
 
     private Daoris.Driver.Driver Protocol(SaidStandIn service, string mode, MovedClock clock, Func<DriverConfig, DriverConfig>? change = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],

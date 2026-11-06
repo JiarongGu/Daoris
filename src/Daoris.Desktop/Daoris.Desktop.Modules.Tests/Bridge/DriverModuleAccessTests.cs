@@ -70,7 +70,7 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
         await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { permissions = "asking" } });
-        var adapter = AdapterSet.Built().Resolve("claude-code-acp");
+        var adapter = ProviderRegistry.Built().Resolve("claude-code-acp");
         var started = DrivenAccess.For(AccessRules.Resolve(DriverConfig.Load(DriverConfigPath), "engine", null), "engine", adapter);
         using var running = loop.Processes.OpenSetup("s1", now => started.SwapIn(now, adapter));
         IReadOnlyList<string> Console() => [.. loop.Output.Tail("s1").Lines.Select(line => line.Text)];

@@ -91,7 +91,7 @@ public sealed class SessionChecksStartTests : IDisposable
             Drivable = ["engine"], Trees = ["engine"], Actors = StaffedRoles.On("stub"), TestBound = 1, PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), Log, DaorisHome.Entry(Home, HomeEntry.Spawn)] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, Home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));

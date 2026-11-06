@@ -13,7 +13,7 @@ public sealed class DeclaredDoorsTests : IDisposable
 
     public void Dispose() => ConformanceScratch.Remove(_home);
 
-    private static AdapterSet With(params DeclaredDoor[] doors) => AdapterSet.Built().WithPlugins(new Declared(doors));
+    private static ProviderRegistry With(params DeclaredDoor[] doors) => ProviderRegistry.Built().WithPlugins(new Declared(doors));
 
     private static DeclaredDoor Door(string name, string? accountOf = null, string? maker = null, string? profile = null, string plugin = "acme") =>
         new(name, plugin, ["acme-agent", "--acp"], Posture: "edits", ProfileVariable: profile, AccountOf: accountOf, Product: "Acme", Maker: maker);
@@ -58,14 +58,14 @@ public sealed class DeclaredDoorsTests : IDisposable
               "limits": [ "x" ], "rules": "claude", "dialect": "native" } ] }
             """);
 
-        var set = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Reserved));
+        var set = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Reserved));
         var abilities = set.Resolve("named-door").Abilities();
 
-        Assert.Equal("named", set.Registry.DeclaredBy("named-door"));
+        Assert.Equal("named", set.DeclaredBy("named-door"));
         Assert.True(abilities.Interactive);
         Assert.False(abilities.TakesSettings);
         Assert.Null(set.Resolve("named-door").RuleLanguage());
-        Assert.False(set.Registry.Door("named-door").Dialect.IsKnown);
+        Assert.False(set.Door("named-door").Dialect.IsKnown);
         Assert.Null(set.Resolve("named-door").Toolchain!.Limits);
     }
 
@@ -75,7 +75,7 @@ public sealed class DeclaredDoorsTests : IDisposable
         var set = With(
             Door("acme-a", accountOf: "claude-code", maker: "Acme", profile: "ACME_A_HOME"),
             Door("acme-b", accountOf: "claude-code", plugin: "other"));
-        var registry = set.Registry;
+        var registry = set;
 
         Assert.Equal("claude-code", registry.OwnerOfAgent("acme-a").Value);
         Assert.Equal("claude-code", registry.OwnerOfAgent("acme-b").Value);
@@ -91,7 +91,7 @@ public sealed class DeclaredDoorsTests : IDisposable
     public void An_account_of_nothing_registers_makes_a_provider_of_its_own_and_one_naming_another_door_is_keyed_by_it()
     {
         var set = With(Door("acme-agent", accountOf: "acme"), Door("foo"), Door("bar", accountOf: "foo"));
-        var registry = set.Registry;
+        var registry = set;
 
         Assert.Contains(registry.Providers, provider => provider.Id.Value == "acme" && provider.Identity.DeclaredBy.Contains("acme"));
         Assert.DoesNotContain("acme", registry.Reserved);
@@ -102,11 +102,11 @@ public sealed class DeclaredDoorsTests : IDisposable
     [Fact]
     public void A_disabled_plugins_names_are_kept_and_no_door_of_it_is_carried()
     {
-        var set = AdapterSet.Built().WithPlugins(new Declared([], declaredAgents: ["off-door", "off-owner"]));
+        var set = ProviderRegistry.Built().WithPlugins(new Declared([], declaredAgents: ["off-door", "off-owner"]));
 
         Assert.DoesNotContain("off-door", set.Names);
         Assert.Contains("off-owner", set.Agents);
-        Assert.Contains(set.Registry.Providers, provider => provider.Unavailable && provider.Id.Value == "off-door");
+        Assert.Contains(set.Providers, provider => provider.Unavailable && provider.Id.Value == "off-door");
     }
 
     [Fact]

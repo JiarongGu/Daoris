@@ -234,7 +234,7 @@ internal static class HelpRuleSettings
         var map = circle ? after.WorkspaceOpinions : after.Opinions;
         // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
         // plugin's agent is judged by what its plugin declares (XAGENT1b2), as the terminal and the reviewer's choice judge it.
-        var adapters = AdapterSet.Built().WithPlugins(facts.Plugins);
+        var adapters = ProviderRegistry.Built().WithPlugins(facts.Plugins);
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
             ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, ActorChoices.BuildAgent(config), adapters)), .. OpinionRules.Gate(standing)]
             : [];

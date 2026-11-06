@@ -29,7 +29,7 @@ public sealed class BrainstormVoicePlanTests : IDisposable
         // `voice` runs by a bare name only its pinned install answers; `other` is present wherever it is asked.
         var voice = new HarnessToolchain(Binary: ["voice-pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
         var other = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["voice"] = Adapter("voice", voice),
             ["other"] = Adapter("other", other),

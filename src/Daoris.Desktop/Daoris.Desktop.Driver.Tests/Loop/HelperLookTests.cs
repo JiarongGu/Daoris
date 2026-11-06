@@ -92,7 +92,7 @@ public sealed class HelperLookTests : IDisposable
             Actors = StaffedRoles.On("claude-code-acp"), Cap = cap,
             Helpers = unset ? new Dictionary<string, HelperRule>() : new Dictionary<string, HelperRule> { ["reports"] = rule ?? On },
             WorkspaceHelpers = workspaces ?? new Dictionary<string, HelperRule>(),
-        }, drained), AdapterSet.Built(), _home)
+        }, drained), ProviderRegistry.Built(), _home)
         {
             HelperPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no helper starts here") : pass.RunAsync,
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
@@ -632,7 +632,7 @@ public sealed class HelperLookTests : IDisposable
     {
         Ask("a1");
         var host = Host();
-        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Cap = 3, Helpers = new Dictionary<string, HelperRule> { ["reports"] = On } }, AdapterSet.Built(), _home)
+        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Cap = 3, Helpers = new Dictionary<string, HelperRule> { ["reports"] = On } }, ProviderRegistry.Built(), _home)
         {
             HelperPasses = (_, _, _) => Task.FromResult(new HelperPassRun(null, "refused  helper") { Code = HelperWhy.NotStarted }),
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
@@ -1310,7 +1310,7 @@ public sealed class HelperLookTests : IDisposable
         var ledger = new ChatLedger().Register("engine", root);
         ledger.Chat("s1", "completed", "talk", root).Helped(word, host.HelperHands[0].Text, helper: Helper);
         new HarnessConversations(_home).Keep("s1", "talk", "conv-s1");
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = Talk() });
         using var runner = new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: driver.Context.Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -1584,7 +1584,7 @@ public sealed class HelperLookTests : IDisposable
     [Fact]
     public void The_named_agent_is_taken_if_the_rule_lists_none_or_names_it_else_the_rules_list_else_another_maker()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         HelperAsk Ask(string? agent) => new("a1", "s1", "Why?", agent, HelperAsk.ByAgent, At);
 
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask("codex-acp"), new HelperRule(HelperRules.On, []), adapters, "claude-code"));

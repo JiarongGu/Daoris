@@ -66,7 +66,7 @@ public sealed class PartnerLandingTests : IDisposable
 
     private Daoris.Driver.Driver Driver(string root, string leadState = "working") =>
         new(new OpinionStandIn().Session("s1", leadState, tree: root).Client(), DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = 3 },
-            AdapterSet.Built(), _home)
+            ProviderRegistry.Built(), _home)
         {
             PartnerTrees = (_, _) => Task.FromResult<string?>(root),
         };

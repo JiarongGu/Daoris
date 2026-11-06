@@ -97,7 +97,7 @@ internal static class LoopComeUp
         {
             var config = DriverConfig.Load(loop.ConfigPath);
             var doors = new PlaceApplyDoors(
-                new PlaceWorld(service), new SetupWorld(service, loop.Home), loop.Home, PluginCatalog.Load(loop.Home, AdapterSet.Built().Names),
+                new PlaceWorld(service), new SetupWorld(service, loop.Home), loop.Home, PluginCatalog.Load(loop.Home, ProviderRegistry.Built().Names),
                 DriverContext.UnadoptedOf(loop, config), () => DriverConfig.Load(loop.ConfigPath),
                 _ => throw new InvalidOperationException("settling writes no configuration"), DateOnly.FromDateTime(DateTime.Now));
             await PlaceApplies.SettleAllAsync(doors, ct).ConfigureAwait(false);

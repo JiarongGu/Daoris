@@ -39,7 +39,7 @@ public sealed class HelpStartReadTests : IDisposable
         StandInService service, string id)
     {
         service.Seed(id, "queued");
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(

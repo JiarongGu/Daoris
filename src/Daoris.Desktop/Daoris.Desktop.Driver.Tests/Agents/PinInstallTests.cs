@@ -13,7 +13,7 @@ public sealed class PinInstallTests : IDisposable
 
     public void Dispose() => ConformanceScratch.Remove(_home);
 
-    private static HarnessToolchain Toolchain(string door) => AdapterSet.Built().Resolve(door).Toolchain!;
+    private static HarnessToolchain Toolchain(string door) => ProviderRegistry.Built().Resolve(door).Toolchain!;
 
     [Fact]
     public void A_channel_program_not_yet_installed_is_staged_from_its_channel()

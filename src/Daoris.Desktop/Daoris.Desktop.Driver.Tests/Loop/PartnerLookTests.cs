@@ -69,7 +69,7 @@ public sealed class PartnerLookTests : IDisposable
     private Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, Keeper? keeper = null, int cap = 3, ReviewerChoice? choice = null, bool drained = false) =>
         new(host.Client(), drained ? InstallUpdate.Drained(DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = cap })
-                : DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = cap }, AdapterSet.Built(), _home)
+                : DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp"), Cap = cap }, ProviderRegistry.Built(), _home)
         {
             PartnerPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no partner starts here") : pass.RunAsync,
             PartnerKeeps = (keeper ?? new Keeper()).KeepAsync,

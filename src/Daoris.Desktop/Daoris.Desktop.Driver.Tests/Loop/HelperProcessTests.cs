@@ -69,7 +69,7 @@ public sealed class HelperProcessTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", agent] },
             Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["stub"]) },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
@@ -153,7 +153,7 @@ public sealed class HelperProcessTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
             Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, [adapter]) },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
@@ -212,7 +212,7 @@ public sealed class HelperProcessTests : IDisposable
                 Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["acp-stub"]) },
             },
             "helper", [new ActorChoice("acp-stub", "opus")]);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
@@ -250,7 +250,7 @@ public sealed class HelperProcessTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", SilentAgent()] },
             Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["acp-stub"]) },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {

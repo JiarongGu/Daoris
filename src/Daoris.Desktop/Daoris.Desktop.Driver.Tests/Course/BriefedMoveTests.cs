@@ -62,7 +62,7 @@ public sealed class BriefedMoveTests : IDisposable
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events, harnesses: roster);
@@ -302,7 +302,7 @@ public sealed class BriefedMoveTests : IDisposable
         await GitSeed.PlainAsync(repository, "engine");
         var ledger = new ChatLedger().Quest("q1", "Done").Register("engine", repository);
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

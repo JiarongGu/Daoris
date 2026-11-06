@@ -96,7 +96,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         using var service = _ledger.Client();
         var watch = new DriverWatch(
             service, config, _home, processes, sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         _ledger.Publish("q1", "engine");
         var published = 0;
@@ -167,7 +167,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Holding()] },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             _ledger.Client(), config, adapters, _home, processes: processes,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

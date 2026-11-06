@@ -40,7 +40,7 @@ public sealed class PluginsRoutes(DriverContext context)
     private async Task<object?> PluginsAsync(NoPayload _, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        var reserved = AdapterSet.Built().Names;
+        var reserved = ProviderRegistry.Built().Names;
         var catalog = PluginCatalog.Load(_loop.Home, reserved);
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
         // HELPPLUG1a's tightening: the person's approvals of what each plugin offers Ask Daoris.
@@ -198,7 +198,7 @@ public sealed class PluginsRoutes(DriverContext context)
         var folder = press.Folder;
         var (_, refusal) = ReadPluginFolder(folder);
         if (refusal is not null) throw new DriverException($"{refusal} Nothing was copied.");
-        var added = PluginInstall.Add(_loop.Home, Path.GetFullPath(folder), AdapterSet.Built().Names);
+        var added = PluginInstall.Add(_loop.Home, Path.GetFullPath(folder), ProviderRegistry.Built().Names);
         _loop.Nudge();
         return new { added.Id, added.Name, added.Version };
     }
@@ -277,7 +277,7 @@ public sealed class PluginsRoutes(DriverContext context)
             return new { updated.Id, Applied = true, Refusal = (string?)null, Source = updated.Source.Said, updated.From, Changes = ChangesOf(updated.Changes) };
         }
 
-        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, AdapterSet.Built().Names, OffersFolder, shipped);
+        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, ProviderRegistry.Built().Names, OffersFolder, shipped);
         return new
         {
             Id = plan?.Id ?? id,
@@ -299,7 +299,7 @@ public sealed class PluginsRoutes(DriverContext context)
     {
         await Task.CompletedTask;
         var offer = press.Offer;
-        var added = PluginInstall.AddOffer(_loop.Home, OffersFolder, offer, AdapterSet.Built().Names);
+        var added = PluginInstall.AddOffer(_loop.Home, OffersFolder, offer, ProviderRegistry.Built().Names);
         _loop.Nudge();
         return new { added.Id, added.Name, added.Version };
     }
@@ -350,7 +350,7 @@ public sealed class PluginsRoutes(DriverContext context)
             {
                 IReadOnlyList<string>? writes = action == "help-reads" ? [] : press.Writes;
                 HelpGrants.Approve(
-                    _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), entry.Manifest.Id,
+                    _loop.Home, PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names), entry.Manifest.Id,
                     ActField.Needs(press.Server, "server"), writes);
                 break;
             }
@@ -594,7 +594,7 @@ public sealed class PluginsRoutes(DriverContext context)
         if (PluginInstall.Placement(_loop.Home, full) is { } misplaced) return (null, misplaced);
         if (!Directory.Exists(full)) return (null, $"there is no folder `{full}` on this machine.");
 
-        var (manifest, refusal) = PluginInstall.Read(full, AdapterSet.Built().Names);
+        var (manifest, refusal) = PluginInstall.Read(full, ProviderRegistry.Built().Names);
         if (refusal is not null) return (null, refusal);
         var id = manifest!.Id;
         return PluginCatalog.Load(_loop.Home).Plugins.Any(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
@@ -613,7 +613,7 @@ public sealed class PluginsRoutes(DriverContext context)
     internal static async Task<PluginUpdatePlan> UpdatePluginAsync(DriverContext context, string id, bool shipped = false)
     {
         var loop = context.Loop;
-        var reserved = AdapterSet.Built().Names;
+        var reserved = ProviderRegistry.Built().Names;
         var (plan, refusal) = PluginInstall.PlanUpdate(loop.Home, id, reserved, context.OffersFolder, shipped);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
         await loop.StopPluginAsync(plan.Id).ConfigureAwait(false);

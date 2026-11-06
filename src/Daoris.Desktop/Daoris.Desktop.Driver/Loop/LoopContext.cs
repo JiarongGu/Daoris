@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// built, so a class that reads one reads it here at the moment it needs it.</para>
 /// </remarks>
 internal sealed class LoopContext(
-    ServiceClient service, DriverConfig config, string home, AdapterSet adapters, SessionProcesses? processes, HarnessRoster? harnesses,
+    ServiceClient service, DriverConfig config, string home, ProviderRegistry adapters, SessionProcesses? processes, HarnessRoster? harnesses,
     SessionEvents? events, SessionOutput? output, SessionUsage? usage, RunningSessions? running, HookSet? hooks, IInAppBrowser? browser)
 {
     /// <summary>The plugins that speak (D64), shared across ticks; null where no plugin is read at all.</summary>
@@ -215,7 +215,7 @@ internal sealed class LoopContext(
     /// The adapters this tick spawns with: the build's, plus whatever the plugins read this tick declare (D64 §3). Set once per tick,
     /// before any start is run.
     /// </summary>
-    public AdapterSet Adapters { get; set; } = adapters;
+    public ProviderRegistry Adapters { get; set; } = adapters;
 
     /// <summary>The servers this tick hands every session (D65 §1f): what the contributing plugins declare, beside the knowledge host.</summary>
     public IReadOnlyList<ServerEntry> Servers { get; set; } = [];

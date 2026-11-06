@@ -215,7 +215,7 @@ public sealed class BrainstormProcessTests : IDisposable
         OwnConnector();
         var refs = _repository.Output("for-each-ref --format=\"%(refname) %(objectname)\"");
         var head = _repository.Output("rev-parse HEAD");
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with
@@ -310,7 +310,7 @@ public sealed class BrainstormProcessTests : IDisposable
         OwnConnector();
         foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
         new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null),
@@ -390,7 +390,7 @@ public sealed class BrainstormProcessTests : IDisposable
     public async Task A_real_agent_past_its_minutes_is_stopped_and_what_answered_is_ranked()
     {
         OwnConnector();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with

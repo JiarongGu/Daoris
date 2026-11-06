@@ -78,10 +78,10 @@ public sealed class ChatTransientProcessTests : IDisposable
         return config;
     }
 
-    private HarnessRoster Roster(AdapterSet adapters) =>
+    private HarnessRoster Roster(ProviderRegistry adapters) =>
         new(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now };
 
-    private ChatRunner Runner(ServiceClient client, AdapterSet adapters, HarnessRoster roster, SessionEvents events, MovedClock clock) =>
+    private ChatRunner Runner(ServiceClient client, ProviderRegistry adapters, HarnessRoster roster, SessionEvents events, MovedClock clock) =>
         new(client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster)
         {
             RetryClock = clock,
@@ -174,7 +174,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
         var queues = new List<ChatQueue>();
@@ -252,7 +252,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events, clock);
 
         var id = await WarmAsync(runner, ledger, events, config, help: true);
@@ -285,7 +285,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events, clock);
 
         var id = await WarmAsync(runner, ledger, events, config, help: false);
@@ -328,7 +328,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -386,7 +386,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -423,7 +423,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -456,7 +456,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -514,7 +514,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -573,7 +573,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events, clock);
 
@@ -617,7 +617,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events, clock);
 
         var id = await WarmAsync(runner, ledger, events, config, help: false);
@@ -653,7 +653,7 @@ public sealed class ChatTransientProcessTests : IDisposable
         var events = Events;
         var clock = new MovedClock();
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = Runner(client, adapters, Roster(adapters), events, clock);
         var queues = new List<ChatQueue>();
         runner.QueueChanged += (_, queue) => { lock (queues) queues.Add(queue); };

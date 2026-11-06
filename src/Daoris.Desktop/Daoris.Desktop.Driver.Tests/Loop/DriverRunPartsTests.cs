@@ -25,7 +25,7 @@ public sealed class DriverRunPartsTests : IDisposable
     [Fact]
     public void The_run_takes_the_registered_stages_in_their_order_each_built_from_the_driver()
     {
-        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home);
+        var driver = new Daoris.Driver.Driver(_ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home);
 
         var order = driver.RunStages.Order;
         Assert.Equal(["agent", "clean", "account", "access", "tree", "steward", "bind", "setup", "trust", "continue", "open", "hand"], order.Select(part => part.Name));

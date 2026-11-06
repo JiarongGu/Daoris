@@ -119,7 +119,7 @@ public sealed class ClosedQuestCarryTickTests : IDisposable
 
     private Daoris.Driver.Driver Driver(SaidStandIn service, string mode)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],

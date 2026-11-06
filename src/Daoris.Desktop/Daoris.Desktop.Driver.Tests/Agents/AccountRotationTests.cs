@@ -52,7 +52,7 @@ public sealed class AccountRotationTests : IDisposable
     private static ISessionAdapter Adapter(string name, HarnessToolchain? toolchain, Transport wire = Transport.Native) => TestDoors.Door(name, toolchain, transport: wire);
 
     private HarnessRoster Roster(string binary) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [binary], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
@@ -191,7 +191,7 @@ public sealed class AccountRotationTests : IDisposable
     [Fact]
     public async Task The_protocol_stub_s_start_walks_the_stub_s_order_and_runs_as_the_next_stub_account()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
         foreach (var name in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", name));
         Wire(s => s.WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"]));

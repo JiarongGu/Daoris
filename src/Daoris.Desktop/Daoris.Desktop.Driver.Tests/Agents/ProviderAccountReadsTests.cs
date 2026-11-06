@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ProviderAccountReadsTests
 {
-    private static HarnessRoster Roster() => new(AdapterSet.Built(), "provider-account-reads-nowhere");
+    private static HarnessRoster Roster() => new(ProviderRegistry.Built(), "provider-account-reads-nowhere");
 
     [Theory]
     [InlineData("claude-code")]
@@ -53,14 +53,14 @@ public sealed class ProviderAccountReadsTests
     {
         var roster = Roster();
         Assert.Equal("ANTHROPIC_API_KEY", roster.KeyVariableOf(door));
-        Assert.Equal(AdapterSet.Built().Resolve("claude-code").Toolchain!.KeyVariable, roster.KeyVariableOf(door));
+        Assert.Equal(ProviderRegistry.Built().Resolve("claude-code").Toolchain!.KeyVariable, roster.KeyVariableOf(door));
     }
 
     [Fact]
     public void A_door_whose_agent_takes_no_key_reads_none()
     {
         var roster = Roster();
-        foreach (var door in AdapterSet.Built().Names)
+        foreach (var door in ProviderRegistry.Built().Names)
         {
             Assert.Equal(
                 roster.AccountToolchain(door)?.KeyVariable is { Length: > 0 } variable ? variable : null,

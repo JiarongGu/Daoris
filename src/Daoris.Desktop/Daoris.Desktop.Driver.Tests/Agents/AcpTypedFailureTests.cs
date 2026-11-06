@@ -13,7 +13,7 @@ public sealed class AcpTypedFailureTests
 {
     private const string Capacity = "Selected model is at capacity. Please try a different model.";
 
-    private static readonly AdapterSet Built = AdapterSet.Built();
+    private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
     /// <summary>The terminal answer <c>codex-acp</c> sends a typed client: <c>end_turn</c>, the failure in <c>_meta</c> (source-derived).</summary>
     private static string Typed(JsonElement request, string category, string title, string severity = "error") =>

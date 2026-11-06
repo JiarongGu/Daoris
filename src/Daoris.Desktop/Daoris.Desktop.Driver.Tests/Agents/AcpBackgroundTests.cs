@@ -1690,7 +1690,7 @@ public sealed class AcpBackgroundTests
             },
         });
 
-    private static readonly AdapterSet Built = AdapterSet.Built();
+    private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
     /// <summary>A transient retry on <paramref name="clock"/>, its owner's check <paramref name="wanted"/> (AGENTERRORS1a).</summary>
     private static TransientRetry Retry(MovedClock clock, Func<CancellationToken, Task<bool>>? wanted = null) => new()

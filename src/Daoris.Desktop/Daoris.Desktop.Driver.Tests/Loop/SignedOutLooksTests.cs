@@ -90,13 +90,13 @@ public sealed class SignedOutLooksTests : IDisposable
     public async Task A_start_held_on_signed_out_accounts_asks_no_account_at_any_look_and_never_the_own_sign_in()
     {
         using var service = _ledger.Client();
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
 
         TickReport? last = null;
         for (var look = 0; look < Looks; look++)
         {
-            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+            last = await new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         }
 
         var sitting = Assert.Single(last!.Considerations);
@@ -126,13 +126,13 @@ public sealed class SignedOutLooksTests : IDisposable
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
 
         TickReport? last = null;
         for (var look = 0; look < 3; look++)
         {
-            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+            last = await new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         }
 
         var sitting = Assert.Single(last!.Considerations);
@@ -160,17 +160,17 @@ public sealed class SignedOutLooksTests : IDisposable
     public async Task A_sign_in_at_the_terminal_is_asked_about_at_the_next_look_that_account_alone()
     {
         using var service = _ledger.Client();
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
         _ledger.Publish("q1", "engine");
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+        await new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
         var before = Asked.Count;
 
         // The terminal's `daoris agent login stub --account account-2` marks its sign-in when it ends, a minute on by the
         // roster's clock.
         ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(_home, "stub", "account-2"), _now);
         File.SetLastWriteTimeUtc(ProbeLock.SignedInPathOf(_home, "stub", "account-2"), _now.AddMinutes(1).UtcDateTime);
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
-        await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+        await new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
+        await new Daoris.Driver.Driver(service, Config, ProviderRegistry.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal(["status account-2"], Asked.Skip(before));
     }

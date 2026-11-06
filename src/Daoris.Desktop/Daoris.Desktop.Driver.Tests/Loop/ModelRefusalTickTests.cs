@@ -52,7 +52,7 @@ public sealed class ModelRefusalTickTests : IDisposable
 
     private (Daoris.Driver.Driver Driver, HarnessRoster Roster) Driver(string url, string refuses)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var config = ActorChoices.With(
             DriverConfig.Empty with
@@ -233,8 +233,8 @@ public sealed class ModelRefusalTickTests : IDisposable
 
     private (Daoris.Driver.Driver Driver, HarnessRoster Roster) PipeDriver(string url, string refuses)
     {
-        var built = AdapterSet.Built();
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(
+        var built = ProviderRegistry.Built();
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(
             built.Names.Select(name => KeyValuePair.Create(name, built.Resolve(name))).Append(KeyValuePair.Create(PipeStub.Named, PipeStub.Door())),
             StringComparer.OrdinalIgnoreCase));
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));

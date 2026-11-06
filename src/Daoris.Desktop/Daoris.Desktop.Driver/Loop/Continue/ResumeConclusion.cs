@@ -30,7 +30,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
 
         if (opening.By.EndsWith(":words:refused", StringComparison.Ordinal))
         {
-            _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.Registry.OwnerOfAgent(adapter.Name).Value);
+            _driver.RefuseAccount(adapter, selection, context.Harnesses.Adapters.OwnerOfAgent(adapter.Name).Value);
             return;
         }
 

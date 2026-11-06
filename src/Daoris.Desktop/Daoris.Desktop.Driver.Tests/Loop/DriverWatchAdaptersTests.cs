@@ -29,10 +29,10 @@ public sealed class DriverWatchAdaptersTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private static AdapterSet Only(string name) =>
-        new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { [name] = AdapterSet.Built().Resolve(name) });
+    private static ProviderRegistry Only(string name) =>
+        new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { [name] = ProviderRegistry.Built().Resolve(name) });
 
-    private DriverWatch Watch(AdapterSet? adapters, HarnessRoster? harnesses = null)
+    private DriverWatch Watch(ProviderRegistry? adapters, HarnessRoster? harnesses = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "cap": 2, "pollSeconds": 1, "trees": ["engine"] }""");
@@ -48,7 +48,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     {
         var watch = Watch(adapters: null);
 
-        Assert.Equal(AdapterSet.Built().Names, watch.Harnesses.Adapters.Names);
+        Assert.Equal(ProviderRegistry.Built().Names, watch.Harnesses.Adapters.Names);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class DriverWatchAdaptersTests : IDisposable
     [Fact]
     public async Task Each_look_runs_over_the_adapter_set_the_watch_was_handed()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var roster = new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses));
         var watch = Watch(Only("stub"), roster);
         var reports = 0;
 

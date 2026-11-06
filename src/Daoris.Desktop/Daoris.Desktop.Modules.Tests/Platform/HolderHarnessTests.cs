@@ -126,7 +126,7 @@ public sealed class HolderHarnessTests : Bridge
     {
         Pinned();
         var terminals = new HolderTerminalTests.Terminals();
-        var built = AdapterSet.Built().Registry;
+        var built = ProviderRegistry.Built();
         var opened = new ProviderRegistry(
             built.Providers.Select(provider => provider.Id.Value == HolderTerminal.Harness ? provider with { Reach = Reach.Opened } : provider), built.Reserved);
         using var module = new TerminalModule(Bus, terminals) { HolderReaching = new ProviderReach(opened) };

@@ -50,7 +50,7 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
 
     private ChatRunner Runner(ServiceClient client, SessionEvents events, SessionProcesses processes)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new ChatRunner(
             client, adapters, _home, processes, events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

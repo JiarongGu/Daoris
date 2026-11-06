@@ -36,7 +36,7 @@ public sealed class WorkflowRoutes(DriverContext context)
 
         var config = DriverConfig.Load(_loop.ConfigPath);
         // The plugins beside the file, switched on and sound, as the landing's and the terminal's doors read them.
-        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names));
         var drawn = new CurrentWorkflow(WorkflowSteps.StartHolds(plugins), [], "");
 
         if (repository is not null)
@@ -542,7 +542,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         var service = _loop.Service ?? throw NotReady();
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names));
         // A repository's workspace is the registry's, read as `WORKFLOW_CURRENT` reads it; one it does not hold is in none.
         string? WorkspaceOf(string repository) => snapshot.Repositories
             .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;

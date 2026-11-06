@@ -73,7 +73,7 @@ public sealed class NativePromptProcessTests : IDisposable
     [Fact]
     public async Task A_start_that_redirects_no_input_is_left_alone()
     {
-        var stub = AdapterSet.Built().Resolve("stub");
+        var stub = ProviderRegistry.Built().Resolve("stub");
         // It never reads its input, which is the host's own: the point is that nothing is written to one that is not redirected.
         var script = Path.Combine(_root, "idle.mjs");
         File.WriteAllText(script, "console.log('ok');\n");
@@ -95,7 +95,7 @@ public sealed class NativePromptProcessTests : IDisposable
     [Fact]
     public async Task The_protocol_doors_input_is_never_written_a_prompt()
     {
-        var acp = AdapterSet.Built().Resolve("acp-stub");
+        var acp = ProviderRegistry.Built().Resolve("acp-stub");
         var info = acp.Prepare(Target(_root), ["node", Reader()]);
         Assert.True(info.RedirectStandardInput);
         using var process = Process.Start(info)!;

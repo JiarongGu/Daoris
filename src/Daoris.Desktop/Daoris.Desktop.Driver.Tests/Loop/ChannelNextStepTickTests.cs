@@ -57,7 +57,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
 
     private Daoris.Driver.Driver Protocol(ChannelStandIn service, string mode, SessionProcesses processes)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
