@@ -15,8 +15,8 @@ import { OPEN_STATES } from '../settings/repository/proposals';
 /** A part of an agent's page a door names (D150 §2.4): its accounts, what it may do, or its usage. */
 export type AgentPart = 'accounts' | 'rules' | 'usage';
 
-/** What one account has carried (TOOL3, D57 §4), as the usage answer counts it per door; null is the tool's own sign-in. */
-export type AgentUsage = { harness: string; profile: string | null; sessions: number; used: number };
+/** What one account has carried (TOOL3, D57 §4), as the usage answer counts it per agent (s-vii); null is the tool's own sign-in. */
+export type AgentUsage = { agent: string; profile: string | null; sessions: number; used: number };
 
 /**
  * An account's state as last known (D150 §5.3): signed in, signed out, cooling until a time, or unknown. An API key says

@@ -36,7 +36,7 @@ public sealed class CoreSetTests(ITestOutputHelper output)
 
     /// <summary>
     /// 🔴 Each repository work's row is the core set and its own tools, less what the table refused it before (a helper's quests,
-    /// memory changes and channel, an intake's memory changes); Ask Daoris's row is every tool but the turns and the memory changes.
+    /// memory changes and channel, an intake's memory changes and helper ask); Ask Daoris's row is every tool but the turns, the helper ask and the memory changes.
     /// </summary>
     [Theory]
     [InlineData(ParticipantWork.Build)]
@@ -52,10 +52,10 @@ public sealed class CoreSetTests(ITestOutputHelper output)
         {
             ParticipantWork.Build or ParticipantWork.Design => [.. Core, .. Working],
             ParticipantWork.Chat => [.. Core, "go_ahead_ask", "handover_propose", "opinion_answer", "permission_propose"],
-            ParticipantWork.Intake => Core.Except(memoryChanges),
+            ParticipantWork.Intake => Core.Except([.. memoryChanges, "helper_ask"]),
             ParticipantWork.Help => [.. Core.Except(["channel_post", "channel_read", "memory_propose", "quest_publish", "quest_respond", .. memoryChanges]),
                 "helper_answer"],
-            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", .. memoryChanges]),
+            _ => ToolClassesTests.Advertised().Except(["brainstorm_give", "brainstorm_synthesize", "helper_ask", .. memoryChanges]),
         };
 
         Assert.Equal(expected.Order(StringComparer.Ordinal), Served(new SessionWork(work)));

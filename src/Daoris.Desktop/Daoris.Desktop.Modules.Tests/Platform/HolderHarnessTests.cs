@@ -117,6 +117,29 @@ public sealed class HolderHarnessTests : Bridge
         Assert.Empty(terminals.Launched);
     }
 
+    /// <summary>
+    /// AGENTPROVIDER1 row u: a holder's start is outside the plan, so a harness whose provider is not opened to the machine's room is refused
+    /// before anything starts, saying so; every provider today reaches everywhere, so the built agents' reach starts it as before.
+    /// </summary>
+    [Fact]
+    public async Task A_holder_s_harness_whose_provider_is_not_opened_to_the_machine_s_room_is_refused_before_anything_starts()
+    {
+        Pinned();
+        var terminals = new HolderTerminalTests.Terminals();
+        var built = AdapterSet.Built().Registry;
+        var opened = new ProviderRegistry(
+            built.Providers.Select(provider => provider.Id.Value == HolderTerminal.Harness ? provider with { Reach = Reach.Opened } : provider), built.Reserved);
+        using var module = new TerminalModule(Bus, terminals) { HolderReaching = new ProviderReach(opened) };
+
+        var refused = await module.OpenHolderAsync(Home, Open());
+
+        Assert.Equal(HolderHarness.Refused, refused.Why);
+        Assert.Equal("`claude-code` works only where it is opened, and the machine's room is not opened to it", refused.Message);
+        Assert.Empty(terminals.Launched);
+        Assert.False(Directory.Exists(HolderTerminal.Folder(Home, "h1")));
+        Assert.Null(HolderReach.Closes(new ProviderReach(built)));
+    }
+
     [Fact]
     public void The_environment_is_composed_whole_and_holds_none_of_Daoris_s_own()
     {

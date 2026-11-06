@@ -70,7 +70,7 @@ public sealed class ApprovedChoiceTests
         }
         finally
         {
-            Directory.Delete(folder, true);
+            GitSeed.Discard(folder);
         }
     }
 }

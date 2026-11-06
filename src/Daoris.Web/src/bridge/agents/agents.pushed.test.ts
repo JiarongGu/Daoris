@@ -40,13 +40,15 @@ describe('what sessions consumed, pushed (PUSH1e)', () => {
         broken: 'no record',
       }],
       ['accounts', {
-        'codex/home': { harness: 'codex', profile: 'home', sessions: 1, used: 5 },
-        'claude-code/work': { harness: 'claude-code', profile: 'work', sessions: 2, used: 9 },
-        'claude-code': { harness: 'claude-code', profile: null, sessions: 1, used: 3 },
+        'codex/home': { agent: 'codex', profile: 'home', sessions: 1, used: 5 },
+        'claude-code/work': { agent: 'claude-code', profile: 'work', sessions: 2, used: 9 },
+        'claude-code': { agent: 'claude-code', profile: null, sessions: 1, used: 3 },
+        // An older host's share by door reads as nothing, never as another agent's (AGENTPROVIDER1 s-vii).
+        'claude-code-acp/work': { harness: 'claude-code-acp', profile: 'work', sessions: 1, used: 1 },
       }],
-    ]), true) as { sessions: { session: string }[]; accounts: { harness: string; profile: string | null }[] };
+    ]), true) as { sessions: { session: string }[]; accounts: { agent: string; profile: string | null }[] };
 
     expect(composed.sessions.map((each) => each.session)).toEqual(['d', 'a', 'b', 'c']);
-    expect(composed.accounts.map((each) => `${each.harness}/${each.profile ?? ''}`)).toEqual(['claude-code/', 'claude-code/work', 'codex/home']);
+    expect(composed.accounts.map((each) => `${each.agent}/${each.profile ?? ''}`)).toEqual(['claude-code/', 'claude-code/work', 'codex/home']);
   });
 });

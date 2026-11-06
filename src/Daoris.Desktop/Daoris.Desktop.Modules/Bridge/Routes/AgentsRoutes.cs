@@ -535,7 +535,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // (`UsageStateSlice`, PUSH1e), so the pull an older page makes and the push cannot drift.
     [DriverRoute("USAGE", PipeClass.Open)]
     private Task<object?> UsageAsync(NoPayload _, CancellationToken cancellationToken) =>
-        Task.FromResult<object?>(UsageStateSlice.Answer(_loop.Usage));
+        Task.FromResult<object?>(UsageStateSlice.Answer(_loop.Usage, UsageStateSlice.AgentsOf(_loop)));
 
     /// <summary>
     /// One setting's change as the page sent it (AGT6): a text sets it, null clears it, and a key left out

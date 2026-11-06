@@ -140,6 +140,9 @@ public sealed partial class DriverModuleRoutesTests
         ["driverConsiderations.ts"] = "Driver",
         ["sessionGroups.ts"] = "Sessions",
         ["sessionHelpers.ts"] = "Sessions",
+        ["gitPush.ts"] = "Git",
+        ["lines.ts"] = "SessionGitAccess",
+        ["supervision.ts"] = "Sessions",
     };
 
     [Fact]

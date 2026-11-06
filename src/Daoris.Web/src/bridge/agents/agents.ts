@@ -67,8 +67,10 @@ export type UsedSession = {
   size: number;
   when: string;
 };
+/** One account's share, counted by agent (AGENTPROVIDER1 s-vii): one account used through both of an agent's doors is one share. */
 export type UsedAccount = {
-  harness: string;
+  /** The agent its sessions' doors are: the provider's id, so `claude-code-acp`'s sessions count under `claude-code`. */
+  agent: string;
   profile: string | null;
   sessions: number;
   used: number;
@@ -81,7 +83,7 @@ const isUsedSession = (value: unknown): value is UsedSession =>
   typeof value === 'object' && value !== null && typeof (value as { session?: unknown }).session === 'string';
 
 const isUsedAccount = (value: unknown): value is UsedAccount =>
-  typeof value === 'object' && value !== null && typeof (value as { harness?: unknown }).harness === 'string';
+  typeof value === 'object' && value !== null && typeof (value as { agent?: unknown }).agent === 'string';
 
 const records = <T>(part: unknown, is: (value: unknown) => value is T): T[] | null =>
   (typeof part === 'object' && part !== null && !Array.isArray(part) ? Object.values(part).filter(is) : null);
@@ -91,9 +93,9 @@ const ordinal = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /**
  * What sessions consumed, as the shell pushes it (PUSH1e, D182): a keyed slice of two partitions, `sessions` (each measured session
- * under its id) and `accounts` (each account's share under its door and account), a session's end a delta of what it moved
+ * under its id) and `accounts` (each account's share under its agent and account), a session's end a delta of what it moved
  * (`mergeKeyed`), composed into `USAGE`'s answer in the route's order: the sessions newest first by `when` as an instant (a tie by
- * id, where the route keeps the file's order), the accounts by door, then account, the own home's first (`UsageStateSlice`).
+ * id, where the route keeps the file's order), the accounts by agent, then account, the own home's first (`UsageStateSlice`).
  * Nothing judged yet, or a partition missing, composes nothing, which is waited for.
  */
 export const usageSlice: SliceSpec = {
@@ -107,7 +109,7 @@ export const usageSlice: SliceSpec = {
     if (!sessions || !accounts) return undefined;
     return {
       sessions: sessions.sort((a, b) => byInstant(b.when, a.when) || ordinal(a.session, b.session)),
-      accounts: accounts.sort((a, b) => ordinal(a.harness, b.harness) || ordinal(a.profile ?? '', b.profile ?? '')),
+      accounts: accounts.sort((a, b) => ordinal(a.agent, b.agent) || ordinal(a.profile ?? '', b.profile ?? '')),
     } satisfies UsageAnswer;
   },
   merge: mergeKeyed,

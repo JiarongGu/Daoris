@@ -42,7 +42,7 @@ public sealed class RoleCatalogStartTests : IDisposable
     }
 
     [Fact]
-    public void A_catalogue_with_one_added_role_reproduces_the_eight_seeded_roles_starts_beside_today_s_plan()
+    public void A_catalogue_with_one_added_role_reproduces_the_nine_seeded_roles_starts_beside_today_s_plan()
     {
         var config = Staffed() with { Actors = new Dictionary<string, IReadOnlyList<ActorChoice>> { ["designer"] = [new ActorChoice("opus-agent", "opus", "high")] } };
         var designer = RoleCatalogTests.Working("designer", ParticipantWork.Design, new RoleScope(RoleScope.Workspace, "w1"));
@@ -58,7 +58,7 @@ public sealed class RoleCatalogStartTests : IDisposable
         Assert.Equal("designer", catalog.RoleFor(ParticipantWork.Design, inside).Role!.Id);
         Assert.Equal([new ActorEffective("opus-agent", "opus", "high", "1")], catalog.Order(ParticipantWork.Design, inside, config));
         Assert.All(ParticipantWork.Codes.Where(work => work != ParticipantWork.Design), work => Assert.Equal(Today(work, config).Order, catalog.Order(work, inside, config)));
-        Assert.Equal("build", Today(ParticipantWork.Design, config).Role);
+        Assert.Equal("design", Today(ParticipantWork.Design, config).Role);
     }
 
     [Fact]

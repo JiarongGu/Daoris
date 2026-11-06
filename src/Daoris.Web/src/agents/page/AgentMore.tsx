@@ -96,7 +96,8 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
       )}
 
       {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
-          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). */}
+          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). Counted by agent (AGENTPROVIDER1 s-vii), so
+          an account used through both of the agent's doors is one row. */}
       {(tool.present || sessions > 0) && (
         <Fold section="usage" title={t('usage.title')} summary={usage === null ? t('agents.usage.reading') : usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
           <Prose className="text-small">{t('usage.body')}</Prose>
@@ -106,8 +107,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
               {usage.map((account) => {
                 const called = account.profile ? labelOf(account.profile) : ownLabel;
                 return (
-                  <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
-                    <span className="font-mono text-small">{account.harness}</span>
+                  <li key={`${account.agent}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
                     <Chip>{called}</Chip>
                     <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
                     <Tip content={t('usage.contextTip')}>

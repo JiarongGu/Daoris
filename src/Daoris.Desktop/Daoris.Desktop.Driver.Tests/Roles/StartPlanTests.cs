@@ -109,15 +109,15 @@ public sealed class StartPlanTests : IDisposable
     private static IEnumerable<string> Keys(JsonElement line) => line.EnumerateObject().Select(property => property.Name);
 
     /// <summary>
-    /// C5-3.6: the plan's role is the seeded role of the work (the design's §2.2 table), Build's for design work while no role takes it, and its
+    /// C5-3.6: the plan's role is the seeded role of the work (the design's §2.2 table), Design's for design work, and its
     /// order the role's <see cref="ActorChoices.Effective"/>, read once for the start; no catalogue is read until row x.
     /// </summary>
     [Fact]
-    public void A_work_walks_its_seeded_role_s_effective_order_and_design_work_walks_Build_s()
+    public void A_work_walks_its_seeded_role_s_effective_order_design_work_walking_Design_s()
     {
         Assert.Equal(
             [
-                ("build", "build"), ("design", "build"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
+                ("build", "build"), ("design", "design"), ("chat", "chat"), ("ask-daoris", "ask-daoris"), ("intake", "intake"), ("help", "helper"),
                 ("partner", "partner"), ("review", "opinion"), ("brainstorm", "brainstorm"),
             ],
             ParticipantWork.Codes.Select(work => (work, StartPlan.RoleOf(work))));
@@ -126,7 +126,7 @@ public sealed class StartPlanTests : IDisposable
 
         var plan = Plan(ParticipantWork.Design, new ActorChoice("cool", "opus", "high"), new ActorChoice("fine"));
 
-        Assert.Equal(("design", "build"), (plan.Work, plan.Role));
+        Assert.Equal(("design", "design"), (plan.Work, plan.Role));
         Assert.Equal([new ActorEffective("cool", "opus", "high", "1"), new ActorEffective("fine", null, null, "2")], plan.Order);
     }
 
@@ -134,7 +134,7 @@ public sealed class StartPlanTests : IDisposable
     [Fact]
     public void One_vocabulary_names_every_pass_and_reads_a_held_account_walk_by_its_facts()
     {
-        Assert.Equal(["unavailable", "no-posture", "no-connector", "not-offered", "cooling", "signed-out", "held"], StartPasses.Codes);
+        Assert.Equal(["unavailable", "no-posture", "no-connector", "not-opened", "not-offered", "cooling", "signed-out", "held"], StartPasses.Codes);
         Assert.Equal(AgentOffers.NotOffered, StartPasses.NotOffered);
 
         var cooling = new CoolingEntry("cool", "account-1", Now.AddHours(2), true, "weekly", Now, "s0");
@@ -425,7 +425,7 @@ public sealed class StartPlanTests : IDisposable
         Assert.Equal("piped", StartPlan.AgentFor(ParticipantWork.Review, config, catalogue: catalogue, place: new RolePlace(Workspace: "w1"), role: "opinion"));
 
         var seeded = new StartPlan(ParticipantWork.Design, config, _roster, _adapters, _memory, role: "build") { Subject = "quest:q1" };
-        Assert.Equal(("build", "build", 0L), (seeded.Role, seeded.Seeded, seeded.Revision));
+        Assert.Equal(("build", "design", 0L), (seeded.Role, seeded.Seeded, seeded.Revision));
 
         var held = Assert.Throws<DriverException>(() => Named("checker", new RolePlace(Workspace: "w2")));
         Assert.Equal(catalogue.Named("checker", ParticipantWork.Review, new RolePlace(Workspace: "w2")).Held, held.Message);

@@ -92,7 +92,8 @@ public sealed class StartPlanStaffTests : IDisposable
     private StartPlan Plan(string work = "build", params ActorChoice[] choices)
     {
         var config = ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("cool") }, "build", choices.Length == 0 ? [One, Two] : choices);
-        return new StartPlan(work, config, _roster, _adapters, _memory)
+        // Design work has its own seeded role; this role's per-choice takes are walked by naming it.
+        return new StartPlan(work, config, _roster, _adapters, _memory, role: work == RoleWork.Design ? "build" : null)
         {
             Workspace = "default", Subject = "quest:q1", Named = ("quest", "q1"), Log = _log, Staff = Ledger,
         };

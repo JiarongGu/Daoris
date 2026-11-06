@@ -87,7 +87,7 @@ public sealed class IntegrationAuthorityTests : IDisposable
         Assert.Null(await LapsedAsync(sweep, Following(LandingIntegrate.Done), new Seam(null)));
         Assert.Contains("request: owner", await LapsedAsync(sweep, Following(LandingIntegrate.Owner), new Seam(null)), StringComparison.Ordinal);
         Assert.Contains("request: owner", await LapsedAsync(sweep, Rule(Gated), new Seam(null)), StringComparison.Ordinal);
-        Assert.Contains("no longer carries `integrate`", await LapsedAsync(sweep, Rule(null), new Seam(null)), StringComparison.Ordinal);
+        Assert.Contains("no longer carries a policy", await LapsedAsync(sweep, Rule(null), new Seam(null)), StringComparison.Ordinal);
     }
 
     /// <summary>A steward's request stands while the place's workflow's <c>integrate</c> says <c>steward</c> and the seam says its appointment is live.</summary>
@@ -114,7 +114,7 @@ public sealed class IntegrationAuthorityTests : IDisposable
 
         Assert.Contains("request: done", await LapsedAsync(request, Following(LandingIntegrate.Done), seam), StringComparison.Ordinal);
         Assert.Contains("request: owner", await LapsedAsync(request, Rule(Gated), seam), StringComparison.Ordinal);
-        Assert.Contains("no longer carries `integrate`", await LapsedAsync(request, Rule(null), seam), StringComparison.Ordinal);
+        Assert.Contains("no longer carries a policy", await LapsedAsync(request, Rule(null), seam), StringComparison.Ordinal);
         var nameless = Request(new IntegrationRequester(IntegrationRequester.Steward, IntegrationDoors.Act));
         Assert.Contains("names no act", await LapsedAsync(nameless, Following(LandingIntegrate.Steward), seam), StringComparison.Ordinal);
         Assert.Equal(0, seam.Asked);

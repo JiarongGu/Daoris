@@ -113,13 +113,17 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
 
     /// <summary>
     /// The participants, in the person's order (D177 point 1): each agent the request names that the policy lists, or every one where
-    /// it lists none (D176 point 9), at most the policy's four, each with its maker; and the ones the policy does not list, which take
-    /// no turn.
+    /// it lists none (D176 point 9), at most the policy's four, each with its maker; the ones the policy does not list, which take
+    /// no turn; and the ones whose provider is not opened to the meeting's place, refused before anything goes to them, each by its
+    /// sentence, since a meeting's start is outside the plan and has no walk to pass them in (AGENTPROVIDER1 row u).
     /// </summary>
-    private (List<MeetingParticipant> Taking, List<string> Left) Participants(MeetingRequest request, BrainstormRule rule)
+    internal static (List<MeetingParticipant> Taking, List<string> Left, List<string> Closed) Participants(
+        MeetingRequest request, BrainstormRule rule, AdapterSet adapters, ProviderReach reach)
     {
         var taking = new List<MeetingParticipant>();
         var left = new List<string>();
+        var closed = new List<string>();
+        var place = new ReachPlace(null, request.Repository);
         foreach (var agent in request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (rule.Agents.Count > 0 && !rule.Agents.Contains(agent, StringComparer.OrdinalIgnoreCase))
@@ -128,12 +132,18 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                 continue;
             }
 
+            if (reach.Closes(agent, place) is { } refused)
+            {
+                closed.Add(refused);
+                continue;
+            }
+
             if (taking.Count >= DriverBrainstorms.MostAgents) break;
-            var family = AgentFamily.Of(_context.Adapters, agent);
+            var family = AgentFamily.Of(adapters, agent);
             taking.Add(new MeetingParticipant($"a{taking.Count + 1}", family.Maker ?? family.Owner, agent));
         }
 
-        return (taking, left);
+        return (taking, left, closed);
     }
 
     /// <summary>
@@ -143,8 +153,10 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     /// </summary>
     private async Task<string> FreezeAsync(MeetingRequest request, Snapshot snapshot, MeetingFiles files, CancellationToken ct)
     {
-        var (taking, left) = Participants(request, _brainstorms.RuleOf(request.Repository, snapshot));
-        var outside = left.Count == 0 ? "" : $" {string.Join(", ", left.Select(agent => $"`{agent}`"))} {(left.Count == 1 ? "is" : "are")} not in the policy, and take no turn.";
+        var (taking, left, closed) = Participants(
+            request, _brainstorms.RuleOf(request.Repository, snapshot), _context.Adapters, new ProviderReach(_context.Adapters.Registry));
+        var outside = (left.Count == 0 ? "" : $" {string.Join(", ", left.Select(agent => $"`{agent}`"))} {(left.Count == 1 ? "is" : "are")} not in the policy, and take no turn.")
+            + string.Concat(closed.Select(refused => $" {refused}, and takes no turn."));
         if (taking.Count < MeetingCommand.FewestAgents)
         {
             files.WriteState(new MeetingState(request.Id, BrainstormStates.Ended, 1, null, DriverBrainstorms.NotInPolicy, DateTimeOffset.UtcNow));

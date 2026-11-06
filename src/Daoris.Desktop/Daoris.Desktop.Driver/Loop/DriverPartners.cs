@@ -63,6 +63,10 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
     private static string Claim(string piece) => $"partner:{piece}";
 
+    private PartnerActRunner? _acts;
+
+    private PartnerActRunner Acts => _acts ??= new(_context, RootAsync, (ask, token) => KeepAsync(ask, new PartnerFiles(_context.Home), lastWords: null, token));
+
     /// <summary>
     /// The pieces on file at a look: each judged and started, or carried on from where it stands, beside the look. Returns how many this
     /// look reserved, which take slots under the cap before any quest's first start, as a helper's do (D130). Nothing is read where no
@@ -104,10 +108,18 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 // DRAINHOLD1: every act that starts a session, makes or removes a copy, or keeps into a repository waits out an update's drain
                 // (the delivery too, which can go a conversation on in a turn); what is on file stays as it is, and the claim is let go below.
                 if (_context.Config.Draining
-                    && step.Act is PartnerAct.Judge or PartnerAct.Prepare or PartnerAct.RemoveCopyThenPrepare or PartnerAct.Keep
-                        or PartnerAct.Answer or PartnerAct.Hand)
+                    && (step.Act is PartnerAct.Judge or PartnerAct.Prepare or PartnerAct.RemoveCopyThenPrepare or PartnerAct.Keep
+                        or PartnerAct.Answer or PartnerAct.Hand || Acts.Waits(ask.Id)))
                 {
                     _context.DrainHolds(events, "partner", ask.Id, $"piece `{ask.Id}`");
+                    continue;
+                }
+
+                // The person's later acts and the read of whether a handed piece was taken in, each in the look, quick and the claim's own.
+                if (step.Act == PartnerAct.None && (await Acts.RunAsync(ask, state, files, ct).ConfigureAwait(false)
+                    ?? await Acts.TakenInAsync(ask, state, files, ct).ConfigureAwait(false)) is { } acted)
+                {
+                    events.Add(_context.Said.Say(acted));
                     continue;
                 }
 

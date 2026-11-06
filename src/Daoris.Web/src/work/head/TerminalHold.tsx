@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type SessionHold, useLetGoOfTerminal, useSessionHold } from '../../bridge/hold';
 import { Button } from '../../design/ui';
+
+/** What the head says of a hold: the terminal that has it, as the shell tells it. */
+export type TerminalHeld = { asker?: { process?: string | null; pid?: number | null } | null };
 
 /**
  * A conversation a terminal holds (RPC1g1, D238 point 2, the terminal-conversation design §3.1): said on its head with the terminal's
@@ -16,7 +17,7 @@ import { Button } from '../../design/ui';
  * A molecule: handed the hold and its door. Where nothing can act it is handed none, and still says who holds it.
  */
 export function TerminalHold({ hold, onLetGo, busy = false, said = null }: {
-  hold: SessionHold;
+  hold: TerminalHeld;
   /** Take the conversation back from the terminal. Absent where nothing can. */
   onLetGo?: () => void;
   busy?: boolean;
@@ -41,19 +42,4 @@ export function TerminalHold({ hold, onLetGo, busy = false, said = null }: {
       {said && <p role="status" className="m-0 mt-1.5 text-small text-warn">{said}</p>}
     </section>
   );
-}
-
-/** The hold of `session` as the shell tells it, with its door; nothing where no terminal holds it. */
-export function SessionTerminalHold({ session }: { session: string }) {
-  const { t } = useTranslation();
-  const hold = useSessionHold(session);
-  const letGo = useLetGoOfTerminal();
-  const [said, setSaid] = useState<string | null>(null);
-  if (!hold) return null;
-  const press = async () => {
-    setSaid(null);
-    const answer = await letGo.mutateAsync(session).catch((error: Error) => ({ done: false, why: null, message: error.message }));
-    if (!answer.done) setSaid(answer.why === 'not-held' ? t('work.head.notHeld') : answer.message ?? null);
-  };
-  return <TerminalHold hold={hold} busy={letGo.isPending} said={said} onLetGo={() => void press()} />;
 }

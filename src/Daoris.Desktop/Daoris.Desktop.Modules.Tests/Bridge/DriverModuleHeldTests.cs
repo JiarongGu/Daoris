@@ -41,6 +41,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         ["SESSION_RELATED"] = new { session = "a1b2c3d4" },
         ["SESSION_MEMORY"] = new { session = "a1b2c3d4" },
         ["TOGETHER"] = new { session = "a1b2c3d4" },
+        ["CHANNEL_LINE"] = new { session = "a1b2c3d4" },
         ["GIT_CHANGES"] = new { repository = "engine" },
         ["GIT_HUNKS"] = new { repository = "engine", path = "a.txt", side = "unstaged" },
         ["GIT_COMMIT_PLAN"] = new { repository = "engine", verb = "commit" },

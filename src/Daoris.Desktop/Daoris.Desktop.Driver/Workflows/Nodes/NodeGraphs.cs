@@ -351,7 +351,7 @@ public static class NodeGraphs
         {
             foreach (var chosen in lands.Where(land => !land.Options.ContainsKey("method")))
             {
-                Say(GraphRefusal.LandMethod, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: merge, branch, push, pull-request or integrate.");
+                Say(GraphRefusal.LandMethod, null, chosen.Id, $"node `{chosen.Id}`: a `land` is saved with its method chosen: {string.Join(", ", LandNodes.Methods.SkipLast(1))} or {LandNodes.Methods[^1]}.");
             }
         }
 

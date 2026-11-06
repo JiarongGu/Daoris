@@ -20,7 +20,8 @@ public static class ActorWords
 
 /// <summary>
 /// One entry of a role's order a start passed (D205 §4.1): its code, one of <see cref="StartPasses"/> (<c>unavailable</c>, <c>no-posture</c>,
-/// <c>no-connector</c>, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c> or <c>held</c>), and the walk's own reason in English.
+/// <c>no-connector</c>, <c>not-opened</c>, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c> or <c>held</c>), and the walk's own reason in
+/// English.
 /// </summary>
 public sealed record BuildPass(ActorEffective Entry, string Code, string? Why)
 {

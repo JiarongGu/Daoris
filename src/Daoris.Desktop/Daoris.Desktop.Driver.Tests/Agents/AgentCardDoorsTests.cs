@@ -14,7 +14,7 @@ public sealed class AgentCardDoorsTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        if (Directory.Exists(_home)) GitSeed.Discard(_home);
     }
 
     private HarnessRoster Roster(string id, string harnesses)

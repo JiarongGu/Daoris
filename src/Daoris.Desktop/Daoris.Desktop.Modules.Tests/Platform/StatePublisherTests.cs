@@ -422,6 +422,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_HELPERS", "", null)]
     // COAGENT1b: the person's ask of a piece, a file the loop's next look takes; the pieces' read.
     [InlineData("SESSION_PARTNER_ASK", "sessions,driver", "id")]
+    [InlineData("SESSION_PARTNER_ACT", "sessions,driver", "id")]
     [InlineData("SESSION_PARTNERS", "", null)]
     // MIXAGENT1c: the person's yes and no to a session's agent's own ask to hand it over, and the ask's read.
     [InlineData("SESSION_HAND_OVER_APPROVE", "sessions,driver", "session")]
