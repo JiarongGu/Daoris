@@ -7,6 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// D192's runner contract): the environment it sets, on the runner's process alone, through the gate environment's composition; and how
 /// the exit and the answer file are read. Files and pure functions, no process.
 /// </summary>
+/// <remarks>One case plants a variable in the process's environment, which every child a class beside it starts inherits, so it runs alone.</remarks>
+[Collection(Alone.Name)]
 public sealed class IntegrationRunnerCallTests
 {
     private const string Tip = "0123456789abcdef0123456789abcdef01234567";

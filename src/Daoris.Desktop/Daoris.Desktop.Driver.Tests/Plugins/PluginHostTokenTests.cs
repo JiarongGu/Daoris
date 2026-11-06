@@ -8,6 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The API token's hand-off (D241 point 5): <c>DAORIS_HOST_TOKEN</c> goes to the one plugin process started for it, and the start is
 /// refused where no identity serves origin, the identity is read only, Write denies, or no token is set. No process starts.
 /// </summary>
+/// <remarks>It sets the token's variable in the process's environment, which every class beside it reads, so it runs alone.</remarks>
+[Collection(Alone.Name)]
 public sealed class PluginHostTokenTests : IDisposable
 {
     private const string Host = "git.example.invalid";

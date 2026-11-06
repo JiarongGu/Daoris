@@ -120,7 +120,7 @@ public sealed class SpawnTableTests
 
     /// <summary>
     /// Whose work a start serves is the request's (ENVLEAK1): a quest's variables, a brainstorm's pass naming no repository and no
-    /// service, and a conversation naming its own record and no target, an inherited one cleared (C3-1.1).
+    /// service, and a conversation naming its own record and no target.
     /// </summary>
     [Fact]
     public void Whose_work_a_start_serves_is_its_request_s_and_a_conversation_s_names_no_target()
@@ -136,17 +136,12 @@ public sealed class SpawnTableTests
         Assert.False(passInfo.Environment.ContainsKey("DAORIS_SERVICE_URL"));
         Assert.Equal("b-1", passInfo.Environment[AgentWorkVariables.Brainstorm]);
 
-        var before = Environment.GetEnvironmentVariable("DAORIS_TARGET");
-        try
-        {
-            Environment.SetEnvironmentVariable("DAORIS_TARGET", "inherited");
-            var chat = Chat("c-1") with { Mode = "bypassPermissions", Resume = "kept" };
-            Assert.Equal(("bypassPermissions", "kept"), (chat.Mode, chat.Resume));
-            var info = Shell.Chat(new ProcessRecipe("stand", []), chat);
-            Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
-            Assert.Equal("c-1", info.Environment[ChildMarks.SessionVariable]);
-        }
-        finally { Environment.SetEnvironmentVariable("DAORIS_TARGET", before); }
+        // An inherited target cleared is SpawnInheritedTests', which sets the process's environment and so runs alone.
+        var chat = Chat("c-1") with { Mode = "bypassPermissions", Resume = "kept" };
+        Assert.Equal(("bypassPermissions", "kept"), (chat.Mode, chat.Resume));
+        var info = Shell.Chat(new ProcessRecipe("stand", []), chat);
+        Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
+        Assert.Equal("c-1", info.Environment[ChildMarks.SessionVariable]);
     }
 
     [Fact]
