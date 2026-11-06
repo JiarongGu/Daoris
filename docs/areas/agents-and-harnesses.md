@@ -424,8 +424,13 @@ Agents page, and `orient-index` and `code-map` once files move.
   trusted limit and sign-out entries that read no sentence (`HarnessRoster.LimitedTrusted`, `RefusedAccounts.SignOut`), which
   readers each door's site calls (`AccountReaders`), a refused model by its whole outcome and then by door and phase
   (`ModelRefusals`), the retry table by door, phase and run (`RetryTable`) and what was hit (`LimitHit`). `Agents/Layer/` holds the
-  failure ingress (`LayerFailures`), the translations of claims (`LayerClaims`), accounts (`LayerAccounts`) and events
-  (`LayerReadings`, each event into today's readings in today's order, a stop Daoris asked read as a stop), the two containers
+  failure ingress (`LayerFailures`, a prompt's delivery read by `LayerDelivery` from what its own turn showed after the write, the
+  layer's stamp standing only for a terminal that states no turn), the translations of claims (`LayerClaims`), accounts
+  (`LayerAccounts`) and events (`LayerReadings`, each event into today's readings in today's order, a stop Daoris asked read as a
+  stop; the conversation named by the first start the agent announced; a refused model told by `LayerRefusals` against the door's
+  model-refusal entries, the ending's flag on a native turn that ran nothing; the turn's own report, `LayerTurnReport`: denials, the
+  context against the window the harness names and the tokens by model, said at the terminal as the native capture says them, a protocol
+  door's context figures as sent), the two containers
   (`LayerContainer`: the registry's, which never spawns and refuses a door registered twice; one per start or read over its own
   runner), `LauncherRunner` (every layer start through `AgentStarts`, no clock on a turn, a read bounded by its patience, each raw line
   heard, the lines outside a frame and stderr kept as the harness's own, stdin recorded, a stop the kill of the tree), `LayerRun`
@@ -437,7 +442,9 @@ Agents page, and `orient-index` and `code-map` once files move.
   projection's fields (a provenance by the door's relation of permitted pairs and the pair its scenario expects, a generated id by
   first appearance, a time by its interval from the run's start, a named library clock within its interval), a held case holding
   alike only on the same missing reader. On the tests' provider today's Claude reader on `TransportRun` and `LayerRun` read a
-  scenario alike but for a tool step's kind, which the Claude reader derives from the tool's name (`LayerParityProcessTests`). A
+  scenario alike (a refused model, a denial, the context and tokens by model, the unannounced start and a meter-only failure among them)
+  but for a tool step's kind, which the Claude reader derives from the tool's name, and the context a count written to the cache
+  adds, which the layer's tick does not carry (`LayerParityProcessTests`). A
   pending line may name the run kind it holds its case on (`run`, read by the suite and `tools/stand-ins.mjs` alike), and each
   waits on a row a case can still wait for, the agent-lyntai design's own among them (`PendingRowsTests`). Codex's account
   windows are read through the layer where the driver carries it (`LayerUsageRead` over each provider folder's `Layer/` vendor,

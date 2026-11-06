@@ -92,7 +92,7 @@ internal sealed class LayerRun(LayerRegistration registration, LayerStart start,
             : null;
         string[] own;
         lock (_gate) own = [.. _own.TakeLast(HarnessEnding.LinesKept)];
-        return new AgentRunEnd(exit, Usage: null, new HarnessEnding(exit, failure, own), readings.Conversation is not null);
+        return new AgentRunEnd(exit, readings.Usage, new HarnessEnding(exit, failure, own) { ModelRefused = readings.ModelRefused }, readings.Conversation is not null);
     }
 
     public async ValueTask DisposeAsync()
@@ -105,7 +105,7 @@ internal sealed class LayerRun(LayerRegistration registration, LayerStart start,
     private Task BeginAsync(string? resume)
     {
         if (_turn is not null) return Task.FromException(new InvalidOperationException("a layer run is one turn: a resume is a run of its own."));
-        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff);
+        _readings = new LayerReadings(start.Transport, start.Clock, start.CoolOff, new LayerRefusals(registration.ModelRefusals));
         _file = AgentContext.Current.OpenTranscript(start.Transcript, append: resume is not null);
         _runner = new LauncherRunner(seat with { Outside = Own, Error = Own }, patience: null, exists);
         Container = LayerContainer.ForSpawn(registration, _runner);

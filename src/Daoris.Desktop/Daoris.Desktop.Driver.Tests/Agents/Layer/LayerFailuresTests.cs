@@ -91,6 +91,36 @@ public sealed class LayerFailuresTests
         Assert.Equal(new DoorFailure("protocol", null, "fatal", null, "the terminal's own text", DoorWhere.Open), read.Failure);
     }
 
+    /// <summary>
+    /// A prompt's delivery is Daoris's hearing of what its turn showed after the write (LQ3's per-prompt half): a tool step uncertain, words,
+    /// thinking or a plan taken, a meter, a background task or nothing never sent; the layer's own stamp stands only where it states no turn.
+    /// </summary>
+    [Theory]
+    [InlineData(new[] { AgentShownKind.Text }, FailureDelivery.Taken)]
+    [InlineData(new[] { AgentShownKind.Thinking }, FailureDelivery.Taken)]
+    [InlineData(new[] { AgentShownKind.Plan }, FailureDelivery.Taken)]
+    [InlineData(new[] { AgentShownKind.ToolCall }, FailureDelivery.Uncertain)]
+    [InlineData(new[] { AgentShownKind.Text, AgentShownKind.ToolResult }, FailureDelivery.Uncertain)]
+    [InlineData(new[] { AgentShownKind.Usage }, FailureDelivery.NeverSent)]
+    [InlineData(new[] { AgentShownKind.Usage, AgentShownKind.Task }, FailureDelivery.NeverSent)]
+    [InlineData(new AgentShownKind[0], FailureDelivery.NeverSent)]
+    public void A_delivery_is_read_from_what_the_turn_showed_after_the_write_not_the_layer_s_stamp(AgentShownKind[] shown, FailureDelivery delivery)
+    {
+        var failure = new AgentFailure(AgentFailureKind.Transient, "tests:transient") { Delivery = AgentDelivery.Taken };
+
+        var read = LayerFailures.Normalize(failure, "protocol", DoorWhere.Prompt, null, Seen, Hour, new AgentTurnEvidence(true, shown));
+
+        Assert.Equal(delivery, read.Delivery);
+    }
+
+    [Fact]
+    public void A_terminal_that_states_no_turn_keeps_the_layer_s_stamp()
+    {
+        Assert.Equal(
+            FailureDelivery.Uncertain,
+            Read(new AgentFailure(AgentFailureKind.Fatal, "tests:fatal") { Delivery = AgentDelivery.Uncertain }).Delivery);
+    }
+
     /// <summary>Provenance is kept apart: the log's name of what decided it is the layer's entry, marked so, and no reader reads policy from it.</summary>
     [Fact]
     public void The_provenance_is_the_layer_s_entry_marked_as_the_layer_s()
