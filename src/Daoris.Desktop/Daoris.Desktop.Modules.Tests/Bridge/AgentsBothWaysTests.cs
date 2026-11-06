@@ -111,7 +111,7 @@ public sealed partial class AgentsBothWaysTests : DriverModuleBridge
     [InlineData("rules ask WebSearch")]
     [InlineData("rules remove Bash(make:*) --repository engine")]
     [InlineData("rules remove WebFetch --workspace nobody")]
-    [InlineData("rules default no-push off")]
+    [InlineData("rules default no-publish off")]
     [InlineData("rules default tree-guard on")]
     [InlineData("rules accept p0000007")]
     [InlineData("rules decline #p0000007 --note Not from a session.")]

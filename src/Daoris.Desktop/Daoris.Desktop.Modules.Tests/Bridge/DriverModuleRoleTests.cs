@@ -19,11 +19,8 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         {
             Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
             var module = Module();
-            var suggested = Assert.Single((await AnswerAsync(module, "ROLES")).GetProperty("suggested").EnumerateArray().ToList());
-            Assert.Equal(("designer", "opus"), (suggested.GetProperty("id").GetString(), suggested.GetProperty("choices")[0].GetProperty("model").GetString()));
-            var table = (await AnswerAsync(module, "ROLES")).GetProperty("suggestedChoices").EnumerateArray().ToList();
-            Assert.Equal(ActorSuggestion.Table.Select(each => each.Role), table.Select(each => each.GetProperty("role").GetString()));
-            Assert.Equal("sonnet", table[0].GetProperty("choices")[0].GetProperty("model").GetString());
+            // The seeded Design role takes design machine-wide; the cases below add roles that do, so it is removed first.
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "design" });
 
             await AnswerAsync(module, "SET_ROLE", new
             {
@@ -34,7 +31,6 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
 
             var answer = await AnswerAsync(module, "ROLES");
             Assert.True(answer.GetProperty("kept").GetBoolean());
-            Assert.Empty(answer.GetProperty("suggested").EnumerateArray());
             Assert.Contains("design", answer.GetProperty("works").EnumerateArray().Select(work => work.GetString()));
             var designer = answer.GetProperty("roles").EnumerateArray().Single(row => row.GetProperty("id").GetString() == "designer");
             Assert.Equal(("set", "设计师", 1L), (designer.GetProperty("state").GetString(), designer.GetProperty("name").GetProperty("zh").GetString(), designer.GetProperty("revision").GetInt64()));
@@ -80,6 +76,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         {
             Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
             var module = Module();
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "design" });
             await AnswerAsync(module, "SET_ROLE", new
             {
                 change = "set", id = "designer",
@@ -115,6 +112,7 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
         {
             Assert.Equal(StaffingImported.Done, staffing.ImportFile().How);
             var module = Module();
+            await AnswerAsync(module, "SET_ROLE", new { change = "remove", id = "design" });
             var designer = new
             {
                 change = "set", id = "designer", revision = 0,

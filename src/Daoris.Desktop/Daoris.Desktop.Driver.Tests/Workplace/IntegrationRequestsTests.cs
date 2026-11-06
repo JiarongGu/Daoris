@@ -118,7 +118,7 @@ public sealed class IntegrationRequestsTests : IDisposable
     {
         var refused = await AdmitAsync(Config(null), new Records([Landed()]), Card());
 
-        Refused(refused, IntegrationRefusals.NoIntegrate, "`engine`'s landing rule carries no `integrate`, so nothing was requested");
+        Refused(refused, IntegrationRefusals.NoIntegrate, "`engine`'s line carries no policy, so nothing was requested");
         Assert.Empty(_asked);
     }
 
@@ -533,7 +533,7 @@ public sealed class IntegrationRequestsTests : IDisposable
         Assert.Equal((LandingIntegrate.Done, LandingIntegrate.Hold), (admitted.Request!.Policy.Request, admitted.Request.Policy.Conflicts));
 
         Refused(await AdmitAsync(Config(null), new Records([Written(AcceptedBy.Person, LandingIntegrate.Owner)]), Node()), IntegrationRefusals.NoIntegrate,
-            "`engine`'s landing rule carries no `integrate`");
+            "`engine`'s line carries no policy");
     }
 
     /// <summary>The node's route is Daoris's own, and only for a unit and the tip it froze; no other requester or route uses its door.</summary>

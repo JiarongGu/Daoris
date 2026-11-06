@@ -89,6 +89,8 @@ const ORGANISMS = new Set<string>([
   './work/rail/useSessionsList.tsx',
   './work/start/agentRoster.ts',
   './work/head/AttendedPane.tsx',
+  // The terminal hold's container (RPC1g1): it holds the bridge's hold and its let-go, so `TerminalHold` is handed them and holds neither.
+  './work/head/SessionTerminalHold.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',
   './work/conversation/AttendedBoxes.tsx',

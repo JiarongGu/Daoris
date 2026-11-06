@@ -100,7 +100,10 @@ internal static class ConformanceSubjects
     {
         var built = AdapterSet.Built();
         var registry = ProviderRegistry.Of(built);
-        var listed = new AdapterSet(new Dictionary<string, ISessionAdapter>(LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase));
+        // The agent a door runs as with no door of its own (`codex`) is reserved by its being a registered provider's id.
+        var listed = new AdapterSet(
+            new Dictionary<string, ISessionAdapter>(LegacyDoor.Over(Providers.Built()), StringComparer.OrdinalIgnoreCase),
+            new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase) { [CodexAccounts.Agent] = CodexAccounts.Toolchain });
         var plugins = WithPlugins(built);
         var made = ProviderRegistry.Of(plugins);
 

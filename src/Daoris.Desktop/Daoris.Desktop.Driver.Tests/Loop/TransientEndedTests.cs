@@ -70,12 +70,13 @@ public sealed class TransientEndedTests
     [Fact]
     public void A_retry_waits_no_wait_past_its_passes_minutes()
     {
-        var retry = new TransientRetry { Read = _ => throw new InvalidOperationException(), Clock = new HeldClock(Now), Deadline = Now.AddMinutes(5) };
+        // The first wait is a minute, the second two, the third four: the clock has run the waits already spent, so the third would end
+        // at minute seven, past the five minutes, and the episode ends there.
+        TransientRetry Retry(int spent) => new() { Read = _ => throw new InvalidOperationException(), Clock = new HeldClock(Now.AddMinutes(spent)), Deadline = Now.AddMinutes(5) };
 
-        // The first wait is a minute, the second two, the third four: the third would end past the five minutes, so the episode ends there.
-        Assert.False(retry.PastBound(Episode(0, false)));
-        Assert.False(retry.PastBound(Episode(1, false)));
-        Assert.True(retry.PastBound(Episode(2, false)));
+        Assert.False(Retry(0).PastBound(Episode(0, false)));
+        Assert.False(Retry(1).PastBound(Episode(1, false)));
+        Assert.True(Retry(3).PastBound(Episode(2, false)));
     }
 
     [Fact]

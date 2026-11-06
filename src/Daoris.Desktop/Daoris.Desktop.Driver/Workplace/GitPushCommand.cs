@@ -36,7 +36,7 @@ public static class GitPushCommand
                 if (yes is not null && yes != (word == "--yes")) { problem = "`--plan` and `--yes` are two answers; give one."; return null; }
                 yes = word == "--yes";
             }
-            else if (word.StartsWith("--", StringComparison.Ordinal))
+            else if (word.StartsWith('-'))
             {
                 problem = $"`{word}` is not a word `git push` takes: it pushes one ref, never forced, never with `-u`.";
                 return null;

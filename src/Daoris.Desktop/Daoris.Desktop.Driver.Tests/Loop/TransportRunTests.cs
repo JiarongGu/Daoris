@@ -51,6 +51,7 @@ public sealed class TransportRunTests : IDisposable
         new(host, adapter, new TransportStart(new ProcessStartInfo("never-started"), StartClass.Person)
         {
             Target = handed ? Target() : null,
+            Request = handed ? SpawnRequests.Of(Target(), null) : null,
             Selection = handed ? new HarnessSelection(null) : null,
         });
 

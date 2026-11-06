@@ -155,10 +155,14 @@ public sealed class WorkplaceHelpBoundaryTests : IDisposable
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            JsonNode body = request.RequestUri!.AbsolutePath == "/api/sessions"
-                ? new JsonArray(new JsonObject { ["id"] = "s1", ["repository"] = repository, ["ask"] = ask, ["kind"] = "chat", ["state"] = "completed",
-                    ["created"] = "2026-10-27T00:00:00Z", ["updated"] = "2026-10-27T00:00:00Z", ["deletable"] = true })
-                : new JsonObject { ["id"] = "s1", ["deletable"] = true, ["message"] = "deleted" };
+            JsonObject Record() => new() { ["id"] = "s1", ["repository"] = repository, ["ask"] = ask, ["kind"] = "chat", ["state"] = "completed",
+                ["created"] = "2026-10-27T00:00:00Z", ["updated"] = "2026-10-27T00:00:00Z", ["deletable"] = true };
+            JsonNode body = request.RequestUri!.AbsolutePath switch
+            {
+                "/api/sessions" => new JsonArray(Record()),
+                "/api/sessions/changes" => new JsonObject { ["whole"] = true, ["changed"] = new JsonArray(Record()), ["order"] = new JsonArray("s1"), ["mark"] = null },
+                _ => new JsonObject { ["id"] = "s1", ["deletable"] = true, ["message"] = "deleted" },
+            };
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") });
         }
     }

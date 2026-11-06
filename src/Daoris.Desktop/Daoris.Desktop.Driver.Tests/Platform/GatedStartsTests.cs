@@ -114,7 +114,7 @@ public sealed class GatedStartsTests : IDisposable
 
         using var _ = Refusing();
         await Assert.ThrowsAsync<Win32Exception>(() => Calling(() => driver.Holds.HoldAsync(
-            actor: "build", adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
+            actor: "build", adapter: Stub, info: new ProcessStartInfo(Nowhere), target: Target(), sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
             cwd: _home, harnessNotice: null, rules: (null, null, null), handed: null, refusesInput: null,
             conclude: (_, _, _, _) => Task.FromResult(0), ct: CancellationToken.None, spawned: () => spawned = true)));
 
@@ -139,13 +139,17 @@ public sealed class GatedStartsTests : IDisposable
         using var _ = Refusing();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Calling(() => driver.Holds.HoldAsync(
             actor: "build",
-            adapter: null!, info: new ProcessStartInfo(Nowhere), target: null!, sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
+            adapter: Stub, info: new ProcessStartInfo(Nowhere), target: Target(), sessionId: "s1", transcript: Path.Combine(_home, "s1.log"),
             cwd: _home, harnessNotice: null, rules: (null, null, null), handed: null, refusesInput: null,
             conclude: (_, _, _, _) => Task.FromResult(0), ct: closed.Token, spawned: () => spawned = true)));
 
         Assert.False(spawned);
         Assert.Empty(_seen);
     }
+
+    private static ISessionAdapter Stub => AdapterSet.Built().Resolve("stub");
+
+    private SessionTarget Target() => new("q-1", "title", "body", "asker", "repo", _home, "http://svc");
 
     private PluginEntry Plugin() =>
         new(new PluginManifest("probe", 1, "probe", "1.0.0", "", [], new PluginHooks([Nowhere, "hooks.mjs"], ["quest/consider"]), []),

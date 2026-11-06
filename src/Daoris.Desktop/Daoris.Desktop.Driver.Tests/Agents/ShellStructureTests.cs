@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// git through the port Workplace installs, so it names no type of Workplace, Work orders or Context; and Platform names nothing of a spawn.
 /// Each held twice: on the driver's tree, and by a planted breach the structure check refuses.
 /// </summary>
+[Trait(Category.Name, Category.Census)]
 public sealed class ShellStructureTests
 {
     private static readonly Lazy<(StructureMap Map, StructureAnalysis Analysis)> Tree = new(() =>

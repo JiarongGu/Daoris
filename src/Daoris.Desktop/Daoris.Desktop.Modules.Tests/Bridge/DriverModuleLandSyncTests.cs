@@ -39,10 +39,8 @@ public sealed class DriverModuleLandSyncTests
 
         // CHATFLOW1d: `press` is what refused a chat run's press, null on every other.
         Assert.Equal(JsonValueKind.Null, read.GetProperty("press").ValueKind);
-        // LANDBACK1 part 1: `carried` is the carry-on an Accept sent where the tree was dirty or conflicted, null on a landing.
-        Assert.Equal(JsonValueKind.Null, read.GetProperty("carried").ValueKind);
         Assert.Equal(
-            ["session", "done", "message", "branch", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press", "carried"],
+            ["session", "done", "message", "branch", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press"],
             read.EnumerateObject().Select(field => field.Name));
     }
 
