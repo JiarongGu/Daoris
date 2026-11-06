@@ -23274,3 +23274,9 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **SESSCOMMIT1 — the doctrine names the process's source**. → `docs/2026-11-02-parked-triage.md`, WORKFLOWCLEAN1
 
   **Outcome** 2026-11-06: BL27: the backlog is within its budget (6,423 of 6,600 words); FLAKE1, TEST1 and REH1 keep their open fix-log entries as their evidence homes, and `docs/development.md`'s records step says so. The canon's `persist-working-state` rule names the process's source (D164 point 4: where the starting tool tells the commit and landing process, follow it; otherwise the repository's own rules stand), synced here and to both examples.
+
+## NOCOMPAT1b2 (2026-11-06)
+
+- [x] **NOCOMPAT1b2 — the landing rules' last traces** (driver, service, web; D232): the landing rules, the auto lander and its names, `handed`, the plain bind, the landings rows and the workspace Setup tab are gone. Left: the service's take bind, which no production writer makes now (`QuestGraphBinds`, `Quests` and `QuestBindOperation`'s bind and take-bind, `QuestTakeBind`, the `took_bind` column and its tables, `ServiceClient.TookBindAsync`; about 50 service test sites rebound onto a seeded `Bound` operation); `BindRunsLook`'s second pass over sessions opened with no binding; the `workspace-setup` help part and its alias. → `docs/areas/workflows-review-landing.md`
+
+  **Outcome** 2026-11-06: the auto lander's names, the workspace Setup tab, the plain bind and the service's take bind are gone (its operations, the `took_bind` column and its two tables dropped on open); the look's second bind pass and the `workspace-setup` help part are gone; a start binds its own run and the look only says it (BL6, BL11, BL11b, BL32, BL32b).
