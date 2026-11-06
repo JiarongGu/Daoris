@@ -73,7 +73,7 @@ const hoverOf = (target: EventTarget): string | null => {
 
 export function SuppliedCanvas({
   world, label, moves, fit, feature, storeKey, selected, onSelect, zoom, opening, nodeLabel, titleOf, frameClass, renderNode, renderEdges,
-  tools, findLabel, findFrom = FIND_FROM, findItems, list, reveal: arriving,
+  tools, findLabel, findFrom = FIND_FROM, findItems, list, reveal: arriving, groupHead,
 }: {
   world: SuppliedWorld;
   /** Names the region and the world for a reader. */
@@ -111,6 +111,8 @@ export function SuppliedCanvas({
   list?: ReactNode;
   /** A card to show once it is drawn, and to give the focus when `focus` (a way back to a map); acted on once per object given. */
   reveal?: { id: string; focus: boolean } | null;
+  /** What stands in a frame's header beside its title, an act on that frame; the title alone where not given. */
+  groupHead?: (group: { id: string; title: string }) => ReactNode;
 }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pane = useRef<HTMLDivElement>(null);
@@ -127,6 +129,7 @@ export function SuppliedCanvas({
   const [listed, setListed] = useState(false);
 
   const stops = useMemo(() => world.order.filter((id) => !statics.has(id) && world.boxes.has(id)), [world, statics]);
+  const placeOf = useMemo(() => new Map(stops.map((id, at) => [id, at + 1])), [stops]);
   const walk = useMemo(() => createWalk({ order: world.order, boxes: world.boxes, lines: world.lines, statics }), [world, statics]);
   const known = (stop: Stop | null) => stop !== null && (stop.line ? world.lines.some((line) => line.id === stop.id) : stops.includes(stop.id));
   const at: Stop | null = known(active) ? active : stops[0] ? { line: false, id: stops[0] } : null;
@@ -303,25 +306,41 @@ export function SuppliedCanvas({
             const box = placed(group.box);
             return (
               <div key={group.id} data-canvas-group={group.id} className="absolute rounded-card border border-line bg-raised/40" style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
-                <span className="block truncate px-3 pt-2 text-small font-medium text-ink-soft">{group.title}</span>
+                <span className="flex items-center justify-between gap-2 px-3 pt-2">
+                  <span className="min-w-0 truncate text-small font-medium text-ink-soft">{group.title}</span>
+                  {groupHead?.(group)}
+                </span>
               </div>
             );
           })}
           <svg width={frame.w} height={frame.h} viewBox={`${frame.x} ${frame.y} ${frame.w} ${frame.h}`} focusable="false" className="pointer-events-none absolute left-0 top-0 overflow-visible">
             {renderEdges(context)}
           </svg>
-          {world.order.map((id) => {
+          {world.order.filter((id) => statics.has(id)).map((id) => {
+            const raw = world.boxes.get(id);
+            if (!raw || !cull.mounted.has(id)) return null;
+            const box = placed(raw);
+            const state: NodeState = { tier, selected: false, focused: hovered === id, dim: false, scale };
+            return (
+              <div key={id} role="img" aria-label={nodeLabel(id)} data-flow-static={id} className={cn('absolute', frameClass?.(id))} style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
+                {renderNode(id, state)}
+              </div>
+            );
+          })}
+          {/* The cards are one list, so a reader hears each one's place among them though culling mounts only some. */}
+          <div role="list" aria-label={label} className="pointer-events-none absolute left-0 top-0 size-full">
+          {stops.map((id) => {
             const raw = world.boxes.get(id);
             if (!raw || !cull.mounted.has(id)) return null;
             const box = placed(raw);
             const place = { left: box.x, top: box.y, width: box.w, height: box.h };
-            const dim = standing !== null && !statics.has(id) && !standing.has(id);
+            const dim = standing !== null && !standing.has(id);
             const state: NodeState = { tier, selected: selected === id, focused: hovered === id, dim, scale };
-            if (statics.has(id)) {
-              return <div key={id} role="img" aria-label={nodeLabel(id)} data-flow-static={id} className={cn('absolute', frameClass?.(id))} style={place}>{renderNode(id, state)}</div>;
-            }
             return (
-              <div key={id} className={cn('absolute', frameClass?.(id))} style={place}>
+              <div
+                key={id} role="listitem" aria-setsize={stops.length} aria-posinset={placeOf.get(id)}
+                className={cn('pointer-events-auto absolute', frameClass?.(id))} style={place}
+              >
                 <button
                   type="button"
                   data-flow-node={id}
@@ -341,6 +360,7 @@ export function SuppliedCanvas({
               </div>
             );
           })}
+          </div>
         </div>
       </Canvas>
       {gone && <GoneNotice />}

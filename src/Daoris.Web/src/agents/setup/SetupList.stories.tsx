@@ -27,11 +27,14 @@ const read = (fold: string | null) => {
   };
 };
 
-function Tree({ fold = null, needsLook = false }: { fold?: string | null; needsLook?: boolean }) {
+function Tree({ fold = null, needsLook = false, search = '' }: { fold?: string | null; needsLook?: boolean; search?: string }) {
   const [chosen, setChosen] = useState<string | null>(repositoryId('aurora', 'engine'));
+  const all = read(fold);
+  // A search narrows the rows the answer holds; the chosen place is kept by the view and stays chosen though its row is not drawn.
+  const narrowed = search ? { ...all, repositories: all.repositories.filter((row) => row.repository?.includes(search)) } : all;
   const state: SetupState = {
-    search: '', onSearch: nothing, needsLook, onNeedsLook: nothing, fold, onFold: nothing, foldAfter: null, onFoldAfter: nothing,
-    onMore: nothing, read: read(fold), status: 'ok',
+    search, onSearch: nothing, needsLook, onNeedsLook: nothing, fold, onFold: nothing, foldAfter: null, onFoldAfter: nothing,
+    onMore: nothing, read: narrowed, status: 'ok',
   };
   return <SetupList state={state} chosen={chosen} onChoose={setChosen} />;
 }
@@ -55,3 +58,7 @@ export const FoldOpenChinese: Story = { args: { fold: 'aurora' }, decorators: [c
 /** The chip pressed: it narrows the places to those that need a look. */
 export const NeedsAttention: Story = { args: { needsLook: true } };
 export const NeedsAttentionChinese: Story = { args: { needsLook: true }, decorators: [chinese, frames, inLight] };
+
+/** A search that leaves the chosen place's row out: the tree shows the rows that match, and the place stays the page's (the kept selection). */
+export const SearchKeepsTheChoice: Story = { args: { search: 'portal' } };
+export const SearchKeepsTheChoiceChinese: Story = { args: { search: 'portal' }, decorators: [chinese, frames, inLight] };
