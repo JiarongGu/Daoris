@@ -26,7 +26,7 @@ export function BringInAgent({ choices, onClose }: { choices: readonly BringInCh
       role="dialog"
       aria-labelledby="bring-in-title"
       data-bring-in
-      className="grid gap-2 rounded-control border border-line bg-surface p-3"
+      className="grid gap-2 rounded-control border border-line bg-raised p-3"
       onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }}
     >
       <h3 id="bring-in-title" className="m-0 text-small font-semibold">{t('work.team.bringIn.title')}</h3>

@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import type { GitDeletedRef } from '../../bridge/repositories/git';
+import type { GitDeletedRef } from './DeletedRefs';
 import { DeletedRefs } from './DeletedRefs';
 
 // A repository's deletes as the journal holds them (ONEWAY1r, D204): who pressed each, its kept commits, and its Undo open, shut or refused,

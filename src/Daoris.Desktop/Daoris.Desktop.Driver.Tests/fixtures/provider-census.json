@@ -228,6 +228,8 @@
       ["src/Daoris.Web/src/work/start/NewConversation.stories.tsx", "\"codex\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/work/start/NewConversation.stories.tsx", "id in a sentence", "-", "measurement", "a story's sample text names the agents it shows"],
       ["src/Daoris.Web/src/work/strip/menuFixtures.ts", "\"claude-code\"", "-", "measurement", "fixture data for the stories names the agents it stands for"],
+      ["src/Daoris.Web/src/work/team/CoWorkers.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
+      ["src/Daoris.Web/src/work/team/CoWorkers.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/work/waits/HelperAsks.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],
       ["src/Daoris.Web/src/work/waits/HelperAsks.stories.tsx", "\"codex-acp\"", "-", "measurement", "a story's sample data names the doors it shows"],
       ["src/Daoris.Web/src/work/waits/WaitPanel.stories.tsx", "\"claude-code\"", "-", "measurement", "a story's sample data names the agents it shows"],

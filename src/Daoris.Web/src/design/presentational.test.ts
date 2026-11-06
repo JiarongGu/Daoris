@@ -79,6 +79,8 @@ const ORGANISMS = new Set<string>([
   './work/conversation/useBoxWords.ts',
   './work/start/useNewStart.ts',
   './work/start/StartPane.tsx',
+  // The head's team facts (COWORKUX1): the helpers' hooks held once, so Co-workers, Bring in another agent and a member's thread hold none.
+  './work/team/useTeam.ts',
   './work/head/useHeadAsks.ts',
   './work/review/useSessionLanding.ts',
   './work/waits/useAttendedWaits.ts',

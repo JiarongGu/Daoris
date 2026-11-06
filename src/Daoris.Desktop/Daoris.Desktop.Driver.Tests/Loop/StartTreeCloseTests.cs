@@ -5,14 +5,15 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// QUEUEDTREE1b (D51, D181's QUEUEDTREE1 note): a start's own path, from the look to its record's open, when the driver closes after
-/// its tree opened and before the record's open is asked. The tree and its branch go by the clean path on no token, and no record opens.
+/// its tree opened and before the record's open is asked. The tree goes by the clean path on no token, and no record opens.
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. The driver has no <c>Runner</c>, so the look reaches the start's own path; git is a small model
 /// of one repository standing in through <see cref="WorkingTree.Runs"/>, which sees the token each git is asked on, and every other
 /// start in the flow is refused through <see cref="ProcessStarts.Within"/>. The loop closes as the start reads its tree's head, the
-/// last await between the open and the record's. The real-git twin is GOONTREE1's row in the Process half's
-/// <c>SessionMessagesTickTests</c>.
+/// last await between the open and the record's. The branch's delete is the journal's <c>ref.delete</c> act (ONEWAY1r), whose git
+/// starts as a held child no stand-in reaches, so that half of the case, with the tree's, is <see cref="StartTreeCloseGitTests"/>', over
+/// real git in the git process family.
 /// </remarks>
 public sealed class StartTreeCloseTests : IDisposable
 {
@@ -93,8 +94,6 @@ public sealed class StartTreeCloseTests : IDisposable
         var tree = _opened ?? throw new Xunit.Sdk.XunitException("the start opened no tree: " + said);
         Assert.False(Directory.Exists(tree), "the tree was left: " + said);
         Assert.Contains($"(no token) worktree remove {Path.GetFullPath(tree)}", _asked);
-        Assert.True(_asked.Contains("(no token) update-ref --stdin"), "the branch's delete was not asked on no token: " + said);
-        Assert.True(_branch is null, "the branch was left: " + said);
         Assert.Empty(_ledger.Sessions);
         Assert.DoesNotContain(Path.GetFileName(_agent), _seen);
     }
@@ -128,14 +127,6 @@ public sealed class StartTreeCloseTests : IDisposable
             case ["worktree", "remove", var gone]:
                 Directory.Delete(gone, recursive: true);
                 _tree = null;
-                return Said("");
-            case ["for-each-ref", "--format=%(refname)%09%(symref)", "--", ..]:
-                // The delete's transaction asks first whether a name it moves is a symbolic ref: each that stands, none symbolic.
-                return Said(string.Join('\n', arguments.Skip(3).Where(name => name == "refs/heads/main" || (_branch is not null && name == $"refs/heads/{_branch}"))
-                    .Select(name => name + "\t")));
-            case ["update-ref", "--stdin"]:
-                // The branch's delete, verified against the line's tip: the model's one transaction.
-                _branch = null;
                 return Said("");
             case ["--no-optional-locks", "status", ..] or ["log", ..] or ["ls-files", ..] or ["config", ..] or ["worktree", "unlock", _] or ["worktree", "list", ..]:
                 return Said("");

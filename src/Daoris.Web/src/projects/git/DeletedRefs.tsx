@@ -2,9 +2,23 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button, Inline } from '../../design/ui';
-import type { GitDeletedRef } from '../../bridge/repositories/git';
 import { ago, stamp } from '../../locales/format';
 import type { RefActs } from './NewRef';
+
+/**
+ * One delete the journal holds (ONEWAY1r): the act `GIT_REF_UNDO` takes, what went and at which commit, who pressed it, and `closed`, why
+ * its Undo is shut (`undone` · `name-taken` · `commit-gone`), null where it is open.
+ */
+export type GitDeletedRef = {
+  act: string;
+  kind: 'branch' | 'tag';
+  name: string;
+  commit: string;
+  at: string;
+  press: string;
+  recovery: string | null;
+  closed: string | null;
+};
 
 /** Who pressed a delete, as the journal records it: Daoris's own door, the window or the terminal. */
 const who = (t: TFunction, press: string): string =>

@@ -2,7 +2,7 @@ import type { Attention } from './AttentionRow';
 import { CLOSE_SENDER, endOffersStop, type HeldAttempt, heldWords } from '../head/milestone';
 import { opinionState } from '../gates/opinion';
 import type { GitHeld, QuietWait } from './attentionPushed';
-import { isTaskAct, type TaskAct } from '../../workflow/TaskPress';
+import { isTaskAct, type TaskAct } from '../../workflow/task/TaskPress';
 
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =

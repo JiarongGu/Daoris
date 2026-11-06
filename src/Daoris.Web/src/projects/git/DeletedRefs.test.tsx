@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
-import type { GitDeletedRef } from '../../bridge/repositories/git';
+import type { GitDeletedRef } from './DeletedRefs';
 import { DeletedRefs } from './DeletedRefs';
 
 // ONEWAY1r: the git page lists a repository's deletes from the journal, each with its Undo. A molecule: the rows and the acts arrive as props.

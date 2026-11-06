@@ -15,7 +15,7 @@ import {
 } from './attention';
 import { Note } from '../Note';
 import type { Answered } from '../InlineConfirm';
-import type { TaskAct } from '../../workflow/TaskPress';
+import type { TaskAct } from '../../workflow/task/TaskPress';
 import { taskActOf } from './attentionOffers';
 import { hasNote, type NoteRecord } from '../noteLines';
 import type { OpinionWait } from '../gates/opinion';
