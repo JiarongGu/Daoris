@@ -135,7 +135,31 @@ public sealed class NativeStreamsTests : IDisposable
         Assert.Empty(again.Ended(0).BackgroundCut);
     }
 
-    /// <summary>Lines read as the capture reads them: each frame's task said once as its reading, which the run's own ending reads.</summary>
+    /// <summary>
+    /// BGWAIT1c at the capture's close: Daoris ended the process at its turn's end after the harness killed its command and before it wrote the
+    /// notification, so the update's word is the command's end and the run's ending cuts it; its stream ends with its session, as before.
+    /// </summary>
+    [Fact]
+    public async Task A_command_killed_after_the_turn_with_no_notification_is_cut_at_the_capture_s_close()
+    {
+        var output = new SessionOutput();
+        var own = new HarnessWords();
+        var lines = new[]
+        {
+            System("task_started", new { task_id = "b1", tool_use_id = "toolu_bg", description = "npm run gates", task_type = "local_bash" }),
+            Json(new { type = "result", subtype = "success", is_error = false }),
+            System("task_updated", new { task_id = "b1", patch = new { status = "killed" } }),
+        };
+
+        await HarnessCapture.CaptureStructuredAsync(
+            new StringReader(string.Join('\n', lines)), new StringReader(""), Path.Combine(_root, "s5.log"), new RecordReadings("s5", output, null),
+            new ClaudeStreamJson(), prompt: null, CancellationToken.None, own: own);
+
+        Assert.Equal(["npm run gates"], own.Ended(0).BackgroundCut);
+        Assert.Equal(SessionStream.SessionEnded, Assert.Single(output.Streams("s5")).State);
+    }
+
+    /// <summary>Lines read as the capture reads them: each frame's task said once as its reading, then the close's, which the run's own ending reads.</summary>
     private static void Hear(HarnessWords own, IEnumerable<string> lines)
     {
         var tasks = new NativeTasks();
@@ -143,6 +167,8 @@ public sealed class NativeStreamsTests : IDisposable
         {
             if (tasks.Read(NativeFrame.Of(line)) is { } task) own.Read(task);
         }
+
+        foreach (var ended in tasks.Close()) own.Read(ended);
     }
 
     /// <summary>

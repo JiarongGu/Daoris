@@ -291,6 +291,8 @@ internal sealed class LayerRun(
         finally
         {
             Handed(leg, leg.Readings.Flush());
+            // The ends only an update said, its notification never written, as today's capture says them at its stream's close (BGWAIT1c).
+            foreach (var ended in leg.Tasks.Close()) Work(ended);
             leg.Started.TrySetResult(null);
             Close();
         }

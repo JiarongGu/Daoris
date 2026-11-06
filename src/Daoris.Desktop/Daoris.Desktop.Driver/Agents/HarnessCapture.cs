@@ -215,8 +215,10 @@ internal static class HarnessCapture
             }
         }
 
-        // Said while the transcript is still open: what it left running ended with it.
+        // Said while the transcript is still open: what it left running ended with it. Then the ends only an update said, its notification
+        // never written (BGWAIT1c): the run's ending reads them, and a stream the close already ended keeps its words.
         if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
+        foreach (var ended in tasks.Close()) Work(ended);
         await errors.ConfigureAwait(false);
         return mapper.Usage;
     }

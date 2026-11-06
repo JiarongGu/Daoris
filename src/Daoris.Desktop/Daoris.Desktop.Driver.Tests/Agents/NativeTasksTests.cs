@@ -13,10 +13,65 @@ public sealed class NativeTasksTests
         .Where(line => line.Length > 0)
         .ToArray();
 
-    private static List<WireReading> Read(IEnumerable<string> lines)
+    private const string Result = """{"type":"result","subtype":"success","is_error":false}""";
+
+    private static string Started(string id, string name) =>
+        $$"""{"type":"system","subtype":"task_started","task_id":"{{id}}","description":"{{name}}","task_type":"local_bash"}""";
+
+    private static string Updated(string id, string status) =>
+        $$$"""{"type":"system","subtype":"task_updated","task_id":"{{{id}}}","patch":{"status":"{{{status}}}"}}""";
+
+    private static List<WireReading> Read(IEnumerable<string> lines, NativeTasks? tasks = null)
+    {
+        tasks ??= new NativeTasks();
+        return [.. lines.Select(line => tasks.Read(NativeFrame.Of(line))).OfType<WireReading>()];
+    }
+
+    /// <summary>What the run's own ending cuts of <paramref name="readings"/>.</summary>
+    private static IReadOnlyList<string> Cut(IEnumerable<WireReading> readings)
+    {
+        var own = new HarnessWords();
+        foreach (var reading in readings) own.Read(reading);
+        return own.Ended(0).BackgroundCut;
+    }
+
+    /// <summary>
+    /// The stream's close (BGWAIT1c): a command its update killed after the turn's result, its notification never written because the process
+    /// ended first (Daoris ending it at its turn's end), is ended in its update's word, which the run's ending cuts; one its update killed before
+    /// the result is ended too, never cut; each said once.
+    /// </summary>
+    [Fact]
+    public void A_command_its_update_ended_with_no_notification_after_is_ended_in_that_word_at_the_close()
     {
         var tasks = new NativeTasks();
-        return [.. lines.Select(line => tasks.Read(NativeFrame.Of(line))).OfType<WireReading>()];
+        var read = Read([Started("b1", "npm run gates"), Started("b2", "git fetch"), Updated("b2", "killed"), Result, Updated("b1", "killed")], tasks);
+
+        var closed = tasks.Close();
+
+        Assert.Equal(
+            [new WireReading.TaskStarted("b1") { Kind = "local_bash", Name = "npm run gates" }, new WireReading.TaskStarted("b2") { Kind = "local_bash", Name = "git fetch" }],
+            read);
+        Assert.Equal([new WireReading.TaskEnded("b1", "killed") { AfterTurn = true }, new WireReading.TaskEnded("b2", "killed")], closed);
+        Assert.Empty(tasks.Close());
+        Assert.Equal(["npm run gates"], Cut([.. read, .. closed]));
+    }
+
+    /// <summary>
+    /// A command with no ending word at the close, started alone or updated only as running, says no end: its end is unsaid, which the run's
+    /// ending reads as no cut, as it read a stream that ended before its work's end was said; a command its notification ended says none again.
+    /// </summary>
+    [Fact]
+    public void A_command_started_alone_at_the_close_says_no_end()
+    {
+        var tasks = new NativeTasks();
+        var read = Read(
+        [
+            Started("b1", "npm run gates"), Started("b2", "dev server"), Updated("b2", "running"), Started("b3", "git fetch"), Updated("b3", "killed"),
+            """{"type":"system","subtype":"task_notification","task_id":"b3","status":"stopped"}""", Result,
+        ], tasks);
+
+        Assert.Empty(tasks.Close());
+        Assert.Empty(Cut(read));
     }
 
     /// <summary>The recorded turn's two commands: one ended before its turn's result, one ended by its harness after it.</summary>
