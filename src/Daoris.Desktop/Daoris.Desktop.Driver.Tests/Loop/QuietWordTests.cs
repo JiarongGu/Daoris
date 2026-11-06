@@ -84,9 +84,10 @@ public sealed class QuietWordTests : IDisposable
         var word = QuietWord.Tell(_watch, "s2", new DrivenInbox(_ => { }), said)!;
         Run(SessionWatch.DefaultQuiet + Pace);
         await Settled(() => said.Said.Count > 0);
+        var kept = said.Said.Single().Id!;
         word.Dispose();
         quest.Dispose();
-        Assert.Equal([said.Said.Single().Id!], said.TakenOff);
+        Assert.Equal([kept], said.TakenOff);
     }
 
     /// <summary>
