@@ -439,15 +439,20 @@ Agents page, and `orient-index` and `code-map` once files move.
   opinion's, a memory operation's author's `adapter` and `harness`, the machine log's fields, a note's part, a plugin's `session.ended`,
   a brainstorm's and a meeting's files, `START_CHAT`'s press), kept because the record's one field runs across the service's store, the sync
   between hosts and some hundred and twenty reads on the page, so it is renamed `door` in a chunk of its own, the service's schema step,
-  the contract and the page together; **t-iii**, the `harness`, `pipe` and `acp` words still stored or on a wire: the usage entries'
-  (`usage.json`'s `harness`, the pushed usage slice's field), the lineage's `harness` and `acp` signal, a door failure's `harness` and
-  its `pipe` door, the account presses' and their `HARNESSES` and `ACCOUNTS` reads, the bridge's `intakeAdapter` and `helperAdapter`
-  (the driver's state slice), and the transport's `pipe` and `acp` as the sheet's `wire` to the page (`AgentCapabilities`, `LayerStart`,
-  the page's `DoorSheet`), each renamed through a migration step and its readers in one chunk with the contract; the lineage file is
-  the service's `LineageFile` and a plugin may read its lines, so its end waits on that contract. Done: the binding files are imported
+  the contract and the page together; **t-iii**, the `harness` word still on a wire or in a file: the account presses' and the
+  `HARNESSES` and `ACCOUNTS` answers' (the press payloads of `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`,
+  `HarnessCancelPress` and `AgentSettingsPress` and the terminal's senders of them, `PipeReads`' grounds, and the roster rows' and the
+  attention slice's `harness` key with the page's `ToolDoor.harness` and its some seven hundred reads), to be renamed `door` with the
+  contract regenerated in a chunk of its own; and the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
+  may read, so its end waits on that contract (the page's catalogue keys `harness.wire.acp` and `harness.wire.pipe` keep their names).
+  Done: the binding files are imported
   once by the `binding-files` step (a copy kept, the file and its `.imported` set-aside taken out), so a conversation is kept and read in
   the store alone and no look imports anything; Ask Daoris's receipts name the door by `door` and the transport by `transport`
-  (`native` or `protocol`), the `wired-files` step renaming an older receipt's `harness` and `pipe`/`acp` `door`. Not a seam's word, so
+  (`native` or `protocol`), the `wired-files` step renaming an older receipt's `harness` and `pipe`/`acp` `door`; the usage file's entries
+  name their door by `door` (the `usage-file` step), as the pushed usage slice's sessions do; a door's failure is met on `native` or
+  `protocol` and a line of the door's own beside a failed result is `DoorWhere.Lines`; the driver state names the agents of Intake and
+  Ask Daoris `intakeAgent` and `helperAgent`; the sheet's `transport` (`protocol` or `native`, `Sheet.TransportWord`) reaches the page
+  as the roster row's and the door sheet's `transport`. Not a seam's word, so
   with no end: the instance's `run/pipe`, dsh's own `acp` profile, the doctrine layout's `harness`, and a lack's granting door
   `harness` (another agent's, `HelpWired.DoorHarness`).
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
@@ -516,7 +521,7 @@ Agents page, and `orient-index` and `code-map` once files move.
   native door's live, driven and one-turn tries). 1d is built.
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
   Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
-  `WireReading.Failed` (`pipe`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
+  `WireReading.Failed` (`native`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
   `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
   as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so
   `AccountEndings.Limited` cools the account once, notes it and the record says `limit`, then parks or waits by its line's rules; a native
