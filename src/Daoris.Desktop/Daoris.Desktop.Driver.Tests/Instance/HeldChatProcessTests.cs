@@ -103,7 +103,8 @@ public sealed class HeldChatProcessTests : IAsyncDisposable
         Assert.Equal(
             "what is this repository for?",
             Assert.Single(daoris.Sent, each => Is(each, "SESSION_INPUT")).GetProperty("payload").GetProperty("text").GetString());
-        Assert.False(Directory.Exists(Path.Combine(home, "sessions", "requests")) && Directory.EnumerateFiles(Path.Combine(home, "sessions", "requests")).Any());
+        var requests = DaorisHome.Entry(home, HomeEntry.Requests);
+        Assert.False(Directory.Exists(requests) && Directory.EnumerateFiles(requests).Any());
     }
 
     [Fact]
