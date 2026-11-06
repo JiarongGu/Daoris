@@ -217,10 +217,11 @@ internal interface ITransportHost
     Task KeepHandedAsync(string sessionId, ProcessStartInfo info, CancellationToken ct);
 
     /// <summary>
-    /// A resume's process given the environment a start has (<c>Driver.Prepare</c>). Never asked of a host whose runs are handed no selection,
-    /// as a conversation's are: it goes on through a start of its own (MSG1c).
+    /// A resume's process given the environment a start has (<c>Driver.Prepare</c>), its door's facts read from <paramref name="adapters"/>, the
+    /// registry the run was started from: never the host's registry now, which a plugin's change since may have made without the door. Never
+    /// asked of a host whose runs are handed no selection, as a conversation's are: it goes on through a start of its own (MSG1c).
     /// </summary>
-    ProcessStartInfo Prepared(AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
+    ProcessStartInfo Prepared(ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo next) =>
         throw new NotSupportedException("a conversation goes on through a start of its own, never through its run's go-on.");
 
     /// <summary>How long an agent whose session ended with its own background work still running is given to exit once its stdin closed (DONEEND1).</summary>

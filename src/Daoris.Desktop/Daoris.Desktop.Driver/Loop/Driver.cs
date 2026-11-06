@@ -482,7 +482,12 @@ public sealed class Driver(
 
     internal (ProcessStartInfo Info, string? Notice) Prepare(
         AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
-        Equipment.Prepare(Context.Adapters, adapter, target, selection, prepared);
+        Prepare(Context.Adapters, adapter, target, selection, prepared);
+
+    /// <summary>The same, the door's facts read from <paramref name="adapters"/>: a run's go-on hands the registry it was started from.</summary>
+    internal (ProcessStartInfo Info, string? Notice) Prepare(
+        ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared) =>
+        Equipment.Prepare(adapters, adapter, target, selection, prepared);
 
     internal bool HandedConnector(AgentDoor adapter, string? workspace, string? repository, string tool) =>
         Equipment.HandedConnector(adapter, workspace, repository, tool);

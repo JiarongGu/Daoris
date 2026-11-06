@@ -72,10 +72,9 @@ public sealed class TransportRunProcessTests : IDisposable
         File.WriteAllText(Path.Combine(_home, "agent.cjs"), Script);
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
         _processes = new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        // The scripted door is registered beside the shipped ones: a go-on's process is prepared by the driver, whose readers find the door
-        // in its own registry (its maker, for the commit trailer).
-        _driver = new Daoris.Driver.Driver(
-            _service, DriverConfig.Empty, TestDoors.Registry([.. ProviderRegistry.Built().Providers, Scripted(_home, structured: true)]), _home, _processes);
+        // The driver's registry holds the shipped doors alone: a go-on's process is prepared from the registry its run was started from,
+        // whose door it is, never from one the driver holds now.
+        _driver = new Daoris.Driver.Driver(_service, DriverConfig.Empty, ProviderRegistry.Built(), _home, _processes);
         _events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         _events.Evented += (_, e) =>
         {
