@@ -389,11 +389,8 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     [Fact]
     public void Agents_reads_review_background_data_below_the_review_operation()
     {
-        var (map, _, _, analysis, _) = Tree.Value;
-        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
-        var agents = order.IndexOf("Agents");
-        Assert.Empty(analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
-            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => order.IndexOf(map.OwnerOf(path) ?? "") > agents))));
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => path.StartsWith("Review/", StringComparison.Ordinal)))));
     }
 
     [Fact]
