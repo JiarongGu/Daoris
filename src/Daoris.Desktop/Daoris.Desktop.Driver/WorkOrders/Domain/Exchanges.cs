@@ -170,6 +170,8 @@ public static class Exchanges
                 var (delivery, outcome) = kind switch
                 {
                     HelperStates.Refused => (NotReached, "refused"),
+                    // COWORKUX1d: an answer kept for the person is answered and reaches the line only by their pass.
+                    HelperStates.Answered when at?.Handed == HelperState.KeptForPerson => (Kept, "answered"),
                     HelperStates.Answered when at?.Handed is not null => (Taken, "taken-in"),
                     HelperStates.Answered => (Taken, "answered"),
                     HelperStates.Started => (Taken, "asked"),

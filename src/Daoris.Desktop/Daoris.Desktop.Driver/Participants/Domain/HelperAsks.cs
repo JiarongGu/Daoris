@@ -32,6 +32,23 @@ public sealed record HelperAsk(string Id, string Asker, string Question, string?
     /// words then, while it works. False for an ask with no level, every ask from before among them: today's delivery.
     /// </summary>
     public bool Urgent { get; init; }
+
+    /// <summary>
+    /// The ask this one follows (COWORKUX1d, the co-worker design §4.3): the person's <i>Ask again…</i> names the helper's ask it asks
+    /// again after, whose question and answer its helper is handed as Daoris's record. Null for a first ask, every agent's among them.
+    /// </summary>
+    public string? After { get; init; }
+
+    /// <summary>
+    /// Where the answer goes (§7): <see cref="ToPerson"/> keeps it for the person, reaching the lead only by their <i>Pass to the lead</i>;
+    /// null is the lead, today's one path. Only the person's doors write it.
+    /// </summary>
+    public string? To { get; init; }
+
+    public const string ToPerson = "person";
+
+    /// <summary>Whether the answer is the person's, not the lead's.</summary>
+    public bool ForPerson => To == ToPerson;
 }
 
 /// <summary>
@@ -46,8 +63,17 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
     /// <summary>The answer is the helper's last words, bounded, since it never used its tool.</summary>
     public bool LastWords { get; init; }
 
-    /// <summary>The word id the answer went to the asker as, once handed.</summary>
+    /// <summary>The word id the answer went to the asker as, once handed; <see cref="KeptForPerson"/> where it is the person's to pass.</summary>
     public string? Handed { get; init; }
+
+    /// <summary>The <see cref="Handed"/> mark of an answer kept for the person (COWORKUX1d): settled for the lead, which never waits on it.</summary>
+    public const string KeptForPerson = "person";
+
+    /// <summary>
+    /// When the person pressed <i>Pass to the lead</i> on an answer kept for them (COWORKUX1d, the co-worker design §7): the look hands it to
+    /// the lead then, with the <c>answers.passed</c> note beside it, so the count reads the press as their word.
+    /// </summary>
+    public DateTimeOffset? Passed { get; init; }
 
     /// <summary>
     /// When the driver began handing the answer (HELPERWAIT1; Codex's round-2 #2 on COWORKUX1): written before the hand door is asked and

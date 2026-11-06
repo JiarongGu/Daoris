@@ -58,4 +58,23 @@ public sealed class HelperBoxShapeTests : IDisposable
             File.ReadAllText(HelperBox.PathOf(_home, urgent!, "ask")));
         Assert.DoesNotContain("urgent", File.ReadAllText(HelperBox.PathOf(_home, ordinary!, "ask")));
     }
+
+    /// <summary>
+    /// 🔴 COWORKUX1d (the co-worker design §4.3): `after` and `to` are the person's doors' alone, written by the driver's
+    /// <c>HelperPersonAsk</c> after `askedBy` (its suite, <c>HelperPersonAskTests</c>, holds that text); an agent's ask carries neither, so
+    /// the driver reads it as a first ask whose answer goes to the session that asked, today's one path.
+    /// </summary>
+    [Fact]
+    public void An_agents_ask_carries_no_follow_up_or_destination()
+    {
+        var box = new HelperBox(_home);
+        var asker = new Session("s1", "q1", "reports", "claude-code", SessionState.Working, null, null, null, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
+
+        var (id, _) = box.Ask(asker, "s1", "Why?", "codex-acp", DateTimeOffset.Parse("2026-11-06T10:00:00Z"));
+
+        var text = File.ReadAllText(HelperBox.PathOf(_home, id!, "ask"));
+        Assert.DoesNotContain("\"after\"", text);
+        Assert.DoesNotContain("\"to\"", text);
+        Assert.Contains("\"askedBy\": \"agent\"", text);
+    }
 }

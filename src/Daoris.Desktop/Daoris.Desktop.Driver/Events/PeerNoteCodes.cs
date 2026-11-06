@@ -25,6 +25,10 @@ public static class PeerNoteCodes
     public static readonly NoteCode HelperRefusedBy = new("helper.refused-by", ["agent", "why"]) { Why = NoteCodes.Helper };
     public static readonly NoteCode HelperHelping = new("helper.helping", ["session"]);
 
+    // On the asker, at the person's own ask of a helper whose answer comes to it: their word on the line, which the answers-alone count
+    // reads as one, so the answer that follows is the first alone.
+    public static readonly NoteCode HelperPersonAsked = new("helper.person-asked", []);
+
     // On the asker, a helper an account's limit cut off and that it no longer waits on, with when that account is ready again, or
     // with none where no cool-off this machine holds names it.
     public static readonly NoteCode HelperLimited = new("helper.limited", ["agent", "until"]);

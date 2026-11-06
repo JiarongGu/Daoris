@@ -80,6 +80,7 @@
   "person.route.SESSION_HELPER_ASK": "ask another agent to help a session",
   "person.route.SESSION_HELPER_APPROVE": "say yes to an agent's ask for a helper",
   "person.route.SESSION_HELPER_DECLINE": "say no to an agent's ask for a helper",
+  "person.route.SESSION_HELPER_PASS": "pass a helper's answer to the lead",
   "person.route.SESSION_MEMORY_DECIDE": "decide a session's memory changes: approve or decline an end, or keep or drop what it left staged",
   "person.route.TOGETHER_PRESS": "ask a session to replay other sessions' work onto its branch, so one Accept lands them together",
   "person.route.TOGETHER_ASK_AGAIN": "ask a session again to bring the other sessions' work in, after its check failed",

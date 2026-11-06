@@ -54,6 +54,17 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private Task<object?> SessionHelperAskAsync(SessionHelperAsk press, CancellationToken cancellationToken) => _asks.HelperAskAsync(press, cancellationToken);
 
+    // *Pass to the lead* (COWORKUX1d, the co-worker design §7): an answer the person asked for themselves sent to the session that asked,
+    // the helper's word with its mark unchanged and `answers.passed` beside it, which the count reads as their word. The state marked for
+    // the look to hand; an answer that goes to the session already, one with no answer yet, or one this session does not hold is
+    // `passed: false` with its code.
+    [DriverRoute("SESSION_HELPER_PASS", PipeClass.Person, Drain = PipeDrain.Waits)]
+    [Owner("SESSION_HELPER_PASS", Session = "session")]
+    [GroundSession("SESSION_HELPER_PASS", "session")]
+    [Says("SESSION_HELPER_PASS", "session:session")]
+    [Publishes("SESSION_HELPER_PASS", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private Task<object?> SessionHelperPassAsync(SessionHelperPass press, CancellationToken cancellationToken) => _asks.HelperPassAsync(press);
+
     // The asks a session made of helpers, oldest first, each as the driver's look left it: its state and code, the
     // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
     // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.

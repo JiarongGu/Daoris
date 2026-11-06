@@ -44,6 +44,13 @@ public static class HelperNotes
                 $"Helper {agent} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again.",
                 ("agent", agent));
 
+    /// <summary>
+    /// On the asker: the person asked a helper about its work, and the answer comes to it (COWORKUX1d, the co-worker design §7). Their
+    /// word on the line, so the answers-alone count starts again.
+    /// </summary>
+    public static Noted PersonAsked() =>
+        Noted.Of(PeerNoteCodes.HelperPersonAsked, "You asked a helper about this session's work; its answer comes as this session's next turn.");
+
     /// <summary>On the helper: whose session it helps.</summary>
     public static Noted Helping(string asker) =>
         Noted.Of(PeerNoteCodes.HelperHelping, $"This session is helping session {asker}: it reads, answers one question and changes nothing.", ("session", asker));

@@ -241,6 +241,7 @@
   "note.helper.refused": "No helper answered this question: {{why}}.",
   "note.helper.refused-by": "Helper {{agent}} did not answer this question: {{why}}.",
   "note.helper.helping": "This session is helping session {{session}}: it reads, answers one question and changes nothing.",
+  "note.helper.person-asked": "You asked a helper about this session's work; its answer comes as this session's next turn.",
   "note.helper.limited": "Helper {{agent}} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again; its account is ready again at {{until}}.",
   "note.helper.limited-no-reset": "Helper {{agent}} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again.",
   "note.answers.held": "{{agent}}'s answer waits for you: it would take this work on a third time with nobody between.",

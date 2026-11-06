@@ -14,6 +14,10 @@ namespace Daoris.Knowledge;
 /// helper, a reviewer, an intake or Ask Daoris (a helper cannot ask for a helper). Whether the rule allows an ask, the two at once and which
 /// agent are the driver's, which alone reads <c>driver.json</c>; it answers a refusal through the state file's code.</para>
 ///
+/// <para><b>The person's fields are not written here</b> (COWORKUX1d, the co-worker design §4.3): <c>after</c>, the ask a follow-up
+/// follows, and <c>to: person</c>, an answer kept for the person, are the person's doors' alone, which the driver writes. An ask from here
+/// carries neither, so it is a first ask whose answer goes to the session that asked.</para>
+///
 /// <para><b>Never fed to a remote or served over HTTP</b>, as <see cref="RuleProposalBox"/>'s files are: the driver's helper
 /// session (a later row) reads them from the home. The driver's <c>HelperAsks</c> and this share no code; each side's tests hold
 /// the same shapes.</para>
