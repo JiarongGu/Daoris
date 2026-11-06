@@ -58,7 +58,7 @@ public sealed class HelpRoomOwnPluginsTests
             File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins,"installed.one", PluginSource.FileName), """{ "offer": "installed.one" }""");
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0,
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], asks: 0,
                 plugins: PluginCatalog.Load(home), offers: PluginOffers.Load(offersFolder, home, []));
 
             Assert.Equal(["github-pull-request", "tickets"], machine.Offers.Select(offer => offer.Id));

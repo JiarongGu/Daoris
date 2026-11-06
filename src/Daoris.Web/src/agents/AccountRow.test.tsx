@@ -4,12 +4,12 @@ import { cleanup, render as rtlRender, screen, within } from '@testing-library/r
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
-import { byTool, type ToolDoor } from './tools';
+import type { ToolDoor } from './tools';
 import { ACCOUNT_COLUMNS, AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';
 import type { AccountSaid } from '../settings/accounts/accounts';
 import { accountState, type WindowCell } from './agents';
-import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
+import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
 // An account's row as a person reads it (ACCTUX1, the 2026-10-07 second opinion's account section): what its agent last said
 // is a reading, not metadata, so it is set at the row's own size, its shares in the ink and its times in the soft ink; a key
@@ -31,7 +31,7 @@ const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {} }: {
   speaks?: boolean; said?: Record<string, AccountSaid>;
 } = {}) {
-  const [tool] = byTool([{ ...CLAUDE, profiles }]);
+  const [tool] = toolsOf([{ ...CLAUDE, profiles }]);
   const use = {
     ...CLAUDE_USE,
     speaks,

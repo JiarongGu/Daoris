@@ -215,7 +215,7 @@ public static class HelpRoom
     /// where reading across lets the helper read it (D107): no other root, no profile's home, no key.
     /// </summary>
     /// <remarks>Each section describes the facts it says, from the same sources (MOD6).</remarks>
-    /// <param name="product">What a person calls a harness's tool, where its toolchain says.</param>
+    /// <param name="facts">The agents as their registrations declare them (<see cref="IAgentFacts"/>), which say what a person calls a harness's tool; none names none.</param>
     /// <param name="asks">How many asks wait for the person's answer.</param>
     /// <param name="standing">The asks the host answered, listed by id where they are not closed (HELP6).</param>
     /// <param name="offers">The install's own plugins (PLUG9 d); the room lists the sound ones not installed here.</param>
@@ -232,16 +232,16 @@ public static class HelpRoom
     /// </param>
     public static HelpMachine Describe(
         DriverConfig config, IKnowledgeSnapshot snapshot, IReadOnlyList<RepositoryLine> lines,
-        IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
+        IReadOnlyList<HarnessReport> roster, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, IKnowledgeSessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
         IReadOnlyList<IKnowledgeMilestone>? work = null, IReadOnlyList<InventoryUnread>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
-        HelpNotReadYet? notReadYet = null, string? workspace = null, HelpWaits? waits = null)
+        HelpNotReadYet? notReadYet = null, string? workspace = null, HelpWaits? waits = null, IAgentFacts? facts = null)
     {
         var sources = new HelpMachineSources(
-            config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
+            config, snapshot, lines, roster, facts, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
             parked ?? [], browser)
         {
             Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
@@ -293,7 +293,7 @@ public static class HelpRoom
 /// <param name="Browser">What Daoris's browser's files hold (HELP10), or null where the desktop read none.</param>
 internal sealed record HelpMachineSources(
     DriverConfig Config, IKnowledgeSnapshot Snapshot, IReadOnlyList<RepositoryLine> Lines, IReadOnlyList<HarnessReport> Roster,
-    Func<string, string?> Product, int Asks, IReadOnlyList<AskView> Standing, PluginCatalog Plugins,
+    IAgentFacts? Facts, int Asks, IReadOnlyList<AskView> Standing, PluginCatalog Plugins,
     IReadOnlyList<LandedBranch> Landed, IReadOnlyList<PluginOffer> Offers, IReadOnlyList<ParkedQuest> Parked,
     HelpBrowserFacts? Browser) : IHelpMachineSources
 {

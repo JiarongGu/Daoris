@@ -154,8 +154,11 @@ export function AgentPage({
   now?: Date;
 }) {
   const { t } = useTranslation();
-  const door = tool.doors[0]!;
-  const signsIn = door.signsIn !== false;
+  // The agent's account acts and the door they run through come from the roster's sheet (COAGENT1e), never from a door of the list.
+  const lead = tool.lead ?? tool.name;
+  const signsIn = tool.acts?.signsIn === true;
+  const takesKey = tool.acts?.takesKey === true;
+  const installs = tool.acts?.installs === true;
   const product = tool.product ?? tool.name;
   // The set's one scope, every workspace's (POOL1a2, D197): its order, how it is used and its next start.
   const machine: AccountScope | null = use ? machineScope(use) : null;
@@ -305,11 +308,11 @@ export function AgentPage({
   };
 
   // The header's ⋯ (D152 §4.1): a door's own acts, which *Ways in* keeps too, and the agent's id, which left the head.
-  const owning = tool.doors.find((each) => each.present) ?? door;
+  const owning = tool.doors.find((each) => each.present);
   const pinnable = tool.doors.find((each) => each.pinnable);
   const headMenu: MenuAct[] = [
-    ...(tool.present && (owning.updates === 'pin' || owning.updates === 'tool')
-      ? [{ id: 'update', label: t('harness.update'), disabled: busy, onSelect: () => acts.onDoor(owning.harness, 'update') }] : []),
+    ...(tool.present && (owning?.updates === 'pin' || owning?.updates === 'tool')
+      ? [{ id: 'update', label: t('harness.update'), disabled: busy, onSelect: () => acts.onDoor(owning!.harness, 'update') }] : []),
     ...(pinnable && !pinnable.pinned
       ? [{
         id: 'pin', label: t('agents.head.pin'), disabled: busy,
@@ -345,15 +348,15 @@ export function AgentPage({
               {t(tool.accounts.length === 0 ? 'harness.login.forDaoris' : 'agents.add.open')}
             </Button>
           )}
-          {tool.present && door.takesKey && !keying && (
+          {tool.present && takesKey && !keying && (
             <Button variant="ghost" disabled={busy} onClick={() => askKey(true)}>
               <Icon name="account" size={13} />
               {t('harness.profile.addKey')}
             </Button>
           )}
           {/* An agent not installed heads with its own installer (D152 §4.6), the same one *Ways in* runs. */}
-          {!tool.present && door.installs !== false && (
-            <Button variant="primary" disabled={busy} onClick={() => acts.onDoor(door.harness, 'install')}>{t('harness.install')}</Button>
+          {!tool.present && installs && (
+            <Button variant="primary" disabled={busy} onClick={() => acts.onDoor(lead, 'install')}>{t('harness.install')}</Button>
           )}
           <Menu.Root>
             <Tip content={t('agents.head.more', { agent: product })}>
@@ -428,7 +431,7 @@ export function AgentPage({
     const label = accountLabel(account, tool);
     const state = states.get(account.name)!;
     const facts = use?.accounts.find((each) => each.name === account.name);
-    const offered = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, takesKey: Boolean(door.takesKey) });
+    const offered = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, takesKey });
     // What its agent last said, and since when it is offered again, under that row alone; a cool-off's column says its hold's
     // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
     // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
@@ -520,12 +523,12 @@ export function AgentPage({
       {/* *Add an account…* (D152 §4.5), under the header where it was started: step 1, the sign-in, or step 3. */}
       <AccountsFold adding={adding} goingBack={goingBack} signInNewPanel={signInNewPanel} added={added} back={back} busy={busy} now={now} setGoingBack={setGoingBack} acts={acts} tool={tool} t={t} addedKey={addedKey} addedWho={addedWho} offeredName={offeredName} addedFallback={addedFallback} refusalOf={refusalOf} answered={answered} latest={latest} use={use} product={product} readingNow={readingNow} reading={reading} pooled={pooled} labelOf={labelOf} nextSaid={nextSaid} accountRow={accountRow} ownLabel={ownLabel} termsOpen={termsOpen} setTermsOpen={setTermsOpen} keying={keying} addKey={addKey} keyDraft={keyDraft} setKeyDraft={setKeyDraft} askKey={askKey} machine={machine} open={open} toggle={toggle} choices={choices} />
       <AgentDoors t={t} tool={tool} adapter={adapter} open={open} toggle={toggle} onOpenPlugin={onOpenPlugin} busy={busy} acts={acts} pinOpen={pinOpen} setPinOpen={setPinOpen} pinning={pinning} setPinning={setPinning} doorRunning={doorRunning} doorConsole={doorConsole} />
-      <AgentMore rulesShown={rulesShown} t={t} rules={rules} open={open} toggle={toggle} busy={busy} acts={acts} settingsShown={settingsShown} tool={tool} labelOf={labelOf} tuning={tuning} askSettings={askSettings} door={door} settingsBusy={settingsBusy} answered={answered} setTuning={setTuning} refusalOf={refusalOf} sessions={sessions} usage={usage} ownLabel={ownLabel} usedBy={usedBy} product={product} />
+      <AgentMore rulesShown={rulesShown} t={t} rules={rules} open={open} toggle={toggle} busy={busy} acts={acts} settingsShown={settingsShown} tool={tool} labelOf={labelOf} tuning={tuning} askSettings={askSettings} lead={lead} settingsBusy={settingsBusy} answered={answered} setTuning={setTuning} refusalOf={refusalOf} sessions={sessions} usage={usage} ownLabel={ownLabel} usedBy={usedBy} product={product} />
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
         {/* An agent Daoris has no installer for is installed with its maker's own tooling, so no `daoris agent install` (INSTALLDOOR1). */}
         <Inline text={t(
           tool.present ? 'agents.page.terminal'
-            : door.installs === false ? (tool.maker ? 'agents.page.installedByMaker' : 'agents.page.installedByMakerUnnamed')
+            : !installs ? (tool.maker ? 'agents.page.installedByMaker' : 'agents.page.installedByMakerUnnamed')
               : 'agents.page.terminalAbsent',
           { agent: tool.name, product, maker: tool.maker },
         )} />

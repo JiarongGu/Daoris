@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { ago, clockOf, moment } from '../locales/format';
 import { byTool, type ToolDoor } from './tools';
+import { toolsOf } from './agentsFixtures';
 import { scopeOf, THREE } from '../settings/accounts/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts/accounts';
 import {
@@ -171,9 +172,9 @@ describe('the list', () => {
    * mark its declaration gives leads; else the first letters, each word's initial or a lone word's first two; and none
    * repeats a mark above it in the list.
    */
-  /** INSTALLDOOR1: a row says whether Daoris has an installer for it; a shell that sends no `installs` reads as one that does. */
+  /** INSTALLDOOR1: a row says whether Daoris has an installer for it. */
   it('says whether Daoris installs each agent, an absent field reading as it does', () => {
-    const rows = (door: Partial<ToolDoor>) => agentRows(byTool([{ ...claude(), present: false, ...door }]), undefined)[0]!;
+    const rows = (door: Partial<ToolDoor>) => agentRows(toolsOf([{ ...claude(), present: false, ...door }]), undefined)[0]!;
     expect(rows({}).installs).toBe(true);
     expect(rows({ installs: true }).installs).toBe(true);
     expect(rows({ installs: false }).installs).toBe(false);
@@ -200,11 +201,11 @@ describe('the list', () => {
     expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
   });
 
-  it('says an agent with no Daoris account has none yet, not that it runs on its own sign-in', () => {
-    const rows = agentRows(byTool([claude({ profiles: [] })]), undefined);
+  it('says an agent with no Daoris account has none yet, not its own sign-in', () => {
+    const rows = agentRows(toolsOf([claude({ profiles: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('no Daoris account yet');
-    // A plugin's agent that signs in nowhere is installed, and nothing more is claimed of it.
-    const declared = agentRows(byTool([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
+    // A plugin's agent that signs in nowhere is only installed.
+    const declared = agentRows(toolsOf([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
     expect(declared[0]!.phrase).toBe('installed');
   });
 });
@@ -343,6 +344,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(machine, labelOf)).toEqual({
       takes: "The next start takes account-3: it runs fewer of Daoris's sessions than account-2.",
       held: `account-1 is cooling until ${moment(machine.next!.others[0]!.until!)}.`,
+      doors: [],
     });
   });
 
@@ -364,7 +366,7 @@ describe('the next start, above the accounts', () => {
       next: { account: 'account-3', reason: 'near', over: 'account-1', others: [{ account: 'account-1', hold: 'near' }] },
     });
     expect(nextStartSaid(near, labelOf)).toEqual({
-      takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null,
+      takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null, doors: [],
     });
     // Passed while another reason names a third account: its hold says which of the three holds it (SWITCH1b-iii).
     const held = scopeOf({
@@ -385,7 +387,7 @@ describe('the next start, above the accounts', () => {
     });
     expect(nextStartSaid(scope, labelOf)).toEqual({
       takes: `None of Daoris's accounts is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
-      held: null,
+      held: null, doors: [],
     });
   });
 
@@ -398,10 +400,9 @@ describe('the next start, above the accounts', () => {
   /** OWNSPACE1b-A (D175 point 4): no Daoris account signed in is its own line, said apart from a wait. */
   it('says no Daoris account is signed in, once, where the reason arrives', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)).toEqual({
-      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null,
+      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null, doors: [],
     });
   });
-
   it('says it in one sentence in 中文, with no space after a full-width mark', async () => {
     await i18n.changeLanguage('zh');
     const said = nextStartSaid(THREE.scopes[0]!, labelOf)!;

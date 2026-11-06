@@ -4,10 +4,10 @@ import { cleanup, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
-import { byTool, type ToolDoor } from './tools';
+import type { ToolDoor } from './tools';
 import { type AgentActs, AgentPage } from './AgentPage';
 import { NameAccount } from './AddAccount';
-import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
+import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
 // The add flow's last step says what an account left unnamed is called (ACCTUX1, the 2026-10-07 second opinion): the name the
 // page gives it, which for a fresh id is who signed in or a key's handle, never the id it said before, which the page shows
@@ -27,7 +27,7 @@ const FRESH = 'acct-5e1f0a2b';
 
 /** Claude Code's page at the add flow's last step, the new account kept as `profile` and who signed in as `who`. */
 function asking(profile: NonNullable<ToolDoor['profiles']>[number], who: string | null, acts: AgentActs = ACTS) {
-  const [tool] = byTool([{ ...CLAUDE, profiles: [...CLAUDE.profiles!, profile] }]);
+  const [tool] = toolsOf([{ ...CLAUDE, profiles: [...CLAUDE.profiles!, profile] }]);
   return render(
     <AgentPage tool={tool!} use={CLAUDE_USE} rules={null} usage={[]} acts={acts} added={{ account: profile.name, who }} />,
   );

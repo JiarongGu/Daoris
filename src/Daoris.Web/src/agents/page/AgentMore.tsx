@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { figure } from '../../locales/format';
-import type { Tool, ToolDoor } from '../tools';
+import type { Tool } from '../tools';
 import type { UsedBy } from '../roles/roleStructure';
 import { UsedLine } from '../roles/StructureSections';
 import { Button, Chip, Prose, SkeletonRows, Tip } from '../../design/ui';
@@ -12,7 +12,7 @@ import { type TFunction } from 'i18next';
 import { Fold } from './Fold';
 import type { AgentActs, AgentSection, Question } from '../AgentPage';
 
-export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, settingsShown, tool, labelOf, tuning, askSettings, door, settingsBusy, answered, setTuning, refusalOf, sessions, usage, ownLabel, usedBy, product }: {
+export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, settingsShown, tool, labelOf, tuning, askSettings, lead, settingsBusy, answered, setTuning, refusalOf, sessions, usage, ownLabel, usedBy, product }: {
   rulesShown: boolean;
   t: TFunction<"translation", undefined>;
   rules: AgentRulesState | null;
@@ -25,7 +25,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
   labelOf: (name: string) => string;
   tuning: string | null;
   askSettings: (account: string | null) => void;
-  door: ToolDoor;
+  lead: string;
   settingsBusy: boolean;
   answered: (question: Question, account: string, close?: () => void) => Answered;
   setTuning: React.Dispatch<React.SetStateAction<string | null>>;
@@ -74,7 +74,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
                     (SETTINGSWAIT1), so a refusal is never said to nobody. */}
                 {tuning === account.name && (
                   <AccountSettingsForm
-                    harness={door.harness}
+                    harness={lead}
                     account={account.name}
                     accountLabel={labelOf(account.name)}
                     settings={account.settings!}

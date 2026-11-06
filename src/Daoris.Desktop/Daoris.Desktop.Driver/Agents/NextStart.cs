@@ -23,4 +23,14 @@ public sealed record NextStart(string? Account, NextReason Reason, IReadOnlyList
 
     /// <summary>Where it is <see cref="NextReason.Lapsing"/>, when the reading that says it was made.</summary>
     public DateTimeOffset? Seen { get; init; }
+
+    /// <summary>
+    /// The other doors onto the agent's accounts whose own-home state differs from the door this answer speaks for (the account's own
+    /// door): a plugin's door that starts in its own home where the account's is owed an account, or the reverse. One each, so the
+    /// card says it of the door and never as the agent's.
+    /// </summary>
+    public IReadOnlyList<DoorStart> Doors { get; init; } = [];
 }
+
+/// <summary>One door's answer to whether a start on it runs in its own home, owing no Daoris account.</summary>
+public sealed record DoorStart(string Door, bool StartsInOwnHome);

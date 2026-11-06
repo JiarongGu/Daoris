@@ -18,6 +18,8 @@ namespace Daoris.Driver;
 /// <param name="Product">What the plugin says its tool is.</param>
 /// <param name="Maker">Who makes it, which the commit trailer and the reviewer's choice read.</param>
 /// <param name="OwnHome">The plugin's word that its agent's own home is nobody's (D175).</param>
+/// <param name="FullPosture">The harness's own mode that asks nothing, or null where none is declared.</param>
+/// <param name="AskingPosture">The harness's own mode that asks the person, or null where none is declared.</param>
 public sealed record DeclaredDoor(
     string Name,
     string DeclaredBy,
@@ -30,4 +32,6 @@ public sealed record DeclaredDoor(
     string? AccountOf = null,
     string? Product = null,
     string? Maker = null,
-    bool OwnHome = false);
+    bool OwnHome = false,
+    string? FullPosture = null,
+    string? AskingPosture = null);

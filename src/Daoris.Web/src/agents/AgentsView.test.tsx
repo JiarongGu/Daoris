@@ -7,8 +7,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 // The Agents place in SHELL mode (UX6e, D150 §5): the list of agents and an agent's page, its accounts with their last known
 // state and when each was read, and every act on it, over the mocked bridge. Moved from Settings → Agents' suite with the
-// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e), its assertions read on the page they are on now.
-
+// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e).
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
@@ -17,7 +16,7 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
 }));
 
 vi.mock('@shenora/react', async () => ({
-  ...(await import('../test/sliceShell')).mockedShell(invoke, { notifyReady }),
+  ...(await import('../test/sliceShell')).mockedShell((await import('./agentsFixtures')).sheeted(invoke), { notifyReady }),
   useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
     eventHandlers.set(`${module}.${type}`, handler);
   },
@@ -876,7 +875,7 @@ describe('the Agents place', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/neither can be taken now/);
     await userEvent.click(screen.getByRole('button', { name: 'Use a device code' }));
 
-    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'codex-acp', action: 'login-new', way: 'device-code' },
     });
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());

@@ -7,6 +7,8 @@
   "harness.next.takes": "The next start takes {{account}}: {{why}}.",
   "harness.next.own": "The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.",
   "harness.next.noAccount": "No Daoris account is signed in for it; its starts wait until you sign in.",
+  "harness.next.door.ownHome": "A start on `{{door}}` runs in its own home, which is nobody's sign-in: it is owed no account.",
+  "harness.next.door.owed": "A start on `{{door}}` is owed a Daoris account, and waits until one is signed in.",
   "harness.next.waitsUntil": "None of Daoris's accounts is ready, so the next start waits until {{when}}.",
   "harness.next.waits": "None of Daoris's accounts is ready, and none comes ready by itself: the next start waits for you.",
   "harness.next.signInSooner": "Signing in to {{accounts}} starts it sooner.",

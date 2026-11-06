@@ -27,6 +27,7 @@ import {
   ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, ownBuild, ownBuildRoot, ownBuilt, portRefusal,
   rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
+import { declareStubTwo, stubTwoListed } from './stub-two.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readPlace, readRegister, readWorkspaceSetup, withFirstOnPath,
   writeDoctrineLauncher,
@@ -6079,10 +6080,8 @@ section('18. Three plugins: one declares a harness, one hands a server, one hold
 // TRACKED examples under `examples/plugins/`, installed with the real `daoris plugin add`, so the
 // example somebody copies is the one this gate drives. No code of any of them loads anywhere.
 //
-// The driver's home is the directory its config sits in (`onHome`), which for the main config is
-// `scratch` — so the plugins live there, and the CLI's two doors onto the same
-// folder are pointed there too, for this phase only. `daoris plugin` is the driver program's since PUSH1f2f, and each of its
-// changes is a person's press, so the phase's calls are the person's (`PERSON`): no session's marker.
+// The driver's home is its config's directory (`onHome`), `scratch` for the main config, so the plugins live there. `daoris plugin`
+// is the driver program's (PUSH1f2f) and each change a person's press, so the calls are the person's (`PERSON`).
 const PLUGIN_HOME = { DAORIS_HOME: scratch, ...PERSON };
 const agentPlugin = homeEntry(scratch, 'plugins', 'rehearsal.agent');
 mkdirSync(agentPlugin, { recursive: true });
@@ -6095,9 +6094,11 @@ writeFileSync(join(agentPlugin, 'plugin.json'), `${JSON.stringify({
   harnesses: [{ name: 'gate-agent', command: ['node', acpAgent] }],
 }, null, 2)}\n`);
 
+declareStubTwo(homeEntry(scratch, 'plugins', 'rehearsal.stub-two'), acpAgent);
+
 const pluginAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plugins', 'hold-by-title')}"`, scratch, PLUGIN_HOME);
 check(
-  '`daoris plugin add` copies the tracked example in under its id',
+  '`plugin add` copies the tracked example in under its id',
   pluginAdded.code === 0 && /added plugin `hold-by-title`/.test(pluginAdded.out)
     && existsSync(homeEntry(scratch, 'plugins', 'hold-by-title', 'hooks.mjs')),
   pluginAdded.out,
@@ -6106,15 +6107,15 @@ const pluginFolder = homeEntry(scratch, 'plugins', 'hold-by-title');
 
 const browserAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plugins', 'browser')}"`, scratch, PLUGIN_HOME);
 check(
-  '`daoris plugin add` takes the tracked browser example, which declares a server and nothing else',
+  '`plugin add` takes the tracked browser example, which declares a server and nothing else',
   browserAdded.code === 0 && /added plugin `browser`/.test(browserAdded.out),
   browserAdded.out,
 );
 
-// The terminal's door reads the same folder by the catalogue's own rules: `daoris plugin list` is the driver program's (PUSH1f2f).
+// The terminal reads the same folder by the catalogue's rules (PUSH1f2f).
 const pluginList = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME);
 check(
-  '`daoris plugin list` names all three — what each declares, hands and speaks on',
+  '`plugin list` names all three — what each declares, hands and speaks on',
   pluginList.code === 0
     && /rehearsal\.agent[\s\S]*declares gate-agent/.test(pluginList.out)
     && /browser[\s\S]*hands sessions browser/.test(pluginList.out)
@@ -6124,10 +6125,11 @@ check(
 
 const harnessList = run(`node "${cliBin}" agent list`, scratch, NO_HARNESS);
 check(
-  '`daoris agent list` shows the declared agent beside the build\'s own, naming the plugin',
+  '`agent list` shows the declared agent beside the build\'s own, naming the plugin',
   /gate-agent/.test(harnessList.out) && /declared by plugin `rehearsal\.agent`/.test(harnessList.out),
   harnessList.out,
 );
+check('`agent list` shows Stub Two by file', stubTwoListed(harnessList.out), harnessList.out);
 
 // Driven on the DECLARED harness: nothing in driver.json names a command, because the declaration
 // carries it. Two quests — one the gate lets through, one it holds. Build takes the declared agent through the role door, as
