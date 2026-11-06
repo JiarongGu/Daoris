@@ -3,8 +3,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// The factory of the doors a plugin declares (the agent-provider design §4.8, row q): a <see cref="DeclaredDoor"/> made a contract door
 /// riding the protocol transport, what the manifest may never claim being what the declaration has no field for. The door's identity and
-/// its home are its own, from the declaration; what the transport gives every protocol door is stated from the transport, and that the
-/// door holds a conversation is stated here.
+/// its home are its own, from the declaration; what the transport gives every protocol door is stated from the transport (its resume,
+/// eligibility to negotiate at the open), and that the door holds a conversation and is handed no settings file is stated here. The
+/// registry places the door by its account key when it joins (<see cref="JoinedProviders"/>).
 /// </summary>
 public static class DeclaredDoors
 {
@@ -27,33 +28,9 @@ public static class DeclaredDoors
         Known<IDialect>.Absent,
         new AbilitiesPart(
             Known<bool>.Declared(true, "a declared door holds a conversation"),
-            Known<bool>.Absent,
-            Known<bool>.Absent),
+            Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
+            Known<bool>.Declared(false, "a declared door is handed no settings file")),
         new DoorTablesPart(null, null),
         string.IsNullOrEmpty(declared.AccountOf) ? null : new AccountKey(declared.AccountOf),
         InstructionsPart.None);
-
-    /// <summary>
-    /// The provider of a door a declaration made, made from the declaration alone: its id the door's, no program of its own, and the
-    /// account pool the door's own key names, which the registry's pool joins to the provider its door's account key names. A plugin's
-    /// harness takes Claude Code's skill layout, and no rule language of its own.
-    /// </summary>
-    public static Provider Provider(DeclaredDoor declared) => Provider(Door(declared));
-
-    private static Provider Provider(AgentDoor door) => new(
-        new ProviderId(door.Id.Value),
-        new ProviderIdentity(door.Identity.Product, door.Identity.Maker, null, false, [door.Identity.DeclaredBy!]),
-        [door],
-        Known<ToolSpec>.Absent,
-        Known<AccountsPart>.Declared(new AccountsPart(door.AccountOf ?? new AccountKey(door.Id.Value), null, PoolFacts.None), "a plugin's declaration"),
-        Known<TablesPart>.Absent,
-        Known<UsagePart>.Absent,
-        Known<LentPart>.Absent,
-        Known<ISettingsFile>.Absent,
-        Known<IChildVocabulary>.Absent,
-        Known<IRuleLanguage>.Absent,
-        Known<ISkillLayout>.Declared(ClaudeSkills.Layout, "a plugin's harness takes Claude Code's skill layout"),
-        Known<IConversationHome>.Absent,
-        Reach.Everywhere,
-        Known<VocabularyPart>.Absent);
 }

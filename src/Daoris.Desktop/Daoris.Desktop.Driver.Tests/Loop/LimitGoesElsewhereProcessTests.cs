@@ -49,7 +49,8 @@ public sealed class LimitGoesElsewhereProcessTests : IDisposable
     };
 
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
-    private static ProviderRegistry Adapters() => TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), PluginDoors.Provider(new PluginHarness("acp-second", ["node"]), "second-plugin")]);
+    private static ProviderRegistry Adapters() =>
+        TestDoors.Registry(TestDoors.Shipped("stub", "acp-stub")).Joined([PluginDoors.Door(new PluginHarness("acp-second", ["node"]), "second-plugin")], []);
 
     /// <summary>The machine's choices, with <paramref name="actor"/>'s order: the first stand-in, then the second.</summary>
     private DriverConfig Config(string actor, IReadOnlyList<ActorChoice> order)

@@ -7,5 +7,5 @@ public static class PluginRegistry
     /// <paramref name="set"/> plus every harness the catalogue's contributing plugins declare (D64 §3). The catalogue has already refused any
     /// name the registry carries, so a plugin adds and the built-in registry is exactly what it was.
     /// </summary>
-    public static ProviderRegistry WithPlugins(this ProviderRegistry set, IAgentPlugins catalog) => set.Joined(catalog.Doors.Select(DeclaredDoors.Provider), catalog.DeclaredAgents);
+    public static ProviderRegistry WithPlugins(this ProviderRegistry set, IAgentPlugins catalog) => set.Joined(catalog.Doors.Select(DeclaredDoors.Door), catalog.DeclaredAgents);
 }

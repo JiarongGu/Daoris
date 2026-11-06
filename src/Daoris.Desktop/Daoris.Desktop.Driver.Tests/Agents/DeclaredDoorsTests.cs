@@ -32,7 +32,10 @@ public sealed class DeclaredDoorsTests : IDisposable
         Assert.Equal("edits", door.Postures.Ordinary);
         Assert.Null(door.Postures.Full);
         Assert.True(door.Abilities.Interactive.Required);
-        Assert.False(door.Abilities.Resumes.IsKnown);
+        // The declaration has no resume: the door's is the protocol transport's, eligibility to negotiate at the open.
+        Assert.True(door.Abilities.Resumes.Required);
+        Assert.Equal(Eligibility.Applies, door.Abilities.Resumes.Applies);
+        Assert.False(door.Abilities.TakesSettings.Required);
         Assert.False(door.Dialect.IsKnown);
         Assert.Equal(LentPart.None, door.Lent);
         Assert.Equal(new DoorTablesPart(null, null), door.Tables);

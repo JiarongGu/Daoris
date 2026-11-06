@@ -112,18 +112,12 @@ public sealed class ProviderRegistry
     public IReadOnlyList<string> Agents => Known;
 
     /// <summary>
-    /// This registry plus <paramref name="more"/> providers and the agents they declare. A name it carries is kept as it is, so nothing
-    /// can be replaced: a provider joins, and the registry it joins is exactly what it was (<c>WithPlugins</c> says who offers them).
+    /// This registry plus the doors a plugin <paramref name="declared"/>, each placed by its account key (<see cref="JoinedProviders"/>),
+    /// and the agents the plugins name. A name it carries is kept as it is, so nothing can be replaced: every door it carries reads as it
+    /// did (<c>WithPlugins</c> says who offers them).
     /// </summary>
-    public ProviderRegistry Joined(IEnumerable<Provider> more, IEnumerable<string> declaredAgents)
-    {
-        var carried = new HashSet<string>(Known, StringComparer.OrdinalIgnoreCase);
-        // A provider joins unless its own id or one of its doors' ids is carried; the account key its doors run as is a name it shares.
-        var joining = more
-            .Where(provider => !provider.Doors.Select(door => door.Id.Value).Append(provider.Id.Value).Any(carried.Contains))
-            .ToList();
-        return new ProviderRegistry([.. Providers.Where(provider => !provider.Unavailable), .. joining], _declared.Concat(declaredAgents));
-    }
+    public ProviderRegistry Joined(IEnumerable<AgentDoor> declared, IEnumerable<string> declaredAgents) =>
+        new(JoinedProviders.Of(this, declared), _declared.Concat(declaredAgents));
 
     /// <summary>Every provider, in id order, unavailable descriptors among them.</summary>
     public IReadOnlyList<Provider> Providers { get; }

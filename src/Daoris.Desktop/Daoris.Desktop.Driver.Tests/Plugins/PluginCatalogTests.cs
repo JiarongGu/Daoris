@@ -316,7 +316,7 @@ public sealed class PluginCatalogTests : IDisposable
             Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
             // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
             var built = Built();
-            if (refused) Assert.Same(built.AgentNamed(name), built.WithPlugins(catalog).AgentNamed(name));
+            if (refused) Assert.Equal(built.AgentNamed(name), built.WithPlugins(catalog).AgentNamed(name));
         }
     }
 
@@ -391,12 +391,12 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.True(report.Present, report.Problem);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
 
-        var missing = PluginDoors.Provider(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain");
-        Assert.False((await HarnessProbe.ProbeAsync("gone", new ProviderRegistry([missing], []).AgentNamed("gone")!, null, new HarnessSettings(), _home)).Present);
+        var missing = Built().Joined([PluginDoors.Door(new PluginHarness("gone", [Path.Combine(folder, "gone.mjs")]), "plain")], []);
+        Assert.False((await HarnessProbe.ProbeAsync("gone", missing.AgentNamed("gone")!, null, new HarnessSettings(), _home)).Present);
 
         // One that DOES declare a version question is run, like every built-in harness.
-        var asked = PluginDoors.Provider(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain");
-        Assert.False(new ProviderRegistry([asked], []).AgentNamed("asked")!.Program.ProbeByPresence);
+        var asked = Built().Joined([PluginDoors.Door(new PluginHarness("asked", ["x"], VersionArguments: ["--version"]), "plain")], []);
+        Assert.False(asked.AgentNamed("asked")!.Program.ProbeByPresence);
     }
 
     /// <summary>A wire that carries no posture asks for nothing (ACP3): null, never a guessed mode.</summary>

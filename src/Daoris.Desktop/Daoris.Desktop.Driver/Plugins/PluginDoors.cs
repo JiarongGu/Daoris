@@ -24,6 +24,6 @@ public static class PluginDoors
         harness.FullPosture,
         harness.AskingPosture);
 
-    /// <summary>The provider <paramref name="harness"/> makes for <paramref name="plugin"/>, with its one door, as the registry carries it.</summary>
-    public static Provider Provider(PluginHarness harness, string plugin) => DeclaredDoors.Provider(Declare(harness, plugin));
+    /// <summary>The door <paramref name="harness"/> makes for <paramref name="plugin"/>, which the registry places by its account key when it joins.</summary>
+    public static AgentDoor Door(PluginHarness harness, string plugin) => DeclaredDoors.Door(Declare(harness, plugin));
 }

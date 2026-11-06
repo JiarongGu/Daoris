@@ -1214,7 +1214,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
-    private static ProviderRegistry TwoAgents() => TestDoors.Registry([.. TestDoors.Shipped("stub", "acp-stub"), PluginDoors.Provider(new PluginHarness("acp-second", ["node"]), "second-plugin")]);
+    private static ProviderRegistry TwoAgents() =>
+        TestDoors.Registry(TestDoors.Shipped("stub", "acp-stub")).Joined([PluginDoors.Door(new PluginHarness("acp-second", ["node"]), "second-plugin")], []);
 
     /// <summary>The machine's choices with Chat's order the first stand-in, then the second, which runs in its own home and answers every prompt.</summary>
     private DriverConfig ConfigWithSecondChoice()
