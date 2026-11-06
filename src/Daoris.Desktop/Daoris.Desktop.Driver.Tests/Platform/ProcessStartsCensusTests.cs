@@ -453,6 +453,26 @@ public sealed class ProcessStartsCensusTests
         Assert.Empty(NoConsoleStarts.Stale(sources));
     }
 
+    /// <summary>Every direct start a driver test makes is git past the ceiling or named with its purpose in <see cref="TestProcessStarts"/> (D249).</summary>
+    [Fact]
+    public void Every_direct_start_a_driver_test_makes_is_named_with_its_purpose()
+    {
+        var problems = TestProcessStarts.Problems(TestProcessStarts.Sources("Daoris.Desktop.Driver.Tests"), "Daoris.Desktop.Driver.Tests");
+
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
+    }
+
+    /// <summary>A start planted in an unlisted test file is named, and a listed file that starts nothing is taken off.</summary>
+    [Fact]
+    public void A_test_start_planted_unlisted_is_named_by_the_census()
+    {
+        var planted = TestProcessStarts.Sources("Daoris.Desktop.Driver.Tests").Append(("Daoris.Desktop.Driver.Tests/Planted.cs", "var p = Process.Start(info);"));
+
+        Assert.Contains("Daoris.Desktop.Driver.Tests/Planted.cs: a direct start of a process, not named",
+            TestProcessStarts.Problems(planted, "Daoris.Desktop.Driver.Tests"));
+        Assert.Empty(TestProcessStarts.Problems([("Daoris.Desktop.Driver.Tests/Planted.cs", "var p = TestGit.Past(info); Process.Start(info);")], "Other"));
+    }
+
     /// <summary>A start with no window hidden fails; each way of hiding it, and each named exemption, passes.</summary>
     [Fact]
     public void A_console_start_without_CreateNoWindow_fails_the_census()
