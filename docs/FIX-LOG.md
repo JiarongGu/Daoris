@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-06 - A root `lyntai-local.props` carrying a machine path was committed and pushed (FIX6)
+
+- **Symptom:** `test-map` found an unplaced tracked file, `lyntai-local.props` at the repository's root: the local Lyntai build's props,
+  whose feed is an absolute path on the developer's machine. It was on the remote's main.
+- **Root cause:** a builder's commit (286cb5ba6, 2026-11-05) staged a copy of the props written at the root, where only the ignored
+  `local/lyntai-local.props` belongs (`tools/lyntai-local.mjs` writes that one). The sensitive gate's private patterns named no
+  development folder, so nothing refused the path.
+- **Fix:** the file is removed (290df493c), and the private patterns refuse the development folder's absolute path. The history still
+  carries it: rewriting it, and the remote's, is the owner's call (`leak-repair`). The path names a folder, no user, account or private name.
+- **Verify:** `node tools/test-map.mjs --check`; the sensitive gate over the tree, which names nothing.
+
 ## 2026-11-06 - Every start inherited `DAORIS_HOST_TOKEN` where Daoris's own environment held it (FIX4)
 
 - **Symptom:** `GitSessionHoldsTests`, which names the tokens a session must never hold, was red: `DAORIS_HOST_TOKEN` was not taken out
