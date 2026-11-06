@@ -5,8 +5,10 @@ namespace Daoris.Driver;
 /// gate's judgement (<see cref="OpinionGateReading"/>).
 /// </summary>
 [NodeKind(NodeKinds.Opinion, NodeGroup.Checks, NodeKinds.Check)]
-public sealed class OpinionNode : BuiltInNode, IObserves
+public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads
 {
+    public PassRead Asks => PassRead.Gates;
+
     public NodeObservation Observe(NodeReading reading) => OpinionGateReading.Observe(reading);
 
     /// <summary>

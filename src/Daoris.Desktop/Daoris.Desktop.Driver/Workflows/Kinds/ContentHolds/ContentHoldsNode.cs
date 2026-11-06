@@ -5,8 +5,10 @@ namespace Daoris.Driver;
 /// branch of the person's holds, and that neither the line nor such a branch holds it by content (SQUASHTIDY1f).
 /// </summary>
 [NodeKind(NodeKinds.ContentHolds, NodeGroup.Checks, NodeKinds.QuestHolds)]
-internal sealed class ContentHoldsNode : BuiltInNode, IObserves
+internal sealed class ContentHoldsNode : BuiltInNode, IObserves, IAsksReads
 {
+    public PassRead Asks => PassRead.Content;
+
     /// <summary>As <c>quest.holds</c>'s: a hold that does not let go keeps it active with its reason, and the person's pass is the way past it.</summary>
     public override NodeAuthority Row { get; } =
         new(NodeKinds.ContentHolds, NodeReach.Observed, NodeSource.Holds, null, false, PersonSkips: true, MayEnd: false, Evidenced: true);

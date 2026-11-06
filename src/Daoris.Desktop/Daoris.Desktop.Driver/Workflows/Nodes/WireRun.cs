@@ -12,6 +12,9 @@ public sealed record WireRun(string GraphDigest, string Run)
 {
     public NodeScope Scope => new(GraphDigest, Run);
 
+    /// <summary>The clock a start is stamped with, so a node says since when it waits; null stamps none.</summary>
+    public Func<DateTimeOffset>? Clock { get; init; }
+
     /// <summary>
     /// Each node's place on a live graph, by node id (FABRIC-RUN1f; the cutover design §9, <see cref="NodeGraphs.Places"/>): a node named here is
     /// scoped, bound, receipted and fired on by its place where every other is by <see cref="GraphDigest"/>, so an edit elsewhere in the graph

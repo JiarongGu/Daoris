@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <param name="Workspace">The run's workspace.</param>
 /// <param name="Acts">The presses it waits for: <c>done</c>, or <c>approve</c> and <c>reject</c>.</param>
 /// <param name="Work">The run's newest work quest here: what the row's door reads the run by; null where it has none.</param>
-public sealed record HumanTask(string Run, string Node, string Repository, string Workspace, IReadOnlyList<string> Acts, string? Work);
+/// <param name="Since">When the node became active: since when the task waits; null on a record written before it was clocked.</param>
+public sealed record HumanTask(string Run, string Node, string Repository, string Workspace, IReadOnlyList<string> Acts, string? Work, DateTimeOffset? Since = null);
 
 /// <summary>
 /// The runs waiting on a person's task, judged from the runs the runtime last governed and each run's node record read now. **Read, never
@@ -26,9 +27,11 @@ public static class HumanTasks
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
             foreach (var node in each.Graph.Nodes.Where(node => NodeKit.Of(node.Kind) is HumanNode))
             {
-                if (WorkPerformer.StatusOf(kept, node.Id).State != NodeStates.Active || kept.Pending.Any(word => word.Node == node.Id)) continue;
+                var status = WorkPerformer.StatusOf(kept, node.Id);
+                if (status.State != NodeStates.Active || kept.Pending.Any(word => word.Node == node.Id)) continue;
                 tasks.Add(new HumanTask(
-                    each.Run, node.Id, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, HumanNode.Presses(node), scope.Quests.LastOrDefault()?.Id));
+                    each.Run, node.Id, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, HumanNode.Presses(node), scope.Quests.LastOrDefault()?.Id,
+                    status.Since));
             }
         }
 

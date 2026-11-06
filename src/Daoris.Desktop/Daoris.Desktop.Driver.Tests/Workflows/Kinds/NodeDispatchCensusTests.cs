@@ -20,6 +20,7 @@ public sealed partial class NodeDispatchCensusTests
         "Workflows/Nodes/NodeGoverning.cs",
         "Workflows/Nodes/NodeGraphs.cs",
         "Workflows/Nodes/WorkPerformer.cs",
+        "Workflows/Nodes/NodeEvaluations.cs",
         "Loop/Watch/WatchNodes.cs",
     ];
 
@@ -72,6 +73,18 @@ public sealed partial class NodeDispatchCensusTests
         Assert.Null(typeof(WorkPerformer).GetProperty("Checks"));
         Assert.NotNull(typeof(WorkPerformer).GetProperty(nameof(WorkPerformer.Doors)));
         Assert.Equal([NodeKinds.Check], NodeKit.Built.Units.Where(unit => unit is IJournalled).Select(unit => unit.Row.Kind));
+    }
+
+    /// <summary>The pass's reads are chosen by what each unit declares it waits on, and the landing by the one unit that makes it.</summary>
+    [Fact]
+    public void The_pass_reads_by_what_each_unit_asks()
+    {
+        string[] Asking(PassRead read) => [.. NodeKit.Built.Units.Where(unit => unit is IAsksReads asks && asks.Asks.HasFlag(read)).Select(unit => unit.Row.Kind)];
+
+        Assert.Equal([NodeKinds.Look, NodeKinds.Opinion], Asking(PassRead.Gates).Order(StringComparer.Ordinal));
+        Assert.Equal([NodeKinds.ContentHolds], Asking(PassRead.Content));
+        Assert.Equal([NodeKinds.Push], Asking(PassRead.Remote));
+        Assert.Equal([NodeKinds.Land], NodeKit.Built.Units.Where(unit => unit is IMakesLanding).Select(unit => unit.Row.Kind));
     }
 
     [GeneratedRegex(@"NodeKinds\.([A-Z]\w*)")]

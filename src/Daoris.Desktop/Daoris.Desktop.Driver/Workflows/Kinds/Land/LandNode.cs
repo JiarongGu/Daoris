@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s (LANDNODE1c2).
 /// </summary>
 [NodeKind(NodeKinds.Land, NodeGroup.Landing)]
-internal sealed class LandNode : BuiltInNode, IObserves, IStarts
+internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 {
     /// <summary>
     /// Reached when the landing record holds the bound tip, failed by the landing's own refusal. Never skipped, since a skip would read as landed;

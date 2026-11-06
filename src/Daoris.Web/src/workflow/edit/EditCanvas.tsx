@@ -4,7 +4,7 @@ import { Button, Prose } from '../../design/ui';
 import { type ChartEdit, FlowChart } from '../chart/FlowChart';
 import { type DrawnNode, type DrawnWire, type DrawOptions, graphFlow, type GraphFlow } from '../graphFlow';
 import type { PresetWorkflow, SavedWorkflow, WorkflowListAnswer, WorkflowPaletteAnswer } from './answers';
-import { howSaid, plain, stepTitle } from './editWords';
+import { howSaid, kindIn, plain, stepTitle } from './editWords';
 import { entriesOf, type GraphDraft, outcomesOf } from './graphDraft';
 import { presetName } from './presetWords';
 
@@ -20,7 +20,7 @@ export function draftFlow(
     id: node.id, kind: node.kind, title: stepTitle(t, i18n, palette, node), outcomes: outcomesOf(node), open: () => select(node.id),
   }));
   const wires = draft.wires.filter((wire) => wire.from !== null).map((wire): DrawnWire => ({
-    id: wire.id, kind: wire.kind, from: wire.from!, to: wire.to, outcome: wire.outcome, on: wire.on, says: plain(howSaid(t, wire)),
+    id: wire.id, kind: wire.kind, from: wire.from!, to: wire.to, outcome: wire.outcome, on: wire.on, says: plain(howSaid(t, wire, kindIn(draft, wire.from!))),
     ...(wire.kind === 'data' ? { output: wire.fromPort } : {}),
   }));
   return graphFlow(t, { nodes, wires, entries: entriesOf(draft), end: draft.end }, { label: t('workflow.edit.drawing'), holds });

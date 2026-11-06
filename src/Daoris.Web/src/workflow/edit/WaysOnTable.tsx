@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, SelectField } from '../../design/ui';
 import type { GraphProblem, WorkflowPaletteAnswer } from './answers';
-import { rowNone, rowSaid, targetSaid } from './editWords';
+import { kindIn, rowNone, rowSaid, targetSaid } from './editWords';
 import { canInsertOn, type DraftWire, type GraphDraft, rowsOf, targetsOf, type WayRowKey } from './graphDraft';
 import { Refusals } from './Refusals';
 
@@ -40,7 +40,7 @@ export function WaysOnTable({ palette, draft, step, titleOf, problemsAt, acts }:
     <section aria-labelledby={headId} className="grid min-w-0 gap-2">
       <h4 id={headId} className="m-0 text-small font-semibold text-ink">{t('workflow.edit.next.title')}</h4>
       {rows.map(({ key, ways }) => {
-        const row = rowSaid(t, key);
+        const row = rowSaid(t, key, kindIn(draft, step));
         const where = t('workflow.edit.next.where', { row, step: from });
         const open = targetsOf(palette, draft, step, key);
         const option = (id: string, kind: string) => ({ value: id, label: targetSaid(t, kind, titleOf(id)) });

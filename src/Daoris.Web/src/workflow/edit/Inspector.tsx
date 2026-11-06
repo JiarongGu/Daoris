@@ -313,7 +313,7 @@ function MoreWays({ palette, draft, node, titleOf, onChange }: {
       <div className="mt-2 grid min-w-0 gap-2">
         {more.length === 0 && <p className="m-0 text-small text-ink-soft">{t('workflow.edit.more.none')}</p>}
         {more.map((wire) => {
-          const way = plain(waySaid(t, wire, titleOf(wire.to)));
+          const way = plain(waySaid(t, wire, titleOf(wire.to), node.kind));
           return (
             <div key={wire.id} className="flex min-w-0 flex-wrap items-center justify-between gap-1.5">
               <span className="min-w-0 text-small text-ink [overflow-wrap:anywhere]">{way}</span>

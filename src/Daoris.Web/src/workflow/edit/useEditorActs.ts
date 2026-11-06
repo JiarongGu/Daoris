@@ -110,7 +110,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   };
   const stepsAt = (id: string): string[] => (nodeOf(id) ? [id] : id.startsWith(HOLDS) ? holdsRun(id) : []);
 
-  const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row), from: titleOf(from), to: titleOf(to) });
+  const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row, nodeOf(from)?.kind), from: titleOf(from), to: titleOf(to) });
   /** A change's words, with the inputs it proposed and the ones it leaves to ask about (SETUPUX1r). */
   const carried = (said: string, next: GraphDraft, proposed: Carried[], steps: string[]) =>
     [said, carriedSaid(t, i18n, palette, next, proposed, steps)].filter(Boolean).join(' ');
@@ -153,7 +153,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   // Choosing a way's target on the chart: only the steps that can take it are offered, and the focus goes to the first.
   const choose = (from: string, row: WayRowKey) => {
     const offered = targetsOf(palette, draft, from, row);
-    const named = { row: rowSaid(t, row), step: titleOf(from) };
+    const named = { row: rowSaid(t, row, nodeOf(from)?.kind), step: titleOf(from) };
     if (offered.length === 0) { setHeard(t('workflow.edit.pick.none', named)); return; }
     setDrawer(false);
     setConfirming(null);

@@ -5,8 +5,10 @@ namespace Daoris.Driver;
 /// holds the pushed commit.
 /// </summary>
 [NodeKind(NodeKinds.Push, NodeGroup.Landing, NodeKinds.Land)]
-internal sealed class PushNode : BuiltInNode, IObserves, IStarts
+internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 {
+    public PassRead Asks => PassRead.Remote;
+
     /// <summary>Failed by the push act's refusal. Never skipped, since a skip would read as pushed where nothing was; the person's doors are stop and Try again.</summary>
     public override NodeAuthority Row { get; } = new(NodeKinds.Push, NodeReach.Performed, NodeSource.Git, NodeSource.Git, false, PersonSkips: false, true, true);
 

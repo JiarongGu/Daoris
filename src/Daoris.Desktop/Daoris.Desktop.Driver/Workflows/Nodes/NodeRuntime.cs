@@ -477,8 +477,8 @@ public sealed class NodeRuntime(
                 .ConfigureAwait(false);
             var gates = await NodeEvaluations.GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
             var (before, evaluated) = governed.Scope is null
-                ? NodeEvaluations.Evaluate(governed, record, tipped, tip, reads, gates)
-                : NodeEvaluations.EvaluateRun(governed, record, tip, reads, gates);
+                ? NodeEvaluations.Evaluate(governed, record, tipped, tip, reads, gates, clock)
+                : NodeEvaluations.EvaluateRun(governed, record, tip, reads, gates, clock);
             if (evaluated.Refusal is { } refusal)
             {
                 said.Add($"work  {unit}: its graph was not judged ({refusal}: {string.Join(", ", evaluated.Missing)}), so nothing on it is started.");

@@ -146,6 +146,22 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_waiting_task_says_since_when_it_waits()
+    {
+        BoundTo(ApprovalGraph);
+        Read();
+        var runtime = Runtime();
+        var began = _now;
+        await RunPassAsync(runtime);
+        Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);
+
+        // Later passes leave the moment it began to wait where it was.
+        _now = _now.AddHours(3);
+        await RunPassAsync(runtime, whole: false);
+        Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);
+    }
+
+    [Fact]
     public void The_terminal_says_each_press_with_a_note_if_given()
     {
         foreach (var act in new[] { NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject })

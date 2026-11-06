@@ -4,7 +4,8 @@ import { sentence } from '../../locales/format';
 import { fingerprintOf } from '../draftFingerprint';
 import { type EditorRole, type GraphProblem, type StepStaffing, type WorkflowListAnswer, type WorkflowPaletteAnswer, type WorkflowSaveAnswer, type WorkflowSaveAsk, type WorkflowUseAnswer, type WorkflowUseAsk } from './answers';
 import { type Begin } from './EditCanvas';
-import { rowSaid, stepTitle } from './editWords';
+import { outcomeSaid } from '../graphFlow';
+import { kindIn, rowSaid, stepTitle } from './editWords';
 import { canInsertOn, type Carried, connect, draftOf, entriesOf, type GraphDraft, graphOf, type InsertAt, moveInChain, removeWire, retarget, setOption, type WayRowKey, type DraftWire, type GraphJson, type DraftNode } from './graphDraft';
 import { type Confirming, Inspector, type InspectorActs } from './Inspector';
 import { presetName } from './presetWords';
@@ -81,7 +82,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
     }
     if ('from' in at) {
       const row = at.row.startsWith('outcome:') ? 'outcome' : at.row;
-      return t(`workflow.edit.picker.at.${row}`, { from: titleOf(at.from), outcome: at.row.slice('outcome:'.length) });
+      return t(`workflow.edit.picker.at.${row}`, { from: titleOf(at.from), outcome: outcomeSaid(t, kindIn(draft, at.from), at.row.slice('outcome:'.length)) });
     }
     return t('workflow.edit.picker.free');
   };
@@ -185,7 +186,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
     onOption: (option, value, said) => change(setOption(latest.current, id, option, value), said),
     onTarget: (row, wire, to) => {
       if (to === null) {
-        change(removeWire(draft, wire.id), t('workflow.edit.said.wayRemoved', { row: rowSaid(t, row), from: titleOf(id), to: titleOf(wire.to) }));
+        change(removeWire(draft, wire.id), t('workflow.edit.said.wayRemoved', { row: rowSaid(t, row, kindIn(draft, id)), from: titleOf(id), to: titleOf(wire.to) }));
         return;
       }
       const next = retarget(palette, draft, wire.id, to);
