@@ -204,7 +204,7 @@ H-09 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_o
 H-10 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:press,person,-,False => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
 H-11 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:agent,agent,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Agent by=Agent words=-
 H-12 ChatHandOverTests.A_hand_over_press_with_an_account_keeps_the_pick_and_no_other_hand_over_does:curve,daoris,account-2,False => Move when=TurnEnd where=Pick@fake:account-2(chat/-) how=Brief why=Curve by=Daoris words=-
-H-13 ChatHandOverTests.A_hand_over_of_a_picked_conversation_to_another_agent_keeps_no_pick => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
+H-13 AgentOfDoorTests.Two_providers_sharing_a_pool_are_two_agents_and_a_joined_door_is_its_provider_s => Move when=TurnEnd where=Settled@other(chat/-) how=Brief why=Press by=Person words=-
 H-14 HandOverAskLookTests.Under_ask_the_ask_waits_for_the_persons_word_naming_the_agent_and_its_record_says_so_once => Hold why=ConsentRefused doors=LetAskGo,NotNow repair=None code=-
 H-15 HandOverAskLookTests.Under_off_the_ask_is_refused_and_its_record_says_why => Hold why=ConsentRefused doors=- repair=None code=off
 H-16 HandOverAskLookTests.Under_on_a_conversations_ask_is_kept_as_a_box_for_its_turns_end_or_handed_to_the_chat_runner => Move when=TurnEnd where=Settled@codex-acp(chat/-) how=Brief why=Agent by=Agent words=-
@@ -477,7 +477,11 @@ out GoOnNewTests.The_course_s_answer_is_what_keeps_the_choice_or_refuses_it R Pr
 out GoOnNewTests.A_choice_that_does_not_read_is_none E
 out StartFromTests.The_courses_answer_is_what_refuses_or_starts_the_press R Press
 out StartWithTests.The_course_starts_a_conversation_on_the_persons_first_words R Press
-out GoOnNewTests.The_terminal_reads_one_session_s_id_and_its_usage_says_the_verb V
+out GoOnNewTests.The_terminal_reads_one_session_s_id_with_no_agent_and_its_usage_says_the_verb V
+out AgentOfDoorTests.One_agent_s_two_doors_are_one_agent_and_another_agent_is_not R Account
+out HandOverTests.The_accounts_a_hand_over_is_judged_by_are_one_read_for_the_chat_the_curve_and_the_loop R Account
+out ChatHandOverTests.A_hand_over_of_a_picked_conversation_to_its_agent_s_other_door_on_the_picked_account_keeps_the_pick E
+out AnswersAloneTests.The_watchers_word_to_a_quiet_session_resets_no_count_and_another_word_of_Daoris_still_does R Alone
 out GoOnNewTests.The_terminal_says_what_comes_of_it_in_one_line E
 out StartFromTests.A_conversation_that_does_not_start_leaves_the_words_where_they_were E
 out StartFromTests.Words_the_new_conversation_did_not_take_stay_where_they_were E
@@ -538,6 +542,7 @@ suite CurveMoveTests
 suite CurveMoveProcessTests
 suite HandOverTests
 suite ChatHandOverTests
+suite AgentOfDoorTests
 suite HandOverAskLookTests
 suite HandOverAtTurnEndTests
 suite HandOverAskTickTests

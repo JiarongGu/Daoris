@@ -1,0 +1,8 @@
+{
+  "id": "claude-code",
+  "standIn": false,
+  "doors": [
+    { "id": "claude-code", "kind": "native" },
+    { "id": "claude-code-acp", "kind": "protocol" }
+  ]
+}

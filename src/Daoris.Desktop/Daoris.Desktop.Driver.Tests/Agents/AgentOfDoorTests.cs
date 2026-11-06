@@ -13,7 +13,7 @@ public sealed class AgentOfDoorTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        if (Directory.Exists(_home)) GitSeed.Discard(_home);
     }
 
     private AdapterSet WithPlugin(string id, string harnesses)

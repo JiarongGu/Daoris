@@ -77,7 +77,7 @@ public sealed class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposabl
         using var process = Process.Start(info)!;
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        await process.WaitForExitAsync().WaitAsync(Poll.Patience);
         return (process.ExitCode, await stdout, await stderr);
     }
 
@@ -163,7 +163,7 @@ public sealed class GitHttpsProcessTests : IClassFixture<GitTlsHost>, IDisposabl
             await process.StandardInput.WriteAsync($"protocol=https\nhost={host}\n\n");
             process.StandardInput.Close();
             var said = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync().WaitAsync(Poll.Patience);
             return (process.ExitCode, said);
         }
 

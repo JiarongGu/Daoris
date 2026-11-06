@@ -50,6 +50,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["ContentHolds.cs"] = (Refs, "Daoris's holds on content under its own refs, and a branch deleted verified at the tip judged", ["update-ref@root"]),
         ["RecoveryDropping.cs"] = (Refs, "a recovery ref dropped verified at its commit", ["update-ref@root"]),
         ["RefTransaction.cs"] = (Refs, "one typed transaction per ref act (GITTXN1, GITTXN2), each ref's expectation inside it, for refs no checkout has out: the content holds' deletes, drops and put-backs", ["update-ref@?", "update-ref@root"]),
+        ["PartnerActRunner.cs"] = (Refs, "a discarded piece's ref dropped verified at the commit it was frozen as, then its copy removed", ["update-ref@root"]),
         ["PieceKeeper.cs"] = (Refs, "a kept piece: read and staged in a private index (GIT_INDEX_FILE), its ref made only where absent; its copy checked out", ["checkout@copy", "read-tree@root", "update-index@root", "update-ref@root"]),
         ["OnlyHereProof.cs"] = (Refs, "git's record of gone trees pruned before its branch is deleted through the journal's act (JournaledDeletes)", ["worktree@root"]),
         ["TreeOpenings.cs"] = (Refs, "an opening undone: its own tree removed and its new branch deleted", ["branch@root", "worktree@root"]),

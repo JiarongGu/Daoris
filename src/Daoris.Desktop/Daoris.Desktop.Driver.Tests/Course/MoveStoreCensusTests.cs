@@ -41,6 +41,9 @@ public sealed class MoveStoreCensusTests
     /// <summary>The ended limit move (FOUNDATION1f-vi part a), which decides its move through the same holder.</summary>
     private const string EndedMove = "Course/Chat/EndedLimitMove.cs";
 
+    /// <summary>The conversation's move a supervisor rule makes at a transient end (CONTEXTDRIVE1n), which decides its move through the same holder.</summary>
+    private const string TransientMove = "Course/Chat/TransientMove.cs";
+
     /// <summary>The curve's move (FOUNDATION1f-iii part a), which decides its move through the holder as the live limit move does.</summary>
     private const string CurveMove = "Course/Chat/CurveMove.cs";
 
@@ -72,7 +75,7 @@ public sealed class MoveStoreCensusTests
 
     /// <summary>The production files allowed to name a type of the move store, each for the row above that adopts it.</summary>
     private static readonly string[] Allowed =
-        [Window, CurveMove, LiveMove, EndedMove, Conversations, DrivenCourse, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal];
+        [Window, CurveMove, LiveMove, EndedMove, TransientMove, Conversations, DrivenCourse, HandOverAsk, QuestAsk, Wiring, CarryOn, DrivenLine, QuestTake, Terminal];
 
     /// <summary>Each "file names type" of the sources that name one of the types, the store's own files left out.</summary>
     private static List<string> Readers(IEnumerable<(string File, string Source)> sources, IReadOnlyCollection<string> names)

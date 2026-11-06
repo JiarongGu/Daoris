@@ -15,10 +15,14 @@ public sealed class LineAccountCallersCensusTests
     /// The files that read a cooling account (<c>CoolingOf</c>, <c>CoolingsOf</c>), ask a resume (<c>ResumeAsync</c>) or read whether its words
     /// wait (<c>ResumeChoice.Waits</c>) and have not moved onto the rule. Each only hands the roster's reading of an account's cool-off to a
     /// listing or a verb of the shell, which decides nothing by it (FOUNDATION1a-i's census; each moves with the row that moves its reader).
+    /// The conversation's limit rule (<c>LimitRuled</c>) hands the cool-off's end to the supervisor rule's judgement, and the go-on press hands
+    /// the roster's reading to the go-on-new ask.
     /// </summary>
     private static readonly string[] NotYetMoved =
     [
+        "Daoris.Desktop.Driver/Course/Chat/LimitRuled.cs",
         "Daoris.Desktop.Driver/WorkOrders/Sessions/SessionCooling.cs",
+        "Daoris.Desktop.Modules/Bridge/Routes/GoOnPress.cs",
         "Daoris.Desktop.Modules/Bridge/Routes/SessionsMoveDesk.cs",
         "Daoris.Desktop.Modules/Bridge/Routes/SessionsVerbs.cs",
     ];

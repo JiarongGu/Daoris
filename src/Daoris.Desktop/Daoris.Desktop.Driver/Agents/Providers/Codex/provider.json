@@ -1,0 +1,7 @@
+{
+  "id": "codex",
+  "standIn": false,
+  "doors": [
+    { "id": "codex-acp", "kind": "protocol" }
+  ]
+}

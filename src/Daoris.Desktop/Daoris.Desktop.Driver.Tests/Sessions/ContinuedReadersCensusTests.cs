@@ -69,13 +69,9 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "the landing's word to a session, said through the lander's world: said at its head under the landing's key"),
         ],
-        ["TreesConsole.cs"] =
+        ["SessionsKeeping.cs"] =
         [
-            (How.Follows, "the terminal's carry-on word to a session its Accept carried on (LANDBACK1 part 1): said at its head under its key"),
-        ],
-        ["TreesLandDesk.cs"] =
-        [
-            (How.Follows, "the window's Accept carrying a session on (LANDBACK1 part 1): Daoris's word said at its head under its key, never the person's"),
+            (How.Follows, "the terminal's say to a conversation no driver here took: the same say again at the head of the record's line, its files carried to the head's folder first"),
         ],
         ["TogetherRoutes.cs"] =
         [
@@ -132,6 +128,7 @@ public sealed partial class ContinuedReadersCensusTests
         ["SessionWords.cs"] = "the inbox's and the turns' head is where the shell says the word again, through its whole judge",
         ["ReopenTelling.cs"] = "the running session's inbox answered `continued`: the reopen's words are said at the head through the reopen's doors",
         ["LongCalls.cs"] = "Daoris's word about this run's call: a record that went on is told nothing, as a closed inbox is",
+        ["QuietWord.cs"] = "the watcher's word to a quiet session: a record that went on is told nothing, as a closed inbox is, and its episode is forgotten",
     };
 
     /// <summary>The runner hands a keep on to the dispatcher that holds it, which is named above and reads the head itself.</summary>
