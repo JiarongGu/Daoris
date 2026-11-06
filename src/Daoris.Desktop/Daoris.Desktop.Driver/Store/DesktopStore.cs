@@ -42,6 +42,9 @@ public sealed class DesktopStore : IDisposable
     /// <summary>The stamp a role's staffing policy's step raised the store to (STAFFPOLICY1a).</summary>
     public const int PolicyWriter = 3;
 
+    /// <summary>The version whose step gives the store today's names (AGENTPROVIDER1t, D232), run by the home's migration's <c>StoreNamesStep</c>.</summary>
+    public const int NamesVersion = 22;
+
     /// <summary>How long a write waits on the file's lock before it is refused, in seconds (§13.4).</summary>
     private const int BusySeconds = 5;
 

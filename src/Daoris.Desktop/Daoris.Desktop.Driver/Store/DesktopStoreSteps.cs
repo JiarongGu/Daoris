@@ -641,7 +641,7 @@ internal static class DesktopStoreSteps
         // AGENTPROVIDER1t (D232): a binding's door by today's name, and the staffing's projection of driver.json's old keys, which no
         // code reads, dropped. The home's migration runs it (`StoreNamesStep`) with the store's copy kept. No raise: no build older than
         // the migration runs on a converted home.
-        new(StoreNamesStep.Version, PolicyWriter, write => write.Execute(
+        new(DesktopStore.NamesVersion, PolicyWriter, write => write.Execute(
             """
             ALTER TABLE bindings RENAME COLUMN adapter TO door;
             DROP TABLE role_staffing_found;
