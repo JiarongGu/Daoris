@@ -249,7 +249,7 @@ internal static class NodeGoverning
             AfterHanded = RunSubjects.AfterHanded(graph),
             GoAheads = goAheads,
             // The quests a session serving the run's work published, which its `work.requests` holds the work on.
-            Requests = WorkRequestsNode.Published(quests,
+            Requests = WorkRequestsReading.Published(quests,
                 work.SelectMany(quest => units.GetValueOrDefault(QuestUnits.IdOf(quest.Id))?.Executors ?? []).Distinct(StringComparer.Ordinal),
                 work.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)),
             Root = root,

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>Why the evaluation moved a node (<see cref="WireMove.Why"/>).</summary>
 public static class WireWhy
 {
-    /// <summary>An observed built-in's records said an outcome, through <see cref="BuiltInNodes.Observe(WorkUnit, NodeDeclaration, NodeAcceptance, NodeGitReads?)"/>.</summary>
+    /// <summary>An observed built-in's records said an outcome, through <see cref="NodeObserving.Observe(WorkUnit, NodeDeclaration, NodeAcceptance, NodeGitReads?)"/>.</summary>
     public const string Observed = "observed";
 
     /// <summary>Its binding's revision, graph or version is no longer current (<see cref="NodeAcceptances.Lapsed"/>).</summary>

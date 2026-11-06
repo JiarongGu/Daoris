@@ -146,7 +146,7 @@ public sealed record WorkUnit(string Id, string Kind, WorkOwner Owner, WorkSubje
     public IReadOnlyList<WorkLink> Links { get; init; } = [];
 
     /// <summary>
-    /// The canonical record entries its adapter read it from (FABRIC-NODE1): what an observed built-in node reads (<see cref="BuiltInNodes"/>),
+    /// The canonical record entries its adapter read it from (FABRIC-NODE1): what an observed built-in node reads (<see cref="NodeObserving"/>),
     /// so a node is observed from the unit's own records and never joined to them a second time.
     /// </summary>
     public WorkUnitRecords Records { get; init; } = WorkUnitRecords.None;

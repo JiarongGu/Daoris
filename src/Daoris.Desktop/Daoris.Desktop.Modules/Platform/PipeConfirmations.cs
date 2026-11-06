@@ -254,6 +254,12 @@ public sealed class PipeConfirmations : IDisposable
     public Action<PipeConfirmation, PipeConfirmationEnd>? Noticed { get; set; }
 
     /// <summary>
+    /// Told each press no terminal waits on its line for as it settles, after its record says how it ended, whichever of the five
+    /// (EVENTHOOK1d-ii, D244): the wake of a press whose verb gave up. One a line waits on hears it there.
+    /// </summary>
+    public Action<PipeConfirmation, PipeEnding>? Settled { get; set; }
+
+    /// <summary>
     /// Whether a Confirm of a press of this module's route takes nothing now, and the press waits (CONFIRMWAIT1a-ii, §7.2): every press while
     /// Daoris closes or an update applies, and while an update drains, the presses that would add to what it waits on (DRAINHOLD1). Asked
     /// before the grounds are read and again after, inside this one's lock.
@@ -721,6 +727,7 @@ public sealed class PipeConfirmations : IDisposable
         }
 
         held.Ended.TrySetResult(ending);
+        if (!held.Shown.WaitedOn) Settled?.Invoke(held.Shown, ending);
     }
 
     private PipeConfirmationsNow Telling() => new(_seq, [.. _waiting.Select(each => each.Shown)]);
