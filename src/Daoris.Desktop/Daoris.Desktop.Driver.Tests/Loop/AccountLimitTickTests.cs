@@ -53,7 +53,7 @@ public sealed class AccountLimitTickTests : IDisposable
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var now = Seen;
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();

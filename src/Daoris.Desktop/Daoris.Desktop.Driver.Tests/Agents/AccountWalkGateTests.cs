@@ -66,7 +66,7 @@ public sealed class AccountWalkGateTests : IDisposable
     private HarnessRoster Roster(
         Func<string, Task<LoginState>>? status = null, bool usage = false,
         Func<string, Task<IReadOnlyList<WindowReading>?>>? windows = null, TimeSpan? patience = null, bool asks = false) =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,

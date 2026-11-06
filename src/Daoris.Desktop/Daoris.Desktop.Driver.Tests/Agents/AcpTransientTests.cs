@@ -150,7 +150,7 @@ public sealed class AcpTransientTests
         }
     }
 
-    private static readonly AdapterSet Built = AdapterSet.Built();
+    private static readonly ProviderRegistry Built = ProviderRegistry.Built();
 
     private static TransientRetry Retry(MovedClock clock, Told told, Func<CancellationToken, Task<bool>>? wanted = null) => new()
     {

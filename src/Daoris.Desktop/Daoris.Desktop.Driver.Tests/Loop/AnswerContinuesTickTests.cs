@@ -51,9 +51,9 @@ public sealed class AnswerContinuesTickTests : IDisposable
     private static string? SaidText(JsonObject record) =>
         record["said"] is JsonArray { Count: > 0 } said ? string.Join("\n\n", said.Select(word => word!["text"]!.GetValue<string>())) : null;
 
-    private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null, ServiceClient? client = null, AdapterSet? set = null)
+    private Daoris.Driver.Driver Driver(ParkStandIn service, string mode, HarnessRoster? roster = null, ServiceClient? client = null, ProviderRegistry? set = null)
     {
-        var adapters = set ?? AdapterSet.Built();
+        var adapters = set ?? ProviderRegistry.Built();
         var config = StaffedRoles.Config("acp-stub") with
         {
             Drivable = ["engine"],
@@ -214,8 +214,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
         await using var service = ParkStandIn.Start(_repository);
         await ParkedAsync(service, Driver(service, "resumes"));
         await new ServiceClient(service.Url, null).SayAsync("s1", "Port 8080.");
-        var built = AdapterSet.Built();
-        var without = new AdapterSet(
+        var built = ProviderRegistry.Built();
+        var without = new ProviderRegistry(
             built.Names.Where(name => name != "acp-stub").ToDictionary(name => name, built.Resolve, StringComparer.OrdinalIgnoreCase));
         var heard = Heard().Length;
 
@@ -316,7 +316,7 @@ public sealed class AnswerContinuesTickTests : IDisposable
     public async Task An_unrestricted_start_on_a_harness_with_no_such_mode_is_held_before_any_record_opens()
     {
         await using var service = ParkStandIn.Start(_repository);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), Config(Agent(), "resumes", AccessRules.Unrestricted), adapters, _home,
             processes: new SessionProcesses(), harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
@@ -345,8 +345,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
     private Daoris.Driver.Driver Postured(ParkStandIn service, string permissions)
     {
         // Every built adapter, the stub whose accounts the protocol stub runs as among them, with the protocol stub postured.
-        var built = AdapterSet.Built();
-        var adapters = new AdapterSet(built.Names.ToDictionary(
+        var built = ProviderRegistry.Built();
+        var adapters = new ProviderRegistry(built.Names.ToDictionary(
             name => name, name => name == "acp-stub" ? PosturedStub() : built.Resolve(name), StringComparer.OrdinalIgnoreCase));
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), Config(Agent(), "modes", permissions), adapters, _home, processes: new SessionProcesses(),

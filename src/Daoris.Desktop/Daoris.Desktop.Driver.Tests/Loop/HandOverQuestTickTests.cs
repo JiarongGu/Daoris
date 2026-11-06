@@ -62,7 +62,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
         // FOUNDATION1f-v part c: the ask decides the hand-over's move in the store through the driver's own holder, and no box is written.
         var asked = await QuestHandOver.AskAsync(
-            new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(AdapterSet.Built(), _home), "s1", "stub", null, HandOverWhy.Press, HandOverBy.Person);
+            new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(ProviderRegistry.Built(), _home), "s1", "stub", null, HandOverWhy.Press, HandOverBy.Person);
         Assert.True(asked.Kept, asked.Message);
         Assert.Empty(new HandOverBox(_home).Pending());
         Assert.Equal("decided", Move().PhaseWord);
@@ -125,7 +125,7 @@ public sealed class HandOverQuestTickTests : IDisposable
     // One driver for every look, as the goal's tick test builds one, sharing the processes the stop reaches.
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: _processes,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

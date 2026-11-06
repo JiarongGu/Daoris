@@ -103,7 +103,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
 
     private Daoris.Driver.Driver Driver(ConversationMoves? moves = null, DriverConfig? config = null)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(Service.Url, null), config ?? Config(), adapters, Home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)))
@@ -280,7 +280,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     public void ComeUp()
     {
         Config().Save(ConfigPath);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         _closing = new CancellationTokenSource();
         var watch = new DriverWatch(
             new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(), sync: null,

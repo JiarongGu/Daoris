@@ -53,7 +53,7 @@ public sealed class StartWiringTests : IDisposable
                 Binary: ["node", script], VersionArguments: ["--version"],
                 ProfileVariable: "AGENT_HOME", AccountOf: "agent"), Transport.Protocol),
         };
-        return new HarnessRoster(new AdapterSet(adapters), Settings);
+        return new HarnessRoster(new ProviderRegistry(adapters), Settings);
     }
 
     private static DriverConfig Config(string adapter = "agent") => DriverConfig.Empty with { Actors = StaffedRoles.On(adapter) };

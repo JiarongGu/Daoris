@@ -39,7 +39,7 @@ internal static class SessionsConsole
     {
         try
         {
-            return Adoption.Unadopted(ActorChoices.BuildAgent(config), AdapterSet.Built().AbilitiesOf);
+            return Adoption.Unadopted(ActorChoices.BuildAgent(config), ProviderRegistry.Built().AbilitiesOf);
         }
         catch (DriverException refused) when (refused is not UnknownDoorException)
         {

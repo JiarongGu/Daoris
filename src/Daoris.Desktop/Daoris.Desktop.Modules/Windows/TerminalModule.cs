@@ -253,7 +253,7 @@ public sealed class TerminalModule : ModuleBase, IDisposable
     public Func<string, (string? Binary, string? Why)> Harness { get; set; } = HolderHarness.Find;
 
     /// <summary>Whether the holder's harness's provider may work at the machine's room (<see cref="HolderReach"/>): the built agents', unless a test hands its own.</summary>
-    public ProviderReach HolderReaching { get; set; } = new(AdapterSet.Built().Registry);
+    public ProviderReach HolderReaching { get; set; } = new(ProviderRegistry.Built());
 
     /// <summary>
     /// A role holder's tab (SUPERVISOR1a-ii, D208 §2.2; STEWARDROLE1a-i, D209 §2.2 and §6.1): a tab of this panel, never a console window

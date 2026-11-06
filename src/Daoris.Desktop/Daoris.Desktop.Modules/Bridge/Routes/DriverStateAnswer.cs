@@ -20,7 +20,7 @@ internal static class DriverStateAnswer
         var config = DriverConfig.Load(loop.ConfigPath);
         var access = ConfiguredAccess.Read(loop.Home);
         // HELPMODE1c3: the browser's grant is its plugin's approval, drawn here read only from that record.
-        var browser = HelpGrants.Read(loop.Home, PluginCatalog.Load(loop.Home, AdapterSet.Built().Names)).Browser;
+        var browser = HelpGrants.Read(loop.Home, PluginCatalog.Load(loop.Home, ProviderRegistry.Built().Names)).Browser;
         // HELPMODE1c4: the checkouts D107 lets agents outside read, from the machine's facts as last judged, never a read of its own;
         // none before the facts are judged, and the loop's next look pushes them.
         string[] readable = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } whole

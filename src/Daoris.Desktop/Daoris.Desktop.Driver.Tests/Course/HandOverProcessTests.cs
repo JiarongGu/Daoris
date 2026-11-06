@@ -55,7 +55,7 @@ public sealed class HandOverProcessTests : IDisposable
 
     private ChatRunner Runner(ServiceClient client, SessionEvents events)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

@@ -47,7 +47,7 @@ public sealed class AgentPinCommandTests : IDisposable
         },
         Folder = _root,
         UserHome = Path.Combine(_root, "user"),
-        Adapters = _ => AdapterSet.Built(),
+        Adapters = _ => ProviderRegistry.Built(),
         Waiting = waiting,
         Transport = transport,
         Npm = npm ?? ["npm"],

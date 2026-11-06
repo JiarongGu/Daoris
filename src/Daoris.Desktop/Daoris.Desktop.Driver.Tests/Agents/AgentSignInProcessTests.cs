@@ -93,7 +93,7 @@ public sealed class AgentSignInProcessTests : IDisposable
             File.SetUnixFileMode(shim, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         }
 
-        var set = AdapterSet.Built();
+        var set = ProviderRegistry.Built();
         var settings = new HarnessSettings().WithVersion(Agent, Stubbed);
         foreach (var name in set.Names.Where(name => name != Agent && set.Resolve(name).Toolchain is { Binary.Count: > 0 }))
         {

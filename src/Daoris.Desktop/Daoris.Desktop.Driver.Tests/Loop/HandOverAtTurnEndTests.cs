@@ -35,7 +35,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub") };
         config = ActorChoices.With(config, "build", [new ActorChoice("stub"), new ActorChoice("codex-acp")]);
         if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             HandOverDoors = _ => Task.FromResult<IReadOnlyList<HandOverDoor>>([new("stub", true, null), new("codex-acp", true, "codex")]),
@@ -92,7 +92,7 @@ public sealed class HandOverAtTurnEndTests : IDisposable
     {
         var config = ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub") }, "build", build);
         if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             // The roster's order would be codex-acp then dsh; Build's own order is dsh, then codex-acp.

@@ -106,14 +106,14 @@ public sealed class SpawnSkillsTests : IDisposable
         var docs = DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.plugins", "acme.docs");
         var settings = DaorisHome.Entry(_home, HomeEntry.Spawn, "s1.settings.json");
         var info = new ProcessStartInfo();
-        AdapterSet.Built().Resolve("claude-code").HandPlugins(info, [tickets, docs]);
+        ProviderRegistry.Built().Resolve("claude-code").HandPlugins(info, [tickets, docs]);
         Assert.Equal(["--plugin-dir", tickets, "--plugin-dir", docs], info.ArgumentList);
 
         var stub = new ProcessStartInfo();
-        AdapterSet.Built().Resolve("stub").HandPlugins(stub, [tickets]);
+        ProviderRegistry.Built().Resolve("stub").HandPlugins(stub, [tickets]);
         Assert.Empty(stub.ArgumentList);
 
-        var acp = AdapterSet.Built().Resolve("claude-code-acp");
+        var acp = ProviderRegistry.Built().Resolve("claude-code-acp");
         using var meta = JsonDocument.Parse(JsonSerializer.Serialize(acp.AcpSessionMeta(settings, [tickets])));
         var options = meta.RootElement.GetProperty("claudeCode").GetProperty("options");
         Assert.Equal(settings, options.GetProperty("settings").GetString());
@@ -129,7 +129,7 @@ public sealed class SpawnSkillsTests : IDisposable
         var info = new ProcessStartInfo();
 
         var (folder, plugins) = SpawnSkills.Hand(
-            AdapterSet.Built().Resolve("claude-code"), info, _home, "s1a2b3c4", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+            ProviderRegistry.Built().Resolve("claude-code"), info, _home, "s1a2b3c4", PluginCatalog.Load(_home), PluginServerTo.Sessions);
 
         Assert.Equal(["--plugin-dir", Assert.Single(plugins)], info.ArgumentList);
         SpawnFiles.RemoveFolder(folder);
@@ -150,7 +150,7 @@ public sealed class SpawnSkillsTests : IDisposable
 
         var acp = new ProcessStartInfo();
         var (acpFolder, acpPlugins) = SpawnSkills.Hand(
-            AdapterSet.Built().Resolve("claude-code-acp"), acp, _home, "s2b3c4d5", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+            ProviderRegistry.Built().Resolve("claude-code-acp"), acp, _home, "s2b3c4d5", PluginCatalog.Load(_home), PluginServerTo.Sessions);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Spawn, "s2b3c4d5.plugins"), acpFolder);
         Assert.Equal("acme.tickets", Path.GetFileName(Assert.Single(acpPlugins)));
         Assert.Empty(acp.ArgumentList);
@@ -159,7 +159,7 @@ public sealed class SpawnSkillsTests : IDisposable
         {
             var info = new ProcessStartInfo();
             var (folder, plugins) = SpawnSkills.Hand(
-                AdapterSet.Built().Resolve(door), info, _home, "s3c4d5e6", PluginCatalog.Load(_home), PluginServerTo.Sessions);
+                ProviderRegistry.Built().Resolve(door), info, _home, "s3c4d5e6", PluginCatalog.Load(_home), PluginServerTo.Sessions);
             Assert.Null(folder);
             Assert.Empty(plugins);
             Assert.Empty(info.ArgumentList);

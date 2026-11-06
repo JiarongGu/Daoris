@@ -133,7 +133,7 @@ internal sealed class StartPlan
 {
     private readonly DriverConfig _config;
     private readonly HarnessRoster _roster;
-    private readonly AdapterSet _adapters;
+    private readonly ProviderRegistry _adapters;
     private readonly PassMemory _memory;
 
     /// <param name="work">The start's work, one of the participant's work codes (<c>build</c>, <c>intake</c>, …).</param>
@@ -160,7 +160,7 @@ internal sealed class StartPlan
     /// A role record that does not read, or two roles taking the work in one scope, hold the start; a named role holds it by its own sentence.
     /// </exception>
     public StartPlan(
-        string work, DriverConfig config, HarnessRoster roster, AdapterSet adapters, PassMemory memory, IReadOnlyList<string>? fence = null,
+        string work, DriverConfig config, HarnessRoster roster, ProviderRegistry adapters, PassMemory memory, IReadOnlyList<string>? fence = null,
         IReadOnlyList<ActorEffective>? order = null, RoleCatalog? catalogue = null, RolePlace place = default, string? role = null)
     {
         Work = work;
@@ -192,7 +192,7 @@ internal sealed class StartPlan
     /// </summary>
     public ProviderReach Reaching
     {
-        get => _reaching ??= new ProviderReach(_adapters.Registry);
+        get => _reaching ??= new ProviderReach(_adapters);
         init => _reaching = value;
     }
 

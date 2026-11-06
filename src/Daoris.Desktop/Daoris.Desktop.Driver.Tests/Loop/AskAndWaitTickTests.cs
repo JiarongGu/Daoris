@@ -160,7 +160,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                 ["stub"] = ["node", Agent(), log, resumedDoesNothing ? "idle" : "work"],
             },
         };
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));

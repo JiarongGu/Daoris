@@ -287,7 +287,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     public async Task The_list_answers_each_plugins_servers_hook_listening_health_and_whether_an_update_waits()
     {
         var gate = Folder("gate", Gate());
-        PluginInstall.Add(Home, gate, AdapterSet.Built().Names);
+        PluginInstall.Add(Home, gate, ProviderRegistry.Built().Names);
         var bare = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.bare");
         Directory.CreateDirectory(bare);
         File.WriteAllText(Path.Combine(bare, "plugin.json"), """{ "id": "acme.bare" }""");
@@ -411,7 +411,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     [Fact]
     public async Task A_plugins_page_is_the_drivers_reader_with_the_loops_health_and_one_gone_is_refused_by_its_code()
     {
-        PluginInstall.Add(Home, Folder("gate", Gate()), AdapterSet.Built().Names);
+        PluginInstall.Add(Home, Folder("gate", Gate()), ProviderRegistry.Built().Names);
         var kept = DaorisHome.Entry(Home, HomeEntry.Plugins,".data", "acme.gate");
         Directory.CreateDirectory(kept);
         File.WriteAllText(Path.Combine(kept, "state.json"), "{}");
@@ -449,7 +449,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     [Fact]
     public async Task Activity_answers_what_the_machine_log_holds_for_the_period_asked()
     {
-        PluginInstall.Add(Home, Folder("gate", Gate()), AdapterSet.Built().Names);
+        PluginInstall.Add(Home, Folder("gate", Gate()), ProviderRegistry.Built().Names);
         void Write(DateTimeOffset at, Action<PluginLog> write)
         {
             using var log = new MachineLog(Home, "desktop", () => at);
@@ -526,7 +526,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         Assert.Contains("99", await Refused(Folder("future", """{ "id": "acme.future", "apiVersion": 99 }""")));
 
         // An id already installed is refused before the press, naming the two ways to replace it.
-        PluginInstall.Add(Home, gate, AdapterSet.Built().Names);
+        PluginInstall.Add(Home, gate, ProviderRegistry.Built().Names);
         var installed = await Refused(gate);
         Assert.Contains("already installed", installed);
         Assert.Contains("Update…", installed);

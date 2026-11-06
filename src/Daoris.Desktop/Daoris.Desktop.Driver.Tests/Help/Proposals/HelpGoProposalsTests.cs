@@ -284,7 +284,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
             System.IO.File.WriteAllText(Path.Combine(offers, id, PluginCatalog.ManifestName), $$"""{ "id": "{{id}}" }""");
         }
 
-        return facts with { OffersFolder = offers, Offers = PluginOffers.Load(offers, _home, AdapterSet.Built().Names) };
+        return facts with { OffersFolder = offers, Offers = PluginOffers.Load(offers, _home, ProviderRegistry.Built().Names) };
     }
 
     /// <summary>

@@ -277,7 +277,7 @@ internal static class ConformanceLiveCases
     {
         var door = run.TheDoor.Id.Value;
         // The stand-in's own doors, so the roster asks no other agent's program on this machine.
-        var standIn = new AdapterSet(run.Provider.Doors.ToDictionary(
+        var standIn = new ProviderRegistry(run.Provider.Doors.ToDictionary(
             each => each.Id.Value, each => run.Subject.Adapters.Resolve(each.Id.Value), StringComparer.OrdinalIgnoreCase));
         var roster = new HarnessRoster(standIn, DaorisHome.Entry(run.Home(), HomeEntry.Harnesses));
 

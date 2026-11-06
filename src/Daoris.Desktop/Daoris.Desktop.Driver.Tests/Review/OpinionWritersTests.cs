@@ -73,7 +73,7 @@ public sealed class OpinionWritersTests
         var asked = new List<(string Reviewer, string Label)>();
 
         var choice = await ReviewerChoice.WalkAsync(
-            AdapterSet.Built(), ActorChoices.Effective("opinion", DriverConfig.Empty, fence: reviewers.Split(',')),
+            ProviderRegistry.Built(), ActorChoices.Effective("opinion", DriverConfig.Empty, fence: reviewers.Split(',')),
             OpinionWriters.Agents(records, "s1", ["q1"]),
             entry =>
             {

@@ -51,7 +51,7 @@ internal sealed class ChatServers(ChatContext context)
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions,
         bool every = false)
     {
-        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
+        var catalog = PluginCatalog.Load(home, ProviderRegistry.Built().Names);
         // Ask Daoris takes only the servers the person approved for it; a session, its own.
         var servers = every ? [.. PluginServerTo.All.SelectMany(catalog.ServersTo).DistinctBy(server => server.Name)]
             : to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);

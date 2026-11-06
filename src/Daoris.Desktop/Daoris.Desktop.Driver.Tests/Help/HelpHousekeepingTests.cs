@@ -142,7 +142,7 @@ public sealed class HelpHousekeepingTests : IDisposable
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", allow);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", allow);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", allow);
-        Assert.Equal(place.Housekeeping, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, new ChatAgent(AdapterSet.Built().Resolve("claude-code")))).Housekeeping);
+        Assert.Equal(place.Housekeeping, HelpPlacement.Under(place, HelpAccess.For(HelpModes.Full, new ChatAgent(ProviderRegistry.Built().Resolve("claude-code")))).Housekeeping);
     }
 
     /// <summary>

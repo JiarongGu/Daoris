@@ -43,7 +43,7 @@ public sealed class HandOverAskLookTests : IDisposable
     private Daoris.Driver.Driver Driver(string? mode = null, bool wired = false, bool drained = false)
     {
         var service = _ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(service, drained ? InstallUpdate.Drained(Config(mode)) : Config(mode), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Stops = (session, note) =>

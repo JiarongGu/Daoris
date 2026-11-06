@@ -104,7 +104,7 @@ public sealed class HelpProposalFacts(DriverContext context)
         {
             Circle = HelpCircle.OfRecord(_loop.Home, records?.FirstOrDefault(record => string.Equals(record.Id, conversation, StringComparison.OrdinalIgnoreCase))),
             // A landing rule naming a plugin is judged by the catalogue the landing route reads.
-            Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
+            Plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names),
             // The identities a `git-use` proposal may point at: labels and hosts, never a key or a token.
             GitIdentities = [.. GitIdentities.Read(_loop.Home).Select(each => new HelpGitIdentity(each.Id, each.Label, each.Host, each.Way))],
             // A plugin is added from a registered checkout, never from the home, and may not shadow a
@@ -113,10 +113,10 @@ public sealed class HelpProposalFacts(DriverContext context)
             Checkouts = snapshot.Repositories
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
-            Reserved = AdapterSet.Built().Names,
+            Reserved = ProviderRegistry.Built().Names,
             // The install's own plugins, which an add may name by id, and where an offer's update reads.
             OffersFolder = context.OffersFolder,
-            Offers = PluginOffers.Load(context.OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            Offers = PluginOffers.Load(context.OffersFolder, _loop.Home, ProviderRegistry.Built().Names),
             // A retry names a quest the last tick parked by its strikes, the verdict the drawer shows Retry by.
             Parked = _loop.Parked.Latest,
             // Or one its last look held by the person's stop, released from the session that look named.
@@ -136,7 +136,7 @@ public sealed class HelpProposalFacts(DriverContext context)
                 {
                     var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
                     var pinned = settings.ResolveVersion(report.Adapter, null, null);
-                    var owner = _loop.Harnesses.Adapters.Registry.OwnerOfAgent(report.Adapter).Value;
+                    var owner = _loop.Harnesses.Adapters.OwnerOfAgent(report.Adapter).Value;
                     return new HelpDoorFacts(report.Adapter)
                     {
                         Present = report.Present,
@@ -266,7 +266,7 @@ public sealed class HelpProposalFacts(DriverContext context)
         if (JudgedAgainstPlaces(proposals))
         {
             var world = new PlaceWorld(service);
-            var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+            var plugins = PluginCatalog.Load(_loop.Home, ProviderRegistry.Built().Names);
             var places = new Dictionary<string, PlacePlanned>(StringComparer.Ordinal);
             foreach (var proposal in proposals.Where(each => each.Kind == "setup" && each.Door == "place" && each.Place is not null))
             {

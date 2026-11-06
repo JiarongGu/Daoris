@@ -27,7 +27,7 @@ internal static class HarnessSettingsChange
     /// order, a removed one taken out by the edit.
     /// </param>
     /// <param name="log">Where the strays' lines go; the driver's log under the file's home where none is handed.</param>
-    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="HarnessAccountFolders.AgentsKnown"/>) where none is handed.</param>
+    /// <param name="agents">The agents Daoris knows (<see cref="ProviderRegistry.Agents"/>); the home's (<see cref="HarnessAccountFolders.AgentsKnown"/>) where none is handed.</param>
     public static HarnessSettings Change(
         string path, Func<HarnessSettings, HarnessSettings> edit, Action? read = null, AccountChange? account = null, MachineLog? log = null,
         TimeSpan? within = null, IReadOnlyCollection<string>? agents = null)

@@ -22,7 +22,7 @@ public sealed class ChatRunnerPartsTests : IDisposable
     public void The_runner_builds_the_registered_executors_in_their_order_each_from_its_wiring()
     {
         using var runner = new ChatRunner(
-            new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
+            new ChatLedger().Client(), ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)));
 
         var order = runner.Executors.Order;
         Assert.Equal(

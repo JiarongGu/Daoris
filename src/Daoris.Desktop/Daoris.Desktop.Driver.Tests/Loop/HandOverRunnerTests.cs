@@ -31,7 +31,7 @@ public sealed class HandOverRunnerTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger)
     {
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = Talk("talk"),
             ["other"] = Talk("other"),

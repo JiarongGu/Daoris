@@ -174,7 +174,7 @@ public sealed class SessionChecksHandTests : IDisposable
     public void A_claude_session_under_light_is_handed_each_heavy_command_denied_and_the_classifier_told(string name)
     {
         Marked();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
@@ -199,7 +199,7 @@ public sealed class SessionChecksHandTests : IDisposable
     public void A_codex_session_under_light_is_handed_no_rules_file()
     {
         Marked();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         // The roster reads this test's own harness file, never the one DAORIS_HOME names (the live install's, where it is set).
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, Home,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));

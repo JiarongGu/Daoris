@@ -39,7 +39,7 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     {
         HarnessToolchain Toolchain(string variable) =>
             new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["door"] = Door(Toolchain("DOOR_HOME"), full),
             // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.

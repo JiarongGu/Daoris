@@ -37,8 +37,8 @@ public sealed class RegistrationFollowLoopTests : IDisposable
     }
 
     private Daoris.Driver.Driver Driver() => new(
-        _ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home,
-        harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        _ledger.Client(), DriverConfig.Empty, ProviderRegistry.Built(), _home,
+        harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
     [Fact]
     public async Task A_look_follows_a_line_daoris_moved_once_and_says_what_must_be_fixed()
@@ -69,7 +69,7 @@ public sealed class RegistrationFollowLoopTests : IDisposable
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1 }""");
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var said = new List<string>();
         var looks = 0;
         var watching = watch.RunAsync(

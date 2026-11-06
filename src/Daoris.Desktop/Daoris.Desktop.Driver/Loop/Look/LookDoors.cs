@@ -63,7 +63,7 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     HookSet? ILandingWiring.Hooks => Context.Hooks;
 
-    AdapterSet IPluginWiring.Built => driver.Built;
+    ProviderRegistry IPluginWiring.Built => driver.Built;
 
     HookSet? IPluginWiring.Hooks => Context.Hooks;
 

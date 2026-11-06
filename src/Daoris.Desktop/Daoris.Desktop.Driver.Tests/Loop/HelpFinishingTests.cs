@@ -40,8 +40,8 @@ public sealed class HelpFinishingTests : IDisposable
     }
 
     private ChatRunner Runner() => new(
-        new ChatLedger().Client(), AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), null,
-        harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        new ChatLedger().Client(), ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), null,
+        harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
     /// <summary>🔴 A conversation the person finished is finishing, and no other is: a start carries on only one they did not finish.</summary>
     [Fact]

@@ -22,7 +22,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// </summary>
     public UsageQuestion? UsageOf(string adapter) =>
         roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
-            ? roster.Adapters.Registry.UsageOf(new DoorId(roster.Adapters.Resolve(adapter).Name)) as UsageQuestion
+            ? roster.Adapters.UsageOf(new DoorId(roster.Adapters.Resolve(adapter).Name)) as UsageQuestion
             : null;
 
     /// <summary>

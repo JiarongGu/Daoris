@@ -17,7 +17,7 @@ public sealed class StartPlanReachTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "provider-reach-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private readonly AdapterSet _adapters;
+    private readonly ProviderRegistry _adapters;
 
     private readonly HarnessRoster _roster;
 
@@ -29,7 +29,7 @@ public sealed class StartPlanReachTests : IDisposable
         foreach (var agent in new[] { "cool", "fine" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, agent, "account-1"));
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").Save(Settings);
         var present = new HarnessToolchain(Binary: [command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),
@@ -55,7 +55,7 @@ public sealed class StartPlanReachTests : IDisposable
         new(registry.Providers.Select(provider => Ids.Same(provider.Id.Value, opened) ? provider with { Reach = Reach.Opened } : provider), registry.Reserved);
 
     /// <summary>The reach of the machine's agents with <c>cool</c> stated <see cref="Reach.Opened"/>, opened where <paramref name="openings"/> say.</summary>
-    private ProviderReach CoolReach(IReachOpenings? openings = null) => new(Stated(_adapters.Registry, "cool"), openings);
+    private ProviderReach CoolReach(IReachOpenings? openings = null) => new(Stated(_adapters, "cool"), openings);
 
     /// <summary>A quest's plan on the repository <c>engine</c>, Build's order <paramref name="choices"/>.</summary>
     private StartPlan Plan(ProviderReach reach, string work = "build", params ActorChoice[] choices)
@@ -149,9 +149,9 @@ public sealed class StartPlanReachTests : IDisposable
     public void Every_built_in_and_plugin_provider_is_admitted_as_today()
     {
         Assert.All(Providers.Built(), provider => Assert.Equal(Daoris.Driver.Reach.Everywhere, provider.Reach));
-        Assert.All(AdapterSet.Built().Registry.Providers, provider => Assert.Equal(Daoris.Driver.Reach.Everywhere, provider.Reach));
-        var reach = new ProviderReach(AdapterSet.Built().Registry);
-        Assert.All(AdapterSet.Built().Names, door => Assert.Null(reach.Closes(door, Engine)));
+        Assert.All(ProviderRegistry.Built().Providers, provider => Assert.Equal(Daoris.Driver.Reach.Everywhere, provider.Reach));
+        var reach = new ProviderReach(ProviderRegistry.Built());
+        Assert.All(ProviderRegistry.Built().Names, door => Assert.Null(reach.Closes(door, Engine)));
         Assert.Null(reach.Closes("claude-code", ReachPlace.Machine));
     }
 
@@ -164,13 +164,13 @@ public sealed class StartPlanReachTests : IDisposable
         File.WriteAllText(
             Path.Combine(folder, PluginCatalog.ManifestName),
             """{ "id": "p.joined", "harnesses": [ { "name": "p-joined", "command": ["agent"], "accountOf": "claude-code" } ] }""");
-        var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(_home, ProviderRegistry.Built().Names));
 
-        var reach = new ProviderReach(Stated(adapters.Registry, "claude-code"));
+        var reach = new ProviderReach(Stated(adapters, "claude-code"));
 
         Assert.Equal("claude-code", reach.ProviderOf("p-joined")?.Id.Value);
         Assert.Equal("`p-joined` works only where it is opened, and the repository `engine` is not opened to it", reach.Closes("p-joined", Engine));
-        Assert.Null(new ProviderReach(adapters.Registry).Closes("p-joined", Engine));
+        Assert.Null(new ProviderReach(adapters).Closes("p-joined", Engine));
     }
 
     /// <summary>

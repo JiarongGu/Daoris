@@ -102,7 +102,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
 
     private Daoris.Driver.Driver Driver(string mode)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null),
             DriverConfig.Empty with

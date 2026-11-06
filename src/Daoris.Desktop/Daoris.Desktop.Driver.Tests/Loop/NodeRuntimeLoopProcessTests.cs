@@ -117,7 +117,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _) ?? throw new InvalidOperationException("the home's lease was not taken");
         await using var hooks = new HookSet(_home, say: (_, _) => { });
         var watch = new DriverWatch(_ledger.Client(), config, _home, new SessionProcesses(), sync: null, hooks: hooks,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var reports = new List<TickReport>();
         var watching = watch.RunAsync((report, _) =>
         {

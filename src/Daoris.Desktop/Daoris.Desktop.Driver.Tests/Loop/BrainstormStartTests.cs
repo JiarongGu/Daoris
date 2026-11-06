@@ -34,7 +34,7 @@ public sealed class BrainstormStartTests : IDisposable
     {
         OwnConnector();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, ProviderRegistry.Built(), _home)
         {
             Variable = Variable,
         };

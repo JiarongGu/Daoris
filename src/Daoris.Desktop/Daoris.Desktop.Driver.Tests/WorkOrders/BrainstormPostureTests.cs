@@ -38,7 +38,7 @@ public sealed class BrainstormPostureTests : IDisposable
     /// <summary>The rules file the driver hands a pass on Claude Code's pipe door, as the harness reads it.</summary>
     private JsonNode Handed(string turn)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
         var adapter = adapters.Resolve("claude-code");
         var info = new ProcessStartInfo("claude");
@@ -116,7 +116,7 @@ public sealed class BrainstormPostureTests : IDisposable
     [InlineData("s1", "synthesize.json")]
     public void Claude_Code_s_protocol_door_is_handed_the_golden_rules_through_its_session_meta(string turn, string golden)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
         var adapter = adapters.Resolve("claude-code-acp");
 
@@ -143,7 +143,7 @@ public sealed class BrainstormPostureTests : IDisposable
     [Fact]
     public void Codex_is_handed_no_rules_and_asks_its_read_only_mode_required()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var driver = new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), DriverConfig.Empty, adapters, _home);
         var adapter = adapters.Resolve("codex-acp");
 
@@ -164,7 +164,7 @@ public sealed class BrainstormPostureTests : IDisposable
     [Fact]
     public void Only_a_brainstorm_pass_asks_the_reading_mode_and_a_harness_with_none_keeps_its_own()
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var quest = new SessionTarget("q1", "Quest", "", "Daoris", "", "tree", "");
 
         Assert.Null(Daoris.Driver.SessionRules.PassPosture(quest, adapters.Resolve("codex-acp")));

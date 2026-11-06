@@ -39,7 +39,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
 
         var loop = Loop();
         var service = new DriverModuleStartFromTests.StandIn(root);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
@@ -94,7 +94,7 @@ public sealed class DriverModuleStartWithProcessTests : DriverModuleBridge
         new HarnessSettings().WithRotation("stub", ["account-1", "account-2"]).Save(HarnessSettingsPath);
 
         var service = new DriverModuleStartFromTests.StandIn(root);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         using var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);

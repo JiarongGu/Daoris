@@ -58,7 +58,7 @@ public static class WorkflowRunCommand
     {
         var home = DriverConfig.HomeOf(configPath);
         var config = DriverConfig.Load(configPath);
-        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(home, AdapterSet.Built().Names));
+        var plugins = WorkflowSteps.PluginsOf(PluginCatalog.Load(home, ProviderRegistry.Built().Names));
         var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
         string? WorkspaceOf(string repository) => registry
             .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;

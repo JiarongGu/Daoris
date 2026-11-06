@@ -122,7 +122,7 @@ public sealed class MeetingTests : IDisposable
         var config = DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = cap, Brainstorms = rule };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
-            drained ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), _home)
+            drained ? InstallUpdate.Drained(config) : config, ProviderRegistry.Built(), _home)
         {
             MeetingTurns = scripted ? script.RunAsync : null,
             BrainstormMinute = minute,
@@ -192,7 +192,7 @@ public sealed class MeetingTests : IDisposable
         var read = 0;
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())), DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 },
-            AdapterSet.Built(), _home)
+            ProviderRegistry.Built(), _home)
         {
             BrainstormSearches = (words, _, _) => Task.FromResult(new BrainstormSearch([], "words")),
             BrainstormCheckouts = (_, ct) =>
@@ -659,7 +659,7 @@ public sealed class MeetingTests : IDisposable
         var script = new Script();
         var driver = new Daoris.Driver.Driver(
             new ServiceClient("http://127.0.0.1:9", null, new HttpClient(new Refuses())),
-            DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, AdapterSet.Built(), _home)
+            DriverConfig.Empty with { Actors = StaffedRoles.On("stub"), Cap = 3 }, ProviderRegistry.Built(), _home)
         {
             BrainstormTurns = script.RunAsync,
             BrainstormMinute = Second,

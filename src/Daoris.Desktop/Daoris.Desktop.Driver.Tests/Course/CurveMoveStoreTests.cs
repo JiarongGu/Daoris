@@ -181,7 +181,7 @@ public sealed class CurveMoveStoreTests : IDisposable
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
         var client = ledger.Client();
         ledger.Chat("c1", "working", "talk", _root, profile: "account-1");
-        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        var adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["talk"] = Talk(new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "TALK_HOME", ProbeByPresence: true,
@@ -453,8 +453,8 @@ public sealed class CurveMoveStoreTests : IDisposable
         }
 
         using var runner = new ChatRunner(
-            client, AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), new SessionOutput(),
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+            client, ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), new SessionOutput(),
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         await runner.TakeUpAsync();
 
         var now = Store("run-probe").Read(decided.Move.Id)!;

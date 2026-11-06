@@ -10,13 +10,13 @@ internal static class HandOverAccounts
     /// The accounts the roster holds for <paramref name="agent"/>, or null where it has no such agent or one that holds no conversations;
     /// none for an agent without an account pool.
     /// </summary>
-    public static IReadOnlyList<string>? Of(AdapterSet adapters, string harnessesHome, string agent)
+    public static IReadOnlyList<string>? Of(ProviderRegistry adapters, string harnessesHome, string agent)
     {
         try
         {
             var resolved = adapters.Resolve(agent);
             if (!resolved.Interactive) return null;
-            return resolved.Toolchain is not null ? HarnessSettings.Profiles(harnessesHome, adapters.Registry.OwnerOfAgent(resolved.Name).Value) : [];
+            return resolved.Toolchain is not null ? HarnessSettings.Profiles(harnessesHome, adapters.OwnerOfAgent(resolved.Name).Value) : [];
         }
         catch (DriverException)
         {

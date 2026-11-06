@@ -46,7 +46,7 @@ public sealed class DriverLoopSendsBackTests : IDisposable
     {
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(new Records()));
         using var runner = new ChatRunner(
-            client, AdapterSet.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)),
+            client, ProviderRegistry.Built(), _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)),
             events: new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)));
         IChatSendBacks seam = runner;
         var hands = 0;

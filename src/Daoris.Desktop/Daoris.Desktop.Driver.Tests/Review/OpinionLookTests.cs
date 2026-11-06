@@ -375,14 +375,14 @@ public sealed class OpinionLookTests : IDisposable
         var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
         {
-            var real = AdapterSet.Built().Resolve(name).Toolchain!;
+            var real = ProviderRegistry.Built().Resolve(name).Toolchain!;
             adapters[name] = Adapter(name, new HarnessToolchain(
                 Binary: [Command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
                 // A test double whose own home is nobody's (OWNSPACE1a): the look's pass is this file's subject, not the account.
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 
-        var set = new AdapterSet(adapters);
+        var set = new ProviderRegistry(adapters);
         return new Daoris.Driver.Driver(host.Client(), drained ? InstallUpdate.Drained(Config()) : Config(), set, _home, harnesses: new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Passes = (ask, choice, _) =>

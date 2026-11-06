@@ -95,11 +95,11 @@ public sealed class WorkplacePluginsPortsTests : IDisposable
         Assert.Equal(DateTimeOffset.UtcNow, wire.Now, TimeSpan.FromMinutes(1));
 
         // The catalogue is read as the driver reads it: a harness name this build carries refuses the plugin that declares it.
-        var reserved = AdapterSet.Built().Names.First();
+        var reserved = ProviderRegistry.Built().Names.First();
         Install("acme.clash", JsonSerializer.Serialize(new { id = "acme.clash", version = "1.0.0", harnesses = new[] { new { name = reserved, command = new[] { "node", "a.mjs" } } } }));
         var loaded = Assert.IsType<PluginCatalog>(WorkplacePlugins.Current.Load(_home));
         Assert.NotNull(Assert.Single(loaded.Plugins).Problem);
-        Assert.Equal(Assert.Single(PluginCatalog.Load(_home, AdapterSet.Built().Names).Plugins).Problem, loaded.Plugins[0].Problem);
+        Assert.Equal(Assert.Single(PluginCatalog.Load(_home, ProviderRegistry.Built().Names).Plugins).Problem, loaded.Plugins[0].Problem);
         Assert.NotSame(loaded, WorkplacePlugins.Current.Load(_home));
     }
 

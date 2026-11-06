@@ -24,7 +24,7 @@ public sealed class StartPlanTests : IDisposable
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "foundation1j-plan-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private readonly AdapterSet _adapters;
+    private readonly ProviderRegistry _adapters;
 
     private readonly HarnessRoster _roster;
 
@@ -43,7 +43,7 @@ public sealed class StartPlanTests : IDisposable
 
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").WithDefault("piped", "account-1").Save(Settings);
         var present = new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true);
-        _adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        _adapters = new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["cool"] = Adapter("cool", present),
             ["fine"] = Adapter("fine", present),

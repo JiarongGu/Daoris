@@ -36,7 +36,7 @@ public sealed class RoleStructureTests : IDisposable
 
     /// <summary>The fake agent, present by a file look, whose every status and usage question is written down and fails.</summary>
     private HarnessRoster Roster() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,

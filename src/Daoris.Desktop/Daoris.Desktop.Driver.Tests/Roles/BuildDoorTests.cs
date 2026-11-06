@@ -23,7 +23,7 @@ public sealed class BuildDoorTests : IDisposable
     // The old and the new case: a later choice that rides the protocol, which the window and set-up once left unsaid.
     [InlineData(new[] { "stub", "acp-stub" }, true)]
     public void Where_any_of_Builds_order_rides_the_protocol_the_repository_may_be_driven(string[] order, bool drives) =>
-        Assert.Equal(drives, BuildDoor.Drives(_home, Build(order), AdapterSet.Built()));
+        Assert.Equal(drives, BuildDoor.Drives(_home, Build(order), ProviderRegistry.Built()));
 
     // An id nobody knows is refused, never read as the pipe, wherever it stands in the order, and by the window's and set-up's reads alike.
     [Theory]
@@ -33,7 +33,7 @@ public sealed class BuildDoorTests : IDisposable
     public void A_door_nobody_knows_is_refused_never_read_as_the_pipe(string[] order, string unknown)
     {
         Assert.Contains(unknown, order);
-        var refused = Assert.Throws<UnknownDoorException>(() => BuildDoor.Drives(_home, Build(order), AdapterSet.Built()));
+        var refused = Assert.Throws<UnknownDoorException>(() => BuildDoor.Drives(_home, Build(order), ProviderRegistry.Built()));
         Assert.Equal("nobody-knows", refused.Door);
         Assert.Equal(UnknownDoorException.Words("nobody-knows"), refused.Message);
         Assert.Throws<UnknownDoorException>(() => SetupWorld.Unadopted(Build(order), _home));
@@ -44,6 +44,6 @@ public sealed class BuildDoorTests : IDisposable
     {
         var config = Build("stub", "acp-stub");
         Assert.True(SetupWorld.Unadopted(config, _home));
-        Assert.Equal(BuildDoor.Drives(_home, config, AdapterSet.Built()), SetupWorld.Unadopted(config, _home));
+        Assert.Equal(BuildDoor.Drives(_home, config, ProviderRegistry.Built()), SetupWorld.Unadopted(config, _home));
     }
 }

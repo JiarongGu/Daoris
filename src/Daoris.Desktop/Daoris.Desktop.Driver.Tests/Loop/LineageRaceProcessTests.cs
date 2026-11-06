@@ -246,7 +246,7 @@ public sealed class LineageRaceProcessTests : IDisposable
 
     private Daoris.Driver.Driver Driver(SessionProcesses processes)
     {
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         var config = DriverConfig.Empty with { Drivable = ["engine"], Actors = StaffedRoles.On("stub"), PollSeconds = 1, TestBound = 3 };
         return new Daoris.Driver.Driver(
             _ledger.Client(), config, adapters, _home, processes: processes, output: new SessionOutput(),
@@ -265,7 +265,7 @@ public sealed class LineageRaceProcessTests : IDisposable
         {
             Whose.Value = name;
             using var within = LineageTokens.Within(tokens);
-            var adapter = AdapterSet.Built().Resolve("stub");
+            var adapter = ProviderRegistry.Built().Resolve("stub");
             var target = new SessionTarget("q1", "The race", "", "game", "engine", _root, StandInLedger.Url) { Home = _home };
             var info = adapter.Prepare(target, ["node", _script, "agent", ChildLineage.PathOf(_home, "s1"), _signals, name, child, holds ? "holds" : "alone"]);
             var moved = movedFirst ? ChildLineage.Opened(_home, "s1") : null;

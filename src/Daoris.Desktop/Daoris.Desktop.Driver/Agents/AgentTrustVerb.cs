@@ -30,7 +30,7 @@ internal static class AgentTrustVerb
         var folder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(world.Folder, given)));
         if (!Directory.Exists(folder)) throw new AgentWords($"no folder at `{folder}` — trust is granted to a folder a session would run in.");
 
-        var owner = roster.Adapters.Registry.OwnerOfAgent(name).Value;
+        var owner = roster.Adapters.OwnerOfAgent(name).Value;
         if (owner != name) Say($"{AgentsCommand.Prefix}: `{name}` runs as `{owner}`'s accounts — this is one of them.");
         var profile = AgentsCommand.FlagValue(args, "--account") is { } named ? AgentsCommand.AccountNamed(home, owner, named) : null;
         // With no account named, the set in its order (the account-pool design §5.1): the order's accounts that are here, then the rest.

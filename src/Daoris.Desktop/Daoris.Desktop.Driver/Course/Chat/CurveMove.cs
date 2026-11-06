@@ -98,7 +98,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         {
             var resolved = _context.Harnesses.Adapters.Resolve(adapter);
             if (resolved.Toolchain is not { } toolchain) return null;
-            (agent, owner) = (resolved.Name, _context.Harnesses.Adapters.Registry.OwnerOfAgent(resolved.Name).Value);
+            (agent, owner) = (resolved.Name, _context.Harnesses.Adapters.OwnerOfAgent(resolved.Name).Value);
             scope = _context.Harnesses.Settings.Set(owner);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException or JsonException)

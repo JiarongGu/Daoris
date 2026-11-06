@@ -106,7 +106,7 @@ internal sealed class HelpAccessSwap(IExecutorWiring wiring) : IExecutor
         var context = wiring.Context;
         try
         {
-            var catalog = PluginCatalog.Load(context.Home, AdapterSet.Built().Names);
+            var catalog = PluginCatalog.Load(context.Home, ProviderRegistry.Built().Names);
             new HelpWired(context.Home).Keep(sessionId, HelpWired.Compose(handed, catalog, HelpGrants.Read(context.Home, catalog), DateTimeOffset.UtcNow));
             WiredKept?.Invoke(sessionId);
         }

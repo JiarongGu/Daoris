@@ -146,7 +146,7 @@ public sealed class WorkflowBindingLookTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+            harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             // A start binds its run before its take, and the look says what it bound: the stand-in's run binds as the real start does.
             Runner = async (start, opened, ct) =>

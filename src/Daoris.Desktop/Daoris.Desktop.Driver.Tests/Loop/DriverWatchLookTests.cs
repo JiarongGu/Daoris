@@ -36,7 +36,7 @@ public sealed class DriverWatchLookTests : IDisposable
             var heard = 0;
             watch = new DriverWatch(
                 client, config, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), sync: null,
-                harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+                harnesses: new HarnessRoster(ProviderRegistry.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
             {
                 Log = log,
             };

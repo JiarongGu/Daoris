@@ -54,7 +54,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>An agent with accounts, present by a look, with no login question: only a reading says an account is signed out.</summary>
     private HarnessRoster Fake() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true)),
@@ -64,7 +64,7 @@ public sealed class SignInRefusedStartTests : IDisposable
             Zone = Zone,
         };
 
-    private HarnessRoster Built() => new(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
+    private HarnessRoster Built() => new(ProviderRegistry.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
     private static DriverConfig FakeConfig => ActorChoices.With(DriverConfig.Empty, "build", [new ActorChoice("fake")]);
 
@@ -74,7 +74,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         "build", [new ActorChoice("acp-stub")]);
 
     private Daoris.Driver.Driver Driver(ServiceClient service, HarnessRoster roster) =>
-        new(service, Config, AdapterSet.Built(), _home, harnesses: roster);
+        new(service, Config, ProviderRegistry.Built(), _home, harnesses: roster);
 
     private void Accounts(string agent, params string[] names)
     {
@@ -399,7 +399,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
+            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
 
         Assert.Equal("failed", conclusion.State);
         Assert.Equal(
@@ -429,7 +429,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         };
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, AdapterSet.Built().Resolve("claude-code-acp"), new HarnessSelection(null, "account-2"), expired, ended);
+            failed, ProviderRegistry.Built().Resolve("claude-code-acp"), new HarnessSelection(null, "account-2"), expired, ended);
 
         Assert.Equal(("account.signed-out", "claude-code"), (conclusion.Parts![^1].Code, (string?)conclusion.Parts[^1].Value("owner")));
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("claude-code", "account-2"));
@@ -447,7 +447,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var ended = new SessionConclusion(state, "it ended.");
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            ended, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
+            ended, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"), Refusal);
 
         Assert.Equal(ended, conclusion);
         Assert.False(File.Exists(AccountReads.PathOf(_home)));
@@ -460,7 +460,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = new SessionConclusion("failed", "the agent's turn failed before it took its quest: Internal error: Overloaded");
 
         var conclusion = Driver(service, Built()).AccountSignedOut(
-            failed, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"),
+            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-2"),
             "the ACP agent refused the call: Internal error: Overloaded");
 
         Assert.Equal(failed, conclusion);
@@ -479,7 +479,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
 
         var conclusion = Driver(service, roster).AccountSignedOut(
-            failed, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null), Refusal);
+            failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null), Refusal);
 
         Assert.Equal("account.signed-out-own", conclusion.Parts![^1].Code);
         Assert.EndsWith(
@@ -511,7 +511,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         File.WriteAllText(transcript, "working on it\nFailed to authenticate. API Error: 401 API key is invalid.\n");
 
         var conclusion = Driver(service, roster).AccountRefused(
-            new SessionConclusion("failed", "exit 1 before taking its quest."), AdapterSet.Built().Resolve("stub"),
+            new SessionConclusion("failed", "exit 1 before taking its quest."), ProviderRegistry.Built().Resolve("stub"),
             new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Equal("account.refused", conclusion.Parts![^1].Code);
@@ -525,7 +525,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
     /// <summary>The fake agent with Claude Code's sign-in words declared, so a conversation's refused turn can be read on it.</summary>
     private HarnessRoster FakeSigningIn() =>
-        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        new(new ProviderRegistry(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             ["fake"] = Adapter("fake", new HarnessToolchain(
                 Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
@@ -603,7 +603,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var roster = Built();
         using var runner = Runner(service, roster);
 
-        var said = runner.SignedOut(new ChatAgent(AdapterSet.Built().Resolve("acp-stub")), profile: null, Refusal);
+        var said = runner.SignedOut(new ChatAgent(ProviderRegistry.Built().Resolve("acp-stub")), profile: null, Refusal);
 
         Assert.Equal("account.signed-out-own", said!.Parts![^1].Code);
         Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
@@ -621,7 +621,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         await service.AdvanceAsync(id!, "working");
         var failed = Observation.Conclude(0, "Open", turnFailed: Refusal);
         var concluded = accountLine
-            ? Driver(service, roster).AccountSignedOut(failed, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-1"), Refusal)
+            ? Driver(service, roster).AccountSignedOut(failed, ProviderRegistry.Built().Resolve("acp-stub"), new HarnessSelection(null, "account-1"), Refusal)
             : failed;
         await service.AdvanceAsync(id!, concluded.State, note: concluded.Note, parts: concluded.Parts);
         return id!;

@@ -11,7 +11,7 @@ public static class BuildDoor
     /// A door nobody knows is refused, never read as the pipe. An order that does not read may not drive, as the start that reads it holds.
     /// </summary>
     /// <exception cref="UnknownDoorException">An entry of Build's order names a door this build does not know.</exception>
-    public static bool Drives(string home, DriverConfig config, AdapterSet adapters)
+    public static bool Drives(string home, DriverConfig config, ProviderRegistry adapters)
     {
         IReadOnlyList<ActorEffective> order;
         try

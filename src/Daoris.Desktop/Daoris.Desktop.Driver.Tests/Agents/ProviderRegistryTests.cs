@@ -103,9 +103,9 @@ public sealed class ProviderRegistryTests : IDisposable
     public void Every_built_door_reads_its_abilities_as_its_adapter_answered_them()
     {
         // Row g: a caller's door test reads the door's ability; each one answers what the wire test answered.
-        foreach (var name in AdapterSet.Built().Names)
+        foreach (var name in ProviderRegistry.Built().Names)
         {
-            var adapter = AdapterSet.Built().Resolve(name);
+            var adapter = ProviderRegistry.Built().Resolve(name);
             var abilities = adapter.Abilities();
             var protocol = adapter.Transport == Transport.Protocol;
             Assert.Equal(protocol, abilities.ServersOnWire);
@@ -131,7 +131,7 @@ public sealed class ProviderRegistryTests : IDisposable
     public void Adoption_drives_where_the_loop_planned_the_protocol_door(string[] build, bool drives)
     {
         // The loop's cases (`BuildDoor`): the protocol where any of Build's candidates rides it, else the pipe.
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         Assert.Equal(drives, Adoption.Drives(build, adapters.AbilitiesOf));
         Assert.Equal(drives, build.Any(door => Adoption.Unadopted(door, adapters.AbilitiesOf)));
     }
@@ -143,7 +143,7 @@ public sealed class ProviderRegistryTests : IDisposable
     public void Adoption_refuses_a_door_nobody_knows_wherever_it_stands(string[] build, string unknown)
     {
         Assert.Contains(unknown, build);
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         Assert.Equal("nobody-knows", Assert.Throws<UnknownDoorException>(() => Adoption.Drives(build, adapters.AbilitiesOf)).Door);
         Assert.Throws<UnknownDoorException>(() => Adoption.Unadopted("nobody-knows", adapters.AbilitiesOf));
     }
@@ -152,10 +152,10 @@ public sealed class ProviderRegistryTests : IDisposable
     public void A_dsh_door_holds_no_conversation_by_its_declared_ability()
     {
         // The chat's two tests of `Interactive` read the door's declaration, never the transport's (C2-1.1).
-        var dsh = AdapterSet.Built().Resolve("dsh").Abilities();
+        var dsh = ProviderRegistry.Built().Resolve("dsh").Abilities();
         Assert.Equal(Transport.Protocol, dsh.Transport);
         Assert.False(dsh.Interactive);
-        Assert.True(AdapterSet.Built().Resolve("codex-acp").Abilities().Interactive);
+        Assert.True(ProviderRegistry.Built().Resolve("codex-acp").Abilities().Interactive);
     }
 
     /// <summary>§5: a key resolves to its pool, the key and the providers holding it, and a pool that holds none is no pool.</summary>
@@ -208,7 +208,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Table().GetProperty("cases").EnumerateArray().Single(each => each.GetProperty("name").GetString() == name);
 
     /// <summary>Writes the case's plugins under the home, as a person's would be, and joins the enabled ones to the built set.</summary>
-    private AdapterSet Build(JsonElement plugins)
+    private ProviderRegistry Build(JsonElement plugins)
     {
         foreach (var plugin in plugins.EnumerateArray())
         {
@@ -220,7 +220,7 @@ public sealed class ProviderRegistryTests : IDisposable
             if (plugin.TryGetProperty("disabled", out var off) && off.GetBoolean()) PluginState.Disable(_home, id);
         }
 
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         return built.WithPlugins(AgentPluginReads.Current.Load(_home, built.Reserved));
     }
 
@@ -230,7 +230,7 @@ public sealed class ProviderRegistryTests : IDisposable
         bool Login, string? KeyVariable, string? SettingsFile, string? HomeVariable, bool OwnHome, bool StartsInOwnHome, string? TrustFile);
 
     /// <summary>Today's answers: <c>Toolchain.Owner</c>, <c>AgentFamily</c> and the roster's readers, each read where the code reads it.</summary>
-    private static Answer Today(AdapterSet set, HarnessRoster roster, string door)
+    private static Answer Today(ProviderRegistry set, HarnessRoster roster, string door)
     {
         var toolchain = set.Resolve(door).Toolchain!;
         var agent = roster.AccountAgentOf(door);
@@ -273,7 +273,7 @@ public sealed class ProviderRegistryTests : IDisposable
     /// (<c>HarnessRoster.OwnersToolchain</c>, private, copied here), where the walk reads the door's own: the cells where two copies
     /// answer differently today.
     /// </summary>
-    private static List<string> Disagreeing(AdapterSet set)
+    private static List<string> Disagreeing(ProviderRegistry set)
     {
         HarnessToolchain? Owners(string owner)
         {
@@ -286,7 +286,7 @@ public sealed class ProviderRegistryTests : IDisposable
                 door ??= toolchain;
             }
 
-            return door ?? set.Registry.ToolchainOf(owner);
+            return door ?? set.ToolchainOf(owner);
         }
 
         return [.. set.Names.Where(name =>
@@ -307,7 +307,7 @@ public sealed class ProviderRegistryTests : IDisposable
     {
         var table = Case(name);
         var set = Build(table.GetProperty("plugins"));
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
         var roster = new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
         foreach (var door in set.Names)
@@ -343,13 +343,13 @@ public sealed class ProviderRegistryTests : IDisposable
     {
         var table = Case(name);
         var set = Build(table.GetProperty("plugins"));
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
         var roster = new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses));
 
         // `AgentsCommand` reads a door's settings file through its account agent and any other agent's own toolchain.
         string? Settings(string agent) => set.Names.Contains(agent, StringComparer.OrdinalIgnoreCase)
             ? roster.AccountToolchain(agent)?.SettingsFile
-            : set.Registry.ToolchainOf(agent)?.SettingsFile;
+            : set.ToolchainOf(agent)?.SettingsFile;
         if (table.TryGetProperty("agents", out var agents))
         {
             foreach (var listed in agents.EnumerateObject())
@@ -376,7 +376,7 @@ public sealed class ProviderRegistryTests : IDisposable
     {
         var table = Case(name);
         var set = Build(table.GetProperty("plugins"));
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
 
         foreach (var listed in table.GetProperty("pools").EnumerateObject())
         {
@@ -392,18 +392,18 @@ public sealed class ProviderRegistryTests : IDisposable
 
     /// <summary>
     /// The known agents are the build's and every installed plugin's, a disabled one's too (POOLSTRAY1): the registry's equal
-    /// <c>AdapterSet.Agents</c>, which is <c>HarnessSettings.AgentsKnown</c>, for each case, with the disabled plugin's names among them.
+    /// <c>ProviderRegistry.Agents</c>, which is <c>HarnessSettings.AgentsKnown</c>, for each case, with the disabled plugin's names among them.
     /// </summary>
     [Theory]
     [MemberData(nameof(Cases))]
     public void The_known_agents_equal_the_sets_and_the_settings(string name)
     {
         var set = Build(Case(name).GetProperty("plugins"));
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
 
         Assert.Equal(set.Agents, registry.Known);
         Assert.Equal(HarnessSettings.AgentsKnown(_home), registry.Known);
-        Assert.Equal(AdapterSet.Built().Reserved, registry.Reserved);
+        Assert.Equal(ProviderRegistry.Built().Reserved, registry.Reserved);
     }
 
     /// <summary>Mirrors <c>AccountSetTests</c>' known agents: a disabled plugin's <c>acme-agent</c> and <c>acme</c> are among them.</summary>
@@ -415,8 +415,8 @@ public sealed class ProviderRegistryTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"], "accountOf": "acme" } ] }""");
         PluginState.Disable(_home, "acme.agent");
-        var built = AdapterSet.Built();
-        var registry = ProviderRegistry.Of(built.WithPlugins(AgentPluginReads.Current.Load(_home, built.Names)));
+        var built = ProviderRegistry.Built();
+        var registry = built.WithPlugins(AgentPluginReads.Current.Load(_home, built.Names));
 
         Assert.Equal(HarnessSettings.AgentsKnown(_home), registry.Known);
         Assert.Contains("claude-code", registry.Known);
@@ -432,12 +432,12 @@ public sealed class ProviderRegistryTests : IDisposable
         }
     }
 
-    /// <summary>§2.2: an unknown id is D23's error, the one <c>AdapterSet.Resolve</c> gives; a provider's id where a door is asked is that same error.</summary>
+    /// <summary>§2.2: an unknown id is D23's error, the one <c>ProviderRegistry.Resolve</c> gives; a provider's id where a door is asked is that same error.</summary>
     [Fact]
     public void An_unknown_id_is_the_error_naming_what_exists_and_a_provider_is_no_door()
     {
-        var set = AdapterSet.Built();
-        var registry = ProviderRegistry.Of(set);
+        var set = ProviderRegistry.Built();
+        var registry = set;
 
         foreach (var asked in new[] { "nope", "codex" })
         {
@@ -459,7 +459,7 @@ public sealed class ProviderRegistryTests : IDisposable
     [Fact]
     public void Each_kind_of_id_resolves_by_its_kind_and_codex_is_a_provider_never_a_door()
     {
-        var registry = ProviderRegistry.Of(AdapterSet.Built());
+        var registry = ProviderRegistry.Built();
 
         Assert.Equal(new DoorId("claude-code-acp"), registry.Resolve("claude-code-acp", IdKind.Door).Door!.Id);
         Assert.Equal(new ProviderId("claude-code"), registry.Resolve("claude-code", IdKind.Provider).Provider!.Id);
@@ -481,8 +481,8 @@ public sealed class ProviderRegistryTests : IDisposable
     [Fact]
     public void The_providers_and_doors_hold_what_the_toolchains_declare()
     {
-        var set = AdapterSet.Built();
-        var registry = ProviderRegistry.Of(set);
+        var set = ProviderRegistry.Built();
+        var registry = set;
 
         Assert.Equal(["alt-stub", "claude-code", "codex", "dsh", "stub"], registry.Providers.Select(p => p.Id.Value));
         Assert.All(registry.Providers, provider => Assert.Equal(Reach.Everywhere, provider.Reach));
@@ -528,8 +528,8 @@ public sealed class ProviderRegistryTests : IDisposable
     [Fact]
     public void Each_lent_part_is_what_a_harness_naming_that_id_reads_today()
     {
-        var set = AdapterSet.Built();
-        var registry = ProviderRegistry.Of(set);
+        var set = ProviderRegistry.Built();
+        var registry = set;
         var claude = set.Resolve("claude-code").Toolchain!;
         var stub = set.Resolve("stub").Toolchain!;
         var codexAcp = set.Resolve("codex-acp").Toolchain!;
@@ -572,7 +572,7 @@ public sealed class ProviderRegistryTests : IDisposable
     public void A_plugins_door_keeps_its_own_identity_and_home_whatever_provider_it_joins()
     {
         var set = Build(Case("joins a registered provider whose key is that string").GetProperty("plugins"));
-        var registry = ProviderRegistry.Of(set);
+        var registry = set;
 
         var joined = registry.Door("p-claude");
         Assert.Equal(new ProviderId("claude-code"), registry.ProviderOf(joined.Id));
@@ -603,13 +603,13 @@ public sealed class ProviderRegistryTests : IDisposable
     [Fact]
     public void A_provider_made_for_a_door_named_account_of_references_that_doors_declarations_by_name()
     {
-        var named = ProviderRegistry.Of(Build(Case("names codex-acp and reads its limit words and usage question").GetProperty("plugins")));
+        var named = Build(Case("names codex-acp and reads its limit words and usage question").GetProperty("plugins"));
         var made = named.Provider("p-cx");
 
         Assert.Equal(new AccountKey("codex-acp"), made.Accounts.Required.Key);
         Assert.Equal(new DoorId("codex-acp"), made.Accounts.Required.References);
-        Assert.Same(AdapterSet.Built().Resolve("codex-acp").Toolchain!.Limits, made.Tables.Required.Limits);
-        Assert.Same(AdapterSet.Built().Resolve("codex-acp").Toolchain!.Usage, made.Usage.Required.Question);
+        Assert.Same(ProviderRegistry.Built().Resolve("codex-acp").Toolchain!.Limits, made.Tables.Required.Limits);
+        Assert.Same(ProviderRegistry.Built().Resolve("codex-acp").Toolchain!.Usage, made.Usage.Required.Question);
         Assert.False(made.Lent.Required.Tables.Limits is not null);
         Assert.Equal(["p-cx"], named.Resolve("codex-acp", IdKind.AccountKey).Pool!.Providers.Select(id => id.Value));
         Assert.Equal(["codex-acp"], named.Provider("codex").Doors.Select(door => door.Id.Value));

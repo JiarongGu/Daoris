@@ -116,7 +116,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>What <c>LINES</c> answers for <paramref name="lines"/>, one builder for the pull and the slice (<see cref="LinesWires.Answer"/>).</summary>
-    internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, AdapterSet adapters) => LinesWires.Answer(lines, config, adapters);
+    internal static object Answer(IReadOnlyList<LineRow> lines, DriverConfig config, ProviderRegistry adapters) => LinesWires.Answer(lines, config, adapters);
 
     /// <summary>A rule's <c>integrate</c> as the file writes it (<see cref="LinesWires.IntegrateWire"/>).</summary>
     internal static object? IntegrateWire(LandingIntegrate? integrate) => LinesWires.IntegrateWire(integrate);
@@ -523,7 +523,7 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     /// <summary>A second-opinion rule as the bridge carries it (<see cref="LinesWires.OpinionWire"/>).</summary>
-    internal static object OpinionWire(OpinionRule rule, string working, AdapterSet adapters) => LinesWires.OpinionWire(rule, working, adapters);
+    internal static object OpinionWire(OpinionRule rule, string working, ProviderRegistry adapters) => LinesWires.OpinionWire(rule, working, adapters);
 
     // what a helper an agent asks for does, and how work is committed,
     // the screens' half of `daoris place helpers` and `daoris place commits`, sent by `bridge/lines.ts`. Ask Daoris's `setting`

@@ -128,11 +128,11 @@ public static class HarnessAccountFolders
 
     /// <summary>
     /// The agents Daoris knows on <paramref name="home"/> (POOLSTRAY1): the build's and every installed plugin's
-    /// (<see cref="AdapterSet.Agents"/>), for a writer or reader handed no set of its own.
+    /// (<see cref="ProviderRegistry.Agents"/>), for a writer or reader handed no set of its own.
     /// </summary>
     public static IReadOnlyList<string> AgentsKnown(string home)
     {
-        var built = AdapterSet.Built();
+        var built = ProviderRegistry.Built();
         return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)).Agents;
     }
 
@@ -140,7 +140,7 @@ public static class HarnessAccountFolders
     /// Each agent's accounts on this machine, for every agent Daoris knows that the wiring names or whose account homes exist
     /// (POOLSTRAY1): a folder under the account homes no known agent names is no agent, and its folders no accounts.
     /// </summary>
-    /// <param name="agents">The agents Daoris knows (<see cref="AdapterSet.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
+    /// <param name="agents">The agents Daoris knows (<see cref="ProviderRegistry.Agents"/>); the home's (<see cref="AgentsKnown"/>) where none is handed.</param>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> AccountsOf(
         string home, HarnessSettings settings, IReadOnlyCollection<string>? agents = null)
     {
