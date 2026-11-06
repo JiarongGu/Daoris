@@ -67,7 +67,7 @@ public sealed class PartnerChatProcessTests : IDisposable
         var config = Config();
         var events = Events;
         using var client = ledger.Client();
-        var adapters = AdapterSet.Built();
+        var adapters = ProviderRegistry.Built();
         using var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
