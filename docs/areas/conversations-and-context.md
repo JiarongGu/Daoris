@@ -53,7 +53,7 @@ of everything it handed, section by section.
 | `LimitMove`, `LimitWaits` | `Course/Chat/` | Executors `limit-move` and `limit-wait`: a limit at a turn's end moves to the next account now, or waits for the look's `limits` stage to wake it. `LimitMove`'s ended-conversation move is `EndedLimitMove`, built by it and reaching its siblings through the wiring at run time; `LimitNotes`, `LimitResetWord` and `GoingOn` (the go-on's record of its words) are files of their own |
 | `CurveMove` | `Course/Chat/CurveMove.cs` (`Agents/Domain/SwitchDecision.cs`) | Executor `curve-move`: the usage curve's move of a conversation at its turn's end |
 | `ConversationRules`, `TransientMove`, `LimitRuled` | `Course/Chat/` | A conversation's line as the supervisor's rules read it; executor `transient-move`, the rules' move or hold past its episode; the limits rule's wait and ask and the moves bound before the limit's walk |
-| `HandOver`, `ChatHandOver`, `HandOverQuest` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions |
+| `HandOver`, `ChatHandOver`, `HandOverQuest`, `PartLeftovers` | `Course/HandOver/`, `Course/Chat/` | Hand-overs to another agent or account, for conversations (executor `hand-over`) and quests' sessions; what the old part left running, ended and waited for |
 | `StartFrom`, `StartWith` | `Course/Chat/ChatRunner.StartFrom.cs`, `StartWith.cs` | *Start a conversation with these words*; a conversation opened on its first words |
 | `DrivenCourse`, `LimitResume` | `Course/GoOn/DrivenCourse.cs`, `Course/LimitResume.cs` | A driven line's carry-ons, and its resume after a limit or update |
 | `Continuations`, `ResumeAsk` | `Course/Domain/Continuation.cs`, `ResumeAsk.cs` | Judges whether a record resumes; what a resumed run is told |
@@ -152,7 +152,10 @@ of everything it handed, section by section.
     `ask` puts it to the person, `off` refuses it. (from D163)
 27. A conversation's hand-over is taken at its turn's end. Its first message is the brief, with none of the person's words.
     A quest's session stops at once for the person's press, which is their stop. An agent's ask waits for the turn's end.
-    (from D163, D188)
+    Before a conversation's next part starts in its tree (a hand-over or an account's move), the old part's job is taken from
+    its tracking, and once its process has gone what the job still holds (a command left in the background) is ended and waited
+    for, up to 30 seconds (`PartLeftovers`); the old record says so, `chat.left-ended`, or `chat.left-running` past the bound.
+    A quest's session's carry-on starts at a later look, after its stop ended its job. (from D163, D188)
 28. A hand-over is refused for Ask Daoris, for the same agent and account, for a closed quest, for a tree that is gone, and
     for a session the person parked. (from D163, D212)
     *Go on in a new session*, the words a cooling account holds on a driven record, is the same press naming no agent:
@@ -230,7 +233,7 @@ of everything it handed, section by section.
   structure gate (D166).
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
   `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`,
-  `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
+  `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `PartLeftTests`, `HandOverLeftProcessTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
   `*CrashProcessTests`, `*DowngradeProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
   `StandingBlockTests`, `InstructionAccountTests`, `CourseCountsTests`, `LineCountsTests`, `LineKeysTests`,
   `AnswersAloneHoldTests` (all in `Daoris.Desktop.Driver.Tests`); `Loop/ChatGoesOnProcessTests`, `Loop/ChatTurnsTests`;
@@ -278,8 +281,6 @@ of everything it handed, section by section.
 - **LIMITGOON1 (row i):** the limit move seen on the installed window.
 - **LIMITRESUME1 (ONEWAY1g row f):** the limit resume's remaining row on the installed doors.
 - **CHATFLOW1:** a conversation's work in its own tree runs its repository's workflow.
-- **COAGENT1c / COAGENT1g:** a conversation as the lead; a hand-over waits for the outgoing part's background work and
-  children.
 - **RPC1g:** a terminal's conversation is the running Daoris's. The design (`docs/2026-11-06-terminal-conversation-design.md`)
   is accepted (D238): one runner, a terminal holding one conversation over the pipe under one Confirm, nothing alone with no instance.
   The pipe holds a conversation for one connection (`src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/PipeHolding.cs`),

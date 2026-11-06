@@ -224,6 +224,8 @@
   "note.chat.handed-over": "这段对话已转交给 {{agent}} 继续，新对话为 {{session}}。",
   "note.chat.taken-over": "这段对话是从 {{agent}} 的对话 {{session}} 转交过来继续的，原因：{{why}}；交给它的是 Daoris 对其的记录，而非它自己的轮次。",
   "note.chat.briefing-unsaid": "Daoris 保留的上一段对话的内容没有送达智能体：请告诉它你之前进行到哪里。",
+  "note.chat.left-ended": "Daoris 结束了这一部分留下仍在运行的进程，共 {{count}} 个，并等到它们全部退出后，才在这个工作树中开始下一部分。",
+  "note.chat.left-running": "这一部分留下仍在运行的进程，共 {{count}} 个，{{seconds}} 秒后仍未结束：下一部分在这个工作树中于它们旁边开始了。",
   "note.moved.on": "以本会话的新一段 {{session}} 继续，由 {{agent}}（账户 `{{account}}`）运行，因为{{why}}：其上下文为 {{tokens}} 个 token，新的一段收到了 Daoris 对它的简报，{{count}} 个字符。",
   "note.moved.from": "接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：其上下文为 {{tokens}} 个 token，它收到了 Daoris 对它的简报，{{count}} 个字符。",
   "note.chat.moved": "在这一轮结束时转到账户 `{{to}}`：`{{from}}` 的{{window}}上限已用 {{used}}，超出其曲线此刻的 {{curve}}；`{{to}}` 还有余量。",

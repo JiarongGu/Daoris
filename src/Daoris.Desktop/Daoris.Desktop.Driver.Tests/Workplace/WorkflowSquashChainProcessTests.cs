@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// D245's proof: a workflow <c>land</c> → <c>push</c> → <c>pull-request</c> → <c>monitor</c> → <c>tidy</c> against G1's stand-ins. A two-part
 /// chain lands as one squashed commit, the <c>push</c> door pushes it to <see cref="GitSshHost"/>, the request is opened and then merged as a
-/// squash on <see cref="PullRequestApiHost"/>, the answer is kept as the plugin's <c>work/state</c> keeps it, the monitor reads it merged, and the
+/// squash on <see cref="PullRequestApiHost"/>, the answer is kept as the plugin's <c>work/state</c> keeps it, the monitor reads it merged (its
+/// <c>when merged</c> route to the tidy; <c>when closed</c> goes to a person's task), and the
 /// tidy ends both parts once: their branches gone through the journal with an Undo, each part's commits on a recovery ref, and the press
 /// offering none of them again.
 /// </summary>
@@ -147,11 +148,12 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
           {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"branch"}},
           {"id":"push","kind":"push","version":1,"reach":"performed"},
           {"id":"pull-request","kind":"acme-host/pull-request","version":1,"reach":"performed"},
-          {"id":"monitor","kind":"monitor","version":1,"reach":"observed"},
-          {"id":"tidy","kind":"tidy","version":1,"reach":"performed"}],
+          {"id":"monitor","kind":"monitor","version":1,"reach":"observed","outcomes":["merged","closed"]},
+          {"id":"tidy","kind":"tidy","version":1,"reach":"performed"},
+          {"id":"closed","kind":"human","version":1,"reach":"pressed"}],
          "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"push"},
                   {"id":"c","kind":"after","from":"push","to":"pull-request"},{"id":"d","kind":"after","from":"pull-request","to":"monitor"},
-                  {"id":"e","kind":"after","from":"monitor","to":"tidy"}]}
+                  {"id":"e","kind":"when","from":"monitor","to":"tidy","outcome":"merged"},{"id":"f","kind":"when","from":"monitor","to":"closed","outcome":"closed"}]}
         """;
 
     [Fact]
@@ -178,7 +180,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
         var id = Assert.Single(_api.PullRequests).Id;
         var address = $"{_api.Address.TrimEnd('/')}/acme/engine/pull/{id}";
         Assert.True(new PullRequestRecords(Home).Keep("engine", Landed, "acme-host", address));
-        Assert.False(CompletionNodes.Monitor(landings.Of("engine", Landed)).Reached);
+        Assert.Null(PullRequestReading.Of(landings.Of("engine", Landed)).State);
 
         // The platform squash-merges it: one new commit on main, holding neither part's commits by ancestry.
         await Ok(Git(Seed, "fetch", Bare, Landed));
@@ -196,8 +198,8 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
             PullRequest = address, MergeCommit = merged, SourceCommit = squashed, Target = "main", How = MergeHow.Squash, Plugin = "acme-host",
             At = DateTimeOffset.UtcNow, AskedAt = DateTimeOffset.UtcNow,
         });
-        var watched = CompletionNodes.Monitor(landings.Of("engine", Landed));
-        Assert.True(watched.Reached, watched.Said);
+        var watched = PullRequestReading.Of(landings.Of("engine", Landed));
+        Assert.True(watched.State == PullRequestReading.Merged, watched.Said);
 
         // The tidy: both parts ended once, each branch gone through the journal, each part's commits on a recovery ref.
         var tidying = new TidyDoor(Home);
@@ -211,7 +213,7 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
         Assert.Null(await RefAsync(Work, "refs/heads/work/two"));
         Assert.Equal(one, await RefAsync(Work, tidied.Parts[0].KeptOn!));
         Assert.Equal(two, await RefAsync(Work, tidied.Parts[1].KeptOn!));
-        Assert.True(CompletionNodes.Tidy(landings.Of("engine", Landed)).Reached);
+        Assert.True(TidyReading.Tidied(landings.Of("engine", Landed)));
 
         // Once: a second start at the same tip ends nothing more.
         Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed)));
@@ -236,20 +238,27 @@ public sealed class WorkflowSquashChainProcessTests : IClassFixture<GitSshHost>,
     }
 
     [Fact]
-    public async Task A_request_closed_without_merging_ends_nothing_and_its_branches_stay()
+    public async Task A_request_closed_without_merging_is_routed_to_the_person_and_ends_nothing_and_fails_nothing()
     {
-        var nodes = NodeGraphs.Read(Graph, onSave: true).Graph!.Nodes.ToDictionary(node => node.Kind, StringComparer.Ordinal);
+        var graph = NodeGraphs.Read(Graph, onSave: true).Graph!;
+        var nodes = graph.Nodes.ToDictionary(node => node.Kind, StringComparer.Ordinal);
         var (one, two, squashed) = await ReadyAsync();
         var landings = new LandedBranches(Home);
         landings.PullRequested("engine", Landed, "acme-host", "https://example.invalid/acme/engine/pull/1");
         landings.Answered(landings.Of("engine", Landed)!, new PullRequestState(PullRequestStates.Abandoned) { Plugin = "acme-host", AskedAt = DateTimeOffset.UtcNow });
 
-        Assert.True(CompletionNodes.Monitor(landings.Of("engine", Landed)).Reached);
+        // The monitor reads it closed, which the graph routes to the person's task and never to the tidy.
+        Assert.Equal(PullRequestReading.Closed, PullRequestReading.Of(landings.Of("engine", Landed)).State);
+        var closed = Assert.Single(graph.Wires, wire => wire.Outcome == PullRequestReading.Closed);
+        Assert.Equal(NodeKinds.Human, graph.Nodes.Single(node => node.Id == closed.To.Node).Kind);
+
+        // A tidy started all the same ends nothing and fails nothing.
         var tidying = new TidyDoor(Home);
         Assert.True(tidying.Start(new TidyStart("run:q1", nodes[NodeKinds.Tidy], "engine", "default", Work, Landed, squashed)));
         await tidying.IdleAsync();
 
         Assert.Null(landings.Of("engine", Landed)!.Tidied);
+        Assert.False(File.Exists(NodeRecordFiles.PathOf(Home, "run:q1")));
         Assert.Equal(one, await RefAsync(Work, "refs/heads/work/one"));
         Assert.Equal(two, await RefAsync(Work, "refs/heads/work/two"));
     }

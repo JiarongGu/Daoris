@@ -21,11 +21,8 @@ internal sealed class HumanNode : BuiltInNode, IObserves, IPressed
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
 
-    /// <summary>Its outcomes are a task's or an approval's, or none.</summary>
-    public override string? Problem(NodeDeclaration node) =>
-        node.Outcomes.Count == 0 || node.Outcomes.SequenceEqual(Task) || node.Outcomes.SequenceEqual(Approval) ? null : "outcomes";
-
-    public override bool OwnsOutcomes => true;
+    /// <summary>Its outcomes are a task's or an approval's, in their order; one declaring none is a task reached with no outcome.</summary>
+    public override bool TakesOutcomes(IReadOnlyList<string> outcomes) => outcomes.SequenceEqual(Task) || outcomes.SequenceEqual(Approval);
 
     public override NodePart Part(NodeDeclaration node) => new(NodeKinds.Human, WorkflowParticipation.You, WorkflowExecutor.Daoris);
 
