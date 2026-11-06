@@ -366,7 +366,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
                 }
 
                 if (owned.WaitForExit(StopWithin)) return HostStop.Exited;
-                owned.Kill(entireProcessTree: true);
+                OwnedProcesses.End(owned);
                 return HostStop.Killed;
             }
             catch (InvalidOperationException)

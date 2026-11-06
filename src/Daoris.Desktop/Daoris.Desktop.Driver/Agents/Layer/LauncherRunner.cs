@@ -256,7 +256,7 @@ internal sealed class LauncherRunner(LauncherSeat seat, TimeSpan? patience = nul
     {
         try
         {
-            if (process is { HasExited: false }) process.Kill(entireProcessTree: true);
+            if (process is { HasExited: false }) OwnedProcesses.End(process);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
         {

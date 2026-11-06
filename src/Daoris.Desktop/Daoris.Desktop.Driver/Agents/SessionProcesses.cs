@@ -274,7 +274,7 @@ public sealed class SessionProcesses(string? markers = null)
 
         try
         {
-            entry.Process.Kill(entireProcessTree: true);
+            OwnedProcesses.End(entry.Process);
         }
         catch (Exception error) when (Ending(error))
         {
@@ -317,7 +317,7 @@ public sealed class SessionProcesses(string? markers = null)
     {
         try
         {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            if (!process.HasExited) OwnedProcesses.End(process);
         }
         catch (Exception error) when (Ending(error))
         {

@@ -45,7 +45,7 @@ public sealed class HarnessRun
         try
         {
             _download?.Cancel();
-            if (_process is { HasExited: false }) _process.Kill(entireProcessTree: true);
+            if (_process is { HasExited: false }) OwnedProcesses.End(_process);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or ObjectDisposedException)
         {

@@ -374,6 +374,27 @@ public sealed class ProcessStartsCensusTests
             PurposeProblems(planted));
     }
 
+    /// <summary>The runtime's kills that stay outside the one management's end (D249, <see cref="OwnedProcesses.End"/>), each with why.</summary>
+    private static readonly Dictionary<string, string> OwnKills = new(StringComparer.Ordinal)
+    {
+        ["Daoris.Desktop.Driver/Platform/OwnedProcesses.cs"] = "the management's own end",
+        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] =
+            "the git doors' program of its own, which git starts and which compiles without the management: the door's ssh ended with it",
+        ["Daoris.Desktop.Driver/Workplace/ActReconciler.cs"] =
+            "a journaled act step's git an earlier Daoris left, found by its pid, whose refused kill the reconciler reads as not ended",
+    };
+
+    [Fact]
+    public void Every_process_is_ended_through_the_one_management_but_in_the_files_named_with_their_reason()
+    {
+        // The runtime's tree kill, as every kill of the desktop's was written; a plugin trial's own Kill() ends through the management.
+        var killing = Sources().Where(each => Regex.IsMatch(each.Source, @"\.Kill\(\s*(?:entireProcessTree|true|false)\b")).Select(each => each.File).ToHashSet();
+
+        Assert.True(killing.All(OwnKills.ContainsKey), "a process ended outside OwnedProcesses.End: end it there, or name the file in "
+            + "OwnKills with why:\n" + string.Join('\n', killing.Where(file => !OwnKills.ContainsKey(file))));
+        Assert.All(OwnKills.Keys, file => Assert.True(killing.Contains(file), $"{file} kills nothing itself now: take it off OwnKills"));
+    }
+
     private static List<string> PurposeProblems(IEnumerable<(string File, string Source)> sources)
     {
         var problems = new List<string>();

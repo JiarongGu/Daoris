@@ -157,7 +157,7 @@ internal static class SessionWaits
                 if (quiet.IsCancellationRequested) quietEnding?.Invoke();
                 else timingOut?.Invoke(bound ?? 0);
             }
-            process.Kill(entireProcessTree: true);
+            OwnedProcesses.End(process);
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
             if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
             return null; // timeout: the caller records "failed"

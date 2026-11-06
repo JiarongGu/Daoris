@@ -86,7 +86,7 @@ internal sealed class PluginTrialProcess : IDisposable
     {
         try
         {
-            _process.Kill(entireProcessTree: true);
+            OwnedProcesses.End(_process);
             _process.WaitForExit(2000);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception)
