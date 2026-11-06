@@ -23304,3 +23304,34 @@ The 26 pointer lines of the parked file's head (the owner's reports and features
 - [x] **REVIEW2-LEFT1 — what REVIEW2's fixes left** (tests): about 48 tick classes still root their homes under the OS temp, and the modules' `Bridge` home has no fixture. Proof: no test home under the OS temp, by the census. → `docs/2026-11-02-review2-findings.md`
 
   **Outcome** 2026-11-07: every desktop test home roots under the checkout's `_fixtures/test-homes` (`TestHomes.Root`, 457 files moved by a count-asserted edit) and the modules' `Bridge` homes under `_fixtures/bridge-homes`; `TestHomesCensusTests` pins no `GetTempPath` or `GetTempFileName` in either test project but three named exceptions that create nothing there or need a folder outside any repository.
+
+## AGENTLYNTAI1a, 1b-i, 1b-ii and 1c (2026-11-07)
+
+- [x] **AGENTLYNTAI1a** the desktop builds on Lyntai's agent layer and nothing changes; **1b-i** the layer's adapter, the fourth view
+  and the oracle; **1b-ii** `alt-stub`, a third stand-in, by its folder alone; **1c** Claude Code's and Codex's account windows read
+  through the layer, as before (driver; D213, D240 point 8, D248). → `docs/2026-10-30-agent-lyntai-design.md` §9.2, §12
+
+  **Outcome** 2026-11-07: all four accepted by the owner. 1a (`6935a7865`): the reference holds only where this machine's local Lyntai
+  build is in use, a build without it is today's driver, the closure restores offline; its installed proof (the published app started
+  with feeds unreachable) stays on AGENTLYNTAI1. 1b-i (`8bbd98df0`, `9a2de82e5`, `50c20a25a`): the typed access failure, the host policy
+  on Daoris's own types, `Agents/Layer/`'s ingress, translations, containers, `LauncherRunner`, `LayerRun` and layer view, the suite's
+  fourth view and the parity oracle, on the tests' provider. 1b-ii: met by AP-H's folder (`1415b9626`); its own-vocabulary cases wait
+  on 1f-ii and AGENTPROVIDER1j. 1c (`78167b30d`, `55e372916`): `IUsageRead` read through the layer where the local build is in use,
+  today's reader the read without it; Claude Code's bound to the layer's read again once Lyntai read a null-id model.
+
+## MODELROLE1e2 and MODELROLE1l (2026-11-07)
+
+- [x] **MODELROLE1e2** what MODELROLE1e left: row d's hand-over and row f's editor; **MODELROLE1l** design and decision work starts on
+  its own role (driver, service, web; D205). → `docs/2026-10-23-actors-design.md`
+
+  **Outcome** 2026-11-07: e2 built with BL7 (`395b875ad`): a hand-over keeps its model and effort, a handed start takes the role's
+  choice, and the four fenced roles are edited in the one role editor (D233 choice 5); its partner case goes with COAGENT1. l built
+  (`a94212935`): Design is a seeded role on `opus` · high that design work takes with no model named. Both installed proofs are in the
+  installed batch.
+
+## GITAPP1 (2026-11-07)
+
+- [x] **GITAPP1 — Daoris's git as comprehensive as a git management app, and Review fast** (design; D202). → `docs/2026-10-23-git-app-design.md`
+
+  **Outcome** 2026-11-07: part one built (D202). Part two was measured as OPTIMIZE1a (BL54, `3453472de`): a review asks two or three
+  object questions of its 23 git starts, so a held reader is not worth adding and none is built.
