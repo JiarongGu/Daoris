@@ -32,6 +32,7 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/**",
         "src/Daoris.Desktop/Daoris.Desktop.GitDoor/**",
         "src/Daoris.Desktop/Daoris.Desktop.PieceStart/**",
+        "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
       ]
     },

@@ -249,7 +249,7 @@ internal static class GitRuns
         try
         {
             // Through the process-wide gate, off the caller's thread (UIFREEZE1), as the background's (PARALLEL1d).
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Git, StartClass.Background, ct).ConfigureAwait(false)
                       ?? throw new DriverException("git did not start");
             within.CancelAfter(GitBounds.Of(arguments));
             using var ending = Ending(within.Token, process);
@@ -268,7 +268,7 @@ internal static class GitRuns
             var bounded = count == buffer.Length && await Heard(stream.ReadAsync(new byte[1], within.Token), within.Token).ConfigureAwait(false) > 0;
             if (bounded)
             {
-                ChildProcess.KillTree(process);
+                OwnedProcesses.End(process);
             }
 
             await process.WaitForExitAsync(within.Token).ConfigureAwait(false);
@@ -307,7 +307,7 @@ internal static class GitRuns
     /// token, and the kill closes the pipe under it, so the read ends with git.
     /// </summary>
     private static CancellationTokenRegistration Ending(CancellationToken within, Process process) =>
-        within.Register(() => ChildProcess.KillTree(process));
+        within.Register(() => OwnedProcesses.End(process));
 
     /// <summary>
     /// A streamed git past its bound or its caller's cancellation (PARALLEL1e): its tree ended, never left running unowned as
@@ -371,7 +371,7 @@ internal static class GitRuns
         try
         {
             // Through the process-wide gate, off the caller's thread (UIFREEZE1), as the background's (PARALLEL1d).
-            process = await ProcessStarts.Shared.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Git, StartClass.Background, ct).ConfigureAwait(false)
                       ?? throw new DriverException("git did not start");
             within.CancelAfter(GitBounds.Of(arguments));
             using var ending = Ending(within.Token, process);
@@ -386,7 +386,7 @@ internal static class GitRuns
 
             if (stopped)
             {
-                ChildProcess.KillTree(process);
+                OwnedProcesses.End(process);
             }
 
             await process.WaitForExitAsync(within.Token).ConfigureAwait(false);

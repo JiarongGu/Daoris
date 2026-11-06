@@ -59,7 +59,7 @@ public static class ChildProcess
         Process? process;
         try
         {
-            process = await starts.StartAsync(info, StartClass.Background, ct).ConfigureAwait(false);
+            process = await starts.StartAsync(info, ProcessPurpose.Read, StartClass.Background, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
         {
@@ -122,46 +122,18 @@ public static class ChildProcess
     }
 
     /// <summary>
-    /// End a process and everything it started. A process that ended as it was stopped is already what was asked for, so
-    /// the refusals of a process that is gone are swallowed.
-    /// </summary>
-    /// <remarks>
-    /// Whether it ended is not this method's to say: a runner that must know awaits the exit after it
-    /// (<see cref="EndAsync"/>, GITAPP1a-iii), which tells a kill that failed from one that worked.
-    /// </remarks>
-    public static void KillTree(Process process)
-    {
-        try
-        {
-            Kill(process);
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
-        {
-            // It ended as it was stopped, or the exit wait after it says it did not.
-        }
-    }
-
-    /// <summary>
     /// How long a runner waits for a process's exit after its kill (GITAPP1a-iii, the git-app design P1.6; provisional): past
     /// it, the process is said unended.
     /// </summary>
     public static readonly TimeSpan ExitBound = TimeSpan.FromSeconds(5);
 
-    // The kill a test's flow makes instead of the runtime's (KillingWith); null in production.
-    private static readonly AsyncLocal<Action<Process>?> s_kill = new();
-
     // Who is told of a process that outlived its kill in this flow (Telling): the git seam, which says it as `git.unended`.
     private static readonly AsyncLocal<Action<int, string>?> s_unended = new();
 
-    private static void Kill(Process process)
-    {
-        if (s_kill.Value is { } stand) stand(process);
-        else process.Kill(entireProcessTree: true);
-    }
-
     /// <summary>
-    /// End <paramref name="process"/>'s tree and await its exit within <see cref="ExitBound"/> (GITAPP1a-iii, the git-app design P1.6,
-    /// Codex R4-5): the runners call it on their caller's cancellation or past their bound, and dispose the process only after.
+    /// End <paramref name="process"/>'s tree (<see cref="OwnedProcesses.End"/>) and await its exit within <see cref="ExitBound"/>
+    /// (GITAPP1a-iii, the git-app design P1.6, Codex R4-5): the runners call it on their caller's cancellation or past their bound, and
+    /// dispose the process only after.
     /// </summary>
     /// <exception cref="ProcessUnendedException">
     /// Its exit was not seen within the bound, its kill refused or not: told to this flow's listener (<see cref="Telling"/>) and
@@ -170,16 +142,8 @@ public static class ChildProcess
     internal static async Task EndAsync(Process process, CancellationToken ct)
     {
         var pid = PidOf(process);
-        string? refused = null;
-        try
-        {
-            Kill(process);
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
-        {
-            // Read by the exit wait: a process that ended as it was stopped refuses its kill and has exited.
-            refused = error.Message;
-        }
+        // Read by the exit wait: a process that ended as it was stopped refuses its kill and has exited.
+        var refused = OwnedProcesses.End(process);
 
         using var bound = new CancellationTokenSource(ExitBound);
         try
@@ -213,17 +177,6 @@ public static class ChildProcess
         {
             return 0;
         }
-    }
-
-    /// <summary>
-    /// The test seam (GITAPP1a-iii): until disposed, every kill this flow's runners make is <paramref name="kill"/> instead of the
-    /// runtime's, so a test can stand in a kill that is refused. Production opens none.
-    /// </summary>
-    internal static IDisposable KillingWith(Action<Process> kill)
-    {
-        var before = s_kill.Value;
-        s_kill.Value = kill;
-        return new Restore(() => s_kill.Value = before);
     }
 
     /// <summary>

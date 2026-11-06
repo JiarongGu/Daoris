@@ -42,7 +42,7 @@ public static class UpdateLauncher
         start.ArgumentList.Add(pid.ToString(CultureInfo.InvariantCulture));
         try
         {
-            using var started = await ProcessStarts.Shared.StartAsync(start, ct).ConfigureAwait(false);
+            using var started = await ProcessStarts.Shared.StartAsync(start, ProcessPurpose.Outlives, ct).ConfigureAwait(false);
             return started is not null;
         }
         catch (Win32Exception)

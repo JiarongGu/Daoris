@@ -253,8 +253,9 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
             // starts none of the tools.
             var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
             foreach (var argument in EdgeBrowser.Arguments(profile, port)) start.ArgumentList.Add(argument);
-            // Through the start gate (PROCSTART2), as every start of the desktop's is.
-            (await ProcessStarts.Shared.StartAsync(start, CancellationToken.None).ConfigureAwait(false))?.Dispose();
+            // Through the start gate (PROCSTART2), as every start of the desktop's is; held by no job (D249): this Edge is recorded and
+            // reused by the next shell.
+            (await ProcessStarts.Shared.StartAsync(start, ProcessPurpose.Outlives, CancellationToken.None).ConfigureAwait(false))?.Dispose();
             Daoris.Driver.AtomicFile.WriteText(record, EdgeBrowser.Record(port));
 
             using var edge = new EngineCdp(port);

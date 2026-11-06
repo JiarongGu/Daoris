@@ -125,13 +125,13 @@ public sealed class ChildProcessTests : IDisposable
     }
 }
 
-/// <summary>The runner's guarded kill, with no child started (the fast half).</summary>
+/// <summary>The one management's guarded kill (D249), with no child started (the fast half).</summary>
 public sealed class ChildProcessKillTests
 {
     [Fact]
-    public void Ending_a_process_that_never_ran_does_not_throw()
+    public void Ending_a_process_that_never_ran_does_not_throw_and_says_why_it_was_refused()
     {
         using var never = new Process();
-        ChildProcess.KillTree(never);
+        Assert.NotNull(OwnedProcesses.End(never));
     }
 }

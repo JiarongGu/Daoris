@@ -446,7 +446,7 @@ public static partial class GitIdentityActs
         if (home is null) Tools.Hand(info);
         else Tools.Hand(info, home);
         adjust(info);
-        using var process = await ProcessStarts.Shared.StartAsync(info, StartClass.Person, CancellationToken.None).ConfigureAwait(false)
+        using var process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, StartClass.Person, CancellationToken.None).ConfigureAwait(false)
             ?? throw new DriverException($"git: {Path.GetFileName(file)} did not start (no-ssh)");
         // A secret goes in on the standard input and nowhere else; a program's answer that may carry one is drained unread.
         if (input is not null) await process.StandardInput.WriteAsync(input).ConfigureAwait(false);

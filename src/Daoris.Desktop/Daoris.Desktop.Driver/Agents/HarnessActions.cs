@@ -45,7 +45,7 @@ public sealed class HarnessRun
         try
         {
             _download?.Cancel();
-            if (_process is { HasExited: false }) _process.Kill(entireProcessTree: true);
+            if (_process is { HasExited: false }) OwnedProcesses.End(_process);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or ObjectDisposedException)
         {
@@ -400,7 +400,7 @@ public static class HarnessActions
         Process process;
         try
         {
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (Win32Exception error)
@@ -468,7 +468,7 @@ public static class HarnessActions
         {
             // Through the start gate (PROCSTART2): an agent's install or sign-in is a press, so a person's start (PARALLEL1d);
             // its caller's token ends its wait for a place as it ends the run (PARALLEL1e).
-            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false)
+            process = await ProcessStarts.Shared.StartAsync(info, ProcessPurpose.Tool, ct).ConfigureAwait(false)
                 ?? throw new DriverException($"`{command[0]}` did not start");
         }
         catch (System.ComponentModel.Win32Exception)

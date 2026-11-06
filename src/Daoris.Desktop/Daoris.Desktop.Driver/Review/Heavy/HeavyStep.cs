@@ -92,7 +92,7 @@ internal sealed class HeavyStep : IDisposable
     {
         try
         {
-            if (_elsewhere is { HasExited: false }) _elsewhere.Kill(entireProcessTree: true);
+            if (_elsewhere is { HasExited: false }) OwnedProcesses.End(_elsewhere);
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception)
         {

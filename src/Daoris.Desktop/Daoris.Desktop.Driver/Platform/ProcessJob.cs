@@ -176,6 +176,49 @@ public sealed class ProcessJob : IDisposable
     /// </summary>
     public bool Holds => Volatile.Read(ref _handle) != IntPtr.Zero;
 
+    /// <summary>Whether the job holds <paramref name="process"/>: false where there is no job or the answer did not read.</summary>
+    internal bool Contains(IntPtr process)
+    {
+        var handle = Volatile.Read(ref _handle);
+        return handle != IntPtr.Zero && IsProcessInJob(process, handle, out var held) && held;
+    }
+
+    /// <summary>
+    /// The ids of every live process the job holds, those of jobs nested in it among them (the one management's census, D249): none where
+    /// there is no job or the list did not read.
+    /// </summary>
+    internal IReadOnlyList<int> Ids
+    {
+        get
+        {
+            var handle = Volatile.Read(ref _handle);
+            if (handle == IntPtr.Zero) return [];
+            var room = 32;
+            while (true)
+            {
+                // Two counts, then the ids as pointer-sized words from the eighth byte.
+                var size = 8 + room * IntPtr.Size;
+                var buffer = Marshal.AllocHGlobal(size);
+                try
+                {
+                    if (QueryInformationJobObject(handle, BasicProcessIdList, buffer, (uint)size, IntPtr.Zero))
+                    {
+                        var ids = new int[Marshal.ReadInt32(buffer, 4)];
+                        for (var each = 0; each < ids.Length; each++) ids[each] = (int)Marshal.ReadIntPtr(buffer, 8 + each * IntPtr.Size);
+                        return ids;
+                    }
+
+                    if (Marshal.GetLastWin32Error() != MoreData) return [];
+                    room = Math.Max(room * 2, Marshal.ReadInt32(buffer));
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// The CPU every process that ever joined the job has used, user and kernel, cumulative (SESSWATCH1a, the session-watch design §1.2):
     /// busy is read as the difference between two reads, never from one. Null where there is no job or the accounting did not read.
@@ -323,6 +366,8 @@ public sealed class ProcessJob : IDisposable
 
     private const uint KillOnJobClose = 0x2000;
     private const int BasicAccountingInformation = 1;
+    private const int BasicProcessIdList = 3;
+    private const int MoreData = 234;
     private const int ExtendedLimitInformation = 9;
     private const uint JobAssignProcess = 0x0001;
     private const uint JobQuery = 0x0004;
@@ -401,6 +446,10 @@ public sealed class ProcessJob : IDisposable
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool QueryInformationJobObject(
         IntPtr job, int infoClass, out JobObjectBasicAccountingInformation info, uint length, IntPtr returned);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool QueryInformationJobObject(IntPtr job, int infoClass, IntPtr info, uint length, IntPtr returned);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
