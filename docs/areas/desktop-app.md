@@ -343,5 +343,5 @@ a probe, git through a counting seam, a source that only names a start, a proces
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **PERSONDOOR2** (no row filed): the boundary between the person and their agents that D156 §7 names, and the machine
   key moved off a session's connector.
-- **OPTIMIZE1b**: D249 is accepted and built, with the tests' own direct starts named (below) and the census read as the process stops
+- **OPTIMIZE1b**: D249 is accepted and built, every test start named with its purpose and the census read as the process stops
   (`RunningProcessesLine`). No door reads the census while the window is open.
