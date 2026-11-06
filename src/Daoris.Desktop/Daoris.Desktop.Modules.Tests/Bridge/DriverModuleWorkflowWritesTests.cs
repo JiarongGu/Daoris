@@ -215,10 +215,10 @@ public sealed class DriverModuleWorkflowWritesTests : DriverModuleBridge
         var (module, _) = await UpAsync();
         var first = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", graph = WorkflowPresets.GraphOf("integrated")!.Graph() });
         Assert.True(first.GetProperty("done").GetBoolean(), first.GetProperty("message").GetString());
-        // A pull request needs a plugin that lands, which `engine`'s branch rule names none of.
-        var pullRequest = WorkflowPresets.GraphOf("pull-request")!.Graph();
+        // An integration with no press asks with `done`, which needs the line's gates, and `engine`'s line policy declares none.
+        var noPress = WorkflowPresets.GraphOf("integrated-no-press")!.Graph();
 
-        var refused = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", graph = pullRequest, @base = 1, authorize = new[] { "repository:engine:default" } });
+        var refused = await AnswerAsync(module, "WORKFLOW_SAVE", new { id = "line", graph = noPress, @base = 1, authorize = new[] { "repository:engine:default" } });
 
         Assert.Equal((false, "reach"), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("refused").GetString()));
         Assert.Equal("engine", Assert.Single(refused.GetProperty("reach").EnumerateArray()).GetProperty("repository").GetString());

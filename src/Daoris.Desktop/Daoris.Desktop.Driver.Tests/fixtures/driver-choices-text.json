@@ -505,6 +505,35 @@
       "after": null
     },
     {
+      "name": "quiet",
+      "argv": [
+        "quiet",
+        "15"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a session that says nothing and runs nothing for 15 minutes is looked in on; none is ever stopped for running long.",
+        "  Written to <config> — read at the next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"quietMinutes\": 15\n}\n"
+    },
+    {
+      "name": "quiet 4",
+      "argv": [
+        "quiet",
+        "4"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver quiet` needs a whole number of minutes from 5 to 120 — e.g. `daoris settings quiet 15`."
+      ],
+      "after": null
+    },
+    {
       "name": "line",
       "argv": [
         "line",
@@ -2378,6 +2407,7 @@
       "out": [
         "daoris: the roles that take this machine's work",
         "  build       Build · takes build on the machine · its staffing's order (the seed)",
+        "  design      Design · takes design on the machine · its staffing's order (the seed)",
         "  intake      Intake · takes intake on the machine · its staffing's order (the seed)",
         "  opinion     Second opinion · takes review on the machine · its staffing's order (the seed)",
         "  helper      Helper · takes help on the machine · its staffing's order (the seed)",

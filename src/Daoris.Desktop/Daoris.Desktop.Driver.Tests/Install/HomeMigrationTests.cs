@@ -300,7 +300,7 @@ public sealed class HomeMigrationTests : IDisposable
         using var read = new SqliteConnection($"Data Source={path};Pooling=False");
         read.Open();
         Assert.Equal(["cccccc", "dddddddddddd"], Column(read, "SELECT id FROM quests ORDER BY id"));
-        Assert.Equal(["aaaaaa:published", "aaaaaa:done", "aaaaaa:deleted", "cccccc:published"], Column(read, "SELECT quest || ':' || kind FROM quest_log ORDER BY position"));
+        Assert.Equal(["aaaaaa:published", "aaaaaa:done", "cccccc:published", "aaaaaa:deleted"], Column(read, "SELECT quest || ':' || kind FROM quest_log ORDER BY position"));
         Assert.Equal(["5"], Column(read, "SELECT sequence FROM quest_log WHERE kind = 'deleted'"));
         Assert.Empty(Column(read, "SELECT quest FROM quest_forwards"));
     }

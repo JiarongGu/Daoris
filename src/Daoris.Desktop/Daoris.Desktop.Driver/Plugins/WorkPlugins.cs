@@ -81,7 +81,7 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
             foreach (var (id, state) in _states)
             {
                 state.Awaited = awaited.TryGetValue(id, out var units) ? [.. units] : [];
-                Tell(id, state);
+                Tell(id, state, perMinute: true);
             }
         }
     }
@@ -361,10 +361,11 @@ internal sealed class WorkPlugins(PluginLog log, Func<DateTimeOffset> clock) : I
     /// The awaited set told to the listened process where it changed or a resync is due: at once, its answer not waited for here, so no look
     /// and no caller of <see cref="Watch"/> waits on a plugin. The peer writes frames in the order they are told.
     /// </summary>
-    private void Tell(string plugin, State state)
+    private void Tell(string plugin, State state, bool perMinute = false)
     {
         if (state.Listened is not { Alive: true } channel) return;
-        var resync = state.ResyncDue;
+        // A set told on a look's own account (the reconcile's watch) resyncs no oftener than a minute: a drop's resync waits for its look.
+        var resync = state.ResyncDue && (!perMinute || state.Resynced is not { } last || clock() - last >= WorkBounds.Minute);
         var said = WorkWire.Watch(new WorkWatchFrame(state.Generation, false, state.Awaited)).ToJsonString();
         if (!resync && said == state.Told) return;
 

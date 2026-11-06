@@ -39,9 +39,9 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
             })
             .ToList();
 
-        // The trees domain's two, an entry's or an ask's Accept (ACCEPTALL1), and the clean-up's and bringing up to date's lists a
-        // terminal asks for, which say a plugin's own lines into their answer (RPCOPEN1). Ask Daoris hands no branch on (D233).
-        Assert.Equal(4, built.Count(call => call.Kind == "LandingPlugins"));
+        // An entry's or an ask's Accept (ACCEPTALL1), and the clean-up's list a terminal asks for, which says a plugin's own lines into
+        // its answer (RPCOPEN1). A landing is a run's land, which builds no plugin wire here; Ask Daoris hands no branch on (D233).
+        Assert.Equal(2, built.Count(call => call.Kind == "LandingPlugins"));
         Assert.Contains(built, call => call is { Kind: "HookSet", File: "LoopRun.cs" });
         Assert.All(built, call => Assert.True(
             Regex.IsMatch(call.Call, @"\blog:\s") && Regex.IsMatch(call.Call, @"\bhealth:\s"),
@@ -68,11 +68,10 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
         Assert.DoesNotContain("LandingPlugins", waits);
         Assert.DoesNotContain("LandAsync", waits);
 
-        // The gate, the plan and the Accept read through trees with no wire; the wire is built after the performed branch is left.
-        var landing = source.IndexOf("SessionTrees Landing() => new(", StringComparison.Ordinal);
-        var performed = source.IndexOf("return await PerformedPressAsync(", StringComparison.Ordinal);
-        var inPlace = source.IndexOf("await Landing().LandAsync(", StringComparison.Ordinal);
-        Assert.True(landing > 0 && performed > landing && inPlace > performed);
+        // A run's land is the one way to land: the route builds no landing in place, so it has no wire to build and none to call.
+        Assert.Contains("return await PerformedPressAsync(", source);
+        Assert.DoesNotContain("SessionTrees Landing() => new(", source);
+        Assert.DoesNotContain("await Landing().LandAsync(", source);
     }
 
     /// <summary>

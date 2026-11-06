@@ -83,7 +83,8 @@ internal static class AnswersAlone
             if (Resets(e))
             {
                 steps.Add(new AloneStep(AloneStep.Reset, part, e.Seq, e.At, []));
-                said |= prompting;
+                // The person's ask of a helper is no word beside the answer it brings: that answer is the first alone after it.
+                said |= prompting && !AsksHelper(e);
                 continue;
             }
 
@@ -122,6 +123,9 @@ internal static class AnswersAlone
             && (e.Origin is null or "person" || e.From == DaorisWords.From)
         || e.Kind == SessionEventKind.Note
             && e.Parts?.Any(part => part.Code == HeldNoteCodes.AnswersPassed.Code || part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
+
+    private static bool AsksHelper(SessionEvent e) =>
+        e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == PeerNoteCodes.HelperPersonAsked.Code) == true;
 
     /// <summary>
     /// A solicited answer, taken: a helper's answer by its mark, the turn a second opinion's findings were handed in, or the supervisor's

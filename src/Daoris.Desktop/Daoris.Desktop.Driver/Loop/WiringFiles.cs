@@ -38,26 +38,29 @@ internal static class WiringFiles
         return rows;
     }
 
+    /// <summary>Where an entry's file is as it runs: its override's value, the driver's config where it is found, else the home's; or why it has none.</summary>
+    internal static (string? Path, string? Why) PathOf(WiringWorld world, HomeEntry entry, string? overrides)
+    {
+        var named = overrides is null ? null : world.Process(overrides);
+        string? why = world.Home is null ? "no-home" : null;
+        if (entry == HomeEntry.DriverConfig) return (ConfigPath(world), why);
+        if (!string.IsNullOrWhiteSpace(named)) return (named.Trim(), why);
+        if (world.Home is not { } home) return (null, why);
+        try
+        {
+            return (DaorisHome.Entry(home, entry), why);
+        }
+        catch (HomeEntryTwiceException)
+        {
+            return (null, "twice");
+        }
+    }
+
     internal static JsonObject FileRow(
         WiringWorld world, SizeReading? reading, HomeEntry entry, string? overrides, string? door, bool record, string? remotesWhy)
     {
         var named = overrides is null ? null : world.Process(overrides);
-        string? path = null;
-        string? pathWhy = world.Home is null ? "no-home" : null;
-        if (entry == HomeEntry.DriverConfig) path = ConfigPath(world);
-        else if (!string.IsNullOrWhiteSpace(named)) path = named.Trim();
-        else if (world.Home is { } home)
-        {
-            try
-            {
-                path = DaorisHome.Entry(home, entry);
-            }
-            catch (HomeEntryTwiceException)
-            {
-                pathWhy = "twice";
-            }
-        }
-
+        var (path, pathWhy) = PathOf(world, entry, overrides);
         var isFile = path is not null && File.Exists(path);
         var present = isFile || (path is not null && Directory.Exists(path));
         var row = new JsonObject

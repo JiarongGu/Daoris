@@ -60,7 +60,7 @@ public sealed class AgentCoursePortsTests
     public async Task Actual_retry_binding_keeps_key_author_attempt_acknowledgement_and_take_off_fallback()
     {
         var doors = new Doors();
-        using var service = new ServiceClient(doors);
+        using var service = new ServiceClient(new SessionChangesDoors(doors));
         var keep = AgentCourse.Current.RetryGoOn(service, "s1");
         var episode = new TransientEpisode(DateTimeOffset.UnixEpoch,
             new(AgentErrorKind.Transient, new("protocol", -32603, "overloaded", 529, "failure", DoorWhere.Prompt), "stand"));

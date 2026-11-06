@@ -348,7 +348,7 @@ public sealed class ProviderRegistry
         {
             return (
                 programFacts,
-                provider.Accounts.Required.Facts,
+                provider.Accounts.IsKnown ? provider.Accounts.Required.Facts : PoolFacts.None,
                 provider.Tables.IsKnown ? provider.Tables.Required : TablesPart.None,
                 provider.Usage.IsKnown ? provider.Usage.Required : UsagePart.None);
         }

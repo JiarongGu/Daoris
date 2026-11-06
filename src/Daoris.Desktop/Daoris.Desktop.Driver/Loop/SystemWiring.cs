@@ -524,6 +524,7 @@ public static class SystemWiring
         terminal["launchers"] = new JsonArray([.. (bin is null ? [] : Launchers).Select(name =>
             (JsonNode?)new JsonObject { ["name"] = name, ["present"] = File.Exists(Path.Combine(bin!, name)) })]);
         terminal["launchersWhy"] = bin is null ? "development" : null;
+        terminal["bin"] = bin;
 
         var accountPath = Folders(world.Account?.Invoke("PATH"));
         var machinePath = Folders(world.Machine?.Invoke("PATH"));
