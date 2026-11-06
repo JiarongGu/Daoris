@@ -28,6 +28,29 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts
     ];
 
     /// <summary>
+    /// One landing to a graph (LANDNODE1a), the method's tail and no other: what precedes a <c>land</c> decides whether it waits on a person, and
+    /// nothing here refuses one that starts without a press (LANDNODE1c2). A land of the method <c>integrate</c> brings an <c>integrate</c> after it.
+    /// </summary>
+    public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
+    {
+        var standing = GraphStanding.Of(graph);
+        if (!ReferenceEquals(standing.Landings[0], node))
+        {
+            yield return new WireProblem(GraphRefusal.LandOnce, null, node.Id,
+                $"node `{node.Id}`: `{standing.Landings[0].Id}` and `{node.Id}` are both a landing, and a graph holds one `{NodeKinds.Land}`.");
+        }
+
+        if (NodeOptions.Text(node, "method") == LandNodes.Integrate && !standing.ById.Values.Any(each => each.Kind == NodeKinds.Integrate))
+        {
+            yield return new WireProblem(GraphRefusal.LandTail, null, node.Id,
+                $"node `{node.Id}`: a `{LandNodes.Integrate}` land brings a `{NodeKinds.Integrate}` after it, and the graph holds none.");
+        }
+    }
+
+    public override WireProblem? DeclarationProblem(NodeDeclaration node, string field) => field != LandNodes.AcceptOption ? null
+        : new WireProblem(GraphRefusal.Accept, null, node.Id, $"node `{node.Id}`: a `land` takes no `accept`. Where you accept the work, put *Your review* before it; with no review it lands once the steps before it are done.");
+
+    /// <summary>
     /// The first option that does not hold, by its name, or null: each held to its choices, and the method's own refusals (a pattern on a merge,
     /// a squash of an integrate). Where the graph's other nodes must stand is the graph's rules'.
     /// </summary>

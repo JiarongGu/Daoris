@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The runtime starts, observes and keeps every kind through the kit (D247, NODEKIT1 1b): it asks a node's unit whether it observes, starts or is
-/// pressed, and names no kind to choose what to do. The evaluator's own kinds, <c>all</c> and <c>stop</c>, are its wiring and stay its.
+/// pressed, and names no kind to choose what to do; the save's graph rules (<c>NodeGraphs</c>) name none either. The evaluator's own kinds, <c>all</c> and <c>stop</c>, are its wiring and stay its.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class NodeDispatchCensusTests
@@ -18,6 +18,7 @@ public sealed partial class NodeDispatchCensusTests
         "Workflows/Nodes/WireEvaluation.cs",
         "Workflows/Nodes/NodeRunKeeping.cs",
         "Workflows/Nodes/NodeGoverning.cs",
+        "Workflows/Nodes/NodeGraphs.cs",
         "Workflows/Nodes/WorkPerformer.cs",
         "Loop/Watch/WatchNodes.cs",
     ];

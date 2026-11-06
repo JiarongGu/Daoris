@@ -36,6 +36,42 @@ internal sealed class IntegrateNode : BuiltInNode, IStarts
         return null;
     }
 
+    /// <summary>
+    /// At most one, after the landing, and a tail of a <c>land</c> whose method is <c>integrate</c> (§17.4's graph rules; G8): said against the
+    /// node it is about, once.
+    /// </summary>
+    public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
+    {
+        var standing = GraphStanding.Of(graph);
+        var first = standing.ById.Values.First(each => each.Kind == NodeKinds.Integrate);
+        if (!ReferenceEquals(first, node))
+        {
+            yield return new WireProblem(GraphRefusal.IntegrateTwice, null, node.Id,
+                $"node `{node.Id}`: `{first.Id}` and `{node.Id}` are both an `{NodeKinds.Integrate}`, and the graph's landing is integrated once.");
+        }
+        else if (standing.Landings.Count == 0)
+        {
+            yield return new WireProblem(GraphRefusal.IntegrateUnlanded, null, node.Id,
+                $"node `{node.Id}`: an `{NodeKinds.Integrate}` integrates the landing a `{NodeKinds.Land}` makes, and the graph holds no `{NodeKinds.Land}`.");
+        }
+
+        foreach (var land in standing.Landings)
+        {
+            var method = NodeOptions.Text(land, "method");
+            if (method is null || !LandNodes.Methods.Contains(method, StringComparer.Ordinal)) continue;
+            if (method != LandNodes.Integrate)
+            {
+                yield return new WireProblem(GraphRefusal.LandTail, null, node.Id, $"node `{node.Id}` is a `{NodeKinds.Integrate}`, which comes with a `land` whose method is `{LandNodes.Integrate}`: "
+                    + "choose that method on the landing and it brings this step.");
+            }
+            else if (!NodeGraphStarts.Reach([land.Id], standing.Ordered, forward: true).Contains(node.Id))
+            {
+                yield return new WireProblem(GraphRefusal.LandTail, null, node.Id,
+                    $"node `{node.Id}`: a `{NodeKinds.Integrate}` is the tail of `{land.Id}`, and no way from `{land.Id}` reaches it.");
+            }
+        }
+    }
+
     /// <summary>A graph-only kind, kept by its node's id for the comparison's graph part (<see cref="Involvement.Lowers"/>).</summary>
     public override NodePart Part(NodeDeclaration node) => NodePart.Automatic(node.Kind) with { Lowered = NodeKinds.Integrate };
 

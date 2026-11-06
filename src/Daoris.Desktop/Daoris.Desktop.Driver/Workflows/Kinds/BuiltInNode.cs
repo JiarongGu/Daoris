@@ -17,6 +17,10 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual string? Problem(NodeDeclaration node) => null;
 
+    public virtual WireProblem? DeclarationProblem(NodeDeclaration node, string field) => null;
+
+    public virtual string NeverEndBecause => "it is reached on a claim, and an end on evidence.";
+
     public virtual IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node) => [];
 
     /// <summary>The outcomes a node of it is reached with, which its declaration writes; none where its kind is no decision.</summary>

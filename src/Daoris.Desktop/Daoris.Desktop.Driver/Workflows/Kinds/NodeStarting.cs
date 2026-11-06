@@ -40,6 +40,8 @@ internal sealed record NodeStarting
 
     public required NodeIntegrating Integrating { get; init; }
 
+    public required NodeRequesting Requesting { get; init; }
+
     /// <summary>Drops what the pass governs, so the unit is judged again on what is there now; its evaluation ends with this start.</summary>
     public required Action Drop { get; init; }
 
