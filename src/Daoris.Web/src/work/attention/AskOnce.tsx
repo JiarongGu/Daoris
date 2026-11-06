@@ -5,6 +5,8 @@ import { opinionState } from '../gates/opinion';
 import { unsettledWords } from '../gates/OpinionGate';
 import { TrustAsk } from '../waits/TrustAsk';
 import type { AttentionActId } from './attention';
+import { taskActOf } from './attentionOffers';
+import { TaskPress } from '../../workflow/TaskPress';
 import type { Attention } from './AttentionRow';
 
 /**
@@ -27,6 +29,15 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   onGrant: (answered: Answered) => void;
 }) {
   const { t } = useTranslation();
+  // NODEKIT1 HUMAN: a person's task's press asks as its run's view asks it, with the note the person may give.
+  const task = taskActOf(act);
+  if (task) {
+    return (
+      <TaskPress
+        className="mt-2" act={task} node={item.task?.node ?? ''} words={words} onWords={onWords} busy={busy} onConfirm={onConfirm} onClose={onCancel}
+      />
+    );
+  }
   if (act === 'trust' && item.trust) {
     return (
       <div className="mt-2">
